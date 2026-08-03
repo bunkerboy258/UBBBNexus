@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/CatalogSystem/BBBEquipmentCatalog.h"
 
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 

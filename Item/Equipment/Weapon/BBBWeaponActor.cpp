@@ -5,7 +5,7 @@
 #include "Components/ArrowComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/Base/BBBFireFragment.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"

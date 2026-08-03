@@ -1,6 +1,6 @@
 
 #include "BBBWork/UBBBNexus/Item/RuntimeData/BBBItemRuntimeData.h"
-#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragment.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragmentRuntimeData.h"
 

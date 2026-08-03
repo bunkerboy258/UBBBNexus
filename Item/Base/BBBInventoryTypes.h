@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemInstance.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 #include "BBBInventoryTypes.generated.h"
 
 UENUM(BlueprintType)

@@ -1,8 +1,8 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/Item/BBBInventoryTypes.h"
-#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemTypes.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBInventoryTypes.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemTypes.h"
 #include "BBBCharacterItemState.generated.h"
 class ABBBEquipmentActor;
 class UBBBEquipmentDefinition;

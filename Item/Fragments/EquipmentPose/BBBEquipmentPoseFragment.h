@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemTypes.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemTypes.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragment.h"
 #include "BBBEquipmentPoseFragment.generated.h"
 class UCurveFloat;
