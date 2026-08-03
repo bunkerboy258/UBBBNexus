@@ -20,13 +20,18 @@ UBBBEquipmentInstance *UBBBEquipmentInstance::Create(
         return nullptr;
     }
 
-    Instance->Configure(InDefinition, InStackCount);
+    Instance->InstanceId = FGuid::NewGuid();
+    Instance->Definition = &InDefinition;
+    Instance->StackCount = FMath::Clamp(InStackCount, 1, InDefinition.MaxStack);
     Instance->RuntimeData = NewObject<UBBBItemRuntimeData>(Instance);
 
     if (!ensureMsgf(Instance->RuntimeData, TEXT("[UBBBI]Equipment runtime data creation failed")))
     {
         return nullptr;
     }
+
+    Instance->RuntimeData->Initialize(InDefinition);
+    Instance->bIsRuntimeDataInitialized = true;
 
     return Instance;
 }
@@ -41,12 +46,14 @@ UBBBEquipmentInstance *UBBBEquipmentInstance::CreateMirror(
         return nullptr;
     }
 
-    Instance->Configure(InDefinition, 1);
+    Instance->InstanceId = FGuid::NewGuid();
+    Instance->Definition = &InDefinition;
+    Instance->StackCount = 1;
     Instance->InstanceMode = EInstanceMode::Mirror;
     return Instance;
 }
 
-void UBBBEquipmentInstance::Initialize(
+void UBBBEquipmentInstance::Equip(
     USkeletalMeshComponent &CharacterMesh,
     FBBBCharacterExternalAPI &CharacterAPI,
     FName AttachmentSocketName,
@@ -56,13 +63,10 @@ void UBBBEquipmentInstance::Initialize(
     if (!ensureMsgf(EquipmentDefinition, TEXT("[UBBBI]Equipment instance definition is invalid")))
     { return; }
 
-    if (InstanceMode == EInstanceMode::Runtime && !bIsRuntimeDataInitialized)
+    if (InstanceMode == EInstanceMode::Runtime
+        && !ensureMsgf(RuntimeData && bIsRuntimeDataInitialized, TEXT("[UBBBI]Equipment runtime data is not initialized")))
     {
-        if (!ensureMsgf(RuntimeData, TEXT("[UBBBI]Equipment runtime data is null")))
-        { return; }
-
-        RuntimeData->Initialize(*EquipmentDefinition);
-        bIsRuntimeDataInitialized = true;
+        return;
     }
 
     if (ModelActor)

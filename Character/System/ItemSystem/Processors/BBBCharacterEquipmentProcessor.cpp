@@ -20,16 +20,19 @@ void FBBBCharacterEquipmentProcessor::Update(
         }
 
         EquipmentState.ActiveMainHandInstance = EquipmentState.DesiredMainHandInstance;
+
+        if (EquipmentState.ActiveMainHandInstance)
+        {
+            EquipmentState.ActiveMainHandInstance->Equip(
+                CharacterMesh,
+                CharacterAPI,
+                AttachmentSocketName,
+                WorldTimeSeconds);
+        }
     }
 
     if (!EquipmentState.ActiveMainHandInstance)
     { return; }
-
-    EquipmentState.ActiveMainHandInstance->Initialize(
-        CharacterMesh,
-        CharacterAPI,
-        AttachmentSocketName,
-        WorldTimeSeconds);
 
     EquipmentState.ActiveMainHandInstance->Update(WorldTimeSeconds);
 }

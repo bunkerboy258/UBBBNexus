@@ -27,8 +27,6 @@ public:
 
 protected:
 
-    void Configure(UBBBItemDefinition &InDefinition, int32 InStackCount);
-
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     FGuid InstanceId;
 

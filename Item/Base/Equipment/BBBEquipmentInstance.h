@@ -34,7 +34,7 @@ public:
      * @param AttachmentSocketName\t装备挂接插槽
      * @param WorldTimeSeconds\t当前世界时间
      */
-    void Initialize(
+    void Equip(
         USkeletalMeshComponent &CharacterMesh,
         FBBBCharacterExternalAPI &CharacterAPI,
         FName AttachmentSocketName,
