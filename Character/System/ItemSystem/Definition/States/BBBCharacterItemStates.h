@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 #include "BBBCharacterItemStates.generated.h"
 
 class FBBBCharacterDefaultItemInitializer;
@@ -45,7 +46,10 @@ struct FBBBCharacterEquipmentState
     }
 
     /** @return 当前装备是否仍在执行装备过渡 */
-    bool IsEquipping() const;
+    bool IsEquipping() const
+    {
+        return ActiveMainHandInstance && ActiveMainHandInstance->IsEquipping();
+    }
 
 private:
 

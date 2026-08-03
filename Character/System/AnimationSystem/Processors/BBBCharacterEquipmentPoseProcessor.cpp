@@ -41,7 +41,7 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     if (!ActiveDefinition || !EquippedItemActor)
     { return; }
     //读取姿势配置与武器网格
-    const UBBBEquipmentPoseFragment *Pose = ActiveDefinition->FindFragment<UBBBEquipmentPoseFragment>();
+    const UBBBEquipmentPoseFragment *Pose = ActiveDefinition->EquipmentPoseFragment;
     UStaticMeshComponent *WeaponMesh = EquippedItemActor->FindComponentByClass<UStaticMeshComponent>();
     //缺少姿势配置或网格时保持重置状态
     if (!Pose || !WeaponMesh)

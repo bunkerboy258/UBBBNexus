@@ -5,6 +5,8 @@
 #include "BBBEquipmentDefinition.generated.h"
 class ABBBEquipmentActor;
 class UAnimMontage;
+class UBBBEquipmentPoseFragment;
+class UBBBItemFragment;
 
 //装备可占用的角色槽位
 UENUM(BlueprintType)
@@ -33,4 +35,11 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation")
     TObjectPtr<UAnimMontage> HoldIdleMontage = nullptr;
+
+    //装备姿势配置插槽
+    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment")
+    TObjectPtr<UBBBEquipmentPoseFragment> EquipmentPoseFragment;
+
+    //收集装备层 Fragment 命名插槽
+    virtual void CollectFragments(TArray<const UBBBItemFragment *> &OutFragments) const override;
 };

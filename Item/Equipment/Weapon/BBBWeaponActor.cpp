@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/BBBWeaponDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/Base/BBBFireFragment.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBSingleProjectileFireFragment.h"
@@ -187,11 +188,13 @@ void ABBBWeaponActor::SubmitRecoil(const FVector2D &Impulse, float RecoverySpeed
 
 void ABBBWeaponActor::BindDefinitionFragments()
 {
-    if (!EquipmentDefinition)
+    const UBBBWeaponDefinition *WeaponDefinition = Cast<UBBBWeaponDefinition>(EquipmentDefinition);
+    if (!ensureMsgf(WeaponDefinition, TEXT("[UBBBI]Weapon actor requires a weapon definition")))
     { return; }
 
-    FireFragment = EquipmentDefinition->FindFragment<UBBBFireFragment>();
-    MagazineFragment = EquipmentDefinition->FindFragment<UBBBMagazineFragment>();
+    //命名插槽直连装配
+    FireFragment = WeaponDefinition->FireFragment;
+    MagazineFragment = WeaponDefinition->MagazineFragment;
 }
 
 void ABBBWeaponActor::BindRuntimeData()

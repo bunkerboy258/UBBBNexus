@@ -13,7 +13,7 @@ class ABBB_EVAC_API UBBBItemRuntimeData final : public UObject
 public:
 
     /**
-     * 按静态配置遍历 Fragment 创建并收集运行数据
+     * 按静态配置的 Fragment 命名插槽创建并收集运行数据
      * @param Definition	物品静态配置
      */
     void Initialize(const UBBBItemDefinition &Definition);

@@ -136,7 +136,7 @@ private:
     void SubmitItemIKBlock(bool bBlockItemIK) const;
 
     /**
-     * 从装备静态配置绑定 Fire 与 Magazine Fragment
+     * 从武器静态配置的命名插槽直连绑定 Fire 与 Magazine Fragment
      */
     void BindDefinitionFragments();
 

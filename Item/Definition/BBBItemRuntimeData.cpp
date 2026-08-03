@@ -9,7 +9,11 @@ void UBBBItemRuntimeData::Initialize(const UBBBItemDefinition &Definition)
 
     RuntimeDataList.Reset();
 
-    for (const UBBBItemFragment *Fragment : Definition.Fragments)
+    //收集定义中的全部 Fragment 命名插槽
+    TArray<const UBBBItemFragment *> Fragments;
+    Definition.CollectFragments(Fragments);
+
+    for (const UBBBItemFragment *Fragment : Fragments)
     {
 
         if (!Fragment)
