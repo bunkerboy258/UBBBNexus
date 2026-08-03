@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputStates.h"
 
 struct FBBBInputRawData
 {

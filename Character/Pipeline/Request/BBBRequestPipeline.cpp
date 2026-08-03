@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/BBBRequestPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Context/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 
 void FBBBRequestPipeline::Initialize(
     FBBBDecisionRuntimeData &InDecisionData,

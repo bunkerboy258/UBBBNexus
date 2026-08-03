@@ -2,7 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimInstance.generated.h"
 
 UCLASS()

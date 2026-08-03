@@ -1,12 +1,12 @@
 
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBFacingConfig.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Context/BBBFacingStates.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Context/BBBFacingRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Context/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/States/BBBFacingStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 

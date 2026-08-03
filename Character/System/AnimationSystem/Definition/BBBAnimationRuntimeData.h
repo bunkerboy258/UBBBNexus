@@ -1,8 +1,8 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimationRuntimeData.generated.h"
 class FBBBCharacterAimPresentationProcessor;
 class FBBBCharacterEquipmentPoseProcessor;

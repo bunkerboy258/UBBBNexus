@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimStates.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBAimRuntimeData.generated.h"
 class FBBBAimRestoreProcessor;
 class FBBBCharacterAimSystem;

@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/Context/BBBLocomotionStates.h"
+#include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/Definition/States/BBBLocomotionStates.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
 USTRUCT(BlueprintType)

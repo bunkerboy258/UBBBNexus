@@ -1,8 +1,8 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRawData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputRawData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputStates.h"
 #include "BBBInputRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 struct FBBBCharacterRuntimeData;

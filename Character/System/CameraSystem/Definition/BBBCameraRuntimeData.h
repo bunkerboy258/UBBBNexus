@@ -1,7 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Context/BBBCameraCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Context/BBBCameraStates.h"
+#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/Commands/BBBCameraCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/States/BBBCameraStates.h"
 #include "BBBCameraRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 

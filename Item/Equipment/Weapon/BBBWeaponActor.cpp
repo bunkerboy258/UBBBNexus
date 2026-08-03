@@ -15,7 +15,7 @@
 #include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Weapon/Projectile/BBBBulletActor.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireEvents.h"
-#include "BBBWork/UBBBNexus/Item/Context/BBBItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Definition/BBBItemRuntimeData.h"
 #include "Kismet/GameplayStatics.h"
 
 ABBBWeaponActor::ABBBWeaponActor()

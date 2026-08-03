@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Execution/Executors/BBBItemActionExecutor.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Context/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemCommands.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/Commands/BBBCharacterItemCommands.h"
 
 void FBBBItemActionExecutor::Update(
     FBBBDecisionRuntimeData &DecisionData,

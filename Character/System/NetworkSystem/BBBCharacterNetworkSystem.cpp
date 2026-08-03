@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/BBBNetworkRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Context/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 
 void FBBBCharacterNetworkSystem::Initialize(
     FBBBNetworkRuntimeData &InNetworkData,

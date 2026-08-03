@@ -3,8 +3,8 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Context/BBBCharacterWorldRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterItemSystem::Initialize(

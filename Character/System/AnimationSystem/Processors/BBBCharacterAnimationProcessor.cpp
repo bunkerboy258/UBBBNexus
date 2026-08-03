@@ -1,11 +1,11 @@
 
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationProcessor.h"
 #include "Animation/AnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Context/BBBFacingRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 //播放排队蒙太奇并更新开火与转身表现

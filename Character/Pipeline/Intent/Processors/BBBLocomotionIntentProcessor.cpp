@@ -1,9 +1,9 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBLocomotionIntentProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/States/BBBIntentStates.h"
 
 void FBBBLocomotionIntentProcessor::Update(
     const FBBBInputRuntimeData &InputData,

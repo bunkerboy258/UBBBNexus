@@ -2,7 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
 #include "Camera/CameraComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRawData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "EnhancedInputComponent.h"

@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineFragment.h"
 #include "Animation/AnimMontage.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Weapon/BBBWeaponActor.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineRuntimeData.h"

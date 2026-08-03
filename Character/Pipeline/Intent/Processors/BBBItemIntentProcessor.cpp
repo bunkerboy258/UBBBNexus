@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBItemIntentProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/States/BBBIntentStates.h"
 
 void FBBBItemIntentProcessor::Update(
     const FBBBInputRuntimeData &InputData,

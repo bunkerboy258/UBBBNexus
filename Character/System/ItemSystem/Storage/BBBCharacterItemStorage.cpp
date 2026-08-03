@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
 
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemStates.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/States/BBBCharacterItemStates.h"
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 
 bool FBBBCharacterItemStorage::AddItem(

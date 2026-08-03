@@ -1,8 +1,8 @@
 
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Processors/BBBCharacterItemActionProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemActionResults.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemStates.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/Results/BBBCharacterItemActionResults.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/Commands/BBBCharacterItemCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/States/BBBCharacterItemStates.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 

@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBFireUploadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemActionResults.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/Results/BBBCharacterItemActionResults.h"
 
 void FBBBFireUploadProcessor::Update(
     const FBBBCharacterItemActionResults &ActionResults,

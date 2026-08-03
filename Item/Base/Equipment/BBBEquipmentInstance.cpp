@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Context/BBBItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Definition/BBBItemRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"

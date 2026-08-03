@@ -1,6 +1,6 @@
 
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBSingleProjectileFireFragment.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Weapon/BBBWeaponActor.h"

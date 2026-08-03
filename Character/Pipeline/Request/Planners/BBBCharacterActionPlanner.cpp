@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Planners/BBBCharacterActionPlanner.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Context/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Context/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 
 void FBBBCharacterActionPlanner::Update(
     const FBBBIntentRuntimeData &Intent,
