@@ -10,7 +10,7 @@
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/World/BBBCharacterWorldRuntimeData.h"
 #include "BBBCharacterRuntimeData.generated.h"

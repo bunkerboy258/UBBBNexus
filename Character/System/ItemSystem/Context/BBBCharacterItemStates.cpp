@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemStates.h"
 
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 

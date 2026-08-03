@@ -6,7 +6,7 @@
 class FBBBCharacterItemActionProcessor;
 struct FBBBCharacterItemRuntimeData;
 
-/** 保存角色本帧通过装备成功完成的动作 */
+/** 角色本帧成功完成的物品动作结果 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterItemActionResults
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBCharacterItemState.generated.h"
+#include "BBBCharacterItemStates.generated.h"
 
 class FBBBCharacterDefaultItemInitializer;
 class FBBBCharacterEquipmentProcessor;
@@ -61,19 +61,4 @@ private:
     /** 角色当前装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UBBBEquipmentInstance> ActiveMainHandInstance = nullptr;
-};
-
-/** 角色物品领域的背包与装备状态 */
-USTRUCT(BlueprintType)
-struct FBBBCharacterItemState
-{
-    GENERATED_BODY()
-
-    /** 角色唯一背包 */
-    UPROPERTY(BlueprintReadOnly)
-    FBBBCharacterBackpackState Backpack;
-
-    /** 角色当前装备状态 */
-    UPROPERTY(BlueprintReadOnly)
-    FBBBCharacterEquipmentState Equipment;
 };

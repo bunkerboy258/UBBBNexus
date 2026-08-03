@@ -47,7 +47,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.CharacterData.Aim,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.CharacterData.Intent,
-        Character.RuntimeData.CharacterData.Item.State.Equipment,
+        Character.RuntimeData.CharacterData.Item.Equipment,
         Character.RuntimeData.CharacterData.Animation.GetCommands(),
         Config.Aim,
         Config.AimAnimation);
@@ -82,7 +82,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.NetworkSystem.Initialize(
         Character.RuntimeData.CharacterData.Network,
         Character.RuntimeData.CharacterData.Aim,
-        Character.RuntimeData.CharacterData.Item.State.Equipment,
+        Character.RuntimeData.CharacterData.Item.Equipment,
         *Character.CharacterNetworkComponent,
         *Config.Item.EquipmentCatalog,
         Character.RuntimeData.WorldData,
@@ -99,7 +99,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.CharacterData.Aim,
         Character.RuntimeData.CharacterData.Facing,
         Character.RuntimeData.CharacterData.Intent,
-        Character.RuntimeData.CharacterData.Item.State.Equipment,
+        Character.RuntimeData.CharacterData.Item.Equipment,
         Config.Aim,
         Config.AimAnimation,
         Config.Locomotion,
@@ -123,13 +123,13 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.ArbitrationPipeline.Initialize(
         Character.RuntimeData.CharacterData.Decision,
-        Character.RuntimeData.CharacterData.Item.State.Equipment);
+        Character.RuntimeData.CharacterData.Item.Equipment);
     
     Character.ExecutionPipeline.Initialize(
         Character.RuntimeData.CharacterData.Decision,
         Character.RuntimeData.CharacterData.Item.Commands,
-        Character.RuntimeData.CharacterData.Item.State.Equipment,
-        Character.RuntimeData.CharacterData.Item.State.Backpack);
+        Character.RuntimeData.CharacterData.Item.Equipment,
+        Character.RuntimeData.CharacterData.Item.Backpack);
     
     Character.CharacterUpdatePipeline.Initialize(
         Character,

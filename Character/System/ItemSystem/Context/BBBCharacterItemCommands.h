@@ -1,60 +1,53 @@
-
 #pragma once
+
 #include "CoreMinimal.h"
 #include "BBBCharacterItemCommands.generated.h"
-class FBBBItemActionExecutor;
+
 class FBBBCharacterItemActionProcessor;
 class FBBBFireRestoreProcessor;
+class FBBBItemActionExecutor;
 class FBBBReloadRestoreProcessor;
 struct FBBBCharacterItemRuntimeData;
 
+/** 角色物品领域本帧执行命令 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterItemCommands
 {
     GENERATED_BODY()
+
 private:
-    friend class FBBBItemActionExecutor;
+
     friend class FBBBCharacterItemActionProcessor;
     friend class FBBBFireRestoreProcessor;
+    friend class FBBBItemActionExecutor;
     friend class FBBBReloadRestoreProcessor;
     friend struct FBBBCharacterItemRuntimeData;
 
-    /**
-     * 提交本帧开火指令
-     */
+    /** 提交本帧开火命令 */
     void SubmitFire()
     {
         bActivateFire = true;
     }
 
-    /**
-     * 提交本帧换弹指令
-     */
+    /** 提交本帧换弹命令 */
     void SubmitReload()
     {
         bActivateReload = true;
     }
 
-    /**
-     * 提交本帧开火表现指令
-     */
+    /** 提交本帧开火表现命令 */
     void SubmitFirePresentation()
     {
         bPresentFire = true;
     }
 
-    /**
-     * 提交本帧换弹表现指令
-     */
+    /** 提交本帧换弹表现命令 */
     void SubmitReloadPresentation()
     {
         bPresentReload = true;
     }
 
-    /**
-     * 消费本帧开火指令 读取后清除标记
-     * @return 本帧是否存在待执行开火指令
-     */
+    /** @return 本帧是否存在待执行开火命令 */
     bool ConsumeFire()
     {
         const bool bShouldActivateFire = bActivateFire;
@@ -62,10 +55,7 @@ private:
         return bShouldActivateFire;
     }
 
-    /**
-     * 消费本帧换弹指令 读取后清除标记
-     * @return 本帧是否存在待执行换弹指令
-     */
+    /** @return 本帧是否存在待执行换弹命令 */
     bool ConsumeReload()
     {
         const bool bShouldActivateReload = bActivateReload;
@@ -73,10 +63,7 @@ private:
         return bShouldActivateReload;
     }
 
-    /**
-     * 消费本帧开火表现指令 读取后清除标记
-     * @return 本帧是否存在待表现开火指令
-     */
+    /** @return 本帧是否存在待表现开火命令 */
     bool ConsumeFirePresentation()
     {
         const bool bShouldPresentFire = bPresentFire;
@@ -84,10 +71,7 @@ private:
         return bShouldPresentFire;
     }
 
-    /**
-     * 消费本帧换弹表现指令 读取后清除标记
-     * @return 本帧是否存在待表现换弹指令
-     */
+    /** @return 本帧是否存在待表现换弹命令 */
     bool ConsumeReloadPresentation()
     {
         const bool bShouldPresentReload = bPresentReload;
@@ -95,9 +79,7 @@ private:
         return bShouldPresentReload;
     }
 
-    /**
-     * 清理本帧全部物品指令
-     */
+    /** 清理本帧全部物品命令 */
     void CleanFrame()
     {
         bActivateFire = false;
@@ -106,15 +88,19 @@ private:
         bPresentReload = false;
     }
 
+    /** 是否存在待执行开火命令 */
     UPROPERTY()
     bool bActivateFire = false;
 
+    /** 是否存在待执行换弹命令 */
     UPROPERTY()
     bool bActivateReload = false;
 
+    /** 是否存在待表现开火命令 */
     UPROPERTY()
     bool bPresentFire = false;
 
+    /** 是否存在待表现换弹命令 */
     UPROPERTY()
     bool bPresentReload = false;
 };

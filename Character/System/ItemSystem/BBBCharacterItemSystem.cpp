@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/World/BBBCharacterWorldRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterItemSystem::Initialize(
@@ -22,7 +22,7 @@ void FBBBCharacterItemSystem::Initialize(
     WorldData = &InWorldData;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
 
-    FBBBCharacterBackpackState &Backpack = ItemData->State.Backpack;
+    FBBBCharacterBackpackState &Backpack = ItemData->Backpack;
     Backpack.Slots.Init(nullptr, FMath::Max(1, InItemConfig.BackpackSlotCount));
     Backpack.QuickAccessBindings.Init(nullptr, FMath::Max(1, InItemConfig.QuickAccessSlotCount));
 
@@ -38,11 +38,11 @@ void FBBBCharacterItemSystem::Update()
         *CharacterMesh,
         WorldData->GetWorldTimeSeconds(),
         RightHandWeaponSocketName,
-        ItemData->State.Equipment,
+        ItemData->Equipment,
         *CharacterAPI);
 
     ItemActionProcessor.Update(
         ItemData->Commands,
-        ItemData->State.Equipment,
+        ItemData->Equipment,
         ItemData->ActionResults);
 }

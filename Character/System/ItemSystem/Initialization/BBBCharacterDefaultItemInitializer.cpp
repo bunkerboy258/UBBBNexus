@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Initialization/BBBCharacterDefaultItemInitializer.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Context/BBBCharacterItemRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
@@ -12,7 +12,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
     UObject &ItemOuter,
     const FBBBCharacterItemConfig &InItemConfig) const
 {
-    FBBBCharacterItemState &ItemState = ItemData.State;
+    FBBBCharacterBackpackState &Backpack = ItemData.Backpack;
 
     for (const FBBBDefaultBackpackItem &DefaultItem : InItemConfig.DefaultBackpackItems)
     {
@@ -28,14 +28,14 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
         if (!NewInstance)
         { continue; }
 
-        if (!Storage.AddItem(ItemState.Backpack, *NewInstance))
+        if (!Storage.AddItem(Backpack, *NewInstance))
         {
             UE_LOG(LogTemp, Warning, TEXT("Failed to add default item to inventory"));
             continue;
         }
 
         if (DefaultItem.QuickAccessSlot != INDEX_NONE
-            && !Storage.BindQuickAccessItem(ItemState.Backpack, DefaultItem.QuickAccessSlot, *NewInstance))
+            && !Storage.BindQuickAccessItem(Backpack, DefaultItem.QuickAccessSlot, *NewInstance))
         {
             UE_LOG(LogTemp, Warning, TEXT("Failed to bind default item to quick access slot"));
         }
@@ -44,12 +44,12 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
     if (!InItemConfig.bAutoEquipFirstQuickAccessItem)
     { return; }
 
-    if (ItemState.Backpack.QuickAccessBindings.IsEmpty())
+    if (Backpack.QuickAccessBindings.IsEmpty())
     { return; }
 
-    UBBBEquipmentInstance *FirstQuickAccessItem = Cast<UBBBEquipmentInstance>(ItemState.Backpack.QuickAccessBindings[0]);
+    UBBBEquipmentInstance *FirstQuickAccessItem = Cast<UBBBEquipmentInstance>(Backpack.QuickAccessBindings[0]);
     if (!FirstQuickAccessItem)
     { return; }
 
-    ItemState.Equipment.DesiredMainHandInstance = FirstQuickAccessItem;
+    ItemData.Equipment.DesiredMainHandInstance = FirstQuickAccessItem;
 }
