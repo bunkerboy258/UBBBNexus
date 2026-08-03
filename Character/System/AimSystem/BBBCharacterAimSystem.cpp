@@ -11,7 +11,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 
 void FBBBCharacterAimSystem::Initialize(
     APawn &InPawn,

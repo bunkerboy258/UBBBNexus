@@ -2,8 +2,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemInstance.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemTypes.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemInstance.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemTypes.h"
 #include "BBBEquipmentActor.generated.h"
 struct FBBBCharacterAnimationRequest;
 class FBBBCharacterExternalAPI;

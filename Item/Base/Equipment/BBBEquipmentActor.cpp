@@ -1,9 +1,9 @@
 
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 
 ABBBEquipmentActor::ABBBEquipmentActor()
 {

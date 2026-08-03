@@ -5,8 +5,8 @@
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Weapon/BBBWeaponActor.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
-#include "BBBWork/UBBBNexus/Item/Projectile/BBBFireTypes.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/Projectile/BBBBulletActor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/Projectile/BBBFireTypes.h"
 
 UBBBSingleProjectileFireFragment::UBBBSingleProjectileFireFragment()
 {

@@ -1,8 +1,8 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemTypes.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemTypes.h"
 #include "BBBEquipmentDefinition.generated.h"
 class ABBBEquipmentActor;
 class UAnimMontage;

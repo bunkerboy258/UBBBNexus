@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemActionResults.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 
 void FBBBCharacterItemActionProcessor::Update(
     FBBBCharacterItemCommands &ItemCommands,

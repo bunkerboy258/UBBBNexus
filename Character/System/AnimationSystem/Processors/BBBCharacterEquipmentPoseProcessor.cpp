@@ -7,9 +7,9 @@
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/EquipmentPose/BBBEquipmentPoseFragment.h"
 
 //计算装备瞄准来源与左手IK表现数据

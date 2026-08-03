@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemDefinition.h"
 
 void FBBBEquipmentUploadProcessor::Update(
     const FBBBCharacterEquipmentState &EquipmentState,

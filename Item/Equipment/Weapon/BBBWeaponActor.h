@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 #include "BBBWeaponActor.generated.h"
 class ABBBBulletActor;
 class UArrowComponent;

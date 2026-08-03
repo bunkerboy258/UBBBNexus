@@ -6,9 +6,9 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentCatalog.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 
 void FBBBCharacterEquipmentSpawnProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,

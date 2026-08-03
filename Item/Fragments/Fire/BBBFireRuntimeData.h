@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/RuntimeData/BBBItemFragmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragmentRuntimeData.h"
 #include "BBBFireRuntimeData.generated.h"
 
 UCLASS(BlueprintType)

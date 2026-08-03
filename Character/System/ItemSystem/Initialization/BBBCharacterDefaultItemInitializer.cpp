@@ -3,8 +3,8 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
-#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/RuntimeData/BBBItemRuntimeData.h"
 
 void FBBBCharacterDefaultItemInitializer::Initialize(
