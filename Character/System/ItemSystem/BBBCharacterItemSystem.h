@@ -44,20 +44,12 @@ private:
         const FBBBCharacterWorldRuntimeData &InWorldData);
 
     FBBBCharacterItemRuntimeData *ItemData = nullptr;
-
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
-
     FBBBCharacterExternalAPI *CharacterAPI = nullptr;
-
     USkeletalMeshComponent *CharacterMesh = nullptr;
-
     FName RightHandWeaponSocketName = NAME_None;
-
     FBBBCharacterItemStorage Storage;
-
     FBBBCharacterDefaultItemInitializer DefaultItemInitializer;
-
     FBBBCharacterEquipmentProcessor EquipmentProcessor;
-
     FBBBCharacterItemActionProcessor ItemActionProcessor;
 };
