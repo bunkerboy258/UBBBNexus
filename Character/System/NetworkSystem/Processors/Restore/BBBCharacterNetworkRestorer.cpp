@@ -1,6 +1,6 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/BBBCharacterNetworkRestorer.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/BBBNetworkRuntimeData.h"
 
 void FBBBCharacterNetworkRestorer::Update(
     FBBBNetworkRuntimeData &NetworkData,

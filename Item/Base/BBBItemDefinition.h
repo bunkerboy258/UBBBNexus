@@ -6,21 +6,6 @@
 class UBBBItemFragment;
 class UTexture2D;
 
-//装备的握持类型
-UENUM(BlueprintType)
-enum class EBBBEquipmentSlot : uint8
-{
-    MainHand UMETA(DisplayName = "Main Hand")
-};
-
-//武器的动画类型
-UENUM(BlueprintType)
-enum class EBBBWeaponAnimType : uint8
-{
-    None UMETA(DisplayName = "None"),
-    Rifle UMETA(DisplayName = "Rifle")
-};
-
 UCLASS(Abstract, BlueprintType)
 class ABBB_EVAC_API UBBBItemDefinition : public UPrimaryDataAsset
 {

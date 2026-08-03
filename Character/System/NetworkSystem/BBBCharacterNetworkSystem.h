@@ -1,9 +1,9 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBFireNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBReloadNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/States/BBBAimNetworkState.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/Packets/BBBEquipmentNetworkPacket.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/Packets/BBBFireNetworkPacket.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/Packets/BBBReloadNetworkPacket.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/BBBNetworkStates.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/BBBCharacterNetworkRestorer.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/BBBCharacterNetworkUploader.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Validation/BBBCharacterNetworkValidator.h"

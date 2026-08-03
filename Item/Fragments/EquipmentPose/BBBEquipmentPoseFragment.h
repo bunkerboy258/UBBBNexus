@@ -1,10 +1,17 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragment.h"
 #include "BBBEquipmentPoseFragment.generated.h"
 class UCurveFloat;
+
+//装备向角色动画系统声明的姿态类型
+UENUM(BlueprintType)
+enum class EBBBWeaponAnimType : uint8
+{
+    None UMETA(DisplayName = "None"),
+    Rifle UMETA(DisplayName = "Rifle")
+};
 
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class ABBB_EVAC_API UBBBEquipmentPoseFragment final : public UBBBItemFragment

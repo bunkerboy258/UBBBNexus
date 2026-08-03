@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/Processors/BBBAimRestoreProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/States/BBBAimNetworkState.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/BBBNetworkStates.h"
 
 void FBBBAimRestoreProcessor::Update(
     FBBBAimRuntimeData &AimData,

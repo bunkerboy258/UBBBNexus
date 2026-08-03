@@ -1,8 +1,9 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Processors/BBBInputProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Input/BBBInputTypes.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRawData.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputStates.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Input/BBBInputConfig.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRawData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRuntimeData.h"
 
 void FBBBInputProcessor::Update(
     const FBBBInputRawData &InputRawData,

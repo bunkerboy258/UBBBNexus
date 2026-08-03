@@ -1,10 +1,10 @@
 
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAimPresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimTypes.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeTypes.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBCharacterAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimStates.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationStates.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAimPresentationProcessor::Update(

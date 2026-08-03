@@ -1,10 +1,10 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBAimUploadProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimTypes.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeTypes.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Context/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Context/BBBNetworkRuntimeData.h"
 namespace
 {
     //判断是否满足提交条件(最重要的作用是避免频繁提交卡爆带宽)

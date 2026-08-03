@@ -14,8 +14,8 @@
 #include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineFragment.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Weapon/Projectile/BBBBulletActor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/Projectile/BBBFireTypes.h"
-#include "BBBWork/UBBBNexus/Item/RuntimeData/BBBItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireEvents.h"
+#include "BBBWork/UBBBNexus/Item/Context/BBBItemRuntimeData.h"
 #include "Kismet/GameplayStatics.h"
 
 ABBBWeaponActor::ABBBWeaponActor()

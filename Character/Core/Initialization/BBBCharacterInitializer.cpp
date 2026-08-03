@@ -2,7 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
 #include "Camera/CameraComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRawData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Input/Context/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "EnhancedInputComponent.h"
@@ -29,47 +29,47 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     { return; }
     
     Character.CharacterExternalAPI.Initialize(
-        Character.RuntimeData.CharacterData.Animation.Commands,
-        Character.RuntimeData.CharacterData.Camera.Commands);
+        Character.RuntimeData.Animation.Commands,
+        Character.RuntimeData.Camera.Commands);
     
     Character.CameraSystem.Initialize(
         Character,
         *Character.CameraBoom,
-        Character.RuntimeData.CharacterData.Camera,
+        Character.RuntimeData.Camera,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Input,
-        Character.RuntimeData.CharacterData.Intent,
+        Character.RuntimeData.Input,
+        Character.RuntimeData.Intent,
         Config.Camera);
     
     Character.AimSystem.Initialize(
         Character,
         *Character.GetMesh(),
-        Character.RuntimeData.CharacterData.Aim,
+        Character.RuntimeData.Aim,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Intent,
-        Character.RuntimeData.CharacterData.Item.Equipment,
-        Character.RuntimeData.CharacterData.Animation.GetCommands(),
+        Character.RuntimeData.Intent,
+        Character.RuntimeData.Item.Equipment,
+        Character.RuntimeData.Animation.GetCommands(),
         Config.Aim,
         Config.AimAnimation);
     
     Character.LocomotionSystem.Initialize(
         Character,
         *Movement,
-        Character.RuntimeData.CharacterData.Intent,
+        Character.RuntimeData.Intent,
         Config.Locomotion);
     
     Character.FacingSystem.Initialize(
         Character,
         *Movement,
-        Character.RuntimeData.CharacterData.Facing,
+        Character.RuntimeData.Facing,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Intent,
-        Character.RuntimeData.CharacterData.Aim,
+        Character.RuntimeData.Intent,
+        Character.RuntimeData.Aim,
         Config.Facing);
     
     Character.ItemSystem.Initialize(
         *Character.GetMesh(),
-        Character.RuntimeData.CharacterData.Item,
+        Character.RuntimeData.Item,
         Character.CharacterExternalAPI,
         Character,
         Config.Equipment,
@@ -77,59 +77,59 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData);
     
     Character.CharacterNetworkComponent->Initialize(
-        Character.RuntimeData.CharacterData.Network);
+        Character.RuntimeData.Network);
 
     Character.NetworkSystem.Initialize(
-        Character.RuntimeData.CharacterData.Network,
-        Character.RuntimeData.CharacterData.Aim,
-        Character.RuntimeData.CharacterData.Item.Equipment,
+        Character.RuntimeData.Network,
+        Character.RuntimeData.Aim,
+        Character.RuntimeData.Item.Equipment,
         *Character.CharacterNetworkComponent,
         *Config.Item.EquipmentCatalog,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Item.Commands,
-        Character.RuntimeData.CharacterData.Item.ActionResults,
+        Character.RuntimeData.Item.Commands,
+        Character.RuntimeData.Item.ActionResults,
         Config.Aim);
     
     Character.AnimationSystem.Initialize(
         *Character.GetMesh(),
         *Movement,
-        Character.RuntimeData.CharacterData.Animation,
-        Character.RuntimeData.CharacterPresentationData.AnimationState,
+        Character.RuntimeData.Animation,
+        Character.RuntimeData.AnimationState,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Aim,
-        Character.RuntimeData.CharacterData.Facing,
-        Character.RuntimeData.CharacterData.Intent,
-        Character.RuntimeData.CharacterData.Item.Equipment,
+        Character.RuntimeData.Aim,
+        Character.RuntimeData.Facing,
+        Character.RuntimeData.Intent,
+        Character.RuntimeData.Item.Equipment,
         Config.Aim,
         Config.AimAnimation,
         Config.Locomotion,
         Config.Equipment.AimSourceBoneName);
     
     Character.InputPipeline.Initialize(
-        Character.RuntimeData.CharacterData.Input,
+        Character.RuntimeData.Input,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.InputRawData,
+        Character.RuntimeData.Input.RawInputData,
         Config.Input.Pipeline);
     
     Character.IntentPipeline.Initialize(
-        Character.RuntimeData.CharacterData.Intent,
+        Character.RuntimeData.Intent,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Input,
+        Character.RuntimeData.Input,
         Config.Locomotion);
     
     Character.RequestPipeline.Initialize(
-        Character.RuntimeData.CharacterData.Decision,
-        Character.RuntimeData.CharacterData.Intent);
+        Character.RuntimeData.Decision,
+        Character.RuntimeData.Intent);
     
     Character.ArbitrationPipeline.Initialize(
-        Character.RuntimeData.CharacterData.Decision,
-        Character.RuntimeData.CharacterData.Item.Equipment);
+        Character.RuntimeData.Decision,
+        Character.RuntimeData.Item.Equipment);
     
     Character.ExecutionPipeline.Initialize(
-        Character.RuntimeData.CharacterData.Decision,
-        Character.RuntimeData.CharacterData.Item.Commands,
-        Character.RuntimeData.CharacterData.Item.Equipment,
-        Character.RuntimeData.CharacterData.Item.Backpack);
+        Character.RuntimeData.Decision,
+        Character.RuntimeData.Item.Commands,
+        Character.RuntimeData.Item.Equipment,
+        Character.RuntimeData.Item.Backpack);
     
     Character.CharacterUpdatePipeline.Initialize(
         Character,
@@ -204,7 +204,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Triggered,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetMoveAxis(Value.Get<FVector2D>());
+                Character.RuntimeData.Input.RawInputData.SetMoveAxis(Value.Get<FVector2D>());
             });
         
         Input->BindActionValueLambda(
@@ -212,7 +212,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Completed,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetMoveAxis(FVector2D::ZeroVector);
+                Character.RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
             });
         
         Input->BindActionValueLambda(
@@ -220,7 +220,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Canceled,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetMoveAxis(FVector2D::ZeroVector);
+                Character.RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
             });
     }
     
@@ -231,7 +231,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Triggered,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetLookAxis(Value.Get<FVector2D>());
+                Character.RuntimeData.Input.RawInputData.SetLookAxis(Value.Get<FVector2D>());
             });
     }
     
@@ -243,10 +243,10 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             [&Character](const FInputActionValue &Value)
             {
                 //设置连续开火状态为1
-                Character.RuntimeData.InputRawData.SetFireHeld(true);
+                Character.RuntimeData.Input.RawInputData.SetFireHeld(true);
 
                 //触发开火开始的边沿事件
-                Character.RuntimeData.InputRawData.MarkFireStarted();
+                Character.RuntimeData.Input.RawInputData.MarkFireStarted();
             });
         
         Input->BindActionValueLambda(
@@ -255,10 +255,10 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             [&Character](const FInputActionValue &Value)
             {
                 //设置连续开火状态为0
-                Character.RuntimeData.InputRawData.SetFireHeld(false);
+                Character.RuntimeData.Input.RawInputData.SetFireHeld(false);
 
                 //触发开火结束的边沿事件
-                Character.RuntimeData.InputRawData.MarkFireCompleted();
+                Character.RuntimeData.Input.RawInputData.MarkFireCompleted();
             });
 
         //输入被取消时 执行与正常结束相同的状态收束
@@ -267,9 +267,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Canceled,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetFireHeld(false);
+                Character.RuntimeData.Input.RawInputData.SetFireHeld(false);
 
-                Character.RuntimeData.InputRawData.MarkFireCompleted();
+                Character.RuntimeData.Input.RawInputData.MarkFireCompleted();
             });
     }
     
@@ -280,7 +280,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Started,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.MarkReloadPressed();
+                Character.RuntimeData.Input.RawInputData.MarkReloadPressed();
             });
     }
     
@@ -291,7 +291,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Started,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.MarkEquipSlot1Pressed();
+                Character.RuntimeData.Input.RawInputData.MarkEquipSlot1Pressed();
             });
     }
     
@@ -302,7 +302,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Started,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.MarkEquipSlot2Pressed();
+                Character.RuntimeData.Input.RawInputData.MarkEquipSlot2Pressed();
             });
     }
     
@@ -314,9 +314,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Started,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetPrecisionAimHeld(true);
+                Character.RuntimeData.Input.RawInputData.SetPrecisionAimHeld(true);
                 
-                Character.RuntimeData.InputRawData.MarkPrecisionAimStarted();
+                Character.RuntimeData.Input.RawInputData.MarkPrecisionAimStarted();
             });
         
         Input->BindActionValueLambda(
@@ -324,9 +324,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Completed,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetPrecisionAimHeld(false);
+                Character.RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
                 
-                Character.RuntimeData.InputRawData.MarkPrecisionAimCompleted();
+                Character.RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
             });
         
         Input->BindActionValueLambda(
@@ -334,9 +334,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Canceled,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetPrecisionAimHeld(false);
+                Character.RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
                 
-                Character.RuntimeData.InputRawData.MarkPrecisionAimCompleted();
+                Character.RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
             });
     }
     
@@ -347,7 +347,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Started,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetSprintHeld(true);
+                Character.RuntimeData.Input.RawInputData.SetSprintHeld(true);
             });
         
         Input->BindActionValueLambda(
@@ -355,7 +355,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Completed,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetSprintHeld(false);
+                Character.RuntimeData.Input.RawInputData.SetSprintHeld(false);
             });
         
         Input->BindActionValueLambda(
@@ -363,7 +363,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             ETriggerEvent::Canceled,
             [&Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.InputRawData.SetSprintHeld(false);
+                Character.RuntimeData.Input.RawInputData.SetSprintHeld(false);
             });
     }
 }

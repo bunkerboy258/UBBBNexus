@@ -6,6 +6,13 @@
 class ABBBEquipmentActor;
 class UAnimMontage;
 
+//装备可占用的角色槽位
+UENUM(BlueprintType)
+enum class EBBBEquipmentSlot : uint8
+{
+    MainHand UMETA(DisplayName = "Main Hand")
+};
+
 UCLASS(Abstract, BlueprintType)
 class ABBB_EVAC_API UBBBEquipmentDefinition : public UBBBItemDefinition
 {

@@ -1,6 +1,6 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Arbitration/Arbitrators/BBBCharacterActionDomainArbitrator.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionTypes.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Context/BBBDecisionRuntimeData.h"
 
 void FBBBCharacterActionDomainArbitrator::Update(
     FBBBDecisionRuntimeData &DecisionData) const

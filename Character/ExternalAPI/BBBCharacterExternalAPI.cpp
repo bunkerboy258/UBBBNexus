@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Context/BBBCharacterAnimationCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Context/BBBCameraRuntimeData.h"
 
 void FBBBCharacterExternalAPI::Initialize(
     FBBBCharacterAnimationCommands &InAnimationCommands,
