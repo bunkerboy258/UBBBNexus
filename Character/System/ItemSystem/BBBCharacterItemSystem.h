@@ -17,10 +17,23 @@ class ABBB_EVAC_API FBBBCharacterItemSystem final
 {
 public:
 
+    /**
+     * 逐帧驱动物品系统 更新装备状态并执行物品动作
+     */
     void Update();
 private:
     friend class FBBBCharacterInitializer;
 
+    /**
+     * 初始化物品系统依赖 建立背包槽位并生成出生物品
+     * @param InCharacterMesh	角色骨骼网格
+     * @param InItemData	角色物品运行时数据
+     * @param InCharacterAPI	角色能力接口
+     * @param InItemOuter	物品实例生命周期所有者
+     * @param InEquipmentConfig	角色装备配置
+     * @param InItemConfig	角色物品配置
+     * @param InWorldData	角色世界运行时数据
+     */
     void Initialize(
         USkeletalMeshComponent &InCharacterMesh,
         FBBBCharacterItemRuntimeData &InItemData,

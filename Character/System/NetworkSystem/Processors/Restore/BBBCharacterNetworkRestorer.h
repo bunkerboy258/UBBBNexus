@@ -15,6 +15,15 @@ class ABBB_EVAC_API FBBBCharacterNetworkRestorer final
 {
 public:
 
+    /**
+     * 逐帧取出并应用所有待还原网络Packet与瞄准状态
+     * @param NetworkData	网络运行时数据
+     * @param AimData	瞄准运行时数据
+     * @param EquipmentState	角色装备状态
+     * @param ItemCommands	角色物品指令
+     * @param EquipmentCatalog	装备目录
+     * @param InstanceOuter	镜像装备实例生命周期所有者
+     */
     void Update(
         FBBBNetworkRuntimeData &NetworkData,
         FBBBAimRuntimeData &AimData,

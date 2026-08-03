@@ -16,6 +16,11 @@ private:
     friend class FBBBCharacterCameraSystem;
     friend struct FBBBCameraRuntimeData;
 
+    /**
+     * 提交一次相机后座力请求 冲量累加等待消费
+     * @param Impulse	后座力冲量 X为Pitch Y为Yaw
+     * @param RecoverySpeed	后座力恢复速度
+     */
     void SubmitRecoilRequest(
         const FVector2D &Impulse,
         float RecoverySpeed)
@@ -48,6 +53,10 @@ struct FBBBCameraRuntimeData
 {
     GENERATED_BODY()
 
+    /**
+     * 取出待处理的后座力请求并清空命令缓冲
+     * @return 待处理的后座力请求
+     */
     FBBBCameraCommands ConsumeRecoilRequest()
     {
         const FBBBCameraCommands PendingCommands = Commands;
@@ -55,11 +64,19 @@ struct FBBBCameraRuntimeData
         return PendingCommands;
     }
 
+    /**
+     * 读取当前相机状态
+     * @return 相机状态
+     */
     const FBBBCameraState &GetState() const
     {
         return State;
     }
 
+    /**
+     * 提交相机状态
+     * @param InState	相机状态
+     */
     void CommitState(const FBBBCameraState &InState)
     {
         State = InState;

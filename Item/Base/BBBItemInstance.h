@@ -15,14 +15,34 @@ class ABBB_EVAC_API UBBBItemInstance : public UObject
 
 public:
 
+    /**
+     * 获取实例唯一标识
+     * @return 实例唯一标识
+     */
     const FGuid &GetInstanceId() const;
 
+    /**
+     * 获取物品静态配置
+     * @return 物品静态配置
+     */
     UBBBItemDefinition *GetDefinition() const;
 
+    /**
+     * 获取物品运行数据
+     * @return 物品运行数据
+     */
     UBBBItemRuntimeData *GetRuntimeData() const;
 
+    /**
+     * 获取堆叠数量
+     * @return 当前堆叠数量
+     */
     int32 GetStackCount() const;
 
+    /**
+     * 校验实例是否有效
+     * @return 实例标识与静态配置均有效时返回 true
+     */
     bool IsValid() const;
 
 protected:

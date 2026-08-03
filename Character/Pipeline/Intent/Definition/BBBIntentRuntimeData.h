@@ -10,52 +10,90 @@ struct FBBBIntentRuntimeData
 {
     GENERATED_BODY()
 
+    /**
+     * 读取即时二维移动输入
+     * @return 移动输入二维值
+     */
     const FVector2D &GetMoveInput() const
     {
         return MoveInput;
     }
 
+    /**
+     * 读取跨帧平滑移动输入
+     * @return 平滑移动输入二维值
+     */
     const FVector2D &GetSmoothedMoveInput() const
     {
         return SmoothedMoveInput;
     }
 
+    /**
+     * 判断是否应视为存在移动输入
+     * @return 是否存在移动输入
+     */
     bool HasMoveInput() const
     {
         return bHasMoveInput;
     }
 
+    /**
+     * 判断当前帧是否请求持续开火
+     * @return 是否请求开火
+     */
     bool WantsFire() const
     {
         return bWantsFire;
     }
 
+    /**
+     * 判断当前帧是否请求瞄准姿态
+     * @return 是否请求瞄准
+     */
     bool WantsAim() const
     {
         return bWantsAim;
     }
 
+    /**
+     * 判断当前帧是否请求冲刺速度
+     * @return 是否请求冲刺
+     */
     bool WantsSprint() const
     {
         return bWantsSprint;
     }
 
+    /**
+     * 判断当前帧是否请求换弹
+     * @return 是否请求换弹
+     */
     bool WantsReload() const
     {
         return bWantsReload;
     }
 
+    /**
+     * 读取当前帧请求的装备槽位
+     * @return 装备槽位下标
+     */
     int32 GetRequestedEquipSlot() const
     {
         return RequestedEquipSlot;
     }
 
+    /**
+     * 发布完整意图快照覆盖当前数据
+     * @param IntentData	本帧意图快照
+     */
     void CommitFrame(const FBBBIntentRuntimeData &IntentData)
     {
         *this = IntentData;
     }
 
-    //清除一次性意图 并保留移动平滑连续性
+    /**
+     * 清除一次性意图并保留移动平滑连续性
+     */
     void CleanFrame()
     {
         //跨帧保留平滑值

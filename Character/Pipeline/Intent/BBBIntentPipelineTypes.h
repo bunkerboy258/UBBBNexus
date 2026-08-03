@@ -33,6 +33,10 @@ struct FBBBCharacterIntentState
     //当前帧请求切换的库存槽位
     int32 RequestedEquipSlot = INDEX_NONE;
 
+    /**
+     * 将中间意图状态拷贝为运行时意图数据
+     * @return 完整意图运行时数据
+     */
     FBBBIntentRuntimeData ToRuntimeData() const
     {
         FBBBIntentRuntimeData RuntimeData;

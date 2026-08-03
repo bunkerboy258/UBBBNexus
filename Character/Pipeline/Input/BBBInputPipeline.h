@@ -12,13 +12,21 @@ class FBBBInputPipeline final
 {
 public:
 
-    //生成当前帧供意图系统读取的稳定输入
+    /**
+     * 生成当前帧供意图系统读取的稳定输入
+     */
     void Update() const;
 private:
     //初始化器负责一次性注入输入依赖
     friend class FBBBCharacterInitializer;
 
-    //绑定输入缓冲运行时数据与处理配置
+    /**
+     * 绑定输入缓冲运行时数据与处理配置
+     * @param InInputData	输入运行时数据
+     * @param InWorldData	角色所属世界运行时数据
+     * @param InInputRawData	原始输入缓冲
+     * @param InConfig	输入管线配置
+     */
     void Initialize(
         FBBBInputRuntimeData &InInputData,
         const FBBBCharacterWorldRuntimeData &InWorldData,

@@ -36,18 +36,39 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     
 public:
     
+    /**
+     * 构造角色并装配相机臂与相机等默认组件
+     */
     ABBBCharacter();
+    /**
+     * 游戏开始时通过初始化器装配全部运行时对象
+     */
     virtual void BeginPlay() override;
+    /**
+     * 每帧驱动角色主更新管线
+     * @param DeltaSeconds	帧间隔秒数
+     */
     virtual void Tick(float DeltaSeconds) override;
 
-    // ACharacter 提供的一个虚函数 用来绑定玩家输入
+    /**
+     * 绑定玩家输入到输入管线
+     * @param PlayerInputComponent	玩家输入组件
+     */
     virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
     
+    /**
+     * 获取角色静态配置
+     * @return 角色配置常量引用
+     */
     const FBBBCharacterConfig &GetCharacterConfig() const
     {
         return CharacterConfig;
     }
     
+    /**
+     * 获取动画表现状态
+     * @return 管线提交后的动画状态常量引用
+     */
     const FBBBCharacterAnimationState &GetAnimationState() const
     {
         //动画只读取管线提交后的表现数据

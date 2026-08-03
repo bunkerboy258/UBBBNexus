@@ -16,12 +16,22 @@ class FBBBIntentPipeline final
 {
 public:
 
+    /**
+     * 依次执行全部意图处理器并发布本帧意图快照
+     */
     void Update() const;
     
 private:
     
     friend class FBBBCharacterInitializer;
 
+    /**
+     * 注入意图管线固定依赖
+     * @param InIntentData	意图运行时数据
+     * @param InWorldData	角色所属世界运行时数据
+     * @param InInputData	输入后处理数据
+     * @param InLocomotionConfig	角色移动配置
+     */
     void Initialize(
         FBBBIntentRuntimeData &InIntentData,
         const FBBBCharacterWorldRuntimeData &InWorldData,

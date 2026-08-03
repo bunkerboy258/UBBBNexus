@@ -18,10 +18,25 @@ class ABBB_EVAC_API FBBBCharacterAimSystem final
 {
 public:
 
+    /**
+     * 每帧更新瞄准状态 计算瞄准目标点与骨骼空间瞄准角并提交运行时数据
+     */
     void Update();
 private:
     friend class FBBBCharacterInitializer;
 
+    /**
+     * 初始化瞄准系统依赖与配置
+     * @param InPawn	所属角色Pawn
+     * @param InCharacterMesh	角色骨骼网格组件
+     * @param InAimData	瞄准运行时数据
+     * @param InWorldData	世界运行时数据
+     * @param InIntentData	意图运行时数据
+     * @param InEquipmentState	装备状态
+     * @param InAnimationCommands	动画命令
+     * @param InAimConfig	瞄准配置
+     * @param InAnimationConfig	瞄准动画配置
+     */
     void Initialize(
         APawn &InPawn,
         USkeletalMeshComponent &InCharacterMesh,
@@ -33,6 +48,14 @@ private:
         const FBBBAimConfig &InAimConfig,
         const FBBBAimAnimationConfig &InAnimationConfig);
 
+    /**
+     * 沿相机视线执行瞄准射线检测并写入结果
+     * @param ViewLocation	视线起点
+     * @param ViewRotation	视线旋转
+     * @param EquippedActor	需忽略的当前装备实体
+     * @param OutResult	输出瞄准检测结果
+     * @return 视线方向有效且结果已写入时返回true
+     */
     bool BuildAimTrace(
         const FVector &ViewLocation,
         const FRotator &ViewRotation,

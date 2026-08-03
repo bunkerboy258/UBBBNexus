@@ -73,7 +73,10 @@ struct FBBBCharacterPresentationData
 {
     GENERATED_BODY()
 
-    //向根运行时数据公开只读表现快照
+    /**
+     * 向根运行时数据公开只读表现快照
+     * @return 动画表现状态常量引用
+     */
     const FBBBCharacterAnimationState &GetAnimationState() const
     {
         return AnimationState;
@@ -96,10 +99,15 @@ struct FBBBCharacterRuntimeData
 {
     GENERATED_BODY()
 
-    //在一帧末尾清除禁止跨帧保留的瞬时数据
+    /**
+     * 在一帧末尾清除禁止跨帧保留的瞬时数据
+     */
     void Clean();
 
-    //向角色与动画实例公开只读表现快照
+    /**
+     * 向角色与动画实例公开只读表现快照
+     * @return 最终表现数据而非中间逻辑状态
+     */
     const FBBBCharacterAnimationState &GetAnimationState() const
     {
         //返回最终表现数据而非中间逻辑状态

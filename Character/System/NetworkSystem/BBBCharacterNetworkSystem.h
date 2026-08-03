@@ -23,18 +23,36 @@ class ABBB_EVAC_API FBBBCharacterNetworkSystem final
 {
 public:
 
-    //校验网络包
+    /**
+     * 逐帧校验待校验网络Packet 通过者广播
+     */
     void UpdateValidation();
 
-    //应用网络包
+    /**
+     * 逐帧取出待还原网络Packet并应用到本地状态
+     */
     void UpdateRestore();
 
-    //生成网络包
+    /**
+     * 逐帧将本地状态变化生成网络Packet并上传
+     */
     void UpdateUpload();
 
 private:
     friend class FBBBCharacterInitializer;
 
+    /**
+     * 初始化网络系统依赖
+     * @param InNetworkData	网络运行时数据
+     * @param InAimData	瞄准运行时数据
+     * @param InEquipmentState	角色装备状态
+     * @param InNetworkComponent	角色网络组件
+     * @param InEquipmentCatalog	装备目录
+     * @param InWorldData	角色世界运行时数据
+     * @param InItemCommands	角色物品指令
+     * @param InActionResults	装备动作结果
+     * @param InAimConfig	瞄准配置
+     */
     void Initialize(
         FBBBNetworkRuntimeData &InNetworkData,
         FBBBAimRuntimeData &InAimData,
@@ -46,6 +64,10 @@ private:
         const FBBBCharacterItemActionResults &InActionResults,
         const FBBBAimConfig &InAimConfig);
 
+    /**
+     * 检查网络系统依赖是否完备
+     * @return 依赖是否全部有效
+     */
     bool HasRequiredDependencies() const;
 
     FBBBNetworkRuntimeData *NetworkData = nullptr;

@@ -13,9 +13,13 @@ class ABBB_EVAC_API ABBBPlayerState : public APlayerState
     GENERATED_BODY()
 public:
 
-    //创建并配置ABBB玩家状态
+    /**
+     * 创建并配置玩家状态 设置网络更新频率
+     */
     ABBBPlayerState();
 
-    //进入游戏时建立运行依赖
+    /**
+     * 进入游戏时建立运行依赖
+     */
     virtual void BeginPlay() override;
 };

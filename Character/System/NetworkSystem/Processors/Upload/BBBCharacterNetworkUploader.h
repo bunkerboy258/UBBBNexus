@@ -16,6 +16,16 @@ class ABBB_EVAC_API FBBBCharacterNetworkUploader final
 {
 public:
 
+    /**
+     * 逐帧将本地状态变化生成网络Packet并上传
+     * @param NetworkData	网络运行时数据
+     * @param WorldTimeSeconds	当前世界时间
+     * @param AimData	瞄准运行时数据
+     * @param AimConfig	瞄准配置
+     * @param EquipmentState	角色装备状态
+     * @param ActionResults	装备动作结果
+     * @param NetworkComponent	角色网络组件
+     */
     void Update(
         FBBBNetworkRuntimeData &NetworkData,
         float WorldTimeSeconds,

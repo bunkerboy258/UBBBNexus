@@ -14,6 +14,9 @@ struct FBBBCharacterItemRuntimeData
 {
     GENERATED_BODY()
 
+    /**
+     * 清理本帧物品指令与动作结果
+     */
     void CleanFrame()
     {
         Commands.CleanFrame();

@@ -45,6 +45,10 @@ public:
     UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Item")
     TArray<TObjectPtr<UBBBItemFragment>> Fragments;
 
+    /**
+     * 按类型查找静态配置中的第一个匹配 Fragment
+     * @return 匹配类型的 Fragment 未找到时返回 nullptr
+     */
     template <typename T>
     const T *FindFragment() const
     {

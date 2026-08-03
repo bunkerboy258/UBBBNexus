@@ -12,12 +12,20 @@ class FBBBArbitrationPipeline final
 {
 public:
 
+    /**
+     * 依次应用装备状态动作域与优先级仲裁
+     */
     void Update() const;
     
 private:
     
     friend class FBBBCharacterInitializer;
 
+    /**
+     * 注入仲裁管线固定依赖
+     * @param InDecisionData	角色仲裁数据
+     * @param InEquipmentState	角色装备状态
+     */
     void Initialize(
         FBBBDecisionRuntimeData &InDecisionData,
         const FBBBCharacterEquipmentState &InEquipmentState);

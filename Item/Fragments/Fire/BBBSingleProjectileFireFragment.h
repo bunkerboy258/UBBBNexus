@@ -17,10 +17,24 @@ class ABBB_EVAC_API UBBBSingleProjectileFireFragment final : public UBBBFireFrag
     GENERATED_BODY()
 public:
 
+    /**
+     * 构造 Fragment 默认 Bullet 类型为 ABBBBulletActor
+     */
     UBBBSingleProjectileFireFragment();
 
+    /**
+     * 校验射速后按枪口插槽方向生成 Bullet 并播放开火表现与后坐力
+     * @param Weapon	武器模型
+     * @param RuntimeData	开火运行数据
+     * @param OutShotEvent	输出射击事件
+     * @return 是否成功开火
+     */
     virtual bool Fire(ABBBWeaponActor &Weapon, UBBBFireRuntimeData &RuntimeData, FBBBShotEvent &OutShotEvent) const override;
 
+    /**
+     * 播放开火 Montage 与音效的表现层反馈
+     * @param Weapon	武器模型
+     */
     virtual void Present(ABBBWeaponActor &Weapon) const override;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Weapon", meta = (ClampMin = "0.01"))

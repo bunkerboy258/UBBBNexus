@@ -16,18 +16,26 @@ class ABBB_EVAC_API ABBBPlayerController : public APlayerController
     GENERATED_BODY()
 public:
 
-    //创建并配置ABBB玩家控制器
+    /**
+     * 创建并配置玩家控制器 加载默认输入映射并创建鼠标切换动作
+     */
     ABBBPlayerController();
 
-    //进入游戏时建立运行依赖
+    /**
+     * 进入游戏时为本地玩家注册默认与鼠标切换输入映射
+     */
     virtual void BeginPlay() override;
 
-    //绑定玩家输入动作
+    /**
+     * 绑定鼠标切换输入动作到控制器回调
+     */
     virtual void SetupInputComponent() override;
 
+    /**
+     * 切换鼠标指针与游戏输入模式
+     */
     //让下方函数按照所列规则参与反射调用或远程调用
     UFUNCTION(BlueprintCallable, Category = "BBB|Input")
-    //切换鼠标指针与游戏输入模式
     void ToggleMouseCursor();
 protected:
 
@@ -52,6 +60,9 @@ private:
     //保存ToggleMouseIMC供所属对象后续流程使用
     TObjectPtr<UInputMappingContext> ToggleMouseIMC;
 
-    //切换鼠标菜单输入模式
+    /**
+     * 切换鼠标菜单输入模式
+     * @param bEnabled	是否启用菜单模式
+     */
     void SetMouseMenuMode(bool bEnabled);
 };
