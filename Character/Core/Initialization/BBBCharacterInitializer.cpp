@@ -31,8 +31,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.CharacterExternalAPI.Initialize(
         Character.RuntimeData.CharacterData.Animation.Commands,
-        Character.RuntimeData.CharacterData.Camera.Commands,
-        Character.RuntimeData.CharacterData.Item.Events);
+        Character.RuntimeData.CharacterData.Camera.Commands);
     
     Character.CameraSystem.Initialize(
         Character,
@@ -87,7 +86,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.CharacterData.Item.State.Equipment,
         *Character.CharacterNetworkComponent,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.CharacterData.Item.Events,
+        Character.RuntimeData.CharacterData.Item.Commands,
+        Character.RuntimeData.CharacterData.Item.ActionResults,
         Config.Aim);
     
     Character.AnimationSystem.Initialize(

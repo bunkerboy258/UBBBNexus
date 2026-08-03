@@ -12,7 +12,8 @@ class UBBBCharacterNetworkComponent;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterItemEvents;
+struct FBBBCharacterItemActionResults;
+struct FBBBCharacterItemCommands;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBNetworkRuntimeData;
 
@@ -39,7 +40,8 @@ private:
         FBBBCharacterEquipmentState &InEquipmentState,
         UBBBCharacterNetworkComponent &InNetworkComponent,
         const FBBBCharacterWorldRuntimeData &InWorldData,
-        const FBBBCharacterItemEvents &InItemEvents,
+        FBBBCharacterItemCommands &InItemCommands,
+        const FBBBCharacterItemActionResults &InActionResults,
         const FBBBAimConfig &InAimConfig);
 
     bool HasRequiredDependencies() const;
@@ -47,7 +49,8 @@ private:
     FBBBNetworkRuntimeData *NetworkData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
-    const FBBBCharacterItemEvents *ItemEvents = nullptr;
+    FBBBCharacterItemCommands *ItemCommands = nullptr;
+    const FBBBCharacterItemActionResults *ActionResults = nullptr;
     FBBBCharacterEquipmentState *EquipmentState = nullptr;
 
     //瞄准配置引用

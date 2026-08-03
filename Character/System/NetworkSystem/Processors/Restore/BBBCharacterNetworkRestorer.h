@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/Processors/BBBReloadRestoreProcessor.h"
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
+struct FBBBCharacterItemCommands;
 struct FBBBNetworkRuntimeData;
 
 class ABBB_EVAC_API FBBBCharacterNetworkRestorer final
@@ -16,7 +17,8 @@ public:
     void Update(
         FBBBNetworkRuntimeData &NetworkData,
         FBBBAimRuntimeData &AimData,
-        FBBBCharacterEquipmentState &EquipmentState) const;
+        FBBBCharacterEquipmentState &EquipmentState,
+        FBBBCharacterItemCommands &ItemCommands) const;
 private:
 
     //保存装备还原处理器供所属对象后续流程使用

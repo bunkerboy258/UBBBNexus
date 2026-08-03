@@ -63,5 +63,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
         return;
     }
 
+    ItemState.Equipment.TargetMode = EBBBEquipmentTargetMode::RuntimeItem;
+    ItemState.Equipment.DesiredMirrorHandle = NAME_None;
     ItemState.Equipment.DesiredMainHandItem = FirstHotbarItem;
 }

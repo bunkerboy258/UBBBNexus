@@ -14,6 +14,9 @@ void FBBBCharacterWeaponSwitchProcessor::Update(FBBBCharacterEquipmentState &Equ
     Equipment.EquippedItemActor = nullptr;
 
     Equipment.ActiveMainHandItem = FBBBItemInstance();
+    Equipment.ActiveMainHandDefinition = nullptr;
+    Equipment.ActiveTargetMode = EBBBEquipmentTargetMode::None;
+    Equipment.ActiveMirrorHandle = NAME_None;
 
     Equipment.bIsEquipping = false;
     Equipment.EquipEndTime = 0.0f;

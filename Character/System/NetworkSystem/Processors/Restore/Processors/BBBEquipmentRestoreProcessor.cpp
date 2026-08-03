@@ -6,10 +6,5 @@ void FBBBEquipmentRestoreProcessor::Update(
     FBBBCharacterEquipmentState &EquipmentState,
     const FBBBEquipmentNetworkPacket &Packet) const
 {
-    FBBBItemInstance Item;
-    Item.InstanceId = Packet.ItemInstanceId;
-    Item.Definition = Packet.ItemDefinition;
-    Item.StackCount = 1;
-
-    EquipmentState.RestoreDesiredMainHandItem(Item);
+    EquipmentState.RestoreDesiredMainHandMirror(Packet.EquipmentHandle);
 }

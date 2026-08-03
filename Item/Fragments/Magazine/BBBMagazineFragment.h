@@ -22,7 +22,7 @@ public:
 
     bool Reload(ABBBWeaponActor &Weapon, UBBBMagazineRuntimeData &RuntimeData) const;
 
-    void PresentReload(ABBBWeaponActor &Weapon, UBBBMagazineRuntimeData &RuntimeData) const;
+    void PresentReload(ABBBWeaponActor &Weapon) const;
 
     void Update(ABBBWeaponActor &Weapon, UBBBMagazineRuntimeData &RuntimeData) const;
 

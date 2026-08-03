@@ -47,8 +47,6 @@ bool UBBBMagazineFragment::Reload(
     RuntimeData.bCommitReloadAmmo = true;
     RuntimeData.ReloadEndTime = Weapon.GetWorld()->GetTimeSeconds() + ReloadMontage->GetPlayLength();
 
-    Weapon.PublishReloadEvent();
-
     FBBBCharacterAnimationRequest Request;
     Request.Montage = ReloadMontage;
     Request.bRestartIfPlaying = true;
@@ -57,20 +55,8 @@ bool UBBBMagazineFragment::Reload(
     return true;
 }
 
-void UBBBMagazineFragment::PresentReload(
-    ABBBWeaponActor &Weapon,
-    UBBBMagazineRuntimeData &RuntimeData) const
+void UBBBMagazineFragment::PresentReload(ABBBWeaponActor &Weapon) const
 {
-
-    RuntimeData.bIsReloading = true;
-    RuntimeData.bCommitReloadAmmo = false;
-    RuntimeData.ReloadEndTime = Weapon.GetWorld() ? Weapon.GetWorld()->GetTimeSeconds() : 0.0f;
-
-    if (ReloadMontage)
-    {
-        RuntimeData.ReloadEndTime += ReloadMontage->GetPlayLength();
-    }
-
     FBBBCharacterAnimationRequest Request;
     Request.Montage = ReloadMontage;
     Request.bRestartIfPlaying = true;

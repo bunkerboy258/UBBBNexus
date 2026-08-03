@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBEquipmentNetworkPacket.generated.h"
 
-class UBBBItemDefinition;
 
 //注册到UE反射与序列化系统
 USTRUCT()
@@ -13,8 +12,5 @@ struct FBBBEquipmentNetworkPacket
     GENERATED_BODY()
 
     UPROPERTY()
-    FGuid ItemInstanceId;
-
-    UPROPERTY()
-    TObjectPtr<UBBBItemDefinition> ItemDefinition = nullptr;
+    FName EquipmentHandle = NAME_None;
 };

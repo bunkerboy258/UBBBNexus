@@ -7,7 +7,7 @@
 class ABBBEquipmentActor;
 class UAnimMontage;
 
-UCLASS(BlueprintType)
+UCLASS(Abstract, BlueprintType)
 class ABBB_EVAC_API UBBBEquipmentDefinition : public UBBBItemDefinition
 {
     GENERATED_BODY()

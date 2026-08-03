@@ -3,5 +3,5 @@
 
 bool FBBBEquipmentValidationProcessor::Update(const FBBBEquipmentNetworkPacket &Packet) const
 {
-    return Packet.ItemInstanceId.IsValid() && Packet.ItemDefinition != nullptr;
+    return !Packet.EquipmentHandle.IsNone();
 }

@@ -44,8 +44,8 @@ void FBBBCharacterAimSystem::Update()
     //复制上一帧状态
     FBBBAimRuntimeState State = AimData->GetState();
     //读取当前主手物品
-    const FBBBItemInstance &ActiveItem = EquipmentState->GetActiveMainHandItem();
-    const bool bCanAim = ActiveItem.IsValid()
+    const UBBBEquipmentDefinition *ActiveDefinition = EquipmentState->GetActiveMainHandDefinition();
+    const bool bCanAim = ActiveDefinition
         && IntentData->WantsAim()
         //装备切换动画期间禁止物品IK
         && !AnimationCommands->IsItemIKBlockedRequested();

@@ -3,29 +3,29 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
+#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
 
 void FBBBEquipmentUploadProcessor::Update(
     const FBBBCharacterEquipmentState &EquipmentState,
     FBBBNetworkRuntimeData &NetworkData,
     UBBBCharacterNetworkComponent &NetworkComponent) const
 {
-    const FBBBItemInstance &DesiredItem = EquipmentState.GetDesiredMainHandItem();
+    const FBBBItemInstance &ActiveItem = EquipmentState.GetActiveMainHandItem();
 
-    if (!DesiredItem.IsValid())
+    if (!ActiveItem.IsValid())
     {
         return;
     }
 
-    if (NetworkData.GetLastUploadedItemInstanceId() == DesiredItem.InstanceId)
+    if (NetworkData.GetLastUploadedItemInstanceId() == ActiveItem.InstanceId)
     {
         return;
     }
 
     FBBBEquipmentNetworkPacket Packet;
-    Packet.ItemInstanceId = DesiredItem.InstanceId;
-    Packet.ItemDefinition = DesiredItem.Definition;
+    Packet.EquipmentHandle = ActiveItem.Definition->ItemId;
 
     NetworkComponent.SendEquipmentPacket(Packet);
 
-    NetworkData.CommitLastUploadedItemInstanceId(DesiredItem.InstanceId);
+    NetworkData.CommitLastUploadedItemInstanceId(ActiveItem.InstanceId);
 }

@@ -1,13 +1,13 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBReloadUploadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemEvents.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemActionResults.h"
 
 void FBBBReloadUploadProcessor::Update(
-    const FBBBCharacterItemEvents &ItemEvents,
+    const FBBBCharacterItemActionResults &ActionResults,
     UBBBCharacterNetworkComponent &NetworkComponent) const
 {
-    for (int32 Index = 0; Index < ItemEvents.GetReloadEventCount(); ++Index)
+    for (int32 Index = 0; Index < ActionResults.GetSuccessfulReloadCount(); ++Index)
     {
         FBBBReloadNetworkPacket Packet;
 

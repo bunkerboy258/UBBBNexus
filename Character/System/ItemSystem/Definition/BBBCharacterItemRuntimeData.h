@@ -2,7 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemEvents.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemActionResults.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
 #include "BBBCharacterItemRuntimeData.generated.h"
 class FBBBCharacterDefaultItemInitializer;
@@ -18,7 +18,7 @@ struct FBBBCharacterItemRuntimeData
     void CleanFrame()
     {
         Commands.CleanFrame();
-        Events.CleanFrame();
+        ActionResults.CleanFrame();
     }
 private:
     friend class FBBBCharacterDefaultItemInitializer;
@@ -33,5 +33,5 @@ private:
     FBBBCharacterItemState State;
 
     UPROPERTY()
-    FBBBCharacterItemEvents Events;
+    FBBBCharacterItemActionResults ActionResults;
 };

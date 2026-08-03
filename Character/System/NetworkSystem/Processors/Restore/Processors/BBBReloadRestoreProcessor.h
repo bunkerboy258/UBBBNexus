@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-struct FBBBCharacterEquipmentState;
+struct FBBBCharacterItemCommands;
 struct FBBBReloadNetworkPacket;
 
 class ABBB_EVAC_API FBBBReloadRestoreProcessor final
@@ -9,6 +9,6 @@ class ABBB_EVAC_API FBBBReloadRestoreProcessor final
 public:
 
     void Update(
-        const FBBBCharacterEquipmentState &EquipmentState,
+        FBBBCharacterItemCommands &ItemCommands,
         const FBBBReloadNetworkPacket &Packet) const;
 };

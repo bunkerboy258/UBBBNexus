@@ -15,21 +15,31 @@ ABBBEquipmentActor::ABBBEquipmentActor()
     SetReplicateMovement(false);
 }
 
-void ABBBEquipmentActor::InitializeEquipment(
+void ABBBEquipmentActor::InitializeRuntimeEquipment(
     const FBBBItemInstance &InItemInstance,
     FBBBCharacterExternalAPI &InCharacterAPI)
 {
-
-    ItemInstance = InItemInstance;
-
-    CharacterAPI = &InCharacterAPI;
-
-    if (!ensureMsgf(ItemInstance.IsValid(), TEXT("[UBBBI]Equipment actor received invalid item instance")))
+    if (!ensureMsgf(InItemInstance.IsValid(), TEXT("[UBBBI]Equipment actor received invalid runtime item instance")))
     {
         return;
     }
 
-    SetActorTickEnabled(true);
+    const UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(InItemInstance.Definition);
+    if (!ensureMsgf(Definition, TEXT("[UBBBI]Runtime item definition is not an equipment definition")))
+    {
+        return;
+    }
+
+    ItemInstance = InItemInstance;
+    InitializeCommon(*Definition, InCharacterAPI, EBBBEquipmentInstanceMode::Runtime);
+}
+
+void ABBBEquipmentActor::InitializeEquipmentMirror(
+    const UBBBEquipmentDefinition &InDefinition,
+    FBBBCharacterExternalAPI &InCharacterAPI)
+{
+    ItemInstance = FBBBItemInstance();
+    InitializeCommon(InDefinition, InCharacterAPI, EBBBEquipmentInstanceMode::Mirror);
 }
 
 void ABBBEquipmentActor::Tick(float DeltaSeconds)
@@ -40,17 +50,55 @@ void ABBBEquipmentActor::Tick(float DeltaSeconds)
 
 void ABBBEquipmentActor::Equip()
 {
-
-    const UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(ItemInstance.Definition);
-    if (!ensureMsgf(Definition, TEXT("[UBBBI]Item definition is not UBBBEquipmentDefinition")))
+    if (!ensureMsgf(EquipmentDefinition, TEXT("[UBBBI]Equipment definition is null during equip")))
     {
         return;
     }
 
     FBBBCharacterAnimationRequest Request;
-    Request.Montage = Definition->EquipMontage;
+    Request.Montage = EquipmentDefinition->EquipMontage;
 
     QueueMontage(Request);
+}
+
+bool ABBBEquipmentActor::Fire()
+{
+    return false;
+}
+
+bool ABBBEquipmentActor::Reload()
+{
+    return false;
+}
+
+void ABBBEquipmentActor::PresentFire()
+{
+}
+
+void ABBBEquipmentActor::PresentReload()
+{
+}
+
+const UBBBEquipmentDefinition *ABBBEquipmentActor::GetEquipmentDefinition() const
+{
+    return EquipmentDefinition;
+}
+
+EBBBEquipmentInstanceMode ABBBEquipmentActor::GetInstanceMode() const
+{
+    return InstanceMode;
+}
+
+void ABBBEquipmentActor::InitializeCommon(
+    const UBBBEquipmentDefinition &InDefinition,
+    FBBBCharacterExternalAPI &InCharacterAPI,
+    EBBBEquipmentInstanceMode InInstanceMode)
+{
+    EquipmentDefinition = &InDefinition;
+    CharacterAPI = &InCharacterAPI;
+    InstanceMode = InInstanceMode;
+
+    SetActorTickEnabled(InstanceMode == EBBBEquipmentInstanceMode::Runtime);
 }
 
 void ABBBEquipmentActor::QueueMontage(const FBBBCharacterAnimationRequest &Request) const

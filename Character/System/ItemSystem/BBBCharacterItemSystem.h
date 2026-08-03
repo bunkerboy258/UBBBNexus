@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
 class FBBBCharacterExternalAPI;
 class FBBBCharacterInitializer;
+class UBBBEquipmentCatalog;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterItemConfig;
@@ -41,6 +42,8 @@ private:
     USkeletalMeshComponent *CharacterMesh = nullptr;
 
     FName RightHandWeaponSocketName = NAME_None;
+
+    UBBBEquipmentCatalog *EquipmentCatalog = nullptr;
 
     FBBBCharacterItemStorage Storage;
 

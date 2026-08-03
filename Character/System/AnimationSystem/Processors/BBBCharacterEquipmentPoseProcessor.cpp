@@ -9,6 +9,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/EquipmentPose/BBBEquipmentPoseFragment.h"
 
 //计算装备瞄准来源与左手IK表现数据
@@ -28,15 +29,15 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     AnimationState.bHasValidAimSource = false;
     AnimationState.bHasValidLeftHandTarget = false;
     //读取当前装备与物品实例
-    const FBBBItemInstance &ActiveItem = EquipmentState.GetActiveMainHandItem();
+    const UBBBEquipmentDefinition *ActiveDefinition = EquipmentState.GetActiveMainHandDefinition();
     ABBBEquipmentActor *EquippedItemActor = EquipmentState.GetEquippedItemActor();
     //缺少装备时保持重置状态
-    if (!ActiveItem.Definition || !EquippedItemActor)
+    if (!ActiveDefinition || !EquippedItemActor)
     {
         return;
     }
     //读取姿势配置与武器网格
-    const UBBBEquipmentPoseFragment *Pose = ActiveItem.Definition->FindFragment<UBBBEquipmentPoseFragment>();
+    const UBBBEquipmentPoseFragment *Pose = ActiveDefinition->FindFragment<UBBBEquipmentPoseFragment>();
     UStaticMeshComponent *WeaponMesh = EquippedItemActor->FindComponentByClass<UStaticMeshComponent>();
     //缺少姿势配置或网格时保持重置状态
     if (!Pose || !WeaponMesh)

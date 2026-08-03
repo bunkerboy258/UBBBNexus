@@ -15,7 +15,7 @@ class UStaticMeshComponent;
 struct FBBBShotEvent;
 struct FBBBCharacterAnimationRequest;
 
-UCLASS(Abstract)
+UCLASS()
 class ABBB_EVAC_API ABBBWeaponActor : public ABBBEquipmentActor
 {
     GENERATED_BODY()
@@ -23,17 +23,19 @@ public:
 
     ABBBWeaponActor();
 
-    virtual void InitializeEquipment(const FBBBItemInstance &InItemInstance, FBBBCharacterExternalAPI &InCharacterAPI) override;
+    virtual void InitializeRuntimeEquipment(const FBBBItemInstance &InItemInstance, FBBBCharacterExternalAPI &InCharacterAPI) override;
+
+    virtual void InitializeEquipmentMirror(const UBBBEquipmentDefinition &InDefinition, FBBBCharacterExternalAPI &InCharacterAPI) override;
 
     virtual void Tick(float DeltaSeconds) override;
 
-    virtual bool Fire();
+    virtual bool Fire() override;
 
-    virtual bool Reload();
+    virtual bool Reload() override;
 
-    virtual void PresentFire();
+    virtual void PresentFire() override;
 
-    virtual void PresentReload();
+    virtual void PresentReload() override;
 
     UFUNCTION(BlueprintCallable, Category = "BBB|Weapon")
     UStaticMeshComponent *GetWeaponMesh() const
@@ -68,11 +70,11 @@ private:
 
     void SubmitRecoil(const FVector2D &Impulse, float RecoverySpeed) const;
 
-    void PublishFireEvent() const;
-
-    void PublishReloadEvent() const;
-
     void SubmitItemIKBlock(bool bBlockItemIK) const;
+
+    void BindDefinitionFragments();
+
+    void BindRuntimeData();
 
     const UBBBFireFragment *FireFragment = nullptr;
 

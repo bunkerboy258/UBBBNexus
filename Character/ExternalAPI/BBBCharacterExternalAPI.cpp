@@ -2,16 +2,13 @@
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemEvents.h"
 
 void FBBBCharacterExternalAPI::Initialize(
     FBBBCharacterAnimationCommands &InAnimationCommands,
-    FBBBCameraCommands &InCameraCommands,
-    FBBBCharacterItemEvents &InItemEvents)
+    FBBBCameraCommands &InCameraCommands)
 {
     AnimationCommands = &InAnimationCommands;
     CameraCommands = &InCameraCommands;
-    ItemEvents = &InItemEvents;
 }
 
 //压入动画蒙太奇请求
@@ -43,26 +40,8 @@ void FBBBCharacterExternalAPI::SubmitCameraRecoil(
 }
 
 //通知射击事件
-void FBBBCharacterExternalAPI::PublishItemFireEvent()
-{
-    if (!ensureMsgf(ItemEvents, TEXT("[UBBBC]Character external item target is null")))
-    {
-        return;
-    }
-
-    ItemEvents->PublishFire();
-}
 
 //通知换弹事件
-void FBBBCharacterExternalAPI::PublishReloadEvent()
-{
-    if (!ensureMsgf(ItemEvents, TEXT("[UBBBC]Character external item target is null")))
-    {
-        return;
-    }
-
-    ItemEvents->PublishReload();
-}
 
 //压入锁定物品ik请求
 void FBBBCharacterExternalAPI::SubmitItemIKBlockRequest(bool bBlocked)

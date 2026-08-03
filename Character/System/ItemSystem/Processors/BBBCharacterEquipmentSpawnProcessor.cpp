@@ -7,21 +7,34 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentCatalog.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
 
 void FBBBCharacterEquipmentSpawnProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
     float WorldTimeSeconds,
     FName RightHandWeaponSocketName,
+    UBBBEquipmentCatalog &EquipmentCatalog,
     FBBBCharacterItemRuntimeData &ItemData,
     FBBBCharacterExternalAPI &CharacterAPI) const
 {
 
     FBBBCharacterEquipmentState &Equipment = ItemData.State.Equipment;
 
-    FBBBItemInstance &ItemInstance = Equipment.DesiredMainHandItem;
+    UBBBEquipmentDefinition *Definition = nullptr;
+    const FBBBItemInstance *RuntimeItem = nullptr;
 
-    UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(ItemInstance.Definition);
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::RuntimeItem)
+    {
+        RuntimeItem = &Equipment.DesiredMainHandItem;
+        Definition = Cast<UBBBEquipmentDefinition>(RuntimeItem->Definition);
+    }
+
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::Mirror)
+    {
+        Definition = EquipmentCatalog.FindDefinition(Equipment.DesiredMirrorHandle);
+    }
+
     if (!ensureMsgf(Definition, TEXT("[UBBBC]Equipment spawn aborted: desired item definition is not UBBBEquipmentDefinition")))
     {
         return;
@@ -35,7 +48,8 @@ void FBBBCharacterEquipmentSpawnProcessor::Update(
         return;
     }
 
-    if (!ensureMsgf(ItemInstance.RuntimeData, TEXT("[UBBBC]Equipment spawn aborted: item runtime data is null")))
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::RuntimeItem
+        && !ensureMsgf(RuntimeItem && RuntimeItem->RuntimeData, TEXT("[UBBBC]Equipment spawn aborted: runtime item data is null")))
     {
         return;
     }
@@ -62,11 +76,23 @@ void FBBBCharacterEquipmentSpawnProcessor::Update(
 
     EquipmentActor->SetActorRelativeTransform(Definition->SpawnOffset);
 
-    EquipmentActor->InitializeEquipment(ItemInstance, CharacterAPI);
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::RuntimeItem)
+    {
+        EquipmentActor->InitializeRuntimeEquipment(*RuntimeItem, CharacterAPI);
+    }
+
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::Mirror)
+    {
+        EquipmentActor->InitializeEquipmentMirror(*Definition, CharacterAPI);
+    }
 
     Equipment.EquippedItemActor = EquipmentActor;
-
-    Equipment.ActiveMainHandItem = ItemInstance;
+    Equipment.ActiveTargetMode = Equipment.TargetMode;
+    Equipment.ActiveMainHandDefinition = Definition;
+    Equipment.ActiveMainHandItem = RuntimeItem ? *RuntimeItem : FBBBItemInstance();
+    Equipment.ActiveMirrorHandle = Equipment.TargetMode == EBBBEquipmentTargetMode::Mirror
+        ? Equipment.DesiredMirrorHandle
+        : NAME_None;
 
     Equipment.bIsEquipping = Definition->EquipMontage != nullptr;
 

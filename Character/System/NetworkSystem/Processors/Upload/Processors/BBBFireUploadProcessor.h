@@ -2,13 +2,13 @@
 #pragma once
 #include "CoreMinimal.h"
 class UBBBCharacterNetworkComponent;
-struct FBBBCharacterItemEvents;
+struct FBBBCharacterItemActionResults;
 
 class ABBB_EVAC_API FBBBFireUploadProcessor final
 {
 public:
 
     void Update(
-        const FBBBCharacterItemEvents &ItemEvents,
+        const FBBBCharacterItemActionResults &ActionResults,
         UBBBCharacterNetworkComponent &NetworkComponent) const;
 };

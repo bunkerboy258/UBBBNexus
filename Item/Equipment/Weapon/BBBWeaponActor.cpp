@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireFragment.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBSingleProjectileFireFragment.h"
@@ -28,12 +29,11 @@ ABBBWeaponActor::ABBBWeaponActor()
     WeaponMesh->SetGenerateOverlapEvents(false);
 }
 
-void ABBBWeaponActor::InitializeEquipment(
+void ABBBWeaponActor::InitializeRuntimeEquipment(
     const FBBBItemInstance &InItemInstance,
     FBBBCharacterExternalAPI &InCharacterAPI)
 {
-
-    Super::InitializeEquipment(InItemInstance, InCharacterAPI);
+    Super::InitializeRuntimeEquipment(InItemInstance, InCharacterAPI);
 
     if (!ensureMsgf(ItemInstance.Definition, TEXT("[UBBBI]Weapon item instance has no definition")))
     {
@@ -47,27 +47,40 @@ void ABBBWeaponActor::InitializeEquipment(
         return;
     }
 
-    FireFragment = ItemInstance.Definition->FindFragment<UBBBFireFragment>();
+    BindDefinitionFragments();
+    BindRuntimeData();
 
-    MagazineFragment = ItemInstance.Definition->FindFragment<UBBBMagazineFragment>();
-
-    FireRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBFireRuntimeData>();
-
-    MagazineRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBMagazineRuntimeData>();
-
-    if (!ensureMsgf(
-            FireFragment && MagazineFragment && FireRuntimeData && MagazineRuntimeData,
-            TEXT("[UBBBI]Weapon definition missing required fire or magazine fragments/runtime data")))
+    if (!ensureMsgf(FireFragment && MagazineFragment && FireRuntimeData && MagazineRuntimeData, TEXT("[UBBBI]Weapon definition missing required fire or magazine fragments/runtime data")))
     {
         SetActorTickEnabled(false);
         return;
     }
 }
 
+void ABBBWeaponActor::InitializeEquipmentMirror(
+    const UBBBEquipmentDefinition &InDefinition,
+    FBBBCharacterExternalAPI &InCharacterAPI)
+{
+    Super::InitializeEquipmentMirror(InDefinition, InCharacterAPI);
+
+    FireRuntimeData = nullptr;
+    MagazineRuntimeData = nullptr;
+    BindDefinitionFragments();
+
+    if (!ensureMsgf(FireFragment && MagazineFragment, TEXT("[UBBBI]Weapon mirror definition missing required fire or magazine fragments")))
+    {
+        return;
+    }
+}
+
 void ABBBWeaponActor::Tick(float DeltaSeconds)
 {
-
     Super::Tick(DeltaSeconds);
+
+    if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
+    {
+        return;
+    }
 
     if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon tick skipped because magazine fragment or runtime data is missing")))
     {
@@ -79,6 +92,10 @@ void ABBBWeaponActor::Tick(float DeltaSeconds)
 
 bool ABBBWeaponActor::Fire()
 {
+    if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
+    {
+        return false;
+    }
 
     if (!ensureMsgf(
             FireFragment && MagazineFragment && FireRuntimeData && MagazineRuntimeData,
@@ -101,12 +118,15 @@ bool ABBBWeaponActor::Fire()
 
     MagazineFragment->ConsumeRound(*MagazineRuntimeData);
 
-    PublishFireEvent();
     return true;
 }
 
 bool ABBBWeaponActor::Reload()
 {
+    if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
+    {
+        return false;
+    }
 
     if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon reload failed: missing magazine fragment or runtime data")))
     {
@@ -129,13 +149,12 @@ void ABBBWeaponActor::PresentFire()
 
 void ABBBWeaponActor::PresentReload()
 {
-
-    if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon reload presentation failed because magazine fragment or runtime data is missing")))
+    if (!ensureMsgf(MagazineFragment, TEXT("[UBBBI]Weapon reload presentation failed because magazine fragment is missing")))
     {
         return;
     }
 
-    MagazineFragment->PresentReload(*this, *MagazineRuntimeData);
+    MagazineFragment->PresentReload(*this);
 }
 
 bool ABBBWeaponActor::SpawnBullet(
@@ -212,26 +231,26 @@ void ABBBWeaponActor::SubmitRecoil(const FVector2D &Impulse, float RecoverySpeed
     CharacterAPI->SubmitCameraRecoil(Impulse, RecoverySpeed);
 }
 
-void ABBBWeaponActor::PublishFireEvent() const
+void ABBBWeaponActor::BindDefinitionFragments()
 {
-
-    if (!ensureMsgf(CharacterAPI, TEXT("[UBBBI]Weapon fire event skipped because character API is null")))
+    if (!EquipmentDefinition)
     {
         return;
     }
 
-    CharacterAPI->PublishItemFireEvent();
+    FireFragment = EquipmentDefinition->FindFragment<UBBBFireFragment>();
+    MagazineFragment = EquipmentDefinition->FindFragment<UBBBMagazineFragment>();
 }
 
-void ABBBWeaponActor::PublishReloadEvent() const
+void ABBBWeaponActor::BindRuntimeData()
 {
-
-    if (!ensureMsgf(CharacterAPI, TEXT("[UBBBI]Weapon reload event skipped because character API is null")))
+    if (!ItemInstance.RuntimeData)
     {
         return;
     }
 
-    CharacterAPI->PublishReloadEvent();
+    FireRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBFireRuntimeData>();
+    MagazineRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBMagazineRuntimeData>();
 }
 
 void ABBBWeaponActor::SubmitItemIKBlock(bool bBlockItemIK) const

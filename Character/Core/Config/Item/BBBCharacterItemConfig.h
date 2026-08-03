@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBCharacterItemConfig.generated.h"
 class UBBBItemDefinition;
+class UBBBEquipmentCatalog;
 
 USTRUCT(BlueprintType)
 //描述角色出生时创建的一类库存物品
@@ -44,4 +45,8 @@ struct FBBBCharacterItemConfig
     //决定初始化后是否选择首个有效快捷栏物品
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     bool bAutoEquipFirstHotbarItem = true;
+
+    /** 可供本地角色和远端镜像解析装备句柄的定义表 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UBBBEquipmentCatalog> EquipmentCatalog = nullptr;
 };

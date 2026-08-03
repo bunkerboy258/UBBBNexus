@@ -22,6 +22,7 @@ void FBBBCharacterItemSystem::Initialize(
     CharacterAPI = &InCharacterAPI;
 
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
+    EquipmentCatalog = InItemConfig.EquipmentCatalog;
     FBBBCharacterItemInventoryState &Inventory = ItemData->State.Inventory;
     Inventory.MainInventoryCapacity = FMath::Max(1, InItemConfig.MainInventoryCapacity);
     Inventory.HotbarCapacity = FMath::Max(1, InItemConfig.HotbarCapacity);
@@ -36,7 +37,7 @@ void FBBBCharacterItemSystem::Initialize(
 void FBBBCharacterItemSystem::Update()
 {
 
-    if (!ensureMsgf(ItemData && WorldData && CharacterAPI && CharacterMesh && CharacterMesh->GetWorld(), TEXT("[UBBBC]Item system update aborted because dependencies are null")))
+    if (!ensureMsgf(ItemData && WorldData && CharacterAPI && CharacterMesh && EquipmentCatalog && CharacterMesh->GetWorld(), TEXT("[UBBBC]Item system update aborted because dependencies are null")))
     {
         return;
     }
@@ -45,17 +46,50 @@ void FBBBCharacterItemSystem::Update()
 
     EquipmentTransitionProcessor.Update(WorldData->GetWorldTimeSeconds(), Equipment);
     
-    if (Equipment.ActiveMainHandItem.InstanceId != Equipment.DesiredMainHandItem.InstanceId)
+    bool bRequiresEquipmentChange = false;
+
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::RuntimeItem)
+    {
+        bRequiresEquipmentChange = Equipment.ActiveTargetMode != EBBBEquipmentTargetMode::RuntimeItem
+            || Equipment.ActiveMainHandItem.InstanceId != Equipment.DesiredMainHandItem.InstanceId;
+    }
+
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::Mirror)
+    {
+        bRequiresEquipmentChange = Equipment.ActiveTargetMode != EBBBEquipmentTargetMode::Mirror
+            || Equipment.ActiveMirrorHandle != Equipment.DesiredMirrorHandle;
+    }
+
+    if (Equipment.TargetMode == EBBBEquipmentTargetMode::None)
+    {
+        bRequiresEquipmentChange = Equipment.EquippedItemActor != nullptr;
+    }
+
+    if (bRequiresEquipmentChange)
     {
 
         WeaponSwitchProcessor.Update(Equipment);
-        if (Equipment.DesiredMainHandItem.IsValid())
+        if (Equipment.TargetMode == EBBBEquipmentTargetMode::RuntimeItem
+            && Equipment.DesiredMainHandItem.IsValid())
         {
 
             EquipmentSpawnProcessor.Update(
                 *CharacterMesh,
                 WorldData->GetWorldTimeSeconds(),
                 RightHandWeaponSocketName,
+                *EquipmentCatalog,
+                *ItemData,
+                *CharacterAPI);
+        }
+
+        if (Equipment.TargetMode == EBBBEquipmentTargetMode::Mirror
+            && !Equipment.DesiredMirrorHandle.IsNone())
+        {
+            EquipmentSpawnProcessor.Update(
+                *CharacterMesh,
+                WorldData->GetWorldTimeSeconds(),
+                RightHandWeaponSocketName,
+                *EquipmentCatalog,
                 *ItemData,
                 *CharacterAPI);
         }
@@ -63,5 +97,6 @@ void FBBBCharacterItemSystem::Update()
 
     ItemActionProcessor.Update(
         ItemData->Commands,
-        ItemData->State.Equipment);
+        ItemData->State.Equipment,
+        ItemData->ActionResults);
 }

@@ -48,6 +48,8 @@ void FBBBEquipmentExecutor::Update(
             }
 
             //写入期望物品
+            EquipmentState.TargetMode = EBBBEquipmentTargetMode::RuntimeItem;
+            EquipmentState.DesiredMirrorHandle = NAME_None;
             EquipmentState.DesiredMainHandItem = ItemInstance;
 
         }

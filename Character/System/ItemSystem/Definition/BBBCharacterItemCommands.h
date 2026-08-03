@@ -4,6 +4,8 @@
 #include "BBBCharacterItemCommands.generated.h"
 class FBBBItemActionExecutor;
 class FBBBCharacterItemActionProcessor;
+class FBBBFireRestoreProcessor;
+class FBBBReloadRestoreProcessor;
 struct FBBBCharacterItemRuntimeData;
 
 USTRUCT(BlueprintType)
@@ -13,6 +15,8 @@ struct FBBBCharacterItemCommands
 private:
     friend class FBBBItemActionExecutor;
     friend class FBBBCharacterItemActionProcessor;
+    friend class FBBBFireRestoreProcessor;
+    friend class FBBBReloadRestoreProcessor;
     friend struct FBBBCharacterItemRuntimeData;
 
     void SubmitFire()
@@ -23,6 +27,16 @@ private:
     void SubmitReload()
     {
         bActivateReload = true;
+    }
+
+    void SubmitFirePresentation()
+    {
+        bPresentFire = true;
+    }
+
+    void SubmitReloadPresentation()
+    {
+        bPresentReload = true;
     }
 
     bool ConsumeFire()
@@ -39,10 +53,26 @@ private:
         return bShouldActivateReload;
     }
 
+    bool ConsumeFirePresentation()
+    {
+        const bool bShouldPresentFire = bPresentFire;
+        bPresentFire = false;
+        return bShouldPresentFire;
+    }
+
+    bool ConsumeReloadPresentation()
+    {
+        const bool bShouldPresentReload = bPresentReload;
+        bPresentReload = false;
+        return bShouldPresentReload;
+    }
+
     void CleanFrame()
     {
         bActivateFire = false;
         bActivateReload = false;
+        bPresentFire = false;
+        bPresentReload = false;
     }
 
     UPROPERTY()
@@ -50,4 +80,10 @@ private:
 
     UPROPERTY()
     bool bActivateReload = false;
+
+    UPROPERTY()
+    bool bPresentFire = false;
+
+    UPROPERTY()
+    bool bPresentReload = false;
 };

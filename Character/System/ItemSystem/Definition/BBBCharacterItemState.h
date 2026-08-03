@@ -2,8 +2,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Item/BBBInventoryTypes.h"
+#include "BBBWork/UBBBNexus/Item/BBBItemTypes.h"
 #include "BBBCharacterItemState.generated.h"
 class ABBBEquipmentActor;
+class UBBBEquipmentDefinition;
 class FBBBCharacterDefaultItemInitializer;
 class FBBBCharacterEquipmentSpawnProcessor;
 class FBBBCharacterEquipmentTransitionProcessor;
@@ -54,6 +56,12 @@ struct FBBBCharacterEquipmentState
     {
         return bIsEquipping;
     }
+
+    /** @return 当前装备实体使用的静态定义 */
+    const UBBBEquipmentDefinition *GetActiveMainHandDefinition() const
+    {
+        return ActiveMainHandDefinition;
+    }
 private:
     friend class FBBBCharacterDefaultItemInitializer;
     friend class FBBBCharacterEquipmentSpawnProcessor;
@@ -63,16 +71,29 @@ private:
     friend class FBBBEquipmentExecutor;
     friend class FBBBEquipmentRestoreProcessor;
 
-    void RestoreDesiredMainHandItem(const FBBBItemInstance &Item)
+    void RestoreDesiredMainHandMirror(FName EquipmentHandle)
     {
-        DesiredMainHandItem = Item;
+        TargetMode = EBBBEquipmentTargetMode::Mirror;
+        DesiredMainHandItem = FBBBItemInstance();
+        DesiredMirrorHandle = EquipmentHandle;
     }
+
+    EBBBEquipmentTargetMode TargetMode = EBBBEquipmentTargetMode::None;
+
+    FName DesiredMirrorHandle = NAME_None;
 
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     FBBBItemInstance DesiredMainHandItem;
 
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     FBBBItemInstance ActiveMainHandItem;
+
+    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UBBBEquipmentDefinition> ActiveMainHandDefinition = nullptr;
+
+    EBBBEquipmentTargetMode ActiveTargetMode = EBBBEquipmentTargetMode::None;
+
+    FName ActiveMirrorHandle = NAME_None;
 
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     TObjectPtr<ABBBEquipmentActor> EquippedItemActor = nullptr;

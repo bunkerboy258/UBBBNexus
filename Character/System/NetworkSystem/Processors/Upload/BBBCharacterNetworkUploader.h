@@ -9,7 +9,7 @@ class UBBBCharacterNetworkComponent;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterItemEvents;
+struct FBBBCharacterItemActionResults;
 struct FBBBNetworkRuntimeData;
 
 class ABBB_EVAC_API FBBBCharacterNetworkUploader final
@@ -22,7 +22,7 @@ public:
         const FBBBAimRuntimeData &AimData,
         const FBBBAimConfig &AimConfig,
         const FBBBCharacterEquipmentState &EquipmentState,
-        const FBBBCharacterItemEvents &ItemEvents,
+        const FBBBCharacterItemActionResults &ActionResults,
         UBBBCharacterNetworkComponent &NetworkComponent) const;
 private:
 
