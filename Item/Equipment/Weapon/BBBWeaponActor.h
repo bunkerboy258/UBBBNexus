@@ -23,9 +23,7 @@ public:
 
     ABBBWeaponActor();
 
-    virtual void InitializeRuntimeEquipment(const FBBBItemInstance &InItemInstance, FBBBCharacterExternalAPI &InCharacterAPI) override;
-
-    virtual void InitializeEquipmentMirror(const UBBBEquipmentDefinition &InDefinition, FBBBCharacterExternalAPI &InCharacterAPI) override;
+    virtual void Initialize(UBBBEquipmentInstance &InEquipmentInstance, FBBBCharacterExternalAPI &InCharacterAPI) override;
 
     virtual void Tick(float DeltaSeconds) override;
 

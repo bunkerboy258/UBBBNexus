@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/Base/BBBFireFragment.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBSingleProjectileFireFragment.h"
@@ -29,68 +30,42 @@ ABBBWeaponActor::ABBBWeaponActor()
     WeaponMesh->SetGenerateOverlapEvents(false);
 }
 
-void ABBBWeaponActor::InitializeRuntimeEquipment(
-    const FBBBItemInstance &InItemInstance,
+void ABBBWeaponActor::Initialize(
+    UBBBEquipmentInstance &InEquipmentInstance,
     FBBBCharacterExternalAPI &InCharacterAPI)
 {
-    Super::InitializeRuntimeEquipment(InItemInstance, InCharacterAPI);
-
-    if (!ensureMsgf(ItemInstance.Definition, TEXT("[UBBBI]Weapon item instance has no definition")))
-    {
-        SetActorTickEnabled(false);
-        return;
-    }
-
-    if (!ensureMsgf(ItemInstance.RuntimeData, TEXT("[UBBBI]Weapon item instance has no runtime data")))
-    {
-        SetActorTickEnabled(false);
-        return;
-    }
+    Super::Initialize(InEquipmentInstance, InCharacterAPI);
 
     BindDefinitionFragments();
     BindRuntimeData();
 
-    if (!ensureMsgf(FireFragment && MagazineFragment && FireRuntimeData && MagazineRuntimeData, TEXT("[UBBBI]Weapon definition missing required fire or magazine fragments/runtime data")))
+    if (!ensureMsgf(FireFragment && MagazineFragment, TEXT("[UBBBI]Weapon definition missing required fire or magazine fragments")))
     {
         SetActorTickEnabled(false);
         return;
     }
-}
 
-void ABBBWeaponActor::InitializeEquipmentMirror(
-    const UBBBEquipmentDefinition &InDefinition,
-    FBBBCharacterExternalAPI &InCharacterAPI)
-{
-    Super::InitializeEquipmentMirror(InDefinition, InCharacterAPI);
-
-    FireRuntimeData = nullptr;
-    MagazineRuntimeData = nullptr;
-    BindDefinitionFragments();
-
-    if (!ensureMsgf(FireFragment && MagazineFragment, TEXT("[UBBBI]Weapon mirror definition missing required fire or magazine fragments")))
-    { return; }
+    if (InEquipmentInstance.GetRuntimeData()
+        && !ensureMsgf(FireRuntimeData && MagazineRuntimeData, TEXT("[UBBBI]Weapon runtime data missing required fire or magazine data")))
+    {
+        SetActorTickEnabled(false);
+    }
 }
 
 void ABBBWeaponActor::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
-    if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
-    { return; }
-
     if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon tick skipped because magazine fragment or runtime data is missing")))
-    { return; }
+    {
+        return;
+    }
 
     MagazineFragment->Update(*this, *MagazineRuntimeData);
 }
 
 bool ABBBWeaponActor::Fire()
 {
-    if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
-    {
-        return false;
-    }
-
     if (!ensureMsgf(
             FireFragment && MagazineFragment && FireRuntimeData && MagazineRuntimeData,
             TEXT("[UBBBI]Weapon fire failed: missing fire or magazine fragments/runtime data")))
@@ -117,11 +92,6 @@ bool ABBBWeaponActor::Fire()
 
 bool ABBBWeaponActor::Reload()
 {
-    if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
-    {
-        return false;
-    }
-
     if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon reload failed: missing magazine fragment or runtime data")))
     {
         return false;
@@ -228,11 +198,13 @@ void ABBBWeaponActor::BindDefinitionFragments()
 
 void ABBBWeaponActor::BindRuntimeData()
 {
-    if (!ItemInstance.RuntimeData)
-    { return; }
+    if (!EquipmentInstance || !EquipmentInstance->GetRuntimeData())
+    {
+        return;
+    }
 
-    FireRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBFireRuntimeData>();
-    MagazineRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBMagazineRuntimeData>();
+    FireRuntimeData = EquipmentInstance->GetRuntimeData()->FindRuntimeData<UBBBFireRuntimeData>();
+    MagazineRuntimeData = EquipmentInstance->GetRuntimeData()->FindRuntimeData<UBBBMagazineRuntimeData>();
 }
 
 void ABBBWeaponActor::SubmitItemIKBlock(bool bBlockItemIK) const

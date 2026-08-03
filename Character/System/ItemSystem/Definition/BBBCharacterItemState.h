@@ -4,13 +4,9 @@
 #include "BBBWork/UBBBNexus/Item/Base/BBBInventoryTypes.h"
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemTypes.h"
 #include "BBBCharacterItemState.generated.h"
-class ABBBEquipmentActor;
-class UBBBEquipmentDefinition;
+class UBBBEquipmentInstance;
 class FBBBCharacterDefaultItemInitializer;
-class FBBBCharacterEquipmentSpawnProcessor;
-class FBBBCharacterEquipmentTransitionProcessor;
-class FBBBCharacterItemSystem;
-class FBBBCharacterWeaponSwitchProcessor;
+class FBBBCharacterEquipmentProcessor;
 class FBBBEquipmentExecutor;
 class FBBBEquipmentRestoreProcessor;
 
@@ -37,72 +33,30 @@ struct FBBBCharacterEquipmentState
 {
     GENERATED_BODY()
 
-    const FBBBItemInstance &GetDesiredMainHandItem() const
+    UBBBEquipmentInstance *GetDesiredMainHandInstance() const
     {
-        return DesiredMainHandItem;
+        return DesiredMainHandInstance;
     }
 
-    const FBBBItemInstance &GetActiveMainHandItem() const
+    UBBBEquipmentInstance *GetActiveMainHandInstance() const
     {
-        return ActiveMainHandItem;
+        return ActiveMainHandInstance;
     }
 
-    ABBBEquipmentActor *GetEquippedItemActor() const
-    {
-        return EquippedItemActor;
-    }
-
-    bool IsEquipping() const
-    {
-        return bIsEquipping;
-    }
-
-    /** @return 当前装备实体使用的静态定义 */
-    const UBBBEquipmentDefinition *GetActiveMainHandDefinition() const
-    {
-        return ActiveMainHandDefinition;
-    }
+    bool IsEquipping() const;
 private:
     friend class FBBBCharacterDefaultItemInitializer;
-    friend class FBBBCharacterEquipmentSpawnProcessor;
-    friend class FBBBCharacterEquipmentTransitionProcessor;
-    friend class FBBBCharacterItemSystem;
-    friend class FBBBCharacterWeaponSwitchProcessor;
+    friend class FBBBCharacterEquipmentProcessor;
     friend class FBBBEquipmentExecutor;
     friend class FBBBEquipmentRestoreProcessor;
 
-    void RestoreDesiredMainHandMirror(FName EquipmentHandle)
-    {
-        TargetMode = EBBBEquipmentTargetMode::Mirror;
-        DesiredMainHandItem = FBBBItemInstance();
-        DesiredMirrorHandle = EquipmentHandle;
-    }
-
-    EBBBEquipmentTargetMode TargetMode = EBBBEquipmentTargetMode::None;
-
-    FName DesiredMirrorHandle = NAME_None;
-
+    /** 角色期望装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    FBBBItemInstance DesiredMainHandItem;
+    TObjectPtr<UBBBEquipmentInstance> DesiredMainHandInstance = nullptr;
 
+    /** 角色当前装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    FBBBItemInstance ActiveMainHandItem;
-
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UBBBEquipmentDefinition> ActiveMainHandDefinition = nullptr;
-
-    EBBBEquipmentTargetMode ActiveTargetMode = EBBBEquipmentTargetMode::None;
-
-    FName ActiveMirrorHandle = NAME_None;
-
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<ABBBEquipmentActor> EquippedItemActor = nullptr;
-
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    bool bIsEquipping = false;
-
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    float EquipEndTime = 0.0f;
+    TObjectPtr<UBBBEquipmentInstance> ActiveMainHandInstance = nullptr;
 };
 
 USTRUCT(BlueprintType)

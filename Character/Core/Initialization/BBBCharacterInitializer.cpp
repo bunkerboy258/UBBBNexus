@@ -18,6 +18,11 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //网络组件存在？
     if (!ensureMsgf(Character.CharacterNetworkComponent, TEXT("[UBBBC]Character initialization failed: CharacterNetworkComponent is null")))
     { return; }
+
+    if (!ensureMsgf(Config.Item.EquipmentCatalog, TEXT("[UBBBC]Character initialization failed because equipment catalog is null")))
+    {
+        return;
+    }
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
 
@@ -81,6 +86,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.CharacterData.Aim,
         Character.RuntimeData.CharacterData.Item.State.Equipment,
         *Character.CharacterNetworkComponent,
+        *Config.Item.EquipmentCatalog,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.CharacterData.Item.Commands,
         Character.RuntimeData.CharacterData.Item.ActionResults,

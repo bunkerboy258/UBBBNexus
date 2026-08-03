@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Validation/BBBCharacterNetworkValidator.h"
 class FBBBCharacterInitializer;
 class UBBBCharacterNetworkComponent;
+class UBBBEquipmentCatalog;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
@@ -39,6 +40,7 @@ private:
         FBBBAimRuntimeData &InAimData,
         FBBBCharacterEquipmentState &InEquipmentState,
         UBBBCharacterNetworkComponent &InNetworkComponent,
+        UBBBEquipmentCatalog &InEquipmentCatalog,
         const FBBBCharacterWorldRuntimeData &InWorldData,
         FBBBCharacterItemCommands &InItemCommands,
         const FBBBCharacterItemActionResults &InActionResults,
@@ -57,6 +59,7 @@ private:
     const FBBBAimConfig *AimConfig = nullptr;
 
     UBBBCharacterNetworkComponent *NetworkComponent = nullptr;
+    UBBBEquipmentCatalog *EquipmentCatalog = nullptr;
     FBBBCharacterNetworkUploader Uploader;
     FBBBCharacterNetworkValidator Validator;
     FBBBCharacterNetworkRestorer Restorer;

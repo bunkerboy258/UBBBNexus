@@ -12,6 +12,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 
 void FBBBCharacterAimSystem::Initialize(
     APawn &InPawn,
@@ -42,7 +43,10 @@ void FBBBCharacterAimSystem::Update()
     //复制上一帧状态
     FBBBAimRuntimeState State = AimData->GetState();
     //读取当前主手物品
-    const UBBBEquipmentDefinition *ActiveDefinition = EquipmentState->GetActiveMainHandDefinition();
+    UBBBEquipmentInstance *ActiveInstance = EquipmentState->GetActiveMainHandInstance();
+    const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
+        ? ActiveInstance->GetEquipmentDefinition()
+        : nullptr;
     const bool bCanAim = ActiveDefinition
         && IntentData->WantsAim()
         //装备切换动画期间禁止物品IK
@@ -61,7 +65,9 @@ void FBBBCharacterAimSystem::Update()
         ViewLocation,
         ViewRotation,
         //忽略当前装备实体避免命中自身武器
-        EquipmentState->GetEquippedItemActor(),
+        ActiveInstance
+            ? ActiveInstance->GetModelActor()
+            : nullptr,
         //写入结果
         TraceResult))
     {

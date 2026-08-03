@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
 #include "BBBCharacterItemRuntimeData.generated.h"
 class FBBBCharacterDefaultItemInitializer;
-class FBBBCharacterEquipmentSpawnProcessor;
 class FBBBCharacterInitializer;
 class FBBBCharacterItemSystem;
 
@@ -22,7 +21,6 @@ struct FBBBCharacterItemRuntimeData
     }
 private:
     friend class FBBBCharacterDefaultItemInitializer;
-    friend class FBBBCharacterEquipmentSpawnProcessor;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterItemSystem;
 

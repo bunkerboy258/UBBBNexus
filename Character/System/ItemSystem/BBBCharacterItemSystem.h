@@ -2,14 +2,11 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Initialization/BBBCharacterDefaultItemInitializer.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Processors/BBBCharacterEquipmentSpawnProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Processors/BBBCharacterEquipmentTransitionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Processors/BBBCharacterEquipmentProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Processors/BBBCharacterItemActionProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Processors/BBBCharacterWeaponSwitchProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
 class FBBBCharacterExternalAPI;
 class FBBBCharacterInitializer;
-class UBBBEquipmentCatalog;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterItemConfig;
@@ -43,17 +40,11 @@ private:
 
     FName RightHandWeaponSocketName = NAME_None;
 
-    UBBBEquipmentCatalog *EquipmentCatalog = nullptr;
-
     FBBBCharacterItemStorage Storage;
 
     FBBBCharacterDefaultItemInitializer DefaultItemInitializer;
 
-    FBBBCharacterEquipmentSpawnProcessor EquipmentSpawnProcessor;
-
-    FBBBCharacterEquipmentTransitionProcessor EquipmentTransitionProcessor;
-
-    FBBBCharacterWeaponSwitchProcessor WeaponSwitchProcessor;
+    FBBBCharacterEquipmentProcessor EquipmentProcessor;
 
     FBBBCharacterItemActionProcessor ItemActionProcessor;
 };

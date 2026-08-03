@@ -1,45 +1,51 @@
-
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
 
-bool FBBBCharacterItemStorage::GetBackpackItem(const FBBBCharacterItemState &ItemState, int32 BackpackSlot, FBBBItemInstance &OutItem) const
+#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
+
+UBBBItemInstance *FBBBCharacterItemStorage::GetBackpackItem(
+    const FBBBCharacterItemState &ItemState,
+    int32 BackpackSlot) const
 {
     const FBBBCharacterItemInventoryState &Inventory = ItemState.Inventory;
-
     if (BackpackSlot < 0 || BackpackSlot >= Inventory.MainInventoryCapacity)
     {
-        return false;
+        return nullptr;
     }
 
     for (const FBBBInventoryEntry &Entry : Inventory.MainInventory.Entries)
     {
-        if (Entry.SlotIndex == BackpackSlot && Entry.ItemInstance.IsValid())
+        if (Entry.SlotIndex == BackpackSlot && Entry.ItemInstance && Entry.ItemInstance->IsValid())
         {
-            OutItem = Entry.ItemInstance;
-            return true;
+            return Entry.ItemInstance;
         }
     }
-    return false;
+
+    return nullptr;
 }
 
-bool FBBBCharacterItemStorage::GetHotbarItem(const FBBBCharacterItemState &ItemState, int32 HotbarSlot, FBBBItemInstance &OutItem) const
+UBBBItemInstance *FBBBCharacterItemStorage::GetHotbarItem(
+    const FBBBCharacterItemState &ItemState,
+    int32 HotbarSlot) const
 {
     const FBBBCharacterItemInventoryState &Inventory = ItemState.Inventory;
-
     if (HotbarSlot < 0 || HotbarSlot >= Inventory.HotbarCapacity)
     {
-        return false;
+        return nullptr;
     }
-    return FindItemInstance(ItemState, Inventory.HotbarItemInstanceIds[HotbarSlot], OutItem);
+
+    return FindItemInstance(ItemState, Inventory.HotbarItemInstanceIds[HotbarSlot]);
 }
 
-bool FBBBCharacterItemStorage::AddItem(FBBBCharacterItemState &ItemState, const FBBBItemInstance &ItemInstance) const
+bool FBBBCharacterItemStorage::AddItem(
+    FBBBCharacterItemState &ItemState,
+    UBBBItemInstance &ItemInstance) const
 {
-
     if (!ItemInstance.IsValid())
     {
         return false;
     }
+
     const int32 Capacity = ItemState.Inventory.MainInventoryCapacity;
     if (ItemState.Inventory.MainInventory.GetNumOccupiedSlots() >= Capacity)
     {
@@ -54,15 +60,15 @@ bool FBBBCharacterItemStorage::AddItem(FBBBCharacterItemState &ItemState, const 
             return AddItemToSlot(ItemState, SlotIndex, ItemInstance);
         }
     }
+
     return false;
 }
 
 bool FBBBCharacterItemStorage::AddItemToSlot(
     FBBBCharacterItemState &ItemState,
     int32 SlotIndex,
-    const FBBBItemInstance &ItemInstance) const
+    UBBBItemInstance &ItemInstance) const
 {
-
     if (!ItemInstance.IsValid())
     {
         return false;
@@ -72,6 +78,7 @@ bool FBBBCharacterItemStorage::AddItemToSlot(
     {
         return false;
     }
+
     int32 ExistingIndex = INDEX_NONE;
     if (FindEntryIndex(ItemState, SlotIndex, ExistingIndex))
     {
@@ -80,7 +87,7 @@ bool FBBBCharacterItemStorage::AddItemToSlot(
 
     FBBBInventoryEntry Entry;
     Entry.SlotIndex = SlotIndex;
-    Entry.ItemInstance = ItemInstance;
+    Entry.ItemInstance = &ItemInstance;
     ItemState.Inventory.MainInventory.Entries.Add(Entry);
     return true;
 }
@@ -90,13 +97,12 @@ bool FBBBCharacterItemStorage::AssignHotbarItem(
     int32 HotbarSlot,
     const FGuid &ItemInstanceId) const
 {
-
     if (HotbarSlot < 0 || HotbarSlot >= ItemState.Inventory.HotbarCapacity)
     {
         return false;
     }
-    FBBBItemInstance ItemInstance;
-    if (!FindItemInstance(ItemState, ItemInstanceId, ItemInstance))
+
+    if (!FindItemInstance(ItemState, ItemInstanceId))
     {
         return false;
     }
@@ -105,7 +111,10 @@ bool FBBBCharacterItemStorage::AssignHotbarItem(
     return true;
 }
 
-bool FBBBCharacterItemStorage::FindEntryIndex(const FBBBCharacterItemState &ItemState, int32 SlotIndex, int32 &OutEntryIndex)
+bool FBBBCharacterItemStorage::FindEntryIndex(
+    const FBBBCharacterItemState &ItemState,
+    int32 SlotIndex,
+    int32 &OutEntryIndex)
 {
     const TArray<FBBBInventoryEntry> &Entries = ItemState.Inventory.MainInventory.Entries;
     for (int32 Index = 0; Index < Entries.Num(); ++Index)
@@ -116,25 +125,26 @@ bool FBBBCharacterItemStorage::FindEntryIndex(const FBBBCharacterItemState &Item
             return true;
         }
     }
+
     return false;
 }
 
-bool FBBBCharacterItemStorage::FindItemInstance(
+UBBBItemInstance *FBBBCharacterItemStorage::FindItemInstance(
     const FBBBCharacterItemState &ItemState,
-    const FGuid &ItemInstanceId,
-    FBBBItemInstance &OutItem)
+    const FGuid &ItemInstanceId)
 {
     if (!ItemInstanceId.IsValid())
     {
-        return false;
+        return nullptr;
     }
+
     for (const FBBBInventoryEntry &Entry : ItemState.Inventory.MainInventory.Entries)
     {
-        if (Entry.ItemInstance.InstanceId == ItemInstanceId)
+        if (Entry.ItemInstance && Entry.ItemInstance->GetInstanceId() == ItemInstanceId)
         {
-            OutItem = Entry.ItemInstance;
-            return true;
+            return Entry.ItemInstance;
         }
     }
-    return false;
+
+    return nullptr;
 }

@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/EquipmentPose/BBBEquipmentPoseFragment.h"
 
 //计算装备瞄准来源与左手IK表现数据
@@ -29,8 +30,13 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     AnimationState.bHasValidAimSource = false;
     AnimationState.bHasValidLeftHandTarget = false;
     //读取当前装备与物品实例
-    const UBBBEquipmentDefinition *ActiveDefinition = EquipmentState.GetActiveMainHandDefinition();
-    ABBBEquipmentActor *EquippedItemActor = EquipmentState.GetEquippedItemActor();
+    UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
+        ? ActiveInstance->GetEquipmentDefinition()
+        : nullptr;
+    ABBBEquipmentActor *EquippedItemActor = ActiveInstance
+        ? ActiveInstance->GetModelActor()
+        : nullptr;
     //缺少装备时保持重置状态
     if (!ActiveDefinition || !EquippedItemActor)
     { return; }

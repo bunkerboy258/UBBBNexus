@@ -9,6 +9,7 @@ struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
 struct FBBBCharacterItemCommands;
 struct FBBBNetworkRuntimeData;
+class UBBBEquipmentCatalog;
 
 class ABBB_EVAC_API FBBBCharacterNetworkRestorer final
 {
@@ -18,7 +19,9 @@ public:
         FBBBNetworkRuntimeData &NetworkData,
         FBBBAimRuntimeData &AimData,
         FBBBCharacterEquipmentState &EquipmentState,
-        FBBBCharacterItemCommands &ItemCommands) const;
+        FBBBCharacterItemCommands &ItemCommands,
+        UBBBEquipmentCatalog &EquipmentCatalog,
+        UObject &InstanceOuter) const;
 private:
 
     //保存装备还原处理器供所属对象后续流程使用

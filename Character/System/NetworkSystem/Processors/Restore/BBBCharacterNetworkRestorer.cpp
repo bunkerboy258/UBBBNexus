@@ -6,14 +6,16 @@ void FBBBCharacterNetworkRestorer::Update(
     FBBBNetworkRuntimeData &NetworkData,
     FBBBAimRuntimeData &AimData,
     FBBBCharacterEquipmentState &EquipmentState,
-    FBBBCharacterItemCommands &ItemCommands) const
+    FBBBCharacterItemCommands &ItemCommands,
+    UBBBEquipmentCatalog &EquipmentCatalog,
+    UObject &InstanceOuter) const
 {
 
     TArray<FBBBEquipmentNetworkPacket> PendingEquipmentPackets = NetworkData.RestoreEquipmentPackets();
 
     for (const FBBBEquipmentNetworkPacket &Packet : PendingEquipmentPackets)
     {
-        EquipmentRestoreProcessor.Update(EquipmentState, Packet);
+        EquipmentRestoreProcessor.Update(EquipmentState, Packet, EquipmentCatalog, InstanceOuter);
     }
 
     TArray<FBBBFireNetworkPacket> PendingFirePackets = NetworkData.RestoreFirePackets();

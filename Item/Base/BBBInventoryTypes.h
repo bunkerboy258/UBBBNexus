@@ -39,7 +39,7 @@ struct FBBBInventoryEntry
     int32 SlotIndex = INDEX_NONE;
 
     UPROPERTY(BlueprintReadOnly)
-    FBBBItemInstance ItemInstance;
+    TObjectPtr<UBBBItemInstance> ItemInstance = nullptr;
 };
 
 USTRUCT(BlueprintType)

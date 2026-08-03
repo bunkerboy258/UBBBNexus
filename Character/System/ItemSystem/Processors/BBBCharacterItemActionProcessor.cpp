@@ -4,15 +4,23 @@
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemActionResults.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemState.h"
 #include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
 
 void FBBBCharacterItemActionProcessor::Update(
     FBBBCharacterItemCommands &ItemCommands,
     const FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterItemActionResults &ActionResults) const
 {
-    ABBBEquipmentActor *EquippedItemActor = EquipmentState.GetEquippedItemActor();
+    UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    ABBBEquipmentActor *EquippedItemActor = ActiveInstance
+        ? ActiveInstance->GetModelActor()
+        : nullptr;
+
     if (!EquippedItemActor)
-    { return; }
+    {
+        return;
+    }
+
     if (ItemCommands.ConsumeFire())
     {
         if (EquippedItemActor->Fire())
@@ -23,7 +31,6 @@ void FBBBCharacterItemActionProcessor::Update(
 
     if (ItemCommands.ConsumeReload())
     {
-
         if (EquippedItemActor->Reload())
         {
             ActionResults.RecordSuccessfulReload();

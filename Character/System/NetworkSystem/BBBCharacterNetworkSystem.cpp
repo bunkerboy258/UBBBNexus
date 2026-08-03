@@ -8,6 +8,7 @@ void FBBBCharacterNetworkSystem::Initialize(
     FBBBAimRuntimeData &InAimData,
     FBBBCharacterEquipmentState &InEquipmentState,
     UBBBCharacterNetworkComponent &InNetworkComponent,
+    UBBBEquipmentCatalog &InEquipmentCatalog,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     FBBBCharacterItemCommands &InItemCommands,
     const FBBBCharacterItemActionResults &InActionResults,
@@ -17,6 +18,7 @@ void FBBBCharacterNetworkSystem::Initialize(
     AimData = &InAimData;
     EquipmentState = &InEquipmentState;
     NetworkComponent = &InNetworkComponent;
+    EquipmentCatalog = &InEquipmentCatalog;
     WorldData = &InWorldData;
     ItemCommands = &InItemCommands;
     ActionResults = &InActionResults;
@@ -27,7 +29,7 @@ void FBBBCharacterNetworkSystem::Initialize(
 bool FBBBCharacterNetworkSystem::HasRequiredDependencies() const
 {
     return ensureMsgf(
-        NetworkData && WorldData && AimData && ItemCommands && ActionResults && EquipmentState && AimConfig && NetworkComponent,
+        NetworkData && WorldData && AimData && ItemCommands && ActionResults && EquipmentState && AimConfig && NetworkComponent && EquipmentCatalog,
         TEXT("[UBBBC]Network system operation aborted because dependencies are null"));
 }
 
@@ -44,7 +46,13 @@ void FBBBCharacterNetworkSystem::UpdateRestore()
     if (!HasRequiredDependencies())
     { return; }
 
-    Restorer.Update(*NetworkData, *AimData, *EquipmentState, *ItemCommands);
+    Restorer.Update(
+        *NetworkData,
+        *AimData,
+        *EquipmentState,
+        *ItemCommands,
+        *EquipmentCatalog,
+        *NetworkComponent);
 }
 
 void FBBBCharacterNetworkSystem::UpdateUpload()
