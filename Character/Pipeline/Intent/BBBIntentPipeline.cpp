@@ -21,9 +21,7 @@ void FBBBIntentPipeline::Initialize(
 void FBBBIntentPipeline::Update() const
 {
     if (!ensureMsgf(WorldData && InputData && IntentData && LocomotionConfig, TEXT("[UBBBC]Intent pipeline update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     FBBBCharacterIntentState Intent;
 

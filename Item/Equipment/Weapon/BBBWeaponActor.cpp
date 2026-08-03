@@ -68,9 +68,7 @@ void ABBBWeaponActor::InitializeEquipmentMirror(
     BindDefinitionFragments();
 
     if (!ensureMsgf(FireFragment && MagazineFragment, TEXT("[UBBBI]Weapon mirror definition missing required fire or magazine fragments")))
-    {
-        return;
-    }
+    { return; }
 }
 
 void ABBBWeaponActor::Tick(float DeltaSeconds)
@@ -78,14 +76,10 @@ void ABBBWeaponActor::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
 
     if (InstanceMode != EBBBEquipmentInstanceMode::Runtime)
-    {
-        return;
-    }
+    { return; }
 
     if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon tick skipped because magazine fragment or runtime data is missing")))
-    {
-        return;
-    }
+    { return; }
 
     MagazineFragment->Update(*this, *MagazineRuntimeData);
 }
@@ -140,9 +134,7 @@ void ABBBWeaponActor::PresentFire()
 {
 
     if (!ensureMsgf(FireFragment, TEXT("[UBBBI]Weapon fire presentation failed because fire fragment is missing")))
-    {
-        return;
-    }
+    { return; }
 
     FireFragment->Present(*this);
 }
@@ -150,9 +142,7 @@ void ABBBWeaponActor::PresentFire()
 void ABBBWeaponActor::PresentReload()
 {
     if (!ensureMsgf(MagazineFragment, TEXT("[UBBBI]Weapon reload presentation failed because magazine fragment is missing")))
-    {
-        return;
-    }
+    { return; }
 
     MagazineFragment->PresentReload(*this);
 }
@@ -206,9 +196,7 @@ void ABBBWeaponActor::PlayFireSound(USoundBase *Sound, FName MuzzleSocketName) c
 {
 
     if (!Sound || !GetWorld())
-    {
-        return;
-    }
+    { return; }
 
     FVector SoundLocation = GetActorLocation();
 
@@ -224,9 +212,7 @@ void ABBBWeaponActor::SubmitRecoil(const FVector2D &Impulse, float RecoverySpeed
 {
 
     if (!ensureMsgf(CharacterAPI, TEXT("[UBBBI]Weapon recoil skipped because character API is null")))
-    {
-        return;
-    }
+    { return; }
 
     CharacterAPI->SubmitCameraRecoil(Impulse, RecoverySpeed);
 }
@@ -234,9 +220,7 @@ void ABBBWeaponActor::SubmitRecoil(const FVector2D &Impulse, float RecoverySpeed
 void ABBBWeaponActor::BindDefinitionFragments()
 {
     if (!EquipmentDefinition)
-    {
-        return;
-    }
+    { return; }
 
     FireFragment = EquipmentDefinition->FindFragment<UBBBFireFragment>();
     MagazineFragment = EquipmentDefinition->FindFragment<UBBBMagazineFragment>();
@@ -245,9 +229,7 @@ void ABBBWeaponActor::BindDefinitionFragments()
 void ABBBWeaponActor::BindRuntimeData()
 {
     if (!ItemInstance.RuntimeData)
-    {
-        return;
-    }
+    { return; }
 
     FireRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBFireRuntimeData>();
     MagazineRuntimeData = ItemInstance.RuntimeData->FindRuntimeData<UBBBMagazineRuntimeData>();
@@ -257,9 +239,7 @@ void ABBBWeaponActor::SubmitItemIKBlock(bool bBlockItemIK) const
 {
 
     if (!ensureMsgf(CharacterAPI, TEXT("[UBBBI]Weapon IK skipped because character API is null")))
-    {
-        return;
-    }
+    { return; }
 
     CharacterAPI->SubmitItemIKBlockRequest(bBlockItemIK);
 }

@@ -15,9 +15,7 @@ void FBBBEquipmentExecutor::Update(
         FBBBCharacterActionRequest &Request = DecisionData.AccessRequestForExecution(Index);
 
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Approved)
-        {
-            continue;
-        }
+        { continue; }
 
         if (Request.GetType() == EBBBCharacterActionType::Equip)
         {
@@ -43,9 +41,7 @@ void FBBBEquipmentExecutor::Update(
 
             //重复选择时不响应
             if (EquipmentState.DesiredMainHandItem.InstanceId == ItemInstance.InstanceId)
-            {
-                continue;
-            }
+            { continue; }
 
             //写入期望物品
             EquipmentState.TargetMode = EBBBEquipmentTargetMode::RuntimeItem;

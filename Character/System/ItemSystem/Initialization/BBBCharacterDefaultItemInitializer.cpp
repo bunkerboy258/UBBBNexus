@@ -17,6 +17,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
     FBBBCharacterItemState &ItemState = ItemData.State;
 
     const FBBBCharacterItemConfig &Config = InItemConfig;
+    
     for (const FBBBDefaultInventoryItem &DefaultItem : Config.DefaultItems)
     {
         if (!DefaultItem.Definition)
@@ -49,14 +50,10 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
         }
     }
     if (!Config.bAutoEquipFirstHotbarItem)
-    {
-        return;
-    }
+    { return; }
     FBBBItemInstance FirstHotbarItem;
     if (!Storage.GetHotbarItem(ItemState, 0, FirstHotbarItem))
-    {
-        return;
-    }
+    { return; }
     if (!FirstHotbarItem.Definition || !Cast<UBBBEquipmentDefinition>(FirstHotbarItem.Definition))
     {
         UE_LOG(LogTemp, Warning, TEXT("First hotbar item cannot be equipped"));

@@ -32,9 +32,7 @@ void FBBBCharacterExternalAPI::SubmitCameraRecoil(
     float RecoverySpeed)
 {
     if (!ensureMsgf(CameraCommands, TEXT("[UBBBC]Character external camera target is null")))
-    {
-        return;
-    }
+    { return; }
 
     CameraCommands->SubmitRecoilRequest(Impulse, RecoverySpeed);
 }
@@ -47,9 +45,7 @@ void FBBBCharacterExternalAPI::SubmitCameraRecoil(
 void FBBBCharacterExternalAPI::SubmitItemIKBlockRequest(bool bBlocked)
 {
     if (!ensureMsgf(AnimationCommands, TEXT("[UBBBC]Character external animation target is null")))
-    {
-        return;
-    }
+    { return; }
 
     AnimationCommands->SubmitItemIKBlockRequest(bBlocked);
 }

@@ -14,9 +14,7 @@ void FBBBArbitrationPipeline::Initialize(
 void FBBBArbitrationPipeline::Update() const
 {
     if (!ensureMsgf(DecisionData && EquipmentState, TEXT("[UBBBC]Arbitration pipeline update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     EquipmentStateArbitrator.Update(*DecisionData, *EquipmentState);
     ActionDomainArbitrator.Update(*DecisionData);

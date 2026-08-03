@@ -33,17 +33,13 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     ABBBEquipmentActor *EquippedItemActor = EquipmentState.GetEquippedItemActor();
     //缺少装备时保持重置状态
     if (!ActiveDefinition || !EquippedItemActor)
-    {
-        return;
-    }
+    { return; }
     //读取姿势配置与武器网格
     const UBBBEquipmentPoseFragment *Pose = ActiveDefinition->FindFragment<UBBBEquipmentPoseFragment>();
     UStaticMeshComponent *WeaponMesh = EquippedItemActor->FindComponentByClass<UStaticMeshComponent>();
     //缺少姿势配置或网格时保持重置状态
     if (!Pose || !WeaponMesh)
-    {
-        return;
-    }
+    { return; }
 
     //计算枪口相对瞄准骨骼的本地变换
     if (WeaponMesh->DoesSocketExist(Pose->AimSourceSocketName) && CharacterMesh.GetBoneIndex(AimSourceBoneName) != INDEX_NONE)

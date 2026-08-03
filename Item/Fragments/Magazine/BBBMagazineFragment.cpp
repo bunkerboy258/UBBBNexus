@@ -74,9 +74,7 @@ void UBBBMagazineFragment::Update(
     if (!RuntimeData.bIsReloading
         || !Weapon.GetWorld()
         || Weapon.GetWorld()->GetTimeSeconds() < RuntimeData.ReloadEndTime)
-    {
-        return;
-    }
+    { return; }
 
     if (RuntimeData.bCommitReloadAmmo)
     {

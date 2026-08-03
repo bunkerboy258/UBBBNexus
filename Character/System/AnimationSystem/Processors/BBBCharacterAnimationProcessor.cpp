@@ -32,9 +32,7 @@ void FBBBCharacterAnimationProcessor::Update(
         for (const FBBBCharacterAnimationRequest &Request : PendingMontages)
         {
             if (!Request.Montage)
-            {
-                continue;
-            }
+            { continue; }
             //允许打断时先停止同名蒙太奇
             if (Request.bRestartIfPlaying && AnimInstance->Montage_IsPlaying(Request.Montage))
             {

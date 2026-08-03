@@ -5,7 +5,6 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
 
-
 ABBBBulletActor::ABBBBulletActor()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -31,7 +30,6 @@ ABBBBulletActor::ABBBBulletActor()
     ProjectileMovementComponent->bShouldBounce = false;
 }
 
-
 void ABBBBulletActor::BeginPlay()
 {
     Super::BeginPlay();
@@ -49,7 +47,6 @@ void ABBBBulletActor::BeginPlay()
         ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ABBBBulletActor::HandleProjectileStop);
     }
 }
-
 
 void ABBBBulletActor::InitializeBullet(FVector InitialVelocity, AActor *IgnoredOwner, AActor *IgnoredEquipmentActor)
 {
@@ -74,7 +71,6 @@ void ABBBBulletActor::InitializeBullet(FVector InitialVelocity, AActor *IgnoredO
     }
 }
 
-
 void ABBBBulletActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     if (TrailComponent)
@@ -83,7 +79,6 @@ void ABBBBulletActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
     }
     Super::EndPlay(EndPlayReason);
 }
-
 
 void ABBBBulletActor::HandleProjectileStop(const FHitResult &ImpactResult)
 {

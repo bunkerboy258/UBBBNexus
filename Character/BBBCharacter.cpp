@@ -59,9 +59,7 @@ void ABBBCharacter::Tick(float DeltaSeconds)
     const UWorld *World = GetWorld();
 
     if (!ensureMsgf(World, TEXT("[UBBBC]Character update aborted because world is null")))
-    {
-        return;
-    }
+    { return; }
 
     //更新当前帧世界时间快照
     RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());

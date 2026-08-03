@@ -68,9 +68,7 @@ void FBBBCharacterAimPresentationProcessor::Update(
     AnimationState.bHasValidAimTarget = bHasValidAimTarget;
     AnimationState.AimIKDistanceAlpha = 1.0f;
     if (!AnimationConfig.bEnableNearAimIKDistanceAlpha)
-    {
-        return;
-    }
+    { return; }
     const float Distance = FVector::Dist(AimOrigin, FVector(AimState.AimIKTargetWorld));
     if (AnimationConfig.SafeAimIKTargetDistance <= AnimationConfig.MinAimIKTargetDistance)
     {

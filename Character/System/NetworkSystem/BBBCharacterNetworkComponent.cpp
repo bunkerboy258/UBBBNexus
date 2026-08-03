@@ -32,9 +32,7 @@ void UBBBCharacterNetworkComponent::SetReplicatedAimState(const FBBBAimNetworkSt
     ReplicatedAimState = AimState;
 
     if (!ensureMsgf(NetworkData, TEXT("[UBBBC]Network component method aborted: network data is null")))
-    {
-        return;
-    }
+    { return; }
     NetworkData->SetPendingRestoreAimState(AimState);
 }
 
@@ -45,9 +43,7 @@ void UBBBCharacterNetworkComponent::SendEquipmentPacket(FBBBEquipmentNetworkPack
     if (GetOwner() && GetOwner()->HasAuthority())
     {
         if (!ensureMsgf(NetworkData, TEXT("[UBBBC]Equipment packet send failed because network data is null")))
-        {
-            return;
-        }
+        { return; }
         //把装备请求交给服务器校验链
         NetworkData->EnqueueValidationEquipmentPacket(MoveTemp(Packet));
         //结束当前把装备请求交给服务器校验链流程
@@ -143,16 +139,12 @@ void UBBBCharacterNetworkComponent::ServerUploadReloadPacket_Implementation(FBBB
 void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
 {
     if (!ensureMsgf(NetworkData, TEXT("[UBBBC]Network component method aborted: network data is null")))
-    {
-        return;
-    }
+    { return; }
 
     APawn *OwnerPawn = GetOwnerPawn();
     //跳过本地控制角色
     if (!OwnerPawn || OwnerPawn->IsLocallyControlled())
-    {
-        return;
-    }
+    { return; }
 
     //提交还原数据包
     NetworkData->EnqueueRestoreEquipmentPacket(MoveTemp(Packet));

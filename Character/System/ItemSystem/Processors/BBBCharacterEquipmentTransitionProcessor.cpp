@@ -8,14 +8,10 @@ void FBBBCharacterEquipmentTransitionProcessor::Update(
 {
 
     if (!Equipment.bIsEquipping)
-    {
-        return;
-    }
+    { return; }
 
     if (WorldTimeSeconds < Equipment.EquipEndTime)
-    {
-        return;
-    }
+    { return; }
 
     Equipment.bIsEquipping = false;
     Equipment.EquipEndTime = 0.0f;

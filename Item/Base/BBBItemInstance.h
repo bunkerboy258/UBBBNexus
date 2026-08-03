@@ -6,7 +6,6 @@
 class UBBBItemDefinition;
 class UBBBItemRuntimeData;
 
-
 USTRUCT(BlueprintType)
 struct FBBBItemInstance
 {

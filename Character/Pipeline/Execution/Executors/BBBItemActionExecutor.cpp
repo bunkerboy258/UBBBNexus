@@ -12,9 +12,7 @@ void FBBBItemActionExecutor::Update(
         FBBBCharacterActionRequest &Request = DecisionData.AccessRequestForExecution(Index);
 
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Approved)
-        {
-            continue;
-        }
+        { continue; }
 
         if (Request.GetType() == EBBBCharacterActionType::Fire)
         {

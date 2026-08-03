@@ -36,9 +36,7 @@ void FBBBCharacterEquipmentSpawnProcessor::Update(
     }
 
     if (!ensureMsgf(Definition, TEXT("[UBBBC]Equipment spawn aborted: desired item definition is not UBBBEquipmentDefinition")))
-    {
-        return;
-    }
+    { return; }
 
     if (!Definition->EquipmentActorClass
         || !CharacterMesh.GetOwner()
@@ -50,9 +48,7 @@ void FBBBCharacterEquipmentSpawnProcessor::Update(
 
     if (Equipment.TargetMode == EBBBEquipmentTargetMode::RuntimeItem
         && !ensureMsgf(RuntimeItem && RuntimeItem->RuntimeData, TEXT("[UBBBC]Equipment spawn aborted: runtime item data is null")))
-    {
-        return;
-    }
+    { return; }
 
     FActorSpawnParameters SpawnParameters;
     SpawnParameters.Owner = CharacterMesh.GetOwner();

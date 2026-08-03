@@ -9,9 +9,7 @@ void FBBBCharacterEquipmentStateArbitrator::Update(
 {
     //装备稳定时不限制
     if (!EquipmentState.IsEquipping())
-    {
-        return;
-    }
+    { return; }
 
     for (int32 Index = 0; Index < DecisionData.GetRequestCount(); ++Index)
     {
@@ -19,16 +17,12 @@ void FBBBCharacterEquipmentStateArbitrator::Update(
 
         //跳过已被处理的请求
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Pending)
-        {
-            continue;
-        }
+        { continue; }
 
         //拒绝所有占用身体的请求
         if (Request.GetDomain() != EBBBCharacterActionDomain::FullBody
             && Request.GetDomain() != EBBBCharacterActionDomain::UpperBody)
-        {
-            continue;
-        }
+        { continue; }
         
         Request.RejectByDomain();
     }

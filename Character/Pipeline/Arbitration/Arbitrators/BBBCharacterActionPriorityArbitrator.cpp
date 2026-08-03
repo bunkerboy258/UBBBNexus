@@ -13,9 +13,7 @@ void FBBBCharacterActionPriorityArbitrator::Update(
         const FBBBCharacterActionRequest &Request = DecisionData.GetRequest(Index);
 
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Pending)
-        {
-            continue;
-        }
+        { continue; }
 
         int32 *WinnerIndex = WinnerIndices.Find(Request.GetDomain());
 
@@ -37,9 +35,7 @@ void FBBBCharacterActionPriorityArbitrator::Update(
         FBBBCharacterActionRequest &Request = DecisionData.AccessRequestForArbitration(Index);
 
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Pending)
-        {
-            continue;
-        }
+        { continue; }
 
         if (WinnerIndices.FindRef(Request.GetDomain()) == Index)
         {

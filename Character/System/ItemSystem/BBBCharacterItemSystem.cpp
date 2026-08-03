@@ -38,12 +38,11 @@ void FBBBCharacterItemSystem::Update()
 {
 
     if (!ensureMsgf(ItemData && WorldData && CharacterAPI && CharacterMesh && EquipmentCatalog && CharacterMesh->GetWorld(), TEXT("[UBBBC]Item system update aborted because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     FBBBCharacterEquipmentState &Equipment = ItemData->State.Equipment;
 
+    //推进装备的过渡状态
     EquipmentTransitionProcessor.Update(WorldData->GetWorldTimeSeconds(), Equipment);
     
     bool bRequiresEquipmentChange = false;

@@ -6,7 +6,6 @@
 class UBBBItemFragment;
 class UTexture2D;
 
-
 UCLASS(Abstract, BlueprintType)
 class ABBB_EVAC_API UBBBItemDefinition : public UPrimaryDataAsset
 {

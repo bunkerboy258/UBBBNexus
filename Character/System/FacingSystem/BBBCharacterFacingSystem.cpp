@@ -30,9 +30,7 @@ void FBBBCharacterFacingSystem::Initialize(
 void FBBBCharacterFacingSystem::Update()
 {
     if (!ensureMsgf(Pawn && Movement && WorldData && FacingData && IntentData && AimData && Config, TEXT("[UBBBC]Facing system update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
     bool bIsBodyTurning = FacingData->IsBodyTurning();
     float CurrentAimYawAbs = FacingData->GetCurrentAimYawAbs();
     bool bLastFaceAimDirection = FacingData->GetLastFaceAimDirection();

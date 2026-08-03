@@ -12,9 +12,7 @@ void FBBBCharacterItemActionProcessor::Update(
 {
     ABBBEquipmentActor *EquippedItemActor = EquipmentState.GetEquippedItemActor();
     if (!EquippedItemActor)
-    {
-        return;
-    }
+    { return; }
     if (ItemCommands.ConsumeFire())
     {
         if (EquippedItemActor->Fire())

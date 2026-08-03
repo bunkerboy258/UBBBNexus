@@ -15,15 +15,11 @@ class ABBB_EVAC_API ABBBBulletActor : public AActor
     GENERATED_BODY()
 public:
 
-
     ABBBBulletActor();
-
 
     virtual void BeginPlay() override;
 
-
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
 
     UFUNCTION(BlueprintCallable, Category = "BBB|Bullet")
     void InitializeBullet(FVector InitialVelocity, AActor *IgnoredOwner, AActor *IgnoredEquipmentActor);
@@ -46,7 +42,6 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Bullet|Trail")
     TObjectPtr<UNiagaraSystem> TrailEffect = nullptr;
-
 
     UFUNCTION()
     void HandleProjectileStop(const FHitResult &ImpactResult);

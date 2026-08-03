@@ -23,9 +23,7 @@ void FBBBExecutionPipeline::Update() const
             && InventoryState
             && EquipmentState,
         TEXT("[UBBBC]Execution pipeline update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     EquipmentExecutor.Update(
         *DecisionData,

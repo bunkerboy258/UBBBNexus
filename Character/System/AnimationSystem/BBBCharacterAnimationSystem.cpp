@@ -58,9 +58,7 @@ void FBBBCharacterAnimationSystem::Update()
             && AimAnimationConfig
             && LocomotionConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     AimPresentationProcessor.Update(
         *CharacterMesh,

@@ -38,9 +38,7 @@ void FBBBCharacterAimSystem::Initialize(
 void FBBBCharacterAimSystem::Update()
 {
     if (!ensureMsgf(Pawn && CharacterMesh && WorldData && AimData && IntentData && EquipmentState && AnimationCommands && AimConfig && AnimationConfig && Pawn->GetWorld(), TEXT("[UBBBC]Aim system update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
     //复制上一帧状态
     FBBBAimRuntimeState State = AimData->GetState();
     //读取当前主手物品

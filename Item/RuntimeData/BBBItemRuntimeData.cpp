@@ -20,9 +20,7 @@ void UBBBItemRuntimeData::Initialize(const UBBBItemDefinition &Definition)
 
         UBBBItemFragmentRuntimeData *RuntimeData = Fragment->InitializeRuntimeData(*this);
         if (!RuntimeData)
-        {
-            continue;
-        }
+        { continue; }
 
         RuntimeDataList.Add(RuntimeData);
     }

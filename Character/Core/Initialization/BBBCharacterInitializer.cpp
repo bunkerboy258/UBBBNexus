@@ -17,17 +17,13 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 
     //网络组件存在？
     if (!ensureMsgf(Character.CharacterNetworkComponent, TEXT("[UBBBC]Character initialization failed: CharacterNetworkComponent is null")))
-    {
-        return;
-    }
+    { return; }
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
 
     //相机骨骼网格与移动组件存在？
     if (!ensureMsgf(Character.CameraBoom && Character.GetMesh() && Movement, TEXT("[UBBBC]Character initialization failed because engine components are null")))
-    {
-        return;
-    }
+    { return; }
     
     Character.CharacterExternalAPI.Initialize(
         Character.RuntimeData.CharacterData.Animation.Commands,
@@ -193,9 +189,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
 
     //类型不匹配时 不建立任何不完整绑定
     if (!Input)
-    {
-        return;
-    }
+    { return; }
     
     const FBBBCharacterInputConfig &Config = Character.CharacterConfig.Input;
     

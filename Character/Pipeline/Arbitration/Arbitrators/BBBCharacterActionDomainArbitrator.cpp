@@ -20,9 +20,7 @@ void FBBBCharacterActionDomainArbitrator::Update(
     }
 
     if (!bHasFullBody)
-    {
-        return;
-    }
+    { return; }
 
     //如果存在全身域的动作请求 废掉所有上半身动作
     for (int32 Index = 0; Index < DecisionData.GetRequestCount(); ++Index)

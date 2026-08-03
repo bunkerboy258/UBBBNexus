@@ -34,9 +34,7 @@ bool FBBBCharacterNetworkSystem::HasRequiredDependencies() const
 void FBBBCharacterNetworkSystem::UpdateValidation()
 {
     if (!HasRequiredDependencies())
-    {
-        return;
-    }
+    { return; }
 
     Validator.Update(*NetworkData, *NetworkComponent);
 }
@@ -44,9 +42,7 @@ void FBBBCharacterNetworkSystem::UpdateValidation()
 void FBBBCharacterNetworkSystem::UpdateRestore()
 {
     if (!HasRequiredDependencies())
-    {
-        return;
-    }
+    { return; }
 
     Restorer.Update(*NetworkData, *AimData, *EquipmentState, *ItemCommands);
 }
@@ -54,9 +50,7 @@ void FBBBCharacterNetworkSystem::UpdateRestore()
 void FBBBCharacterNetworkSystem::UpdateUpload()
 {
     if (!HasRequiredDependencies())
-    {
-        return;
-    }
+    { return; }
 
     Uploader.Update(
         *NetworkData,

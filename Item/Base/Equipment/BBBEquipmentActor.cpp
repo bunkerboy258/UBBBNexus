@@ -20,15 +20,11 @@ void ABBBEquipmentActor::InitializeRuntimeEquipment(
     FBBBCharacterExternalAPI &InCharacterAPI)
 {
     if (!ensureMsgf(InItemInstance.IsValid(), TEXT("[UBBBI]Equipment actor received invalid runtime item instance")))
-    {
-        return;
-    }
+    { return; }
 
     const UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(InItemInstance.Definition);
     if (!ensureMsgf(Definition, TEXT("[UBBBI]Runtime item definition is not an equipment definition")))
-    {
-        return;
-    }
+    { return; }
 
     ItemInstance = InItemInstance;
     InitializeCommon(*Definition, InCharacterAPI, EBBBEquipmentInstanceMode::Runtime);
@@ -51,9 +47,7 @@ void ABBBEquipmentActor::Tick(float DeltaSeconds)
 void ABBBEquipmentActor::Equip()
 {
     if (!ensureMsgf(EquipmentDefinition, TEXT("[UBBBI]Equipment definition is null during equip")))
-    {
-        return;
-    }
+    { return; }
 
     FBBBCharacterAnimationRequest Request;
     Request.Montage = EquipmentDefinition->EquipMontage;
@@ -105,14 +99,10 @@ void ABBBEquipmentActor::QueueMontage(const FBBBCharacterAnimationRequest &Reque
 {
 
     if (!Request.Montage)
-    {
-        return;
-    }
+    { return; }
 
     if (!ensureMsgf(CharacterAPI, TEXT("[UBBBI]Character API is null when queueing equipment montage")))
-    {
-        return;
-    }
+    { return; }
 
     CharacterAPI->QueueMontage(Request);
 }

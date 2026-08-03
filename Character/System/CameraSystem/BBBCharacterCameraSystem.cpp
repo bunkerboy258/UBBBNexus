@@ -30,9 +30,7 @@ void FBBBCharacterCameraSystem::Initialize(
 void FBBBCharacterCameraSystem::Update()
 {
     if (!ensureMsgf(Pawn && CameraBoom && WorldData && InputData && IntentData && CameraData && Config, TEXT("[UBBBC]Camera system update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
     const float DeltaSeconds = WorldData->GetFrameDeltaSeconds();
     const FBBBProcessedInputFrame &ProcessedInput = InputData->GetProcessedInput();
     const FVector2D Look = ProcessedInput.LookDelta;

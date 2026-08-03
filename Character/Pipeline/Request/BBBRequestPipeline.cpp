@@ -14,9 +14,7 @@ void FBBBRequestPipeline::Initialize(
 void FBBBRequestPipeline::Update() const
 {
     if (!ensureMsgf(IntentData && DecisionData, TEXT("[UBBBC]Request pipeline update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     ActionPlanner.Update(*IntentData, *DecisionData);
 }

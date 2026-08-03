@@ -67,9 +67,7 @@ void FBBBCharacterUpdatePipeline::Update() const
             && ArbitrationPipeline
             && ExecutionPipeline,
         TEXT("[UBBBC]Pipeline update aborted because injected systems are null")))
-    {
-        return;
-    }
+    { return; }
 
     //本地控制？
     const bool bIsLocallyControlled = Pawn->IsLocallyControlled();

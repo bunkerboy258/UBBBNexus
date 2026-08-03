@@ -20,9 +20,7 @@ void FBBBInputPipeline::Initialize(
 void FBBBInputPipeline::Update() const
 {
     if (!ensureMsgf(WorldData && InputRawData && InputData && Config, TEXT("[UBBBC]Input pipeline update failed because dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     const float DeltaSeconds = WorldData->GetFrameDeltaSeconds();
     InputProcessor.Update(*InputRawData, *InputData, *Config, DeltaSeconds);

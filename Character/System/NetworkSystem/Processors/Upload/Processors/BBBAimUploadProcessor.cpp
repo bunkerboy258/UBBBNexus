@@ -61,9 +61,7 @@ void FBBBAimUploadProcessor::Update(
     const float Now = WorldTimeSeconds;
 
     if (!ShouldSubmitAimState(Observer, AimState, AimConfig, Now))
-    {
-        return;
-    }
+    { return; }
 
     Observer.LastObservedState = AimState;
 

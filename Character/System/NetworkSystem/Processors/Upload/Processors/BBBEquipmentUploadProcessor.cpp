@@ -13,14 +13,10 @@ void FBBBEquipmentUploadProcessor::Update(
     const FBBBItemInstance &ActiveItem = EquipmentState.GetActiveMainHandItem();
 
     if (!ActiveItem.IsValid())
-    {
-        return;
-    }
+    { return; }
 
     if (NetworkData.GetLastUploadedItemInstanceId() == ActiveItem.InstanceId)
-    {
-        return;
-    }
+    { return; }
 
     FBBBEquipmentNetworkPacket Packet;
     Packet.EquipmentHandle = ActiveItem.Definition->ItemId;
