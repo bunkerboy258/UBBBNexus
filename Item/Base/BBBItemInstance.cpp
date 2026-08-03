@@ -27,6 +27,7 @@ bool UBBBItemInstance::IsValid() const
     return InstanceId.IsValid() && Definition != nullptr;
 }
 
+//
 void UBBBItemInstance::Configure(UBBBItemDefinition &InDefinition, int32 InStackCount)
 {
     InstanceId = FGuid::NewGuid();

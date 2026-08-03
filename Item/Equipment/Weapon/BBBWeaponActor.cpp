@@ -57,9 +57,7 @@ void ABBBWeaponActor::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
 
     if (!ensureMsgf(MagazineFragment && MagazineRuntimeData, TEXT("[UBBBI]Weapon tick skipped because magazine fragment or runtime data is missing")))
-    {
-        return;
-    }
+    { return; }
 
     MagazineFragment->Update(*this, *MagazineRuntimeData);
 }
@@ -199,9 +197,7 @@ void ABBBWeaponActor::BindDefinitionFragments()
 void ABBBWeaponActor::BindRuntimeData()
 {
     if (!EquipmentInstance || !EquipmentInstance->GetRuntimeData())
-    {
-        return;
-    }
+    { return; }
 
     FireRuntimeData = EquipmentInstance->GetRuntimeData()->FindRuntimeData<UBBBFireRuntimeData>();
     MagazineRuntimeData = EquipmentInstance->GetRuntimeData()->FindRuntimeData<UBBBMagazineRuntimeData>();

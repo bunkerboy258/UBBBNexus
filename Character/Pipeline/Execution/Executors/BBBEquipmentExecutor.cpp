@@ -14,9 +14,7 @@ void FBBBEquipmentExecutor::Update(
         FBBBCharacterActionRequest &Request = DecisionData.AccessRequestForExecution(Index);
 
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Approved)
-        {
-            continue;
-        }
+        { continue; }
 
         if (Request.GetType() == EBBBCharacterActionType::Equip)
         {
@@ -24,14 +22,10 @@ void FBBBEquipmentExecutor::Update(
 
             UBBBEquipmentInstance *ItemInstance = GetHotbarItem(InventoryState, Request.GetEquipSlot());
             if (!ensureMsgf(ItemInstance, TEXT("[UBBBC]Requested hotbar item is not valid equipment")))
-            {
-                continue;
-            }
+            { continue; }
 
             if (EquipmentState.DesiredMainHandInstance == ItemInstance)
-            {
-                continue;
-            }
+            { continue; }
 
             EquipmentState.DesiredMainHandInstance = ItemInstance;
         }

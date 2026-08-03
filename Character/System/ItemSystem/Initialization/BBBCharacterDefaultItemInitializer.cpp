@@ -18,9 +18,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
     {
         UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(DefaultItem.Definition);
         if (!ensureMsgf(Definition, TEXT("[UBBBC]Default item definition is not equipment")))
-        {
-            continue;
-        }
+        { continue; }
 
         UBBBEquipmentInstance *NewInstance = UBBBEquipmentInstance::Create(
             ItemOuter,
@@ -28,9 +26,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
             DefaultItem.StackCount);
 
         if (!NewInstance)
-        {
-            continue;
-        }
+        { continue; }
 
         if (!Storage.AddItem(ItemState, *NewInstance))
         {
@@ -46,15 +42,11 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
     }
 
     if (!InItemConfig.bAutoEquipFirstHotbarItem)
-    {
-        return;
-    }
+    { return; }
 
     UBBBEquipmentInstance *FirstHotbarItem = Cast<UBBBEquipmentInstance>(Storage.GetHotbarItem(ItemState, 0));
     if (!FirstHotbarItem)
-    {
-        return;
-    }
+    { return; }
 
     ItemState.Equipment.DesiredMainHandInstance = FirstHotbarItem;
 }

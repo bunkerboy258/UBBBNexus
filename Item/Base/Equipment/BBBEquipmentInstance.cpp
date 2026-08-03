@@ -54,32 +54,24 @@ void UBBBEquipmentInstance::Initialize(
 {
     UBBBEquipmentDefinition *EquipmentDefinition = GetEquipmentDefinition();
     if (!ensureMsgf(EquipmentDefinition, TEXT("[UBBBI]Equipment instance definition is invalid")))
-    {
-        return;
-    }
+    { return; }
 
     if (InstanceMode == EInstanceMode::Runtime && !bIsRuntimeDataInitialized)
     {
         if (!ensureMsgf(RuntimeData, TEXT("[UBBBI]Equipment runtime data is null")))
-        {
-            return;
-        }
+        { return; }
 
         RuntimeData->Initialize(*EquipmentDefinition);
         bIsRuntimeDataInitialized = true;
     }
 
     if (ModelActor)
-    {
-        return;
-    }
+    { return; }
 
     if (!ensureMsgf(
         EquipmentDefinition->EquipmentActorClass && CharacterMesh.GetOwner() && CharacterMesh.GetWorld(),
         TEXT("[UBBBI]Equipment model creation dependencies are invalid")))
-    {
-        return;
-    }
+    { return; }
 
     FActorSpawnParameters SpawnParameters;
     SpawnParameters.Owner = CharacterMesh.GetOwner();
@@ -92,9 +84,7 @@ void UBBBEquipmentInstance::Initialize(
         SpawnParameters);
 
     if (!ensureMsgf(ModelActor, TEXT("[UBBBI]Equipment model actor creation failed")))
-    {
-        return;
-    }
+    { return; }
 
     ModelActor->AttachToComponent(
         &CharacterMesh,

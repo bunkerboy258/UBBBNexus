@@ -23,9 +23,7 @@ void FBBBCharacterEquipmentProcessor::Update(
     }
 
     if (!EquipmentState.ActiveMainHandInstance)
-    {
-        return;
-    }
+    { return; }
 
     EquipmentState.ActiveMainHandInstance->Initialize(
         CharacterMesh,

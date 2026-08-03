@@ -20,9 +20,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     { return; }
 
     if (!ensureMsgf(Config.Item.EquipmentCatalog, TEXT("[UBBBC]Character initialization failed because equipment catalog is null")))
-    {
-        return;
-    }
+    { return; }
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
 

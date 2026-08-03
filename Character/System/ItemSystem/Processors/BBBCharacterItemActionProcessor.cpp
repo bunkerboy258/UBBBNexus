@@ -17,9 +17,7 @@ void FBBBCharacterItemActionProcessor::Update(
         : nullptr;
 
     if (!EquippedItemActor)
-    {
-        return;
-    }
+    { return; }
 
     if (ItemCommands.ConsumeFire())
     {

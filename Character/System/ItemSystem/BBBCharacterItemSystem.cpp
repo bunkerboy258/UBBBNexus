@@ -34,9 +34,7 @@ void FBBBCharacterItemSystem::Initialize(
 void FBBBCharacterItemSystem::Update()
 {
     if (!ensureMsgf(ItemData && WorldData && CharacterAPI && CharacterMesh, TEXT("[UBBBC]Item system update dependencies are null")))
-    {
-        return;
-    }
+    { return; }
 
     EquipmentProcessor.Update(
         *CharacterMesh,

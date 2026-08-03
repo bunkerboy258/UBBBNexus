@@ -13,21 +13,15 @@ void FBBBEquipmentRestoreProcessor::Update(
 {
     UBBBEquipmentDefinition *Definition = EquipmentCatalog.FindDefinition(Packet.EquipmentHandle);
     if (!ensureMsgf(Definition, TEXT("[UBBBC]Equipment restore handle has no matching definition")))
-    {
-        return;
-    }
+    { return; }
 
     UBBBEquipmentInstance *CurrentInstance = EquipmentState.DesiredMainHandInstance;
     if (CurrentInstance && CurrentInstance->GetDefinition() == Definition)
-    {
-        return;
-    }
+    { return; }
 
     UBBBEquipmentInstance *MirrorInstance = UBBBEquipmentInstance::CreateMirror(InstanceOuter, *Definition);
     if (!ensureMsgf(MirrorInstance, TEXT("[UBBBC]Equipment mirror instance creation failed")))
-    {
-        return;
-    }
+    { return; }
 
     EquipmentState.DesiredMainHandInstance = MirrorInstance;
 }
