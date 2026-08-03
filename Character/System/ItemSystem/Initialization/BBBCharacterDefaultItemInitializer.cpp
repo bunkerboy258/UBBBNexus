@@ -14,7 +14,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
 {
     FBBBCharacterItemState &ItemState = ItemData.State;
 
-    for (const FBBBDefaultInventoryItem &DefaultItem : InItemConfig.DefaultItems)
+    for (const FBBBDefaultBackpackItem &DefaultItem : InItemConfig.DefaultBackpackItems)
     {
         UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(DefaultItem.Definition);
         if (!ensureMsgf(Definition, TEXT("[UBBBC]Default item definition is not equipment")))
@@ -28,25 +28,28 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
         if (!NewInstance)
         { continue; }
 
-        if (!Storage.AddItem(ItemState, *NewInstance))
+        if (!Storage.AddItem(ItemState.Backpack, *NewInstance))
         {
             UE_LOG(LogTemp, Warning, TEXT("Failed to add default item to inventory"));
             continue;
         }
 
-        if (DefaultItem.HotbarSlot != INDEX_NONE
-            && !Storage.AssignHotbarItem(ItemState, DefaultItem.HotbarSlot, NewInstance->GetInstanceId()))
+        if (DefaultItem.QuickAccessSlot != INDEX_NONE
+            && !Storage.BindQuickAccessItem(ItemState.Backpack, DefaultItem.QuickAccessSlot, *NewInstance))
         {
-            UE_LOG(LogTemp, Warning, TEXT("Failed to assign default item to hotbar"));
+            UE_LOG(LogTemp, Warning, TEXT("Failed to bind default item to quick access slot"));
         }
     }
 
-    if (!InItemConfig.bAutoEquipFirstHotbarItem)
+    if (!InItemConfig.bAutoEquipFirstQuickAccessItem)
     { return; }
 
-    UBBBEquipmentInstance *FirstHotbarItem = Cast<UBBBEquipmentInstance>(Storage.GetHotbarItem(ItemState, 0));
-    if (!FirstHotbarItem)
+    if (ItemState.Backpack.QuickAccessBindings.IsEmpty())
     { return; }
 
-    ItemState.Equipment.DesiredMainHandInstance = FirstHotbarItem;
+    UBBBEquipmentInstance *FirstQuickAccessItem = Cast<UBBBEquipmentInstance>(ItemState.Backpack.QuickAccessBindings[0]);
+    if (!FirstQuickAccessItem)
+    { return; }
+
+    ItemState.Equipment.DesiredMainHandInstance = FirstQuickAccessItem;
 }

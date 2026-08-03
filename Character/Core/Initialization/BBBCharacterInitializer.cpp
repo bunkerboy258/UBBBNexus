@@ -129,7 +129,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.CharacterData.Decision,
         Character.RuntimeData.CharacterData.Item.Commands,
         Character.RuntimeData.CharacterData.Item.State.Equipment,
-        Character.RuntimeData.CharacterData.Item.State.Inventory);
+        Character.RuntimeData.CharacterData.Item.State.Backpack);
     
     Character.CharacterUpdatePipeline.Initialize(
         Character,

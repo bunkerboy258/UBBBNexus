@@ -22,11 +22,9 @@ void FBBBCharacterItemSystem::Initialize(
     WorldData = &InWorldData;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
 
-    FBBBCharacterItemInventoryState &Inventory = ItemData->State.Inventory;
-    Inventory.MainInventoryCapacity = FMath::Max(1, InItemConfig.MainInventoryCapacity);
-    Inventory.HotbarCapacity = FMath::Max(1, InItemConfig.HotbarCapacity);
-    Inventory.MainInventory.Entries.Reserve(Inventory.MainInventoryCapacity);
-    Inventory.HotbarItemInstanceIds.Init(FGuid(), Inventory.HotbarCapacity);
+    FBBBCharacterBackpackState &Backpack = ItemData->State.Backpack;
+    Backpack.Slots.Init(nullptr, FMath::Max(1, InItemConfig.BackpackSlotCount));
+    Backpack.QuickAccessBindings.Init(nullptr, FMath::Max(1, InItemConfig.QuickAccessSlotCount));
 
     DefaultItemInitializer.Initialize(*ItemData, Storage, InItemOuter, InItemConfig);
 }

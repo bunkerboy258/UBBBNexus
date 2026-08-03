@@ -7,12 +7,12 @@ void FBBBExecutionPipeline::Initialize(
     FBBBDecisionRuntimeData &InDecisionData,
     FBBBCharacterItemCommands &InItemCommands,
     FBBBCharacterEquipmentState &InEquipmentState,
-    const FBBBCharacterItemInventoryState &InInventoryState)
+    const FBBBCharacterBackpackState &InBackpackState)
 {
     DecisionData = &InDecisionData;
     ItemCommands = &InItemCommands;
     EquipmentState = &InEquipmentState;
-    InventoryState = &InInventoryState;
+    BackpackState = &InBackpackState;
 }
 
 void FBBBExecutionPipeline::Update() const
@@ -20,14 +20,14 @@ void FBBBExecutionPipeline::Update() const
     if (!ensureMsgf(
         DecisionData
             && ItemCommands
-            && InventoryState
+            && BackpackState
             && EquipmentState,
         TEXT("[UBBBC]Execution pipeline update failed because dependencies are null")))
     { return; }
 
     EquipmentExecutor.Update(
         *DecisionData,
-        *InventoryState,
+        *BackpackState,
         *EquipmentState);
 
     ItemExecutor.Update(*DecisionData, *ItemCommands);

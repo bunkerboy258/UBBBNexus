@@ -6,7 +6,7 @@
 
 void FBBBEquipmentExecutor::Update(
     FBBBDecisionRuntimeData &DecisionData,
-    const FBBBCharacterItemInventoryState &InventoryState,
+    const FBBBCharacterBackpackState &BackpackState,
     FBBBCharacterEquipmentState &EquipmentState) const
 {
     for (int32 Index = 0; Index < DecisionData.GetRequestCount(); ++Index)
@@ -14,46 +14,32 @@ void FBBBEquipmentExecutor::Update(
         FBBBCharacterActionRequest &Request = DecisionData.AccessRequestForExecution(Index);
 
         if (Request.GetArbitrationResult() != EBBBArbitrationResult::Approved)
-        { continue; }
+        {
+            continue;
+        }
 
         if (Request.GetType() == EBBBCharacterActionType::Equip)
         {
             Request.MarkConsumed();
 
-            UBBBEquipmentInstance *ItemInstance = GetHotbarItem(InventoryState, Request.GetEquipSlot());
-            if (!ensureMsgf(ItemInstance, TEXT("[UBBBC]Requested hotbar item is not valid equipment")))
-            { continue; }
+            const int32 QuickAccessSlot = Request.GetEquipSlot();
+            if (!ensureMsgf(BackpackState.QuickAccessBindings.IsValidIndex(QuickAccessSlot), TEXT("[UBBBC]Requested quick access slot is out of range")))
+            {
+                continue;
+            }
+
+            UBBBEquipmentInstance *ItemInstance = Cast<UBBBEquipmentInstance>(BackpackState.QuickAccessBindings[QuickAccessSlot]);
+            if (!ensureMsgf(ItemInstance, TEXT("[UBBBC]Requested quick access item is not valid equipment")))
+            {
+                continue;
+            }
 
             if (EquipmentState.DesiredMainHandInstance == ItemInstance)
-            { continue; }
+            {
+                continue;
+            }
 
             EquipmentState.DesiredMainHandInstance = ItemInstance;
         }
     }
-}
-
-UBBBEquipmentInstance *FBBBEquipmentExecutor::GetHotbarItem(
-    const FBBBCharacterItemInventoryState &InventoryState,
-    int32 HotbarSlot)
-{
-    if (HotbarSlot < 0 || HotbarSlot >= InventoryState.HotbarItemInstanceIds.Num())
-    {
-        return nullptr;
-    }
-
-    const FGuid &ItemInstanceId = InventoryState.HotbarItemInstanceIds[HotbarSlot];
-    if (!ItemInstanceId.IsValid())
-    {
-        return nullptr;
-    }
-
-    for (const FBBBInventoryEntry &Entry : InventoryState.MainInventory.Entries)
-    {
-        if (Entry.ItemInstance && Entry.ItemInstance->GetInstanceId() == ItemInstanceId)
-        {
-            return Cast<UBBBEquipmentInstance>(Entry.ItemInstance);
-        }
-    }
-
-    return nullptr;
 }
