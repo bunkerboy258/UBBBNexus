@@ -59,6 +59,9 @@ public:
     /** @return 装备实体是否正在执行装备过渡 */
     bool IsEquipping() const;
 
+    /** @return 是否配置可装备操作域 */
+    bool IsEquipable() const;
+
     /** @return 实例标识与静态配置是否有效 */
     bool IsValid() const;
 

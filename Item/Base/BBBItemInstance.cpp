@@ -4,9 +4,7 @@
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Definition/BBBItemRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Engine/World.h"
-#include "GameFramework/Pawn.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentOperation.h"
 
 UBBBItemInstance *UBBBItemInstance::Create(
     UObject &Outer,
@@ -59,37 +57,16 @@ void UBBBItemInstance::Equip(
         return;
     }
 
-    if (!ensureMsgf(
-        Definition && Definition->EquipmentActorClass && CharacterMesh.GetOwner() && CharacterMesh.GetWorld(),
-        TEXT("[UBBBI]Equipment actor creation dependencies are invalid")))
+    if (!ensureMsgf(Definition && Definition->EquipmentOperation, TEXT("[UBBBI]Item is not equipable")))
     {
         return;
     }
 
-    FActorSpawnParameters SpawnParameters;
-    SpawnParameters.Owner = CharacterMesh.GetOwner();
-    SpawnParameters.Instigator = Cast<APawn>(CharacterMesh.GetOwner());
-    SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-    ModelActor = CharacterMesh.GetWorld()->SpawnActor<ABBBEquipmentActor>(
-        Definition->EquipmentActorClass,
-        FTransform::Identity,
-        SpawnParameters);
-
-    if (!ensureMsgf(ModelActor, TEXT("[UBBBI]Equipment actor creation failed")))
-    {
-        return;
-    }
-
-    ModelActor->AttachToComponent(
-        &CharacterMesh,
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+    ModelActor = Definition->EquipmentOperation->Equip(
+        *this,
+        CharacterMesh,
+        CharacterAPI,
         AttachmentSocketName);
-
-    ModelActor->SetActorRelativeTransform(Definition->SpawnOffset);
-    ModelActor->SetActorTickEnabled(RuntimeData != nullptr);
-    ModelActor->Initialize(*this, CharacterAPI);
-    ModelActor->Equip();
 }
 
 void UBBBItemInstance::ReleaseModel()
@@ -131,6 +108,11 @@ ABBBEquipmentActor *UBBBItemInstance::GetModelActor() const
 bool UBBBItemInstance::IsEquipping() const
 {
     return ModelActor && ModelActor->IsEquipping();
+}
+
+bool UBBBItemInstance::IsEquipable() const
+{
+    return Definition && Definition->EquipmentOperation;
 }
 
 bool UBBBItemInstance::IsValid() const

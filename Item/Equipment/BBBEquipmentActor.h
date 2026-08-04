@@ -9,6 +9,7 @@ class FBBBCharacterExternalAPI;
 class UArrowComponent;
 class UBBBFireOperation;
 class UBBBFireRuntimeData;
+class UBBBEquipmentOperation;
 class UBBBItemDefinition;
 class UBBBItemInstance;
 class UBBBMagazineOperation;
@@ -122,6 +123,9 @@ private:
 
     /** 角色能力接口 */
     FBBBCharacterExternalAPI *CharacterAPI = nullptr;
+
+    /** 可装备操作域 */
+    const UBBBEquipmentOperation *EquipmentOperation = nullptr;
 
     /** 开火操作域 */
     const UBBBFireOperation *FireOperation = nullptr;

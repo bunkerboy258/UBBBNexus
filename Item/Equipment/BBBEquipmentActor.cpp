@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 #include "BBBWork/UBBBNexus/Item/Definition/BBBItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentOperation.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Fire/Base/BBBFireOperation.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Fire/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Magazine/BBBMagazineOperation.h"
@@ -46,6 +47,7 @@ void ABBBEquipmentActor::Initialize(
     ItemInstance = &InItemInstance;
     ItemDefinition = InItemInstance.GetDefinition();
     CharacterAPI = &InCharacterAPI;
+    EquipmentOperation = ItemDefinition->EquipmentOperation;
     FireOperation = ItemDefinition->FireOperation;
     MagazineOperation = ItemDefinition->MagazineOperation;
 
@@ -84,18 +86,18 @@ void ABBBEquipmentActor::Tick(float DeltaSeconds)
 
 void ABBBEquipmentActor::Equip()
 {
-    if (!ensureMsgf(ItemDefinition, TEXT("[UBBBI]Equipment item definition is null")))
+    if (!ensureMsgf(EquipmentOperation, TEXT("[UBBBI]Equipment operation is unavailable")))
     {
         return;
     }
 
     FBBBCharacterAnimationRequest Request;
-    Request.Montage = ItemDefinition->EquipMontage;
+    Request.Montage = EquipmentOperation->EquipMontage;
     QueueOperationMontage(Request);
 
-    bIsEquipping = ItemDefinition->EquipMontage && GetWorld();
+    bIsEquipping = EquipmentOperation->EquipMontage && GetWorld();
     EquipEndTime = bIsEquipping
-        ? GetWorld()->GetTimeSeconds() + ItemDefinition->EquipMontage->GetPlayLength()
+        ? GetWorld()->GetTimeSeconds() + EquipmentOperation->EquipMontage->GetPlayLength()
         : 0.0f;
 }
 

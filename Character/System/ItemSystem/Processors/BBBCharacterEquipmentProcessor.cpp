@@ -13,6 +13,12 @@ void FBBBCharacterEquipmentProcessor::Update(
 {
     if (EquipmentState.ActiveMainHandInstance != EquipmentState.DesiredMainHandInstance)
     {
+        if (EquipmentState.DesiredMainHandInstance
+            && !ensureMsgf(EquipmentState.DesiredMainHandInstance->IsEquipable(), TEXT("[UBBBC]Desired item is not equipable")))
+        {
+            return;
+        }
+
         if (EquipmentState.ActiveMainHandInstance)
         {
             EquipmentState.ActiveMainHandInstance->ReleaseModel();
