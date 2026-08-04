@@ -69,7 +69,7 @@ void UBBBEquipmentInstance::Equip(
         return;
     }
 
-    PresentationActor = Definition->EquipDomin->Equip(
+    PresentationActor = Definition->EquipDomin.Get().Equip(
         *RuntimeData->GetEquip(),
         CharacterMesh,
         CharacterAPI,
@@ -92,13 +92,13 @@ void UBBBEquipmentInstance::Update(FBBBCharacterExternalAPI &CharacterAPI)
     }
 
     // 推进装备过渡状态
-    Definition->EquipDomin->Update(CharacterAPI, *PresentationActor, *RuntimeData->GetEquip());
+    Definition->EquipDomin.Get().Update(CharacterAPI, *PresentationActor, *RuntimeData->GetEquip());
 
     // 推进弹匣状态，弹匣碎片可选但配置了就必须有对应运行数据
     if (Definition->MagazineDomin.IsValid()
         && ensureMsgf(RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine runtime data is unavailable during update")))
     {
-        Definition->MagazineDomin->Update(CharacterAPI, *PresentationActor, *RuntimeData->GetMagazine());
+        Definition->MagazineDomin.Get().Update(CharacterAPI, *PresentationActor, *RuntimeData->GetMagazine());
     }
 }
 
@@ -119,13 +119,13 @@ bool UBBBEquipmentInstance::Fire(FBBBCharacterExternalAPI &CharacterAPI)
             return false;
         }
 
-        if (!Definition->MagazineDomin->CanConsumeRound(*RuntimeData->GetMagazine()))
+        if (!Definition->MagazineDomin.Get().CanConsumeRound(*RuntimeData->GetMagazine()))
         {
             return false;
         }
     }
 
-    if (!Definition->FireDomin->Fire(CharacterAPI, *PresentationActor, *RuntimeData->GetFire()))
+    if (!Definition->FireDomin.Get().Fire(CharacterAPI, *PresentationActor, *RuntimeData->GetFire()))
     {
         return false;
     }
@@ -133,7 +133,7 @@ bool UBBBEquipmentInstance::Fire(FBBBCharacterExternalAPI &CharacterAPI)
     // 开火成功后再消耗弹药，保证失败不扣弹，运行数据已在上方校验
     if (Definition->MagazineDomin.IsValid())
     {
-        Definition->MagazineDomin->ConsumeRound(*RuntimeData->GetMagazine());
+        Definition->MagazineDomin.Get().ConsumeRound(*RuntimeData->GetMagazine());
     }
 
     return true;
@@ -148,7 +148,7 @@ bool UBBBEquipmentInstance::Reload(FBBBCharacterExternalAPI &CharacterAPI)
         return false;
     }
 
-    return Definition->MagazineDomin->Reload(
+    return Definition->MagazineDomin.Get().Reload(
         CharacterAPI,
         *PresentationActor,
         *RuntimeData->GetMagazine());
@@ -163,7 +163,7 @@ void UBBBEquipmentInstance::PresentFire(FBBBCharacterExternalAPI &CharacterAPI)
         return;
     }
 
-    Definition->FireDomin->Present(CharacterAPI, *PresentationActor);
+    Definition->FireDomin.Get().Present(CharacterAPI, *PresentationActor);
 }
 
 //------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ void UBBBEquipmentInstance::PresentReload(FBBBCharacterExternalAPI &CharacterAPI
         return;
     }
 
-    Definition->MagazineDomin->PresentReload(CharacterAPI);
+    Definition->MagazineDomin.Get().PresentReload(CharacterAPI);
 }
 
 //------------------------------------------------------------------------------

@@ -9,17 +9,17 @@ void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definit
 {
     if (Definition.EquipDomin.IsValid())
     {
-        Equip = Definition.EquipDomin->InitializeRuntimeData(*this);
+        Equip = Definition.EquipDomin.Get().InitializeRuntimeData(*this);
     }
 
     if (Definition.FireDomin.IsValid())
     {
-        Fire = Definition.FireDomin->InitializeRuntimeData(*this);
+        Fire = Definition.FireDomin.Get().InitializeRuntimeData(*this);
     }
 
     if (Definition.MagazineDomin.IsValid())
     {
-        Magazine = Definition.MagazineDomin->InitializeRuntimeData(*this);
+        Magazine = Definition.MagazineDomin.Get().InitializeRuntimeData(*this);
     }
 }
 
