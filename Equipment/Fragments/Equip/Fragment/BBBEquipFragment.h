@@ -13,7 +13,7 @@ class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
 USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBEquipFragment : public FBBBEquipDomin
+struct ABBB_EVAC_API FBBBEquipFragment final : public FBBBEquipDomin
 {
     GENERATED_BODY()
 

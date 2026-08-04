@@ -13,7 +13,7 @@ class USoundBase;
 
 /** 单投射物开火领域 */
 USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBSingleProjectileFireFragment : public FBBBFireDomin
+struct ABBB_EVAC_API FBBBSingleProjectileFireFragment final : public FBBBFireDomin
 {
     GENERATED_BODY()
 

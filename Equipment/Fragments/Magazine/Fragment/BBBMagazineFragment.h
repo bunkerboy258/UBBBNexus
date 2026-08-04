@@ -11,7 +11,7 @@ class UBBBMagazineRuntimeData;
 
 /** 弹匣与换弹领域 */
 USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBMagazineFragment : public FBBBMagazineDomin
+struct ABBB_EVAC_API FBBBMagazineFragment final : public FBBBMagazineDomin
 {
     GENERATED_BODY()
 

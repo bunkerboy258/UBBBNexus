@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Fragment/BBBEquipFragment.h"
 
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"

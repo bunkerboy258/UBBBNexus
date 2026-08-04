@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBSingleProjectileFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Fragment/BBBSingleProjectileFireFragment.h"
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
