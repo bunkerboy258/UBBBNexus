@@ -10,7 +10,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
-UBBBEquipRuntimeData *UBBBEquipFragment::InitializeRuntimeData(UObject &Outer) const
+UBBBEquipRuntimeData *FBBBEquipFragment::InitializeRuntimeData(UObject &Outer) const
 {
     UBBBEquipRuntimeData *RuntimeData = NewObject<UBBBEquipRuntimeData>(&Outer);
     if (!ensureMsgf(RuntimeData, TEXT("[UBBBE]Equip runtime data creation failed")))
@@ -21,7 +21,7 @@ UBBBEquipRuntimeData *UBBBEquipFragment::InitializeRuntimeData(UObject &Outer) c
     return RuntimeData;
 }
 
-ABBBEquipmentPresentationActor *UBBBEquipFragment::Equip(
+ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     UBBBEquipRuntimeData &RuntimeData,
     USkeletalMeshComponent &CharacterMesh,
     FBBBCharacterExternalAPI &CharacterAPI,
@@ -76,7 +76,7 @@ ABBBEquipmentPresentationActor *UBBBEquipFragment::Equip(
     return PresentationActor;
 }
 
-void UBBBEquipFragment::Update(
+void FBBBEquipFragment::Update(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBEquipRuntimeData &RuntimeData) const

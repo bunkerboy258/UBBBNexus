@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBSingleProjectileFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineFragment.h"
 #include "Engine/DataAsset.h"
 #include "BBBEquipmentDefinition.generated.h"
 
-class UBBBEquipFragment;
-class UBBBSingleProjectileFireFragment;
-class UBBBMagazineFragment;
 class UTexture2D;
 
 /** 装备静态配置与领域插槽 */
@@ -32,15 +32,20 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
     TObjectPtr<UTexture2D> Icon;
 
+    /**
+     * 历史修复说明：旧版使用内嵌UObject保存固定Fragment，UE 5.6详情面板创建对象时会递归刷新并导致栈溢出
+     * 当前插槽类型固定，不需要对象身份与多态，因此改为结构体值配置以避开该编辑器路径
+     */
+
     /** 装备领域 */
-    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
-    TObjectPtr<UBBBEquipFragment> EquipFragment;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
+    FBBBEquipFragment EquipFragment;
 
     /** 开火领域 */
-    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
-    TObjectPtr<UBBBSingleProjectileFireFragment> FireFragment;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
+    FBBBSingleProjectileFireFragment FireFragment;
 
     /** 弹匣领域 */
-    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
-    TObjectPtr<UBBBMagazineFragment> MagazineFragment;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
+    FBBBMagazineFragment MagazineFragment;
 };

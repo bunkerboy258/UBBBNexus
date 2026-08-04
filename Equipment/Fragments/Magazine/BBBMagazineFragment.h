@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
 #include "BBBMagazineFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -10,12 +9,16 @@ class UAnimMontage;
 class UBBBMagazineRuntimeData;
 
 /** 弹匣与换弹领域 */
-UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBMagazineFragment final : public UObject
+USTRUCT(BlueprintType)
+struct ABBB_EVAC_API FBBBMagazineFragment
 {
     GENERATED_BODY()
 
 public:
+    /** 是否启用弹匣操作域 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
+    bool bEnabled = false;
+
     /**
      * 创建并初始化弹匣运行数据
      * @param Outer	运行数据生命周期所有者

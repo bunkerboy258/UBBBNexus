@@ -7,19 +7,16 @@
 
 void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definition)
 {
-    if (Definition.EquipFragment)
+    Equip = Definition.EquipFragment.InitializeRuntimeData(*this);
+
+    if (Definition.FireFragment.bEnabled)
     {
-        Equip = Definition.EquipFragment->InitializeRuntimeData(*this);
+        Fire = Definition.FireFragment.InitializeRuntimeData(*this);
     }
 
-    if (Definition.FireFragment)
+    if (Definition.MagazineFragment.bEnabled)
     {
-        Fire = Definition.FireFragment->InitializeRuntimeData(*this);
-    }
-
-    if (Definition.MagazineFragment)
-    {
-        Magazine = Definition.MagazineFragment->InitializeRuntimeData(*this);
+        Magazine = Definition.MagazineFragment.InitializeRuntimeData(*this);
     }
 }
 

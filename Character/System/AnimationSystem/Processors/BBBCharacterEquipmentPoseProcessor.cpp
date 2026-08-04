@@ -33,8 +33,8 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
         ? ActiveInstance->GetDefinition()
         : nullptr;
-    const UBBBEquipFragment *EquipFragment = ActiveDefinition
-        ? ActiveDefinition->EquipFragment
+    const FBBBEquipFragment *EquipFragment = ActiveDefinition
+        ? &ActiveDefinition->EquipFragment
         : nullptr;
     ABBBEquipmentPresentationActor *PresentationActor = ActiveInstance
         ? ActiveInstance->GetPresentationActor()

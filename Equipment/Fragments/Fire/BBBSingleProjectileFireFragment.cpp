@@ -68,17 +68,17 @@ void PlayFireSound(
 }
 }
 
-UBBBSingleProjectileFireFragment::UBBBSingleProjectileFireFragment()
+FBBBSingleProjectileFireFragment::FBBBSingleProjectileFireFragment()
 {
     BulletActorClass = ABBBBulletActor::StaticClass();
 }
 
-UBBBFireRuntimeData *UBBBSingleProjectileFireFragment::InitializeRuntimeData(UObject &Outer) const
+UBBBFireRuntimeData *FBBBSingleProjectileFireFragment::InitializeRuntimeData(UObject &Outer) const
 {
     return NewObject<UBBBFireRuntimeData>(&Outer);
 }
 
-bool UBBBSingleProjectileFireFragment::Fire(
+bool FBBBSingleProjectileFireFragment::Fire(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBFireRuntimeData &RuntimeData) const
@@ -127,7 +127,7 @@ bool UBBBSingleProjectileFireFragment::Fire(
     return true;
 }
 
-void UBBBSingleProjectileFireFragment::Present(
+void FBBBSingleProjectileFireFragment::Present(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor) const
 {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
 #include "BBBSingleProjectileFireFragment.generated.h"
 
 class ABBBBulletActor;
@@ -12,14 +11,18 @@ class UBBBFireRuntimeData;
 class USoundBase;
 
 /** 单投射物开火领域 */
-UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBSingleProjectileFireFragment final : public UObject
+USTRUCT(BlueprintType)
+struct ABBB_EVAC_API FBBBSingleProjectileFireFragment
 {
     GENERATED_BODY()
 
 public:
     /** 构造单投射物开火配置 */
-    UBBBSingleProjectileFireFragment();
+    FBBBSingleProjectileFireFragment();
+
+    /** 是否启用开火操作域 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")
+    bool bEnabled = false;
 
     /**
      * 创建开火能力运行数据

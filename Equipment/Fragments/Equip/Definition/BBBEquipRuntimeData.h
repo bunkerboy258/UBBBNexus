@@ -4,7 +4,7 @@
 #include "UObject/Object.h"
 #include "BBBEquipRuntimeData.generated.h"
 
-class UBBBEquipFragment;
+struct FBBBEquipFragment;
 
 /** 装备过渡运行数据 */
 UCLASS(BlueprintType)
@@ -20,7 +20,7 @@ public:
     }
 
 private:
-    friend class UBBBEquipFragment;
+    friend struct FBBBEquipFragment;
 
     /** 是否处于装备过渡 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Engine/World.h"
 
-UBBBMagazineRuntimeData *UBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const
+UBBBMagazineRuntimeData *FBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const
 {
     UBBBMagazineRuntimeData *RuntimeData = NewObject<UBBBMagazineRuntimeData>(&Outer);
     if (!ensureMsgf(RuntimeData, TEXT("[UBBBE]Magazine runtime data creation failed")))
@@ -20,17 +20,17 @@ UBBBMagazineRuntimeData *UBBBMagazineFragment::InitializeRuntimeData(UObject &Ou
     return RuntimeData;
 }
 
-bool UBBBMagazineFragment::CanConsumeRound(const UBBBMagazineRuntimeData &RuntimeData) const
+bool FBBBMagazineFragment::CanConsumeRound(const UBBBMagazineRuntimeData &RuntimeData) const
 {
     return !RuntimeData.bIsReloading && RuntimeData.MagazineAmmo > 0;
 }
 
-void UBBBMagazineFragment::ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const
+void FBBBMagazineFragment::ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const
 {
     RuntimeData.MagazineAmmo = FMath::Max(0, RuntimeData.MagazineAmmo - 1);
 }
 
-bool UBBBMagazineFragment::Reload(
+bool FBBBMagazineFragment::Reload(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBMagazineRuntimeData &RuntimeData) const
@@ -53,7 +53,7 @@ bool UBBBMagazineFragment::Reload(
     return true;
 }
 
-void UBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const
+void FBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const
 {
     if (!ReloadMontage)
     {
@@ -65,7 +65,7 @@ void UBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
     CharacterAPI.QueueMontage(Request);
 }
 
-void UBBBMagazineFragment::Update(
+void FBBBMagazineFragment::Update(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBMagazineRuntimeData &RuntimeData) const

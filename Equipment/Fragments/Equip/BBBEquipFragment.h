@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
 #include "BBBEquipFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -12,8 +11,8 @@ class UCurveFloat;
 class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
-UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBEquipFragment final : public UObject
+USTRUCT(BlueprintType)
+struct ABBB_EVAC_API FBBBEquipFragment
 {
     GENERATED_BODY()
 
