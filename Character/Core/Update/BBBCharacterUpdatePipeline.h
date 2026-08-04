@@ -7,7 +7,7 @@ class FBBBCharacterAimSystem;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterCameraSystem;
 class FBBBCharacterFacingSystem;
-class FBBBCharacterItemSystem;
+class FBBBCharacterEquipmentSystem;
 class FBBBCharacterLocomotionSystem;
 class FBBBCharacterNetworkSystem;
 class FBBBCharacterInitializer;
@@ -38,7 +38,7 @@ private:
      * @param InAimSystem	瞄准系统
      * @param InLocomotionSystem	移动系统
      * @param InFacingSystem	朝向系统
-     * @param InItemSystem	物品系统
+     * @param InEquipmentSystem	物品系统
      * @param InNetworkSystem	网络系统
      * @param InAnimationSystem	动画系统
      * @param InInputPipeline	输入管线
@@ -54,7 +54,7 @@ private:
         FBBBCharacterAimSystem &InAimSystem,
         FBBBCharacterLocomotionSystem &InLocomotionSystem,
         FBBBCharacterFacingSystem &InFacingSystem,
-        FBBBCharacterItemSystem &InItemSystem,
+        FBBBCharacterEquipmentSystem &InEquipmentSystem,
         FBBBCharacterNetworkSystem &InNetworkSystem,
         FBBBCharacterAnimationSystem &InAnimationSystem,
         FBBBInputPipeline &InInputPipeline,
@@ -95,7 +95,7 @@ private:
 
     FBBBCharacterFacingSystem *FacingSystem = nullptr;
 
-    FBBBCharacterItemSystem *ItemSystem = nullptr;
+    FBBBCharacterEquipmentSystem *EquipmentSystem = nullptr;
 
     FBBBCharacterNetworkSystem *NetworkSystem = nullptr;
 

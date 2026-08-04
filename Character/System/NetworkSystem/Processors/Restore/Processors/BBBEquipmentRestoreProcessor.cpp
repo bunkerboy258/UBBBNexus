@@ -1,9 +1,9 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/Processors/BBBEquipmentRestoreProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/States/BBBCharacterItemStates.h"
-#include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
-#include "BBBWork/UBBBNexus/Item/CatalogSystem/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 
 void FBBBEquipmentRestoreProcessor::Update(
     FBBBCharacterEquipmentState &EquipmentState,
@@ -11,17 +11,17 @@ void FBBBEquipmentRestoreProcessor::Update(
     UBBBEquipmentCatalog &EquipmentCatalog,
     UObject &InstanceOuter) const
 {
-    UBBBItemDefinition *Definition = EquipmentCatalog.FindDefinition(Packet.EquipmentHandle);
+    UBBBEquipmentDefinition *Definition = EquipmentCatalog.FindDefinition(Packet.EquipmentHandle);
     if (!ensureMsgf(Definition, TEXT("[UBBBC]Equipment restore handle has no matching definition")))
     { return; }
 
-    UBBBItemInstance *CurrentInstance = EquipmentState.DesiredMainHandInstance;
+    UBBBEquipmentInstance *CurrentInstance = EquipmentState.DesiredMainHandInstance;
     if (CurrentInstance && CurrentInstance->GetDefinition() == Definition)
     { return; }
 
-    UBBBItemInstance *MirrorInstance = UBBBItemInstance::CreateMirror(InstanceOuter, *Definition);
-    if (!ensureMsgf(MirrorInstance, TEXT("[UBBBC]Equipment mirror instance creation failed")))
+    UBBBEquipmentInstance *RestoredInstance = UBBBEquipmentInstance::Create(InstanceOuter, *Definition);
+    if (!ensureMsgf(RestoredInstance, TEXT("[UBBBC]Restored equipment instance creation failed")))
     { return; }
 
-    EquipmentState.DesiredMainHandInstance = MirrorInstance;
+    EquipmentState.DesiredMainHandInstance = RestoredInstance;
 }

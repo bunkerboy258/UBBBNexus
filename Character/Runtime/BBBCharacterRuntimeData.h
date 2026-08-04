@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
@@ -74,7 +74,7 @@ private:
 
     //保存角色物品状态与命令
     UPROPERTY(Transient)
-    FBBBCharacterItemRuntimeData Item;
+    FBBBCharacterEquipmentRuntimeData Equipment;
 
     //保存角色网络队列与观测状态
     UPROPERTY(Transient)

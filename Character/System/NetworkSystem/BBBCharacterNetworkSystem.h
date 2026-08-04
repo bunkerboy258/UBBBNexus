@@ -13,8 +13,8 @@ class UBBBEquipmentCatalog;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterItemActionResults;
-struct FBBBCharacterItemCommands;
+struct FBBBCharacterEquipmentResults;
+struct FBBBCharacterEquipmentCommands;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBNetworkRuntimeData;
 
@@ -49,8 +49,8 @@ private:
      * @param InNetworkComponent	角色网络组件
      * @param InEquipmentCatalog	装备目录
      * @param InWorldData	角色世界运行时数据
-     * @param InItemCommands	角色物品指令
-     * @param InActionResults	装备动作结果
+     * @param InEquipmentCommands	角色物品指令
+     * @param InEquipmentResults	装备动作结果
      * @param InAimConfig	瞄准配置
      */
     void Initialize(
@@ -60,8 +60,8 @@ private:
         UBBBCharacterNetworkComponent &InNetworkComponent,
         UBBBEquipmentCatalog &InEquipmentCatalog,
         const FBBBCharacterWorldRuntimeData &InWorldData,
-        FBBBCharacterItemCommands &InItemCommands,
-        const FBBBCharacterItemActionResults &InActionResults,
+        FBBBCharacterEquipmentCommands &InEquipmentCommands,
+        const FBBBCharacterEquipmentResults &InEquipmentResults,
         const FBBBAimConfig &InAimConfig);
 
     /**
@@ -73,8 +73,8 @@ private:
     FBBBNetworkRuntimeData *NetworkData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
-    FBBBCharacterItemCommands *ItemCommands = nullptr;
-    const FBBBCharacterItemActionResults *ActionResults = nullptr;
+    FBBBCharacterEquipmentCommands *EquipmentCommands = nullptr;
+    const FBBBCharacterEquipmentResults *EquipmentResults = nullptr;
     FBBBCharacterEquipmentState *EquipmentState = nullptr;
 
     //瞄准配置引用

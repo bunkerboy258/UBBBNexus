@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/Processors/BBBReloadRestoreProcessor.h"
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterItemCommands;
+struct FBBBCharacterEquipmentCommands;
 struct FBBBNetworkRuntimeData;
 class UBBBEquipmentCatalog;
 
@@ -20,7 +20,7 @@ public:
      * @param NetworkData	网络运行时数据
      * @param AimData	瞄准运行时数据
      * @param EquipmentState	角色装备状态
-     * @param ItemCommands	角色物品指令
+     * @param EquipmentCommands	角色物品指令
      * @param EquipmentCatalog	装备目录
      * @param InstanceOuter	镜像装备实例生命周期所有者
      */
@@ -28,7 +28,7 @@ public:
         FBBBNetworkRuntimeData &NetworkData,
         FBBBAimRuntimeData &AimData,
         FBBBCharacterEquipmentState &EquipmentState,
-        FBBBCharacterItemCommands &ItemCommands,
+        FBBBCharacterEquipmentCommands &EquipmentCommands,
         UBBBEquipmentCatalog &EquipmentCatalog,
         UObject &InstanceOuter) const;
 private:

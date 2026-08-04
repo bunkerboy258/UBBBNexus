@@ -19,7 +19,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     if (!ensureMsgf(Character.CharacterNetworkComponent, TEXT("[UBBBC]Character initialization failed: CharacterNetworkComponent is null")))
     { return; }
 
-    if (!ensureMsgf(Config.Item.EquipmentCatalog, TEXT("[UBBBC]Character initialization failed because equipment catalog is null")))
+    if (!ensureMsgf(Config.Equipment.EquipmentCatalog, TEXT("[UBBBC]Character initialization failed because equipment catalog is null")))
     { return; }
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
@@ -47,7 +47,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Aim,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Intent,
-        Character.RuntimeData.Item.Equipment,
+        Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.Animation.GetCommands(),
         Config.Aim,
         Config.AimAnimation);
@@ -67,13 +67,12 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Aim,
         Config.Facing);
     
-    Character.ItemSystem.Initialize(
+    Character.EquipmentSystem.Initialize(
         *Character.GetMesh(),
-        Character.RuntimeData.Item,
+        Character.RuntimeData.Equipment,
         Character.CharacterExternalAPI,
         Character,
-        Config.Equipment,
-        Config.Item);
+        Config.Equipment);
     
     Character.CharacterNetworkComponent->Initialize(
         Character.RuntimeData.Network);
@@ -81,12 +80,12 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.NetworkSystem.Initialize(
         Character.RuntimeData.Network,
         Character.RuntimeData.Aim,
-        Character.RuntimeData.Item.Equipment,
+        Character.RuntimeData.Equipment.Equipment,
         *Character.CharacterNetworkComponent,
-        *Config.Item.EquipmentCatalog,
+        *Config.Equipment.EquipmentCatalog,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.Item.Commands,
-        Character.RuntimeData.Item.ActionResults,
+        Character.RuntimeData.Equipment.Commands,
+        Character.RuntimeData.Equipment.Results,
         Config.Aim);
     
     Character.AnimationSystem.Initialize(
@@ -98,7 +97,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Aim,
         Character.RuntimeData.Facing,
         Character.RuntimeData.Intent,
-        Character.RuntimeData.Item.Equipment,
+        Character.RuntimeData.Equipment.Equipment,
         Config.Aim,
         Config.AimAnimation,
         Config.Locomotion,
@@ -122,13 +121,13 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.ArbitrationPipeline.Initialize(
         Character.RuntimeData.Decision,
-        Character.RuntimeData.Item.Equipment);
+        Character.RuntimeData.Equipment.Equipment);
     
     Character.ExecutionPipeline.Initialize(
         Character.RuntimeData.Decision,
-        Character.RuntimeData.Item.Commands,
-        Character.RuntimeData.Item.Equipment,
-        Character.RuntimeData.Item.Backpack);
+        Character.RuntimeData.Equipment.Commands,
+        Character.RuntimeData.Equipment.Equipment,
+        Character.RuntimeData.Equipment.Inventory);
     
     Character.CharacterUpdatePipeline.Initialize(
         Character,
@@ -137,7 +136,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.AimSystem,
         Character.LocomotionSystem,
         Character.FacingSystem,
-        Character.ItemSystem,
+        Character.EquipmentSystem,
         Character.NetworkSystem,
         Character.AnimationSystem,
         Character.InputPipeline,

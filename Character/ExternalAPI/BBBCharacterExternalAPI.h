@@ -35,7 +35,7 @@ public:
      * 压入锁定物品 IK 请求
      * @param bBlocked	是否锁定物品 IK
      */
-    void SubmitItemIKBlockRequest(bool bBlocked);
+    void SubmitEquipmentIKBlockRequest(bool bBlocked);
 private:
 
     FBBBCharacterAnimationCommands *AnimationCommands = nullptr;

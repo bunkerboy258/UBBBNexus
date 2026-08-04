@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/BBBCharacterItemSystem.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
@@ -103,7 +103,7 @@ private:
     
     FBBBCharacterFacingSystem FacingSystem;
     
-    FBBBCharacterItemSystem ItemSystem;
+    FBBBCharacterEquipmentSystem EquipmentSystem;
     
     FBBBCharacterAnimationSystem AnimationSystem;
     

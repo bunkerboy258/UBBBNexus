@@ -1,9 +1,9 @@
 
 #pragma once
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBAimIntentProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBEquipmentIntentProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBEquipmentActionIntentProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBInputIntentProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBItemIntentProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBEquipmentSelectionIntentProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Processors/BBBLocomotionIntentProcessor.h"
 struct FBBBCharacterLocomotionConfig;
 struct FBBBInputRuntimeData;
@@ -47,6 +47,6 @@ private:
     FBBBInputIntentProcessor InputProcessor;
     FBBBLocomotionIntentProcessor LocomotionProcessor;
     FBBBAimIntentProcessor AimProcessor;
-    FBBBEquipmentIntentProcessor EquipmentProcessor;
-    FBBBItemIntentProcessor ItemProcessor;
+    FBBBEquipmentActionIntentProcessor ActionProcessor;
+    FBBBEquipmentSelectionIntentProcessor SelectionProcessor;
 };

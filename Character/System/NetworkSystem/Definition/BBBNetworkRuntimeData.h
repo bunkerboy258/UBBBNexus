@@ -16,18 +16,18 @@ struct FBBBNetworkRuntimeData
      * 读取最后上传的主手物品实例
      * @return 最后上传的主手物品实例标识
      */
-    const FGuid &GetLastUploadedItemInstanceId() const
+    const FGuid &GetLastUploadedEquipmentInstanceId() const
     {
-        return LastUploadedItemInstanceId;
+        return LastUploadedEquipmentInstanceId;
     }
 
     /**
      * 记录最后上传的主手物品实例
-     * @param ItemInstanceId	主手物品实例标识
+     * @param EquipmentInstanceId	主手物品实例标识
      */
-    void CommitLastUploadedItemInstanceId(const FGuid &ItemInstanceId)
+    void CommitLastUploadedEquipmentInstanceId(const FGuid &EquipmentInstanceId)
     {
-        LastUploadedItemInstanceId = ItemInstanceId;
+        LastUploadedEquipmentInstanceId = EquipmentInstanceId;
     }
 
     /**
@@ -142,7 +142,7 @@ struct FBBBNetworkRuntimeData
 private:
 
     //最后上传的 主手物品实例标识
-    FGuid LastUploadedItemInstanceId;
+    FGuid LastUploadedEquipmentInstanceId;
 
     //上次发给服务器的瞄准数据
     FBBBAimNetworkObserverState AimObserverState;

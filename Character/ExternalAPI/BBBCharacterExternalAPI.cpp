@@ -42,10 +42,10 @@ void FBBBCharacterExternalAPI::SubmitCameraRecoil(
 //通知换弹事件
 
 //压入锁定物品ik请求
-void FBBBCharacterExternalAPI::SubmitItemIKBlockRequest(bool bBlocked)
+void FBBBCharacterExternalAPI::SubmitEquipmentIKBlockRequest(bool bBlocked)
 {
     if (!ensureMsgf(AnimationCommands, TEXT("[UBBBC]Character external animation target is null")))
     { return; }
 
-    AnimationCommands->SubmitItemIKBlockRequest(bBlocked);
+    AnimationCommands->SubmitEquipmentIKBlockRequest(bBlocked);
 }

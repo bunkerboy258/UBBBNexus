@@ -6,8 +6,8 @@ class FBBBCharacterActionDomainArbitrator;
 class FBBBCharacterActionPriorityArbitrator;
 class FBBBCharacterActionPlanner;
 class FBBBCharacterEquipmentStateArbitrator;
-class FBBBEquipmentExecutor;
-class FBBBItemActionExecutor;
+class FBBBEquipmentSelectionExecutor;
+class FBBBEquipmentActionExecutor;
 struct FBBBCharacterRuntimeData;
 
 UENUM(BlueprintType)
@@ -135,8 +135,8 @@ private:
     friend class FBBBCharacterActionDomainArbitrator;
     friend class FBBBCharacterActionPriorityArbitrator;
     friend class FBBBCharacterEquipmentStateArbitrator;
-    friend class FBBBEquipmentExecutor;
-    friend class FBBBItemActionExecutor;
+    friend class FBBBEquipmentSelectionExecutor;
+    friend class FBBBEquipmentActionExecutor;
 
     /**
      * 标记请求为批准
@@ -266,8 +266,8 @@ private:
     friend class FBBBCharacterActionDomainArbitrator;
     friend class FBBBCharacterActionPriorityArbitrator;
     friend class FBBBCharacterEquipmentStateArbitrator;
-    friend class FBBBEquipmentExecutor;
-    friend class FBBBItemActionExecutor;
+    friend class FBBBEquipmentSelectionExecutor;
+    friend class FBBBEquipmentActionExecutor;
 
     /**
      * 为仲裁器提供可写请求访问

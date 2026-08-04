@@ -1,14 +1,14 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBFireUploadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/Results/BBBCharacterItemActionResults.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Results/BBBCharacterEquipmentResults.h"
 
 void FBBBFireUploadProcessor::Update(
-    const FBBBCharacterItemActionResults &ActionResults,
+    const FBBBCharacterEquipmentResults &EquipmentResults,
     UBBBCharacterNetworkComponent &NetworkComponent) const
 {
 
-    for (int32 Index = 0; Index < ActionResults.GetSuccessfulFireCount(); ++Index)
+    for (int32 Index = 0; Index < EquipmentResults.GetSuccessfulFireCount(); ++Index)
     {
 
         FBBBFireNetworkPacket Packet;

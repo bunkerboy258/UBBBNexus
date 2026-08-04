@@ -16,5 +16,5 @@ void FBBBCharacterRuntimeData::Clean()
     Animation.CleanFrame();
 
     //物品命令与事件完成处理后立即清空
-    Item.CleanFrame();
+    Equipment.CleanFrame();
 }

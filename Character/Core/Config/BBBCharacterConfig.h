@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBFacingConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Input/BBBInputConfig.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBCharacterConfig.generated.h"
 
@@ -32,9 +31,6 @@ struct FBBBCharacterConfig
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterCameraConfig Camera;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FBBBCharacterItemConfig Item;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterEquipmentConfig Equipment;

@@ -30,9 +30,9 @@ struct FBBBCharacterAnimationCommands
      * 本帧是否请求屏蔽物品IK
      * @return 请求屏蔽物品IK时返回true
      */
-    bool IsItemIKBlockedRequested() const
+    bool IsEquipmentIKBlockedRequested() const
     {
-        return bBlockItemIK;
+        return bBlockEquipmentIK;
     }
 
     /**
@@ -60,9 +60,9 @@ private:
      * 提交本帧物品IK屏蔽请求
      * @param bBlocked	是否屏蔽物品IK
      */
-    void SubmitItemIKBlockRequest(bool bBlocked)
+    void SubmitEquipmentIKBlockRequest(bool bBlocked)
     {
-        bBlockItemIK = bBlocked;
+        bBlockEquipmentIK = bBlocked;
     }
 
     /**
@@ -71,12 +71,12 @@ private:
     void CleanFrame()
     {
         PendingMontages.Reset();
-        bBlockItemIK = false;
+        bBlockEquipmentIK = false;
     }
 
     UPROPERTY()
     TArray<FBBBCharacterAnimationRequest> PendingMontages;
 
     UPROPERTY()
-    bool bBlockItemIK = false;
+    bool bBlockEquipmentIK = false;
 };

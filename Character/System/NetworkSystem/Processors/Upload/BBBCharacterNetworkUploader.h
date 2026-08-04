@@ -9,7 +9,7 @@ class UBBBCharacterNetworkComponent;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterItemActionResults;
+struct FBBBCharacterEquipmentResults;
 struct FBBBNetworkRuntimeData;
 
 class ABBB_EVAC_API FBBBCharacterNetworkUploader final
@@ -23,7 +23,7 @@ public:
      * @param AimData	瞄准运行时数据
      * @param AimConfig	瞄准配置
      * @param EquipmentState	角色装备状态
-     * @param ActionResults	装备动作结果
+     * @param EquipmentResults	装备动作结果
      * @param NetworkComponent	角色网络组件
      */
     void Update(
@@ -32,7 +32,7 @@ public:
         const FBBBAimRuntimeData &AimData,
         const FBBBAimConfig &AimConfig,
         const FBBBCharacterEquipmentState &EquipmentState,
-        const FBBBCharacterItemActionResults &ActionResults,
+        const FBBBCharacterEquipmentResults &EquipmentResults,
         UBBBCharacterNetworkComponent &NetworkComponent) const;
 private:
 

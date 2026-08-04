@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/ItemSystem/BBBCharacterItemSystem.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
@@ -22,7 +22,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
     FBBBCharacterAimSystem &InAimSystem,
     FBBBCharacterLocomotionSystem &InLocomotionSystem,
     FBBBCharacterFacingSystem &InFacingSystem,
-    FBBBCharacterItemSystem &InItemSystem,
+    FBBBCharacterEquipmentSystem &InEquipmentSystem,
     FBBBCharacterNetworkSystem &InNetworkSystem,
     FBBBCharacterAnimationSystem &InAnimationSystem,
     FBBBInputPipeline &InInputPipeline,
@@ -37,7 +37,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
     AimSystem = &InAimSystem;
     LocomotionSystem = &InLocomotionSystem;
     FacingSystem = &InFacingSystem;
-    ItemSystem = &InItemSystem;
+    EquipmentSystem = &InEquipmentSystem;
     NetworkSystem = &InNetworkSystem;
     AnimationSystem = &InAnimationSystem;
 
@@ -58,7 +58,7 @@ void FBBBCharacterUpdatePipeline::Update() const
             && AimSystem
             && LocomotionSystem
             && FacingSystem
-            && ItemSystem
+            && EquipmentSystem
             && NetworkSystem
             && AnimationSystem
             && InputPipeline
@@ -122,7 +122,7 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     
     ExecutionPipeline->Update();
     
-    ItemSystem->Update();
+    EquipmentSystem->Update();
     
     CameraSystem->Update();
     
@@ -154,7 +154,7 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     
     ExecutionPipeline->Update();
     
-    ItemSystem->Update();
+    EquipmentSystem->Update();
     
     CameraSystem->Update();
     
@@ -178,7 +178,7 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
     
     NetworkSystem->UpdateRestore();
     
-    ItemSystem->Update();
+    EquipmentSystem->Update();
     
     AnimationSystem->Update();
     
@@ -190,7 +190,7 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
 {
     NetworkSystem->UpdateRestore();
     
-    ItemSystem->Update();
+    EquipmentSystem->Update();
     
     AnimationSystem->Update();
     

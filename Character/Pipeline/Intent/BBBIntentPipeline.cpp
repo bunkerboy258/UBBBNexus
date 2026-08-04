@@ -37,10 +37,10 @@ void FBBBIntentPipeline::Update() const
     AimProcessor.Update(*InputData, Intent);
 
     //把开火与换弹输入转换为装备操作意图
-    EquipmentProcessor.Update(*InputData, Intent);
+    ActionProcessor.Update(*InputData, Intent);
 
     //按槽位按键优先级生成装备切换意图
-    ItemProcessor.Update(*InputData, Intent);
+    SelectionProcessor.Update(*InputData, Intent);
 
     //所有处理器结束后一次性发布完整意图快照
     IntentData->CommitFrame(Intent.ToRuntimeData());
