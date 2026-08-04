@@ -1,10 +1,10 @@
 
-#include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineFragment.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Magazine/BBBMagazineFragment.h"
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponActor.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Magazine/BBBMagazineRuntimeData.h"
 
 UBBBItemFragmentRuntimeData *UBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const
 {

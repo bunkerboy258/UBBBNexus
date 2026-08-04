@@ -1,12 +1,12 @@
 
-#include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBSingleProjectileFireFragment.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Fire/BBBSingleProjectileFireFragment.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponActor.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Fire/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Template/Weapon/Projectile/BBBBulletActor.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireEvents.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Fire/BBBFireEvents.h"
 
 UBBBSingleProjectileFireFragment::UBBBSingleProjectileFireFragment()
 {

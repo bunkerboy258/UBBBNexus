@@ -5,9 +5,9 @@
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragment.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/EquipmentPose/BBBEquipmentPoseFragment.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/Fire/Base/BBBFireFragment.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineFragment.h"
+#include "BBBWork/UBBBNexus/Item/Template/Equipment/EquipmentPose/BBBEquipmentPoseFragment.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Fire/Base/BBBFireFragment.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Magazine/BBBMagazineFragment.h"
 
 void UBBBItemRuntimeData::Initialize(const UBBBItemDefinition &Definition)
 {

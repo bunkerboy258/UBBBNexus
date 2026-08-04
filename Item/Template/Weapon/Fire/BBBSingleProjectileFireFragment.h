@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Fragments/Fire/Base/BBBFireFragment.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Fire/Base/BBBFireFragment.h"
 #include "BBBSingleProjectileFireFragment.generated.h"
 class ABBBBulletActor;
 class ABBBWeaponActor;
