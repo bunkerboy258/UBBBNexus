@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Curves/CurveFloat.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
@@ -63,14 +64,20 @@ ABBBEquipmentPresentationActor *UBBBEquipFragment::Equip(
     }
 
     RuntimeData.bIsEquipping = EquipMontage != nullptr;
-    RuntimeData.EquipEndTime = RuntimeData.bIsEquipping
-        ? CharacterMesh.GetWorld()->GetTimeSeconds() + EquipMontage->GetPlayLength()
-        : 0.0f;
+    RuntimeData.EquipStartTime = 0.0f;
+    RuntimeData.EquipEndTime = 0.0f;
+
+    if (RuntimeData.bIsEquipping)
+    {
+        RuntimeData.EquipStartTime = CharacterMesh.GetWorld()->GetTimeSeconds();
+        RuntimeData.EquipEndTime = RuntimeData.EquipStartTime + EquipMontage->GetPlayLength();
+    }
 
     return PresentationActor;
 }
 
 void UBBBEquipFragment::Update(
+    FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBEquipRuntimeData &RuntimeData) const
 {
@@ -79,16 +86,36 @@ void UBBBEquipFragment::Update(
         return;
     }
 
-    if (!ensureMsgf(PresentationActor.GetWorld(), TEXT("[UBBBE]Equipment presentation world is null")))
+    UWorld *World = PresentationActor.GetWorld();
+    if (!ensureMsgf(World, TEXT("[UBBBE]Equipment presentation world is null")))
     {
         return;
     }
 
-    if (PresentationActor.GetWorld()->GetTimeSeconds() < RuntimeData.EquipEndTime)
+    const float CurrentTime = World->GetTimeSeconds();
+    const float EquipDuration = RuntimeData.EquipEndTime - RuntimeData.EquipStartTime;
+    float EquipProgress = 1.0f;
+
+    if (EquipDuration > KINDA_SMALL_NUMBER)
+    {
+        EquipProgress = FMath::Clamp(
+            (CurrentTime - RuntimeData.EquipStartTime) / EquipDuration,
+            0.0f,
+            1.0f);
+    }
+
+    if (EquipLeftHandIKAlphaCurve)
+    {
+        CharacterAPI.SubmitEquipmentLeftHandIKAlpha(
+            EquipLeftHandIKAlphaCurve->GetFloatValue(EquipProgress));
+    }
+
+    if (CurrentTime < RuntimeData.EquipEndTime)
     {
         return;
     }
 
     RuntimeData.bIsEquipping = false;
+    RuntimeData.EquipStartTime = 0.0f;
     RuntimeData.EquipEndTime = 0.0f;
 }

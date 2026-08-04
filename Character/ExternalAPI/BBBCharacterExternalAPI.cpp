@@ -37,10 +37,6 @@ void FBBBCharacterExternalAPI::SubmitCameraRecoil(
     CameraCommands->SubmitRecoilRequest(Impulse, RecoverySpeed);
 }
 
-//通知射击事件
-
-//通知换弹事件
-
 //压入锁定物品ik请求
 void FBBBCharacterExternalAPI::SubmitEquipmentIKBlockRequest(bool bBlocked)
 {
@@ -48,4 +44,14 @@ void FBBBCharacterExternalAPI::SubmitEquipmentIKBlockRequest(bool bBlocked)
     { return; }
 
     AnimationCommands->SubmitEquipmentIKBlockRequest(bBlocked);
+}
+
+void FBBBCharacterExternalAPI::SubmitEquipmentLeftHandIKAlpha(float Alpha)
+{
+    if (!ensureMsgf(AnimationCommands, TEXT("[UBBBC]Character external animation target is null")))
+    {
+        return;
+    }
+
+    AnimationCommands->SubmitEquipmentLeftHandIKAlpha(Alpha);
 }

@@ -92,7 +92,7 @@ void UBBBEquipmentInstance::Update(FBBBCharacterExternalAPI &CharacterAPI)
     }
 
     // 推进装备过渡状态
-    Definition->EquipFragment->Update(*PresentationActor, *RuntimeData->GetEquip());
+    Definition->EquipFragment->Update(CharacterAPI, *PresentationActor, *RuntimeData->GetEquip());
 
     // 推进弹匣状态，弹匣碎片可选但配置了就必须有对应运行数据
     if (Definition->MagazineFragment

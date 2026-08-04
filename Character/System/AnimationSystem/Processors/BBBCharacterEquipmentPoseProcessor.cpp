@@ -83,6 +83,6 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         && EquipFragment->bEnableLeftHandIK
         && !AnimationCommands.IsEquipmentIKBlockedRequested())
     {
-        AnimationState.LeftHandIKAlpha = 1.0f;
+        AnimationState.LeftHandIKAlpha = AnimationCommands.GetEquipmentLeftHandIKAlpha();
     }
 }
