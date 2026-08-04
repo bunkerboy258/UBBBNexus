@@ -119,3 +119,23 @@ void FBBBEquipFragment::Update(
     RuntimeData.EquipStartTime = 0.0f;
     RuntimeData.EquipEndTime = 0.0f;
 }
+
+FName FBBBEquipFragment::GetAimSourceSocketName() const
+{
+    return AimSourceSocketName;
+}
+
+FName FBBBEquipFragment::GetLeftHandGripSocketName() const
+{
+    return LeftHandGripSocketName;
+}
+
+const FTransform &FBBBEquipFragment::GetLeftHandGripSocketLocalOffset() const
+{
+    return LeftHandGripSocketLocalOffset;
+}
+
+bool FBBBEquipFragment::IsLeftHandIKEnabled() const
+{
+    return bEnableLeftHandIK;
+}

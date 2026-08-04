@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBEquipFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -12,7 +13,7 @@ class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
 USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBEquipFragment
+struct ABBB_EVAC_API FBBBEquipFragment : public FBBBEquipDomin
 {
     GENERATED_BODY()
 
@@ -22,7 +23,7 @@ public:
      * @param Outer	运行数据生命周期所有者
      * @return 创建完成的装备领域运行数据
      */
-    UBBBEquipRuntimeData *InitializeRuntimeData(UObject &Outer) const;
+    virtual UBBBEquipRuntimeData *InitializeRuntimeData(UObject &Outer) const override;
 
     /**
      * 生成并挂接装备表现实体
@@ -32,21 +33,33 @@ public:
      * @param AttachmentSocketName	装备挂接插槽
      * @return 生成完成的装备表现实体，失败时返回空
      */
-    ABBBEquipmentPresentationActor *Equip(
+    virtual ABBBEquipmentPresentationActor *Equip(
         UBBBEquipRuntimeData &RuntimeData,
         USkeletalMeshComponent &CharacterMesh,
         FBBBCharacterExternalAPI &CharacterAPI,
-        FName AttachmentSocketName) const;
+        FName AttachmentSocketName) const override;
 
     /**
      * 更新装备过渡
      * @param PresentationActor	装备表现实体
      * @param RuntimeData		装备领域运行数据
      */
-    void Update(
+    virtual void Update(
         FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBEquipRuntimeData &RuntimeData) const;
+        UBBBEquipRuntimeData &RuntimeData) const override;
+
+    /** @return 瞄准来源插槽 */
+    virtual FName GetAimSourceSocketName() const override;
+
+    /** @return 左手握持插槽 */
+    virtual FName GetLeftHandGripSocketName() const override;
+
+    /** @return 左手握持插槽修正 */
+    virtual const FTransform &GetLeftHandGripSocketLocalOffset() const override;
+
+    /** @return 是否启用左手逆向动力学 */
+    virtual bool IsLeftHandIKEnabled() const override;
 
     /** 装备表现实体类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")

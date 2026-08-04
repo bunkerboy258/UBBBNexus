@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
 #include "BBBMagazineFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -10,34 +11,30 @@ class UBBBMagazineRuntimeData;
 
 /** 弹匣与换弹领域 */
 USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBMagazineFragment
+struct ABBB_EVAC_API FBBBMagazineFragment : public FBBBMagazineDomin
 {
     GENERATED_BODY()
 
 public:
-    /** 是否启用弹匣操作域 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
-    bool bEnabled = false;
-
     /**
      * 创建并初始化弹匣运行数据
      * @param Outer	运行数据生命周期所有者
      * @return 创建完成的弹匣运行数据
      */
-    UBBBMagazineRuntimeData *InitializeRuntimeData(UObject &Outer) const;
+    virtual UBBBMagazineRuntimeData *InitializeRuntimeData(UObject &Outer) const override;
 
     /**
      * 判断当前弹匣是否允许开火
      * @param RuntimeData	弹匣运行数据
      * @return 是否允许消耗弹药
      */
-    bool CanConsumeRound(const UBBBMagazineRuntimeData &RuntimeData) const;
+    virtual bool CanConsumeRound(const UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
      * 消耗一发弹药
      * @param RuntimeData	弹匣运行数据
      */
-    void ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const;
+    virtual void ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
      * 响应一次本地换弹
@@ -46,16 +43,16 @@ public:
      * @param RuntimeData		弹匣运行数据
      * @return 是否成功开始换弹
      */
-    bool Reload(
+    virtual bool Reload(
         FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const;
+        UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
      * 响应一次远端换弹表现
      * @param CharacterAPI	角色能力接口
      */
-    void PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const;
+    virtual void PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const override;
 
     /**
      * 更新换弹过程
@@ -63,10 +60,10 @@ public:
      * @param PresentationActor	装备表现实体
      * @param RuntimeData		弹匣运行数据
      */
-    void Update(
+    virtual void Update(
         FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const;
+        UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /** 弹匣容量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "1"))

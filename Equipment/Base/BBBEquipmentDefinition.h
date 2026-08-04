@@ -1,10 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBSingleProjectileFireFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
 #include "Engine/DataAsset.h"
+#include "StructUtils/InstancedStruct.h"
 #include "BBBEquipmentDefinition.generated.h"
 
 class UTexture2D;
@@ -38,14 +39,19 @@ public:
      */
 
     /** 装备领域 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
-    FBBBEquipFragment EquipFragment;
+
+    /**
+     * 后续修订说明：固定结构体限制了Fragment替换能力，现由TInstancedStruct保存Domin派生Fragment
+     * Domin统一行为契约，具体Fragment保留内联配置且不重新引入内嵌UObject
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBEquipDomin> EquipDomin;
 
     /** 开火领域 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
-    FBBBSingleProjectileFireFragment FireFragment;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBFireDomin> FireDomin;
 
     /** 弹匣领域 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
-    FBBBMagazineFragment MagazineFragment;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBMagazineDomin> MagazineDomin;
 };
