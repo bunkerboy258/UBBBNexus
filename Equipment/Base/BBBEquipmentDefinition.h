@@ -4,9 +4,9 @@
 #include "Engine/DataAsset.h"
 #include "BBBEquipmentDefinition.generated.h"
 
-class UBBBEquipDomain;
-class UBBBFireDomain;
-class UBBBMagazineDomain;
+class UBBBEquipFragment;
+class UBBBSingleProjectileFireFragment;
+class UBBBMagazineFragment;
 class UTexture2D;
 
 /** 装备静态配置与领域插槽 */
@@ -33,14 +33,14 @@ public:
     TObjectPtr<UTexture2D> Icon;
 
     /** 装备领域 */
-    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Domain")
-    TObjectPtr<UBBBEquipDomain> EquipDomain;
+    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
+    TObjectPtr<UBBBEquipFragment> EquipFragment;
 
     /** 开火领域 */
-    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Domain")
-    TObjectPtr<UBBBFireDomain> FireDomain;
+    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
+    TObjectPtr<UBBBSingleProjectileFireFragment> FireFragment;
 
     /** 弹匣领域 */
-    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Domain")
-    TObjectPtr<UBBBMagazineDomain> MagazineDomain;
+    UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Equipment|Fragment")
+    TObjectPtr<UBBBMagazineFragment> MagazineFragment;
 };

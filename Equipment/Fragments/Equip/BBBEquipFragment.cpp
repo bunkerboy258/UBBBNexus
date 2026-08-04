@@ -1,15 +1,15 @@
-#include "BBBWork/UBBBNexus/Equipment/Domains/Equip/BBBEquipDomain.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipFragment.h"
 
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Equip/Definition/BBBEquipRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
-UBBBEquipRuntimeData *UBBBEquipDomain::InitializeRuntimeData(UObject &Outer) const
+UBBBEquipRuntimeData *UBBBEquipFragment::InitializeRuntimeData(UObject &Outer) const
 {
     UBBBEquipRuntimeData *RuntimeData = NewObject<UBBBEquipRuntimeData>(&Outer);
     if (!ensureMsgf(RuntimeData, TEXT("[UBBBE]Equip runtime data creation failed")))
@@ -20,7 +20,7 @@ UBBBEquipRuntimeData *UBBBEquipDomain::InitializeRuntimeData(UObject &Outer) con
     return RuntimeData;
 }
 
-ABBBEquipmentPresentationActor *UBBBEquipDomain::Equip(
+ABBBEquipmentPresentationActor *UBBBEquipFragment::Equip(
     UBBBEquipRuntimeData &RuntimeData,
     USkeletalMeshComponent &CharacterMesh,
     FBBBCharacterExternalAPI &CharacterAPI,
@@ -70,7 +70,7 @@ ABBBEquipmentPresentationActor *UBBBEquipDomain::Equip(
     return PresentationActor;
 }
 
-void UBBBEquipDomain::Update(
+void UBBBEquipFragment::Update(
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBEquipRuntimeData &RuntimeData) const
 {

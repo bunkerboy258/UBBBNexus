@@ -1,33 +1,53 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Base/BBBFireDomain.h"
-#include "BBBSingleProjectileFireDomain.generated.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDomain.h"
+#include "BBBSingleProjectileFireFragment.generated.h"
 
 class ABBBBulletActor;
+class ABBBEquipmentPresentationActor;
+class FBBBCharacterExternalAPI;
 class UAnimMontage;
+class UBBBFireRuntimeData;
 class USoundBase;
 
 /** 单投射物开火领域 */
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBSingleProjectileFireDomain final : public UBBBFireDomain
+class ABBB_EVAC_API UBBBSingleProjectileFireFragment final : public UBBBEquipmentDomain
 {
     GENERATED_BODY()
 
 public:
     /** 构造单投射物开火配置 */
-    UBBBSingleProjectileFireDomain();
+    UBBBSingleProjectileFireFragment();
 
-    //~ Begin UBBBFireDomain Interface
-    virtual bool Fire(
+    /**
+     * 创建开火能力运行数据
+     * @param Outer	运行数据所有者
+     * @return 创建完成的开火运行数据
+     */
+    UBBBFireRuntimeData *InitializeRuntimeData(UObject &Outer) const;
+
+    /**
+     * 执行一次开火
+     * @param CharacterAPI		角色能力接口
+     * @param PresentationActor	装备表现实体
+     * @param RuntimeData		开火运行数据
+     * @return 是否成功开火
+     */
+    bool Fire(
         FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBFireRuntimeData &RuntimeData) const override;
+        UBBBFireRuntimeData &RuntimeData) const;
 
-    virtual void Present(
+    /**
+     * 播放一次远端开火表现
+     * @param CharacterAPI		角色能力接口
+     * @param PresentationActor	装备表现实体
+     */
+    void Present(
         FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor) const override;
-    //~ End UBBBFireDomain Interface
+        ABBBEquipmentPresentationActor &PresentationActor) const;
 
     /** 最短开火间隔 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.01"))

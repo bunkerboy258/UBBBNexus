@@ -1,23 +1,26 @@
 #include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentRuntimeData.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Equip/BBBEquipDomain.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Base/BBBFireDomain.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Magazine/BBBMagazineDomain.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBSingleProjectileFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineFragment.h"
 
 void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definition)
 {
-    Equip = Definition.EquipDomain
-        ? Definition.EquipDomain->InitializeRuntimeData(*this)
-        : nullptr;
+    if (Definition.EquipFragment)
+    {
+        Equip = Definition.EquipFragment->InitializeRuntimeData(*this);
+    }
 
-    Fire = Definition.FireDomain
-        ? Definition.FireDomain->InitializeRuntimeData(*this)
-        : nullptr;
+    if (Definition.FireFragment)
+    {
+        Fire = Definition.FireFragment->InitializeRuntimeData(*this);
+    }
 
-    Magazine = Definition.MagazineDomain
-        ? Definition.MagazineDomain->InitializeRuntimeData(*this)
-        : nullptr;
+    if (Definition.MagazineFragment)
+    {
+        Magazine = Definition.MagazineFragment->InitializeRuntimeData(*this);
+    }
 }
 
 UBBBEquipRuntimeData *UBBBEquipmentRuntimeData::GetEquip() const

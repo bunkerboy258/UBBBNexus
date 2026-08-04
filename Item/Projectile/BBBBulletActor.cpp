@@ -1,5 +1,5 @@
 
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Projectile/BBBBulletActor.h"
+#include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"

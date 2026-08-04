@@ -4,7 +4,7 @@
 #include "UObject/Object.h"
 #include "BBBMagazineRuntimeData.generated.h"
 
-class UBBBMagazineDomain;
+class UBBBMagazineFragment;
 
 /** 弹匣操作域运行数据 */
 UCLASS(BlueprintType)
@@ -13,7 +13,7 @@ class ABBB_EVAC_API UBBBMagazineRuntimeData final : public UObject
     GENERATED_BODY()
 
 private:
-    friend class UBBBMagazineDomain;
+    friend class UBBBMagazineFragment;
 
     /** 当前弹匣弹药 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

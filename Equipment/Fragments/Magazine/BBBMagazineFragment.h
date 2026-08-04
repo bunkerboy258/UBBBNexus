@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDomain.h"
-#include "BBBMagazineDomain.generated.h"
+#include "BBBMagazineFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
 class FBBBCharacterExternalAPI;
@@ -11,7 +11,7 @@ class UBBBMagazineRuntimeData;
 
 /** 弹匣与换弹领域 */
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBMagazineDomain final : public UBBBEquipmentDomain
+class ABBB_EVAC_API UBBBMagazineFragment final : public UBBBEquipmentDomain
 {
     GENERATED_BODY()
 

@@ -1,9 +1,9 @@
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Implementations/BBBSingleProjectileFireDomain.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBSingleProjectileFireFragment.h"
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Definition/BBBFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Projectile/BBBBulletActor.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
@@ -68,12 +68,17 @@ void PlayFireSound(
 }
 }
 
-UBBBSingleProjectileFireDomain::UBBBSingleProjectileFireDomain()
+UBBBSingleProjectileFireFragment::UBBBSingleProjectileFireFragment()
 {
     BulletActorClass = ABBBBulletActor::StaticClass();
 }
 
-bool UBBBSingleProjectileFireDomain::Fire(
+UBBBFireRuntimeData *UBBBSingleProjectileFireFragment::InitializeRuntimeData(UObject &Outer) const
+{
+    return NewObject<UBBBFireRuntimeData>(&Outer);
+}
+
+bool UBBBSingleProjectileFireFragment::Fire(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBFireRuntimeData &RuntimeData) const
@@ -122,7 +127,7 @@ bool UBBBSingleProjectileFireDomain::Fire(
     return true;
 }
 
-void UBBBSingleProjectileFireDomain::Present(
+void UBBBSingleProjectileFireFragment::Present(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor) const
 {

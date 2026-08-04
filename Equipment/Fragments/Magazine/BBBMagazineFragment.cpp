@@ -1,13 +1,13 @@
-#include "BBBWork/UBBBNexus/Equipment/Domains/Magazine/BBBMagazineDomain.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineFragment.h"
 
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Magazine/Definition/BBBMagazineRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Engine/World.h"
 
-UBBBMagazineRuntimeData *UBBBMagazineDomain::InitializeRuntimeData(UObject &Outer) const
+UBBBMagazineRuntimeData *UBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const
 {
     UBBBMagazineRuntimeData *RuntimeData = NewObject<UBBBMagazineRuntimeData>(&Outer);
     if (!ensureMsgf(RuntimeData, TEXT("[UBBBE]Magazine runtime data creation failed")))
@@ -20,17 +20,17 @@ UBBBMagazineRuntimeData *UBBBMagazineDomain::InitializeRuntimeData(UObject &Oute
     return RuntimeData;
 }
 
-bool UBBBMagazineDomain::CanConsumeRound(const UBBBMagazineRuntimeData &RuntimeData) const
+bool UBBBMagazineFragment::CanConsumeRound(const UBBBMagazineRuntimeData &RuntimeData) const
 {
     return !RuntimeData.bIsReloading && RuntimeData.MagazineAmmo > 0;
 }
 
-void UBBBMagazineDomain::ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const
+void UBBBMagazineFragment::ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const
 {
     RuntimeData.MagazineAmmo = FMath::Max(0, RuntimeData.MagazineAmmo - 1);
 }
 
-bool UBBBMagazineDomain::Reload(
+bool UBBBMagazineFragment::Reload(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBMagazineRuntimeData &RuntimeData) const
@@ -53,7 +53,7 @@ bool UBBBMagazineDomain::Reload(
     return true;
 }
 
-void UBBBMagazineDomain::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const
+void UBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const
 {
     if (!ReloadMontage)
     {
@@ -65,7 +65,7 @@ void UBBBMagazineDomain::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) c
     CharacterAPI.QueueMontage(Request);
 }
 
-void UBBBMagazineDomain::Update(
+void UBBBMagazineFragment::Update(
     FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBMagazineRuntimeData &RuntimeData) const

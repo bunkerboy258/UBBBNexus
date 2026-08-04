@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDomain.h"
-#include "BBBEquipDomain.generated.h"
+#include "BBBEquipFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
 class FBBBCharacterExternalAPI;
@@ -12,7 +12,7 @@ class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBEquipDomain final : public UBBBEquipmentDomain
+class ABBB_EVAC_API UBBBEquipFragment final : public UBBBEquipmentDomain
 {
     GENERATED_BODY()
 

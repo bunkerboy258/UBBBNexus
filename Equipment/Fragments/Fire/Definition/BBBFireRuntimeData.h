@@ -4,7 +4,7 @@
 #include "UObject/Object.h"
 #include "BBBFireRuntimeData.generated.h"
 
-class UBBBSingleProjectileFireDomain;
+class UBBBSingleProjectileFireFragment;
 
 /** 开火操作域运行数据 */
 UCLASS(BlueprintType)
@@ -13,7 +13,7 @@ class ABBB_EVAC_API UBBBFireRuntimeData final : public UObject
     GENERATED_BODY()
 
 private:
-    friend class UBBBSingleProjectileFireDomain;
+    friend class UBBBSingleProjectileFireFragment;
 
     /** 上次成功开火时间 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

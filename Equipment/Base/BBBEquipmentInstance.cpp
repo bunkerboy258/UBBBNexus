@@ -3,19 +3,19 @@
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Equip/BBBEquipDomain.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Equip/Definition/BBBEquipRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Base/BBBFireDomain.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Fire/Definition/BBBFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Magazine/BBBMagazineDomain.h"
-#include "BBBWork/UBBBNexus/Equipment/Domains/Magazine/Definition/BBBMagazineRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBSingleProjectileFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 
 UBBBEquipmentInstance *UBBBEquipmentInstance::Create(
     UObject &Outer,
     UBBBEquipmentDefinition &InDefinition)
 {
-    if (!ensureMsgf(InDefinition.EquipDomain, TEXT("[UBBBE]Equipment definition has no equip domain")))
+    if (!ensureMsgf(InDefinition.EquipFragment, TEXT("[UBBBE]Equipment definition has no equip fragment")))
     {
         return nullptr;
     }
@@ -38,9 +38,9 @@ UBBBEquipmentInstance *UBBBEquipmentInstance::Create(
     Instance->RuntimeData->Initialize(InDefinition);
     if (!ensureMsgf(
         Instance->RuntimeData->GetEquip()
-            && (!InDefinition.FireDomain || Instance->RuntimeData->GetFire())
-            && (!InDefinition.MagazineDomain || Instance->RuntimeData->GetMagazine()),
-        TEXT("[UBBBE]Equipment domain runtime data is incomplete")))
+            && (!InDefinition.FireFragment || Instance->RuntimeData->GetFire())
+            && (!InDefinition.MagazineFragment || Instance->RuntimeData->GetMagazine()),
+        TEXT("[UBBBE]Equipment fragment runtime data is incomplete")))
     {
         return nullptr;
     }
@@ -58,12 +58,12 @@ void UBBBEquipmentInstance::Equip(
         return;
     }
 
-    if (!ensureMsgf(Definition && RuntimeData && Definition->EquipDomain && RuntimeData->GetEquip(), TEXT("[UBBBE]Equipment instance cannot equip")))
+    if (!ensureMsgf(Definition && RuntimeData && Definition->EquipFragment && RuntimeData->GetEquip(), TEXT("[UBBBE]Equipment instance cannot equip")))
     {
         return;
     }
 
-    PresentationActor = Definition->EquipDomain->Equip(
+    PresentationActor = Definition->EquipFragment->Equip(
         *RuntimeData->GetEquip(),
         CharacterMesh,
         CharacterAPI,
@@ -77,39 +77,39 @@ void UBBBEquipmentInstance::Update(FBBBCharacterExternalAPI &CharacterAPI)
         return;
     }
 
-    if (Definition->EquipDomain && RuntimeData->GetEquip())
+    if (Definition->EquipFragment && RuntimeData->GetEquip())
     {
-        Definition->EquipDomain->Update(*PresentationActor, *RuntimeData->GetEquip());
+        Definition->EquipFragment->Update(*PresentationActor, *RuntimeData->GetEquip());
     }
 
-    if (Definition->MagazineDomain && RuntimeData->GetMagazine())
+    if (Definition->MagazineFragment && RuntimeData->GetMagazine())
     {
-        Definition->MagazineDomain->Update(CharacterAPI, *PresentationActor, *RuntimeData->GetMagazine());
+        Definition->MagazineFragment->Update(CharacterAPI, *PresentationActor, *RuntimeData->GetMagazine());
     }
 }
 
 bool UBBBEquipmentInstance::Fire(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && RuntimeData && Definition->FireDomain && RuntimeData->GetFire(), TEXT("[UBBBE]Equipment fire domain is unavailable")))
+    if (!ensureMsgf(PresentationActor && Definition && RuntimeData && Definition->FireFragment && RuntimeData->GetFire(), TEXT("[UBBBE]Equipment fire fragment is unavailable")))
     {
         return false;
     }
 
-    if (Definition->MagazineDomain
+    if (Definition->MagazineFragment
         && RuntimeData->GetMagazine()
-        && !Definition->MagazineDomain->CanConsumeRound(*RuntimeData->GetMagazine()))
+        && !Definition->MagazineFragment->CanConsumeRound(*RuntimeData->GetMagazine()))
     {
         return false;
     }
 
-    if (!Definition->FireDomain->Fire(CharacterAPI, *PresentationActor, *RuntimeData->GetFire()))
+    if (!Definition->FireFragment->Fire(CharacterAPI, *PresentationActor, *RuntimeData->GetFire()))
     {
         return false;
     }
 
-    if (Definition->MagazineDomain && RuntimeData->GetMagazine())
+    if (Definition->MagazineFragment && RuntimeData->GetMagazine())
     {
-        Definition->MagazineDomain->ConsumeRound(*RuntimeData->GetMagazine());
+        Definition->MagazineFragment->ConsumeRound(*RuntimeData->GetMagazine());
     }
 
     return true;
@@ -117,12 +117,12 @@ bool UBBBEquipmentInstance::Fire(FBBBCharacterExternalAPI &CharacterAPI)
 
 bool UBBBEquipmentInstance::Reload(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && RuntimeData && Definition->MagazineDomain && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine domain is unavailable")))
+    if (!ensureMsgf(PresentationActor && Definition && RuntimeData && Definition->MagazineFragment && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine fragment is unavailable")))
     {
         return false;
     }
 
-    return Definition->MagazineDomain->Reload(
+    return Definition->MagazineFragment->Reload(
         CharacterAPI,
         *PresentationActor,
         *RuntimeData->GetMagazine());
@@ -130,17 +130,17 @@ bool UBBBEquipmentInstance::Reload(FBBBCharacterExternalAPI &CharacterAPI)
 
 void UBBBEquipmentInstance::PresentFire(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (PresentationActor && Definition && Definition->FireDomain)
+    if (PresentationActor && Definition && Definition->FireFragment)
     {
-        Definition->FireDomain->Present(CharacterAPI, *PresentationActor);
+        Definition->FireFragment->Present(CharacterAPI, *PresentationActor);
     }
 }
 
 void UBBBEquipmentInstance::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (PresentationActor && Definition && Definition->MagazineDomain)
+    if (PresentationActor && Definition && Definition->MagazineFragment)
     {
-        Definition->MagazineDomain->PresentReload(CharacterAPI);
+        Definition->MagazineFragment->PresentReload(CharacterAPI);
     }
 }
 
@@ -172,10 +172,12 @@ ABBBEquipmentPresentationActor *UBBBEquipmentInstance::GetPresentationActor() co
 
 bool UBBBEquipmentInstance::IsEquipping() const
 {
-    const UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData
-        ? RuntimeData->GetEquip()
-        : nullptr;
+    if (!RuntimeData)
+    {
+        return false;
+    }
 
+    const UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData->GetEquip();
     return EquipRuntimeData && EquipRuntimeData->IsEquipping();
 }
 
@@ -183,7 +185,7 @@ bool UBBBEquipmentInstance::IsValid() const
 {
     return InstanceId.IsValid()
         && Definition
-        && Definition->EquipDomain
+        && Definition->EquipFragment
         && RuntimeData
         && RuntimeData->GetEquip();
 }
