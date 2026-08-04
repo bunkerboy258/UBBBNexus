@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDomain.h"
+#include "UObject/Object.h"
 #include "BBBEquipFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -12,7 +12,7 @@ class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBEquipFragment final : public UBBBEquipmentDomain
+class ABBB_EVAC_API UBBBEquipFragment final : public UObject
 {
     GENERATED_BODY()
 

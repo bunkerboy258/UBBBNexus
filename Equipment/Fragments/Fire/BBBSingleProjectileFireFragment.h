@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDomain.h"
+#include "UObject/Object.h"
 #include "BBBSingleProjectileFireFragment.generated.h"
 
 class ABBBBulletActor;
@@ -13,7 +13,7 @@ class USoundBase;
 
 /** 单投射物开火领域 */
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
-class ABBB_EVAC_API UBBBSingleProjectileFireFragment final : public UBBBEquipmentDomain
+class ABBB_EVAC_API UBBBSingleProjectileFireFragment final : public UObject
 {
     GENERATED_BODY()
 
