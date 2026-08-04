@@ -21,7 +21,6 @@ public:
      */
     void Update(
         USkeletalMeshComponent &CharacterMesh,
-        float WorldTimeSeconds,
         FName AttachmentSocketName,
         FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterExternalAPI &CharacterAPI) const;

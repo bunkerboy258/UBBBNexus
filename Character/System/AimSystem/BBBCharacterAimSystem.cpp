@@ -12,8 +12,8 @@
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentActor.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 
 void FBBBCharacterAimSystem::Initialize(
     APawn &InPawn,
@@ -44,9 +44,9 @@ void FBBBCharacterAimSystem::Update()
     //复制上一帧状态
     FBBBAimRuntimeState State = AimData->GetState();
     //读取当前主手物品
-    UBBBEquipmentInstance *ActiveInstance = EquipmentState->GetActiveMainHandInstance();
-    const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
-        ? ActiveInstance->GetEquipmentDefinition()
+    UBBBItemInstance *ActiveInstance = EquipmentState->GetActiveMainHandInstance();
+    const UBBBItemDefinition *ActiveDefinition = ActiveInstance
+        ? ActiveInstance->GetDefinition()
         : nullptr;
     const bool bCanAim = ActiveDefinition
         && IntentData->WantsAim()

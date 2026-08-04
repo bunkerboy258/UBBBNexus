@@ -8,10 +8,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentActor.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/EquipmentPose/BBBEquipmentPoseFragment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/BBBEquipmentActor.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 
 //计算装备瞄准来源与左手IK表现数据
 void FBBBCharacterEquipmentPoseProcessor::Update(
@@ -30,9 +28,9 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     AnimationState.bHasValidAimSource = false;
     AnimationState.bHasValidLeftHandTarget = false;
     //读取当前装备与物品实例
-    UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
-    const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
-        ? ActiveInstance->GetEquipmentDefinition()
+    UBBBItemInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    const UBBBItemDefinition *ActiveDefinition = ActiveInstance
+        ? ActiveInstance->GetDefinition()
         : nullptr;
     ABBBEquipmentActor *EquippedItemActor = ActiveInstance
         ? ActiveInstance->GetModelActor()
@@ -41,29 +39,28 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     if (!ActiveDefinition || !EquippedItemActor)
     { return; }
     //读取姿势配置与武器网格
-    const UBBBEquipmentPoseFragment *Pose = ActiveDefinition->EquipmentPoseFragment;
-    UStaticMeshComponent *WeaponMesh = EquippedItemActor->FindComponentByClass<UStaticMeshComponent>();
+    UStaticMeshComponent *WeaponMesh = EquippedItemActor->GetEquipmentMesh();
     //缺少姿势配置或网格时保持重置状态
-    if (!Pose || !WeaponMesh)
+    if (!WeaponMesh)
     { return; }
 
     //计算枪口相对瞄准骨骼的本地变换
-    if (WeaponMesh->DoesSocketExist(Pose->AimSourceSocketName) && CharacterMesh.GetBoneIndex(AimSourceBoneName) != INDEX_NONE)
+    if (WeaponMesh->DoesSocketExist(ActiveDefinition->AimSourceSocketName) && CharacterMesh.GetBoneIndex(AimSourceBoneName) != INDEX_NONE)
     {
-        const FTransform MuzzleWorld = WeaponMesh->GetSocketTransform(Pose->AimSourceSocketName, RTS_World);
+        const FTransform MuzzleWorld = WeaponMesh->GetSocketTransform(ActiveDefinition->AimSourceSocketName, RTS_World);
         const FTransform BoneWorld = CharacterMesh.GetBoneTransform(AimSourceBoneName, RTS_World);
         AnimationState.AimSourceLocalTransform = MuzzleWorld.GetRelativeTransform(BoneWorld);
         AnimationState.bHasValidAimSource = true;
     }
 
     //校验左手握持插槽
-    AnimationState.bHasValidLeftHandTarget = WeaponMesh->DoesSocketExist(Pose->LeftHandGripSocketName);
+    AnimationState.bHasValidLeftHandTarget = WeaponMesh->DoesSocketExist(ActiveDefinition->LeftHandGripSocketName);
     //装备动画期间屏蔽左手IK
     if (AnimationState.bHasValidLeftHandTarget && EquippedItemActor->GetRootComponent())
     {
         //计算左手目标在右手插槽空间的变换
-        const FTransform GripActor = WeaponMesh->GetSocketTransform(Pose->LeftHandGripSocketName, RTS_Actor);
-        AnimationState.LeftHandTargetRightHandSocketSpace = Pose->LeftHandGripSocketLocalOffset
+        const FTransform GripActor = WeaponMesh->GetSocketTransform(ActiveDefinition->LeftHandGripSocketName, RTS_Actor);
+        AnimationState.LeftHandTargetRightHandSocketSpace = ActiveDefinition->LeftHandGripSocketLocalOffset
             * GripActor
             * EquippedItemActor->GetRootComponent()->GetRelativeTransform();
     }
@@ -79,7 +76,7 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     }
 
     if (AnimationState.bHasValidLeftHandTarget
-        && Pose->bEnableLeftHandIK
+        && ActiveDefinition->bEnableLeftHandIK
         && !AnimationCommands.IsItemIKBlockedRequested())
     {
         AnimationState.LeftHandIKAlpha = 1.0f;

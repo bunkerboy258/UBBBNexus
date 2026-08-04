@@ -3,8 +3,8 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Storage/BBBCharacterItemStorage.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 
 void FBBBCharacterDefaultItemInitializer::Initialize(
     FBBBCharacterItemRuntimeData &ItemData,
@@ -16,11 +16,11 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
 
     for (const FBBBDefaultBackpackItem &DefaultItem : InItemConfig.DefaultBackpackItems)
     {
-        UBBBEquipmentDefinition *Definition = Cast<UBBBEquipmentDefinition>(DefaultItem.Definition);
-        if (!ensureMsgf(Definition, TEXT("[UBBBC]Default item definition is not equipment")))
+        UBBBItemDefinition *Definition = DefaultItem.Definition;
+        if (!ensureMsgf(Definition, TEXT("[UBBBC]Default item definition is null")))
         { continue; }
 
-        UBBBEquipmentInstance *NewInstance = UBBBEquipmentInstance::Create(
+        UBBBItemInstance *NewInstance = UBBBItemInstance::Create(
             ItemOuter,
             *Definition,
             DefaultItem.StackCount);
@@ -47,7 +47,7 @@ void FBBBCharacterDefaultItemInitializer::Initialize(
     if (Backpack.QuickAccessBindings.IsEmpty())
     { return; }
 
-    UBBBEquipmentInstance *FirstQuickAccessItem = Cast<UBBBEquipmentInstance>(Backpack.QuickAccessBindings[0]);
+    UBBBItemInstance *FirstQuickAccessItem = Backpack.QuickAccessBindings[0];
     if (!FirstQuickAccessItem)
     { return; }
 

@@ -1,15 +1,15 @@
 #include "BBBWork/UBBBNexus/Item/CatalogSystem/BBBEquipmentCatalog.h"
 
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
 
-UBBBEquipmentDefinition *UBBBEquipmentCatalog::FindDefinition(FName EquipmentHandle)
+UBBBItemDefinition *UBBBEquipmentCatalog::FindDefinition(FName EquipmentHandle)
 {
     if (EquipmentHandle.IsNone())
     {
         return nullptr;
     }
 
-    for (UBBBEquipmentDefinition *Definition : Definitions)
+    for (UBBBItemDefinition *Definition : Definitions)
     {
         if (Definition && Definition->ItemId == EquipmentHandle)
         {

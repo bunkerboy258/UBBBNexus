@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/States/BBBCharacterItemStates.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 
 void FBBBEquipmentExecutor::Update(
     FBBBDecisionRuntimeData &DecisionData,
@@ -28,8 +28,8 @@ void FBBBEquipmentExecutor::Update(
                 continue;
             }
 
-            UBBBEquipmentInstance *ItemInstance = Cast<UBBBEquipmentInstance>(BackpackState.QuickAccessBindings[QuickAccessSlot]);
-            if (!ensureMsgf(ItemInstance, TEXT("[UBBBC]Requested quick access item is not valid equipment")))
+            UBBBItemInstance *ItemInstance = BackpackState.QuickAccessBindings[QuickAccessSlot];
+            if (!ensureMsgf(ItemInstance, TEXT("[UBBBC]Requested quick access item instance is null")))
             {
                 continue;
             }

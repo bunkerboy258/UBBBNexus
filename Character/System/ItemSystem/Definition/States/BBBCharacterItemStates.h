@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 #include "BBBCharacterItemStates.generated.h"
 
 class FBBBCharacterDefaultItemInitializer;
@@ -9,7 +9,6 @@ class FBBBCharacterEquipmentProcessor;
 class FBBBCharacterItemStorage;
 class FBBBEquipmentExecutor;
 class FBBBEquipmentRestoreProcessor;
-class UBBBEquipmentInstance;
 class UBBBItemInstance;
 
 /** 角色唯一背包及其快捷访问绑定 */
@@ -34,13 +33,13 @@ struct FBBBCharacterEquipmentState
     GENERATED_BODY()
 
     /** @return 角色期望装备的主手实例 */
-    UBBBEquipmentInstance *GetDesiredMainHandInstance() const
+    UBBBItemInstance *GetDesiredMainHandInstance() const
     {
         return DesiredMainHandInstance;
     }
 
     /** @return 角色当前装备的主手实例 */
-    UBBBEquipmentInstance *GetActiveMainHandInstance() const
+    UBBBItemInstance *GetActiveMainHandInstance() const
     {
         return ActiveMainHandInstance;
     }
@@ -60,9 +59,9 @@ private:
 
     /** 角色期望装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UBBBEquipmentInstance> DesiredMainHandInstance = nullptr;
+    TObjectPtr<UBBBItemInstance> DesiredMainHandInstance = nullptr;
 
     /** 角色当前装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UBBBEquipmentInstance> ActiveMainHandInstance = nullptr;
+    TObjectPtr<UBBBItemInstance> ActiveMainHandInstance = nullptr;
 };

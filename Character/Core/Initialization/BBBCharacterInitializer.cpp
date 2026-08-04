@@ -73,8 +73,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.CharacterExternalAPI,
         Character,
         Config.Equipment,
-        Config.Item,
-        Character.RuntimeData.WorldData);
+        Config.Item);
     
     Character.CharacterNetworkComponent->Initialize(
         Character.RuntimeData.Network);

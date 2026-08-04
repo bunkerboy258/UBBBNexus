@@ -2,12 +2,11 @@
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/States/BBBCharacterItemStates.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Base/BBBItemInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
-    float WorldTimeSeconds,
     FName AttachmentSocketName,
     FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterExternalAPI &CharacterAPI) const
@@ -26,13 +25,8 @@ void FBBBCharacterEquipmentProcessor::Update(
             EquipmentState.ActiveMainHandInstance->Equip(
                 CharacterMesh,
                 CharacterAPI,
-                AttachmentSocketName,
-                WorldTimeSeconds);
+                AttachmentSocketName);
         }
     }
 
-    if (!EquipmentState.ActiveMainHandInstance)
-    { return; }
-
-    EquipmentState.ActiveMainHandInstance->Update(WorldTimeSeconds);
 }

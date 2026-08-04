@@ -3,7 +3,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/BBBCharacterItemRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -13,13 +12,11 @@ void FBBBCharacterItemSystem::Initialize(
     FBBBCharacterExternalAPI &InCharacterAPI,
     UObject &InItemOuter,
     const FBBBCharacterEquipmentConfig &InEquipmentConfig,
-    const FBBBCharacterItemConfig &InItemConfig,
-    const FBBBCharacterWorldRuntimeData &InWorldData)
+    const FBBBCharacterItemConfig &InItemConfig)
 {
     CharacterMesh = &InCharacterMesh;
     ItemData = &InItemData;
     CharacterAPI = &InCharacterAPI;
-    WorldData = &InWorldData;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
 
     FBBBCharacterBackpackState &Backpack = ItemData->Backpack;
@@ -31,12 +28,11 @@ void FBBBCharacterItemSystem::Initialize(
 
 void FBBBCharacterItemSystem::Update()
 {
-    if (!ensureMsgf(ItemData && WorldData && CharacterAPI && CharacterMesh, TEXT("[UBBBC]Item system update dependencies are null")))
+    if (!ensureMsgf(ItemData && CharacterAPI && CharacterMesh, TEXT("[UBBBC]Item system update dependencies are null")))
     { return; }
 
     EquipmentProcessor.Update(
         *CharacterMesh,
-        WorldData->GetWorldTimeSeconds(),
         RightHandWeaponSocketName,
         ItemData->Equipment,
         *CharacterAPI);

@@ -1,25 +1,28 @@
-
 #pragma once
+
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragmentRuntimeData.h"
+#include "UObject/Object.h"
 #include "BBBMagazineRuntimeData.generated.h"
 
+/** 弹匣操作域运行数据 */
 UCLASS(BlueprintType)
-class ABBB_EVAC_API UBBBMagazineRuntimeData final : public UBBBItemFragmentRuntimeData
+class ABBB_EVAC_API UBBBMagazineRuntimeData final : public UObject
 {
     GENERATED_BODY()
-public:
 
+public:
+    /** 当前弹匣弹药 */
     UPROPERTY(BlueprintReadOnly)
     int32 MagazineAmmo = 0;
 
+    /** 当前备用弹药 */
     UPROPERTY(BlueprintReadOnly)
     int32 ReserveAmmo = 0;
 
+    /** 是否正在换弹 */
     UPROPERTY(BlueprintReadOnly)
     bool bIsReloading = false;
 
-    bool bCommitReloadAmmo = false;
-
+    /** 换弹结束时间 */
     float ReloadEndTime = 0.0f;
 };

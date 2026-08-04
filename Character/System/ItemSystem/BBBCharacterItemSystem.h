@@ -11,7 +11,6 @@ class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterItemConfig;
 struct FBBBCharacterItemRuntimeData;
-struct FBBBCharacterWorldRuntimeData;
 
 class ABBB_EVAC_API FBBBCharacterItemSystem final
 {
@@ -40,11 +39,9 @@ private:
         FBBBCharacterExternalAPI &InCharacterAPI,
         UObject &InItemOuter,
         const FBBBCharacterEquipmentConfig &InEquipmentConfig,
-        const FBBBCharacterItemConfig &InItemConfig,
-        const FBBBCharacterWorldRuntimeData &InWorldData);
+        const FBBBCharacterItemConfig &InItemConfig);
 
     FBBBCharacterItemRuntimeData *ItemData = nullptr;
-    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBCharacterExternalAPI *CharacterAPI = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     FName RightHandWeaponSocketName = NAME_None;

@@ -1,47 +1,26 @@
-
 #include "BBBWork/UBBBNexus/Item/Definition/BBBItemRuntimeData.h"
+
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragment.h"
-#include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Template/Equipment/EquipmentPose/BBBEquipmentPoseFragment.h"
-#include "BBBWork/UBBBNexus/Item/Template/Weapon/Fire/Base/BBBFireFragment.h"
-#include "BBBWork/UBBBNexus/Item/Template/Weapon/Magazine/BBBMagazineFragment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Fire/Base/BBBFireOperation.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Magazine/BBBMagazineOperation.h"
 
 void UBBBItemRuntimeData::Initialize(const UBBBItemDefinition &Definition)
 {
+    Fire = Definition.FireOperation
+        ? Definition.FireOperation->InitializeRuntimeData(*this)
+        : nullptr;
 
-    RuntimeDataList.Reset();
+    Magazine = Definition.MagazineOperation
+        ? Definition.MagazineOperation->InitializeRuntimeData(*this)
+        : nullptr;
+}
 
-    //按定义层级收集显式插槽
-    TArray<const UBBBItemFragment *> Fragments;
+UBBBFireRuntimeData *UBBBItemRuntimeData::GetFire() const
+{
+    return Fire;
+}
 
-    const UBBBEquipmentDefinition *EquipmentDefinition = Cast<UBBBEquipmentDefinition>(&Definition);
-    if (EquipmentDefinition && EquipmentDefinition->EquipmentPoseFragment)
-    {
-        Fragments.Add(EquipmentDefinition->EquipmentPoseFragment);
-    }
-
-    const UBBBWeaponDefinition *WeaponDefinition = Cast<UBBBWeaponDefinition>(&Definition);
-    if (WeaponDefinition && WeaponDefinition->FireFragment)
-    {
-        Fragments.Add(WeaponDefinition->FireFragment);
-    }
-
-    if (WeaponDefinition && WeaponDefinition->MagazineFragment)
-    {
-        Fragments.Add(WeaponDefinition->MagazineFragment);
-    }
-
-    //逐插槽生成运行数据 纯配置插槽返回空自动跳过
-    for (const UBBBItemFragment *Fragment : Fragments)
-    {
-
-        UBBBItemFragmentRuntimeData *RuntimeData = Fragment->InitializeRuntimeData(*this);
-        if (!RuntimeData)
-        { continue; }
-
-        RuntimeDataList.Add(RuntimeData);
-    }
+UBBBMagazineRuntimeData *UBBBItemRuntimeData::GetMagazine() const
+{
+    return Magazine;
 }
