@@ -3,9 +3,9 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/BBBWeaponActor.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponActor.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/Projectile/BBBBulletActor.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/Projectile/BBBBulletActor.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Fire/BBBFireEvents.h"
 
 UBBBSingleProjectileFireFragment::UBBBSingleProjectileFireFragment()

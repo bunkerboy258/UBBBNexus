@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/ItemSystem/Definition/States/BBBCharacterItemStates.h"
-#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
 
 void FBBBEquipmentExecutor::Update(
     FBBBDecisionRuntimeData &DecisionData,

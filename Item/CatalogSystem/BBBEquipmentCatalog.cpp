@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Item/CatalogSystem/BBBEquipmentCatalog.h"
 
-#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
 
 UBBBEquipmentDefinition *UBBBEquipmentCatalog::FindDefinition(FName EquipmentHandle)
 {

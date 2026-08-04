@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentInstance.h"
 #include "BBBCharacterItemStates.generated.h"
 
 class FBBBCharacterDefaultItemInitializer;

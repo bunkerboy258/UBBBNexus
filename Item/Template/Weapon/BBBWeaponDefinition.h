@@ -1,12 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Base/Equipment/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWeaponDefinition.generated.h"
 
 class UBBBFireFragment;
 class UBBBMagazineFragment;
-class UBBBItemFragment;
 
 UCLASS(BlueprintType)
 class ABBB_EVAC_API UBBBWeaponDefinition final : public UBBBEquipmentDefinition
@@ -21,7 +20,4 @@ public:
     //弹匣配置插槽
     UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "BBB|Weapon")
     TObjectPtr<UBBBMagazineFragment> MagazineFragment;
-
-    //收集武器层 Fragment 命名插槽
-    virtual void CollectFragments(TArray<const UBBBItemFragment *> &OutFragments) const override;
 };

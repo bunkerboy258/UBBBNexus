@@ -3,7 +3,7 @@
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Weapon/BBBWeaponActor.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponActor.h"
 #include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineRuntimeData.h"
 
 UBBBItemFragmentRuntimeData *UBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const

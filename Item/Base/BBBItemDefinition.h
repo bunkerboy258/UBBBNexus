@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "BBBItemDefinition.generated.h"
-class UBBBItemFragment;
 class UTexture2D;
 
 UCLASS(Abstract, BlueprintType)
@@ -26,9 +25,4 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Item", meta = (ClampMin = "1"))
     int32 MaxStack = 1;
-
-    //收集本定义全部 Fragment 命名插槽 供运行数据生成 基类无插槽 由子类追加
-    virtual void CollectFragments(TArray<const UBBBItemFragment *> &OutFragments) const
-    {
-    }
 };

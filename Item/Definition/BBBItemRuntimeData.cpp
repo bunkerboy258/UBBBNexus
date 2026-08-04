@@ -1,26 +1,42 @@
 
 #include "BBBWork/UBBBNexus/Item/Definition/BBBItemRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Base/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Template/Equipment/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragment.h"
 #include "BBBWork/UBBBNexus/Item/Base/Fragment/BBBItemFragmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Template/Weapon/BBBWeaponDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Fragments/EquipmentPose/BBBEquipmentPoseFragment.h"
+#include "BBBWork/UBBBNexus/Item/Fragments/Fire/Base/BBBFireFragment.h"
+#include "BBBWork/UBBBNexus/Item/Fragments/Magazine/BBBMagazineFragment.h"
 
 void UBBBItemRuntimeData::Initialize(const UBBBItemDefinition &Definition)
 {
 
     RuntimeDataList.Reset();
 
-    //收集定义中的全部 Fragment 命名插槽
+    //按定义层级收集显式插槽
     TArray<const UBBBItemFragment *> Fragments;
-    Definition.CollectFragments(Fragments);
 
+    const UBBBEquipmentDefinition *EquipmentDefinition = Cast<UBBBEquipmentDefinition>(&Definition);
+    if (EquipmentDefinition && EquipmentDefinition->EquipmentPoseFragment)
+    {
+        Fragments.Add(EquipmentDefinition->EquipmentPoseFragment);
+    }
+
+    const UBBBWeaponDefinition *WeaponDefinition = Cast<UBBBWeaponDefinition>(&Definition);
+    if (WeaponDefinition && WeaponDefinition->FireFragment)
+    {
+        Fragments.Add(WeaponDefinition->FireFragment);
+    }
+
+    if (WeaponDefinition && WeaponDefinition->MagazineFragment)
+    {
+        Fragments.Add(WeaponDefinition->MagazineFragment);
+    }
+
+    //逐插槽生成运行数据 纯配置插槽返回空自动跳过
     for (const UBBBItemFragment *Fragment : Fragments)
     {
-
-        if (!Fragment)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Item definition contains an invalid fragment"));
-            continue;
-        }
 
         UBBBItemFragmentRuntimeData *RuntimeData = Fragment->InitializeRuntimeData(*this);
         if (!RuntimeData)
