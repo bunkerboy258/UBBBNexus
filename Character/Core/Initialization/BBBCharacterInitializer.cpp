@@ -19,7 +19,11 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     if (!ensureMsgf(Character.CharacterNetworkComponent, TEXT("[UBBBC]Character initialization failed: CharacterNetworkComponent is null")))
     { return; }
 
-    if (!ensureMsgf(Config.Equipment.EquipmentCatalog, TEXT("[UBBBC]Character initialization failed because equipment catalog is null")))
+    if (!ensureMsgf(
+        Config.Equipment.EquipmentCatalog,
+        TEXT("[UBBBC]Character '%s' of class '%s' has no CharacterConfig.Equipment.EquipmentCatalog"),
+        *Character.GetName(),
+        *Character.GetClass()->GetPathName()))
     { return; }
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
