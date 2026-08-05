@@ -31,6 +31,9 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //相机骨骼网格与移动组件存在？
     if (!ensureMsgf(Character.CameraBoom && Character.GetMesh() && Movement, TEXT("[UBBBC]Character initialization failed because engine components are null")))
     { return; }
+
+    //确保角色黑板更新完成后再启动骨骼动画更新
+    Character.GetMesh()->AddTickPrerequisiteActor(&Character);
     
     Character.CharacterExternalAPI.Initialize(
         Character.RuntimeData.Animation.Commands,
