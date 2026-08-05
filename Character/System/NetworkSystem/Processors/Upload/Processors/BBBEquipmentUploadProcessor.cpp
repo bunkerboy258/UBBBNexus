@@ -13,7 +13,7 @@ void FBBBEquipmentUploadProcessor::Update(
 {
     UBBBEquipmentInstance *ActiveEquipment = EquipmentState.GetActiveMainHandInstance();
 
-    if (!ActiveEquipment || !ActiveEquipment->IsValid())
+    if (!ActiveEquipment)
     { return; }
 
     if (NetworkData.GetLastUploadedEquipmentInstanceId() == ActiveEquipment->GetInstanceId())

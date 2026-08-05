@@ -4,11 +4,9 @@
 #include "UObject/Object.h"
 #include "BBBEquipmentInstance.generated.h"
 
-class ABBBEquipmentPresentationActor;
-class FBBBCharacterExternalAPI;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentRuntimeData;
-class USkeletalMeshComponent;
+class UBBBEquipmentSystem;
 
 /** 装备配置、运行数据与表现实体的唯一实例根 */
 UCLASS(BlueprintType)
@@ -25,66 +23,14 @@ public:
      */
     static UBBBEquipmentInstance *Create(UObject &Outer, UBBBEquipmentDefinition &InDefinition);
 
-    /**
-     * 生成并挂接装备表现实体
-     * @param CharacterMesh		角色骨骼网格
-     * @param CharacterAPI		角色能力接口
-     * @param AttachmentSocketName	装备挂接插槽
-     */
-    void Equip(
-        USkeletalMeshComponent &CharacterMesh,
-        FBBBCharacterExternalAPI &CharacterAPI,
-        FName AttachmentSocketName);
-
-    /**
-     * 更新装备内部领域
-     * @param CharacterAPI	角色能力接口
-     */
-    void Update(FBBBCharacterExternalAPI &CharacterAPI);
-
-    /**
-     * 响应本地开火命令
-     * @param CharacterAPI	角色能力接口
-     * @return 是否成功开火
-     */
-    bool Fire(FBBBCharacterExternalAPI &CharacterAPI);
-
-    /**
-     * 响应本地换弹命令
-     * @param CharacterAPI	角色能力接口
-     * @return 是否成功开始换弹
-     */
-    bool Reload(FBBBCharacterExternalAPI &CharacterAPI);
-
-    /**
-     * 响应远端开火表现命令
-     * @param CharacterAPI	角色能力接口
-     */
-    void PresentFire(FBBBCharacterExternalAPI &CharacterAPI);
-
-    /**
-     * 响应远端换弹表现命令
-     * @param CharacterAPI	角色能力接口
-     */
-    void PresentReload(FBBBCharacterExternalAPI &CharacterAPI);
-
-    /** 释放表现实体并保留运行数据 */
-    void ReleasePresentation();
-
     /** @return 实例唯一标识 */
     const FGuid &GetInstanceId() const;
 
     /** @return 装备静态配置 */
     UBBBEquipmentDefinition *GetDefinition() const;
 
-    /** @return 当前装备表现实体 */
-    ABBBEquipmentPresentationActor *GetPresentationActor() const;
-
-    /** @return 当前是否处于装备过渡 */
-    bool IsEquipping() const;
-
-    /** @return 实例是否完整有效 */
-    bool IsValid() const;
+    /** @return 单件装备行为系统 */
+    UBBBEquipmentSystem *GetEquipmentSystem() const;
 
 private:
     /** 实例唯一标识 */
@@ -99,7 +45,7 @@ private:
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UBBBEquipmentRuntimeData> RuntimeData = nullptr;
 
-    /** 当前装备表现实体 */
+    /** 单件装备行为系统 */
     UPROPERTY()
-    TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
+    TObjectPtr<UBBBEquipmentSystem> EquipmentSystem = nullptr;
 };

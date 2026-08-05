@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Results/BBBCharacterEquipmentResults.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 
 void FBBBCharacterEquipmentActionProcessor::Update(
     FBBBCharacterEquipmentCommands &EquipmentCommands,
@@ -18,25 +19,31 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         return;
     }
 
-    ActiveInstance->Update(CharacterAPI);
+    UBBBEquipmentSystem *EquipmentSystem = ActiveInstance->GetEquipmentSystem();
+    if (!ensureMsgf(EquipmentSystem, TEXT("[UBBBC]Active equipment system is null")))
+    {
+        return;
+    }
 
-    if (EquipmentCommands.ConsumeFire() && ActiveInstance->Fire(CharacterAPI))
+    EquipmentSystem->Update(CharacterAPI);
+
+    if (EquipmentCommands.ConsumeFire() && EquipmentSystem->Fire(CharacterAPI))
     {
         EquipmentResults.RecordSuccessfulFire();
     }
 
-    if (EquipmentCommands.ConsumeReload() && ActiveInstance->Reload(CharacterAPI))
+    if (EquipmentCommands.ConsumeReload() && EquipmentSystem->Reload(CharacterAPI))
     {
         EquipmentResults.RecordSuccessfulReload();
     }
 
     if (EquipmentCommands.ConsumeFirePresentation())
     {
-        ActiveInstance->PresentFire(CharacterAPI);
+        EquipmentSystem->PresentFire(CharacterAPI);
     }
 
     if (EquipmentCommands.ConsumeReloadPresentation())
     {
-        ActiveInstance->PresentReload(CharacterAPI);
+        EquipmentSystem->PresentReload(CharacterAPI);
     }
 }

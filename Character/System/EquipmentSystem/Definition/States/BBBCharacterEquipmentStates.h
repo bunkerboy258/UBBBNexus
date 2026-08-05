@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
 class FBBBCharacterDefaultEquipmentInitializer;
@@ -45,7 +46,11 @@ struct FBBBCharacterEquipmentState
     /** @return 当前装备是否仍在执行装备过渡 */
     bool IsEquipping() const
     {
-        return ActiveMainHandInstance && ActiveMainHandInstance->IsEquipping();
+        UBBBEquipmentSystem *EquipmentSystem = ActiveMainHandInstance
+            ? ActiveMainHandInstance->GetEquipmentSystem()
+            : nullptr;
+
+        return EquipmentSystem && EquipmentSystem->IsEquipping();
     }
 
 private:

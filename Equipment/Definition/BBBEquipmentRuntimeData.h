@@ -7,6 +7,7 @@
 class UBBBEquipRuntimeData;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
+class UBBBEquipmentSystem;
 class UBBBFireRuntimeData;
 class UBBBMagazineRuntimeData;
 
@@ -18,6 +19,7 @@ class ABBB_EVAC_API UBBBEquipmentRuntimeData final : public UObject
 
 private:
     friend class UBBBEquipmentInstance;
+    friend class UBBBEquipmentSystem;
 
     /**
      * 根据装备领域创建运行数据

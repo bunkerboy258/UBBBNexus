@@ -14,6 +14,7 @@
 #include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 
 void FBBBCharacterAimSystem::Initialize(
     APawn &InPawn,
@@ -45,6 +46,9 @@ void FBBBCharacterAimSystem::Update()
     FBBBAimRuntimeState State = AimData->GetState();
     //读取当前主手物品
     UBBBEquipmentInstance *ActiveInstance = EquipmentState->GetActiveMainHandInstance();
+    UBBBEquipmentSystem *ActiveEquipmentSystem = ActiveInstance
+        ? ActiveInstance->GetEquipmentSystem()
+        : nullptr;
     const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
         ? ActiveInstance->GetDefinition()
         : nullptr;
@@ -66,8 +70,8 @@ void FBBBCharacterAimSystem::Update()
         ViewLocation,
         ViewRotation,
         //忽略当前装备实体避免命中自身武器
-        ActiveInstance
-            ? ActiveInstance->GetPresentationActor()
+        ActiveEquipmentSystem
+            ? ActiveEquipmentSystem->GetPresentationActor()
             : nullptr,
         //写入结果
         TraceResult))
