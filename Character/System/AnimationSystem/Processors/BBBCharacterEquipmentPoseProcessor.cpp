@@ -11,7 +11,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 
 //计算装备瞄准来源与左手IK表现数据
 void FBBBCharacterEquipmentPoseProcessor::Update(
@@ -31,17 +30,14 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     AnimationState.bHasValidLeftHandTarget = false;
     //读取当前装备与物品实例
     UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
-    UBBBEquipmentSystem *ActiveEquipmentSystem = ActiveInstance
-        ? ActiveInstance->GetEquipmentSystem()
-        : nullptr;
     const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
         ? ActiveInstance->GetDefinition()
         : nullptr;
     const FBBBEquipDomin *EquipDomin = ActiveDefinition
         ? ActiveDefinition->EquipDomin.GetPtr()
         : nullptr;
-    ABBBEquipmentPresentationActor *PresentationActor = ActiveEquipmentSystem
-        ? ActiveEquipmentSystem->GetPresentationActor()
+    ABBBEquipmentPresentationActor *PresentationActor = ActiveInstance
+        ? ActiveInstance->GetPresentationActor()
         : nullptr;
     //缺少装备时保持重置状态
     if (!EquipDomin || !PresentationActor)

@@ -2,6 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
@@ -12,9 +13,11 @@
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 
 bool UBBBEquipmentSystem::Initialize(
+    UBBBEquipmentInstance &InInstance,
     UBBBEquipmentDefinition &InDefinition,
     UBBBEquipmentRuntimeData &InRuntimeData)
 {
+    Instance = &InInstance;
     Definition = &InDefinition;
     RuntimeData = &InRuntimeData;
 
@@ -37,7 +40,12 @@ void UBBBEquipmentSystem::Equip(
     FBBBCharacterExternalAPI &CharacterAPI,
     FName AttachmentSocketName)
 {
-    if (PresentationActor)
+    if (!ensureMsgf(Instance, TEXT("[UBBBE]Equipment system has no owning instance")))
+    {
+        return;
+    }
+
+    if (Instance->PresentationActor)
     {
         return;
     }
@@ -47,7 +55,7 @@ void UBBBEquipmentSystem::Equip(
         return;
     }
 
-    PresentationActor = Definition->EquipDomin.Get().Equip(
+    Instance->PresentationActor = Definition->EquipDomin.Get().Equip(
         *RuntimeData->GetEquip(),
         CharacterMesh,
         CharacterAPI,
@@ -58,7 +66,7 @@ void UBBBEquipmentSystem::Equip(
 
 void UBBBEquipmentSystem::Update(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && RuntimeData, TEXT("[UBBBE]Equipment system is incomplete during update")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && RuntimeData, TEXT("[UBBBE]Equipment system is incomplete during update")))
     {
         return;
     }
@@ -68,12 +76,12 @@ void UBBBEquipmentSystem::Update(FBBBCharacterExternalAPI &CharacterAPI)
         return;
     }
 
-    Definition->EquipDomin.Get().Update(CharacterAPI, *PresentationActor, *RuntimeData->GetEquip());
+    Definition->EquipDomin.Get().Update(CharacterAPI, *Instance->PresentationActor, *RuntimeData->GetEquip());
 
     if (Definition->MagazineDomin.IsValid()
         && ensureMsgf(RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine runtime data is unavailable during update")))
     {
-        Definition->MagazineDomin.Get().Update(CharacterAPI, *PresentationActor, *RuntimeData->GetMagazine());
+        Definition->MagazineDomin.Get().Update(CharacterAPI, *Instance->PresentationActor, *RuntimeData->GetMagazine());
     }
 }
 
@@ -81,7 +89,7 @@ void UBBBEquipmentSystem::Update(FBBBCharacterExternalAPI &CharacterAPI)
 
 bool UBBBEquipmentSystem::Fire(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && RuntimeData && Definition->FireDomin.IsValid() && RuntimeData->GetFire(), TEXT("[UBBBE]Equipment fire domin is unavailable")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && RuntimeData && Definition->FireDomin.IsValid() && RuntimeData->GetFire(), TEXT("[UBBBE]Equipment fire domin is unavailable")))
     {
         return false;
     }
@@ -99,7 +107,7 @@ bool UBBBEquipmentSystem::Fire(FBBBCharacterExternalAPI &CharacterAPI)
         }
     }
 
-    if (!Definition->FireDomin.Get().Fire(CharacterAPI, *PresentationActor, *RuntimeData->GetFire()))
+    if (!Definition->FireDomin.Get().Fire(CharacterAPI, *Instance->PresentationActor, *RuntimeData->GetFire()))
     {
         return false;
     }
@@ -116,14 +124,14 @@ bool UBBBEquipmentSystem::Fire(FBBBCharacterExternalAPI &CharacterAPI)
 
 bool UBBBEquipmentSystem::Reload(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && RuntimeData && Definition->MagazineDomin.IsValid() && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine domin is unavailable")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && RuntimeData && Definition->MagazineDomin.IsValid() && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine domin is unavailable")))
     {
         return false;
     }
 
     return Definition->MagazineDomin.Get().Reload(
         CharacterAPI,
-        *PresentationActor,
+        *Instance->PresentationActor,
         *RuntimeData->GetMagazine());
 }
 
@@ -131,19 +139,19 @@ bool UBBBEquipmentSystem::Reload(FBBBCharacterExternalAPI &CharacterAPI)
 
 void UBBBEquipmentSystem::PresentFire(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && Definition->FireDomin.IsValid(), TEXT("[UBBBE]Equipment fire domin is unavailable during present fire")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && Definition->FireDomin.IsValid(), TEXT("[UBBBE]Equipment fire domin is unavailable during present fire")))
     {
         return;
     }
 
-    Definition->FireDomin.Get().Present(CharacterAPI, *PresentationActor);
+    Definition->FireDomin.Get().Present(CharacterAPI, *Instance->PresentationActor);
 }
 
 //------------------------------------------------------------------------------
 
 void UBBBEquipmentSystem::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(PresentationActor && Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment magazine domin is unavailable during present reload")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment magazine domin is unavailable during present reload")))
     {
         return;
     }
@@ -155,20 +163,13 @@ void UBBBEquipmentSystem::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
 
 void UBBBEquipmentSystem::ReleasePresentation()
 {
-    if (!PresentationActor)
+    if (!Instance || !Instance->PresentationActor)
     {
         return;
     }
 
-    PresentationActor->Destroy();
-    PresentationActor = nullptr;
-}
-
-//------------------------------------------------------------------------------
-
-ABBBEquipmentPresentationActor *UBBBEquipmentSystem::GetPresentationActor() const
-{
-    return PresentationActor;
+    Instance->PresentationActor->Destroy();
+    Instance->PresentationActor = nullptr;
 }
 
 //------------------------------------------------------------------------------

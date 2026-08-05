@@ -4,6 +4,7 @@
 #include "UObject/Object.h"
 #include "BBBEquipmentInstance.generated.h"
 
+class ABBBEquipmentPresentationActor;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentRuntimeData;
 class UBBBEquipmentSystem;
@@ -32,7 +33,12 @@ public:
     /** @return 单件装备行为系统 */
     UBBBEquipmentSystem *GetEquipmentSystem() const;
 
+    /** @return 当前装备表现实体 */
+    ABBBEquipmentPresentationActor *GetPresentationActor() const;
+
 private:
+    friend class UBBBEquipmentSystem;
+
     /** 实例唯一标识 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     FGuid InstanceId;
@@ -48,4 +54,8 @@ private:
     /** 单件装备行为系统 */
     UPROPERTY()
     TObjectPtr<UBBBEquipmentSystem> EquipmentSystem = nullptr;
+
+    /** 当前装备表现实体 */
+    UPROPERTY()
+    TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
 };

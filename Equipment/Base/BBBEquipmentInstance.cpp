@@ -37,7 +37,7 @@ UBBBEquipmentInstance *UBBBEquipmentInstance::Create(
         return nullptr;
     }
 
-    if (!Instance->EquipmentSystem->Initialize(InDefinition, *Instance->RuntimeData))
+    if (!Instance->EquipmentSystem->Initialize(*Instance, InDefinition, *Instance->RuntimeData))
     {
         return nullptr;
     }
@@ -64,4 +64,11 @@ UBBBEquipmentDefinition *UBBBEquipmentInstance::GetDefinition() const
 UBBBEquipmentSystem *UBBBEquipmentInstance::GetEquipmentSystem() const
 {
     return EquipmentSystem;
+}
+
+//------------------------------------------------------------------------------
+
+ABBBEquipmentPresentationActor *UBBBEquipmentInstance::GetPresentationActor() const
+{
+    return PresentationActor;
 }

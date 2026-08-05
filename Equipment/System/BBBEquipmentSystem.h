@@ -4,7 +4,6 @@
 #include "UObject/Object.h"
 #include "BBBEquipmentSystem.generated.h"
 
-class ABBBEquipmentPresentationActor;
 class FBBBCharacterExternalAPI;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
@@ -64,9 +63,6 @@ public:
     /** 释放表现实体并保留运行数据 */
     void ReleasePresentation();
 
-    /** @return 当前装备表现实体 */
-    ABBBEquipmentPresentationActor *GetPresentationActor() const;
-
     /** @return 当前是否处于装备过渡 */
     bool IsEquipping() const;
 
@@ -80,8 +76,12 @@ private:
      * @return 依赖是否完整有效
      */
     bool Initialize(
+        UBBBEquipmentInstance &InInstance,
         UBBBEquipmentDefinition &InDefinition,
         UBBBEquipmentRuntimeData &InRuntimeData);
+
+    /** 所属装备实例 */
+    UBBBEquipmentInstance *Instance = nullptr;
 
     /** 装备静态配置 */
     UPROPERTY()
@@ -90,8 +90,4 @@ private:
     /** 装备运行数据 */
     UPROPERTY()
     TObjectPtr<UBBBEquipmentRuntimeData> RuntimeData = nullptr;
-
-    /** 当前装备表现实体 */
-    UPROPERTY()
-    TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
 };
