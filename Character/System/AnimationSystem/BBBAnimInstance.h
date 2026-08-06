@@ -33,26 +33,6 @@ public:
     }
 
     /**
-     * 读取归一化左右移动输入
-     * @return 归一化左右移动输入
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    float GetNormalizedMoveRight() const
-    {
-        return GetAnimationState().MoveInput.X;
-    }
-
-    /**
-     * 读取归一化前后移动输入
-     * @return 归一化前后移动输入
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    float GetNormalizedMoveForward() const
-    {
-        return GetAnimationState().MoveInput.Y;
-    }
-
-    /**
      * 读取平滑后的左右移动输入
      * @return 平滑后的左右移动输入
      */
@@ -70,26 +50,6 @@ public:
     float GetSmoothedMoveForward() const
     {
         return GetAnimationState().SmoothedMoveInput.Y;
-    }
-
-    /**
-     * 是否正在向左原地转身
-     * @return 正在向左原地转身时返回true
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    bool IsTurningInPlaceLeft() const
-    {
-        return GetAnimationState().LocomotionState == EBBBLocomotionState::IdleAimTurnLeft;
-    }
-
-    /**
-     * 是否正在向右原地转身
-     * @return 正在向右原地转身时返回true
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    bool IsTurningInPlaceRight() const
-    {
-        return GetAnimationState().LocomotionState == EBBBLocomotionState::IdleAimTurnRight;
     }
 
     /**
@@ -132,12 +92,21 @@ public:
         return GetAnimationState().bHasValidAimSource;
     }
 
+    /**
+     * 读取瞄准IK权重
+     * @return 瞄准IK权重
+     */
+    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    float GetAimIKAlpha() const
+    {
+        return GetAnimationState().AimIKAlpha;
+    }
 
     /**
      * 读取左手IK目标在右手插槽空间的位置
      * @return 左手IK目标位置
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|HandIK", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|LeftHandIK", meta = (BlueprintThreadSafe))
     FVector GetLeftHandIKTargetLocation() const
     {
         return GetAnimationState().LeftHandTargetRightHandSocketSpace.GetLocation();
@@ -147,27 +116,17 @@ public:
      * 左手IK目标是否有效
      * @return 左手IK目标有效时返回true
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|HandIK", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|LeftHandIK", meta = (BlueprintThreadSafe))
     bool HasValidLeftHandTarget() const
     {
         return GetAnimationState().bHasValidLeftHandTarget;
     }
 
     /**
-     * 读取瞄准IK权重
-     * @return 瞄准IK权重
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|IKAlpha", meta = (BlueprintThreadSafe))
-    float GetAimIKAlpha() const
-    {
-        return GetAnimationState().AimIKAlpha;
-    }
-
-    /**
      * 读取左手IK权重
      * @return 左手IK权重
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|IKAlpha", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|LeftHandIK", meta = (BlueprintThreadSafe))
     float GetLeftHandIKAlpha() const
     {
         return GetAnimationState().LeftHandIKAlpha;
