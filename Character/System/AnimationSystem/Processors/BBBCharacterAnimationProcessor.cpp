@@ -1,21 +1,13 @@
 
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationProcessor.h"
 #include "Animation/AnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
-//播放排队蒙太奇并更新开火与转身表现
+//播放排队蒙太奇
 void FBBBCharacterAnimationProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
-    const FBBBCharacterAnimationCommands &AnimationCommands,
-    FBBBCharacterAnimationState &AnimationState,
-    const FBBBIntentRuntimeData &IntentData,
-    const FBBBFacingRuntimeData &FacingData,
-    const FBBBAimRuntimeData &AimData) const
+    const FBBBCharacterAnimationCommands &AnimationCommands) const
 {
 
     //读取动画实例与待播蒙太奇队列
@@ -42,14 +34,4 @@ void FBBBCharacterAnimationProcessor::Update(
             AnimInstance->Montage_Play(Request.Montage);
         }
     }
-
-    //读取瞄准状态
-    const FBBBAimRuntimeState &AimState = AimData.GetState();
-
-    //提交开火与原地转身表现
-    AnimationState.bWantsFire = IntentData.WantsFire();
-    AnimationState.bIsTurningInPlaceLeft = FacingData.IsBodyTurning()
-        && AimState.AimYaw < 0.0f;
-    AnimationState.bIsTurningInPlaceRight = FacingData.IsBodyTurning()
-        && AimState.AimYaw > 0.0f;
 }

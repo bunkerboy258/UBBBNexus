@@ -7,6 +7,7 @@
 class FBBBCharacterAimPresentationProcessor;
 class FBBBCharacterEquipmentPoseProcessor;
 class FBBBCharacterInitializer;
+class FBBBCharacterLocomotionPresentationProcessor;
 
 USTRUCT(BlueprintType)
 //角色运行时动画数据
@@ -34,8 +35,13 @@ private:
     friend class FBBBCharacterAimPresentationProcessor;
     friend class FBBBCharacterEquipmentPoseProcessor;
     friend class FBBBCharacterInitializer;
+    friend class FBBBCharacterLocomotionPresentationProcessor;
 
+    /** 动画命令缓冲 */
     UPROPERTY()
     FBBBCharacterAnimationCommands Commands;
+    /** 瞄准表现处理器的跨帧平滑状态 */
     FBBBAimPresentationRuntimeState AimPresentation;
+    /** 移动表现处理器的原地转身运行时状态 */
+    FBBBLocomotionPresentationRuntimeState LocomotionPresentation;
 };

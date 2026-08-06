@@ -73,16 +73,14 @@ void FBBBCharacterAnimationSystem::Update()
         *Movement,
         *LocomotionConfig,
         *AimData,
+        *FacingData,
         *IntentData,
+        *AnimationData,
         *AnimationState);
 
     AnimationProcessor.Update(
         *CharacterMesh,
-        AnimationData->GetCommands(),
-        *AnimationState,
-        *IntentData,
-        *FacingData,
-        *AimData);
+        AnimationData->GetCommands());
 
     EquipmentPoseProcessor.Update(
         *CharacterMesh,

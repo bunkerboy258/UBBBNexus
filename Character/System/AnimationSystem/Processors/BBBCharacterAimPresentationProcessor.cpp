@@ -63,7 +63,6 @@ void FBBBCharacterAimPresentationProcessor::Update(
         TargetAimAlpha,
         DeltaSeconds,
         AnimationConfig.AimIKAlphaInterpSpeed);
-    AnimationState.bWantsAim = AimState.bIsAiming;
     AnimationState.AimTargetComponentSpace = AnimationData.AimPresentation.SmoothedAimTargetComponentSpace;
     AnimationState.bHasValidAimTarget = bHasValidAimTarget;
     AnimationState.AimIKDistanceAlpha = 1.0f;

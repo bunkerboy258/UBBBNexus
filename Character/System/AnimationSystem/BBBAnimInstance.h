@@ -79,7 +79,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsTurningInPlaceLeft() const
     {
-        return GetAnimationState().bIsTurningInPlaceLeft;
+        return GetAnimationState().LocomotionState == EBBBLocomotionState::IdleAimTurnLeft;
     }
 
     /**
@@ -89,27 +89,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsTurningInPlaceRight() const
     {
-        return GetAnimationState().bIsTurningInPlaceRight;
-    }
-
-    /**
-     * 是否有开火意图
-     * @return 有开火意图时返回true
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Weapon", meta = (BlueprintThreadSafe))
-    bool WantsToFire() const
-    {
-        return GetAnimationState().bWantsFire;
-    }
-
-    /**
-     * 是否有瞄准意图
-     * @return 有瞄准意图时返回true
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Weapon", meta = (BlueprintThreadSafe))
-    bool WantsToAim() const
-    {
-        return GetAnimationState().bWantsAim;
+        return GetAnimationState().LocomotionState == EBBBLocomotionState::IdleAimTurnRight;
     }
 
     /**
@@ -205,5 +185,6 @@ protected:
      */
     const FBBBCharacterAnimationState &GetAnimationState() const;
 
+    /** 缓存的角色动画状态引用 由所属角色每帧刷新 */
     const FBBBCharacterAnimationState *AnimationState = nullptr;
 };
