@@ -9,7 +9,7 @@ class ABBB_EVAC_API FBBBInputIntentProcessor final
 public:
 
     /**
-     * 直通拷贝基础移动与视角输入到意图状态
+     * 将移动相关输入整理为角色意图
      * @param InputData	输入后处理数据
      * @param Intent	当前帧意图中间状态
      */

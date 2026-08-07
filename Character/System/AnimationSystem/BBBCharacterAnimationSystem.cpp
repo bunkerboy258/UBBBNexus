@@ -1,7 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
@@ -19,11 +17,9 @@ void FBBBCharacterAnimationSystem::Initialize(
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBAimRuntimeData &InAimData,
     const FBBBFacingRuntimeData &InFacingData,
-    const FBBBIntentRuntimeData &InIntentData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBAimConfig &InAimConfig,
     const FBBBAimAnimationConfig &InAimAnimationConfig,
-    const FBBBCharacterLocomotionConfig &InLocomotionConfig,
     FName InAimSourceBoneName)
 {
     CharacterMesh = &InCharacterMesh;
@@ -33,11 +29,9 @@ void FBBBCharacterAnimationSystem::Initialize(
     WorldData = &InWorldData;
     AimData = &InAimData;
     FacingData = &InFacingData;
-    IntentData = &InIntentData;
     EquipmentState = &InEquipmentState;
     AimConfig = &InAimConfig;
     AimAnimationConfig = &InAimAnimationConfig;
-    LocomotionConfig = &InLocomotionConfig;
     AimSourceBoneName = InAimSourceBoneName;
 }
 
@@ -48,14 +42,12 @@ void FBBBCharacterAnimationSystem::Update()
             && AnimationState
             && AimData
             && FacingData
-            && IntentData
             && EquipmentState
             && CharacterMesh
             && WorldData
             && Movement
             && AimConfig
-            && AimAnimationConfig
-            && LocomotionConfig,
+            && AimAnimationConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
     { return; }
 
@@ -68,15 +60,11 @@ void FBBBCharacterAnimationSystem::Update()
         *AnimationData,
         *AnimationState);
 
-    LocomotionStateProcessor.Update(
+    LocomotionFactsProcessor.Update(
         *Movement,
-        WorldData->GetFrameDeltaSeconds(),
-        *LocomotionConfig,
         *AimData,
         *FacingData,
-        *IntentData,
         *EquipmentState,
-        *AnimationData,
         *AnimationState);
 
     AnimationProcessor.Update(

@@ -45,19 +45,4 @@ struct FBBBCharacterLocomotionConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Jump", meta = (ClampMin = "0.0"))
     float JumpZVelocity = 420.0f;
 
-    /** 走跑动画切换速度迟滞 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Animation", meta = (ClampMin = "0.0"))
-    float AnimationGaitSwitchHysteresis = 20.0f;
-
-    /** 落地动画状态最短保持时间 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Animation", meta = (ClampMin = "0.0"))
-    float AnimationLandStateDuration = 0.12f;
-
-    //定义横向输入从旧值过渡到新值的时间
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Smoothing", meta = (ClampMin = "0.001"))
-    float MoveInputXSmoothTime = 0.1f;
-
-    //定义纵向输入从旧值过渡到新值的时间
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Smoothing", meta = (ClampMin = "0.001"))
-    float MoveInputYSmoothTime = 0.1f;
 };

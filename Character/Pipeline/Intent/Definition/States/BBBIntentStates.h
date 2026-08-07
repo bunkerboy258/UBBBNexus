@@ -9,12 +9,6 @@ struct FBBBCharacterIntentState
     //未经平滑的当前移动方向与强度
     FVector2D MoveInput = FVector2D::ZeroVector;
 
-    //本帧相机旋转增量
-    FVector2D LookDelta = FVector2D::ZeroVector;
-
-    //跨帧插值后的移动方向
-    FVector2D SmoothedMoveInput = FVector2D::ZeroVector;
-
     //包含移动闪断缓冲后的移动有效标记
     bool bHasMoveInput = false;
 
@@ -45,7 +39,6 @@ struct FBBBCharacterIntentState
         FBBBIntentRuntimeData RuntimeData;
 
         RuntimeData.MoveInput = MoveInput;
-        RuntimeData.SmoothedMoveInput = SmoothedMoveInput;
         RuntimeData.bHasMoveInput = bHasMoveInput;
         RuntimeData.bWantsFire = bWantsFire;
         RuntimeData.bWantsAim = bWantsAim;

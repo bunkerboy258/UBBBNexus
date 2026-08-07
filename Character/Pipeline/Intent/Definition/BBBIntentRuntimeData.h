@@ -20,15 +20,6 @@ struct FBBBIntentRuntimeData
     }
 
     /**
-     * 读取跨帧平滑移动输入
-     * @return 平滑移动输入二维值
-     */
-    const FVector2D &GetSmoothedMoveInput() const
-    {
-        return SmoothedMoveInput;
-    }
-
-    /**
      * 判断是否应视为存在移动输入
      * @return 是否存在移动输入
      */
@@ -98,16 +89,11 @@ struct FBBBIntentRuntimeData
     }
 
     /**
-     * 清除一次性意图并保留移动平滑连续性
+     * 清除本帧意图
      */
     void CleanFrame()
     {
-        //跨帧保留平滑值
-        const FVector2D PersistentSmoothedMoveInput = SmoothedMoveInput;
-        
         *this = FBBBIntentRuntimeData();
-        
-        SmoothedMoveInput = PersistentSmoothedMoveInput;
     }
 private:
     
@@ -116,10 +102,6 @@ private:
     //即时二维输入
     UPROPERTY()
     FVector2D MoveInput = FVector2D::ZeroVector;
-
-    //跨帧平滑输入
-    UPROPERTY()
-    FVector2D SmoothedMoveInput = FVector2D::ZeroVector;
 
     //是否应视为存在移动输入
     UPROPERTY()

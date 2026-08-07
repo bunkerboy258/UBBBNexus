@@ -10,6 +10,7 @@ void FBBBInputIntentProcessor::Update(
     const FBBBProcessedInputFrame &Input = InputData.GetProcessedInput();
 
     Intent.MoveInput = Input.MoveInput;
-    Intent.LookDelta = Input.LookDelta;
     Intent.bHasMoveInput = Input.bHasMoveInput;
+    Intent.bWantsSprint = Input.bSprintHeld;
+    Intent.bWantsJump = Input.bJumpPressed;
 }

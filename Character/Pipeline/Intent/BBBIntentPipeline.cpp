@@ -1,37 +1,26 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/BBBIntentPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/States/BBBIntentStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 
 void FBBBIntentPipeline::Initialize(
     FBBBIntentRuntimeData &InIntentData,
-    const FBBBCharacterWorldRuntimeData &InWorldData,
-    const FBBBInputRuntimeData &InInputData,
-    const FBBBCharacterLocomotionConfig &InLocomotionConfig)
+    const FBBBInputRuntimeData &InInputData)
 {
     IntentData = &InIntentData;
-    WorldData = &InWorldData;
     InputData = &InInputData;
-    LocomotionConfig = &InLocomotionConfig;
 }
 
 void FBBBIntentPipeline::Update() const
 {
-    if (!ensureMsgf(WorldData && InputData && IntentData && LocomotionConfig, TEXT("[UBBBC]Intent pipeline update failed because dependencies are null")))
+    if (!ensureMsgf(InputData && IntentData, TEXT("[UBBBC]Intent pipeline update failed because dependencies are null")))
     { return; }
 
     FBBBCharacterIntentState Intent;
 
-    const float DeltaSeconds = WorldData->GetFrameDeltaSeconds();
-
     //复制基础输入(为了保持数据流向一致)
     InputProcessor.Update(*InputData, Intent);
-
-    //计算平滑移动方向与冲刺意图
-    LocomotionProcessor.Update(*InputData, *IntentData, *LocomotionConfig, DeltaSeconds, Intent);
 
     //根据瞄准开火与宽限状态合成瞄准意图
     AimProcessor.Update(*InputData, Intent);

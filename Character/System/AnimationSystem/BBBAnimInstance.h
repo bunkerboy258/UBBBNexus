@@ -22,34 +22,74 @@ public:
      */
     virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-    /**
-     * 读取当前移动状态枚举
-     * @return Locomotion状态枚举
-     */
+    /** @return 是否保持瞄准姿态 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    EBBBLocomotionState GetLocomotionState() const
+    bool IsAiming() const
     {
-        return GetAnimationState().LocomotionState;
+        return GetAnimationState().bIsAiming;
     }
 
-    /**
-     * 读取平滑后的左右移动输入
-     * @return 平滑后的左右移动输入
-     */
+    /** @return 是否存在实际水平移动 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    float GetSmoothedMoveRight() const
+    bool IsMoving() const
     {
-        return GetAnimationState().SmoothedMoveInput.X;
+        return GetAnimationState().bIsMoving;
     }
 
-    /**
-     * 读取平滑后的前后移动输入
-     * @return 平滑后的前后移动输入
-     */
+    /** @return 是否接触地面 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    float GetSmoothedMoveForward() const
+    bool IsGrounded() const
     {
-        return GetAnimationState().SmoothedMoveInput.Y;
+        return GetAnimationState().bIsGrounded;
+    }
+
+    /** @return 主手是否持有装备 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    bool HasMainHandEquipment() const
+    {
+        return GetAnimationState().bHasMainHandEquipment;
+    }
+
+    /** @return 身体是否正在原地转向 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    bool IsTurningInPlace() const
+    {
+        return GetAnimationState().bIsTurningInPlace;
+    }
+
+    /** @return 实际水平移动速度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    float GetGroundSpeed() const
+    {
+        return GetAnimationState().GroundSpeed;
+    }
+
+    /** @return 角色局部前后速度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    float GetLocalForwardSpeed() const
+    {
+        return GetAnimationState().LocalForwardSpeed;
+    }
+
+    /** @return 角色局部左右速度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    float GetLocalRightSpeed() const
+    {
+        return GetAnimationState().LocalRightSpeed;
+    }
+
+    /** @return 实际垂直移动速度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    float GetVerticalSpeed() const
+    {
+        return GetAnimationState().VerticalSpeed;
+    }
+
+    /** @return 相对角色前轴的水平瞄准角 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    float GetAimYaw() const
+    {
+        return GetAnimationState().AimYaw;
     }
 
     /**

@@ -1,7 +1,6 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterLocomotionStates.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
 USTRUCT(BlueprintType)
@@ -10,17 +9,45 @@ struct FBBBCharacterAnimationState
 {
     GENERATED_BODY()
 
-    /** 当前移动动画表现状态 */
+    /** 是否保持瞄准姿态 */
     UPROPERTY(BlueprintReadOnly)
-    EBBBLocomotionState LocomotionState = EBBBLocomotionState::EmptyHandIdle;
+    bool bIsAiming = false;
 
-    /** 归一化移动输入 X为左右 Y为前后 */
+    /** 是否存在实际水平移动 */
     UPROPERTY(BlueprintReadOnly)
-    FVector2D MoveInput = FVector2D::ZeroVector;
+    bool bIsMoving = false;
 
-    /** 平滑后的归一化移动输入 */
+    /** 是否接触地面 */
     UPROPERTY(BlueprintReadOnly)
-    FVector2D SmoothedMoveInput = FVector2D::ZeroVector;
+    bool bIsGrounded = true;
+
+    /** 主手是否持有装备 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bHasMainHandEquipment = false;
+
+    /** 身体是否正在原地转向 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsTurningInPlace = false;
+
+    /** 实际水平移动速度 */
+    UPROPERTY(BlueprintReadOnly)
+    float GroundSpeed = 0.0f;
+
+    /** 角色局部前后速度 */
+    UPROPERTY(BlueprintReadOnly)
+    float LocalForwardSpeed = 0.0f;
+
+    /** 角色局部左右速度 */
+    UPROPERTY(BlueprintReadOnly)
+    float LocalRightSpeed = 0.0f;
+
+    /** 实际垂直移动速度 */
+    UPROPERTY(BlueprintReadOnly)
+    float VerticalSpeed = 0.0f;
+
+    /** 相对角色前轴的水平瞄准角 */
+    UPROPERTY(BlueprintReadOnly)
+    float AimYaw = 0.0f;
 
     /** 瞄准IK权重 */
     UPROPERTY(BlueprintReadOnly)
@@ -73,29 +100,4 @@ struct FBBBAimPresentationRuntimeState
 
     /** 是否已有平滑瞄准目标 */
     bool bHasSmoothedAimTarget = false;
-};
-
-//保存移动表现处理器的转身与跳跃分类运行时状态
-struct FBBBLocomotionPresentationRuntimeState
-{
-    /** 上一帧是否处于离地状态 */
-    bool bWasFalling = false;
-
-    /** 本次跳跃是否以步枪姿态开始 */
-    bool bJumpStartedWithRifle = false;
-
-    /** 本次跳跃是否以奔跑档位开始 */
-    bool bJumpStartedFromRun = false;
-
-    /** 当前稳定使用奔跑动画档位 */
-    bool bUsesRunAnimation = false;
-
-    /** 落地状态剩余保持时间 */
-    float LandStateRemainingTime = 0.0f;
-
-    /** 正在向左原地转身 */
-    bool bIsTurningInPlaceLeft = false;
-
-    /** 正在向右原地转身 */
-    bool bIsTurningInPlaceRight = false;
 };

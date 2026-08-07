@@ -103,11 +103,9 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Aim,
         Character.RuntimeData.Facing,
-        Character.RuntimeData.Intent,
         Character.RuntimeData.Equipment.Equipment,
         Config.Aim,
         Config.AimAnimation,
-        Config.Locomotion,
         Config.Equipment.AimSourceBoneName);
     
     Character.InputPipeline.Initialize(
@@ -118,9 +116,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.IntentPipeline.Initialize(
         Character.RuntimeData.Intent,
-        Character.RuntimeData.WorldData,
-        Character.RuntimeData.Input,
-        Config.Locomotion);
+        Character.RuntimeData.Input);
     
     Character.RequestPipeline.Initialize(
         Character.RuntimeData.Decision,
