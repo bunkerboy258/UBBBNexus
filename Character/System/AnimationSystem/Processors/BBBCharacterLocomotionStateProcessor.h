@@ -18,6 +18,7 @@ public:
     /**
      * 根据装备姿态、速度档位与移动状态推导动画枚举
      * @param Movement	角色移动组件
+     * @param DeltaSeconds	当前帧时间间隔
      * @param Config	Locomotion配置
      * @param AimData	瞄准运行时数据
      * @param FacingData	朝向运行时数据
@@ -28,6 +29,7 @@ public:
      */
     void Update(
         const UCharacterMovementComponent &Movement,
+        float DeltaSeconds,
         const FBBBCharacterLocomotionConfig &Config,
         const FBBBAimRuntimeData &AimData,
         const FBBBFacingRuntimeData &FacingData,

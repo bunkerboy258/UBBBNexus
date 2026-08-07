@@ -87,6 +87,12 @@ struct FBBBLocomotionPresentationRuntimeState
     /** 本次跳跃是否以奔跑档位开始 */
     bool bJumpStartedFromRun = false;
 
+    /** 当前稳定使用奔跑动画档位 */
+    bool bUsesRunAnimation = false;
+
+    /** 落地状态剩余保持时间 */
+    float LandStateRemainingTime = 0.0f;
+
     /** 正在向左原地转身 */
     bool bIsTurningInPlaceLeft = false;
 

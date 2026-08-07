@@ -70,6 +70,7 @@ void FBBBCharacterAnimationSystem::Update()
 
     LocomotionStateProcessor.Update(
         *Movement,
+        WorldData->GetFrameDeltaSeconds(),
         *LocomotionConfig,
         *AimData,
         *FacingData,

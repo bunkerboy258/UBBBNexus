@@ -12,6 +12,7 @@
 //根据装备姿态、速度档位与移动状态推导动画枚举
 void FBBBCharacterLocomotionStateProcessor::Update(
     const UCharacterMovementComponent &Movement,
+    float DeltaSeconds,
     const FBBBCharacterLocomotionConfig &Config,
     const FBBBAimRuntimeData &AimData,
     const FBBBFacingRuntimeData &FacingData,
@@ -31,15 +32,34 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     const bool bStartedFalling = !AnimationData.LocomotionPresentation.bWasFalling
         && bIsFalling;
 
-    //当前存在主手装备时使用步枪动画
+    //主手是否存在装备？
     const bool bHasRifle = EquipmentState.GetActiveMainHandInstance() != nullptr;
 
     //按当前装备姿态选择奔跑阈值
-    bool bUsesRunAnimation = Speed > Config.WalkSpeed;
+    float RunSpeedThreshold = Config.WalkSpeed;
     if (bHasRifle && bAiming)
     {
-        bUsesRunAnimation = Speed > Config.StrafeWalkSpeed;
+        RunSpeedThreshold = Config.StrafeWalkSpeed;
     }
+
+    const float GaitSwitchHysteresis = FMath::Max(Config.AnimationGaitSwitchHysteresis, 0.0f);
+    const float RunEnterSpeed = RunSpeedThreshold + GaitSwitchHysteresis;
+    const float RunExitSpeed = FMath::Max(RunSpeedThreshold - GaitSwitchHysteresis, 0.0f);
+    const bool bWasUsingRunAnimation = AnimationData.LocomotionPresentation.bUsesRunAnimation;
+    bool bUsesRunAnimation = bWasUsingRunAnimation;
+    if (!bMoving)
+    {
+        bUsesRunAnimation = false;
+    }
+    if (bMoving && !bWasUsingRunAnimation && Speed > RunEnterSpeed)
+    {
+        bUsesRunAnimation = true;
+    }
+    if (bMoving && bWasUsingRunAnimation && Speed < RunExitSpeed)
+    {
+        bUsesRunAnimation = false;
+    }
+    AnimationData.LocomotionPresentation.bUsesRunAnimation = bUsesRunAnimation;
 
     //原地开火视为进入原地瞄准
     const bool bIdleAiming = bAiming
@@ -56,10 +76,27 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     {
         AnimationData.LocomotionPresentation.bJumpStartedWithRifle = bHasRifle;
         AnimationData.LocomotionPresentation.bJumpStartedFromRun = bUsesRunAnimation;
+        AnimationData.LocomotionPresentation.LandStateRemainingTime = 0.0f;
+    }
+
+    const float SafeDeltaSeconds = FMath::Max(DeltaSeconds, 0.0f);
+    if (bJustLanded)
+    {
+        AnimationData.LocomotionPresentation.LandStateRemainingTime = FMath::Max(
+            Config.AnimationLandStateDuration,
+            SafeDeltaSeconds);
     }
 
     const bool bJumpStartedWithRifle = AnimationData.LocomotionPresentation.bJumpStartedWithRifle;
     const bool bJumpStartedFromRun = AnimationData.LocomotionPresentation.bJumpStartedFromRun;
+    const bool bLandStateActive = !bIsFalling
+        && AnimationData.LocomotionPresentation.LandStateRemainingTime > 0.0f;
+    if (bLandStateActive)
+    {
+        AnimationData.LocomotionPresentation.LandStateRemainingTime = FMath::Max(
+            AnimationData.LocomotionPresentation.LandStateRemainingTime - SafeDeltaSeconds,
+            0.0f);
+    }
 
     //提交移动表现跨帧状态供内部消费
     AnimationData.LocomotionPresentation.bWasFalling = bIsFalling;
@@ -70,8 +107,8 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     AnimationState.MoveInput = IntentData.GetMoveInput();
     AnimationState.SmoothedMoveInput = IntentData.GetSmoothedMoveInput();
 
-    //落地优先于所有移动表现
-    if (bJustLanded
+    //落地保持期间维持起跳时的步枪速度档位
+    if (bLandStateActive
         && bJumpStartedWithRifle
         && bJumpStartedFromRun)
     {
@@ -79,7 +116,7 @@ void FBBBCharacterLocomotionStateProcessor::Update(
         return;
     }
 
-    if (bJustLanded
+    if (bLandStateActive
         && bJumpStartedWithRifle
         && !bJumpStartedFromRun)
     {
@@ -87,7 +124,7 @@ void FBBBCharacterLocomotionStateProcessor::Update(
         return;
     }
 
-    if (bJustLanded
+    if (bLandStateActive
         && !bJumpStartedWithRifle)
     {
         AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandLand;
@@ -140,7 +177,7 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     }
 
     //步枪瞄准横移超阈值升级奔跑
-    if (bHasRifle && bMoving && bAiming && Speed > Config.StrafeWalkSpeed)
+    if (bHasRifle && bMoving && bAiming && bUsesRunAnimation)
     {
         AnimationState.LocomotionState = EBBBLocomotionState::RifleStrafeRun;
         return;
@@ -154,7 +191,7 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     }
 
     //步枪非瞄准移动超阈值升级奔跑
-    if (bHasRifle && bMoving && !bAiming && Speed > Config.WalkSpeed)
+    if (bHasRifle && bMoving && !bAiming && bUsesRunAnimation)
     {
         AnimationState.LocomotionState = EBBBLocomotionState::RifleRun;
         return;
@@ -191,4 +228,3 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     //空手默认待机
     AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandIdle;
 }
-
