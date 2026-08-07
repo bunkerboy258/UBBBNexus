@@ -106,9 +106,9 @@ void FBBBCharacterAimSystem::Update()
     const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(AimDirection);
     //转换为水平瞄准角
     const FRotator AimRotation = LocalAimDirection.Rotation();
-    //补偿并限制水平瞄准角到有效范围
+    //限制水平瞄准角到有效范围
     const float TargetYaw = FMath::Clamp(
-        AimRotation.Yaw * AnimationConfig->AimYawCompensation,
+        AimRotation.Yaw,
         -90.0f,
         90.0f);
     const float DeltaSeconds = WorldData->GetFrameDeltaSeconds();

@@ -3,60 +3,59 @@
 #include "CoreMinimal.h"
 #include "BBBAimConfig.generated.h"
 
+/**
+ * 瞄准核心配置
+ */
 USTRUCT(BlueprintType)
-//定义瞄准射线距离与骨骼起点
 struct FBBBAimConfig
 {
     GENERATED_BODY()
 
-    //限制相机视线检测的最大距离
+    /** 屏幕中心射线的最大检测距离  */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimTraceDistance = 10000.0f;
 
-    //指定角色骨骼上的瞄准方向计算起点
+    /** 瞄准IK距离衰减的计算起点骨骼 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FName AimOriginSocketName = FName("spine_03");
 
-    //限制瞄准状态上传的最小时间间隔
+    /** 瞄准状态网络上行的最小间隔秒数  */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimUploadInterval = 0.033f;
 };
 
+/**
+ * 瞄准表现配置
+ */
 USTRUCT(BlueprintType)
-//定义瞄准角与逆向动力学表现参数
 struct FBBBAimAnimationConfig
 {
     GENERATED_BODY()
 
-    //补偿骨骼空间水平旋转幅度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimYawCompensation = 1.2f;
-
-    //控制瞄准角追随目标的插值速度
+    /** 水平瞄准角向目标角插值的速度 供FInterpTo逐帧平滑 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimInterpSpeed = 15.0f;
 
-    //决定是否平滑世界空间逆向动力学目标
+    /** 是否对瞄准目标点做阻尼弹簧平滑 关闭时直接使用原始目标点 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     bool bEnableAimIKTargetSmoothing = true;
 
-    //定义逆向动力学目标平滑到新位置的时间
+    /** IK目标点阻尼弹簧平滑的收敛时间 秒 小于等于0时平滑不生效 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimIKTargetSmoothTime = 0.1f;
 
-    //决定近距离目标是否衰减逆向动力学权重
+    /** 是否按距离衰减IK权重 关闭时距离权重恒为1 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     bool bEnableNearAimIKDistanceAlpha = true;
 
-    //低于该距离时完全关闭瞄准逆向动力学
+    /** 近距离IK衰减下限 目标距离不超过该值时IK权重为0 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float MinAimIKTargetDistance = 60.0f;
 
-    //达到该距离时恢复完整瞄准逆向动力学权重
+    /** 近距离IK衰减上限 目标距离达到该值时IK权重恢复为1 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float SafeAimIKTargetDistance = 120.0f;
-
-    //控制逆向动力学权重追随目标值的速度
+    /** 整个瞄准 IK 权重的淡入淡出速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimIKAlphaInterpSpeed = 8.0f;
 };
