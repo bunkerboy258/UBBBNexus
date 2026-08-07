@@ -1,10 +1,9 @@
-
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAimPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterEquipmentPoseProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionPresentationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionStateProcessor.h"
 struct FBBBAimAnimationConfig;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
@@ -78,6 +77,6 @@ private:
     FName AimSourceBoneName = NAME_None;
     FBBBCharacterAnimationProcessor AnimationProcessor;
     FBBBCharacterAimPresentationProcessor AimPresentationProcessor;
-    FBBBCharacterLocomotionPresentationProcessor LocomotionPresentationProcessor;
+    FBBBCharacterLocomotionStateProcessor LocomotionStateProcessor;
     FBBBCharacterEquipmentPoseProcessor EquipmentPoseProcessor;
 };

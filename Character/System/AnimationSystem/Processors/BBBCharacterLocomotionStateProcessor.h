@@ -10,7 +10,7 @@ struct FBBBFacingRuntimeData;
 struct FBBBIntentRuntimeData;
 
 //推导移动状态枚举
-class FBBBCharacterLocomotionPresentationProcessor final
+class FBBBCharacterLocomotionStateProcessor final
 {
 public:
 
@@ -33,3 +33,4 @@ public:
         FBBBAnimationRuntimeData &AnimationData,
         FBBBCharacterAnimationState &AnimationState) const;
 };
+

@@ -7,7 +7,7 @@
 class FBBBCharacterAimPresentationProcessor;
 class FBBBCharacterEquipmentPoseProcessor;
 class FBBBCharacterInitializer;
-class FBBBCharacterLocomotionPresentationProcessor;
+class FBBBCharacterLocomotionStateProcessor;
 
 USTRUCT(BlueprintType)
 //角色运行时动画数据
@@ -35,7 +35,7 @@ private:
     friend class FBBBCharacterAimPresentationProcessor;
     friend class FBBBCharacterEquipmentPoseProcessor;
     friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterLocomotionPresentationProcessor;
+    friend class FBBBCharacterLocomotionStateProcessor;
 
     /** 动画命令缓冲 */
     UPROPERTY()
@@ -45,3 +45,4 @@ private:
     /** 移动表现处理器的原地转身运行时状态 */
     FBBBLocomotionPresentationRuntimeState LocomotionPresentation;
 };
+

@@ -1,5 +1,5 @@
 
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionPresentationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionStateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
@@ -9,7 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 //根据移动与瞄准状态推导移动表现枚举
-void FBBBCharacterLocomotionPresentationProcessor::Update(
+void FBBBCharacterLocomotionStateProcessor::Update(
     const UCharacterMovementComponent &Movement,
     const FBBBCharacterLocomotionConfig &Config,
     const FBBBAimRuntimeData &AimData,
@@ -87,3 +87,4 @@ void FBBBCharacterLocomotionPresentationProcessor::Update(
     AnimationState.MoveInput = IntentData.GetMoveInput();
     AnimationState.SmoothedMoveInput = IntentData.GetSmoothedMoveInput();
 }
+

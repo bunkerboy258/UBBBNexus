@@ -1,4 +1,3 @@
-
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
@@ -69,7 +68,7 @@ void FBBBCharacterAnimationSystem::Update()
         *AnimationData,
         *AnimationState);
 
-    LocomotionPresentationProcessor.Update(
+    LocomotionStateProcessor.Update(
         *Movement,
         *LocomotionConfig,
         *AimData,
