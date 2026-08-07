@@ -88,18 +88,9 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     }
 
     if (bJustLanded
-        && !bJumpStartedWithRifle
-        && bJumpStartedFromRun)
+        && !bJumpStartedWithRifle)
     {
-        AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandRunLand;
-        return;
-    }
-
-    if (bJustLanded
-        && !bJumpStartedWithRifle
-        && !bJumpStartedFromRun)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandWalkLand;
+        AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandLand;
         return;
     }
 
@@ -121,18 +112,9 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     }
 
     if (bIsFalling
-        && !bJumpStartedWithRifle
-        && bJumpStartedFromRun)
+        && !bJumpStartedWithRifle)
     {
-        AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandRunJump;
-        return;
-    }
-
-    if (bIsFalling
-        && !bJumpStartedWithRifle
-        && !bJumpStartedFromRun)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandWalkJump;
+        AnimationState.LocomotionState = EBBBLocomotionState::EmptyHandJump;
         return;
     }
 

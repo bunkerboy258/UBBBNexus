@@ -16,17 +16,11 @@ enum class EBBBLocomotionState : uint8
     /** 空手奔跑 */
     EmptyHandRun UMETA(DisplayName = "EmptyHandRun"),
 
-    /** 空手行走起跳 */
-    EmptyHandWalkJump UMETA(DisplayName = "EmptyHandWalkJump"),
+    /** 空手跳跃 */
+    EmptyHandJump UMETA(DisplayName = "EmptyHandJump"),
 
-    /** 空手行走落地 */
-    EmptyHandWalkLand UMETA(DisplayName = "EmptyHandWalkLand"),
-
-    /** 空手奔跑起跳 */
-    EmptyHandRunJump UMETA(DisplayName = "EmptyHandRunJump"),
-
-    /** 空手奔跑落地 */
-    EmptyHandRunLand UMETA(DisplayName = "EmptyHandRunLand"),
+    /** 空手落地 */
+    EmptyHandLand UMETA(DisplayName = "EmptyHandLand"),
 
     /** 步枪待机 */
     RifleIdle UMETA(DisplayName = "RifleIdle"),
