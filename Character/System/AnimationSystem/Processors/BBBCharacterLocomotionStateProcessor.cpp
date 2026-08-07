@@ -23,6 +23,9 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     const bool bMoving = Speed >= 10.0f;
     const FBBBAimRuntimeState &AimState = AimData.GetState();
     const bool bAiming = AimState.bIsAiming;
+    const bool bIsFalling = Movement.IsFalling();
+    const bool bJustLanded = AnimationData.LocomotionPresentation.bWasFalling
+        && !bIsFalling;
 
     //原地开火视为进入原地瞄准
     const bool bIdleAiming = bAiming
@@ -79,7 +82,18 @@ void FBBBCharacterLocomotionStateProcessor::Update(
         AnimationState.LocomotionState = EBBBLocomotionState::Run;
     }
 
+    if (bIsFalling)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::Jump;
+    }
+
+    if (bJustLanded)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::Land;
+    }
+
     //提交原地转身运行时状态供内部消费
+    AnimationData.LocomotionPresentation.bWasFalling = bIsFalling;
     AnimationData.LocomotionPresentation.bIsTurningInPlaceLeft = bTurningInPlaceLeft;
     AnimationData.LocomotionPresentation.bIsTurningInPlaceRight = bTurningInPlaceRight;
 

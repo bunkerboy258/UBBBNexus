@@ -45,6 +45,10 @@ struct FBBBRawInputFrame
     UPROPERTY(BlueprintReadOnly)
     bool bSprintHeld = false;
 
+    /** 标记跳跃按键本帧被按下 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bJumpPressed = false;
+
     //标记换弹按键本帧被按下
     UPROPERTY(BlueprintReadOnly)
     bool bReloadPressed = false;
@@ -111,6 +115,10 @@ struct FBBBProcessedInputFrame
     //保存冲刺按键当前保持状态
     UPROPERTY(BlueprintReadOnly)
     bool bSprintHeld = false;
+
+    /** 保存本帧一次性跳跃输入 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bJumpPressed = false;
 
     //保存本帧一次性换弹请求
     UPROPERTY(BlueprintReadOnly)

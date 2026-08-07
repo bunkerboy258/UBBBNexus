@@ -70,6 +70,7 @@ void FBBBInputProcessor::Update(
     Processed.bPrecisionAimReleased = Raw.bPrecisionAimCompleted;
     
     Processed.bSprintHeld = Raw.bSprintHeld;
+    Processed.bJumpPressed = Raw.bJumpPressed;
     Processed.bReloadPressed = Raw.bReloadPressed;
     Processed.bEquipSlot1Pressed = Raw.bEquipSlot1Pressed;
     Processed.bEquipSlot2Pressed = Raw.bEquipSlot2Pressed;

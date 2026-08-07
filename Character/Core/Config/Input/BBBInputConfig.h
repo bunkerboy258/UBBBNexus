@@ -46,6 +46,10 @@ struct FBBBCharacterInputConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> SprintAction;
 
+    /** 跳跃输入动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UInputAction> JumpAction;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> ReloadAction;
 

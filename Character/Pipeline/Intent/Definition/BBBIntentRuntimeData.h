@@ -64,6 +64,12 @@ struct FBBBIntentRuntimeData
         return bWantsSprint;
     }
 
+    /** @return 当前帧是否请求角色跳跃 */
+    bool WantsJump() const
+    {
+        return bWantsJump;
+    }
+
     /**
      * 判断当前帧是否请求换弹
      * @return 是否请求换弹
@@ -130,6 +136,10 @@ private:
     //冲刺速度请求
     UPROPERTY()
     bool bWantsSprint = false;
+
+    /** 跳跃请求 */
+    UPROPERTY()
+    bool bWantsJump = false;
 
     //换弹请求
     UPROPERTY()

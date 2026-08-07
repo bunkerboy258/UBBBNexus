@@ -29,5 +29,11 @@ enum class EBBBLocomotionState : uint8
     IdleAimTurnLeft UMETA(DisplayName = "IdleAimTurnLeft"),
 
     /** 原地瞄准向右转身 */
-    IdleAimTurnRight UMETA(DisplayName = "IdleAimTurnRight")
+    IdleAimTurnRight UMETA(DisplayName = "IdleAimTurnRight"),
+
+    /** 跳跃 */
+    Jump UMETA(DisplayName = "Jump"),
+
+    /** 落地 */
+    Land UMETA(DisplayName = "Land")
 };

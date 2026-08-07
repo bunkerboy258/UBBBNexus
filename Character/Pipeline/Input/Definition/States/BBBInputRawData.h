@@ -83,6 +83,12 @@ struct FBBBInputRawData
         RawInput.bSprintHeld = bHeld;
     }
 
+    /** 标记本帧跳跃按下 */
+    void MarkJumpPressed()
+    {
+        RawInput.bJumpPressed = true;
+    }
+
     /**
      * 标记本帧换弹按下
      */
@@ -131,6 +137,8 @@ struct FBBBInputRawData
         RawInput.bPrecisionAimStarted = false;
 
         RawInput.bPrecisionAimCompleted = false;
+
+        RawInput.bJumpPressed = false;
 
         RawInput.bReloadPressed = false;
 

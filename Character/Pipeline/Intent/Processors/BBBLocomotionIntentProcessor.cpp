@@ -25,5 +25,6 @@ void FBBBLocomotionIntentProcessor::Update(
     Intent.SmoothedMoveInput = Smoothed;
     Intent.bHasMoveInput = Input.bHasMoveInput;
     Intent.bWantsSprint = Input.bSprintHeld;
+    Intent.bWantsJump = Input.bJumpPressed;
     
 }

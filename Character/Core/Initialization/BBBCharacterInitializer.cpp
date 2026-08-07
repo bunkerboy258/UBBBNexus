@@ -189,6 +189,9 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 
     //将角色加速度配置同步到引擎移动组件
     Movement->MaxAcceleration = Config.Locomotion.RunAcceleration;
+
+    //将角色起跳速度配置同步到引擎移动组件
+    Movement->JumpZVelocity = Config.Locomotion.JumpZVelocity;
 }
 
 void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputComponent *PlayerInputComponent)
@@ -369,6 +372,17 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             [&Character](const FInputActionValue &Value)
             {
                 Character.RuntimeData.Input.RawInputData.SetSprintHeld(false);
+            });
+    }
+
+    if (Config.JumpAction)
+    {
+        Input->BindActionValueLambda(
+            Config.JumpAction,
+            ETriggerEvent::Started,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.MarkJumpPressed();
             });
     }
 }

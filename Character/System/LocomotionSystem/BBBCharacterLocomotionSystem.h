@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-class APawn;
+class ACharacter;
 class UCharacterMovementComponent;
 class FBBBCharacterInitializer;
 struct FBBBCharacterLocomotionConfig;
@@ -26,12 +26,12 @@ private:
      * @param InConfig	移动配置
      */
     void Initialize(
-        APawn &InPawn,
+        ACharacter &InPawn,
         UCharacterMovementComponent &InMovement,
         const FBBBIntentRuntimeData &InIntentData,
         const FBBBCharacterLocomotionConfig &InConfig);
 
-    APawn *Pawn = nullptr;
+    ACharacter *Character = nullptr;
 
     UCharacterMovementComponent *Movement = nullptr;
 

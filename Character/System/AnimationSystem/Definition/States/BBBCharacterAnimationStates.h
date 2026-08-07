@@ -78,6 +78,9 @@ struct FBBBAimPresentationRuntimeState
 //保存移动表现处理器的原地转身运行时状态
 struct FBBBLocomotionPresentationRuntimeState
 {
+    /** 上一帧是否处于离地状态 */
+    bool bWasFalling = false;
+
     /** 正在向左原地转身 */
     bool bIsTurningInPlaceLeft = false;
 

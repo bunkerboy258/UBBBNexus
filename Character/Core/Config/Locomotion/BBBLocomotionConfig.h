@@ -41,6 +41,10 @@ struct FBBBCharacterLocomotionConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|StrafeRun")
     float StrafeRunAcceleration = 1200.0f;
 
+    /** 垂直起跳速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Jump", meta = (ClampMin = "0.0"))
+    float JumpZVelocity = 420.0f;
+
     //定义横向输入从旧值过渡到新值的时间
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Smoothing", meta = (ClampMin = "0.001"))
     float MoveInputXSmoothTime = 0.1f;
