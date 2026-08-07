@@ -12,7 +12,7 @@ struct FBBBCharacterAnimationState
 
     /** 当前移动动画表现状态 */
     UPROPERTY(BlueprintReadOnly)
-    EBBBLocomotionState LocomotionState = EBBBLocomotionState::Idle;
+    EBBBLocomotionState LocomotionState = EBBBLocomotionState::EmptyHandIdle;
 
     /** 归一化移动输入 X为左右 Y为前后 */
     UPROPERTY(BlueprintReadOnly)
@@ -75,11 +75,17 @@ struct FBBBAimPresentationRuntimeState
     bool bHasSmoothedAimTarget = false;
 };
 
-//保存移动表现处理器的原地转身运行时状态
+//保存移动表现处理器的转身与跳跃分类运行时状态
 struct FBBBLocomotionPresentationRuntimeState
 {
     /** 上一帧是否处于离地状态 */
     bool bWasFalling = false;
+
+    /** 本次跳跃是否以步枪姿态开始 */
+    bool bJumpStartedWithRifle = false;
+
+    /** 本次跳跃是否以奔跑档位开始 */
+    bool bJumpStartedFromRun = false;
 
     /** 正在向左原地转身 */
     bool bIsTurningInPlaceLeft = false;

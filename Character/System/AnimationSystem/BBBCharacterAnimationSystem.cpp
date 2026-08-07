@@ -74,6 +74,7 @@ void FBBBCharacterAnimationSystem::Update()
         *AimData,
         *FacingData,
         *IntentData,
+        *EquipmentState,
         *AnimationData,
         *AnimationState);
 

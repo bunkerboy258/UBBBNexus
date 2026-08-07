@@ -4,36 +4,63 @@
 #include "BBBCharacterLocomotionStates.generated.h"
 
 UENUM(BlueprintType)
-//角色移动动画表现状态
+//角色装备姿态与速度档位动画表现状态
 enum class EBBBLocomotionState : uint8
 {
-    /** 待机 */
-    Idle UMETA(DisplayName = "Idle"),
+    /** 空手待机 */
+    EmptyHandIdle UMETA(DisplayName = "EmptyHandIdle"),
 
-    /** 行走 */
-    Walk UMETA(DisplayName = "Walk"),
+    /** 空手行走 */
+    EmptyHandWalk UMETA(DisplayName = "EmptyHandWalk"),
 
-    /** 奔跑 */
-    Run UMETA(DisplayName = "Run"),
+    /** 空手奔跑 */
+    EmptyHandRun UMETA(DisplayName = "EmptyHandRun"),
 
-    /** 瞄准横移行走 */
-    StrafeWalk UMETA(DisplayName = "StrafeWalk"),
+    /** 空手行走起跳 */
+    EmptyHandWalkJump UMETA(DisplayName = "EmptyHandWalkJump"),
 
-    /** 瞄准横移奔跑 */
-    StrafeRun UMETA(DisplayName = "StrafeRun"),
+    /** 空手行走落地 */
+    EmptyHandWalkLand UMETA(DisplayName = "EmptyHandWalkLand"),
 
-    /** 原地瞄准待机 */
-    IdleAim UMETA(DisplayName = "IdleAim"),
+    /** 空手奔跑起跳 */
+    EmptyHandRunJump UMETA(DisplayName = "EmptyHandRunJump"),
 
-    /** 原地瞄准向左转身 */
-    IdleAimTurnLeft UMETA(DisplayName = "IdleAimTurnLeft"),
+    /** 空手奔跑落地 */
+    EmptyHandRunLand UMETA(DisplayName = "EmptyHandRunLand"),
 
-    /** 原地瞄准向右转身 */
-    IdleAimTurnRight UMETA(DisplayName = "IdleAimTurnRight"),
+    /** 步枪待机 */
+    RifleIdle UMETA(DisplayName = "RifleIdle"),
 
-    /** 跳跃 */
-    Jump UMETA(DisplayName = "Jump"),
+    /** 步枪行走 */
+    RifleWalk UMETA(DisplayName = "RifleWalk"),
 
-    /** 落地 */
-    Land UMETA(DisplayName = "Land")
+    /** 步枪奔跑 */
+    RifleRun UMETA(DisplayName = "RifleRun"),
+
+    /** 步枪瞄准横移行走 */
+    RifleStrafeWalk UMETA(DisplayName = "RifleStrafeWalk"),
+
+    /** 步枪瞄准横移奔跑 */
+    RifleStrafeRun UMETA(DisplayName = "RifleStrafeRun"),
+
+    /** 步枪原地瞄准待机 */
+    RifleIdleAim UMETA(DisplayName = "RifleIdleAim"),
+
+    /** 步枪原地瞄准向左转身 */
+    RifleIdleAimTurnLeft UMETA(DisplayName = "RifleIdleAimTurnLeft"),
+
+    /** 步枪原地瞄准向右转身 */
+    RifleIdleAimTurnRight UMETA(DisplayName = "RifleIdleAimTurnRight"),
+
+    /** 步枪行走起跳 */
+    RifleWalkJump UMETA(DisplayName = "RifleWalkJump"),
+
+    /** 步枪行走落地 */
+    RifleWalkLand UMETA(DisplayName = "RifleWalkLand"),
+
+    /** 步枪奔跑起跳 */
+    RifleRunJump UMETA(DisplayName = "RifleRunJump"),
+
+    /** 步枪奔跑落地 */
+    RifleRunLand UMETA(DisplayName = "RifleRunLand")
 };
