@@ -37,61 +37,6 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     const bool bTurningInPlaceRight = FacingData.IsBodyTurning()
         && AimState.AimYaw > 0.0f;
 
-    //默认待机
-    AnimationState.LocomotionState = EBBBLocomotionState::Idle;
-
-    //原地瞄准
-    if (!bMoving && bIdleAiming)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::IdleAim;
-    }
-
-    //原地瞄准向左转身
-    if (!bMoving && bIdleAiming && bTurningInPlaceLeft)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::IdleAimTurnLeft;
-    }
-
-    //原地瞄准向右转身
-    if (!bMoving && bIdleAiming && bTurningInPlaceRight)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::IdleAimTurnRight;
-    }
-
-    //瞄准移动使用横移状态
-    if (bMoving && bAiming)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::StrafeWalk;
-    }
-
-    //横移超阈值升级奔跑
-    if (bMoving && bAiming && Speed > Config.StrafeWalkSpeed)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::StrafeRun;
-    }
-
-    //普通移动默认行走
-    if (bMoving && !bAiming)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::Walk;
-    }
-
-    //移动超阈值升级奔跑
-    if (bMoving && !bAiming && Speed > Config.WalkSpeed)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::Run;
-    }
-
-    if (bIsFalling)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::Jump;
-    }
-
-    if (bJustLanded)
-    {
-        AnimationState.LocomotionState = EBBBLocomotionState::Land;
-    }
-
     //提交原地转身运行时状态供内部消费
     AnimationData.LocomotionPresentation.bWasFalling = bIsFalling;
     AnimationData.LocomotionPresentation.bIsTurningInPlaceLeft = bTurningInPlaceLeft;
@@ -100,5 +45,71 @@ void FBBBCharacterLocomotionStateProcessor::Update(
     //提交移动输入供动画混合
     AnimationState.MoveInput = IntentData.GetMoveInput();
     AnimationState.SmoothedMoveInput = IntentData.GetSmoothedMoveInput();
+
+    //落地优先于所有移动表现
+    if (bJustLanded)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::Land;
+        return;
+    }
+
+    //离地期间统一使用跳跃状态
+    if (bIsFalling)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::Jump;
+        return;
+    }
+
+    //原地瞄准向左转身
+    if (!bMoving && bIdleAiming && bTurningInPlaceLeft)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::IdleAimTurnLeft;
+        return;
+    }
+
+    //原地瞄准向右转身
+    if (!bMoving && bIdleAiming && bTurningInPlaceRight)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::IdleAimTurnRight;
+        return;
+    }
+
+    //原地瞄准
+    if (!bMoving && bIdleAiming)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::IdleAim;
+        return;
+    }
+
+    //横移超阈值升级奔跑
+    if (bMoving && bAiming && Speed > Config.StrafeWalkSpeed)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::StrafeRun;
+        return;
+    }
+
+    //瞄准移动使用横移状态
+    if (bMoving && bAiming)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::StrafeWalk;
+        return;
+    }
+
+    //移动超阈值升级奔跑
+    if (bMoving && !bAiming && Speed > Config.WalkSpeed)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::Run;
+        return;
+    }
+
+    //普通移动默认行走
+    if (bMoving && !bAiming)
+    {
+        AnimationState.LocomotionState = EBBBLocomotionState::Walk;
+        return;
+    }
+
+    //默认待机
+    AnimationState.LocomotionState = EBBBLocomotionState::Idle;
 }
 
