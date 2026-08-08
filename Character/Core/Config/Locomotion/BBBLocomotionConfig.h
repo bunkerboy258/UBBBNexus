@@ -3,46 +3,50 @@
 #include "CoreMinimal.h"
 #include "BBBLocomotionConfig.generated.h"
 
+/** 定义一种装备状态下的走跑移动参数 */
 USTRUCT(BlueprintType)
-//定义自由移动与持械移动的速度加速度和平滑
+struct FBBBCharacterLocomotionProfileConfig
+{
+    GENERATED_BODY()
+
+    /** 慢速移动的最大速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion", meta = (ClampMin = "0.0"))
+    float WalkSpeed = 280.0f;
+
+    /** 慢速移动的加速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion", meta = (ClampMin = "0.0"))
+    float WalkAcceleration = 800.0f;
+
+    /** 快速移动的最大速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion", meta = (ClampMin = "0.0"))
+    float RunSpeed = 650.0f;
+
+    /** 快速移动的加速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion", meta = (ClampMin = "0.0"))
+    float RunAcceleration = 1600.0f;
+};
+
+/** 定义空手、主手持有装备与跳跃移动参数 */
+USTRUCT(BlueprintType)
 struct FBBBCharacterLocomotionConfig
 {
     GENERATED_BODY()
 
-    //设置自由慢速移动的最大速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Walk")
-    float WalkSpeed = 280.0f;
+    FBBBCharacterLocomotionConfig()
+    {
+        MainHandEquipped.RunSpeed = 360.0f;
+        MainHandEquipped.RunAcceleration = 1200.0f;
+    }
 
-    //设置自由慢速移动达到目标速度的加速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Walk")
-    float WalkAcceleration = 800.0f;
+    /** 空手移动参数 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion")
+    FBBBCharacterLocomotionProfileConfig Unarmed;
 
-    //设置自由快速移动的最大速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Run")
-    float RunSpeed = 650.0f;
-
-    //设置自由快速移动达到目标速度的加速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Run")
-    float RunAcceleration = 1600.0f;
-
-    //设置持械慢速横移的最大速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|StrafeWalk")
-    float StrafeWalkSpeed = 280.0f;
-
-    //设置持械慢速横移达到目标速度的加速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|StrafeWalk")
-    float StrafeWalkAcceleration = 800.0f;
-
-    //设置持械快速横移的最大速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|StrafeRun")
-    float StrafeRunSpeed = 360.0f;
-
-    //设置持械快速横移达到目标速度的加速度
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|StrafeRun")
-    float StrafeRunAcceleration = 1200.0f;
+    /** 主手持有装备时的移动参数 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion")
+    FBBBCharacterLocomotionProfileConfig MainHandEquipped;
 
     /** 垂直起跳速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Jump", meta = (ClampMin = "0.0"))
     float JumpZVelocity = 420.0f;
-
 };

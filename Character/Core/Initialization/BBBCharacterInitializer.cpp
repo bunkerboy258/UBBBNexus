@@ -63,6 +63,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character,
         *Movement,
         Character.RuntimeData.Intent,
+        Character.RuntimeData.Equipment.Equipment,
         Config.Locomotion);
     
     Character.FacingSystem.Initialize(
@@ -181,10 +182,10 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     }
 
     //使用最小正值防止非法配置彻底冻结移动组件
-    Movement->MaxWalkSpeed = FMath::Max(Config.Locomotion.RunSpeed, 1.0f);
+    Movement->MaxWalkSpeed = FMath::Max(Config.Locomotion.Unarmed.RunSpeed, 1.0f);
 
     //将角色加速度配置同步到引擎移动组件
-    Movement->MaxAcceleration = Config.Locomotion.RunAcceleration;
+    Movement->MaxAcceleration = FMath::Max(Config.Locomotion.Unarmed.RunAcceleration, 0.0f);
 
     //将角色起跳速度配置同步到引擎移动组件
     Movement->JumpZVelocity = Config.Locomotion.JumpZVelocity;

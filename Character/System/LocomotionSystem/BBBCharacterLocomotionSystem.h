@@ -5,6 +5,7 @@ class ACharacter;
 class UCharacterMovementComponent;
 class FBBBCharacterInitializer;
 struct FBBBCharacterLocomotionConfig;
+struct FBBBCharacterEquipmentState;
 struct FBBBIntentRuntimeData;
 
 class ABBB_EVAC_API FBBBCharacterLocomotionSystem final
@@ -23,12 +24,14 @@ private:
      * @param InPawn	受控Pawn
      * @param InMovement	角色移动组件
      * @param InIntentData	移动意图运行时数据
+     * @param InEquipmentState	角色当前主手装备状态
      * @param InConfig	移动配置
      */
     void Initialize(
         ACharacter &InPawn,
         UCharacterMovementComponent &InMovement,
         const FBBBIntentRuntimeData &InIntentData,
+        const FBBBCharacterEquipmentState &InEquipmentState,
         const FBBBCharacterLocomotionConfig &InConfig);
 
     ACharacter *Character = nullptr;
@@ -36,6 +39,8 @@ private:
     UCharacterMovementComponent *Movement = nullptr;
 
     const FBBBIntentRuntimeData *IntentData = nullptr;
+
+    const FBBBCharacterEquipmentState *EquipmentState = nullptr;
 
     const FBBBCharacterLocomotionConfig *Config = nullptr;
 };
