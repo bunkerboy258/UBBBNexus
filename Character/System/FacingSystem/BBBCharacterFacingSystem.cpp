@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBFacingConfig.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
@@ -13,6 +14,7 @@ void FBBBCharacterFacingSystem::Initialize(
     UCharacterMovementComponent &InMovement,
     FBBBFacingRuntimeData &InFacingData,
     const FBBBCharacterWorldRuntimeData &InWorldData,
+    const FBBBIntentRuntimeData &InIntentData,
     const FBBBAimRuntimeData &InAimData,
     const FBBBCharacterFacingConfig &InConfig)
 {
@@ -20,6 +22,7 @@ void FBBBCharacterFacingSystem::Initialize(
     Movement = &InMovement;
     FacingData = &InFacingData;
     WorldData = &InWorldData;
+    IntentData = &InIntentData;
     AimData = &InAimData;
     Config = &InConfig;
 }
@@ -29,7 +32,7 @@ void FBBBCharacterFacingSystem::Initialize(
 void FBBBCharacterFacingSystem::Update()
 {
     if (!ensureMsgf(
-        Pawn && Movement && FacingData && WorldData && AimData && Config,
+        Pawn && Movement && FacingData && WorldData && IntentData && AimData && Config,
         TEXT("[UBBBC]Facing system update failed because dependencies are null")))
     {
         return;
@@ -37,12 +40,14 @@ void FBBBCharacterFacingSystem::Update()
 
     const FBBBAimRuntimeState &AimState = AimData->GetState();
     const bool bIsAiming = AimState.bIsAiming;
+    const bool bIsFiring = IntentData->WantsFire();
+    const bool bShouldFaceAimDirection = bIsAiming || bIsFiring;
 
-    //普通移动面向速度方向，瞄准移动由朝向系统控制身体
-    Movement->bOrientRotationToMovement = !bIsAiming;
+    //瞄准或开火时锁定身体朝向，其他情况面向移动方向
+    Movement->bOrientRotationToMovement = !bShouldFaceAimDirection;
     Movement->bUseControllerDesiredRotation = false;
 
-    if (!bIsAiming || !Pawn->GetController())
+    if (!bShouldFaceAimDirection || !Pawn->GetController())
     {
         FacingData->CommitState(false, 0.0f);
         return;

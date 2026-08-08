@@ -9,6 +9,7 @@ struct FBBBAimRuntimeData;
 struct FBBBCharacterFacingConfig;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBFacingRuntimeData;
+struct FBBBIntentRuntimeData;
 
 /** 统一控制角色移动朝向与瞄准身体追赶 */
 class ABBB_EVAC_API FBBBCharacterFacingSystem final
@@ -26,6 +27,7 @@ private:
      * @param InMovement		角色移动组件
      * @param InFacingData	朝向运行数据
      * @param InWorldData		世界运行数据
+     * @param InIntentData		意图运行数据
      * @param InAimData		瞄准运行数据
      * @param InConfig		朝向配置
      */
@@ -34,6 +36,7 @@ private:
         UCharacterMovementComponent &InMovement,
         FBBBFacingRuntimeData &InFacingData,
         const FBBBCharacterWorldRuntimeData &InWorldData,
+        const FBBBIntentRuntimeData &InIntentData,
         const FBBBAimRuntimeData &InAimData,
         const FBBBCharacterFacingConfig &InConfig);
 
@@ -41,6 +44,7 @@ private:
     UCharacterMovementComponent *Movement = nullptr;
     FBBBFacingRuntimeData *FacingData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
+    const FBBBIntentRuntimeData *IntentData = nullptr;
     const FBBBAimRuntimeData *AimData = nullptr;
     const FBBBCharacterFacingConfig *Config = nullptr;
 };
