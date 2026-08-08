@@ -34,8 +34,20 @@ struct FBBBCharacterLocomotionConfig
 
     FBBBCharacterLocomotionConfig()
     {
-        MainHandEquipped.RunSpeed = 360.0f;
+        Unarmed.WalkSpeed = 250.0f;
+        Unarmed.WalkAcceleration = 800.0f;
+        Unarmed.RunSpeed = 500.0f;
+        Unarmed.RunAcceleration = 1600.0f;
+
+        MainHandEquipped.WalkSpeed = 200.0f;
+        MainHandEquipped.WalkAcceleration = 650.0f;
+        MainHandEquipped.RunSpeed = 450.0f;
         MainHandEquipped.RunAcceleration = 1200.0f;
+
+        Strafe.WalkSpeed = 150.0f;
+        Strafe.WalkAcceleration = 650.0f;
+        Strafe.RunSpeed = 300.0f;
+        Strafe.RunAcceleration = 1200.0f;
     }
 
     /** 空手移动参数 */
@@ -45,6 +57,10 @@ struct FBBBCharacterLocomotionConfig
     /** 主手持有装备时的移动参数 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion")
     FBBBCharacterLocomotionProfileConfig MainHandEquipped;
+
+    /** 瞄准横移参数 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion")
+    FBBBCharacterLocomotionProfileConfig Strafe;
 
     /** 垂直起跳速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Jump", meta = (ClampMin = "0.0"))
