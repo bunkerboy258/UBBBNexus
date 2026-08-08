@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
@@ -16,6 +17,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     FBBBCharacterAnimationState &InAnimationState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBAimRuntimeData &InAimData,
+    const FBBBIntentRuntimeData &InIntentData,
     const FBBBFacingRuntimeData &InFacingData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBAimConfig &InAimConfig,
@@ -28,6 +30,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     AnimationState = &InAnimationState;
     WorldData = &InWorldData;
     AimData = &InAimData;
+    IntentData = &InIntentData;
     FacingData = &InFacingData;
     EquipmentState = &InEquipmentState;
     AimConfig = &InAimConfig;
@@ -41,6 +44,7 @@ void FBBBCharacterAnimationSystem::Update()
         AnimationData
             && AnimationState
             && AimData
+            && IntentData
             && FacingData
             && EquipmentState
             && CharacterMesh
@@ -63,6 +67,7 @@ void FBBBCharacterAnimationSystem::Update()
     LocomotionFactsProcessor.Update(
         *Movement,
         *AimData,
+        *IntentData,
         *FacingData,
         *EquipmentState,
         *AnimationState);

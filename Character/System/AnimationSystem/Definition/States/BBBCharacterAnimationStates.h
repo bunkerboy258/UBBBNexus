@@ -13,6 +13,10 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bIsAiming = false;
 
+    /** 是否保持开火意图 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsFiring = false;
+
     /** 是否存在实际水平移动 */
     UPROPERTY(BlueprintReadOnly)
     bool bIsMoving = false;

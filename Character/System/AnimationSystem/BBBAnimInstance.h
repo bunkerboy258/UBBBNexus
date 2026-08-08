@@ -29,6 +29,13 @@ public:
         return GetAnimationState().bIsAiming;
     }
 
+    /** @return 是否保持开火意图 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool IsFiring() const
+    {
+        return GetAnimationState().bIsFiring;
+    }
+
     /** @return 是否存在实际水平移动 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsMoving() const

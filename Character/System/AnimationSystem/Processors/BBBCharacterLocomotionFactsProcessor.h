@@ -6,6 +6,7 @@ class UCharacterMovementComponent;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterAnimationState;
 struct FBBBCharacterEquipmentState;
+struct FBBBIntentRuntimeData;
 struct FBBBFacingRuntimeData;
 
 /** 整理角色移动事实供动画蓝图自行决定表现 */
@@ -23,6 +24,7 @@ public:
     void Update(
         const UCharacterMovementComponent &Movement,
         const FBBBAimRuntimeData &AimData,
+        const FBBBIntentRuntimeData &IntentData,
         const FBBBFacingRuntimeData &FacingData,
         const FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterAnimationState &AnimationState) const;

@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionFactsProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "GameFramework/Actor.h"
@@ -9,6 +10,7 @@
 void FBBBCharacterLocomotionFactsProcessor::Update(
     const UCharacterMovementComponent &Movement,
     const FBBBAimRuntimeData &AimData,
+    const FBBBIntentRuntimeData &IntentData,
     const FBBBFacingRuntimeData &FacingData,
     const FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterAnimationState &AnimationState) const
@@ -25,6 +27,7 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     const FBBBAimRuntimeState &AimState = AimData.GetState();
 
     AnimationState.bIsAiming = AimState.bIsAiming;
+    AnimationState.bIsFiring = IntentData.WantsFire();
     AnimationState.bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     AnimationState.bIsGrounded = Movement.IsMovingOnGround();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
