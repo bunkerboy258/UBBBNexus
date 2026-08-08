@@ -56,35 +56,42 @@ void FBBBCharacterFacingSystem::Update()
     const float CurrentAimYawAbs = FMath::Abs(AimState.AimYaw);
     const bool bWasBodyTurning = FacingData->IsBodyTurning();
 
-    //尚未开始转向时允许上半身在阈值内独立瞄准
+    //身体尚未转向且偏角未超过启动阈值时保持不动
     if (!bWasBodyTurning && CurrentAimYawAbs <= Config->MaxAimYawBeforeBodyTurn)
     {
         FacingData->CommitState(false, CurrentAimYawAbs);
         return;
     }
 
-    //身体追赶至停止阈值后结束转向，形成稳定滞回区间
+    //身体开始转向后必须追到停止阈值内才结束
     if (bWasBodyTurning && CurrentAimYawAbs <= Config->AimYawBodyTurnStopThreshold)
     {
         FacingData->CommitState(false, CurrentAimYawAbs);
         return;
     }
 
+    //两个不同阈值构成滞回，避免临界角度反复启停
+    //计算瞄准来源指向目标的世界方向
     const FVector ToTarget = FVector(AimState.AimTargetWorld) - AimData->GetAimOriginWorld();
+
+    //目标与来源重合时无法得到有效朝向
     if (ToTarget.IsNearlyZero())
     {
         FacingData->CommitState(false, CurrentAimYawAbs);
         return;
     }
 
+    //只提取目标方向的水平旋转
     const FRotator TargetRotation(0.0f, ToTarget.Rotation().Yaw, 0.0f);
+
+    //按照配置速度逐帧追赶目标方向
     const FRotator UpdatedRotation = FMath::RInterpTo(
         Pawn->GetActorRotation(),
         TargetRotation,
         WorldData->GetFrameDeltaSeconds(),
         Config->ArmedBodyTurnInterpSpeed);
 
-    //只旋转角色水平朝向，不修改俯仰与横滚
+    //应用本帧水平旋转并记录身体正在转向
     Pawn->SetActorRotation(UpdatedRotation);
     FacingData->CommitState(true, CurrentAimYawAbs);
 }
