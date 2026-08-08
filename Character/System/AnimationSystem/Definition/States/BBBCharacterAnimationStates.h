@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
+class UAnimSequence;
+
 USTRUCT(BlueprintType)
 //角色动画状态封装
 struct FBBBCharacterAnimationState
@@ -28,6 +30,10 @@ struct FBBBCharacterAnimationState
     /** 主手是否持有装备 */
     UPROPERTY(BlueprintReadOnly)
     bool bHasMainHandEquipment = false;
+
+    /** 当前装备提供的持续上半身动画 */
+    UPROPERTY(BlueprintReadOnly)
+    TObjectPtr<UAnimSequence> EquippedUpperBodyAnimation = nullptr;
 
     /** 身体是否正在原地转向 */
     UPROPERTY(BlueprintReadOnly)

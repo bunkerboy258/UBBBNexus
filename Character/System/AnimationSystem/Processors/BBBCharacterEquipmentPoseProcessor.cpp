@@ -32,6 +32,7 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     ABBBEquipmentPresentationActor *PresentationActor = ActiveInstance
         ? ActiveInstance->GetPresentationActor()
         : nullptr;
+    AnimationState.EquippedUpperBodyAnimation = nullptr;
     //缺少装备时保持重置状态
     if (!EquipDomin || !PresentationActor)
     {
@@ -44,6 +45,8 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         return;
     }
     //读取姿势配置与武器网格
+    AnimationState.EquippedUpperBodyAnimation = EquipDomin->GetEquippedUpperBodyAnimation();
+
     UStaticMeshComponent *WeaponMesh = PresentationActor->GetEquipmentMesh();
     //缺少姿势配置或网格时保持重置状态
     if (!WeaponMesh)

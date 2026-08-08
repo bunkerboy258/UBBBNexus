@@ -5,6 +5,8 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimInstance.generated.h"
 
+class UAnimSequence;
+
 UCLASS()
 class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
 {
@@ -55,6 +57,20 @@ public:
     bool HasMainHandEquipment() const
     {
         return GetAnimationState().bHasMainHandEquipment;
+    }
+
+    /** @return 当前装备提供的持续上半身动画 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    UAnimSequence *GetEquippedUpperBodyAnimation() const
+    {
+        return GetAnimationState().EquippedUpperBodyAnimation;
+    }
+
+    /** @return 当前装备是否提供持续上半身动画 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool HasEquippedUpperBodyAnimation() const
+    {
+        return GetAnimationState().EquippedUpperBodyAnimation != nullptr;
     }
 
     /** @return 身体是否正在原地转向 */

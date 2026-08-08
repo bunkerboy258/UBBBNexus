@@ -5,6 +5,7 @@
 
 class ABBBEquipmentPresentationActor;
 class FBBBCharacterExternalAPI;
+class UAnimSequence;
 class UBBBEquipRuntimeData;
 class USkeletalMeshComponent;
 
@@ -60,4 +61,7 @@ public:
 
     /** @return 是否启用左手逆向动力学 */
     virtual bool IsLeftHandIKEnabled() const;
+
+    /** @return 装备期间持续使用的上半身动画 */
+    virtual UAnimSequence *GetEquippedUpperBodyAnimation() const;
 };

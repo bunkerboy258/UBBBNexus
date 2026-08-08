@@ -139,3 +139,8 @@ bool FBBBEquipFragment::IsLeftHandIKEnabled() const
 {
     return bEnableLeftHandIK;
 }
+
+UAnimSequence *FBBBEquipFragment::GetEquippedUpperBodyAnimation() const
+{
+    return EquippedUpperBodyAnimation;
+}
