@@ -7,8 +7,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/Results/BBBAimResults.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
@@ -17,29 +15,23 @@
 
 void FBBBCharacterAimSystem::Initialize(
     APawn &InPawn,
-    USkeletalMeshComponent &InCharacterMesh,
     FBBBAimRuntimeData &InAimData,
-    const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBIntentRuntimeData &InIntentData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBCharacterAnimationCommands &InAnimationCommands,
-    const FBBBAimConfig &InAimConfig,
-    const FBBBAimAnimationConfig &InAnimationConfig)
+    const FBBBAimConfig &InAimConfig)
 {
     Pawn = &InPawn;
-    CharacterMesh = &InCharacterMesh;
     AimData = &InAimData;
-    WorldData = &InWorldData;
     IntentData = &InIntentData;
     EquipmentState = &InEquipmentState;
     AnimationCommands = &InAnimationCommands;
     AimConfig = &InAimConfig;
-    AnimationConfig = &InAnimationConfig;
 }
 
 void FBBBCharacterAimSystem::Update()
 {
-    if (!ensureMsgf(Pawn && CharacterMesh && WorldData && AimData && IntentData && EquipmentState && AnimationCommands && AimConfig && AnimationConfig && Pawn->GetWorld(), TEXT("[UBBBC]Aim system update failed because dependencies are null")))
+    if (!ensureMsgf(Pawn && AimData && IntentData && EquipmentState && AnimationCommands && AimConfig && Pawn->GetWorld(), TEXT("[UBBBC]Aim system update failed because dependencies are null")))
     { return; }
     //复制上一帧状态
     FBBBAimRuntimeState State = AimData->GetState();
@@ -73,8 +65,6 @@ void FBBBCharacterAimSystem::Update()
         TraceResult))
     {
         State.AimTargetWorld = TraceResult.AimTarget;
-        State.AimTraceStart = TraceResult.ViewStart;
-        State.AimTraceEnd = TraceResult.ViewEnd;
     }
     //射线方向无效时 默认回退角色前方向
     if (!TraceResult.bValid)
@@ -83,43 +73,7 @@ void FBBBCharacterAimSystem::Update()
             + Pawn->GetActorForwardVector() * AimConfig->AimTraceDistance;
     }
     
-    State.AimIKTargetWorld = State.AimTargetWorld;
-    
-    //插槽无效时的默认回退位置
-    FVector AimOriginWorld = Pawn->GetActorLocation() + FVector(0.0f, 0.0f, 50.0f);
-    if (ensureMsgf(
-        !AimConfig->AimOriginSocketName.IsNone()
-            && CharacterMesh->DoesSocketExist(AimConfig->AimOriginSocketName),
-        TEXT("[UBBBC]Aim origin socket is not configured or missing on character mesh")))
-    {
-        AimOriginWorld = CharacterMesh->GetSocketLocation(AimConfig->AimOriginSocketName);
-    }
-    //角色自身为基准建立一套坐标系
-    const FMatrix ReferenceMatrix = FRotationMatrix::MakeFromXZ(
-        //水平参考轴 使用角色前方向
-        Pawn->GetActorForwardVector(),
-        //垂直参考轴 使用角色上方向
-        Pawn->GetActorUpVector());
-    //计算瞄准单位世界方向
-    const FVector AimDirection = (FVector(State.AimIKTargetWorld) - AimOriginWorld).GetSafeNormal();
-    //转换到角色参考空间
-    const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(AimDirection);
-    //转换为水平瞄准角
-    const FRotator AimRotation = LocalAimDirection.Rotation();
-    //限制水平瞄准角到有效范围
-    const float TargetYaw = FMath::Clamp(
-        AimRotation.Yaw,
-        -90.0f,
-        90.0f);
-    const float DeltaSeconds = WorldData->GetFrameDeltaSeconds();
-    //平滑水平角避免动画姿态跳变
-    State.AimYaw = FMath::FInterpTo(
-        State.AimYaw,
-        TargetYaw,
-        DeltaSeconds,
-        AnimationConfig->AimInterpSpeed);
-
-    AimData->CommitLocalState(State, AimOriginWorld);
+    AimData->CommitLocalState(State);
 }
 
 bool FBBBCharacterAimSystem::BuildAimTrace(
@@ -156,12 +110,6 @@ bool FBBBCharacterAimSystem::BuildAimTrace(
         QueryParams);
     //方向有效即标记射线结果可用
     OutResult.bValid = true;
-    //写入本次检测视点起点
-    OutResult.ViewStart = ViewLocation;
-    //写入本次检测单位方向
-    OutResult.ViewDirection = ViewDirection;
-    //写入本次检测最大终点
-    OutResult.ViewEnd = ViewEnd;
     //未命中时默认瞄准最大终点
     OutResult.AimTarget = ViewEnd;
     //命中可见物体时缩短目标到碰撞点

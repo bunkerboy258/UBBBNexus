@@ -16,21 +16,32 @@ struct FBBBFacingRuntimeData
         return State.bIsBodyTurning;
     }
 
-    /** @return 当前水平瞄准偏角绝对值 */
-    float GetCurrentAimYawAbs() const
+    /** @return 相对角色前轴的水平瞄准偏角 */
+    float GetAimYaw() const
     {
-        return State.CurrentAimYawAbs;
+        return State.AimYaw;
+    }
+
+    /** @return 身体朝向计算使用的瞄准起点世界坐标 */
+    const FVector &GetAimOriginWorld() const
+    {
+        return State.AimOriginWorld;
     }
 
     /**
      * 提交当前朝向状态
      * @param bInIsBodyTurning	身体是否正在追赶瞄准方向
-     * @param InCurrentAimYawAbs	当前水平瞄准偏角绝对值
+     * @param InAimYaw		相对角色前轴的水平瞄准偏角
+     * @param InAimOriginWorld	身体朝向计算使用的瞄准起点世界坐标
      */
-    void CommitState(bool bInIsBodyTurning, float InCurrentAimYawAbs)
+    void CommitState(
+        bool bInIsBodyTurning,
+        float InAimYaw,
+        const FVector &InAimOriginWorld)
     {
         State.bIsBodyTurning = bInIsBodyTurning;
-        State.CurrentAimYawAbs = InCurrentAimYawAbs;
+        State.AimYaw = InAimYaw;
+        State.AimOriginWorld = InAimOriginWorld;
     }
 
 private:

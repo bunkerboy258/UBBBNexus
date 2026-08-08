@@ -20,7 +20,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     const FBBBIntentRuntimeData &InIntentData,
     const FBBBFacingRuntimeData &InFacingData,
     const FBBBCharacterEquipmentState &InEquipmentState,
-    const FBBBAimConfig &InAimConfig,
     const FBBBAimAnimationConfig &InAimAnimationConfig,
     FName InAimSourceBoneName)
 {
@@ -33,7 +32,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     IntentData = &InIntentData;
     FacingData = &InFacingData;
     EquipmentState = &InEquipmentState;
-    AimConfig = &InAimConfig;
     AimAnimationConfig = &InAimAnimationConfig;
     AimSourceBoneName = InAimSourceBoneName;
 }
@@ -50,7 +48,6 @@ void FBBBCharacterAnimationSystem::Update()
             && CharacterMesh
             && WorldData
             && Movement
-            && AimConfig
             && AimAnimationConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
     { return; }
@@ -58,9 +55,9 @@ void FBBBCharacterAnimationSystem::Update()
     AimPresentationProcessor.Update(
         *CharacterMesh,
         WorldData->GetFrameDeltaSeconds(),
-        *AimConfig,
         *AimAnimationConfig,
         *AimData,
+        *FacingData,
         *AnimationData,
         *AnimationState);
 

@@ -5,7 +5,7 @@ void FBBBCharacterNetworkUploader::Update(
     FBBBNetworkRuntimeData &NetworkData,
     float WorldTimeSeconds,
     const FBBBAimRuntimeData &AimData,
-    const FBBBAimConfig &AimConfig,
+    const FBBBCharacterNetworkConfig &NetworkConfig,
     const FBBBCharacterEquipmentState &EquipmentState,
     const FBBBCharacterEquipmentResults &EquipmentResults,
     UBBBCharacterNetworkComponent &NetworkComponent) const
@@ -14,5 +14,5 @@ void FBBBCharacterNetworkUploader::Update(
     EquipmentUploadProcessor.Update(EquipmentState, NetworkData, NetworkComponent);
     FireUploadProcessor.Update(EquipmentResults, NetworkComponent);
     ReloadUploadProcessor.Update(EquipmentResults, NetworkComponent);
-    AimUploadProcessor.Update(AimData, AimConfig, WorldTimeSeconds, NetworkData, NetworkComponent);
+    AimUploadProcessor.Update(AimData, NetworkConfig, WorldTimeSeconds, NetworkData, NetworkComponent);
 }

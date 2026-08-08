@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterEquipmentPoseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionFactsProcessor.h"
 struct FBBBAimAnimationConfig;
-struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationState;
@@ -40,7 +39,6 @@ private:
      * @param InAimData	瞄准运行时数据
      * @param InFacingData	朝向运行时数据
      * @param InEquipmentState	装备状态
-     * @param InAimConfig	瞄准配置
      * @param InAimAnimationConfig	瞄准动画配置
      * @param InAimSourceBoneName	瞄准来源骨骼名
      */
@@ -54,7 +52,6 @@ private:
         const FBBBIntentRuntimeData &InIntentData,
         const FBBBFacingRuntimeData &InFacingData,
         const FBBBCharacterEquipmentState &InEquipmentState,
-        const FBBBAimConfig &InAimConfig,
         const FBBBAimAnimationConfig &InAimAnimationConfig,
         FName InAimSourceBoneName);
 
@@ -67,7 +64,6 @@ private:
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     UCharacterMovementComponent *Movement = nullptr;
-    const FBBBAimConfig *AimConfig = nullptr;
     const FBBBAimAnimationConfig *AimAnimationConfig = nullptr;
     FName AimSourceBoneName = NAME_None;
     FBBBCharacterAnimationProcessor AnimationProcessor;

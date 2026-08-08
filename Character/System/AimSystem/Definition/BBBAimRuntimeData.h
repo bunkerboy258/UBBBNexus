@@ -21,29 +21,17 @@ struct FBBBAimRuntimeData
         return State;
     }
 
-    /**
-     * 读取瞄准起点的世界坐标
-     * @return 瞄准起点世界坐标
-     */
-    const FVector &GetAimOriginWorld() const
-    {
-        return AimOriginWorld;
-    }
 private:
     friend class FBBBAimRestoreProcessor;
     friend class FBBBCharacterAimSystem;
 
     /**
-     * 提交本地计算的瞄准状态与瞄准起点
+     * 提交本地计算的瞄准状态
      * @param InState	瞄准运行时状态
-     * @param InAimOriginWorld	瞄准起点世界坐标
      */
-    void CommitLocalState(
-        const FBBBAimRuntimeState &InState,
-        const FVector &InAimOriginWorld)
+    void CommitLocalState(const FBBBAimRuntimeState &InState)
     {
         State = InState;
-        AimOriginWorld = InAimOriginWorld;
     }
 
     /**
@@ -54,12 +42,9 @@ private:
     {
         State.bIsAiming = RemoteState.bIsAiming;
         State.AimTargetWorld = RemoteState.AimTargetWorld;
-        State.AimIKTargetWorld = RemoteState.AimTargetWorld;
     }
 
     UPROPERTY(Transient)
     FBBBAimRuntimeState State;
 
-    UPROPERTY(Transient)
-    FVector AimOriginWorld = FVector::ZeroVector;
 };

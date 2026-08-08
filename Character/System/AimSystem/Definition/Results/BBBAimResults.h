@@ -12,14 +12,5 @@ struct FBBBAimTraceResult
     bool bValid = false;
 
     UPROPERTY(BlueprintReadOnly)
-    FVector_NetQuantize ViewStart = FVector::ZeroVector;
-
-    UPROPERTY(BlueprintReadOnly)
-    FVector_NetQuantize ViewEnd = FVector::ZeroVector;
-
-    UPROPERTY(BlueprintReadOnly)
     FVector_NetQuantize AimTarget = FVector::ZeroVector;
-
-    UPROPERTY(BlueprintReadOnly)
-    FVector ViewDirection = FVector::ForwardVector;
 };

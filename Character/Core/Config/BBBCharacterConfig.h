@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBFacingConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Input/BBBInputConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
 #include "BBBCharacterConfig.generated.h"
 
 USTRUCT(BlueprintType)
@@ -34,4 +35,7 @@ struct FBBBCharacterConfig
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterEquipmentConfig Equipment;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterNetworkConfig Network;
 };

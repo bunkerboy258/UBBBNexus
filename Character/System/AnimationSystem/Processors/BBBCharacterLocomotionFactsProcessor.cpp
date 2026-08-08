@@ -36,5 +36,5 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     AnimationState.LocalForwardSpeed = LocalVelocity.X;
     AnimationState.LocalRightSpeed = LocalVelocity.Y;
     AnimationState.VerticalSpeed = Velocity.Z;
-    AnimationState.AimYaw = AimState.AimYaw;
+    AnimationState.AimYaw = FacingData.GetAimYaw();
 }

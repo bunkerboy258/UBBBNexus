@@ -5,33 +5,27 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAimPresentationProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
     float DeltaSeconds,
-    const FBBBAimConfig &AimConfig,
     const FBBBAimAnimationConfig &AnimationConfig,
     const FBBBAimRuntimeData &AimData,
+    const FBBBFacingRuntimeData &FacingData,
     FBBBAnimationRuntimeData &AnimationData,
     FBBBCharacterAnimationState &AnimationState) const
 {
     const FBBBAimRuntimeState &AimState = AimData.GetState();
 
-    FVector AimOrigin = CharacterMesh.GetComponentLocation() + FVector(0.0f, 0.0f, 50.0f);
-
-    if (!AimConfig.AimOriginSocketName.IsNone()
-        && CharacterMesh.DoesSocketExist(AimConfig.AimOriginSocketName))
-    {
-        AimOrigin = CharacterMesh.GetSocketLocation(AimConfig.AimOriginSocketName);
-    }
-
-    const FVector AimTargetWorld = AimState.AimIKTargetWorld;
+    const FVector AimOrigin = FacingData.GetAimOriginWorld();
+    const FVector AimTargetWorld = AimState.AimTargetWorld;
     const bool bHasValidAimTarget = !AimTargetWorld.IsNearlyZero()
         && !(AimTargetWorld - AimOrigin).IsNearlyZero();
 
     const FVector RawTarget = CharacterMesh.GetComponentTransform().InverseTransformPosition(
-        FVector(AimState.AimIKTargetWorld));
+        FVector(AimState.AimTargetWorld));
     if (!AnimationData.AimPresentation.bHasSmoothedAimTarget)
     {
         AnimationData.AimPresentation.SmoothedAimTargetComponentSpace = RawTarget;
@@ -68,7 +62,7 @@ void FBBBCharacterAimPresentationProcessor::Update(
     AnimationState.AimIKDistanceAlpha = 1.0f;
     if (!AnimationConfig.bEnableNearAimIKDistanceAlpha)
     { return; }
-    const float Distance = FVector::Dist(AimOrigin, FVector(AimState.AimIKTargetWorld));
+    const float Distance = FVector::Dist(AimOrigin, FVector(AimState.AimTargetWorld));
     if (AnimationConfig.SafeAimIKTargetDistance <= AnimationConfig.MinAimIKTargetDistance)
     {
         AnimationState.AimIKDistanceAlpha = 0.0f;

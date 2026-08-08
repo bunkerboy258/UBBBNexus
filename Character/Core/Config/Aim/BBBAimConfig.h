@@ -15,13 +15,6 @@ struct FBBBAimConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimTraceDistance = 10000.0f;
 
-    /** 瞄准IK距离衰减的计算起点骨骼 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FName AimOriginSocketName = FName("spine_03");
-
-    /** 瞄准状态网络上行的最小间隔秒数  */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimUploadInterval = 0.033f;
 };
 
 /**
@@ -31,10 +24,6 @@ USTRUCT(BlueprintType)
 struct FBBBAimAnimationConfig
 {
     GENERATED_BODY()
-
-    /** 水平瞄准角向目标角插值的速度 供FInterpTo逐帧平滑 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimInterpSpeed = 15.0f;
 
     /** 是否对瞄准目标点做阻尼弹簧平滑 关闭时直接使用原始目标点 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

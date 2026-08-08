@@ -6,12 +6,14 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 
 void FBBBCharacterFacingSystem::Initialize(
     APawn &InPawn,
     UCharacterMovementComponent &InMovement,
+    USkeletalMeshComponent &InCharacterMesh,
     FBBBFacingRuntimeData &InFacingData,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBIntentRuntimeData &InIntentData,
@@ -20,6 +22,7 @@ void FBBBCharacterFacingSystem::Initialize(
 {
     Pawn = &InPawn;
     Movement = &InMovement;
+    CharacterMesh = &InCharacterMesh;
     FacingData = &InFacingData;
     WorldData = &InWorldData;
     IntentData = &InIntentData;
@@ -32,66 +35,85 @@ void FBBBCharacterFacingSystem::Initialize(
 void FBBBCharacterFacingSystem::Update()
 {
     if (!ensureMsgf(
-        Pawn && Movement && FacingData && WorldData && IntentData && AimData && Config,
+        Pawn && Movement && CharacterMesh && FacingData && WorldData && IntentData && AimData && Config,
         TEXT("[UBBBC]Facing system update failed because dependencies are null")))
     {
         return;
     }
 
-    const FBBBAimRuntimeState &AimState = AimData->GetState();
-    const bool bIsAiming = AimState.bIsAiming;
-    const bool bIsFiring = IntentData->WantsFire();
-    const bool bShouldFaceAimDirection = bIsAiming || bIsFiring;
+    //骨骼配置无效时保留可用的角色空间回退点
+    FVector AimOriginWorld = Pawn->GetActorLocation() + FVector(0.0f, 0.0f, 50.0f);
+    if (ensureMsgf(
+        !Config->AimOriginBoneName.IsNone()
+            && CharacterMesh->DoesSocketExist(Config->AimOriginBoneName),
+        TEXT("[UBBBC]Facing aim origin bone is not configured or missing on character mesh")))
+    {
+        AimOriginWorld = CharacterMesh->GetSocketLocation(Config->AimOriginBoneName);
+    }
 
-    //瞄准或开火时锁定身体朝向，其他情况面向移动方向
+    const FBBBAimRuntimeState &AimState = AimData->GetState();
+    const FVector ToTarget = FVector(AimState.AimTargetWorld) - AimOriginWorld;
+    const bool bHasAimDirection = !ToTarget.IsNearlyZero();
+    const bool bShouldFaceAimDirection = AimState.bIsAiming || IntentData->WantsFire();
+
+    //把世界瞄准方向转换为角色自身的水平偏角
+    float TargetAimYaw = 0.0f;
+    if (bHasAimDirection)
+    {
+        const FMatrix ReferenceMatrix = FRotationMatrix::MakeFromXZ(
+            Pawn->GetActorForwardVector(),
+            Pawn->GetActorUpVector());
+        const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(ToTarget.GetSafeNormal());
+        TargetAimYaw = FMath::Clamp(LocalAimDirection.Rotation().Yaw, -90.0f, 90.0f);
+    }
+
+    const float AimYaw = FMath::FInterpTo(
+        FacingData->GetAimYaw(),
+        TargetAimYaw,
+        WorldData->GetFrameDeltaSeconds(),
+        Config->AimYawInterpSpeed);
+
+    //远端角色只重建表现事实，不覆盖引擎同步的角色旋转
+    if (!Pawn->IsLocallyControlled())
+    {
+        FacingData->CommitState(false, AimYaw, AimOriginWorld);
+        return;
+    }
+
+    //本地瞄准或开火时锁定身体朝向，其他情况面向移动方向
     Movement->bOrientRotationToMovement = !bShouldFaceAimDirection;
     Movement->bUseControllerDesiredRotation = false;
 
-    if (!bShouldFaceAimDirection || !Pawn->GetController())
+    if (!bShouldFaceAimDirection || !Pawn->GetController() || !bHasAimDirection)
     {
-        FacingData->CommitState(false, 0.0f);
+        FacingData->CommitState(false, AimYaw, AimOriginWorld);
         return;
     }
 
-    const float CurrentAimYawAbs = FMath::Abs(AimState.AimYaw);
+    const float CurrentAimYawAbs = FMath::Abs(AimYaw);
     const bool bWasBodyTurning = FacingData->IsBodyTurning();
 
-    //身体尚未转向且偏角未超过启动阈值时保持不动
+    //启动与停止使用不同阈值，避免临界角度反复转向
     if (!bWasBodyTurning && CurrentAimYawAbs <= Config->MaxAimYawBeforeBodyTurn)
     {
-        FacingData->CommitState(false, CurrentAimYawAbs);
+        FacingData->CommitState(false, AimYaw, AimOriginWorld);
         return;
     }
 
-    //身体开始转向后必须追到停止阈值内才结束
     if (bWasBodyTurning && CurrentAimYawAbs <= Config->AimYawBodyTurnStopThreshold)
     {
-        FacingData->CommitState(false, CurrentAimYawAbs);
+        FacingData->CommitState(false, AimYaw, AimOriginWorld);
         return;
     }
 
-    //两个不同阈值构成滞回，避免临界角度反复启停
-    //计算瞄准来源指向目标的世界方向
-    const FVector ToTarget = FVector(AimState.AimTargetWorld) - AimData->GetAimOriginWorld();
-
-    //目标与来源重合时无法得到有效朝向
-    if (ToTarget.IsNearlyZero())
-    {
-        FacingData->CommitState(false, CurrentAimYawAbs);
-        return;
-    }
-
-    //只提取目标方向的水平旋转
     const FRotator TargetRotation(0.0f, ToTarget.Rotation().Yaw, 0.0f);
-
-    //按照配置速度逐帧追赶目标方向
     const FRotator UpdatedRotation = FMath::RInterpTo(
         Pawn->GetActorRotation(),
         TargetRotation,
         WorldData->GetFrameDeltaSeconds(),
         Config->ArmedBodyTurnInterpSpeed);
 
-    //应用本帧水平旋转并记录身体正在转向
+    //只修改本地角色的水平朝向
     Pawn->SetActorRotation(UpdatedRotation);
-    FacingData->CommitState(true, CurrentAimYawAbs);
+    FacingData->CommitState(true, AimYaw, AimOriginWorld);
 }

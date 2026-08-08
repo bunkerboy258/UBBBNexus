@@ -10,7 +10,7 @@ void FBBBAimRestoreProcessor::Update(
 
     FBBBRemoteAimState RemoteState;
     RemoteState.bIsAiming = AimState.bIsAiming;
-    RemoteState.AimTargetWorld = AimState.AimIKTargetWorld;
+    RemoteState.AimTargetWorld = AimState.AimTargetWorld;
 
     AimData.RestoreRemoteState(RemoteState);
 }

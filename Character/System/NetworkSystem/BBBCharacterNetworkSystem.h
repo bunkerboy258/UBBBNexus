@@ -10,7 +10,7 @@
 class FBBBCharacterInitializer;
 class UBBBCharacterNetworkComponent;
 class UBBBEquipmentCatalog;
-struct FBBBAimConfig;
+struct FBBBCharacterNetworkConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
 struct FBBBCharacterEquipmentResults;
@@ -51,7 +51,7 @@ private:
      * @param InWorldData	角色世界运行时数据
      * @param InEquipmentCommands	角色物品指令
      * @param InEquipmentResults	装备动作结果
-     * @param InAimConfig	瞄准配置
+     * @param InNetworkConfig	网络配置
      */
     void Initialize(
         FBBBNetworkRuntimeData &InNetworkData,
@@ -62,7 +62,7 @@ private:
         const FBBBCharacterWorldRuntimeData &InWorldData,
         FBBBCharacterEquipmentCommands &InEquipmentCommands,
         const FBBBCharacterEquipmentResults &InEquipmentResults,
-        const FBBBAimConfig &InAimConfig);
+        const FBBBCharacterNetworkConfig &InNetworkConfig);
 
     /**
      * 检查网络系统依赖是否完备
@@ -77,8 +77,7 @@ private:
     const FBBBCharacterEquipmentResults *EquipmentResults = nullptr;
     FBBBCharacterEquipmentState *EquipmentState = nullptr;
 
-    //瞄准配置引用
-    const FBBBAimConfig *AimConfig = nullptr;
+    const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 
     UBBBCharacterNetworkComponent *NetworkComponent = nullptr;
     UBBBEquipmentCatalog *EquipmentCatalog = nullptr;

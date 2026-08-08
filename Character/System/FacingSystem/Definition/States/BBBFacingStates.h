@@ -13,7 +13,11 @@ struct FBBBCharacterFacingState
     UPROPERTY(BlueprintReadOnly)
     bool bIsBodyTurning = false;
 
-    /** 当前水平瞄准偏角绝对值 */
+    /** 相对角色前轴的水平瞄准偏角 */
     UPROPERTY(BlueprintReadOnly)
-    float CurrentAimYawAbs = 0.0f;
+    float AimYaw = 0.0f;
+
+    /** 身体朝向计算使用的瞄准起点世界坐标 */
+    UPROPERTY(BlueprintReadOnly)
+    FVector AimOriginWorld = FVector::ZeroVector;
 };

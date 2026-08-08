@@ -2,15 +2,12 @@
 #pragma once
 #include "CoreMinimal.h"
 class APawn;
-class USkeletalMeshComponent;
 class FBBBCharacterInitializer;
-struct FBBBAimAnimationConfig;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBAimTraceResult;
 struct FBBBCharacterAnimationCommands;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterWorldRuntimeData;
 struct FBBBIntentRuntimeData;
 
 //计算视线目标骨骼空间瞄准角 与动画目标
@@ -28,25 +25,19 @@ private:
     /**
      * 初始化瞄准系统依赖与配置
      * @param InPawn	所属角色Pawn
-     * @param InCharacterMesh	角色骨骼网格组件
      * @param InAimData	瞄准运行时数据
-     * @param InWorldData	世界运行时数据
      * @param InIntentData	意图运行时数据
      * @param InEquipmentState	装备状态
      * @param InAnimationCommands	动画命令
      * @param InAimConfig	瞄准配置
-     * @param InAnimationConfig	瞄准动画配置
      */
     void Initialize(
         APawn &InPawn,
-        USkeletalMeshComponent &InCharacterMesh,
         FBBBAimRuntimeData &InAimData,
-        const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBIntentRuntimeData &InIntentData,
         const FBBBCharacterEquipmentState &InEquipmentState,
         const FBBBCharacterAnimationCommands &InAnimationCommands,
-        const FBBBAimConfig &InAimConfig,
-        const FBBBAimAnimationConfig &InAnimationConfig);
+        const FBBBAimConfig &InAimConfig);
 
     /**
      * 沿相机视线执行瞄准射线检测并写入结果
@@ -63,12 +54,9 @@ private:
         FBBBAimTraceResult &OutResult) const;
 
     APawn *Pawn = nullptr;
-    USkeletalMeshComponent *CharacterMesh = nullptr;
-    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     const FBBBIntentRuntimeData *IntentData = nullptr;
     const FBBBCharacterEquipmentState *EquipmentState = nullptr;
     const FBBBCharacterAnimationCommands *AnimationCommands = nullptr;
     const FBBBAimConfig *AimConfig = nullptr;
-    const FBBBAimAnimationConfig *AnimationConfig = nullptr;
 };

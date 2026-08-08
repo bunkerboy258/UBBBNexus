@@ -50,14 +50,11 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.AimSystem.Initialize(
         Character,
-        *Character.GetMesh(),
         Character.RuntimeData.Aim,
-        Character.RuntimeData.WorldData,
         Character.RuntimeData.Intent,
         Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.Animation.GetCommands(),
-        Config.Aim,
-        Config.AimAnimation);
+        Config.Aim);
     
     Character.LocomotionSystem.Initialize(
         Character,
@@ -70,6 +67,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.FacingSystem.Initialize(
         Character,
         *Movement,
+        *Character.GetMesh(),
         Character.RuntimeData.Facing,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Intent,
@@ -95,7 +93,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Equipment.Commands,
         Character.RuntimeData.Equipment.Results,
-        Config.Aim);
+        Config.Network);
     
     Character.AnimationSystem.Initialize(
         *Character.GetMesh(),
@@ -107,7 +105,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Intent,
         Character.RuntimeData.Facing,
         Character.RuntimeData.Equipment.Equipment,
-        Config.Aim,
         Config.AimAnimation,
         Config.Equipment.AimSourceBoneName);
     

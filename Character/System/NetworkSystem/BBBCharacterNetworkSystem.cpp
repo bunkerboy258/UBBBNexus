@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 
@@ -12,7 +13,7 @@ void FBBBCharacterNetworkSystem::Initialize(
     const FBBBCharacterWorldRuntimeData &InWorldData,
     FBBBCharacterEquipmentCommands &InEquipmentCommands,
     const FBBBCharacterEquipmentResults &InEquipmentResults,
-    const FBBBAimConfig &InAimConfig)
+    const FBBBCharacterNetworkConfig &InNetworkConfig)
 {
     NetworkData = &InNetworkData;
     AimData = &InAimData;
@@ -22,14 +23,14 @@ void FBBBCharacterNetworkSystem::Initialize(
     WorldData = &InWorldData;
     EquipmentCommands = &InEquipmentCommands;
     EquipmentResults = &InEquipmentResults;
-    AimConfig = &InAimConfig;
+    NetworkConfig = &InNetworkConfig;
 }
 
 //检查依赖
 bool FBBBCharacterNetworkSystem::HasRequiredDependencies() const
 {
     return ensureMsgf(
-        NetworkData && WorldData && AimData && EquipmentCommands && EquipmentResults && EquipmentState && AimConfig && NetworkComponent && EquipmentCatalog,
+        NetworkData && WorldData && AimData && EquipmentCommands && EquipmentResults && EquipmentState && NetworkConfig && NetworkComponent && EquipmentCatalog,
         TEXT("[UBBBC]Network system operation aborted because dependencies are null"));
 }
 
@@ -64,7 +65,7 @@ void FBBBCharacterNetworkSystem::UpdateUpload()
         *NetworkData,
         WorldData->GetWorldTimeSeconds(),
         *AimData,
-        *AimConfig,
+        *NetworkConfig,
         *EquipmentState,
         *EquipmentResults,
         *NetworkComponent);

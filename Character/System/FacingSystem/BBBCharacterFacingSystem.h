@@ -5,6 +5,7 @@
 class APawn;
 class FBBBCharacterInitializer;
 class UCharacterMovementComponent;
+class USkeletalMeshComponent;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterFacingConfig;
 struct FBBBCharacterWorldRuntimeData;
@@ -25,6 +26,7 @@ private:
      * 初始化朝向系统依赖
      * @param InPawn		所属角色
      * @param InMovement		角色移动组件
+     * @param InCharacterMesh	角色骨骼网格组件
      * @param InFacingData	朝向运行数据
      * @param InWorldData		世界运行数据
      * @param InIntentData		意图运行数据
@@ -34,6 +36,7 @@ private:
     void Initialize(
         APawn &InPawn,
         UCharacterMovementComponent &InMovement,
+        USkeletalMeshComponent &InCharacterMesh,
         FBBBFacingRuntimeData &InFacingData,
         const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBIntentRuntimeData &InIntentData,
@@ -42,6 +45,7 @@ private:
 
     APawn *Pawn = nullptr;
     UCharacterMovementComponent *Movement = nullptr;
+    USkeletalMeshComponent *CharacterMesh = nullptr;
     FBBBFacingRuntimeData *FacingData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     const FBBBIntentRuntimeData *IntentData = nullptr;
