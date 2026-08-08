@@ -72,7 +72,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Movement,
         Character.RuntimeData.Facing,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.Intent,
         Character.RuntimeData.Aim,
         Config.Facing);
     

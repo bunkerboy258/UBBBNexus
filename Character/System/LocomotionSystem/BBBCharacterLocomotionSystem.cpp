@@ -33,6 +33,7 @@ void FBBBCharacterLocomotionSystem::Update()
     const bool bHasMainHandEquipment = EquipmentState->GetActiveMainHandInstance() != nullptr;
     const FBBBCharacterLocomotionProfileConfig *Profile = &Config->Unarmed;
 
+    //持有主手装备时使用装备移动参数
     if (bHasMainHandEquipment)
     {
         Profile = &Config->MainHandEquipped;
@@ -40,6 +41,7 @@ void FBBBCharacterLocomotionSystem::Update()
 
     const bool bIsAiming = AimData->GetState().bIsAiming;
 
+    //实际进入瞄准状态后使用侧向移动参数
     if (bIsAiming)
     {
         Profile = &Config->Strafe;
@@ -48,6 +50,7 @@ void FBBBCharacterLocomotionSystem::Update()
     float DesiredSpeed = Profile->WalkSpeed;
     float DesiredAcceleration = Profile->WalkAcceleration;
 
+    //冲刺意图只负责选择当前姿态下的跑步参数
     if (IntentData->WantsSprint())
     {
         DesiredSpeed = Profile->RunSpeed;
@@ -56,8 +59,8 @@ void FBBBCharacterLocomotionSystem::Update()
 
     Movement->MaxWalkSpeed = FMath::Max(DesiredSpeed, 1.0f);
     Movement->MaxAcceleration = FMath::Max(DesiredAcceleration, 0.0f);
-    Movement->bOrientRotationToMovement = !bIsAiming;
 
+    //跳跃由移动系统提交给角色移动组件
     if (IntentData->WantsJump())
     {
         Character->Jump();
@@ -70,6 +73,7 @@ void FBBBCharacterLocomotionSystem::Update()
 
     const FRotator YawRotation(0.0f, Character->GetControlRotation().Yaw, 0.0f);
 
+    //将局部输入转换为相机水平朝向下的世界移动方向
     Character->AddMovementInput(
         FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X),
         IntentData->GetMoveInput().Y);

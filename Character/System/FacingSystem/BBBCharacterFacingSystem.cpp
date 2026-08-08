@@ -1,12 +1,10 @@
-
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
+
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBFacingConfig.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/States/BBBFacingStates.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 
@@ -15,7 +13,6 @@ void FBBBCharacterFacingSystem::Initialize(
     UCharacterMovementComponent &InMovement,
     FBBBFacingRuntimeData &InFacingData,
     const FBBBCharacterWorldRuntimeData &InWorldData,
-    const FBBBIntentRuntimeData &InIntentData,
     const FBBBAimRuntimeData &InAimData,
     const FBBBCharacterFacingConfig &InConfig)
 {
@@ -23,82 +20,66 @@ void FBBBCharacterFacingSystem::Initialize(
     Movement = &InMovement;
     FacingData = &InFacingData;
     WorldData = &InWorldData;
-    IntentData = &InIntentData;
     AimData = &InAimData;
     Config = &InConfig;
 }
 
+//------------------------------------------------------------------------------
+
 void FBBBCharacterFacingSystem::Update()
 {
-    if (!ensureMsgf(Pawn && Movement && WorldData && FacingData && IntentData && AimData && Config, TEXT("[UBBBC]Facing system update failed because dependencies are null")))
-    { return; }
-    bool bIsBodyTurning = FacingData->IsBodyTurning();
-    float CurrentAimYawAbs = FacingData->GetCurrentAimYawAbs();
-    bool bLastFaceAimDirection = FacingData->GetLastFaceAimDirection();
-    bool bHasAppliedRotationMode = FacingData->HasAppliedRotationMode();
-    const bool bFaceAimDirection = IntentData->WantsAim();
-    if (!bHasAppliedRotationMode || bFaceAimDirection != bLastFaceAimDirection)
+    if (!ensureMsgf(
+        Pawn && Movement && FacingData && WorldData && AimData && Config,
+        TEXT("[UBBBC]Facing system update failed because dependencies are null")))
     {
-        bHasAppliedRotationMode = true;
-        bLastFaceAimDirection = bFaceAimDirection;
-        bIsBodyTurning = false;
-        Movement->bOrientRotationToMovement = !bFaceAimDirection;
-        Movement->bUseControllerDesiredRotation = false;
-    }
-    if (!bFaceAimDirection || !Pawn->GetController())
-    {
-        bIsBodyTurning = false;
-        FacingData->CommitState(
-            bIsBodyTurning,
-            CurrentAimYawAbs,
-            bLastFaceAimDirection,
-            bHasAppliedRotationMode);
         return;
     }
+
     const FBBBAimRuntimeState &AimState = AimData->GetState();
-    CurrentAimYawAbs = FMath::Abs(AimState.AimYaw);
-    if (!bIsBodyTurning && CurrentAimYawAbs <= Config->MaxAimYawBeforeBodyTurn)
+    const bool bIsAiming = AimState.bIsAiming;
+
+    //普通移动面向速度方向，瞄准移动由朝向系统控制身体
+    Movement->bOrientRotationToMovement = !bIsAiming;
+    Movement->bUseControllerDesiredRotation = false;
+
+    if (!bIsAiming || !Pawn->GetController())
     {
-        FacingData->CommitState(
-            bIsBodyTurning,
-            CurrentAimYawAbs,
-            bLastFaceAimDirection,
-            bHasAppliedRotationMode);
+        FacingData->CommitState(false, 0.0f);
         return;
     }
-    if (bIsBodyTurning && CurrentAimYawAbs <= Config->AimYawBodyTurnStopThreshold)
+
+    const float CurrentAimYawAbs = FMath::Abs(AimState.AimYaw);
+    const bool bWasBodyTurning = FacingData->IsBodyTurning();
+
+    //尚未开始转向时允许上半身在阈值内独立瞄准
+    if (!bWasBodyTurning && CurrentAimYawAbs <= Config->MaxAimYawBeforeBodyTurn)
     {
-        bIsBodyTurning = false;
-        FacingData->CommitState(
-            bIsBodyTurning,
-            CurrentAimYawAbs,
-            bLastFaceAimDirection,
-            bHasAppliedRotationMode);
+        FacingData->CommitState(false, CurrentAimYawAbs);
         return;
     }
-    bIsBodyTurning = true;
+
+    //身体追赶至停止阈值后结束转向，形成稳定滞回区间
+    if (bWasBodyTurning && CurrentAimYawAbs <= Config->AimYawBodyTurnStopThreshold)
+    {
+        FacingData->CommitState(false, CurrentAimYawAbs);
+        return;
+    }
+
     const FVector ToTarget = FVector(AimState.AimTargetWorld) - AimData->GetAimOriginWorld();
     if (ToTarget.IsNearlyZero())
     {
-        FacingData->CommitState(
-            bIsBodyTurning,
-            CurrentAimYawAbs,
-            bLastFaceAimDirection,
-            bHasAppliedRotationMode);
+        FacingData->CommitState(false, CurrentAimYawAbs);
         return;
     }
+
     const FRotator TargetRotation(0.0f, ToTarget.Rotation().Yaw, 0.0f);
+    const FRotator UpdatedRotation = FMath::RInterpTo(
+        Pawn->GetActorRotation(),
+        TargetRotation,
+        WorldData->GetFrameDeltaSeconds(),
+        Config->ArmedBodyTurnInterpSpeed);
 
-    Pawn->SetActorRotation(
-        FMath::RInterpTo(
-            Pawn->GetActorRotation(),
-            TargetRotation,
-            WorldData->GetFrameDeltaSeconds(),
-            Config->ArmedBodyTurnInterpSpeed));
-
-    FacingData->CommitState(
-        bIsBodyTurning,
-        CurrentAimYawAbs,
-        bLastFaceAimDirection,
-        bHasAppliedRotationMode);
+    //只旋转角色水平朝向，不修改俯仰与横滚
+    Pawn->SetActorRotation(UpdatedRotation);
+    FacingData->CommitState(true, CurrentAimYawAbs);
 }
