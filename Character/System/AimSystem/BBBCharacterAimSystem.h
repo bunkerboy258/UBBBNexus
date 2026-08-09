@@ -6,7 +6,6 @@ class FBBBCharacterInitializer;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBAimTraceResult;
-struct FBBBCharacterAnimationCommands;
 struct FBBBCharacterEquipmentState;
 struct FBBBIntentRuntimeData;
 
@@ -28,7 +27,6 @@ private:
      * @param InAimData	瞄准运行时数据
      * @param InIntentData	意图运行时数据
      * @param InEquipmentState	装备状态
-     * @param InAnimationCommands	动画命令
      * @param InAimConfig	瞄准配置
      */
     void Initialize(
@@ -36,7 +34,6 @@ private:
         FBBBAimRuntimeData &InAimData,
         const FBBBIntentRuntimeData &InIntentData,
         const FBBBCharacterEquipmentState &InEquipmentState,
-        const FBBBCharacterAnimationCommands &InAnimationCommands,
         const FBBBAimConfig &InAimConfig);
 
     /**
@@ -57,6 +54,5 @@ private:
     FBBBAimRuntimeData *AimData = nullptr;
     const FBBBIntentRuntimeData *IntentData = nullptr;
     const FBBBCharacterEquipmentState *EquipmentState = nullptr;
-    const FBBBCharacterAnimationCommands *AnimationCommands = nullptr;
     const FBBBAimConfig *AimConfig = nullptr;
 };

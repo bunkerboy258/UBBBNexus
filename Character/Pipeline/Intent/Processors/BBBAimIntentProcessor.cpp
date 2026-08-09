@@ -9,5 +9,5 @@ void FBBBAimIntentProcessor::Update(
 {
     const FBBBProcessedInputFrame &Input = InputData.GetProcessedInput();
 
-    Intent.bWantsAim = Input.bPrecisionAimHeld || Input.bFireHeld || Input.bFireRaisedGraceActive;
+    Intent.bWantsAim = Input.bPrecisionAimHeld || Input.bFireRaisedGraceActive;
 }

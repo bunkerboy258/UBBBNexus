@@ -2,6 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimInstance.generated.h"
 
@@ -25,17 +26,10 @@ public:
     virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
     /** @return 是否保持瞄准姿态 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
     bool IsAiming() const
     {
-        return GetAnimationState().bIsAiming;
-    }
-
-    /** @return 是否保持开火意图 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool IsFiring() const
-    {
-        return GetAnimationState().bIsFiring;
+        return AimState && AimState->bIsAiming;
     }
 
     /** @return 是否存在实际水平移动 */
@@ -209,4 +203,7 @@ protected:
 
     /** 缓存的角色动画状态引用 由所属角色每帧刷新 */
     const FBBBCharacterAnimationState *AnimationState = nullptr;
+
+    /** 缓存的瞄准只读状态 */
+    const FBBBAimRuntimeState *AimState = nullptr;
 };

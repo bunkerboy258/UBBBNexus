@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBFacingConfig.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
@@ -14,7 +13,6 @@ void FBBBCharacterFacingSystem::Initialize(
     UCharacterMovementComponent &InMovement,
     FBBBFacingRuntimeData &InFacingData,
     const FBBBCharacterWorldRuntimeData &InWorldData,
-    const FBBBIntentRuntimeData &InIntentData,
     const FBBBAimRuntimeData &InAimData,
     const FBBBCharacterFacingConfig &InConfig)
 {
@@ -22,7 +20,6 @@ void FBBBCharacterFacingSystem::Initialize(
     Movement = &InMovement;
     FacingData = &InFacingData;
     WorldData = &InWorldData;
-    IntentData = &InIntentData;
     AimData = &InAimData;
     Config = &InConfig;
 }
@@ -32,7 +29,7 @@ void FBBBCharacterFacingSystem::Initialize(
 void FBBBCharacterFacingSystem::Update()
 {
     if (!ensureMsgf(
-        Pawn && Movement && FacingData && WorldData && IntentData && AimData && Config,
+        Pawn && Movement && FacingData && WorldData && AimData && Config,
         TEXT("[UBBBC]Facing system update failed because dependencies are null")))
     {
         return;
@@ -41,7 +38,7 @@ void FBBBCharacterFacingSystem::Update()
     Pawn->bUseControllerRotationYaw = false;
 
     const FBBBAimRuntimeState &AimState = AimData->GetState();
-    const bool bUseCustomFacing = IntentData->WantsAim() || IntentData->WantsFire();
+    const bool bUseCustomFacing = AimState.bIsAiming;
 
     //没有瞄准或开火时恢复角色移动组件的正常朝向逻辑
     if (!bUseCustomFacing)

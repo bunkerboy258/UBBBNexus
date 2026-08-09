@@ -20,6 +20,7 @@
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
+class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class UCameraComponent;
 class USpringArmComponent;
@@ -33,6 +34,9 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     friend class FBBBCharacterInitializer;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
+
+    /** 允许动画实例只读角色表现状态 */
+    friend class UBBBAnimInstance;
     
 public:
     
@@ -64,7 +68,9 @@ public:
     {
         return CharacterConfig;
     }
-    
+
+private:
+
     /**
      * 获取动画表现状态
      * @return 管线提交后的动画状态常量引用
@@ -73,6 +79,12 @@ public:
     {
         //动画只读取管线提交后的表现数据
         return RuntimeData.GetAnimationState();
+    }
+
+    /** @return 瞄准系统提交的只读状态 */
+    const FBBBAimRuntimeState &GetAimState() const
+    {
+        return RuntimeData.Aim.GetState();
     }
 protected:
     

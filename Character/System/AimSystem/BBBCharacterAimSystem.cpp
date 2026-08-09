@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/Results/BBBAimResults.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
@@ -18,34 +17,25 @@ void FBBBCharacterAimSystem::Initialize(
     FBBBAimRuntimeData &InAimData,
     const FBBBIntentRuntimeData &InIntentData,
     const FBBBCharacterEquipmentState &InEquipmentState,
-    const FBBBCharacterAnimationCommands &InAnimationCommands,
     const FBBBAimConfig &InAimConfig)
 {
     Pawn = &InPawn;
     AimData = &InAimData;
     IntentData = &InIntentData;
     EquipmentState = &InEquipmentState;
-    AnimationCommands = &InAnimationCommands;
     AimConfig = &InAimConfig;
 }
 
 void FBBBCharacterAimSystem::Update()
 {
-    if (!ensureMsgf(Pawn && AimData && IntentData && EquipmentState && AnimationCommands && AimConfig && Pawn->GetWorld(), TEXT("[UBBBC]Aim system update failed because dependencies are null")))
+    if (!ensureMsgf(Pawn && AimData && IntentData && EquipmentState && AimConfig && Pawn->GetWorld(), TEXT("[UBBBC]Aim system update failed because dependencies are null")))
     { return; }
     //复制上一帧状态
     FBBBAimRuntimeState State = AimData->GetState();
     //读取当前主手物品
     UBBBEquipmentInstance *ActiveInstance = EquipmentState->GetActiveMainHandInstance();
-    const UBBBEquipmentDefinition *ActiveDefinition = ActiveInstance
-        ? ActiveInstance->GetDefinition()
-        : nullptr;
-    const bool bCanAim = ActiveDefinition
-        && IntentData->WantsAim()
-        //装备切换动画期间禁止物品IK
-        && !AnimationCommands->IsEquipmentIKBlockedRequested();
     //提交是否可瞄准
-    State.bIsAiming = bCanAim;
+    State.bIsAiming = IntentData->WantsAim() || IntentData->WantsFire();
     
     FVector ViewLocation = FVector::ZeroVector;
     FRotator ViewRotation = FRotator::ZeroRotator;
