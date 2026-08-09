@@ -6,7 +6,6 @@ class FBBBArbitrationPipeline;
 class FBBBCharacterAimSystem;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterCameraSystem;
-class FBBBCharacterFacingSystem;
 class FBBBCharacterEquipmentSystem;
 class FBBBCharacterLocomotionSystem;
 class FBBBCharacterNetworkSystem;
@@ -37,7 +36,6 @@ private:
      * @param InCameraSystem	相机系统
      * @param InAimSystem	瞄准系统
      * @param InLocomotionSystem	移动系统
-     * @param InFacingSystem	朝向系统
      * @param InEquipmentSystem	物品系统
      * @param InNetworkSystem	网络系统
      * @param InAnimationSystem	动画系统
@@ -53,7 +51,6 @@ private:
         FBBBCharacterCameraSystem &InCameraSystem,
         FBBBCharacterAimSystem &InAimSystem,
         FBBBCharacterLocomotionSystem &InLocomotionSystem,
-        FBBBCharacterFacingSystem &InFacingSystem,
         FBBBCharacterEquipmentSystem &InEquipmentSystem,
         FBBBCharacterNetworkSystem &InNetworkSystem,
         FBBBCharacterAnimationSystem &InAnimationSystem,
@@ -92,8 +89,6 @@ private:
     FBBBCharacterAimSystem *AimSystem = nullptr;
 
     FBBBCharacterLocomotionSystem *LocomotionSystem = nullptr;
-
-    FBBBCharacterFacingSystem *FacingSystem = nullptr;
 
     FBBBCharacterEquipmentSystem *EquipmentSystem = nullptr;
 

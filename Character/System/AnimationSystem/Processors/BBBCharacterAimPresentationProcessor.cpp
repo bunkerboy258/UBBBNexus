@@ -35,7 +35,7 @@ void FBBBCharacterAimPresentationProcessor::Update(
     const bool bHasValidAimTarget = !AimTargetWorld.IsNearlyZero()
         && !(AimTargetWorld - AimOrigin).IsNearlyZero();
 
-    float TargetAimYaw = 0.0f;
+    float TargetAimOffsetYaw = 0.0f;
     if (bHasValidAimTarget)
     {
         const FMatrix ReferenceMatrix = FRotationMatrix::MakeFromXZ(
@@ -43,15 +43,15 @@ void FBBBCharacterAimPresentationProcessor::Update(
             Owner->GetActorUpVector());
         const FVector AimDirection = (AimTargetWorld - AimOrigin).GetSafeNormal();
         const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(AimDirection);
-        TargetAimYaw = FMath::Clamp(LocalAimDirection.Rotation().Yaw, -90.0f, 90.0f);
+        TargetAimOffsetYaw = FMath::Clamp(LocalAimDirection.Rotation().Yaw, -90.0f, 90.0f);
     }
 
-    AnimationData.AimPresentation.SmoothedAimYaw = FMath::FInterpTo(
-        AnimationData.AimPresentation.SmoothedAimYaw,
-        TargetAimYaw,
+    AnimationData.AimPresentation.SmoothedAimOffsetYaw = FMath::FInterpTo(
+        AnimationData.AimPresentation.SmoothedAimOffsetYaw,
+        TargetAimOffsetYaw,
         DeltaSeconds,
-        AnimationConfig.AimYawInterpSpeed);
-    AnimationState.AimYaw = AnimationData.AimPresentation.SmoothedAimYaw;
+        AnimationConfig.AimOffsetYawInterpSpeed);
+    AnimationState.AimOffsetYaw = AnimationData.AimPresentation.SmoothedAimOffsetYaw;
 
     const FVector RawTarget = CharacterMesh.GetComponentTransform().InverseTransformPosition(
         FVector(AimState.AimTargetWorld));

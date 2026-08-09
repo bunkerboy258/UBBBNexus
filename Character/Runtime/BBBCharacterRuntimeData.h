@@ -8,7 +8,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBCharacterRuntimeData.generated.h"
@@ -51,10 +50,6 @@ private:
     //保存动作请求与仲裁结果
     UPROPERTY(Transient)
     FBBBDecisionRuntimeData Decision;
-
-    //保存角色朝向状态
-    UPROPERTY(Transient)
-    FBBBFacingRuntimeData Facing;
 
     //保存角色瞄准状态
     UPROPERTY(Transient)

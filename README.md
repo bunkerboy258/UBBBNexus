@@ -25,7 +25,7 @@ Input → Intent → Request → Arbitration → Execution
 - `FBBBCharacterInitializer` 在初始化阶段注入依赖
 - `FBBBCharacterUpdatePipeline` 根据角色控制身份调度固定更新路径
 
-FacingSystem 仅在本地控制角色上执行身体朝向。远端角色依赖 UE Character Movement 同步位置和旋转，AnimationSystem 根据同步后的世界事实重建动画偏角与 IK 表现。
+AimSystem 仅在本地控制角色上生成瞄准事实，并按移动状态分流身体朝向处理。远端角色依赖 UE Character Movement 同步位置和旋转，AnimationSystem 根据同步后的世界事实重建动画偏角与 IK 表现。
 
 ## 装备与物品
 

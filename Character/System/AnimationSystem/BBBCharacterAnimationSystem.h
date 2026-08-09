@@ -10,7 +10,6 @@ struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationState;
 struct FBBBCharacterEquipmentState;
 struct FBBBCharacterWorldRuntimeData;
-struct FBBBFacingRuntimeData;
 class FBBBCharacterInitializer;
 class UCharacterMovementComponent;
 class USkeletalMeshComponent;
@@ -36,7 +35,6 @@ private:
      * @param InAnimationState	动画状态
      * @param InWorldData	世界运行时数据
      * @param InAimData	瞄准运行时数据
-     * @param InFacingData	朝向运行时数据
      * @param InEquipmentState	装备状态
      * @param InAimAnimationConfig	瞄准动画配置
      * @param InAimSourceBoneName	瞄准来源骨骼名
@@ -48,7 +46,6 @@ private:
         FBBBCharacterAnimationState &InAnimationState,
         const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBAimRuntimeData &InAimData,
-        const FBBBFacingRuntimeData &InFacingData,
         const FBBBCharacterEquipmentState &InEquipmentState,
         const FBBBAimAnimationConfig &InAimAnimationConfig,
         FName InAimSourceBoneName);
@@ -56,7 +53,6 @@ private:
     FBBBAnimationRuntimeData *AnimationData = nullptr;
     FBBBCharacterAnimationState *AnimationState = nullptr;
     const FBBBAimRuntimeData *AimData = nullptr;
-    const FBBBFacingRuntimeData *FacingData = nullptr;
     const FBBBCharacterEquipmentState *EquipmentState = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;

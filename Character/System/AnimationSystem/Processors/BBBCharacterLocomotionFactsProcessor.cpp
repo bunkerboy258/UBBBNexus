@@ -1,13 +1,11 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionFactsProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void FBBBCharacterLocomotionFactsProcessor::Update(
     const UCharacterMovementComponent &Movement,
-    const FBBBFacingRuntimeData &FacingData,
     const FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterAnimationState &AnimationState) const
 {
@@ -24,7 +22,6 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     AnimationState.bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     AnimationState.bIsGrounded = Movement.IsMovingOnGround();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
-    AnimationState.bIsTurningInPlace = FacingData.IsBodyTurning();
     AnimationState.GroundSpeed = GroundSpeed;
     AnimationState.LocalForwardSpeed = LocalVelocity.X;
     AnimationState.LocalRightSpeed = LocalVelocity.Y;

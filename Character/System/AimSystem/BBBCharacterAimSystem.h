@@ -1,58 +1,59 @@
-
 #pragma once
+
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimMovementFacingProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimStateProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimTargetProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimTurnInPlaceProcessor.h"
+
 class APawn;
 class FBBBCharacterInitializer;
+class UCharacterMovementComponent;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
-struct FBBBAimTraceResult;
-struct FBBBCharacterEquipmentState;
+struct FBBBCharacterWorldRuntimeData;
 struct FBBBIntentRuntimeData;
 
-//计算视线目标骨骼空间瞄准角 与动画目标
+/**
+ * 按角色瞄准状态分流各个瞄准处理器
+ */
 class ABBB_EVAC_API FBBBCharacterAimSystem final
 {
 public:
-
     /**
-     * 每帧更新瞄准状态 计算瞄准目标点与骨骼空间瞄准角并提交运行时数据
+     * 按固定顺序更新瞄准状态、目标与身体朝向
      */
     void Update();
+
 private:
     friend class FBBBCharacterInitializer;
 
     /**
-     * 初始化瞄准系统依赖与配置
-     * @param InPawn	所属角色Pawn
-     * @param InAimData	瞄准运行时数据
-     * @param InIntentData	意图运行时数据
-     * @param InEquipmentState	装备状态
-     * @param InAimConfig	瞄准配置
+     * 初始化瞄准系统依赖
+     * @param InPawn       所属角色
+     * @param InMovement   角色移动组件
+     * @param InAimData    瞄准运行数据
+     * @param InIntentData 角色意图数据
+     * @param InWorldData  世界帧数据
+     * @param InAimConfig  瞄准配置
      */
     void Initialize(
         APawn &InPawn,
+        UCharacterMovementComponent &InMovement,
         FBBBAimRuntimeData &InAimData,
         const FBBBIntentRuntimeData &InIntentData,
-        const FBBBCharacterEquipmentState &InEquipmentState,
+        const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBAimConfig &InAimConfig);
 
-    /**
-     * 沿相机视线执行瞄准射线检测并写入结果
-     * @param ViewLocation	视线起点
-     * @param ViewRotation	视线旋转
-     * @param EquippedActor	需忽略的当前装备实体
-     * @param OutResult	输出瞄准检测结果
-     * @return 视线方向有效且结果已写入时返回true
-     */
-    bool BuildAimTrace(
-        const FVector &ViewLocation,
-        const FRotator &ViewRotation,
-        AActor *EquippedActor,
-        FBBBAimTraceResult &OutResult) const;
-
     APawn *Pawn = nullptr;
+    UCharacterMovementComponent *Movement = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     const FBBBIntentRuntimeData *IntentData = nullptr;
-    const FBBBCharacterEquipmentState *EquipmentState = nullptr;
+    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     const FBBBAimConfig *AimConfig = nullptr;
+
+    FBBBCharacterAimStateProcessor AimStateProcessor;
+    FBBBCharacterAimTargetProcessor AimTargetProcessor;
+    FBBBCharacterAimMovementFacingProcessor MovementFacingProcessor;
+    FBBBCharacterAimTurnInPlaceProcessor TurnInPlaceProcessor;
 };

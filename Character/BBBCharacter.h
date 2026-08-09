@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
@@ -112,8 +111,6 @@ private:
     FBBBCharacterAimSystem AimSystem;
     
     FBBBCharacterLocomotionSystem LocomotionSystem;
-    
-    FBBBCharacterFacingSystem FacingSystem;
     
     FBBBCharacterEquipmentSystem EquipmentSystem;
     

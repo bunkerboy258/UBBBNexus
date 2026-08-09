@@ -28,9 +28,6 @@ struct FBBBCharacterAnimationState
     TObjectPtr<UAnimSequence> EquippedUpperBodyAnimation = nullptr;
 
     /** 身体是否正在原地转向 */
-    UPROPERTY(BlueprintReadOnly)
-    bool bIsTurningInPlace = false;
-
     /** 实际水平移动速度 */
     UPROPERTY(BlueprintReadOnly)
     float GroundSpeed = 0.0f;
@@ -49,7 +46,7 @@ struct FBBBCharacterAnimationState
 
     /** 相对角色前轴的水平瞄准角 */
     UPROPERTY(BlueprintReadOnly)
-    float AimYaw = 0.0f;
+    float AimOffsetYaw = 0.0f;
 
     /** 瞄准IK权重 */
     UPROPERTY(BlueprintReadOnly)
@@ -101,7 +98,7 @@ struct FBBBAimPresentationRuntimeState
     float SmoothedAimIKAlpha = 0.0f;
 
     /** 平滑后的动画水平瞄准偏角 */
-    float SmoothedAimYaw = 0.0f;
+    float SmoothedAimOffsetYaw = 0.0f;
 
     /** 是否已有平滑瞄准目标 */
     bool bHasSmoothedAimTarget = false;

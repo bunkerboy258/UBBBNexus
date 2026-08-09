@@ -71,7 +71,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsTurningInPlace() const
     {
-        return GetAnimationState().bIsTurningInPlace;
+        return AimState && AimState->bIsTurningInPlace;
     }
 
     /** @return 实际水平移动速度 */
@@ -104,9 +104,9 @@ public:
 
     /** @return 相对角色前轴的水平瞄准角 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    float GetAimYaw() const
+    float GetAimOffsetYaw() const
     {
-        return GetAnimationState().AimYaw;
+        return GetAnimationState().AimOffsetYaw;
     }
 
     /**

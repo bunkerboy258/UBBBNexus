@@ -41,6 +41,7 @@ private:
     void RestoreRemoteState(const FBBBRemoteAimState &RemoteState)
     {
         State.bIsAiming = RemoteState.bIsAiming;
+        State.bIsTurningInPlace = false;
         State.AimTargetWorld = RemoteState.AimTargetWorld;
     }
 

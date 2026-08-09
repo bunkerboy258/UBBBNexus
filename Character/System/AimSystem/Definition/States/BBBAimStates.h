@@ -13,6 +13,10 @@ struct FBBBAimRuntimeState
     UPROPERTY(BlueprintReadOnly)
     bool bIsAiming = false;
 
+    /** 身体是否正在执行原地转身 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsTurningInPlace = false;
+
     //理想瞄准目标点的世界坐标
     UPROPERTY(BlueprintReadOnly)
     FVector_NetQuantize AimTargetWorld = FVector::ZeroVector;

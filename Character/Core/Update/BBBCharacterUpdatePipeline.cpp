@@ -2,7 +2,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
@@ -21,7 +20,6 @@ void FBBBCharacterUpdatePipeline::Initialize(
     FBBBCharacterCameraSystem &InCameraSystem,
     FBBBCharacterAimSystem &InAimSystem,
     FBBBCharacterLocomotionSystem &InLocomotionSystem,
-    FBBBCharacterFacingSystem &InFacingSystem,
     FBBBCharacterEquipmentSystem &InEquipmentSystem,
     FBBBCharacterNetworkSystem &InNetworkSystem,
     FBBBCharacterAnimationSystem &InAnimationSystem,
@@ -36,7 +34,6 @@ void FBBBCharacterUpdatePipeline::Initialize(
     CameraSystem = &InCameraSystem;
     AimSystem = &InAimSystem;
     LocomotionSystem = &InLocomotionSystem;
-    FacingSystem = &InFacingSystem;
     EquipmentSystem = &InEquipmentSystem;
     NetworkSystem = &InNetworkSystem;
     AnimationSystem = &InAnimationSystem;
@@ -57,7 +54,6 @@ void FBBBCharacterUpdatePipeline::Update() const
             && CameraSystem
             && AimSystem
             && LocomotionSystem
-            && FacingSystem
             && EquipmentSystem
             && NetworkSystem
             && AnimationSystem
@@ -130,8 +126,6 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     
     LocomotionSystem->Update();
     
-    FacingSystem->Update();
-    
     NetworkSystem->UpdateUpload();
     
     AnimationSystem->Update();
@@ -161,8 +155,6 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     AimSystem->Update();
     
     LocomotionSystem->Update();
-    
-    FacingSystem->Update();
     
     NetworkSystem->UpdateUpload();
     
