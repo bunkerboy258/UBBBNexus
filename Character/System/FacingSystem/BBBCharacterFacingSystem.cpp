@@ -52,21 +52,43 @@ void FBBBCharacterFacingSystem::Update()
     }
 
     const FBBBAimRuntimeState &AimState = AimData->GetState();
-    const FVector ToTarget = FVector(AimState.AimTargetWorld) - AimOriginWorld;
-    const bool bHasAimDirection = !ToTarget.IsNearlyZero();
-    const bool bShouldFaceAimDirection = AimState.bIsAiming || IntentData->WantsFire();
+    const bool bUseCustomFacing = AimState.bIsAiming || IntentData->WantsFire();
 
-    //把世界瞄准方向转换为角色自身的水平偏角
-    float TargetAimYaw = 0.0f;
-    if (bHasAimDirection)
+    //没有瞄准或开火时恢复角色移动组件的正常朝向逻辑
+    if (!bUseCustomFacing)
     {
-        const FMatrix ReferenceMatrix = FRotationMatrix::MakeFromXZ(
-            Pawn->GetActorForwardVector(),
-            Pawn->GetActorUpVector());
-        const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(ToTarget.GetSafeNormal());
-        TargetAimYaw = FMath::Clamp(LocalAimDirection.Rotation().Yaw, -90.0f, 90.0f);
+        if (Pawn->IsLocallyControlled())
+        {
+            Movement->bOrientRotationToMovement = true;
+            Movement->bUseControllerDesiredRotation = false;
+        }
+
+        FacingData->CommitState(false, 0.0f, AimOriginWorld);
+        return;
     }
 
+    //瞄准或开火时停用移动朝向并启用自定义区间转向
+    if (Pawn->IsLocallyControlled())
+    {
+        Movement->bOrientRotationToMovement = false;
+        Movement->bUseControllerDesiredRotation = false;
+    }
+
+    const FVector ToTarget = FVector(AimState.AimTargetWorld) - AimOriginWorld;
+
+    //目标与起点重合时没有可计算的朝向
+    if (ToTarget.IsNearlyZero())
+    {
+        FacingData->CommitState(false, 0.0f, AimOriginWorld);
+        return;
+    }
+
+    //把世界瞄准方向转换为角色自身的水平偏角
+    const FMatrix ReferenceMatrix = FRotationMatrix::MakeFromXZ(
+        Pawn->GetActorForwardVector(),
+        Pawn->GetActorUpVector());
+    const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(ToTarget.GetSafeNormal());
+    const float TargetAimYaw = FMath::Clamp(LocalAimDirection.Rotation().Yaw, -90.0f, 90.0f);
     const float AimYaw = FMath::FInterpTo(
         FacingData->GetAimYaw(),
         TargetAimYaw,
@@ -80,11 +102,7 @@ void FBBBCharacterFacingSystem::Update()
         return;
     }
 
-    //本地瞄准或开火时锁定身体朝向，其他情况面向移动方向
-    Movement->bOrientRotationToMovement = !bShouldFaceAimDirection;
-    Movement->bUseControllerDesiredRotation = false;
-
-    if (!bShouldFaceAimDirection || !Pawn->GetController() || !bHasAimDirection)
+    if (!Pawn->GetController())
     {
         FacingData->CommitState(false, AimYaw, AimOriginWorld);
         return;
