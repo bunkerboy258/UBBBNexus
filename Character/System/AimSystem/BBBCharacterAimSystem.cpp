@@ -36,40 +36,16 @@ void FBBBCharacterAimSystem::Update()
 
     AimStateProcessor.Update(*IntentData, State);
 
-    if (!State.bIsAiming)
+    if (State.bIsAiming)
     {
-        MovementFacingProcessor.Update(
-            *Pawn,
-            *Movement,
-            WorldData->GetFrameDeltaSeconds(),
-            AimConfig->MovingFacingInterpSpeed,
-            State);
-
-        AimData->CommitLocalState(State);
-        return;
+        AimTargetProcessor.Update(*Pawn, AimConfig->AimTargetDistance, State);
     }
 
-    AimTargetProcessor.Update(*Pawn, AimConfig->AimTargetDistance, State);
-
-    const bool bIsMoving = Movement->Velocity.Size2D() > AimConfig->StationarySpeedThreshold;
-    if (bIsMoving)
-    {
-        MovementFacingProcessor.Update(
-            *Pawn,
-            *Movement,
-            WorldData->GetFrameDeltaSeconds(),
-            AimConfig->MovingFacingInterpSpeed,
-            State);
-
-        AimData->CommitLocalState(State);
-        return;
-    }
-
-    TurnInPlaceProcessor.Update(
+    AimFacingProcessor.Update(
         *Pawn,
         *Movement,
         WorldData->GetFrameDeltaSeconds(),
-        *AimConfig,
+        AimConfig->FacingInterpSpeed,
         State);
 
     AimData->CommitLocalState(State);

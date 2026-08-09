@@ -1,18 +1,17 @@
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimMovementFacingProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimFacingProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 
-void FBBBCharacterAimMovementFacingProcessor::Update(
+void FBBBCharacterAimFacingProcessor::Update(
     APawn &Pawn,
     UCharacterMovementComponent &Movement,
     float DeltaSeconds,
     float FacingInterpSpeed,
-    FBBBAimRuntimeState &State) const
+    const FBBBAimRuntimeState &State) const
 {
     Pawn.bUseControllerRotationYaw = false;
-    State.bIsTurningInPlace = false;
 
     if (!State.bIsAiming)
     {
@@ -25,7 +24,7 @@ void FBBBCharacterAimMovementFacingProcessor::Update(
     Movement.bUseControllerDesiredRotation = false;
 
     AController *Controller = Pawn.GetController();
-    if (!ensureMsgf(Controller, TEXT("[UBBBC]Moving aim facing failed because controller is null")))
+    if (!ensureMsgf(Controller, TEXT("[UBBBC]Aim facing failed because controller is null")))
     {
         return;
     }

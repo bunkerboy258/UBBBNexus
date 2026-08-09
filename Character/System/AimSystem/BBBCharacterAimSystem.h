@@ -1,10 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimMovementFacingProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimFacingProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimStateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimTargetProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimTurnInPlaceProcessor.h"
 
 class APawn;
 class FBBBCharacterInitializer;
@@ -54,6 +53,5 @@ private:
 
     FBBBCharacterAimStateProcessor AimStateProcessor;
     FBBBCharacterAimTargetProcessor AimTargetProcessor;
-    FBBBCharacterAimMovementFacingProcessor MovementFacingProcessor;
-    FBBBCharacterAimTurnInPlaceProcessor TurnInPlaceProcessor;
+    FBBBCharacterAimFacingProcessor AimFacingProcessor;
 };

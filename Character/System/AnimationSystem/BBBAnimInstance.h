@@ -67,13 +67,6 @@ public:
         return GetAnimationState().EquippedUpperBodyAnimation != nullptr;
     }
 
-    /** @return 身体是否正在原地转向 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    bool IsTurningInPlace() const
-    {
-        return AimState && AimState->bIsTurningInPlace;
-    }
-
     /** @return 实际水平移动速度 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     float GetGroundSpeed() const

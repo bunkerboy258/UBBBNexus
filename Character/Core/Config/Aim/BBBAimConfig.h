@@ -13,25 +13,9 @@ struct FBBBAimConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
     float AimTargetDistance = 10000.0f;
 
-    /** 移动瞄准时身体追随控制器朝向的速度 */
+    /** 瞄准时身体追随控制器朝向的速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
-    float MovingFacingInterpSpeed = 18.0f;
-
-    /** 低于该水平速度时进入原地转身处理 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
-    float StationarySpeedThreshold = 5.0f;
-
-    /** 静止瞄准偏角超过该值时开始原地转身 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0", ClampMax = "180.0"))
-    float TurnInPlaceStartAngle = 40.0f;
-
-    /** 原地转身偏角回落到该值时停止转身 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0", ClampMax = "180.0"))
-    float TurnInPlaceStopAngle = 10.0f;
-
-    /** 静止瞄准时身体追赶控制器朝向的速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
-    float TurnInPlaceInterpSpeed = 8.0f;
+    float FacingInterpSpeed = 18.0f;
 };
 
 /** 瞄准动画表现配置 */
