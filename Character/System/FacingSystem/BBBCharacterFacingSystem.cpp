@@ -38,8 +38,10 @@ void FBBBCharacterFacingSystem::Update()
         return;
     }
 
+    Pawn->bUseControllerRotationYaw = false;
+
     const FBBBAimRuntimeState &AimState = AimData->GetState();
-    const bool bUseCustomFacing = AimState.bIsAiming || IntentData->WantsFire();
+    const bool bUseCustomFacing = IntentData->WantsAim() || IntentData->WantsFire();
 
     //没有瞄准或开火时恢复角色移动组件的正常朝向逻辑
     if (!bUseCustomFacing)
