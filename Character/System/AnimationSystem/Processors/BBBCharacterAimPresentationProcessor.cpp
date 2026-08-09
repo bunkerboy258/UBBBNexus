@@ -77,15 +77,19 @@ void FBBBCharacterAimPresentationProcessor::Update(
         AnimationData.AimPresentation.bHasSmoothedAimTarget = false;
     }
     float TargetAimAlpha = 0.0f;
-    if (AimState.bIsAiming && bHasValidAimTarget)
+    if (AimState.bIsAiming)
     {
         TargetAimAlpha = 1.0f;
     }
-    AnimationData.AimPresentation.SmoothedAimIKAlpha = FMath::FInterpTo(
-        AnimationData.AimPresentation.SmoothedAimIKAlpha,
+    AnimationData.AimPresentation.SmoothedAimPresentationAlpha = FMath::FInterpTo(
+        AnimationData.AimPresentation.SmoothedAimPresentationAlpha,
         TargetAimAlpha,
         DeltaSeconds,
-        AnimationConfig.AimIKAlphaInterpSpeed);
+        AnimationConfig.AimPresentationAlphaInterpSpeed);
+    AnimationState.AimPresentationAlpha = FMath::Clamp(
+        AnimationData.AimPresentation.SmoothedAimPresentationAlpha,
+        0.0f,
+        1.0f);
     AnimationState.AimTargetComponentSpace = AnimationData.AimPresentation.SmoothedAimTargetComponentSpace;
     AnimationState.bHasValidAimTarget = bHasValidAimTarget;
     AnimationState.AimIKDistanceAlpha = 1.0f;

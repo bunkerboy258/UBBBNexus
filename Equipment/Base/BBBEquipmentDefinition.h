@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Aim/BBBAimDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
@@ -9,7 +8,23 @@
 #include "StructUtils/InstancedStruct.h"
 #include "BBBEquipmentDefinition.generated.h"
 
+class UAnimSequence;
 class UTexture2D;
+
+/** 装备提供给角色的持续上半身动画配置 */
+USTRUCT(BlueprintType)
+struct ABBB_EVAC_API FBBBEquipmentUpperBodyAnimationConfig
+{
+    GENERATED_BODY()
+
+    /** 普通持有装备时使用的上半身动画 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
+    TObjectPtr<UAnimSequence> HoldingAnimation = nullptr;
+
+    /** 瞄准时使用的上半身动画 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
+    TObjectPtr<UAnimSequence> AimingAnimation = nullptr;
+};
 
 /** 装备静态配置与领域插槽 */
 UCLASS(BlueprintType)
@@ -34,6 +49,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
     TObjectPtr<UTexture2D> Icon;
 
+    /** 装备提供给角色的持续上半身动画 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
+    FBBBEquipmentUpperBodyAnimationConfig UpperBodyAnimation;
+
     /**
      * 历史修复说明：旧版使用内嵌UObject保存固定Fragment，UE 5.6详情面板创建对象时会递归刷新并导致栈溢出
      * 当前插槽类型固定，不需要对象身份与多态，因此改为结构体值配置以避开该编辑器路径
@@ -47,10 +66,6 @@ public:
      */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
     TInstancedStruct<FBBBEquipDomin> EquipDomin;
-
-    /** 瞄准领域 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
-    TInstancedStruct<FBBBAimDomin> AimDomin;
 
     /** 开火领域 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))

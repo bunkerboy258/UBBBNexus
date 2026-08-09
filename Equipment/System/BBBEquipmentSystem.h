@@ -66,6 +66,23 @@ public:
     /** @return 当前是否处于装备过渡 */
     bool IsEquipping() const;
 
+    /**
+     * 查询瞄准来源的世界变换
+     * @param OutTransform	接收瞄准来源世界变换
+     * @return 瞄准来源有效时返回true
+     */
+    bool TryGetAimSourceWorldTransform(FTransform &OutTransform) const;
+
+    /**
+     * 查询左手握持目标的世界变换
+     * @param OutTransform	接收左手握持目标世界变换
+     * @return 左手握持目标有效时返回true
+     */
+    bool TryGetLeftHandGripWorldTransform(FTransform &OutTransform) const;
+
+    /** @return 是否启用左手逆向动力学 */
+    bool IsLeftHandIKEnabled() const;
+
 private:
     friend class UBBBEquipmentInstance;
 

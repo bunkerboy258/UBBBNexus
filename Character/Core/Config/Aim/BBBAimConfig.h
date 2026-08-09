@@ -54,5 +54,5 @@ struct FBBBAimAnimationConfig
 
     /** 瞄准IK总权重的插值速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimIKAlphaInterpSpeed = 8.0f;
+    float AimPresentationAlphaInterpSpeed = 8.0f;
 };

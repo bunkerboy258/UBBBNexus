@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
+#include "Components/StaticMeshComponent.h"
 
 bool UBBBEquipmentSystem::Initialize(
     UBBBEquipmentInstance &InInstance,
@@ -188,4 +189,72 @@ bool UBBBEquipmentSystem::IsEquipping() const
     }
 
     return EquipRuntimeData->IsEquipping();
+}
+
+//------------------------------------------------------------------------------
+
+bool UBBBEquipmentSystem::TryGetAimSourceWorldTransform(FTransform &OutTransform) const
+{
+    OutTransform = FTransform::Identity;
+
+    if (!Definition || !Definition->EquipDomin.IsValid() || !Instance || !Instance->PresentationActor)
+    {
+        return false;
+    }
+
+    const UStaticMeshComponent *EquipmentMesh = Instance->PresentationActor->GetEquipmentMesh();
+    if (!EquipmentMesh)
+    {
+        return false;
+    }
+
+    const FName SocketName = Definition->EquipDomin.Get().GetAimSourceSocketName();
+    if (!EquipmentMesh->DoesSocketExist(SocketName))
+    {
+        return false;
+    }
+
+    OutTransform = EquipmentMesh->GetSocketTransform(SocketName, RTS_World);
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool UBBBEquipmentSystem::TryGetLeftHandGripWorldTransform(FTransform &OutTransform) const
+{
+    OutTransform = FTransform::Identity;
+
+    if (!Definition || !Definition->EquipDomin.IsValid() || !Instance || !Instance->PresentationActor)
+    {
+        return false;
+    }
+
+    const UStaticMeshComponent *EquipmentMesh = Instance->PresentationActor->GetEquipmentMesh();
+    if (!EquipmentMesh)
+    {
+        return false;
+    }
+
+    const FBBBEquipDomin &EquipDomin = Definition->EquipDomin.Get();
+    const FName SocketName = EquipDomin.GetLeftHandGripSocketName();
+    if (!EquipmentMesh->DoesSocketExist(SocketName))
+    {
+        return false;
+    }
+
+    OutTransform = EquipDomin.GetLeftHandGripSocketLocalOffset()
+        * EquipmentMesh->GetSocketTransform(SocketName, RTS_World);
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool UBBBEquipmentSystem::IsLeftHandIKEnabled() const
+{
+    if (!Definition || !Definition->EquipDomin.IsValid())
+    {
+        return false;
+    }
+
+    return Definition->EquipDomin.Get().IsLeftHandIKEnabled();
 }

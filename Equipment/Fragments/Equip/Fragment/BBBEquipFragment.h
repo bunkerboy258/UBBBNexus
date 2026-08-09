@@ -7,7 +7,6 @@
 class ABBBEquipmentPresentationActor;
 class FBBBCharacterExternalAPI;
 class UAnimMontage;
-class UAnimSequence;
 class UBBBEquipRuntimeData;
 class UCurveFloat;
 class USkeletalMeshComponent;
@@ -62,9 +61,6 @@ public:
     /** @return 是否启用左手逆向动力学 */
     virtual bool IsLeftHandIKEnabled() const override;
 
-    /** @return 装备期间持续使用的上半身动画 */
-    virtual UAnimSequence *GetEquippedUpperBodyAnimation() const override;
-
     /** 装备表现实体类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     TSubclassOf<ABBBEquipmentPresentationActor> PresentationActorClass;
@@ -76,10 +72,6 @@ public:
     /** 装备过渡动画 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     TObjectPtr<UAnimMontage> EquipMontage = nullptr;
-
-    /** 装备期间持续使用的上半身动画 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    TObjectPtr<UAnimSequence> EquippedUpperBodyAnimation = nullptr;
 
     /** 装备期间左手IK权重曲线，横轴为归一化装备进度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")

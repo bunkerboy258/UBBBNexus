@@ -8,6 +8,7 @@ class ABBBEquipmentPresentationActor;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentRuntimeData;
 class UBBBEquipmentSystem;
+struct FBBBEquipmentUpperBodyAnimationConfig;
 
 /** 装备配置、运行数据与表现实体的唯一实例根 */
 UCLASS(BlueprintType)
@@ -30,11 +31,11 @@ public:
     /** @return 装备静态配置 */
     UBBBEquipmentDefinition *GetDefinition() const;
 
+    /** @return 装备提供给角色的持续上半身动画配置 */
+    const FBBBEquipmentUpperBodyAnimationConfig &GetUpperBodyAnimationConfig() const;
+
     /** @return 单件装备行为系统 */
     UBBBEquipmentSystem *GetEquipmentSystem() const;
-
-    /** @return 当前装备表现实体 */
-    ABBBEquipmentPresentationActor *GetPresentationActor() const;
 
 private:
     friend class UBBBEquipmentSystem;

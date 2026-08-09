@@ -23,9 +23,17 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bHasMainHandEquipment = false;
 
-    /** 当前装备提供的持续上半身动画 */
+    /** 当前装备提供的普通握持上半身动画 */
     UPROPERTY(BlueprintReadOnly)
-    TObjectPtr<UAnimSequence> EquippedUpperBodyAnimation = nullptr;
+    TObjectPtr<UAnimSequence> HoldingUpperBodyAnimation = nullptr;
+
+    /** 当前装备提供的瞄准上半身动画 */
+    UPROPERTY(BlueprintReadOnly)
+    TObjectPtr<UAnimSequence> AimingUpperBodyAnimation = nullptr;
+
+    /** 普通握持与瞄准姿势之间的连续混合权重 */
+    UPROPERTY(BlueprintReadOnly)
+    float AimPresentationAlpha = 0.0f;
 
     /** 身体是否正在原地转向 */
     /** 实际水平移动速度 */
@@ -95,7 +103,7 @@ struct FBBBAimPresentationRuntimeState
     FVector AimTargetSmoothVelocity = FVector::ZeroVector;
 
     /** 平滑后的瞄准IK权重 */
-    float SmoothedAimIKAlpha = 0.0f;
+    float SmoothedAimPresentationAlpha = 0.0f;
 
     /** 平滑后的动画水平瞄准偏角 */
     float SmoothedAimOffsetYaw = 0.0f;

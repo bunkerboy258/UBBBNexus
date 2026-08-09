@@ -74,8 +74,3 @@ bool FBBBEquipDomin::IsLeftHandIKEnabled() const
 
     return false;
 }
-
-UAnimSequence *FBBBEquipDomin::GetEquippedUpperBodyAnimation() const
-{
-    return nullptr;
-}

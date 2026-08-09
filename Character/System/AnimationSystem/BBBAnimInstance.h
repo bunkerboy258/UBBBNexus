@@ -53,18 +53,39 @@ public:
         return GetAnimationState().bHasMainHandEquipment;
     }
 
-    /** @return 当前装备提供的持续上半身动画 */
+    /** @return 当前装备提供的普通握持上半身动画 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    UAnimSequence *GetEquippedUpperBodyAnimation() const
+    UAnimSequence *GetHoldingUpperBodyAnimation() const
     {
-        return GetAnimationState().EquippedUpperBodyAnimation;
+        return GetAnimationState().HoldingUpperBodyAnimation;
     }
 
-    /** @return 当前装备是否提供持续上半身动画 */
+    /** @return 当前装备是否提供普通握持上半身动画 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool HasEquippedUpperBodyAnimation() const
+    bool HasHoldingUpperBodyAnimation() const
     {
-        return GetAnimationState().EquippedUpperBodyAnimation != nullptr;
+        return GetAnimationState().HoldingUpperBodyAnimation != nullptr;
+    }
+
+    /** @return 当前装备提供的瞄准上半身动画 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    UAnimSequence *GetAimingUpperBodyAnimation() const
+    {
+        return GetAnimationState().AimingUpperBodyAnimation;
+    }
+
+    /** @return 当前装备是否提供瞄准上半身动画 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool HasAimingUpperBodyAnimation() const
+    {
+        return GetAnimationState().AimingUpperBodyAnimation != nullptr;
+    }
+
+    /** @return 普通握持与瞄准姿势之间的连续混合权重 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    float GetAimPresentationAlpha() const
+    {
+        return GetAnimationState().AimPresentationAlpha;
     }
 
     /** @return 实际水平移动速度 */
