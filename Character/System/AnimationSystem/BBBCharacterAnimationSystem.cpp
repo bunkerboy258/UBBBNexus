@@ -65,6 +65,7 @@ void FBBBCharacterAnimationSystem::Update()
         *CharacterMesh,
         //保存瞄准来源BoneName供所属对象后续流程使用
         AimSourceBoneName,
+        AimData->GetState().bIsAiming,
         *EquipmentState,
         AnimationData->GetCommands(),
         *AnimationData,

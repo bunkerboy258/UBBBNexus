@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Aim/BBBAimDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
@@ -46,6 +47,10 @@ public:
      */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
     TInstancedStruct<FBBBEquipDomin> EquipDomin;
+
+    /** 瞄准领域 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBAimDomin> AimDomin;
 
     /** 开火领域 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))

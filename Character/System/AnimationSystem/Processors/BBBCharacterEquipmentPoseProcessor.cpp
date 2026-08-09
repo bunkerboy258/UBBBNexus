@@ -8,6 +8,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Aim/BBBAimDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
@@ -16,6 +17,7 @@
 void FBBBCharacterEquipmentPoseProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
     FName AimSourceBoneName,
+    bool bIsAiming,
     const FBBBCharacterEquipmentState &EquipmentState,
     const FBBBCharacterAnimationCommands &AnimationCommands,
     const FBBBAnimationRuntimeData &AnimationData,
@@ -28,6 +30,9 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         : nullptr;
     const FBBBEquipDomin *EquipDomin = ActiveDefinition
         ? ActiveDefinition->EquipDomin.GetPtr()
+        : nullptr;
+    const FBBBAimDomin *AimDomin = ActiveDefinition
+        ? ActiveDefinition->AimDomin.GetPtr()
         : nullptr;
     ABBBEquipmentPresentationActor *PresentationActor = ActiveInstance
         ? ActiveInstance->GetPresentationActor()
@@ -46,6 +51,11 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     }
     //读取姿势配置与武器网格
     AnimationState.EquippedUpperBodyAnimation = EquipDomin->GetEquippedUpperBodyAnimation();
+
+    if (bIsAiming && AimDomin && AimDomin->GetUpperBodyAnimation())
+    {
+        AnimationState.EquippedUpperBodyAnimation = AimDomin->GetUpperBodyAnimation();
+    }
 
     UStaticMeshComponent *WeaponMesh = PresentationActor->GetEquipmentMesh();
     //缺少姿势配置或网格时保持重置状态
