@@ -152,14 +152,11 @@ public:
         return GetAnimationState().AimIKAlpha;
     }
 
-    /**
-     * 读取左手IK目标在右手插槽空间的位置
-     * @return 左手IK目标位置
-     */
+    /** @return 左手IK目标在右手骨骼空间的完整变换 */
     UFUNCTION(BlueprintPure, Category = "BBB|LeftHandIK", meta = (BlueprintThreadSafe))
-    FVector GetLeftHandIKTargetLocation() const
+    FTransform GetLeftHandIKTargetTransform() const
     {
-        return GetAnimationState().LeftHandTargetRightHandSocketSpace.GetLocation();
+        return GetAnimationState().LeftHandTargetRightHandBoneSpace;
     }
 
     /**

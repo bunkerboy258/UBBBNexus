@@ -76,9 +76,9 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     float AimIKDistanceAlpha = 1.0f;
 
-    /** 左手IK目标在右手插槽空间的变换 */
+    /** 左手IK目标在右手骨骼空间的完整变换 */
     UPROPERTY(BlueprintReadOnly)
-    FTransform LeftHandTargetRightHandSocketSpace = FTransform::Identity;
+    FTransform LeftHandTargetRightHandBoneSpace = FTransform::Identity;
 
     UPROPERTY(BlueprintReadOnly)
     //关闭boolHasValidLeftHand目标

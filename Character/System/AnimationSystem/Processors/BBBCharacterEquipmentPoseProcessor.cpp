@@ -44,7 +44,7 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         AnimationState.AimIKAlpha = 0.0f;
         AnimationState.LeftHandIKAlpha = 0.0f;
         AnimationState.AimSourceLocalTransform = FTransform::Identity;
-        AnimationState.LeftHandTargetRightHandSocketSpace = FTransform::Identity;
+        AnimationState.LeftHandTargetRightHandBoneSpace = FTransform::Identity;
         AnimationState.bHasValidAimSource = false;
         AnimationState.bHasValidLeftHandTarget = false;
         return;
@@ -64,7 +64,7 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         AnimationState.AimIKAlpha = 0.0f;
         AnimationState.LeftHandIKAlpha = 0.0f;
         AnimationState.AimSourceLocalTransform = FTransform::Identity;
-        AnimationState.LeftHandTargetRightHandSocketSpace = FTransform::Identity;
+        AnimationState.LeftHandTargetRightHandBoneSpace = FTransform::Identity;
         AnimationState.bHasValidAimSource = false;
         AnimationState.bHasValidLeftHandTarget = false;
         return;
@@ -89,19 +89,20 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
 
     //校验左手握持插槽
     const FName LeftHandGripSocketName = EquipDomin->GetLeftHandGripSocketName();
-    AnimationState.bHasValidLeftHandTarget = WeaponMesh->DoesSocketExist(LeftHandGripSocketName);
+    AnimationState.bHasValidLeftHandTarget = WeaponMesh->DoesSocketExist(LeftHandGripSocketName)
+        && CharacterMesh.GetBoneIndex(AimSourceBoneName) != INDEX_NONE;
     //装备动画期间屏蔽左手IK
-    if (AnimationState.bHasValidLeftHandTarget && PresentationActor->GetRootComponent())
+    if (AnimationState.bHasValidLeftHandTarget)
     {
-        //计算左手目标在右手插槽空间的变换
-        const FTransform GripActor = WeaponMesh->GetSocketTransform(LeftHandGripSocketName, RTS_Actor);
-        AnimationState.LeftHandTargetRightHandSocketSpace = EquipDomin->GetLeftHandGripSocketLocalOffset()
-            * GripActor
-            * PresentationActor->GetRootComponent()->GetRelativeTransform();
+        const FTransform GripWorld = EquipDomin->GetLeftHandGripSocketLocalOffset()
+            * WeaponMesh->GetSocketTransform(LeftHandGripSocketName, RTS_World);
+        const FTransform RightHandWorld = CharacterMesh.GetSocketTransform(AimSourceBoneName, RTS_World);
+
+        AnimationState.LeftHandTargetRightHandBoneSpace = GripWorld.GetRelativeTransform(RightHandWorld);
     }
-    if (!AnimationState.bHasValidLeftHandTarget || !PresentationActor->GetRootComponent())
+    if (!AnimationState.bHasValidLeftHandTarget)
     {
-        AnimationState.LeftHandTargetRightHandSocketSpace = FTransform::Identity;
+        AnimationState.LeftHandTargetRightHandBoneSpace = FTransform::Identity;
     }
 
     //目标与来源均有效时合成瞄准IK权重
