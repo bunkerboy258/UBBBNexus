@@ -67,7 +67,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.FacingSystem.Initialize(
         Character,
         *Movement,
-        *Character.GetMesh(),
         Character.RuntimeData.Facing,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Intent,

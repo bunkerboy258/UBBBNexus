@@ -5,24 +5,53 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBFacingRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/Actor.h"
 
 void FBBBCharacterAimPresentationProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
     float DeltaSeconds,
     const FBBBAimAnimationConfig &AnimationConfig,
     const FBBBAimRuntimeData &AimData,
-    const FBBBFacingRuntimeData &FacingData,
     FBBBAnimationRuntimeData &AnimationData,
     FBBBCharacterAnimationState &AnimationState) const
 {
+    const AActor *Owner = CharacterMesh.GetOwner();
+    if (!ensureMsgf(Owner, TEXT("[UBBBC]Aim presentation update failed because mesh owner is null")))
+    {
+        return;
+    }
+
     const FBBBAimRuntimeState &AimState = AimData.GetState();
 
-    const FVector AimOrigin = FacingData.GetAimOriginWorld();
+    FVector AimOrigin = CharacterMesh.GetComponentLocation() + FVector(0.0f, 0.0f, 50.0f);
+    if (!AnimationConfig.AimIKOriginBoneName.IsNone()
+        && CharacterMesh.DoesSocketExist(AnimationConfig.AimIKOriginBoneName))
+    {
+        AimOrigin = CharacterMesh.GetSocketLocation(AnimationConfig.AimIKOriginBoneName);
+    }
+
     const FVector AimTargetWorld = AimState.AimTargetWorld;
     const bool bHasValidAimTarget = !AimTargetWorld.IsNearlyZero()
         && !(AimTargetWorld - AimOrigin).IsNearlyZero();
+
+    float TargetAimYaw = 0.0f;
+    if (bHasValidAimTarget)
+    {
+        const FMatrix ReferenceMatrix = FRotationMatrix::MakeFromXZ(
+            Owner->GetActorForwardVector(),
+            Owner->GetActorUpVector());
+        const FVector AimDirection = (AimTargetWorld - AimOrigin).GetSafeNormal();
+        const FVector LocalAimDirection = ReferenceMatrix.InverseTransformVector(AimDirection);
+        TargetAimYaw = FMath::Clamp(LocalAimDirection.Rotation().Yaw, -90.0f, 90.0f);
+    }
+
+    AnimationData.AimPresentation.SmoothedAimYaw = FMath::FInterpTo(
+        AnimationData.AimPresentation.SmoothedAimYaw,
+        TargetAimYaw,
+        DeltaSeconds,
+        AnimationConfig.AimYawInterpSpeed);
+    AnimationState.AimYaw = AnimationData.AimPresentation.SmoothedAimYaw;
 
     const FVector RawTarget = CharacterMesh.GetComponentTransform().InverseTransformPosition(
         FVector(AimState.AimTargetWorld));

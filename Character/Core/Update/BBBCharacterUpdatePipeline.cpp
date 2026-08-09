@@ -179,8 +179,6 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
-
-    FacingSystem->Update();
     
     AnimationSystem->Update();
     
@@ -193,8 +191,6 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
-
-    FacingSystem->Update();
     
     AnimationSystem->Update();
     

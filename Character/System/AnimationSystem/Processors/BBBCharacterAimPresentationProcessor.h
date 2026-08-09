@@ -6,7 +6,6 @@ struct FBBBAimAnimationConfig;
 struct FBBBAimRuntimeData;
 struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationState;
-struct FBBBFacingRuntimeData;
 
 //把瞄准逻辑转换为动画IK数据
 class FBBBCharacterAimPresentationProcessor final
@@ -19,7 +18,6 @@ public:
      * @param DeltaSeconds	距上一帧的时间间隔
      * @param AnimationConfig	瞄准动画配置
      * @param AimData	瞄准运行时数据
-     * @param FacingData	朝向运行时数据
      * @param AnimationData	动画运行时数据
      * @param AnimationState	输出的动画状态
      */
@@ -28,7 +26,6 @@ public:
         float DeltaSeconds,
         const FBBBAimAnimationConfig &AnimationConfig,
         const FBBBAimRuntimeData &AimData,
-        const FBBBFacingRuntimeData &FacingData,
         FBBBAnimationRuntimeData &AnimationData,
         FBBBCharacterAnimationState &AnimationState) const;
 private:

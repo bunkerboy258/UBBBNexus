@@ -108,6 +108,9 @@ struct FBBBAimPresentationRuntimeState
     /** 平滑后的瞄准IK权重 */
     float SmoothedAimIKAlpha = 0.0f;
 
+    /** 平滑后的动画水平瞄准偏角 */
+    float SmoothedAimYaw = 0.0f;
+
     /** 是否已有平滑瞄准目标 */
     bool bHasSmoothedAimTarget = false;
 };

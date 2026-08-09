@@ -25,6 +25,14 @@ struct FBBBAimAnimationConfig
 {
     GENERATED_BODY()
 
+    /** 计算瞄准IK起点时使用的角色骨骼 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FName AimIKOriginBoneName = FName("spine_03");
+
+    /** 动画水平瞄准偏角的插值速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    float AimYawInterpSpeed = 15.0f;
+
     /** 是否对瞄准目标点做阻尼弹簧平滑 关闭时直接使用原始目标点 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     bool bEnableAimIKTargetSmoothing = true;
