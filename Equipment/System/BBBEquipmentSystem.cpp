@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/RunTime/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"

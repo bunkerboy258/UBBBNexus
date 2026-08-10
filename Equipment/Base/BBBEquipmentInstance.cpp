@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/RunTime/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 
 UBBBEquipmentInstance *UBBBEquipmentInstance::Create(

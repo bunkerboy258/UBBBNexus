@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/RunTime/BBBEquipmentRuntimeData.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
