@@ -48,6 +48,10 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     float LocalRightSpeed = 0.0f;
 
+    /** 角色实际水平转向速度，单位为度每秒 */
+    UPROPERTY(BlueprintReadOnly)
+    float TurnRate = 0.0f;
+
     /** 实际垂直移动速度 */
     UPROPERTY(BlueprintReadOnly)
     float VerticalSpeed = 0.0f;
@@ -91,6 +95,18 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     //关闭boolHasValidLeftHand目标
     bool bHasValidLeftHandTarget = false;
+};
+
+/**
+ * 保存实际转向速度计算所需的跨帧朝向
+ */
+struct FBBBCharacterTurnTrackingState
+{
+    /** 上一次采样的角色水平朝向 */
+    float PreviousActorYaw = 0.0f;
+
+    /** 是否已有可用于计算的上一帧朝向 */
+    bool bHasPreviousActorYaw = false;
 };
 
 //保存瞄准表现处理器的跨帧平滑状态

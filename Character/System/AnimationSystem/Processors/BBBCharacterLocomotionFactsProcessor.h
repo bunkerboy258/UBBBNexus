@@ -5,6 +5,7 @@
 class UCharacterMovementComponent;
 struct FBBBCharacterAnimationState;
 struct FBBBCharacterEquipmentState;
+struct FBBBAnimationRuntimeData;
 
 /** 整理角色移动事实供动画蓝图自行决定表现 */
 class FBBBCharacterLocomotionFactsProcessor final
@@ -19,5 +20,7 @@ public:
     void Update(
         const UCharacterMovementComponent &Movement,
         const FBBBCharacterEquipmentState &EquipmentState,
+        float DeltaSeconds,
+        FBBBAnimationRuntimeData &AnimationData,
         FBBBCharacterAnimationState &AnimationState) const;
 };

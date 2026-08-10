@@ -55,6 +55,8 @@ void FBBBCharacterAnimationSystem::Update()
     LocomotionFactsProcessor.Update(
         *Movement,
         *EquipmentState,
+        WorldData->GetFrameDeltaSeconds(),
+        *AnimationData,
         *AnimationState);
 
     AnimationProcessor.Update(

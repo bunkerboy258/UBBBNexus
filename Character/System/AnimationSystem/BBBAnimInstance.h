@@ -109,6 +109,13 @@ public:
         return GetAnimationState().LocalRightSpeed;
     }
 
+    /** @return 角色实际水平转向速度，单位为度每秒 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    float GetTurnRate() const
+    {
+        return GetAnimationState().TurnRate;
+    }
+
     /** @return 实际垂直移动速度 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     float GetVerticalSpeed() const
