@@ -2,12 +2,14 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
+#include "BBBWork/UBBBNexus/Character/Core/Movement/BBBCharacterMovementComponent.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
 ABBBCharacter::ABBBCharacter()
+    : Super(FObjectInitializer::Get().SetDefaultSubobjectClass<UBBBCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
@@ -55,10 +57,6 @@ void ABBBCharacter::BeginPlay()
 {
     Super::BeginPlay();
     FBBBCharacterInitializer::Initialize(*this);
-
-    OnCharacterMovementUpdated.AddDynamic(
-        this,
-        &ABBBCharacter::HandleCharacterMovementUpdated);
 }
 
 void ABBBCharacter::Tick(float DeltaSeconds)
@@ -76,10 +74,7 @@ void ABBBCharacter::Tick(float DeltaSeconds)
     CharacterUpdatePipeline.UpdateBeforeMovement();
 }
 
-void ABBBCharacter::HandleCharacterMovementUpdated(
-    float DeltaSeconds,
-    FVector OldLocation,
-    FVector OldVelocity)
+void ABBBCharacter::UpdateAfterCharacterMovement()
 {
     CharacterUpdatePipeline.UpdateAfterMovement();
 }

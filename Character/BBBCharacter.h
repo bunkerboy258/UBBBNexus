@@ -20,6 +20,7 @@
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
 class UBBBAnimInstance;
+class UBBBCharacterMovementComponent;
 class UBBBCharacterNetworkComponent;
 class UCameraComponent;
 class USpringArmComponent;
@@ -33,6 +34,9 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     friend class FBBBCharacterInitializer;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
+
+    /** 允许角色移动组件通知主管线处理移动后阶段 */
+    friend class UBBBCharacterMovementComponent;
 
     /** 允许动画实例只读角色表现状态 */
     friend class UBBBAnimInstance;
@@ -70,17 +74,8 @@ public:
 
 private:
 
-    /**
-     * 在移动组件完成本帧更新后提交动画事实并清理帧数据
-     * @param DeltaSeconds 本次移动更新时间
-     * @param OldLocation 移动前角色位置
-     * @param OldVelocity 移动前角色速度
-     */
-    UFUNCTION()
-    void HandleCharacterMovementUpdated(
-        float DeltaSeconds,
-        FVector OldLocation,
-        FVector OldVelocity);
+    /** 在移动组件完成本帧更新后提交动画事实并清理帧数据 */
+    void UpdateAfterCharacterMovement();
 
     /**
      * 获取动画表现状态
