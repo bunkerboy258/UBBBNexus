@@ -46,6 +46,13 @@ public:
         return GetAnimationState().bIsGrounded;
     }
 
+    /** @return 是否实际处于蹲伏状态 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    bool IsCrouching() const
+    {
+        return GetAnimationState().bIsCrouching;
+    }
+
     /** @return 主手是否持有装备 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool HasMainHandEquipment() const

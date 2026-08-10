@@ -55,6 +55,12 @@ struct FBBBIntentRuntimeData
         return bWantsSprint;
     }
 
+    /** @return 当前帧是否请求角色保持蹲伏 */
+    bool WantsCrouch() const
+    {
+        return bWantsCrouch;
+    }
+
     /** @return 当前帧是否请求角色跳跃 */
     bool WantsJump() const
     {
@@ -118,6 +124,10 @@ private:
     //冲刺速度请求
     UPROPERTY()
     bool bWantsSprint = false;
+
+    /** 蹲伏姿态请求 */
+    UPROPERTY()
+    bool bWantsCrouch = false;
 
     /** 跳跃请求 */
     UPROPERTY()

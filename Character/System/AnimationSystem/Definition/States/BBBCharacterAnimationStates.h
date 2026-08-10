@@ -19,6 +19,10 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bIsGrounded = true;
 
+    /** 是否实际处于蹲伏状态 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsCrouching = false;
+
     /** 主手是否持有装备 */
     UPROPERTY(BlueprintReadOnly)
     bool bHasMainHandEquipment = false;

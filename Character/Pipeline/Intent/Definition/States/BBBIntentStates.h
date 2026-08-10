@@ -21,6 +21,9 @@ struct FBBBCharacterIntentState
     //当前帧是否请求冲刺速度
     bool bWantsSprint = false;
 
+    /** 当前帧是否请求角色保持蹲伏 */
+    bool bWantsCrouch = false;
+
     /** 当前帧是否请求角色跳跃 */
     bool bWantsJump = false;
 
@@ -43,6 +46,7 @@ struct FBBBCharacterIntentState
         RuntimeData.bWantsFire = bWantsFire;
         RuntimeData.bWantsAim = bWantsAim;
         RuntimeData.bWantsSprint = bWantsSprint;
+        RuntimeData.bWantsCrouch = bWantsCrouch;
         RuntimeData.bWantsJump = bWantsJump;
         RuntimeData.bWantsReload = bWantsReload;
         RuntimeData.RequestedEquipSlot = RequestedEquipSlot;

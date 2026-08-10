@@ -39,6 +39,7 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
 
     AnimationState.bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     AnimationState.bIsGrounded = Movement.IsMovingOnGround();
+    AnimationState.bIsCrouching = Movement.IsCrouching();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
     AnimationState.GroundSpeed = GroundSpeed;
     AnimationState.LocalForwardSpeed = LocalVelocity.X;

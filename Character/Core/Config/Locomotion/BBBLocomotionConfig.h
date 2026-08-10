@@ -62,6 +62,18 @@ struct FBBBCharacterLocomotionConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion")
     FBBBCharacterLocomotionProfileConfig Strafe;
 
+    /** 蹲伏移动速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Crouch", meta = (ClampMin = "0.0"))
+    float CrouchSpeed = 150.0f;
+
+    /** 蹲伏移动加速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Crouch", meta = (ClampMin = "0.0"))
+    float CrouchAcceleration = 650.0f;
+
+    /** 蹲伏碰撞胶囊半高 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Crouch", meta = (ClampMin = "0.0"))
+    float CrouchedHalfHeight = 44.0f;
+
     /** 垂直起跳速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Jump", meta = (ClampMin = "0.0"))
     float JumpZVelocity = 420.0f;

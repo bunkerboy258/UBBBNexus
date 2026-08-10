@@ -172,6 +172,15 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //将角色加速度配置同步到引擎移动组件
     Movement->MaxAcceleration = FMath::Max(Config.Locomotion.Unarmed.RunAcceleration, 0.0f);
 
+    //启用引擎原生蹲伏能力
+    Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
+
+    //设置蹲伏状态下的移动速度
+    Movement->MaxWalkSpeedCrouched = FMath::Max(Config.Locomotion.CrouchSpeed, 1.0f);
+
+    //设置蹲伏状态下的碰撞胶囊半高
+    Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
+
     //将角色起跳速度配置同步到引擎移动组件
     Movement->JumpZVelocity = Config.Locomotion.JumpZVelocity;
 }
@@ -354,6 +363,33 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             [&Character](const FInputActionValue &Value)
             {
                 Character.RuntimeData.Input.RawInputData.SetSprintHeld(false);
+            });
+    }
+
+    if (Config.CrouchAction)
+    {
+        Input->BindActionValueLambda(
+            Config.CrouchAction,
+            ETriggerEvent::Started,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.SetCrouchHeld(true);
+            });
+
+        Input->BindActionValueLambda(
+            Config.CrouchAction,
+            ETriggerEvent::Completed,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.SetCrouchHeld(false);
+            });
+
+        Input->BindActionValueLambda(
+            Config.CrouchAction,
+            ETriggerEvent::Canceled,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.SetCrouchHeld(false);
             });
     }
 

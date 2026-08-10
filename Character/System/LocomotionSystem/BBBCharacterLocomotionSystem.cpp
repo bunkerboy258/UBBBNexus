@@ -30,6 +30,22 @@ void FBBBCharacterLocomotionSystem::Update()
         return;
     }
 
+    const bool bWantsCrouch = IntentData->WantsCrouch();
+
+    //按住蹲伏时请求引擎进入蹲伏
+    if (bWantsCrouch)
+    {
+        Character->Crouch();
+    }
+
+    //松开蹲伏时请求引擎在空间允许后起身
+    if (!bWantsCrouch)
+    {
+        Character->UnCrouch();
+    }
+
+    const bool bUsesCrouchMovement = bWantsCrouch || Movement->IsCrouching();
+
     const bool bHasMainHandEquipment = EquipmentState->GetActiveMainHandInstance() != nullptr;
     const FBBBCharacterLocomotionProfileConfig *Profile = &Config->Unarmed;
 
@@ -50,8 +66,15 @@ void FBBBCharacterLocomotionSystem::Update()
     float DesiredSpeed = Profile->WalkSpeed;
     float DesiredAcceleration = Profile->WalkAcceleration;
 
+    //蹲伏意图或实际蹲伏状态优先使用蹲伏移动参数
+    if (bUsesCrouchMovement)
+    {
+        DesiredSpeed = Config->CrouchSpeed;
+        DesiredAcceleration = Config->CrouchAcceleration;
+    }
+
     //冲刺意图只负责选择当前姿态下的跑步参数
-    if (IntentData->WantsSprint())
+    if (!bUsesCrouchMovement && IntentData->WantsSprint())
     {
         DesiredSpeed = Profile->RunSpeed;
         DesiredAcceleration = Profile->RunAcceleration;

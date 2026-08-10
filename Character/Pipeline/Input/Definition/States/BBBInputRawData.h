@@ -83,6 +83,15 @@ struct FBBBInputRawData
         RawInput.bSprintHeld = bHeld;
     }
 
+    /**
+     * 更新蹲伏按住状态
+     * @param bHeld	是否按住蹲伏
+     */
+    void SetCrouchHeld(bool bHeld)
+    {
+        RawInput.bCrouchHeld = bHeld;
+    }
+
     /** 标记本帧跳跃按下 */
     void MarkJumpPressed()
     {
