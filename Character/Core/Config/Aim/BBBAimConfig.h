@@ -13,9 +13,6 @@ struct FBBBAimConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
     float AimTargetDistance = 10000.0f;
 
-    /** 瞄准时身体追随控制器朝向的速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
-    float FacingInterpSpeed = 18.0f;
 };
 
 /** 瞄准动画表现配置 */

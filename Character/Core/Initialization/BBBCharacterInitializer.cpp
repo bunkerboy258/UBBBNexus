@@ -53,7 +53,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Movement,
         Character.RuntimeData.Aim,
         Character.RuntimeData.Intent,
-        Character.RuntimeData.WorldData,
         Config.Aim);
     
     Character.LocomotionSystem.Initialize(
