@@ -84,7 +84,7 @@ void FBBBCharacterLocomotionSystem::Update()
     Movement->MaxAcceleration = FMath::Max(DesiredAcceleration, 0.0f);
 
     //跳跃由移动系统提交给角色移动组件
-    if (IntentData->WantsJump())
+    if (!bUsesCrouchMovement && IntentData->WantsJump())
     {
         Character->Jump();
     }
