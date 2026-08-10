@@ -46,7 +46,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
     ExecutionPipeline = &InExecutionPipeline;
 }
 
-void FBBBCharacterUpdatePipeline::UpdateBeforeMovement() const
+void FBBBCharacterUpdatePipeline::Update() const
 {
     if (!ensureMsgf(
         Pawn
@@ -74,75 +74,67 @@ void FBBBCharacterUpdatePipeline::UpdateBeforeMovement() const
     //本地控制且权威
     if (bIsLocallyControlled && bHasAuthority)
     {
-        UpdateLocalAuthorityBeforeMovement();
+        UpdateLocalAuthority();
         return;
     }
 
     //本地控制但不权威
     if (bIsLocallyControlled && !bHasAuthority)
     {
-        UpdateLocalAutonomousBeforeMovement();
+        UpdateLocalAutonomous();
         return;
     }
 
     //远端模拟但权威
     if (!bIsLocallyControlled && bHasAuthority)
     {
-        UpdateRemoteAuthorityBeforeMovement();
+        UpdateRemoteAuthority();
         return;
     }
 
     //远端模拟且不权威
     if (!bIsLocallyControlled && !bHasAuthority)
     {
-        UpdateRemoteSimulatedBeforeMovement();
+        UpdateRemoteSimulated();
         return;
     }
     
 }
 
-void FBBBCharacterUpdatePipeline::UpdateAfterMovement() const
+//本地控制且权威
+void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
 {
-    if (!ensureMsgf(AnimationSystem && RuntimeData, TEXT("[UBBBC]Post-movement update aborted because dependencies are null")))
-    {
-        return;
-    }
+    NetworkSystem->UpdateValidation();
+    
+    NetworkSystem->UpdateRestore();
+    
+    InputPipeline->Update();
+    
+    IntentPipeline->Update();
+    
+    RequestPipeline->Update();
+    
+    ArbitrationPipeline->Update();
+    
+    ExecutionPipeline->Update();
+    
+    EquipmentSystem->Update();
+    
+    CameraSystem->Update();
+    
+    AimSystem->Update();
+    
+    LocomotionSystem->Update();
+    
+    NetworkSystem->UpdateUpload();
 
     AnimationSystem->Update();
 
     RuntimeData->Clean();
 }
 
-//本地控制且权威
-void FBBBCharacterUpdatePipeline::UpdateLocalAuthorityBeforeMovement() const
-{
-    NetworkSystem->UpdateValidation();
-    
-    NetworkSystem->UpdateRestore();
-    
-    InputPipeline->Update();
-    
-    IntentPipeline->Update();
-    
-    RequestPipeline->Update();
-    
-    ArbitrationPipeline->Update();
-    
-    ExecutionPipeline->Update();
-    
-    EquipmentSystem->Update();
-    
-    CameraSystem->Update();
-    
-    AimSystem->Update();
-    
-    LocomotionSystem->Update();
-    
-    NetworkSystem->UpdateUpload();
-}
-
 //本地控制但不权威
-void FBBBCharacterUpdatePipeline::UpdateLocalAutonomousBeforeMovement() const
+void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
 {
     NetworkSystem->UpdateRestore();
     
@@ -165,22 +157,34 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomousBeforeMovement() const
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
+
+    AnimationSystem->Update();
+
+    RuntimeData->Clean();
 }
 
 //远端模拟且权威
-void FBBBCharacterUpdatePipeline::UpdateRemoteAuthorityBeforeMovement() const
+void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 {
     NetworkSystem->UpdateValidation();
     
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
+
+    AnimationSystem->Update();
+
+    RuntimeData->Clean();
 }
 
 //远端模拟且不权威
-void FBBBCharacterUpdatePipeline::UpdateRemoteSimulatedBeforeMovement() const
+void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
 {
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
+
+    AnimationSystem->Update();
+
+    RuntimeData->Clean();
 }
