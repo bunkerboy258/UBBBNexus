@@ -47,44 +47,40 @@ void FBBBCharacterLocomotionSystem::Update()
     const bool bUsesCrouchMovement = bWantsCrouch || Movement->IsCrouching();
 
     const bool bHasMainHandEquipment = EquipmentState->GetActiveMainHandInstance() != nullptr;
-    const bool bIsAiming = AimData->GetState().bIsAiming;
     const FBBBCharacterLocomotionProfileConfig *Profile = &Config->Unarmed;
-    const FBBBCharacterLocomotionProfileConfig *CrouchProfile = &Config->CrouchUnarmed;
 
     //持有主手装备时使用装备移动参数
     if (bHasMainHandEquipment)
     {
         Profile = &Config->MainHandEquipped;
-        CrouchProfile = &Config->CrouchMainHandEquipped;
     }
+
+    const bool bIsAiming = AimData->GetState().bIsAiming;
 
     //实际进入瞄准状态后使用侧向移动参数
     if (bIsAiming)
     {
         Profile = &Config->Strafe;
-        CrouchProfile = &Config->CrouchStrafe;
-    }
-
-    //请求或保持蹲伏时切换到相同装备与瞄准语义下的蹲伏配置
-    if (bUsesCrouchMovement)
-    {
-        Profile = CrouchProfile;
     }
 
     float DesiredSpeed = Profile->WalkSpeed;
     float DesiredAcceleration = Profile->WalkAcceleration;
 
+    //蹲伏意图或实际蹲伏状态优先使用蹲伏移动参数
+    if (bUsesCrouchMovement)
+    {
+        DesiredSpeed = Config->CrouchSpeed;
+        DesiredAcceleration = Config->CrouchAcceleration;
+    }
+
     //冲刺意图只负责选择当前姿态下的跑步参数
-    if (IntentData->WantsSprint())
+    if (!bUsesCrouchMovement && IntentData->WantsSprint())
     {
         DesiredSpeed = Profile->RunSpeed;
         DesiredAcceleration = Profile->RunAcceleration;
     }
 
-    const float ClampedDesiredSpeed = FMath::Max(DesiredSpeed, 1.0f);
-
-    Movement->MaxWalkSpeed = ClampedDesiredSpeed;
-    Movement->MaxWalkSpeedCrouched = ClampedDesiredSpeed;
+    Movement->MaxWalkSpeed = FMath::Max(DesiredSpeed, 1.0f);
     Movement->MaxAcceleration = FMath::Max(DesiredAcceleration, 0.0f);
 
     //跳跃由移动系统提交给角色移动组件

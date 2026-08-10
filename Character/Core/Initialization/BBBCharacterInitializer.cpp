@@ -175,14 +175,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //启用引擎原生蹲伏能力
     Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
 
-    //使用全部蹲伏配置中的最大跑速初始化引擎移动上限
-    const float MaxConfiguredCrouchSpeed = FMath::Max(
-        Config.Locomotion.CrouchUnarmed.RunSpeed,
-        FMath::Max(
-            Config.Locomotion.CrouchMainHandEquipped.RunSpeed,
-            Config.Locomotion.CrouchStrafe.RunSpeed));
-
-    Movement->MaxWalkSpeedCrouched = FMath::Max(MaxConfiguredCrouchSpeed, 1.0f);
+    //设置蹲伏状态下的移动速度
+    Movement->MaxWalkSpeedCrouched = FMath::Max(Config.Locomotion.CrouchSpeed, 1.0f);
 
     //设置蹲伏状态下的碰撞胶囊半高
     Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
