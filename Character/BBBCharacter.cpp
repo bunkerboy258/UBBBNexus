@@ -16,6 +16,11 @@ ABBBCharacter::ABBBCharacter()
     //由引擎同步角色根组件的位置与旋转
     SetReplicateMovement(true);
     //移动时由移动组件自动朝向速度方向
+    UCharacterMovementComponent *Movement = GetCharacterMovement();
+
+    Movement->bTickBeforeOwner = false;
+    Movement->PrimaryComponentTick.AddPrerequisite(this, PrimaryActorTick);
+
     GetCharacterMovement()->bOrientRotationToMovement = true;
     //限制自动转向速度
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
@@ -50,6 +55,10 @@ void ABBBCharacter::BeginPlay()
 {
     Super::BeginPlay();
     FBBBCharacterInitializer::Initialize(*this);
+
+    OnCharacterMovementUpdated.AddDynamic(
+        this,
+        &ABBBCharacter::HandleCharacterMovementUpdated);
 }
 
 void ABBBCharacter::Tick(float DeltaSeconds)
@@ -64,7 +73,15 @@ void ABBBCharacter::Tick(float DeltaSeconds)
     //更新当前帧世界时间快照
     RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
 
-    CharacterUpdatePipeline.Update();
+    CharacterUpdatePipeline.UpdateBeforeMovement();
+}
+
+void ABBBCharacter::HandleCharacterMovementUpdated(
+    float DeltaSeconds,
+    FVector OldLocation,
+    FVector OldVelocity)
+{
+    CharacterUpdatePipeline.UpdateAfterMovement();
 }
 
 void ABBBCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent)

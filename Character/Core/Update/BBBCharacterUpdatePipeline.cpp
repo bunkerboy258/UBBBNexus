@@ -46,7 +46,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
     ExecutionPipeline = &InExecutionPipeline;
 }
 
-void FBBBCharacterUpdatePipeline::Update() const
+void FBBBCharacterUpdatePipeline::UpdateBeforeMovement() const
 {
     if (!ensureMsgf(
         Pawn
@@ -74,35 +74,47 @@ void FBBBCharacterUpdatePipeline::Update() const
     //本地控制且权威
     if (bIsLocallyControlled && bHasAuthority)
     {
-        UpdateLocalAuthority();
+        UpdateLocalAuthorityBeforeMovement();
         return;
     }
 
     //本地控制但不权威
     if (bIsLocallyControlled && !bHasAuthority)
     {
-        UpdateLocalAutonomous();
+        UpdateLocalAutonomousBeforeMovement();
         return;
     }
 
     //远端模拟但权威
     if (!bIsLocallyControlled && bHasAuthority)
     {
-        UpdateRemoteAuthority();
+        UpdateRemoteAuthorityBeforeMovement();
         return;
     }
 
     //远端模拟且不权威
     if (!bIsLocallyControlled && !bHasAuthority)
     {
-        UpdateRemoteSimulated();
+        UpdateRemoteSimulatedBeforeMovement();
         return;
     }
     
 }
 
+void FBBBCharacterUpdatePipeline::UpdateAfterMovement() const
+{
+    if (!ensureMsgf(AnimationSystem && RuntimeData, TEXT("[UBBBC]Post-movement update aborted because dependencies are null")))
+    {
+        return;
+    }
+
+    AnimationSystem->Update();
+
+    RuntimeData->Clean();
+}
+
 //本地控制且权威
-void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
+void FBBBCharacterUpdatePipeline::UpdateLocalAuthorityBeforeMovement() const
 {
     NetworkSystem->UpdateValidation();
     
@@ -127,14 +139,10 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
-    
-    AnimationSystem->Update();
-    
-    RuntimeData->Clean();
 }
 
 //本地控制但不权威
-void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
+void FBBBCharacterUpdatePipeline::UpdateLocalAutonomousBeforeMovement() const
 {
     NetworkSystem->UpdateRestore();
     
@@ -157,34 +165,22 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
-    
-    AnimationSystem->Update();
-    
-    RuntimeData->Clean();
 }
 
 //远端模拟且权威
-void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
+void FBBBCharacterUpdatePipeline::UpdateRemoteAuthorityBeforeMovement() const
 {
     NetworkSystem->UpdateValidation();
     
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
-    
-    AnimationSystem->Update();
-    
-    RuntimeData->Clean();
 }
 
 //远端模拟且不权威
-void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
+void FBBBCharacterUpdatePipeline::UpdateRemoteSimulatedBeforeMovement() const
 {
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
-    
-    AnimationSystem->Update();
-    
-    RuntimeData->Clean();
 }

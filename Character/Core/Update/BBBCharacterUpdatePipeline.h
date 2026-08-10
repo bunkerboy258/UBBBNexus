@@ -23,7 +23,12 @@ public:
     /**
      * 按本地控制与权威状态分发角色帧更新
      */
-    void Update() const;
+    void UpdateBeforeMovement() const;
+
+    /**
+     * 在角色移动完成后更新动画事实并清理帧数据
+     */
+    void UpdateAfterMovement() const;
     
 private:
     
@@ -63,22 +68,22 @@ private:
     /**
      * 本地控制且权威时执行完整帧更新流程
      */
-    void UpdateLocalAuthority() const;
+    void UpdateLocalAuthorityBeforeMovement() const;
 
     /**
      * 本地控制但不权威时执行自主代理帧更新流程
      */
-    void UpdateLocalAutonomous() const;
+    void UpdateLocalAutonomousBeforeMovement() const;
 
     /**
      * 远端模拟且权威时执行服务器侧帧更新流程
      */
-    void UpdateRemoteAuthority() const;
+    void UpdateRemoteAuthorityBeforeMovement() const;
 
     /**
      * 远端模拟且不权威时执行模拟代理帧更新流程
      */
-    void UpdateRemoteSimulated() const;
+    void UpdateRemoteSimulatedBeforeMovement() const;
 
     APawn *Pawn = nullptr;
 

@@ -33,7 +33,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     { return; }
 
     //确保角色黑板更新完成后再启动骨骼动画更新
-    Character.GetMesh()->AddTickPrerequisiteActor(&Character);
+    Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
     
     Character.CharacterExternalAPI.Initialize(
         Character.RuntimeData.Animation.Commands,

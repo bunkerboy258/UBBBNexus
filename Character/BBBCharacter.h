@@ -71,6 +71,18 @@ public:
 private:
 
     /**
+     * 在移动组件完成本帧更新后提交动画事实并清理帧数据
+     * @param DeltaSeconds 本次移动更新时间
+     * @param OldLocation 移动前角色位置
+     * @param OldVelocity 移动前角色速度
+     */
+    UFUNCTION()
+    void HandleCharacterMovementUpdated(
+        float DeltaSeconds,
+        FVector OldLocation,
+        FVector OldVelocity);
+
+    /**
      * 获取动画表现状态
      * @return 管线提交后的动画状态常量引用
      */
