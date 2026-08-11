@@ -78,12 +78,6 @@ void UBBBEquipmentSystem::Update(FBBBCharacterExternalAPI &CharacterAPI)
 
     Definition->EquipDomin.Get().Update(CharacterAPI, *Instance->PresentationActor, *RuntimeData->GetEquip());
 
-    if (Definition->FireDomin.IsValid()
-        && ensureMsgf(RuntimeData->GetFire(), TEXT("[UBBBE]Equipment fire runtime data is unavailable during update")))
-    {
-        Definition->FireDomin.Get().Update(CharacterAPI, *Instance->PresentationActor, *RuntimeData->GetFire());
-    }
-
     if (Definition->MagazineDomin.IsValid()
         && ensureMsgf(RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine runtime data is unavailable during update")))
     {
@@ -145,12 +139,12 @@ bool UBBBEquipmentSystem::Reload(FBBBCharacterExternalAPI &CharacterAPI)
 
 void UBBBEquipmentSystem::PresentFire(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && RuntimeData && Definition->FireDomin.IsValid() && RuntimeData->GetFire(), TEXT("[UBBBE]Equipment fire domin is unavailable during present fire")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && Definition->FireDomin.IsValid(), TEXT("[UBBBE]Equipment fire domin is unavailable during present fire")))
     {
         return;
     }
 
-    Definition->FireDomin.Get().Present(CharacterAPI, *Instance->PresentationActor, *RuntimeData->GetFire());
+    Definition->FireDomin.Get().Present(CharacterAPI, *Instance->PresentationActor);
 }
 
 //------------------------------------------------------------------------------

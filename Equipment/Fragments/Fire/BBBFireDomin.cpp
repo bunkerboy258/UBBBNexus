@@ -25,19 +25,7 @@ bool FBBBFireDomin::Fire(
 
 void FBBBFireDomin::Present(
     FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBFireRuntimeData &RuntimeData) const
-{
-    if (!ensureMsgf(false, TEXT("[UBBBE]Fire domin has no fragment implementation")))
-    {
-        return;
-    }
-}
-
-void FBBBFireDomin::Update(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBFireRuntimeData &RuntimeData) const
+    ABBBEquipmentPresentationActor &PresentationActor) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Fire domin has no fragment implementation")))
     {
