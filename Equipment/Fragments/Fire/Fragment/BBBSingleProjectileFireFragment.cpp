@@ -126,7 +126,6 @@ bool FBBBSingleProjectileFireFragment::Fire(
     }
 
     CharacterAPI.SubmitLeftHandIKBlockRequest(true);
-    CharacterAPI.SubmitAimIKBlockRequest(true);
 
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
 
@@ -161,7 +160,6 @@ void FBBBSingleProjectileFireFragment::Present(
     }
 
     CharacterAPI.SubmitLeftHandIKBlockRequest(true);
-    CharacterAPI.SubmitAimIKBlockRequest(true);
 
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
 }
@@ -172,7 +170,6 @@ void FBBBSingleProjectileFireFragment::Update(
     UBBBFireRuntimeData &RuntimeData) const
 {
     CharacterAPI.SubmitLeftHandIKBlockRequest(RuntimeData.bIsFiring);
-    CharacterAPI.SubmitAimIKBlockRequest(RuntimeData.bIsFiring);
 
     UWorld *World = PresentationActor.GetWorld();
     if (!RuntimeData.bIsFiring
