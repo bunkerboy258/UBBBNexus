@@ -55,3 +55,13 @@ void FBBBCharacterExternalAPI::SubmitAimIKBlockRequest(bool bBlocked)
 
     AnimationCommands->SubmitAimIKBlockRequest(bBlocked);
 }
+
+void FBBBCharacterExternalAPI::SubmitEquipmentLeftHandIKAlpha(float Alpha)
+{
+    if (!ensureMsgf(AnimationCommands, TEXT("[UBBBC]Character external animation target is null")))
+    {
+        return;
+    }
+
+    AnimationCommands->SubmitEquipmentLeftHandIKAlpha(Alpha);
+}

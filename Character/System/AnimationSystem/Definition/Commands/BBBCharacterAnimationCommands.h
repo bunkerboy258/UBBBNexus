@@ -41,6 +41,12 @@ struct FBBBCharacterAnimationCommands
         return bBlockAimIK;
     }
 
+    /** @return 本帧装备左手IK权重 */
+    float GetEquipmentLeftHandIKAlpha() const
+    {
+        return EquipmentLeftHandIKAlpha;
+    }
+
     /**
      * 读取本帧待播放的蒙太奇请求队列
      * @return 待播放蒙太奇请求队列
@@ -81,6 +87,15 @@ private:
     }
 
     /**
+     * 提交本帧装备左手IK权重
+     * @param Alpha	左手IK权重
+     */
+    void SubmitEquipmentLeftHandIKAlpha(float Alpha)
+    {
+        EquipmentLeftHandIKAlpha = FMath::Clamp(Alpha, 0.0f, 1.0f);
+    }
+
+    /**
      * 清理本帧蒙太奇队列与物品IK屏蔽请求
      */
     void CleanFrame()
@@ -88,6 +103,7 @@ private:
         PendingMontages.Reset();
         bBlockLeftHandIK = false;
         bBlockAimIK = false;
+        EquipmentLeftHandIKAlpha = 1.0f;
     }
 
     UPROPERTY()
@@ -100,4 +116,7 @@ private:
     UPROPERTY()
     bool bBlockAimIK = false;
 
+    /** 本帧装备左手IK权重 */
+    UPROPERTY()
+    float EquipmentLeftHandIKAlpha = 1.0f;
 };

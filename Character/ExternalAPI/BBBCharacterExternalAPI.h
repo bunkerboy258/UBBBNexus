@@ -43,6 +43,12 @@ public:
      */
     void SubmitAimIKBlockRequest(bool bBlocked);
 
+    /**
+     * 提交本帧装备左手IK权重
+     * @param Alpha	左手IK权重
+     */
+    void SubmitEquipmentLeftHandIKAlpha(float Alpha);
+
 private:
 
     FBBBCharacterAnimationCommands *AnimationCommands = nullptr;
