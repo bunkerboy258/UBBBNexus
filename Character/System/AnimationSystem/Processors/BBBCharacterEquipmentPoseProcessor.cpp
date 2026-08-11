@@ -47,8 +47,7 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         AnimationState.LeftHandTargetRightHandBoneSpace);
 
     if (AnimationState.bHasValidAimTarget
-        && AnimationState.bHasValidAimSource
-        && !AnimationCommands.IsAimIKBlockedRequested())
+        && AnimationState.bHasValidAimSource)
     {
         AnimationState.AimIKAlpha = AnimationState.AimPresentationAlpha
             * AnimationState.AimIKDistanceAlpha;

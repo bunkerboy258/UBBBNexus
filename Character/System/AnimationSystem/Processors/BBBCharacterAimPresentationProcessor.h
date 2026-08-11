@@ -5,6 +5,7 @@ class USkeletalMeshComponent;
 struct FBBBAimAnimationConfig;
 struct FBBBAimRuntimeData;
 struct FBBBAnimationRuntimeData;
+struct FBBBCharacterAnimationCommands;
 struct FBBBCharacterAnimationState;
 
 //把瞄准逻辑转换为动画IK数据
@@ -26,6 +27,7 @@ public:
         float DeltaSeconds,
         const FBBBAimAnimationConfig &AnimationConfig,
         const FBBBAimRuntimeData &AimData,
+        const FBBBCharacterAnimationCommands &AnimationCommands,
         FBBBAnimationRuntimeData &AnimationData,
         FBBBCharacterAnimationState &AnimationState) const;
 private:

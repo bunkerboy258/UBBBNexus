@@ -41,7 +41,7 @@ public:
      * 提交瞄准IK关闭请求
      * @param bBlocked	是否关闭瞄准IK
      */
-    void SubmitAimIKBlockRequest(bool bBlocked);
+    void SubmitAimBlockRequest(bool bBlocked);
 
     /**
      * 提交本帧装备左手IK权重
