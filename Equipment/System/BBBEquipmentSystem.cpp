@@ -60,6 +60,20 @@ void UBBBEquipmentSystem::Equip(
         CharacterMesh,
         CharacterAPI,
         AttachmentSocketName);
+
+    if (!Instance->PresentationActor)
+    {
+        return;
+    }
+
+    if (Definition->MagazineDomin.IsValid()
+        && !Definition->MagazineDomin.Get().SpawnMagazine(
+            *Instance->PresentationActor,
+            *RuntimeData->GetMagazine()))
+    {
+        Instance->PresentationActor->Destroy();
+        Instance->PresentationActor = nullptr;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -171,8 +185,47 @@ void UBBBEquipmentSystem::ReleasePresentation()
         return;
     }
 
+    if (Definition
+        && RuntimeData
+        && Definition->MagazineDomin.IsValid()
+        && RuntimeData->GetMagazine())
+    {
+        Definition->MagazineDomin.Get().DestroyLoadedMagazine(*RuntimeData->GetMagazine());
+    }
+
     Instance->PresentationActor->Destroy();
     Instance->PresentationActor = nullptr;
+}
+
+//------------------------------------------------------------------------------
+
+void UBBBEquipmentSystem::RemoveMagazinePresentation()
+{
+    if (!Definition || !RuntimeData || !Definition->MagazineDomin.IsValid() || !RuntimeData->GetMagazine())
+    {
+        return;
+    }
+
+    Definition->MagazineDomin.Get().RemoveMagazine(*RuntimeData->GetMagazine());
+}
+
+//------------------------------------------------------------------------------
+
+void UBBBEquipmentSystem::SpawnMagazinePresentation()
+{
+    if (!Instance
+        || !Instance->PresentationActor
+        || !Definition
+        || !RuntimeData
+        || !Definition->MagazineDomin.IsValid()
+        || !RuntimeData->GetMagazine())
+    {
+        return;
+    }
+
+    Definition->MagazineDomin.Get().SpawnMagazine(
+        *Instance->PresentationActor,
+        *RuntimeData->GetMagazine());
 }
 
 //------------------------------------------------------------------------------

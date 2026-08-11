@@ -62,3 +62,31 @@ void FBBBMagazineDomin::Update(
         return;
     }
 }
+
+bool FBBBMagazineDomin::SpawnMagazine(
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBMagazineRuntimeData &RuntimeData) const
+{
+    if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
+    {
+        return false;
+    }
+
+    return false;
+}
+
+void FBBBMagazineDomin::RemoveMagazine(UBBBMagazineRuntimeData &RuntimeData) const
+{
+    if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
+    {
+        return;
+    }
+}
+
+void FBBBMagazineDomin::DestroyLoadedMagazine(UBBBMagazineRuntimeData &RuntimeData) const
+{
+    if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
+    {
+        return;
+    }
+}

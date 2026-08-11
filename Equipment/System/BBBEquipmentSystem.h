@@ -8,6 +8,7 @@ class FBBBCharacterExternalAPI;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
 class UBBBEquipmentRuntimeData;
+class FBBBCharacterEquipmentSystem;
 class USkeletalMeshComponent;
 
 /** 单件装备的领域编排与表现生命周期系统 */
@@ -85,6 +86,13 @@ public:
 
 private:
     friend class UBBBEquipmentInstance;
+    friend class FBBBCharacterEquipmentSystem;
+
+    /** 拔出并掉落当前弹匣表现 */
+    void RemoveMagazinePresentation();
+
+    /** 生成并装入新弹匣表现 */
+    void SpawnMagazinePresentation();
 
     /**
      * 注入单件装备永久依赖

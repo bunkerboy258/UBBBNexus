@@ -7,6 +7,7 @@
 
 class FBBBCharacterExternalAPI;
 class FBBBCharacterInitializer;
+class UBBBMagazineAnimNotify;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
@@ -20,6 +21,7 @@ public:
 
 private:
     friend class FBBBCharacterInitializer;
+    friend class UBBBMagazineAnimNotify;
 
     /**
      * 初始化装备系统固定依赖并建立出生装备
@@ -35,6 +37,12 @@ private:
         FBBBCharacterExternalAPI &InCharacterAPI,
         UObject &InEquipmentOuter,
         const FBBBCharacterEquipmentConfig &InEquipmentConfig);
+
+    /** 拔出并掉落当前装备的弹匣表现 */
+    void RemoveMagazinePresentation();
+
+    /** 生成并装入当前装备的新弹匣表现 */
+    void SpawnMagazinePresentation();
 
     /** 角色装备黑板 */
     FBBBCharacterEquipmentRuntimeData *EquipmentData = nullptr;

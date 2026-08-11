@@ -4,6 +4,7 @@
 #include "BBBMagazineDomin.generated.h"
 
 class ABBBEquipmentPresentationActor;
+class ABBBMagazinePresentationActor;
 class FBBBCharacterExternalAPI;
 class UBBBMagazineRuntimeData;
 
@@ -67,4 +68,26 @@ public:
         FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBMagazineRuntimeData &RuntimeData) const;
+
+    /**
+     * 生成并装入弹匣表现实体
+     * @param PresentationActor    装备表现实体
+     * @param RuntimeData          弹匣运行数据
+     * @return 是否成功生成或已经存在弹匣
+     */
+    virtual bool SpawnMagazine(
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBMagazineRuntimeData &RuntimeData) const;
+
+    /**
+     * 拔出并掉落当前弹匣表现实体
+     * @param RuntimeData    弹匣运行数据
+     */
+    virtual void RemoveMagazine(UBBBMagazineRuntimeData &RuntimeData) const;
+
+    /**
+     * 销毁仍然安装在武器上的弹匣表现实体
+     * @param RuntimeData    弹匣运行数据
+     */
+    virtual void DestroyLoadedMagazine(UBBBMagazineRuntimeData &RuntimeData) const;
 };

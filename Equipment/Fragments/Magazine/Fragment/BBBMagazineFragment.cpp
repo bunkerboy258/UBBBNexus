@@ -5,6 +5,8 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
+#include "BBBWork/UBBBNexus/Equipment/Presentation/Magazine/BBBMagazinePresentationActor.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 
 UBBBMagazineRuntimeData *FBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const
@@ -110,4 +112,81 @@ void FBBBMagazineFragment::Update(
     RuntimeData.ReserveAmmo -= LoadedAmmo;
     RuntimeData.bIsReloading = false;
     RuntimeData.ReloadEndTime = 0.0f;
+}
+
+//------------------------------------------------------------------------------
+
+bool FBBBMagazineFragment::SpawnMagazine(
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBMagazineRuntimeData &RuntimeData) const
+{
+    if (RuntimeData.LoadedMagazineActor)
+    {
+        return true;
+    }
+
+    UStaticMeshComponent *EquipmentMesh = PresentationActor.GetEquipmentMesh();
+    UWorld *World = PresentationActor.GetWorld();
+
+    if (!ensureMsgf(
+        MagazinePresentationActorClass
+            && EquipmentMesh
+            && World
+            && EquipmentMesh->DoesSocketExist(MagazineSocketName),
+        TEXT("[UBBBE]Magazine presentation configuration is incomplete")))
+    {
+        return false;
+    }
+
+    FActorSpawnParameters SpawnParameters;
+    SpawnParameters.Owner = &PresentationActor;
+    SpawnParameters.Instigator = PresentationActor.GetInstigator();
+    SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    ABBBMagazinePresentationActor *MagazineActor = World->SpawnActor<ABBBMagazinePresentationActor>(
+        MagazinePresentationActorClass,
+        FTransform::Identity,
+        SpawnParameters);
+
+    if (!ensureMsgf(MagazineActor, TEXT("[UBBBE]Magazine presentation actor creation failed")))
+    {
+        return false;
+    }
+
+    MagazineActor->PrepareForAttachment();
+    MagazineActor->AttachToComponent(
+        EquipmentMesh,
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        MagazineSocketName);
+    MagazineActor->SetActorRelativeTransform(MagazineSocketOffset);
+
+    RuntimeData.LoadedMagazineActor = MagazineActor;
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBMagazineFragment::RemoveMagazine(UBBBMagazineRuntimeData &RuntimeData) const
+{
+    ABBBMagazinePresentationActor *MagazineActor = RuntimeData.LoadedMagazineActor;
+    if (!MagazineActor)
+    {
+        return;
+    }
+
+    RuntimeData.LoadedMagazineActor = nullptr;
+    MagazineActor->Drop(DroppedMagazineLifeSeconds);
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBMagazineFragment::DestroyLoadedMagazine(UBBBMagazineRuntimeData &RuntimeData) const
+{
+    if (!RuntimeData.LoadedMagazineActor)
+    {
+        return;
+    }
+
+    RuntimeData.LoadedMagazineActor->Destroy();
+    RuntimeData.LoadedMagazineActor = nullptr;
 }

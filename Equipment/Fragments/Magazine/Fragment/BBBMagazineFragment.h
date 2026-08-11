@@ -5,6 +5,7 @@
 #include "BBBMagazineFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
+class ABBBMagazinePresentationActor;
 class FBBBCharacterExternalAPI;
 class UAnimMontage;
 class UBBBMagazineRuntimeData;
@@ -68,6 +69,28 @@ public:
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBMagazineRuntimeData &RuntimeData) const override;
 
+    /**
+     * 生成并装入弹匣表现实体
+     * @param PresentationActor    装备表现实体
+     * @param RuntimeData          弹匣运行数据
+     * @return 是否成功生成或已经存在弹匣
+     */
+    virtual bool SpawnMagazine(
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBMagazineRuntimeData &RuntimeData) const override;
+
+    /**
+     * 拔出并掉落当前弹匣表现实体
+     * @param RuntimeData    弹匣运行数据
+     */
+    virtual void RemoveMagazine(UBBBMagazineRuntimeData &RuntimeData) const override;
+
+    /**
+     * 销毁仍然安装在武器上的弹匣表现实体
+     * @param RuntimeData    弹匣运行数据
+     */
+    virtual void DestroyLoadedMagazine(UBBBMagazineRuntimeData &RuntimeData) const override;
+
     /** 弹匣容量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "1"))
     int32 MagazineSize = 30;
@@ -79,4 +102,20 @@ public:
     /** 换弹动画 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
     TObjectPtr<UAnimMontage> ReloadMontage = nullptr;
+
+    /** 弹匣表现实体类型 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
+    TSubclassOf<ABBBMagazinePresentationActor> MagazinePresentationActorClass;
+
+    /** 弹匣在装备网格上的挂接插槽 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
+    FName MagazineSocketName = TEXT("Magazine");
+
+    /** 弹匣挂接到装备插槽后的局部修正 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
+    FTransform MagazineSocketOffset = FTransform::Identity;
+
+    /** 掉落弹匣自动销毁前的保留时长 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.1"))
+    float DroppedMagazineLifeSeconds = 5.0f;
 };

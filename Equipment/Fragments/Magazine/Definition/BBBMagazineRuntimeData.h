@@ -5,6 +5,7 @@
 #include "BBBMagazineRuntimeData.generated.h"
 
 struct FBBBMagazineFragment;
+class ABBBMagazinePresentationActor;
 
 /** 弹匣操作域运行数据 */
 UCLASS(BlueprintType)
@@ -32,4 +33,8 @@ private:
 
     /** 换弹表现关闭IK的结束时间 */
     float ReloadIKBlockEndTime = 0.0f;
+
+    /** 当前安装在武器上的弹匣表现实体 */
+    UPROPERTY()
+    TObjectPtr<ABBBMagazinePresentationActor> LoadedMagazineActor = nullptr;
 };
