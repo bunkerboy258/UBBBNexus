@@ -15,7 +15,7 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
 public:
 
     /**
-     * 动画实例初始化时缓存角色动画状态引用
+     * 动画实例初始化时 缓存角色动画状态引用
      */
     virtual void NativeInitializeAnimation() override;
 
