@@ -1,6 +1,6 @@
-#include "BBBWork/UBBBNexus/Equipment/Animation/Notifies/BBBMagazineAnimNotify.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Notifies/BBBMagazineAnimNotify.h"
 
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBMagazineAnimNotify::Notify(
@@ -10,24 +10,24 @@ void UBBBMagazineAnimNotify::Notify(
 {
     Super::Notify(MeshComp, Animation, EventReference);
 
-    ABBBCharacter *Character = MeshComp
-        ? Cast<ABBBCharacter>(MeshComp->GetOwner())
+    UBBBAnimInstance *AnimInstance = MeshComp
+        ? Cast<UBBBAnimInstance>(MeshComp->GetAnimInstance())
         : nullptr;
 
-    if (!Character)
+    if (!AnimInstance)
     {
         return;
     }
 
     if (Action == EBBBMagazineAnimNotifyAction::Remove)
     {
-        Character->EquipmentSystem.RemoveMagazinePresentation();
+        AnimInstance->SubmitRemoveMagazine();
         return;
     }
 
     if (Action == EBBBMagazineAnimNotifyAction::Spawn)
     {
-        Character->EquipmentSystem.SpawnMagazinePresentation();
+        AnimInstance->SubmitSpawnMagazine();
     }
 }
 

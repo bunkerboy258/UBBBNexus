@@ -9,6 +9,7 @@
 class FBBBCharacterDefaultEquipmentInitializer;
 class FBBBCharacterEquipmentSystem;
 class FBBBCharacterInitializer;
+class UBBBAnimInstance;
 
 /** 角色装备领域唯一数据根 */
 USTRUCT(BlueprintType)
@@ -27,6 +28,7 @@ private:
     friend class FBBBCharacterDefaultEquipmentInitializer;
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterInitializer;
+    friend class UBBBAnimInstance;
 
     /** 角色装备容器 */
     UPROPERTY()

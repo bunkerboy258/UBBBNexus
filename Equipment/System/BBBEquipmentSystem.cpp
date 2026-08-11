@@ -199,7 +199,7 @@ void UBBBEquipmentSystem::ReleasePresentation()
 
 //------------------------------------------------------------------------------
 
-void UBBBEquipmentSystem::RemoveMagazinePresentation()
+void UBBBEquipmentSystem::RemoveMagazine()
 {
     if (!Definition || !RuntimeData || !Definition->MagazineDomin.IsValid() || !RuntimeData->GetMagazine())
     {
@@ -211,7 +211,7 @@ void UBBBEquipmentSystem::RemoveMagazinePresentation()
 
 //------------------------------------------------------------------------------
 
-void UBBBEquipmentSystem::SpawnMagazinePresentation()
+void UBBBEquipmentSystem::SpawnMagazine()
 {
     if (!Instance
         || !Instance->PresentationActor

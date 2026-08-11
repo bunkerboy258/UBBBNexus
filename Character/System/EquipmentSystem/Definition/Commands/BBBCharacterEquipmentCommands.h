@@ -7,6 +7,7 @@ class FBBBCharacterEquipmentActionProcessor;
 class FBBBFireRestoreProcessor;
 class FBBBEquipmentActionExecutor;
 class FBBBReloadRestoreProcessor;
+class UBBBAnimInstance;
 struct FBBBCharacterEquipmentRuntimeData;
 
 /** 角色物品领域本帧执行命令 */
@@ -21,6 +22,7 @@ private:
     friend class FBBBFireRestoreProcessor;
     friend class FBBBEquipmentActionExecutor;
     friend class FBBBReloadRestoreProcessor;
+    friend class UBBBAnimInstance;
     friend struct FBBBCharacterEquipmentRuntimeData;
 
     /** 提交本帧开火命令 */
@@ -45,6 +47,18 @@ private:
     void SubmitReloadPresentation()
     {
         bPresentReload = true;
+    }
+
+    /** 提交等待消费的拔出弹匣动作 */
+    void SubmitRemoveMagazine()
+    {
+        bPendingRemoveMagazine = true;
+    }
+
+    /** 提交等待消费的生成弹匣动作 */
+    void SubmitSpawnMagazine()
+    {
+        bPendingSpawnMagazine = true;
     }
 
     /** @return 本帧是否存在待执行开火命令 */
@@ -79,6 +93,22 @@ private:
         return bShouldPresentReload;
     }
 
+    /** @return 是否存在等待消费的拔出弹匣动作 */
+    bool ConsumeRemoveMagazine()
+    {
+        const bool bShouldRemoveMagazine = bPendingRemoveMagazine;
+        bPendingRemoveMagazine = false;
+        return bShouldRemoveMagazine;
+    }
+
+    /** @return 是否存在等待消费的生成弹匣动作 */
+    bool ConsumeSpawnMagazine()
+    {
+        const bool bShouldSpawnMagazine = bPendingSpawnMagazine;
+        bPendingSpawnMagazine = false;
+        return bShouldSpawnMagazine;
+    }
+
     /** 清理本帧全部物品命令 */
     void CleanFrame()
     {
@@ -103,4 +133,12 @@ private:
     /** 是否存在待表现换弹命令 */
     UPROPERTY()
     bool bPresentReload = false;
+
+    /** 是否存在等待消费的拔出弹匣动作 */
+    UPROPERTY()
+    bool bPendingRemoveMagazine = false;
+
+    /** 是否存在等待消费的生成弹匣动作 */
+    UPROPERTY()
+    bool bPendingSpawnMagazine = false;
 };

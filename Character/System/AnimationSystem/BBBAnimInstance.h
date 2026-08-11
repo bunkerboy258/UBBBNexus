@@ -7,11 +7,16 @@
 #include "BBBAnimInstance.generated.h"
 
 class UAnimSequence;
+class UBBBMagazineAnimNotify;
+struct FBBBCharacterEquipmentCommands;
 
 UCLASS()
 class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
 {
     GENERATED_BODY()
+
+    friend class UBBBMagazineAnimNotify;
+
 public:
 
     /**
@@ -226,9 +231,21 @@ protected:
      */
     const FBBBCharacterAnimationState &GetAnimationState() const;
 
+private:
+    /** 提交等待角色装备系统消费的拔出弹匣动作 */
+    void SubmitRemoveMagazine();
+
+    /** 提交等待角色装备系统消费的生成弹匣动作 */
+    void SubmitSpawnMagazine();
+
+protected:
+
     /** 缓存的角色动画状态引用 由所属角色每帧刷新 */
     const FBBBCharacterAnimationState *AnimationState = nullptr;
 
     /** 缓存的瞄准只读状态 */
     const FBBBAimRuntimeState *AimState = nullptr;
+
+    /** 缓存的角色装备命令叶子 */
+    FBBBCharacterEquipmentCommands *EquipmentCommands = nullptr;
 };

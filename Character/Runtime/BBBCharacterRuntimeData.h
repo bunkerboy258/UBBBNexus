@@ -13,6 +13,7 @@
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 class ABBBCharacter;
+class UBBBAnimInstance;
 
 USTRUCT()
 //角色全部运行数据的唯一根
@@ -34,6 +35,7 @@ struct FBBBCharacterRuntimeData
 private:
     friend class ABBBCharacter;
     friend class FBBBCharacterInitializer;
+    friend class UBBBAnimInstance;
 
     //保存当前帧世界时间快照
     UPROPERTY(Transient)

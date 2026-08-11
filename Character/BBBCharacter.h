@@ -21,7 +21,6 @@
 class FBBBCharacterInitializer;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
-class UBBBMagazineAnimNotify;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -38,8 +37,6 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     /** 允许动画实例只读角色表现状态 */
     friend class UBBBAnimInstance;
 
-    /** 允许弹匣动画通知把表现时机交给装备系统 */
-    friend class UBBBMagazineAnimNotify;
     
 public:
     

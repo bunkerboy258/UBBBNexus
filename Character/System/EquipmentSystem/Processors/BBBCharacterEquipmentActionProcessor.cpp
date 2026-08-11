@@ -13,6 +13,9 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     FBBBCharacterEquipmentResults &EquipmentResults,
     FBBBCharacterExternalAPI &CharacterAPI) const
 {
+    const bool bShouldRemoveMagazine = EquipmentCommands.ConsumeRemoveMagazine();
+    const bool bShouldSpawnMagazine = EquipmentCommands.ConsumeSpawnMagazine();
+
     UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
     if (!ActiveInstance)
     {
@@ -26,6 +29,16 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     }
 
     EquipmentSystem->Update(CharacterAPI);
+
+    if (bShouldRemoveMagazine)
+    {
+        EquipmentSystem->RemoveMagazine();
+    }
+
+    if (bShouldSpawnMagazine)
+    {
+        EquipmentSystem->SpawnMagazine();
+    }
 
     if (EquipmentCommands.ConsumeFire() && EquipmentSystem->Fire(CharacterAPI))
     {

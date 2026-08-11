@@ -16,7 +16,7 @@ enum class EBBBMagazineAnimNotifyAction : uint8
 };
 
 /**
- * 把蒙太奇中的弹匣操作时机交给当前装备
+ * 把蒙太奇中的弹匣操作时机提交给角色装备命令
  */
 UCLASS(meta = (DisplayName = "BBB Magazine Action"))
 class ABBB_EVAC_API UBBBMagazineAnimNotify final : public UAnimNotify
