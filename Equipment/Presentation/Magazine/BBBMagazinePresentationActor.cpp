@@ -29,7 +29,10 @@ void ABBBMagazinePresentationActor::Drop(float LifeSeconds)
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
     MagazineMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    MagazineMesh->SetCollisionResponseToAllChannels(ECR_Block);
+    MagazineMesh->SetCollisionObjectType(ECC_PhysicsBody);
+    MagazineMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+    MagazineMesh->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+    MagazineMesh->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
     MagazineMesh->SetSimulatePhysics(true);
     MagazineMesh->WakeAllRigidBodies();
 
