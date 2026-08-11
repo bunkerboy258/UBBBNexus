@@ -29,4 +29,7 @@ private:
 
     /** 换弹结束时间 */
     float ReloadEndTime = 0.0f;
+
+    /** 换弹表现关闭IK的结束时间 */
+    float ReloadIKBlockEndTime = 0.0f;
 };

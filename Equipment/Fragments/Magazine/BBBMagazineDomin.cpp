@@ -41,7 +41,10 @@ bool FBBBMagazineDomin::Reload(
     return false;
 }
 
-void FBBBMagazineDomin::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const
+void FBBBMagazineDomin::PresentReload(
+    FBBBCharacterExternalAPI &CharacterAPI,
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBMagazineRuntimeData &RuntimeData) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
     {

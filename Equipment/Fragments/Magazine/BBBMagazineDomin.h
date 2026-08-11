@@ -52,7 +52,10 @@ public:
      * 播放一次换弹表现
      * @param CharacterAPI	角色能力接口
      */
-    virtual void PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const;
+    virtual void PresentReload(
+        FBBBCharacterExternalAPI &CharacterAPI,
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBMagazineRuntimeData &RuntimeData) const;
 
     /**
      * 更新弹匣操作域

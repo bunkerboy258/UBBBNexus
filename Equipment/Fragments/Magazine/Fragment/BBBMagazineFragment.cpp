@@ -46,6 +46,7 @@ bool FBBBMagazineFragment::Reload(
 
     RuntimeData.bIsReloading = true;
     RuntimeData.ReloadEndTime = PresentationActor.GetWorld()->GetTimeSeconds() + ReloadMontage->GetPlayLength();
+    RuntimeData.ReloadIKBlockEndTime = RuntimeData.ReloadEndTime;
 
     FBBBCharacterAnimationRequest Request;
     Request.Montage = ReloadMontage;
@@ -53,9 +54,13 @@ bool FBBBMagazineFragment::Reload(
     return true;
 }
 
-void FBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const
+void FBBBMagazineFragment::PresentReload(
+    FBBBCharacterExternalAPI &CharacterAPI,
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBMagazineRuntimeData &RuntimeData) const
 {
-    if (!ReloadMontage)
+    UWorld *World = PresentationActor.GetWorld();
+    if (!ReloadMontage || !World)
     {
         return;
     }
@@ -63,6 +68,7 @@ void FBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
     FBBBCharacterAnimationRequest Request;
     Request.Montage = ReloadMontage;
     CharacterAPI.QueueMontage(Request);
+    RuntimeData.ReloadIKBlockEndTime = World->GetTimeSeconds() + ReloadMontage->GetPlayLength();
     CharacterAPI.SubmitLeftHandIKBlockRequest(true);
     CharacterAPI.SubmitAimIKBlockRequest(true);
 }
@@ -72,12 +78,27 @@ void FBBBMagazineFragment::Update(
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBMagazineRuntimeData &RuntimeData) const
 {
-    CharacterAPI.SubmitLeftHandIKBlockRequest(RuntimeData.bIsReloading);
-    CharacterAPI.SubmitAimIKBlockRequest(RuntimeData.bIsReloading);
+    UWorld *World = PresentationActor.GetWorld();
+    float CurrentTime = 0.0f;
+
+    if (World)
+    {
+        CurrentTime = World->GetTimeSeconds();
+    }
+
+    const bool bBlockIK = World && CurrentTime < RuntimeData.ReloadIKBlockEndTime;
+    CharacterAPI.SubmitLeftHandIKBlockRequest(bBlockIK);
+    CharacterAPI.SubmitAimIKBlockRequest(bBlockIK);
+
+    if (RuntimeData.ReloadIKBlockEndTime > 0.0f
+        && CurrentTime >= RuntimeData.ReloadIKBlockEndTime)
+    {
+        RuntimeData.ReloadIKBlockEndTime = 0.0f;
+    }
 
     if (!RuntimeData.bIsReloading
-        || !PresentationActor.GetWorld()
-        || PresentationActor.GetWorld()->GetTimeSeconds() < RuntimeData.ReloadEndTime)
+        || !World
+        || CurrentTime < RuntimeData.ReloadEndTime)
     {
         return;
     }

@@ -158,12 +158,15 @@ void UBBBEquipmentSystem::PresentFire(FBBBCharacterExternalAPI &CharacterAPI)
 
 void UBBBEquipmentSystem::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
 {
-    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment magazine domin is unavailable during present reload")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && RuntimeData && Definition->MagazineDomin.IsValid() && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine domin is unavailable during present reload")))
     {
         return;
     }
 
-    Definition->MagazineDomin.Get().PresentReload(CharacterAPI);
+    Definition->MagazineDomin.Get().PresentReload(
+        CharacterAPI,
+        *Instance->PresentationActor,
+        *RuntimeData->GetMagazine());
 }
 
 //------------------------------------------------------------------------------

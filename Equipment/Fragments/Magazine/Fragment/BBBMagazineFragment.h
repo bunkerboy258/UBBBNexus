@@ -52,7 +52,10 @@ public:
      * 响应一次远端换弹表现
      * @param CharacterAPI	角色能力接口
      */
-    virtual void PresentReload(FBBBCharacterExternalAPI &CharacterAPI) const override;
+    virtual void PresentReload(
+        FBBBCharacterExternalAPI &CharacterAPI,
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
      * 更新换弹过程
