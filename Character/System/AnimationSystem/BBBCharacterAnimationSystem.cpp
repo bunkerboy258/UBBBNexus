@@ -16,8 +16,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBAimRuntimeData &InAimData,
     const FBBBCharacterEquipmentState &InEquipmentState,
-    const FBBBAimAnimationConfig &InAimAnimationConfig,
-    FName InAimSourceBoneName)
+    const FBBBAimAnimationConfig &InAimAnimationConfig)
 {
     CharacterMesh = &InCharacterMesh;
     Movement = &InMovement;
@@ -27,7 +26,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     AimData = &InAimData;
     EquipmentState = &InEquipmentState;
     AimAnimationConfig = &InAimAnimationConfig;
-    AimSourceBoneName = InAimSourceBoneName;
 }
 
 void FBBBCharacterAnimationSystem::Update()
@@ -64,8 +62,6 @@ void FBBBCharacterAnimationSystem::Update()
         AnimationData->GetCommands());
 
     EquipmentPoseProcessor.Update(
-        *CharacterMesh,
-        AimSourceBoneName,
         *EquipmentState,
         AnimationData->GetCommands(),
         *AnimationState);

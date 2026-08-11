@@ -37,7 +37,6 @@ private:
      * @param InAimData	瞄准运行时数据
      * @param InEquipmentState	装备状态
      * @param InAimAnimationConfig	瞄准动画配置
-     * @param InAimSourceBoneName	瞄准来源骨骼名
      */
     void Initialize(
         USkeletalMeshComponent &InCharacterMesh,
@@ -47,8 +46,7 @@ private:
         const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBAimRuntimeData &InAimData,
         const FBBBCharacterEquipmentState &InEquipmentState,
-        const FBBBAimAnimationConfig &InAimAnimationConfig,
-        FName InAimSourceBoneName);
+        const FBBBAimAnimationConfig &InAimAnimationConfig);
 
     FBBBAnimationRuntimeData *AnimationData = nullptr;
     FBBBCharacterAnimationState *AnimationState = nullptr;
@@ -58,7 +56,6 @@ private:
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     UCharacterMovementComponent *Movement = nullptr;
     const FBBBAimAnimationConfig *AimAnimationConfig = nullptr;
-    FName AimSourceBoneName = NAME_None;
     FBBBCharacterAnimationProcessor AnimationProcessor;
     FBBBCharacterAimPresentationProcessor AimPresentationProcessor;
     FBBBCharacterLocomotionFactsProcessor LocomotionFactsProcessor;

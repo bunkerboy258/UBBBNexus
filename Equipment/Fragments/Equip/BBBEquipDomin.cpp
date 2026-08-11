@@ -35,36 +35,6 @@ void FBBBEquipDomin::Update(
     }
 }
 
-FName FBBBEquipDomin::GetAimSourceSocketName() const
-{
-    if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
-    {
-        return NAME_None;
-    }
-
-    return NAME_None;
-}
-
-FName FBBBEquipDomin::GetLeftHandGripSocketName() const
-{
-    if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
-    {
-        return NAME_None;
-    }
-
-    return NAME_None;
-}
-
-const FTransform &FBBBEquipDomin::GetLeftHandGripSocketLocalOffset() const
-{
-    if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
-    {
-        return FTransform::Identity;
-    }
-
-    return FTransform::Identity;
-}
-
 bool FBBBEquipDomin::IsLeftHandIKEnabled() const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))

@@ -49,15 +49,6 @@ public:
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBEquipRuntimeData &RuntimeData) const;
 
-    /** @return 瞄准来源插槽 */
-    virtual FName GetAimSourceSocketName() const;
-
-    /** @return 左手握持插槽 */
-    virtual FName GetLeftHandGripSocketName() const;
-
-    /** @return 左手握持插槽修正 */
-    virtual const FTransform &GetLeftHandGripSocketLocalOffset() const;
-
     /** @return 是否启用左手逆向动力学 */
     virtual bool IsLeftHandIKEnabled() const;
 

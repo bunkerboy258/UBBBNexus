@@ -49,15 +49,6 @@ public:
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBEquipRuntimeData &RuntimeData) const override;
 
-    /** @return 瞄准来源插槽 */
-    virtual FName GetAimSourceSocketName() const override;
-
-    /** @return 左手握持插槽 */
-    virtual FName GetLeftHandGripSocketName() const override;
-
-    /** @return 左手握持插槽修正 */
-    virtual const FTransform &GetLeftHandGripSocketLocalOffset() const override;
-
     /** @return 是否启用左手逆向动力学 */
     virtual bool IsLeftHandIKEnabled() const override;
 

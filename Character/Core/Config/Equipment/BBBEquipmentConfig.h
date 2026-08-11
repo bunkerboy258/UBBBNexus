@@ -31,14 +31,6 @@ struct FBBBCharacterEquipmentConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FName RightHandWeaponSocketName = TEXT("WeaponGrip_R");
 
-    /** 瞄准来源参考骨骼 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FName AimSourceBoneName = TEXT("hand_r");
-
-    /** 左手逆向动力学骨骼 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FName LeftHandIKBoneName = TEXT("hand_l");
-
     /** 固定装备容器槽位数量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "1"))
     int32 InventorySlotCount = 20;

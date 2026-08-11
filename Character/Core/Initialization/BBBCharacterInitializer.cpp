@@ -92,8 +92,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Aim,
         Character.RuntimeData.Equipment.Equipment,
-        Config.AimAnimation,
-        Config.Equipment.AimSourceBoneName);
+        Config.AimAnimation);
     
     Character.InputPipeline.Initialize(
         Character.RuntimeData.Input,

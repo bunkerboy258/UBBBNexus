@@ -67,18 +67,18 @@ public:
     bool IsEquipping() const;
 
     /**
-     * 查询瞄准来源的世界变换
-     * @param OutTransform	接收瞄准来源世界变换
-     * @return 瞄准来源有效时返回true
+     * 查询瞄准来源相对右手骨骼的固定变换
+     * @param OutTransform	接收右手骨骼空间变换
+     * @return 固定变换有效时返回true
      */
-    bool TryGetAimSourceWorldTransform(FTransform &OutTransform) const;
+    bool TryGetAimSourceRightHandBoneSpace(FTransform &OutTransform) const;
 
     /**
-     * 查询左手握持目标的世界变换
-     * @param OutTransform	接收左手握持目标世界变换
-     * @return 左手握持目标有效时返回true
+     * 查询左手目标相对右手骨骼的固定变换
+     * @param OutTransform	接收右手骨骼空间变换
+     * @return 固定变换有效时返回true
      */
-    bool TryGetLeftHandGripWorldTransform(FTransform &OutTransform) const;
+    bool TryGetLeftHandTargetRightHandBoneSpace(FTransform &OutTransform) const;
 
     /** @return 是否启用左手逆向动力学 */
     bool IsLeftHandIKEnabled() const;
