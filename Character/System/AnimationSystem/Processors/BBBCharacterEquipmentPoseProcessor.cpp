@@ -62,7 +62,9 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
         AnimationState.LeftHandTargetRightHandBoneSpace = LeftHandGripWorld.GetRelativeTransform(RightHandWorld);
     }
 
-    if (AnimationState.bHasValidAimTarget && AnimationState.bHasValidAimSource)
+    if (AnimationState.bHasValidAimTarget
+        && AnimationState.bHasValidAimSource
+        && !AnimationCommands.IsAimIKBlockedRequested())
     {
         AnimationState.AimIKAlpha = AnimationState.AimPresentationAlpha
             * AnimationState.AimIKDistanceAlpha;
@@ -71,13 +73,13 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
     const bool bEnableLeftHandIK = EquipmentSystem->IsLeftHandIKEnabled();
     if (AnimationState.bHasValidLeftHandTarget
         && bEnableLeftHandIK
-        && !AnimationCommands.IsEquipmentIKBlockedRequested())
+        && !AnimationCommands.IsLeftHandIKBlockedRequested())
     {
-        AnimationState.LeftHandIKAlpha = AnimationCommands.GetEquipmentLeftHandIKAlpha();
+        AnimationState.LeftHandIKAlpha = 1.0f;
     }
     if (!AnimationState.bHasValidLeftHandTarget
         || !bEnableLeftHandIK
-        || AnimationCommands.IsEquipmentIKBlockedRequested())
+        || AnimationCommands.IsLeftHandIKBlockedRequested())
     {
         AnimationState.LeftHandIKAlpha = 0.0f;
     }

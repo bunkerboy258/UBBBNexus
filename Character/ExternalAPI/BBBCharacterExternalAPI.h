@@ -35,13 +35,14 @@ public:
      * 压入锁定物品 IK 请求
      * @param bBlocked	是否锁定物品 IK
      */
-    void SubmitEquipmentIKBlockRequest(bool bBlocked);
+    void SubmitLeftHandIKBlockRequest(bool bBlocked);
 
     /**
-     * 提交本帧装备左手IK权重
-     * @param Alpha	左手IK权重
+     * 提交瞄准IK关闭请求
+     * @param bBlocked	是否关闭瞄准IK
      */
-    void SubmitEquipmentLeftHandIKAlpha(float Alpha);
+    void SubmitAimIKBlockRequest(bool bBlocked);
+
 private:
 
     FBBBCharacterAnimationCommands *AnimationCommands = nullptr;

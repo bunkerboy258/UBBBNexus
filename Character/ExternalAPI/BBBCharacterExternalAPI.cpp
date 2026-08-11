@@ -38,20 +38,20 @@ void FBBBCharacterExternalAPI::SubmitCameraRecoil(
 }
 
 //压入锁定物品ik请求
-void FBBBCharacterExternalAPI::SubmitEquipmentIKBlockRequest(bool bBlocked)
+void FBBBCharacterExternalAPI::SubmitLeftHandIKBlockRequest(bool bBlocked)
 {
     if (!ensureMsgf(AnimationCommands, TEXT("[UBBBC]Character external animation target is null")))
     { return; }
 
-    AnimationCommands->SubmitEquipmentIKBlockRequest(bBlocked);
+    AnimationCommands->SubmitLeftHandIKBlockRequest(bBlocked);
 }
 
-void FBBBCharacterExternalAPI::SubmitEquipmentLeftHandIKAlpha(float Alpha)
+void FBBBCharacterExternalAPI::SubmitAimIKBlockRequest(bool bBlocked)
 {
     if (!ensureMsgf(AnimationCommands, TEXT("[UBBBC]Character external animation target is null")))
     {
         return;
     }
 
-    AnimationCommands->SubmitEquipmentLeftHandIKAlpha(Alpha);
+    AnimationCommands->SubmitAimIKBlockRequest(bBlocked);
 }

@@ -26,9 +26,6 @@ private:
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     bool bIsEquipping = false;
 
-    /** 装备过渡开始时间 */
-    float EquipStartTime = 0.0f;
-
     /** 装备过渡结束时间 */
     float EquipEndTime = 0.0f;
 };

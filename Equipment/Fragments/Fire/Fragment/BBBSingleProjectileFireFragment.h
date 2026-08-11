@@ -47,7 +47,19 @@ public:
      */
     virtual void Present(
         FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor) const override;
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBFireRuntimeData &RuntimeData) const override;
+
+    /**
+     * 更新开火动作状态
+     * @param CharacterAPI		角色能力接口
+     * @param PresentationActor	装备表现实体
+     * @param RuntimeData		开火操作域运行数据
+     */
+    virtual void Update(
+        FBBBCharacterExternalAPI &CharacterAPI,
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBFireRuntimeData &RuntimeData) const override;
 
     /** 最短开火间隔 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.01"))

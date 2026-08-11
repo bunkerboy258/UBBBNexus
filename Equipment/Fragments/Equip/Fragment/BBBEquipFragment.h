@@ -8,7 +8,6 @@ class ABBBEquipmentPresentationActor;
 class FBBBCharacterExternalAPI;
 class UAnimMontage;
 class UBBBEquipRuntimeData;
-class UCurveFloat;
 class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
@@ -72,10 +71,6 @@ public:
     /** 装备过渡动画 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     TObjectPtr<UAnimMontage> EquipMontage = nullptr;
-
-    /** 装备期间左手IK权重曲线，横轴为归一化装备进度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
-    TObjectPtr<UCurveFloat> EquipLeftHandIKAlphaCurve = nullptr;
 
     /** 瞄准来源插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")

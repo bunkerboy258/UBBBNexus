@@ -109,6 +109,14 @@ bool FBBBSingleProjectileFireFragment::Fire(
     }
 
     RuntimeData.LastFireTime = CurrentTime;
+    RuntimeData.bIsFiring = false;
+    RuntimeData.FireEndTime = 0.0f;
+
+    if (FireMontage)
+    {
+        RuntimeData.bIsFiring = true;
+        RuntimeData.FireEndTime = CurrentTime + FireMontage->GetPlayLength();
+    }
 
     if (FireMontage)
     {
@@ -116,6 +124,9 @@ bool FBBBSingleProjectileFireFragment::Fire(
         Request.Montage = FireMontage;
         CharacterAPI.QueueMontage(Request);
     }
+
+    CharacterAPI.SubmitLeftHandIKBlockRequest(true);
+    CharacterAPI.SubmitAimIKBlockRequest(true);
 
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
 
@@ -129,7 +140,8 @@ bool FBBBSingleProjectileFireFragment::Fire(
 
 void FBBBSingleProjectileFireFragment::Present(
     FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor) const
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBFireRuntimeData &RuntimeData) const
 {
     if (FireMontage)
     {
@@ -138,5 +150,38 @@ void FBBBSingleProjectileFireFragment::Present(
         CharacterAPI.QueueMontage(Request);
     }
 
+    UWorld *World = PresentationActor.GetWorld();
+    RuntimeData.bIsFiring = false;
+    RuntimeData.FireEndTime = 0.0f;
+
+    if (FireMontage && World)
+    {
+        RuntimeData.bIsFiring = true;
+        RuntimeData.FireEndTime = World->GetTimeSeconds() + FireMontage->GetPlayLength();
+    }
+
+    CharacterAPI.SubmitLeftHandIKBlockRequest(true);
+    CharacterAPI.SubmitAimIKBlockRequest(true);
+
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
+}
+
+void FBBBSingleProjectileFireFragment::Update(
+    FBBBCharacterExternalAPI &CharacterAPI,
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBFireRuntimeData &RuntimeData) const
+{
+    CharacterAPI.SubmitLeftHandIKBlockRequest(RuntimeData.bIsFiring);
+    CharacterAPI.SubmitAimIKBlockRequest(RuntimeData.bIsFiring);
+
+    UWorld *World = PresentationActor.GetWorld();
+    if (!RuntimeData.bIsFiring
+        || !World
+        || World->GetTimeSeconds() < RuntimeData.FireEndTime)
+    {
+        return;
+    }
+
+    RuntimeData.bIsFiring = false;
+    RuntimeData.FireEndTime = 0.0f;
 }

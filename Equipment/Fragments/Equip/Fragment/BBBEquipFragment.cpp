@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Curves/CurveFloat.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
@@ -64,13 +63,11 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     }
 
     RuntimeData.bIsEquipping = EquipMontage != nullptr;
-    RuntimeData.EquipStartTime = 0.0f;
     RuntimeData.EquipEndTime = 0.0f;
 
     if (RuntimeData.bIsEquipping)
     {
-        RuntimeData.EquipStartTime = CharacterMesh.GetWorld()->GetTimeSeconds();
-        RuntimeData.EquipEndTime = RuntimeData.EquipStartTime + EquipMontage->GetPlayLength();
+        RuntimeData.EquipEndTime = CharacterMesh.GetWorld()->GetTimeSeconds() + EquipMontage->GetPlayLength();
     }
 
     return PresentationActor;
@@ -81,6 +78,9 @@ void FBBBEquipFragment::Update(
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBEquipRuntimeData &RuntimeData) const
 {
+    CharacterAPI.SubmitLeftHandIKBlockRequest(RuntimeData.bIsEquipping);
+    CharacterAPI.SubmitAimIKBlockRequest(RuntimeData.bIsEquipping);
+
     if (!RuntimeData.bIsEquipping)
     {
         return;
@@ -93,30 +93,12 @@ void FBBBEquipFragment::Update(
     }
 
     const float CurrentTime = World->GetTimeSeconds();
-    const float EquipDuration = RuntimeData.EquipEndTime - RuntimeData.EquipStartTime;
-    float EquipProgress = 1.0f;
-
-    if (EquipDuration > KINDA_SMALL_NUMBER)
-    {
-        EquipProgress = FMath::Clamp(
-            (CurrentTime - RuntimeData.EquipStartTime) / EquipDuration,
-            0.0f,
-            1.0f);
-    }
-
-    if (EquipLeftHandIKAlphaCurve)
-    {
-        CharacterAPI.SubmitEquipmentLeftHandIKAlpha(
-            EquipLeftHandIKAlphaCurve->GetFloatValue(EquipProgress));
-    }
-
     if (CurrentTime < RuntimeData.EquipEndTime)
     {
         return;
     }
 
     RuntimeData.bIsEquipping = false;
-    RuntimeData.EquipStartTime = 0.0f;
     RuntimeData.EquipEndTime = 0.0f;
 }
 

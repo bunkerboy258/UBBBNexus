@@ -63,6 +63,8 @@ void FBBBMagazineFragment::PresentReload(FBBBCharacterExternalAPI &CharacterAPI)
     FBBBCharacterAnimationRequest Request;
     Request.Montage = ReloadMontage;
     CharacterAPI.QueueMontage(Request);
+    CharacterAPI.SubmitLeftHandIKBlockRequest(true);
+    CharacterAPI.SubmitAimIKBlockRequest(true);
 }
 
 void FBBBMagazineFragment::Update(
@@ -70,7 +72,8 @@ void FBBBMagazineFragment::Update(
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBMagazineRuntimeData &RuntimeData) const
 {
-    CharacterAPI.SubmitEquipmentIKBlockRequest(RuntimeData.bIsReloading);
+    CharacterAPI.SubmitLeftHandIKBlockRequest(RuntimeData.bIsReloading);
+    CharacterAPI.SubmitAimIKBlockRequest(RuntimeData.bIsReloading);
 
     if (!RuntimeData.bIsReloading
         || !PresentationActor.GetWorld()

@@ -18,4 +18,11 @@ private:
     /** 上次成功开火时间 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     float LastFireTime = -1000.0f;
+
+    /** 是否正在播放开火动作 */
+    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    bool bIsFiring = false;
+
+    /** 开火动作结束时间 */
+    float FireEndTime = 0.0f;
 };

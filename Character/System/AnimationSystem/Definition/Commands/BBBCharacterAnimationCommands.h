@@ -30,15 +30,15 @@ struct FBBBCharacterAnimationCommands
      * 本帧是否请求屏蔽物品IK
      * @return 请求屏蔽物品IK时返回true
      */
-    bool IsEquipmentIKBlockedRequested() const
+    bool IsLeftHandIKBlockedRequested() const
     {
-        return bBlockEquipmentIK;
+        return bBlockLeftHandIK;
     }
 
-    /** @return 本帧装备左手IK权重 */
-    float GetEquipmentLeftHandIKAlpha() const
+    /** @return 本帧是否请求关闭瞄准IK */
+    bool IsAimIKBlockedRequested() const
     {
-        return EquipmentLeftHandIKAlpha;
+        return bBlockAimIK;
     }
 
     /**
@@ -66,18 +66,18 @@ private:
      * 提交本帧物品IK屏蔽请求
      * @param bBlocked	是否屏蔽物品IK
      */
-    void SubmitEquipmentIKBlockRequest(bool bBlocked)
+    void SubmitLeftHandIKBlockRequest(bool bBlocked)
     {
-        bBlockEquipmentIK = bBlocked;
+        bBlockLeftHandIK = bBlockLeftHandIK || bBlocked;
     }
 
     /**
-     * 提交本帧装备左手IK权重
-     * @param Alpha	左手IK权重
+     * 提交本帧瞄准IK关闭请求
+     * @param bBlocked	是否关闭瞄准IK
      */
-    void SubmitEquipmentLeftHandIKAlpha(float Alpha)
+    void SubmitAimIKBlockRequest(bool bBlocked)
     {
-        EquipmentLeftHandIKAlpha = FMath::Clamp(Alpha, 0.0f, 1.0f);
+        bBlockAimIK = bBlockAimIK || bBlocked;
     }
 
     /**
@@ -86,17 +86,18 @@ private:
     void CleanFrame()
     {
         PendingMontages.Reset();
-        bBlockEquipmentIK = false;
-        EquipmentLeftHandIKAlpha = 1.0f;
+        bBlockLeftHandIK = false;
+        bBlockAimIK = false;
     }
 
     UPROPERTY()
     TArray<FBBBCharacterAnimationRequest> PendingMontages;
 
     UPROPERTY()
-    bool bBlockEquipmentIK = false;
+    bool bBlockLeftHandIK = false;
 
-    /** 本帧装备左手IK权重 */
+    /** 本帧是否关闭瞄准IK */
     UPROPERTY()
-    float EquipmentLeftHandIKAlpha = 1.0f;
+    bool bBlockAimIK = false;
+
 };
