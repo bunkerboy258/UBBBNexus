@@ -105,6 +105,24 @@ void FBBBCharacterUpdatePipeline::Update() const
     
 }
 
+//------------------------------------------------------------------------------
+
+void FBBBCharacterUpdatePipeline::LateUpdate() const
+{
+    if (!ensureMsgf(
+        RuntimeData && AnimationSystem,
+        TEXT("[UBBBC]Pipeline LateUpdate aborted because injected dependencies are null")))
+    {
+        return;
+    }
+
+    //移动组件完成本帧位置与旋转后再生成最终动画事实
+    AnimationSystem->Update();
+
+    //所有本帧消费者执行完成后统一清理角色黑板
+    RuntimeData->Clean();
+}
+
 //本地控制且权威
 void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
 {
@@ -133,10 +151,6 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
-
-    AnimationSystem->Update();
-
-    RuntimeData->Clean();
 }
 
 //本地控制但不权威
@@ -165,10 +179,6 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
-
-    AnimationSystem->Update();
-
-    RuntimeData->Clean();
 }
 
 //远端模拟且权威
@@ -179,10 +189,6 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
-
-    AnimationSystem->Update();
-
-    RuntimeData->Clean();
 }
 
 //远端模拟且不权威
@@ -191,8 +197,4 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
     NetworkSystem->UpdateRestore();
     
     EquipmentSystem->Update();
-
-    AnimationSystem->Update();
-
-    RuntimeData->Clean();
 }

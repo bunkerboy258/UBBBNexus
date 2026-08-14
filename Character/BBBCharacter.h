@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
+#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdateTickFunction.h"
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Arbitration/BBBArbitrationPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Execution/BBBExecutionPipeline.h"
@@ -34,6 +35,8 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     friend class FBBBCharacterInitializer;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
+    /** 允许移动后更新函数调用角色LateUpdate */
+    friend struct FBBBCharacterLateUpdateTickFunction;
 
     /** 允许动画实例只读角色表现状态 */
     friend class UBBBAnimInstance;
@@ -56,6 +59,12 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 
     /**
+     * 注册角色主管线与移动后更新函数
+     * @param bRegister 是否注册更新函数
+     */
+    virtual void RegisterActorTickFunctions(bool bRegister) override;
+
+    /**
      * 绑定玩家输入到输入管线
      * @param PlayerInputComponent	玩家输入组件
      */
@@ -71,6 +80,9 @@ public:
     }
 
 private:
+
+    /** 在移动组件完成本帧移动后驱动主管线LateUpdate */
+    void LateUpdate();
 
     /**
      * 获取动画表现状态
@@ -89,17 +101,19 @@ private:
     }
 protected:
     
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Config")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|Config")
     FBBBCharacterConfig CharacterConfig;
     
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Camera")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ABBB|Camera")
     TObjectPtr<USpringArmComponent> CameraBoom;
     
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Camera")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ABBB|Camera")
     TObjectPtr<UCameraComponent> FollowCamera;
     
-    UPROPERTY(VisibleAnywhere, Category = "BBB|Network")
+    UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
     TObjectPtr<UBBBCharacterNetworkComponent> CharacterNetworkComponent;
+    /*分类命名为ABBB是为了快点找到（bushi*/
+
 private:
     
     //表示黑板数据不参与持久化工作
@@ -132,6 +146,9 @@ private:
     FBBBArbitrationPipeline ArbitrationPipeline;
     
     FBBBExecutionPipeline ExecutionPipeline;
+
+    /** 驱动角色移动后更新阶段的独立更新函数 */
+    FBBBCharacterLateUpdateTickFunction LateUpdateTickFunction;
     
     FBBBCharacterUpdatePipeline CharacterUpdatePipeline;
 };

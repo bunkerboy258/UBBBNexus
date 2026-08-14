@@ -6,11 +6,17 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 ABBBCharacter::ABBBCharacter()
 {
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
+
+    //LateUpdate与主管线处于同一更新组并通过依赖关系固定顺序
+    LateUpdateTickFunction.bCanEverTick = true;
+    LateUpdateTickFunction.bStartWithTickEnabled = true;
+    LateUpdateTickFunction.TickGroup = TG_PrePhysics;
     //允许网络同步
     bReplicates = true;
     //由引擎同步角色根组件的位置与旋转
@@ -70,6 +76,47 @@ void ABBBCharacter::Tick(float DeltaSeconds)
     RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
 
     CharacterUpdatePipeline.Update();
+}
+
+//------------------------------------------------------------------------------
+
+void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
+{
+    Super::RegisterActorTickFunctions(bRegister);
+
+    UCharacterMovementComponent *Movement = GetCharacterMovement();
+    USkeletalMeshComponent *Mesh = GetMesh();
+
+    if (!ensureMsgf(
+        Movement && Mesh,
+        TEXT("[UBBBC]Character tick registration failed because required components are null")))
+    {
+        return;
+    }
+
+    if (bRegister)
+    {
+        LateUpdateTickFunction.Target = this;
+        LateUpdateTickFunction.SetTickFunctionEnable(true);
+        LateUpdateTickFunction.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
+        LateUpdateTickFunction.RegisterTickFunction(GetLevel());
+
+        //骨骼网格必须等待LateUpdate提交最终动画事实后才能更新动画图
+        Mesh->PrimaryComponentTick.AddPrerequisite(this, LateUpdateTickFunction);
+        return;
+    }
+
+    Mesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTickFunction);
+    LateUpdateTickFunction.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
+    LateUpdateTickFunction.UnRegisterTickFunction();
+    LateUpdateTickFunction.Target = nullptr;
+}
+
+//------------------------------------------------------------------------------
+
+void ABBBCharacter::LateUpdate()
+{
+    CharacterUpdatePipeline.LateUpdate();
 }
 
 void ABBBCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent)

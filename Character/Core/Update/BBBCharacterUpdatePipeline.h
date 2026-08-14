@@ -25,6 +25,11 @@ public:
      * 按本地控制与权威状态分发角色帧更新
      */
     void Update() const;
+
+    /**
+     * 在角色移动组件完成本帧移动后更新动画事实并清理帧数据
+     */
+    void LateUpdate() const;
     
 private:
     
