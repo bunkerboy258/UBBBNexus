@@ -3,9 +3,9 @@
 #include "CoreMinimal.h"
 
 class UCharacterMovementComponent;
+struct FBBBCharacterAnimationConfig;
 struct FBBBCharacterAnimationState;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterFacingState;
 struct FBBBAnimationRuntimeData;
 
 /** 整理角色移动事实供动画蓝图自行决定表现 */
@@ -21,7 +21,7 @@ public:
     void Update(
         const UCharacterMovementComponent &Movement,
         const FBBBCharacterEquipmentState &EquipmentState,
-        const FBBBCharacterFacingState &FacingState,
+        const FBBBCharacterAnimationConfig &AnimationConfig,
         float DeltaSeconds,
         FBBBAnimationRuntimeData &AnimationData,
         FBBBCharacterAnimationState &AnimationState) const;

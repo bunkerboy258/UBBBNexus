@@ -14,25 +14,25 @@ struct FBBBCharacterFacingRuntimeData
 {
     GENERATED_BODY()
 
-    /** @return 当前只读角色朝向状态 */
+private:
+    friend class FBBBCharacterFacingSystem;
+
+    /** @return 朝向系统内部的只读滞回控制状态 */
     const FBBBCharacterFacingState &GetState() const
     {
         return State;
     }
 
-private:
-    friend class FBBBCharacterFacingSystem;
-
     /**
-     * 提交本帧计算完成的角色朝向状态
-     * @param InState	本帧角色朝向状态
+     * 提交本帧计算完成的滞回控制状态
+     * @param InState	本帧滞回控制状态
      */
     void CommitState(const FBBBCharacterFacingState &InState)
     {
         State = InState;
     }
 
-    /** 角色朝向系统跨帧状态 */
+    /** 仅供朝向系统维护的跨帧滞回控制状态 */
     UPROPERTY(Transient)
     FBBBCharacterFacingState State;
 };

@@ -1,10 +1,10 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBCharacterFacingRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -16,8 +16,8 @@ void FBBBCharacterAnimationSystem::Initialize(
     FBBBCharacterAnimationState &InAnimationState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBAimRuntimeData &InAimData,
-    const FBBBCharacterFacingRuntimeData &InFacingData,
     const FBBBCharacterEquipmentState &InEquipmentState,
+    const FBBBCharacterAnimationConfig &InAnimationConfig,
     const FBBBAimAnimationConfig &InAimAnimationConfig)
 {
     CharacterMesh = &InCharacterMesh;
@@ -26,8 +26,8 @@ void FBBBCharacterAnimationSystem::Initialize(
     AnimationState = &InAnimationState;
     WorldData = &InWorldData;
     AimData = &InAimData;
-    FacingData = &InFacingData;
     EquipmentState = &InEquipmentState;
+    AnimationConfig = &InAnimationConfig;
     AimAnimationConfig = &InAimAnimationConfig;
 }
 
@@ -37,14 +37,23 @@ void FBBBCharacterAnimationSystem::Update()
         AnimationData
             && AnimationState
             && AimData
-            && FacingData
             && EquipmentState
             && CharacterMesh
             && WorldData
             && Movement
+            && AnimationConfig
             && AimAnimationConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
-    { return; }
+    {
+        return;
+    }
+
+    if (!ensureMsgf(
+        AnimationConfig->TurnSignalRateThreshold > 0.0f,
+        TEXT("[UBBBC]Animation system update failed because turn signal threshold is invalid")))
+    {
+        return;
+    }
 
     AimPresentationProcessor.Update(
         *CharacterMesh,
@@ -58,7 +67,7 @@ void FBBBCharacterAnimationSystem::Update()
     LocomotionFactsProcessor.Update(
         *Movement,
         *EquipmentState,
-        FacingData->GetState(),
+        *AnimationConfig,
         WorldData->GetFrameDeltaSeconds(),
         *AnimationData,
         *AnimationState);

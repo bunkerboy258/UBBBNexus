@@ -1,15 +1,15 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionFactsProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/States/BBBCharacterFacingStates.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void FBBBCharacterLocomotionFactsProcessor::Update(
     const UCharacterMovementComponent &Movement,
     const FBBBCharacterEquipmentState &EquipmentState,
-    const FBBBCharacterFacingState &FacingState,
+    const FBBBCharacterAnimationConfig &AnimationConfig,
     float DeltaSeconds,
     FBBBAnimationRuntimeData &AnimationData,
     FBBBCharacterAnimationState &AnimationState) const
@@ -41,12 +41,23 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     TurnTrackingState.PreviousMovementDeltaSeconds = DeltaSeconds;
     TurnTrackingState.bHasPreviousActorYaw = true;
 
-    AnimationState.bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
-    AnimationState.bIsGrounded = Movement.IsMovingOnGround();
+    const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
+    const bool bIsGrounded = Movement.IsMovingOnGround();
+
+    //动画系统只根据角色本体实际转速生成方向信号，不读取相机或控制器
+    const bool bIsTurningLeft = bIsGrounded
+        && !bIsMoving
+        && TurnRate < -AnimationConfig.TurnSignalRateThreshold;
+    const bool bIsTurningRight = bIsGrounded
+        && !bIsMoving
+        && TurnRate > AnimationConfig.TurnSignalRateThreshold;
+
+    AnimationState.bIsMoving = bIsMoving;
+    AnimationState.bIsGrounded = bIsGrounded;
     AnimationState.bIsCrouching = Movement.IsCrouching();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
-    AnimationState.bIsTurningLeft = FacingState.bIsTurningLeft;
-    AnimationState.bIsTurningRight = FacingState.bIsTurningRight;
+    AnimationState.bIsTurningLeft = bIsTurningLeft;
+    AnimationState.bIsTurningRight = bIsTurningRight;
     AnimationState.GroundSpeed = GroundSpeed;
     AnimationState.LocalForwardSpeed = LocalVelocity.X;
     AnimationState.LocalRightSpeed = LocalVelocity.Y;

@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Camera/BBBCameraConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBCharacterFacingConfig.h"
@@ -26,6 +27,10 @@ struct FBBBCharacterConfig
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBAimAnimationConfig AimAnimation;
+
+    /** 角色动画事实识别配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterAnimationConfig Animation;
 
     /** 角色身体朝向配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
