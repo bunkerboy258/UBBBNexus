@@ -45,8 +45,8 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     AnimationState.bIsGrounded = Movement.IsMovingOnGround();
     AnimationState.bIsCrouching = Movement.IsCrouching();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
-    AnimationState.bIsTurningInPlace = FacingState.bIsTurningInPlace;
-    AnimationState.TurnDirection = FacingState.TurnDirection;
+    AnimationState.bIsTurningLeft = FacingState.bIsTurningLeft;
+    AnimationState.bIsTurningRight = FacingState.bIsTurningRight;
     AnimationState.GroundSpeed = GroundSpeed;
     AnimationState.LocalForwardSpeed = LocalVelocity.X;
     AnimationState.LocalRightSpeed = LocalVelocity.Y;

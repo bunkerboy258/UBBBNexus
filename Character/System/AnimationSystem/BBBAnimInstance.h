@@ -44,18 +44,18 @@ public:
         return GetAnimationState().bIsMoving;
     }
 
-    /** @return 当前是否正在执行原地转身 */
+    /** @return 当前是否应该播放向左原地转身 */
     UFUNCTION(BlueprintPure, Category = "BBB|Facing", meta = (BlueprintThreadSafe))
-    bool IsTurningInPlace() const
+    bool IsTurningLeft() const
     {
-        return GetAnimationState().bIsTurningInPlace;
+        return GetAnimationState().bIsTurningLeft;
     }
 
-    /** @return 当前原地转身的水平方向 */
+    /** @return 当前是否应该播放向右原地转身 */
     UFUNCTION(BlueprintPure, Category = "BBB|Facing", meta = (BlueprintThreadSafe))
-    EBBBCharacterTurnDirection GetTurnDirection() const
+    bool IsTurningRight() const
     {
-        return GetAnimationState().TurnDirection;
+        return GetAnimationState().bIsTurningRight;
     }
 
     /** @return 是否接触地面 */

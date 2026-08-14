@@ -1,7 +1,6 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/States/BBBCharacterFacingStates.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
 class UAnimSequence;
@@ -28,13 +27,13 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bHasMainHandEquipment = false;
 
-    /** 是否正在播放原地转身表现 */
+    /** 是否应该播放向左原地转身表现 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsTurningInPlace = false;
+    bool bIsTurningLeft = false;
 
-    /** 当前原地转身表现方向 */
+    /** 是否应该播放向右原地转身表现 */
     UPROPERTY(BlueprintReadOnly)
-    EBBBCharacterTurnDirection TurnDirection = EBBBCharacterTurnDirection::None;
+    bool bIsTurningRight = false;
 
     /** 当前装备提供的普通握持上半身动画 */
     UPROPERTY(BlueprintReadOnly)

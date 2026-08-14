@@ -10,10 +10,10 @@ namespace
 {
 constexpr float IdleSpeedThreshold = 1.0f;
 
-void StopTurningInPlace(FBBBCharacterFacingState &State)
+void ClearTurnSignals(FBBBCharacterFacingState &State)
 {
-    State.bIsTurningInPlace = false;
-    State.TurnDirection = EBBBCharacterTurnDirection::None;
+    State.bIsTurningLeft = false;
+    State.bIsTurningRight = false;
 }
 
 void UseMovementDirection(UCharacterMovementComponent &Movement)
@@ -42,7 +42,7 @@ void FBBBCharacterFacingProcessor::Update(
     //移动期间不经过原地滞回，持续快速追赶相机水平朝向
     if (IntentData.HasMoveInput())
     {
-        StopTurningInPlace(State);
+        ClearTurnSignals(State);
         UseCameraDirection(Movement, Config.MoveAlignmentRotationRate);
         return;
     }
@@ -53,7 +53,7 @@ void FBBBCharacterFacingProcessor::Update(
     //减速或离地期间保持引擎原生移动朝向，不触发原地转身
     if (!bIsIdle)
     {
-        StopTurningInPlace(State);
+        ClearTurnSignals(State);
         UseMovementDirection(Movement);
         return;
     }
@@ -62,32 +62,34 @@ void FBBBCharacterFacingProcessor::Update(
         Character.GetActorRotation().Yaw,
         Character.GetControlRotation().Yaw);
     const float CameraYawDeltaAbs = FMath::Abs(CameraYawDelta);
+    const bool bHasActiveTurnSignal = State.bIsTurningLeft || State.bIsTurningRight;
 
     //尚未转身且相机仍在启动区间内时保持角色方向
-    if (!State.bIsTurningInPlace
+    if (!bHasActiveTurnSignal
         && CameraYawDeltaAbs <= Config.IdleTurnStartAngle)
     {
-        StopTurningInPlace(State);
+        ClearTurnSignals(State);
         UseMovementDirection(Movement);
         return;
     }
 
     //已经转身并进入停止区间后结束旋转，避免阈值附近反复切换
-    if (State.bIsTurningInPlace
+    if (bHasActiveTurnSignal
         && CameraYawDeltaAbs <= Config.IdleTurnStopAngle)
     {
-        StopTurningInPlace(State);
+        ClearTurnSignals(State);
         UseMovementDirection(Movement);
         return;
     }
 
-    State.bIsTurningInPlace = true;
-    State.TurnDirection = EBBBCharacterTurnDirection::Right;
+    State.bIsTurningLeft = false;
+    State.bIsTurningRight = true;
 
     //负偏角表示相机位于角色左侧
     if (CameraYawDelta < 0.0f)
     {
-        State.TurnDirection = EBBBCharacterTurnDirection::Left;
+        State.bIsTurningLeft = true;
+        State.bIsTurningRight = false;
     }
 
     UseCameraDirection(Movement, Config.IdleTurnRotationRate);
