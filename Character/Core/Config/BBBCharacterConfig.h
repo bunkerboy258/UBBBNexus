@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Camera/BBBCameraConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBCharacterFacingConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Input/BBBInputConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
@@ -25,6 +26,10 @@ struct FBBBCharacterConfig
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBAimAnimationConfig AimAnimation;
+
+    /** 角色身体朝向配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterFacingConfig Facing;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterCameraConfig Camera;

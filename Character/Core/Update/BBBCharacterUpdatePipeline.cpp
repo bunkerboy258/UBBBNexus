@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
@@ -19,6 +20,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
     FBBBCharacterRuntimeData &InRuntimeData,
     FBBBCharacterCameraSystem &InCameraSystem,
     FBBBCharacterAimSystem &InAimSystem,
+    FBBBCharacterFacingSystem &InFacingSystem,
     FBBBCharacterLocomotionSystem &InLocomotionSystem,
     FBBBCharacterEquipmentSystem &InEquipmentSystem,
     FBBBCharacterNetworkSystem &InNetworkSystem,
@@ -33,6 +35,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
     RuntimeData = &InRuntimeData;
     CameraSystem = &InCameraSystem;
     AimSystem = &InAimSystem;
+    FacingSystem = &InFacingSystem;
     LocomotionSystem = &InLocomotionSystem;
     EquipmentSystem = &InEquipmentSystem;
     NetworkSystem = &InNetworkSystem;
@@ -53,6 +56,7 @@ void FBBBCharacterUpdatePipeline::Update() const
             && RuntimeData
             && CameraSystem
             && AimSystem
+            && FacingSystem
             && LocomotionSystem
             && EquipmentSystem
             && NetworkSystem
@@ -121,6 +125,8 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     EquipmentSystem->Update();
     
     CameraSystem->Update();
+
+    FacingSystem->Update();
     
     AimSystem->Update();
     
@@ -151,6 +157,8 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     EquipmentSystem->Update();
     
     CameraSystem->Update();
+
+    FacingSystem->Update();
     
     AimSystem->Update();
     

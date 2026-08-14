@@ -2,12 +2,14 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/States/BBBCharacterFacingStates.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void FBBBCharacterLocomotionFactsProcessor::Update(
     const UCharacterMovementComponent &Movement,
     const FBBBCharacterEquipmentState &EquipmentState,
+    const FBBBCharacterFacingState &FacingState,
     float DeltaSeconds,
     FBBBAnimationRuntimeData &AnimationData,
     FBBBCharacterAnimationState &AnimationState) const
@@ -43,6 +45,8 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     AnimationState.bIsGrounded = Movement.IsMovingOnGround();
     AnimationState.bIsCrouching = Movement.IsCrouching();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
+    AnimationState.bIsTurningInPlace = FacingState.bIsTurningInPlace;
+    AnimationState.TurnDirection = FacingState.TurnDirection;
     AnimationState.GroundSpeed = GroundSpeed;
     AnimationState.LocalForwardSpeed = LocalVelocity.X;
     AnimationState.LocalRightSpeed = LocalVelocity.Y;

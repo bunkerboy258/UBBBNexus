@@ -1,13 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimFacingProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimStateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Processors/BBBCharacterAimTargetProcessor.h"
 
 class APawn;
 class FBBBCharacterInitializer;
-class UCharacterMovementComponent;
 struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
 struct FBBBIntentRuntimeData;
@@ -36,18 +34,15 @@ private:
      */
     void Initialize(
         APawn &InPawn,
-        UCharacterMovementComponent &InMovement,
         FBBBAimRuntimeData &InAimData,
         const FBBBIntentRuntimeData &InIntentData,
         const FBBBAimConfig &InAimConfig);
 
     APawn *Pawn = nullptr;
-    UCharacterMovementComponent *Movement = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     const FBBBIntentRuntimeData *IntentData = nullptr;
     const FBBBAimConfig *AimConfig = nullptr;
 
     FBBBCharacterAimStateProcessor AimStateProcessor;
     FBBBCharacterAimTargetProcessor AimTargetProcessor;
-    FBBBCharacterAimFacingProcessor AimFacingProcessor;
 };

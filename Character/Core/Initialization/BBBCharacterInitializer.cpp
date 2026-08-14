@@ -50,10 +50,16 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.AimSystem.Initialize(
         Character,
-        *Movement,
         Character.RuntimeData.Aim,
         Character.RuntimeData.Intent,
         Config.Aim);
+
+    Character.FacingSystem.Initialize(
+        Character,
+        *Movement,
+        Character.RuntimeData.Intent,
+        Character.RuntimeData.Facing,
+        Config.Facing);
     
     Character.LocomotionSystem.Initialize(
         Character,
@@ -91,6 +97,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.AnimationState,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Aim,
+        Character.RuntimeData.Facing,
         Character.RuntimeData.Equipment.Equipment,
         Config.AimAnimation);
     
@@ -123,6 +130,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData,
         Character.CameraSystem,
         Character.AimSystem,
+        Character.FacingSystem,
         Character.LocomotionSystem,
         Character.EquipmentSystem,
         Character.NetworkSystem,

@@ -5,6 +5,7 @@
 class UCharacterMovementComponent;
 struct FBBBCharacterAnimationState;
 struct FBBBCharacterEquipmentState;
+struct FBBBCharacterFacingState;
 struct FBBBAnimationRuntimeData;
 
 /** 整理角色移动事实供动画蓝图自行决定表现 */
@@ -20,6 +21,7 @@ public:
     void Update(
         const UCharacterMovementComponent &Movement,
         const FBBBCharacterEquipmentState &EquipmentState,
+        const FBBBCharacterFacingState &FacingState,
         float DeltaSeconds,
         FBBBAnimationRuntimeData &AnimationData,
         FBBBCharacterAnimationState &AnimationState) const;

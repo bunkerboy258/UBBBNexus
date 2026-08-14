@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBCharacterFacingRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
@@ -56,6 +57,10 @@ private:
     //保存角色瞄准状态
     UPROPERTY(Transient)
     FBBBAimRuntimeData Aim;
+
+    /** 角色身体朝向状态 */
+    UPROPERTY(Transient)
+    FBBBCharacterFacingRuntimeData Facing;
 
     //保存动画命令与处理状态
     UPROPERTY(Transient)

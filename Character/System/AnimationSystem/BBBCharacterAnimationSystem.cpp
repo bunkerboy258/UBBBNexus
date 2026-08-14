@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBCharacterFacingRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -15,6 +16,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     FBBBCharacterAnimationState &InAnimationState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBAimRuntimeData &InAimData,
+    const FBBBCharacterFacingRuntimeData &InFacingData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBAimAnimationConfig &InAimAnimationConfig)
 {
@@ -24,6 +26,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     AnimationState = &InAnimationState;
     WorldData = &InWorldData;
     AimData = &InAimData;
+    FacingData = &InFacingData;
     EquipmentState = &InEquipmentState;
     AimAnimationConfig = &InAimAnimationConfig;
 }
@@ -34,6 +37,7 @@ void FBBBCharacterAnimationSystem::Update()
         AnimationData
             && AnimationState
             && AimData
+            && FacingData
             && EquipmentState
             && CharacterMesh
             && WorldData
@@ -54,6 +58,7 @@ void FBBBCharacterAnimationSystem::Update()
     LocomotionFactsProcessor.Update(
         *Movement,
         *EquipmentState,
+        FacingData->GetState(),
         WorldData->GetFrameDeltaSeconds(),
         *AnimationData,
         *AnimationState);
