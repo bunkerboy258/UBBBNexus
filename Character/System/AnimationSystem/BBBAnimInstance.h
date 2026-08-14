@@ -149,6 +149,13 @@ public:
         return GetAnimationState().VerticalSpeed;
     }
 
+    /** @return 当前动画姿势中左脚是否高于右脚 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    bool IsLeftFootHigherThanRightFoot() const
+    {
+        return bIsLeftFootHigherThanRightFoot;
+    }
+
     /** @return 相对角色前轴的水平瞄准角 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     float GetAimOffsetYaw() const
@@ -254,6 +261,14 @@ private:
 
 protected:
 
+    /** 用于判断急停脚相位的左脚骨骼 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Foot Phase")
+    FName LeftFootBoneName = FName("foot_l");
+
+    /** 用于判断急停脚相位的右脚骨骼 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Foot Phase")
+    FName RightFootBoneName = FName("foot_r");
+
     /** 缓存的角色动画状态引用 由所属角色每帧刷新 */
     const FBBBCharacterAnimationState *AnimationState = nullptr;
 
@@ -262,4 +277,7 @@ protected:
 
     /** 缓存的角色装备命令叶子 */
     FBBBCharacterEquipmentCommands *EquipmentCommands = nullptr;
+
+    /** 当前动画姿势中左脚是否高于右脚 */
+    bool bIsLeftFootHigherThanRightFoot = false;
 };
