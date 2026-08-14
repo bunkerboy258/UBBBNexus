@@ -50,7 +50,8 @@ void FBBBCharacterAnimationSystem::Update()
 
     if (!ensureMsgf(
         AnimationConfig->TurnSignalRateThreshold > 0.0f
-            && AnimationConfig->TurnRateSmoothingTime > 0.0f,
+            && AnimationConfig->TurnRateSmoothingTime > 0.0f
+            && AnimationConfig->MaxTurnRateChangeSpeed > 0.0f,
         TEXT("[UBBBC]Animation system update failed because turn configuration is invalid")))
     {
         return;

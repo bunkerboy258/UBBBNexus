@@ -18,4 +18,8 @@ struct FBBBCharacterAnimationConfig
     /** 将角色离散旋转量转换为稳定动画转速所使用的低通时间，单位为秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Facing", meta = (ClampMin = "0.001"))
     float TurnRateSmoothingTime = 0.12f;
+
+    /** 动画转速每秒允许变化的最大幅度，单位为度每平方秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Facing", meta = (ClampMin = "0.0"))
+    float MaxTurnRateChangeSpeed = 720.0f;
 };

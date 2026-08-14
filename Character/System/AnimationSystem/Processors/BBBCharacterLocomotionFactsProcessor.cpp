@@ -43,10 +43,17 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     //指数低通在不同帧率下保持相近响应并避免弹簧回弹
     const float TurnRateSmoothingAlpha = 1.0f - FMath::Exp(
         -FMath::Max(DeltaSeconds, 0.0f) / AnimationConfig.TurnRateSmoothingTime);
-    TurnTrackingState.SmoothedTurnRate = FMath::Lerp(
+    const float FilteredTurnRate = FMath::Lerp(
         TurnTrackingState.SmoothedTurnRate,
         RawTurnRate,
         TurnRateSmoothingAlpha);
+
+    //限制正负方向的转速变化幅度，避免动画输入因瞬时旋转发生突变
+    TurnTrackingState.SmoothedTurnRate = FMath::FInterpConstantTo(
+        TurnTrackingState.SmoothedTurnRate,
+        FilteredTurnRate,
+        DeltaSeconds,
+        AnimationConfig.MaxTurnRateChangeSpeed);
     const float TurnRate = TurnTrackingState.SmoothedTurnRate;
 
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
