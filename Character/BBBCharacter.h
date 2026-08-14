@@ -52,6 +52,13 @@ public:
      * 游戏开始时通过初始化器装配全部运行时对象
      */
     virtual void BeginPlay() override;
+
+    /**
+     * 游戏结束时停止角色移动后更新
+     * @param EndPlayReason 角色停止游戏的原因
+     */
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
     /**
      * 每帧驱动角色主更新管线
      * @param DeltaSeconds	帧间隔秒数

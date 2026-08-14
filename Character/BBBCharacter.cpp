@@ -15,7 +15,7 @@ ABBBCharacter::ABBBCharacter()
 
     //LateUpdate与主管线处于同一更新组并通过依赖关系固定顺序
     LateUpdateTickFunction.bCanEverTick = true;
-    LateUpdateTickFunction.bStartWithTickEnabled = true;
+    LateUpdateTickFunction.bStartWithTickEnabled = false;
     LateUpdateTickFunction.TickGroup = TG_PrePhysics;
     //允许网络同步
     bReplicates = true;
@@ -61,6 +61,19 @@ void ABBBCharacter::BeginPlay()
 {
     Super::BeginPlay();
     FBBBCharacterInitializer::Initialize(*this);
+
+    //全部运行依赖注入完成后才允许执行LateUpdate
+    LateUpdateTickFunction.SetTickFunctionEnable(true);
+}
+
+//------------------------------------------------------------------------------
+
+void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    //世界清理前停止LateUpdate访问角色运行数据
+    LateUpdateTickFunction.SetTickFunctionEnable(false);
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void ABBBCharacter::Tick(float DeltaSeconds)
@@ -97,7 +110,7 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
     if (bRegister)
     {
         LateUpdateTickFunction.Target = this;
-        LateUpdateTickFunction.SetTickFunctionEnable(true);
+        LateUpdateTickFunction.SetTickFunctionEnable(HasActorBegunPlay());
         LateUpdateTickFunction.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
         LateUpdateTickFunction.RegisterTickFunction(GetLevel());
 
