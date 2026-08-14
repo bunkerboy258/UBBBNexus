@@ -28,17 +28,16 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     float TurnRate = 0.0f;
 
     if (TurnTrackingState.bHasPreviousActorYaw
-        && TurnTrackingState.PreviousMovementDeltaSeconds > KINDA_SMALL_NUMBER)
+        && DeltaSeconds > KINDA_SMALL_NUMBER)
     {
         const float DeltaYaw = FMath::FindDeltaAngleDegrees(
             TurnTrackingState.PreviousActorYaw,
             CurrentActorYaw);
 
-        TurnRate = DeltaYaw / TurnTrackingState.PreviousMovementDeltaSeconds;
+        TurnRate = DeltaYaw / DeltaSeconds;
     }
 
     TurnTrackingState.PreviousActorYaw = CurrentActorYaw;
-    TurnTrackingState.PreviousMovementDeltaSeconds = DeltaSeconds;
     TurnTrackingState.bHasPreviousActorYaw = true;
 
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;

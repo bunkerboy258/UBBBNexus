@@ -117,9 +117,6 @@ struct FBBBCharacterTurnTrackingState
     /** 上一次采样的角色水平朝向 */
     float PreviousActorYaw = 0.0f;
 
-    /** 上一轮角色移动更新使用的帧时间 */
-    float PreviousMovementDeltaSeconds = 0.0f;
-
     /** 是否已有可用于计算的上一帧朝向 */
     bool bHasPreviousActorYaw = false;
 };
