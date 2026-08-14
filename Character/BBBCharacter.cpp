@@ -85,10 +85,10 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
     Super::RegisterActorTickFunctions(bRegister);
 
     UCharacterMovementComponent *Movement = GetCharacterMovement();
-    USkeletalMeshComponent *Mesh = GetMesh();
+    USkeletalMeshComponent *CharacterMesh = GetMesh();
 
     if (!ensureMsgf(
-        Movement && Mesh,
+        Movement && CharacterMesh,
         TEXT("[UBBBC]Character tick registration failed because required components are null")))
     {
         return;
@@ -102,11 +102,11 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
         LateUpdateTickFunction.RegisterTickFunction(GetLevel());
 
         //骨骼网格必须等待LateUpdate提交最终动画事实后才能更新动画图
-        Mesh->PrimaryComponentTick.AddPrerequisite(this, LateUpdateTickFunction);
+        CharacterMesh->PrimaryComponentTick.AddPrerequisite(this, LateUpdateTickFunction);
         return;
     }
 
-    Mesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTickFunction);
+    CharacterMesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTickFunction);
     LateUpdateTickFunction.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
     LateUpdateTickFunction.UnRegisterTickFunction();
     LateUpdateTickFunction.Target = nullptr;
