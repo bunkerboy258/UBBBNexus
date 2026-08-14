@@ -117,6 +117,9 @@ struct FBBBCharacterTurnTrackingState
     /** 上一次采样的角色水平朝向 */
     float PreviousActorYaw = 0.0f;
 
+    /** 动画系统跨帧维护的稳定角色水平转速 */
+    float SmoothedTurnRate = 0.0f;
+
     /** 是否已有可用于计算的上一帧朝向 */
     bool bHasPreviousActorYaw = false;
 };

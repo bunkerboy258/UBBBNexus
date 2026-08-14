@@ -25,7 +25,7 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     const float GroundSpeed = Velocity.Size2D();
     const float CurrentActorYaw = Owner->GetActorRotation().Yaw;
     FBBBCharacterTurnTrackingState &TurnTrackingState = AnimationData.TurnTracking;
-    float TurnRate = 0.0f;
+    float RawTurnRate = 0.0f;
 
     if (TurnTrackingState.bHasPreviousActorYaw
         && DeltaSeconds > KINDA_SMALL_NUMBER)
@@ -34,11 +34,20 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
             TurnTrackingState.PreviousActorYaw,
             CurrentActorYaw);
 
-        TurnRate = DeltaYaw / DeltaSeconds;
+        RawTurnRate = DeltaYaw / DeltaSeconds;
     }
 
     TurnTrackingState.PreviousActorYaw = CurrentActorYaw;
     TurnTrackingState.bHasPreviousActorYaw = true;
+
+    //指数低通在不同帧率下保持相近响应并避免弹簧回弹
+    const float TurnRateSmoothingAlpha = 1.0f - FMath::Exp(
+        -FMath::Max(DeltaSeconds, 0.0f) / AnimationConfig.TurnRateSmoothingTime);
+    TurnTrackingState.SmoothedTurnRate = FMath::Lerp(
+        TurnTrackingState.SmoothedTurnRate,
+        RawTurnRate,
+        TurnRateSmoothingAlpha);
+    const float TurnRate = TurnTrackingState.SmoothedTurnRate;
 
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     const bool bIsGrounded = Movement.IsMovingOnGround();
