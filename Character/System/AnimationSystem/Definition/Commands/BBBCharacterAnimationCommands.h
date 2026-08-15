@@ -36,9 +36,9 @@ struct FBBBCharacterAnimationCommands
     }
 
     /** @return 本帧是否请求关闭瞄准IK */
-    bool IsAimBlockedRequested() const
+    bool IsAimIKBlockedRequested() const
     {
-        return bBlockAim;
+        return bBlockAimIK;
     }
 
     /** @return 本帧装备左手IK权重 */
@@ -81,9 +81,9 @@ private:
      * 提交本帧瞄准IK关闭请求
      * @param bBlocked	是否关闭瞄准IK
      */
-    void SubmitAimBlockRequest(bool bBlocked)
+    void SubmitAimIKBlockRequest(bool bBlocked)
     {
-        bBlockAim = bBlockAim || bBlocked;
+        bBlockAimIK = bBlockAimIK || bBlocked;
     }
 
     /**
@@ -102,7 +102,7 @@ private:
     {
         PendingMontages.Reset();
         bBlockLeftHandIK = false;
-        bBlockAim = false;
+        bBlockAimIK = false;
         EquipmentLeftHandIKAlpha = 1.0f;
     }
 
@@ -114,7 +114,7 @@ private:
 
     /** 本帧是否关闭瞄准IK */
     UPROPERTY()
-    bool bBlockAim = false;
+    bool bBlockAimIK = false;
 
     /** 本帧装备左手IK权重 */
     UPROPERTY()

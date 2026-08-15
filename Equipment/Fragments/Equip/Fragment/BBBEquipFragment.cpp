@@ -147,7 +147,7 @@ void FBBBEquipFragment::Update(
     ABBBEquipmentPresentationActor &PresentationActor,
     UBBBEquipRuntimeData &RuntimeData) const
 {
-    CharacterAPI.SubmitAimBlockRequest(RuntimeData.bIsEquipping);
+    CharacterAPI.SubmitAimIKBlockRequest(RuntimeData.bIsEquipping);
 
     if (!RuntimeData.bIsEquipping)
     {

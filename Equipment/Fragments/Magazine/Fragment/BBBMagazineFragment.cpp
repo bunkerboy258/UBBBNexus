@@ -72,7 +72,7 @@ void FBBBMagazineFragment::PresentReload(
     CharacterAPI.QueueMontage(Request);
     RuntimeData.ReloadIKBlockEndTime = World->GetTimeSeconds() + ReloadMontage->GetPlayLength();
     CharacterAPI.SubmitLeftHandIKBlockRequest(true);
-    CharacterAPI.SubmitAimBlockRequest(true);
+    CharacterAPI.SubmitAimIKBlockRequest(true);
 }
 
 void FBBBMagazineFragment::Update(
@@ -90,7 +90,7 @@ void FBBBMagazineFragment::Update(
 
     const bool bBlockIK = World && CurrentTime < RuntimeData.ReloadIKBlockEndTime;
     CharacterAPI.SubmitLeftHandIKBlockRequest(bBlockIK);
-    CharacterAPI.SubmitAimBlockRequest(bBlockIK);
+    CharacterAPI.SubmitAimIKBlockRequest(bBlockIK);
 
     if (RuntimeData.ReloadIKBlockEndTime > 0.0f
         && CurrentTime >= RuntimeData.ReloadIKBlockEndTime)

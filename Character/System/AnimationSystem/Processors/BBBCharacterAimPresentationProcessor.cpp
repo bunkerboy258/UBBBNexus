@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor.h"
@@ -14,7 +13,6 @@ void FBBBCharacterAimPresentationProcessor::Update(
     float DeltaSeconds,
     const FBBBAimAnimationConfig &AnimationConfig,
     const FBBBAimRuntimeData &AimData,
-    const FBBBCharacterAnimationCommands &AnimationCommands,
     FBBBAnimationRuntimeData &AnimationData,
     FBBBCharacterAnimationState &AnimationState) const
 {
@@ -79,7 +77,7 @@ void FBBBCharacterAimPresentationProcessor::Update(
         AnimationData.AimPresentation.bHasSmoothedAimTarget = false;
     }
     float TargetAimAlpha = 0.0f;
-    if (AimState.bIsAiming && !AnimationCommands.IsAimBlockedRequested())
+    if (AimState.bIsAiming)
     {
         TargetAimAlpha = 1.0f;
     }

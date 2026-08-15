@@ -62,7 +62,6 @@ void FBBBCharacterAnimationSystem::Update()
         WorldData->GetFrameDeltaSeconds(),
         *AimAnimationConfig,
         *AimData,
-        AnimationData->GetCommands(),
         *AnimationData,
         *AnimationState);
 
