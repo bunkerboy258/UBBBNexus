@@ -64,6 +64,10 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     float TurnRate = 0.0f;
 
+    /** CMC更新完成后角色本帧实际发生的水平旋转量，右转为正 */
+    UPROPERTY(BlueprintReadOnly)
+    float ActorYawDelta = 0.0f;
+
     /** 实际垂直移动速度 */
     UPROPERTY(BlueprintReadOnly)
     float VerticalSpeed = 0.0f;

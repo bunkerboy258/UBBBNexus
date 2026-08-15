@@ -25,16 +25,17 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     const float GroundSpeed = Velocity.Size2D();
     const float CurrentActorYaw = Owner->GetActorRotation().Yaw;
     FBBBCharacterTurnTrackingState &TurnTrackingState = AnimationData.TurnTracking;
+    float ActorYawDelta = 0.0f;
     float RawTurnRate = 0.0f;
 
     if (TurnTrackingState.bHasPreviousActorYaw
         && DeltaSeconds > KINDA_SMALL_NUMBER)
     {
-        const float DeltaYaw = FMath::FindDeltaAngleDegrees(
+        ActorYawDelta = FMath::FindDeltaAngleDegrees(
             TurnTrackingState.PreviousActorYaw,
             CurrentActorYaw);
 
-        RawTurnRate = DeltaYaw / DeltaSeconds;
+        RawTurnRate = ActorYawDelta / DeltaSeconds;
     }
 
     TurnTrackingState.PreviousActorYaw = CurrentActorYaw;
@@ -77,5 +78,6 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     AnimationState.LocalForwardSpeed = LocalVelocity.X;
     AnimationState.LocalRightSpeed = LocalVelocity.Y;
     AnimationState.TurnRate = TurnRate;
+    AnimationState.ActorYawDelta = ActorYawDelta;
     AnimationState.VerticalSpeed = Velocity.Z;
 }
