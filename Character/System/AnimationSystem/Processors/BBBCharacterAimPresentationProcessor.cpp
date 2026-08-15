@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor.h"
@@ -13,6 +14,7 @@ void FBBBCharacterAimPresentationProcessor::Update(
     float DeltaSeconds,
     const FBBBAimAnimationConfig &AnimationConfig,
     const FBBBAimRuntimeData &AimData,
+    const FBBBCharacterAnimationCommands &AnimationCommands,
     FBBBAnimationRuntimeData &AnimationData,
     FBBBCharacterAnimationState &AnimationState) const
 {
@@ -76,43 +78,41 @@ void FBBBCharacterAimPresentationProcessor::Update(
         AnimationData.AimPresentation.AimTargetSmoothVelocity = FVector::ZeroVector;
         AnimationData.AimPresentation.bHasSmoothedAimTarget = false;
     }
-    float TargetAimAlpha = 0.0f;
+    float TargetAimIntentAlpha = 0.0f;
     if (AimState.bIsAiming)
     {
-        TargetAimAlpha = 1.0f;
+        TargetAimIntentAlpha = 1.0f;
     }
-    AnimationData.AimPresentation.SmoothedAimPresentationAlpha = FMath::FInterpTo(
-        AnimationData.AimPresentation.SmoothedAimPresentationAlpha,
-        TargetAimAlpha,
+
+    AnimationData.AimPresentation.SmoothedAimIntentAlpha = FMath::FInterpTo(
+        AnimationData.AimPresentation.SmoothedAimIntentAlpha,
+        TargetAimIntentAlpha,
         DeltaSeconds,
-        AnimationConfig.AimPresentationAlphaInterpSpeed);
-    AnimationState.AimPresentationAlpha = FMath::Clamp(
-        AnimationData.AimPresentation.SmoothedAimPresentationAlpha,
+        AnimationConfig.AimIntentAlphaInterpSpeed);
+
+    float TargetAimIKLockAlpha = 1.0f;
+    if (AnimationCommands.IsAimIKBlockedRequested())
+    {
+        TargetAimIKLockAlpha = 0.0f;
+    }
+
+    AnimationData.AimPresentation.SmoothedAimIKLockAlpha = FMath::FInterpTo(
+        AnimationData.AimPresentation.SmoothedAimIKLockAlpha,
+        TargetAimIKLockAlpha,
+        DeltaSeconds,
+        AnimationConfig.AimIKLockAlphaInterpSpeed);
+
+    AnimationState.AimIntentAlpha = FMath::Clamp(
+        AnimationData.AimPresentation.SmoothedAimIntentAlpha,
         0.0f,
         1.0f);
+    const float AimIKLockAlpha = FMath::Clamp(
+        AnimationData.AimPresentation.SmoothedAimIKLockAlpha,
+        0.0f,
+        1.0f);
+    AnimationState.AimIKAlpha = AnimationState.AimIntentAlpha * AimIKLockAlpha;
     AnimationState.AimTargetComponentSpace = AnimationData.AimPresentation.SmoothedAimTargetComponentSpace;
     AnimationState.bHasValidAimTarget = bHasValidAimTarget;
-    AnimationState.AimIKDistanceAlpha = 1.0f;
-    if (!AnimationConfig.bEnableNearAimIKDistanceAlpha)
-    { return; }
-    const float Distance = FVector::Dist(AimOrigin, FVector(AimState.AimTargetWorld));
-    if (AnimationConfig.SafeAimIKTargetDistance <= AnimationConfig.MinAimIKTargetDistance)
-    {
-        AnimationState.AimIKDistanceAlpha = 0.0f;
-        if (Distance > AnimationConfig.MinAimIKTargetDistance)
-        {
-            AnimationState.AimIKDistanceAlpha = 1.0f;
-        }
-        return;
-    }
-    const float DistanceAlpha = FMath::Clamp(
-        (Distance - AnimationConfig.MinAimIKTargetDistance)
-            / (AnimationConfig.SafeAimIKTargetDistance - AnimationConfig.MinAimIKTargetDistance),
-        0.0f,
-        1.0f);
-    AnimationState.AimIKDistanceAlpha = DistanceAlpha
-        * DistanceAlpha
-        * (3.0f - 2.0f * DistanceAlpha);
 }
 
 FVector FBBBCharacterAimPresentationProcessor::SmoothTarget(

@@ -37,19 +37,11 @@ struct FBBBAimAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimIKTargetSmoothTime = 0.1f;
 
-    /** 是否按近距离衰减瞄准IK权重 */
+    /** 瞄准意图强度的插值速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    bool bEnableNearAimIKDistanceAlpha = true;
+    float AimIntentAlphaInterpSpeed = 8.0f;
 
-    /** 瞄准IK权重完全衰减的目标距离 */
+    /** 瞄准IK锁值的插值速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float MinAimIKTargetDistance = 60.0f;
-
-    /** 瞄准IK权重完全恢复的目标距离 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float SafeAimIKTargetDistance = 120.0f;
-
-    /** 瞄准IK总权重的插值速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimPresentationAlphaInterpSpeed = 8.0f;
+    float AimIKLockAlphaInterpSpeed = 8.0f;
 };

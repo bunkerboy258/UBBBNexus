@@ -43,9 +43,9 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     TObjectPtr<UAnimSequence> AimingUpperBodyAnimation = nullptr;
 
-    /** 普通握持与瞄准姿势之间的连续混合权重 */
+    /** 玩家瞄准意图的连续强度 */
     UPROPERTY(BlueprintReadOnly)
-    float AimPresentationAlpha = 0.0f;
+    float AimIntentAlpha = 0.0f;
 
     /** 身体是否正在原地转向 */
     /** 实际水平移动速度 */
@@ -96,10 +96,6 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bHasValidAimSource = false;
 
-    /** 按距离衰减的瞄准IK权重 */
-    UPROPERTY(BlueprintReadOnly)
-    float AimIKDistanceAlpha = 1.0f;
-
     /** 左手IK目标在右手骨骼空间的完整变换 */
     UPROPERTY(BlueprintReadOnly)
     FTransform LeftHandTargetRightHandBoneSpace = FTransform::Identity;
@@ -133,8 +129,11 @@ struct FBBBAimPresentationRuntimeState
     /** 瞄准目标平滑算法的速度状态 */
     FVector AimTargetSmoothVelocity = FVector::ZeroVector;
 
-    /** 平滑后的瞄准IK权重 */
-    float SmoothedAimPresentationAlpha = 0.0f;
+    /** 平滑后的瞄准意图强度 */
+    float SmoothedAimIntentAlpha = 0.0f;
+
+    /** 平滑后的瞄准IK锁值 */
+    float SmoothedAimIKLockAlpha = 1.0f;
 
     /** 平滑后的动画水平瞄准偏角 */
     float SmoothedAimOffsetYaw = 0.0f;

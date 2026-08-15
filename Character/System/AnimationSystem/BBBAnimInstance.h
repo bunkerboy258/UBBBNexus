@@ -2,7 +2,6 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimInstance.generated.h"
 
@@ -29,13 +28,6 @@ public:
      * @param DeltaSeconds	距上一帧的时间间隔
      */
     virtual void NativeUpdateAnimation(float DeltaSeconds) override;
-
-    /** @return 是否保持瞄准姿态 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    bool IsAiming() const
-    {
-        return AimState && AimState->bIsAiming;
-    }
 
     /** @return 是否存在实际水平移动 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
@@ -107,11 +99,11 @@ public:
         return GetAnimationState().AimingUpperBodyAnimation != nullptr;
     }
 
-    /** @return 普通握持与瞄准姿势之间的连续混合权重 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    float GetAimPresentationAlpha() const
+    /** @return 玩家瞄准意图的连续强度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    float GetAimIntentAlpha() const
     {
-        return GetAnimationState().AimPresentationAlpha;
+        return GetAnimationState().AimIntentAlpha;
     }
 
     /** @return 实际水平移动速度 */
@@ -256,9 +248,6 @@ protected:
 
     /** 缓存的角色动画状态引用 由所属角色每帧刷新 */
     const FBBBCharacterAnimationState *AnimationState = nullptr;
-
-    /** 缓存的瞄准只读状态 */
-    const FBBBAimRuntimeState *AimState = nullptr;
 
     /** 缓存的角色装备命令叶子 */
     FBBBCharacterEquipmentCommands *EquipmentCommands = nullptr;

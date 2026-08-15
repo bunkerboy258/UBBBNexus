@@ -15,7 +15,6 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
 {
     AnimationState.HoldingUpperBodyAnimation = nullptr;
     AnimationState.AimingUpperBodyAnimation = nullptr;
-    AnimationState.AimIKAlpha = 0.0f;
     AnimationState.LeftHandIKAlpha = 0.0f;
     AnimationState.AimSourceLocalTransform = FTransform::Identity;
     AnimationState.LeftHandTargetRightHandBoneSpace = FTransform::Identity;
@@ -45,14 +44,6 @@ void FBBBCharacterEquipmentPoseProcessor::Update(
 
     AnimationState.bHasValidLeftHandTarget = EquipmentSystem->TryGetLeftHandTargetRightHandBoneSpace(
         AnimationState.LeftHandTargetRightHandBoneSpace);
-
-    if (AnimationState.bHasValidAimTarget
-        && AnimationState.bHasValidAimSource
-        && !AnimationCommands.IsAimIKBlockedRequested())
-    {
-        AnimationState.AimIKAlpha = AnimationState.AimPresentationAlpha
-            * AnimationState.AimIKDistanceAlpha;
-    }
 
     const bool bEnableLeftHandIK = EquipmentSystem->IsLeftHandIKEnabled();
     if (AnimationState.bHasValidLeftHandTarget

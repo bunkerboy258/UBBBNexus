@@ -13,7 +13,7 @@ void UBBBAnimInstance::NativeInitializeAnimation()
 void UBBBAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
     Super::NativeUpdateAnimation(DeltaSeconds);
-    if (!AnimationState || !AimState || !EquipmentCommands)
+    if (!AnimationState || !EquipmentCommands)
     {
 
         RefreshCachedReferences();
@@ -26,9 +26,6 @@ void UBBBAnimInstance::RefreshCachedReferences()
     ABBBCharacter *Character = Cast<ABBBCharacter>(TryGetPawnOwner());
     AnimationState = Character
         ? &Character->GetAnimationState()
-        : nullptr;
-    AimState = Character
-        ? &Character->GetAimState()
         : nullptr;
     EquipmentCommands = Character
         ? &Character->RuntimeData.Equipment.Commands

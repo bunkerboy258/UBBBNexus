@@ -101,11 +101,6 @@ private:
         return RuntimeData.GetAnimationState();
     }
 
-    /** @return 瞄准系统提交的只读状态 */
-    const FBBBAimRuntimeState &GetAimState() const
-    {
-        return RuntimeData.Aim.GetState();
-    }
 protected:
     
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|Config")
