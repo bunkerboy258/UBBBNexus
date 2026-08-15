@@ -142,13 +142,6 @@ public:
         return GetAnimationState().TurnRate;
     }
 
-    /** @return CMC更新完成后角色本帧实际发生的水平旋转量，右转为正 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    float GetActorYawDelta() const
-    {
-        return GetAnimationState().ActorYawDelta;
-    }
-
     /** @return 实际垂直移动速度 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     float GetVerticalSpeed() const
