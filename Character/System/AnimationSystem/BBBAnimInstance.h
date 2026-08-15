@@ -29,6 +29,13 @@ public:
      */
     virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
+    /** @return 瞄准意图强度达到主要区间时返回true */
+    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    bool IsAiming() const
+    {
+        return GetAnimationState().AimIntentAlpha >= 0.5f;
+    }
+
     /** @return 是否存在实际水平移动 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsMoving() const
