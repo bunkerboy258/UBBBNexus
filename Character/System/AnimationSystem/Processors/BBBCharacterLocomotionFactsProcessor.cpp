@@ -33,14 +33,20 @@ EBBBCharacterLocomotionMode ResolveLocomotionMode(
     float GroundSpeed,
     const FBBBCharacterLocomotionProfileConfig &Profile)
 {
-    if (Movement.IsCrouching())
+    if (GroundSpeed <= KINDA_SMALL_NUMBER
+        && Movement.IsCrouching())
     {
-        return EBBBCharacterLocomotionMode::Crouch;
+        return EBBBCharacterLocomotionMode::CrouchIdle;
     }
 
     if (GroundSpeed <= KINDA_SMALL_NUMBER)
     {
         return EBBBCharacterLocomotionMode::Idle;
+    }
+
+    if (Movement.IsCrouching())
+    {
+        return EBBBCharacterLocomotionMode::Crouch;
     }
 
     //蹲伏除外，表示当前速度最接近走路档还是跑步档

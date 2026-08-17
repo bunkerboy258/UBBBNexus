@@ -29,6 +29,9 @@ enum class EBBBCharacterLocomotionMode : uint8
     /** 静止 */
     Idle,
 
+    /** 蹲伏静止 */
+    CrouchIdle,
+
     /** 行走 */
     Walk,
 
