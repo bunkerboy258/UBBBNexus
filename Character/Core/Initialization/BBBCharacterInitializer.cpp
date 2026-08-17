@@ -98,6 +98,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Aim,
         Character.RuntimeData.Equipment.Equipment,
+        Config.Locomotion,
         Config.Animation,
         Config.AimAnimation);
     

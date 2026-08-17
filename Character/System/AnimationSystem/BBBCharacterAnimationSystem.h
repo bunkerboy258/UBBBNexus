@@ -9,6 +9,7 @@ struct FBBBAimRuntimeData;
 struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationConfig;
 struct FBBBCharacterAnimationState;
+struct FBBBCharacterLocomotionConfig;
 struct FBBBCharacterEquipmentState;
 struct FBBBCharacterWorldRuntimeData;
 class FBBBCharacterInitializer;
@@ -37,6 +38,7 @@ private:
      * @param InWorldData	世界运行时数据
      * @param InAimData	瞄准运行时数据
      * @param InEquipmentState	装备状态
+     * @param InLocomotionConfig	角色移动配置
      * @param InAimAnimationConfig	瞄准动画配置
      */
     void Initialize(
@@ -47,6 +49,7 @@ private:
         const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBAimRuntimeData &InAimData,
         const FBBBCharacterEquipmentState &InEquipmentState,
+        const FBBBCharacterLocomotionConfig &InLocomotionConfig,
         const FBBBCharacterAnimationConfig &InAnimationConfig,
         const FBBBAimAnimationConfig &InAimAnimationConfig);
 
@@ -54,6 +57,7 @@ private:
     FBBBCharacterAnimationState *AnimationState = nullptr;
     const FBBBAimRuntimeData *AimData = nullptr;
     const FBBBCharacterEquipmentState *EquipmentState = nullptr;
+    const FBBBCharacterLocomotionConfig *LocomotionConfig = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     UCharacterMovementComponent *Movement = nullptr;

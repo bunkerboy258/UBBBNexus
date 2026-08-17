@@ -1,14 +1,62 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionFactsProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
+#include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
+#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+namespace
+{
+const FBBBCharacterLocomotionProfileConfig &ResolveLocomotionProfile(
+    const FBBBAimRuntimeData &AimData,
+    const FBBBCharacterEquipmentState &EquipmentState,
+    const FBBBCharacterLocomotionConfig &LocomotionConfig)
+{
+    if (AimData.GetState().bIsAiming)
+    {
+        return LocomotionConfig.Strafe;
+    }
+
+    if (EquipmentState.GetActiveMainHandInstance())
+    {
+        return LocomotionConfig.MainHandEquipped;
+    }
+
+    return LocomotionConfig.Unarmed;
+}
+
+EBBBCharacterLocomotionMode ResolveLocomotionMode(
+    const UCharacterMovementComponent &Movement,
+    float GroundSpeed,
+    const FBBBCharacterLocomotionProfileConfig &Profile)
+{
+    if (Movement.IsCrouching())
+    {
+        return EBBBCharacterLocomotionMode::Crouch;
+    }
+
+    if (GroundSpeed <= KINDA_SMALL_NUMBER)
+    {
+        return EBBBCharacterLocomotionMode::Idle;
+    }
+
+    if (GroundSpeed <= Profile.WalkSpeed)
+    {
+        return EBBBCharacterLocomotionMode::Walk;
+    }
+
+    return EBBBCharacterLocomotionMode::Run;
+}
+}
+
 void FBBBCharacterLocomotionFactsProcessor::Update(
     const UCharacterMovementComponent &Movement,
+    const FBBBAimRuntimeData &AimData,
     const FBBBCharacterEquipmentState &EquipmentState,
+    const FBBBCharacterLocomotionConfig &LocomotionConfig,
     const FBBBCharacterAnimationConfig &AnimationConfig,
     float DeltaSeconds,
     FBBBAnimationRuntimeData &AnimationData,
@@ -58,6 +106,14 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
 
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     const bool bIsGrounded = Movement.IsMovingOnGround();
+    const FBBBCharacterLocomotionProfileConfig &LocomotionProfile = ResolveLocomotionProfile(
+        AimData,
+        EquipmentState,
+        LocomotionConfig);
+    const EBBBCharacterLocomotionMode LocomotionMode = ResolveLocomotionMode(
+        Movement,
+        GroundSpeed,
+        LocomotionProfile);
 
     if (bIsMoving)
     {
@@ -99,7 +155,7 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
 
     AnimationState.bIsMoving = bIsMoving;
     AnimationState.bIsGrounded = bIsGrounded;
-    AnimationState.bIsCrouching = Movement.IsCrouching();
+    AnimationState.LocomotionMode = LocomotionMode;
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
     AnimationState.bIsTurningLeft = bIsTurningLeft;
     AnimationState.bIsTurningRight = bIsTurningRight;

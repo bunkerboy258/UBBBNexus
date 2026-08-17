@@ -22,6 +22,23 @@ enum class EBBBCharacterMoveDirection : uint8
     Right
 };
 
+/** 角色当前实际移动模式 */
+UENUM(BlueprintType)
+enum class EBBBCharacterLocomotionMode : uint8
+{
+    /** 静止 */
+    Idle,
+
+    /** 行走 */
+    Walk,
+
+    /** 奔跑 */
+    Run,
+
+    /** 蹲伏 */
+    Crouch
+};
+
 USTRUCT(BlueprintType)
 //角色动画状态封装
 struct FBBBCharacterAnimationState
@@ -36,9 +53,9 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bIsGrounded = true;
 
-    /** 是否实际处于蹲伏状态 */
+    /** 根据实际状态、速度与移动配置反推的移动模式 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsCrouching = false;
+    EBBBCharacterLocomotionMode LocomotionMode = EBBBCharacterLocomotionMode::Idle;
 
     /** 主手是否持有装备 */
     UPROPERTY(BlueprintReadOnly)
