@@ -28,25 +28,14 @@ const FBBBCharacterLocomotionProfileConfig &ResolveLocomotionProfile(
     return LocomotionConfig.Unarmed;
 }
 
-EBBBCharacterLocomotionMode ResolveLocomotionMode(
+EBBBCharacterMovementMode ResolveMovementMode(
     const UCharacterMovementComponent &Movement,
     float GroundSpeed,
     const FBBBCharacterLocomotionProfileConfig &Profile)
 {
-    if (GroundSpeed <= KINDA_SMALL_NUMBER
-        && Movement.IsCrouching())
-    {
-        return EBBBCharacterLocomotionMode::CrouchIdle;
-    }
-
-    if (GroundSpeed <= KINDA_SMALL_NUMBER)
-    {
-        return EBBBCharacterLocomotionMode::Idle;
-    }
-
     if (Movement.IsCrouching())
     {
-        return EBBBCharacterLocomotionMode::Crouch;
+        return EBBBCharacterMovementMode::Crouch;
     }
 
     //蹲伏除外，表示当前速度最接近走路档还是跑步档
@@ -54,10 +43,10 @@ EBBBCharacterLocomotionMode ResolveLocomotionMode(
 
     if (GroundSpeed < RunSpeedThreshold)
     {
-        return EBBBCharacterLocomotionMode::Walk;
+        return EBBBCharacterMovementMode::Walk;
     }
 
-    return EBBBCharacterLocomotionMode::Run;
+    return EBBBCharacterMovementMode::Run;
 }
 }
 
@@ -119,27 +108,14 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
         AimData,
         EquipmentState,
         LocomotionConfig);
-    const EBBBCharacterLocomotionMode LocomotionMode = ResolveLocomotionMode(
-        Movement,
-        GroundSpeed,
-        LocomotionProfile);
-    FBBBCharacterLocomotionTrackingState &LocomotionTracking = AnimationData.LocomotionTracking;
-
-    if (!LocomotionTracking.bHasCurrentMode)
-    {
-        LocomotionTracking.CurrentMode = LocomotionMode;
-        LocomotionTracking.PreviousMode = LocomotionMode;
-        LocomotionTracking.bHasCurrentMode = true;
-    }
-
-    if (LocomotionTracking.CurrentMode != LocomotionMode)
-    {
-        LocomotionTracking.PreviousMode = LocomotionTracking.CurrentMode;
-        LocomotionTracking.CurrentMode = LocomotionMode;
-    }
 
     if (bIsMoving)
     {
+        AnimationState.LastMovementMode = ResolveMovementMode(
+            Movement,
+            GroundSpeed,
+            LocomotionProfile);
+
         const float ForwardSpeedAbs = FMath::Abs(LocalVelocity.X);
         const float RightSpeedAbs = FMath::Abs(LocalVelocity.Y);
 
@@ -179,7 +155,6 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     AnimationState.bIsMoving = bIsMoving;
     AnimationState.bIsGrounded = bIsGrounded;
     AnimationState.bIsCrouching = Movement.IsCrouching();
-    AnimationState.PreviousLocomotionMode = LocomotionTracking.PreviousMode;
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
     AnimationState.bIsTurningLeft = bIsTurningLeft;
     AnimationState.bIsTurningRight = bIsTurningRight;

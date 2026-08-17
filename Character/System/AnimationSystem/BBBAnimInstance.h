@@ -71,11 +71,11 @@ public:
         return GetAnimationState().bIsCrouching;
     }
 
-    /** @return 最近一次移动状态改变前的移动模式 */
+    /** @return 最后一次发生水平移动时的移动模式 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    EBBBCharacterLocomotionMode GetPreviousLocomotionMode() const
+    EBBBCharacterMovementMode GetLastMovementMode() const
     {
-        return GetAnimationState().PreviousLocomotionMode;
+        return GetAnimationState().LastMovementMode;
     }
 
     /** @return 主手是否持有装备 */
