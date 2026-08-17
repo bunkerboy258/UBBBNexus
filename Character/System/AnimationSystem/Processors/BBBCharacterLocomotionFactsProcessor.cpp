@@ -43,7 +43,10 @@ EBBBCharacterLocomotionMode ResolveLocomotionMode(
         return EBBBCharacterLocomotionMode::Idle;
     }
 
-    if (GroundSpeed <= Profile.WalkSpeed)
+    //蹲伏除外，表示当前速度最接近走路档还是跑步档
+    const float RunSpeedThreshold = (Profile.WalkSpeed + Profile.RunSpeed) * 0.5f;
+
+    if (GroundSpeed < RunSpeedThreshold)
     {
         return EBBBCharacterLocomotionMode::Walk;
     }
