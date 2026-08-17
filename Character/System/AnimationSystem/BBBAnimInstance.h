@@ -134,6 +134,13 @@ public:
         return GetAnimationState().LocalRightSpeed;
     }
 
+    /** @return 最后一次有效水平移动的本地方向 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    EBBBCharacterMoveDirection GetLastMoveDirection() const
+    {
+        return GetAnimationState().LastMoveDirection;
+    }
+
     /** @return 角色实际水平转向速度，单位为度每秒 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     float GetTurnRate() const

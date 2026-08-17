@@ -5,6 +5,23 @@
 
 class UAnimSequence;
 
+/** 角色最后一次有效水平移动的本地方向 */
+UENUM(BlueprintType)
+enum class EBBBCharacterMoveDirection : uint8
+{
+    /** 前方 */
+    Forward,
+
+    /** 后方 */
+    Backward,
+
+    /** 左方 */
+    Left,
+
+    /** 右方 */
+    Right
+};
+
 USTRUCT(BlueprintType)
 //角色动画状态封装
 struct FBBBCharacterAnimationState
@@ -59,6 +76,10 @@ struct FBBBCharacterAnimationState
     /** 角色局部左右速度 */
     UPROPERTY(BlueprintReadOnly)
     float LocalRightSpeed = 0.0f;
+
+    /** 最后一次有效水平移动的本地方向 */
+    UPROPERTY(BlueprintReadOnly)
+    EBBBCharacterMoveDirection LastMoveDirection = EBBBCharacterMoveDirection::Forward;
 
     /** 角色实际水平转向速度，单位为度每秒 */
     UPROPERTY(BlueprintReadOnly)

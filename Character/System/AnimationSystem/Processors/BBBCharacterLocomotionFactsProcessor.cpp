@@ -59,6 +59,36 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     const bool bIsGrounded = Movement.IsMovingOnGround();
 
+    if (bIsMoving)
+    {
+        const float ForwardSpeedAbs = FMath::Abs(LocalVelocity.X);
+        const float RightSpeedAbs = FMath::Abs(LocalVelocity.Y);
+
+        if (ForwardSpeedAbs >= RightSpeedAbs
+            && LocalVelocity.X >= 0.0f)
+        {
+            AnimationState.LastMoveDirection = EBBBCharacterMoveDirection::Forward;
+        }
+
+        if (ForwardSpeedAbs >= RightSpeedAbs
+            && LocalVelocity.X < 0.0f)
+        {
+            AnimationState.LastMoveDirection = EBBBCharacterMoveDirection::Backward;
+        }
+
+        if (RightSpeedAbs > ForwardSpeedAbs
+            && LocalVelocity.Y < 0.0f)
+        {
+            AnimationState.LastMoveDirection = EBBBCharacterMoveDirection::Left;
+        }
+
+        if (RightSpeedAbs > ForwardSpeedAbs
+            && LocalVelocity.Y >= 0.0f)
+        {
+            AnimationState.LastMoveDirection = EBBBCharacterMoveDirection::Right;
+        }
+    }
+
     //动画系统只根据角色本体实际转速生成方向信号，不读取相机或控制器
     const bool bIsTurningLeft = bIsGrounded
         && !bIsMoving
