@@ -45,5 +45,8 @@ private:
 
     /** 实际转向速度计算使用的跨帧状态 */
     FBBBCharacterTurnTrackingState TurnTracking;
+
+    /** 上一次移动状态解算使用的跨帧状态 */
+    FBBBCharacterLocomotionTrackingState LocomotionTracking;
 };
 

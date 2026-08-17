@@ -22,7 +22,7 @@ enum class EBBBCharacterMoveDirection : uint8
     Right
 };
 
-/** 角色当前实际移动模式 */
+/** 角色移动模式 */
 UENUM(BlueprintType)
 enum class EBBBCharacterLocomotionMode : uint8
 {
@@ -53,9 +53,13 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bIsGrounded = true;
 
-    /** 根据实际状态、速度与移动配置反推的移动模式 */
+    /** 是否实际处于蹲伏状态 */
     UPROPERTY(BlueprintReadOnly)
-    EBBBCharacterLocomotionMode LocomotionMode = EBBBCharacterLocomotionMode::Idle;
+    bool bIsCrouching = false;
+
+    /** 最近一次移动状态改变前的移动模式 */
+    UPROPERTY(BlueprintReadOnly)
+    EBBBCharacterLocomotionMode PreviousLocomotionMode = EBBBCharacterLocomotionMode::Idle;
 
     /** 主手是否持有装备 */
     UPROPERTY(BlueprintReadOnly)
@@ -156,6 +160,19 @@ struct FBBBCharacterTurnTrackingState
 
     /** 是否已有可用于计算的上一帧朝向 */
     bool bHasPreviousActorYaw = false;
+};
+
+/** 保存上一次移动状态所需的跨帧状态 */
+struct FBBBCharacterLocomotionTrackingState
+{
+    /** 当前解算出的移动模式 */
+    EBBBCharacterLocomotionMode CurrentMode = EBBBCharacterLocomotionMode::Idle;
+
+    /** 最近一次移动状态改变前的移动模式 */
+    EBBBCharacterLocomotionMode PreviousMode = EBBBCharacterLocomotionMode::Idle;
+
+    /** 是否已经完成第一次移动模式采样 */
+    bool bHasCurrentMode = false;
 };
 
 //保存瞄准表现处理器的跨帧平滑状态

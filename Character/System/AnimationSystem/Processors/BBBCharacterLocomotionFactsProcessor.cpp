@@ -117,6 +117,20 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
         Movement,
         GroundSpeed,
         LocomotionProfile);
+    FBBBCharacterLocomotionTrackingState &LocomotionTracking = AnimationData.LocomotionTracking;
+
+    if (!LocomotionTracking.bHasCurrentMode)
+    {
+        LocomotionTracking.CurrentMode = LocomotionMode;
+        LocomotionTracking.PreviousMode = LocomotionMode;
+        LocomotionTracking.bHasCurrentMode = true;
+    }
+
+    if (LocomotionTracking.CurrentMode != LocomotionMode)
+    {
+        LocomotionTracking.PreviousMode = LocomotionTracking.CurrentMode;
+        LocomotionTracking.CurrentMode = LocomotionMode;
+    }
 
     if (bIsMoving)
     {
@@ -158,7 +172,8 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
 
     AnimationState.bIsMoving = bIsMoving;
     AnimationState.bIsGrounded = bIsGrounded;
-    AnimationState.LocomotionMode = LocomotionMode;
+    AnimationState.bIsCrouching = Movement.IsCrouching();
+    AnimationState.PreviousLocomotionMode = LocomotionTracking.PreviousMode;
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
     AnimationState.bIsTurningLeft = bIsTurningLeft;
     AnimationState.bIsTurningRight = bIsTurningRight;

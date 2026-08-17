@@ -68,14 +68,14 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsCrouching() const
     {
-        return GetAnimationState().LocomotionMode == EBBBCharacterLocomotionMode::Crouch;
+        return GetAnimationState().bIsCrouching;
     }
 
-    /** @return 根据实际状态、速度与移动配置反推的移动模式 */
+    /** @return 最近一次移动状态改变前的移动模式 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    EBBBCharacterLocomotionMode GetLocomotionMode() const
+    EBBBCharacterLocomotionMode GetPreviousLocomotionMode() const
     {
-        return GetAnimationState().LocomotionMode;
+        return GetAnimationState().PreviousLocomotionMode;
     }
 
     /** @return 主手是否持有装备 */
