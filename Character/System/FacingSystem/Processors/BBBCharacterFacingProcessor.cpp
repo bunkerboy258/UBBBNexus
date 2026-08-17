@@ -38,6 +38,16 @@ void FBBBCharacterFacingProcessor::Update(
     const FBBBCharacterFacingConfig &Config,
     FBBBCharacterFacingState &State) const
 {
+    //非瞄准移动保持引擎原生移动朝向
+    if (IntentData.HasMoveInput()
+        && !IntentData.WantsAim()
+        && !IntentData.WantsFire())
+    {
+        StopIdleTurn(State);
+        UseMovementDirection(Movement);
+        return;
+    }
+
     //移动期间不经过原地滞回，持续快速追赶相机水平朝向
     if (IntentData.HasMoveInput())
     {
