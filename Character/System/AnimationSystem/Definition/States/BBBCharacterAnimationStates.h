@@ -46,6 +46,10 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bIsMoving = false;
 
+    /** 是否仍在移动但移动组件已经停止主动驱动 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsStopping = false;
+
     /** 是否接触地面 */
     UPROPERTY(BlueprintReadOnly)
     bool bIsGrounded = true;

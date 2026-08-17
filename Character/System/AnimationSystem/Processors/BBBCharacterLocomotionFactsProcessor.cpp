@@ -105,6 +105,7 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     const bool bIsGrounded = Movement.IsMovingOnGround();
     const bool bHasMovementDrive = Movement.GetCurrentAcceleration().SizeSquared2D() > KINDA_SMALL_NUMBER;
+    const bool bIsStopping = bIsMoving && !bHasMovementDrive;
     const FBBBCharacterLocomotionProfileConfig &LocomotionProfile = ResolveLocomotionProfile(
         AimData,
         EquipmentState,
@@ -158,6 +159,7 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
         && TurnRate > AnimationConfig.TurnSignalRateThreshold;
 
     AnimationState.bIsMoving = bIsMoving;
+    AnimationState.bIsStopping = bIsStopping;
     AnimationState.bIsGrounded = bIsGrounded;
     AnimationState.bIsCrouching = Movement.IsCrouching();
     AnimationState.bHasMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;

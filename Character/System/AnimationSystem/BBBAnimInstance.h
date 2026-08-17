@@ -43,6 +43,13 @@ public:
         return GetAnimationState().bIsMoving;
     }
 
+    /** @return 仍在移动但移动组件已经停止主动驱动时返回true */
+    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    bool IsStopping() const
+    {
+        return GetAnimationState().bIsStopping;
+    }
+
     /** @return 当前是否应该播放向左原地转身 */
     UFUNCTION(BlueprintPure, Category = "BBB|Facing", meta = (BlueprintThreadSafe))
     bool IsTurningLeft() const
