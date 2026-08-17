@@ -71,11 +71,11 @@ public:
         return GetAnimationState().bIsCrouching;
     }
 
-    /** @return 最后一次发生水平移动时的移动模式 */
+    /** @return 最后一次由移动组件主动驱动时的移动模式 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    EBBBCharacterMovementMode GetLastMovementMode() const
+    EBBBCharacterMovementMode GetLastDrivenMovementMode() const
     {
-        return GetAnimationState().LastMovementMode;
+        return GetAnimationState().LastDrivenMovementMode;
     }
 
     /** @return 主手是否持有装备 */

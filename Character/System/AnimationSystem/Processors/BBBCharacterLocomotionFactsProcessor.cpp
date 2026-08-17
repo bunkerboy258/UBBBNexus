@@ -104,18 +104,23 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
 
     const bool bIsMoving = GroundSpeed > KINDA_SMALL_NUMBER;
     const bool bIsGrounded = Movement.IsMovingOnGround();
+    const bool bHasMovementDrive = Movement.GetCurrentAcceleration().SizeSquared2D() > KINDA_SMALL_NUMBER;
     const FBBBCharacterLocomotionProfileConfig &LocomotionProfile = ResolveLocomotionProfile(
         AimData,
         EquipmentState,
         LocomotionConfig);
 
-    if (bIsMoving)
+    //只观察移动组件的实际驱动力，进入制动后保留停止前的移动档位
+    if (bIsMoving && bHasMovementDrive)
     {
-        AnimationState.LastMovementMode = ResolveMovementMode(
+        AnimationState.LastDrivenMovementMode = ResolveMovementMode(
             Movement,
             GroundSpeed,
             LocomotionProfile);
+    }
 
+    if (bIsMoving)
+    {
         const float ForwardSpeedAbs = FMath::Abs(LocalVelocity.X);
         const float RightSpeedAbs = FMath::Abs(LocalVelocity.Y);
 

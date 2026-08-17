@@ -54,9 +54,9 @@ struct FBBBCharacterAnimationState
     UPROPERTY(BlueprintReadOnly)
     bool bIsCrouching = false;
 
-    /** 最后一次发生水平移动时的移动模式 */
+    /** 最后一次由移动组件主动驱动时的移动模式 */
     UPROPERTY(BlueprintReadOnly)
-    EBBBCharacterMovementMode LastMovementMode = EBBBCharacterMovementMode::Walk;
+    EBBBCharacterMovementMode LastDrivenMovementMode = EBBBCharacterMovementMode::Walk;
 
     /** 主手是否持有装备 */
     UPROPERTY(BlueprintReadOnly)
