@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBEquipmentUploadProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
@@ -9,7 +9,7 @@
 void FBBBEquipmentUploadProcessor::Update(
     const FBBBCharacterEquipmentState &EquipmentState,
     FBBBNetworkRuntimeData &NetworkData,
-    UBBBCharacterNetworkComponent &NetworkComponent) const
+    FBBBCharacterNetworkSystem &NetworkSystem) const
 {
     UBBBEquipmentInstance *ActiveEquipment = EquipmentState.GetActiveMainHandInstance();
 
@@ -22,7 +22,7 @@ void FBBBEquipmentUploadProcessor::Update(
     FBBBEquipmentNetworkPacket Packet;
     Packet.EquipmentHandle = ActiveEquipment->GetDefinition()->EquipmentId;
 
-    NetworkComponent.SendEquipmentPacket(Packet);
+    NetworkSystem.SubmitEquipmentPacket(MoveTemp(Packet));
 
     NetworkData.CommitLastUploadedEquipmentInstanceId(ActiveEquipment->GetInstanceId());
 }

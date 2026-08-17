@@ -1,6 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -8,9 +10,26 @@
 void FBBBCharacterEquipmentSelectionProcessor::Update(
     USkeletalMeshComponent &CharacterMesh,
     FName AttachmentSocketName,
+    UObject &EquipmentOuter,
+    FBBBCharacterEquipmentCommands &EquipmentCommands,
     FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterExternalAPI &CharacterAPI) const
 {
+    UBBBEquipmentDefinition *RestoredDefinition = EquipmentCommands.ConsumeRestoredEquipment();
+    if (RestoredDefinition)
+    {
+        UBBBEquipmentInstance *RestoredInstance = UBBBEquipmentInstance::Create(
+            EquipmentOuter,
+            *RestoredDefinition);
+
+        if (!ensureMsgf(RestoredInstance, TEXT("[UBBBC]Restored equipment instance creation failed")))
+        {
+            return;
+        }
+
+        EquipmentState.DesiredMainHandInstance = RestoredInstance;
+    }
+
     // 期望与当前一致时 直接返回
     if (EquipmentState.ActiveMainHandInstance == EquipmentState.DesiredMainHandInstance)
     {

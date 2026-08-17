@@ -15,6 +15,7 @@ void FBBBCharacterEquipmentSystem::Initialize(
     CharacterMesh = &InCharacterMesh;
     EquipmentData = &InEquipmentData;
     CharacterAPI = &InCharacterAPI;
+    EquipmentOuter = &InEquipmentOuter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
 
     EquipmentData->Inventory.Slots.Init(
@@ -33,7 +34,7 @@ void FBBBCharacterEquipmentSystem::Initialize(
 
 void FBBBCharacterEquipmentSystem::Update()
 {
-    if (!ensureMsgf(EquipmentData && CharacterAPI && CharacterMesh, TEXT("[UBBBC]Equipment system update dependencies are null")))
+    if (!ensureMsgf(EquipmentData && CharacterAPI && CharacterMesh && EquipmentOuter, TEXT("[UBBBC]Equipment system update dependencies are null")))
     {
         return;
     }
@@ -41,6 +42,8 @@ void FBBBCharacterEquipmentSystem::Update()
     SelectionProcessor.Update(
         *CharacterMesh,
         RightHandWeaponSocketName,
+        *EquipmentOuter,
+        EquipmentData->Commands,
         EquipmentData->Equipment,
         *CharacterAPI);
 

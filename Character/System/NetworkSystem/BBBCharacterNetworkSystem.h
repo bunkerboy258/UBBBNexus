@@ -40,6 +40,11 @@ public:
 
 private:
     friend class FBBBCharacterInitializer;
+    friend class UBBBCharacterNetworkComponent;
+    friend class FBBBAimUploadProcessor;
+    friend class FBBBEquipmentUploadProcessor;
+    friend class FBBBFireUploadProcessor;
+    friend class FBBBReloadUploadProcessor;
 
     /**
      * 初始化网络系统依赖
@@ -56,7 +61,7 @@ private:
     void Initialize(
         FBBBNetworkRuntimeData &InNetworkData,
         FBBBAimRuntimeData &InAimData,
-        FBBBCharacterEquipmentState &InEquipmentState,
+        const FBBBCharacterEquipmentState &InEquipmentState,
         UBBBCharacterNetworkComponent &InNetworkComponent,
         UBBBEquipmentCatalog &InEquipmentCatalog,
         const FBBBCharacterWorldRuntimeData &InWorldData,
@@ -64,18 +69,48 @@ private:
         const FBBBCharacterEquipmentResults &InEquipmentResults,
         const FBBBCharacterNetworkConfig &InNetworkConfig);
 
-    /**
-     * 检查网络系统依赖是否完备
-     * @return 依赖是否全部有效
-     */
-    bool HasRequiredDependencies() const;
+    /** @param Packet 提交本地装备Packet */
+    void SubmitEquipmentPacket(FBBBEquipmentNetworkPacket Packet);
+
+    /** @param Packet 提交本地开火Packet */
+    void SubmitFirePacket(FBBBFireNetworkPacket Packet);
+
+    /** @param Packet 提交本地换弹Packet */
+    void SubmitReloadPacket(FBBBReloadNetworkPacket Packet);
+
+    /** @param AimState 提交本地瞄准状态 */
+    void SubmitAimState(const FBBBAimNetworkState &AimState);
+
+    /** @param Packet 接收等待权威校验的装备Packet */
+    void ReceiveEquipmentForValidation(FBBBEquipmentNetworkPacket Packet);
+
+    /** @param Packet 接收等待本地还原的装备Packet */
+    void ReceiveEquipmentForRestore(FBBBEquipmentNetworkPacket Packet);
+
+    /** @param Packet 接收等待权威分发的开火Packet */
+    void ReceiveFireForDistribution(FBBBFireNetworkPacket Packet);
+
+    /** @param Packet 接收等待本地还原的开火Packet */
+    void ReceiveFireForRestore(FBBBFireNetworkPacket Packet);
+
+    /** @param Packet 接收等待权威分发的换弹Packet */
+    void ReceiveReloadForDistribution(FBBBReloadNetworkPacket Packet);
+
+    /** @param Packet 接收等待本地还原的换弹Packet */
+    void ReceiveReloadForRestore(FBBBReloadNetworkPacket Packet);
+
+    /** @param AimState 接收权威端提交的瞄准状态 */
+    void ReceiveSubmittedAimState(const FBBBAimNetworkState &AimState);
+
+    /** @param AimState 接收复制到达的瞄准状态 */
+    void ReceiveReplicatedAimState(const FBBBAimNetworkState &AimState);
 
     FBBBNetworkRuntimeData *NetworkData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     FBBBCharacterEquipmentCommands *EquipmentCommands = nullptr;
     const FBBBCharacterEquipmentResults *EquipmentResults = nullptr;
-    FBBBCharacterEquipmentState *EquipmentState = nullptr;
+    const FBBBCharacterEquipmentState *EquipmentState = nullptr;
 
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 

@@ -1,7 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-class UBBBCharacterNetworkComponent;
+class FBBBCharacterNetworkSystem;
 struct FBBBCharacterNetworkConfig;
 struct FBBBAimRuntimeData;
 struct FBBBNetworkRuntimeData;
@@ -16,12 +16,12 @@ public:
      * @param NetworkConfig	网络配置
      * @param WorldTimeSeconds	当前世界时间
      * @param NetworkData	网络运行时数据
-     * @param NetworkComponent	角色网络组件
+     * @param NetworkSystem	角色网络系统
      */
     void Update(
         const FBBBAimRuntimeData &AimData,
         const FBBBCharacterNetworkConfig &NetworkConfig,
         float WorldTimeSeconds,
         FBBBNetworkRuntimeData &NetworkData,
-        UBBBCharacterNetworkComponent &NetworkComponent) const;
+        FBBBCharacterNetworkSystem &NetworkSystem) const;
 };

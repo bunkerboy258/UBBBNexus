@@ -4,9 +4,12 @@
 #include "BBBCharacterEquipmentCommands.generated.h"
 
 class FBBBCharacterEquipmentActionProcessor;
+class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBFireRestoreProcessor;
 class FBBBEquipmentActionExecutor;
 class FBBBReloadRestoreProcessor;
+class FBBBEquipmentRestoreProcessor;
+class UBBBEquipmentDefinition;
 class UBBBAnimInstance;
 struct FBBBCharacterEquipmentRuntimeData;
 
@@ -19,9 +22,11 @@ struct FBBBCharacterEquipmentCommands
 private:
 
     friend class FBBBCharacterEquipmentActionProcessor;
+    friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBFireRestoreProcessor;
     friend class FBBBEquipmentActionExecutor;
     friend class FBBBReloadRestoreProcessor;
+    friend class FBBBEquipmentRestoreProcessor;
     friend class UBBBAnimInstance;
     friend struct FBBBCharacterEquipmentRuntimeData;
 
@@ -47,6 +52,15 @@ private:
     void SubmitReloadPresentation()
     {
         bPresentReload = true;
+    }
+
+    /**
+     * 提交远端还原后的期望装备配置
+     * @param Definition 期望装备配置
+     */
+    void SubmitRestoredEquipment(UBBBEquipmentDefinition &Definition)
+    {
+        PendingRestoredEquipment = &Definition;
     }
 
     /** 提交等待消费的拔出弹匣动作 */
@@ -93,6 +107,14 @@ private:
         return bShouldPresentReload;
     }
 
+    /** @return 等待装备系统创建实例的远端装备配置 */
+    UBBBEquipmentDefinition *ConsumeRestoredEquipment()
+    {
+        UBBBEquipmentDefinition *Definition = PendingRestoredEquipment;
+        PendingRestoredEquipment = nullptr;
+        return Definition;
+    }
+
     /** @return 是否存在等待消费的拔出弹匣动作 */
     bool ConsumeRemoveMagazine()
     {
@@ -116,6 +138,7 @@ private:
         bActivateReload = false;
         bPresentFire = false;
         bPresentReload = false;
+        PendingRestoredEquipment = nullptr;
     }
 
     /** 是否存在待执行开火命令 */
@@ -133,6 +156,10 @@ private:
     /** 是否存在待表现换弹命令 */
     UPROPERTY()
     bool bPresentReload = false;
+
+    /** 等待装备系统创建实例的远端装备配置 */
+    UPROPERTY()
+    TObjectPtr<UBBBEquipmentDefinition> PendingRestoredEquipment = nullptr;
 
     /** 是否存在等待消费的拔出弹匣动作 */
     UPROPERTY()

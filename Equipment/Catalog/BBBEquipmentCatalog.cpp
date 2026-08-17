@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 
-UBBBEquipmentDefinition *UBBBEquipmentCatalog::FindDefinition(FName EquipmentHandle)
+UBBBEquipmentDefinition *UBBBEquipmentCatalog::FindDefinition(FName EquipmentHandle) const
 {
     if (EquipmentHandle.IsNone())
     {

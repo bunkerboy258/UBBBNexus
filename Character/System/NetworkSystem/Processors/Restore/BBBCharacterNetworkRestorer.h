@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/Processors/BBBEquipmentRestoreProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Restore/Processors/BBBReloadRestoreProcessor.h"
 struct FBBBAimRuntimeData;
-struct FBBBCharacterEquipmentState;
 struct FBBBCharacterEquipmentCommands;
 struct FBBBNetworkRuntimeData;
 class UBBBEquipmentCatalog;
@@ -19,18 +18,14 @@ public:
      * 逐帧取出并应用所有待还原网络Packet与瞄准状态
      * @param NetworkData	网络运行时数据
      * @param AimData	瞄准运行时数据
-     * @param EquipmentState	角色装备状态
      * @param EquipmentCommands	角色物品指令
      * @param EquipmentCatalog	装备目录
-     * @param InstanceOuter	镜像装备实例生命周期所有者
      */
     void Update(
         FBBBNetworkRuntimeData &NetworkData,
         FBBBAimRuntimeData &AimData,
-        FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterEquipmentCommands &EquipmentCommands,
-        UBBBEquipmentCatalog &EquipmentCatalog,
-        UObject &InstanceOuter) const;
+        UBBBEquipmentCatalog &EquipmentCatalog) const;
 private:
 
     //保存装备还原处理器供所属对象后续流程使用

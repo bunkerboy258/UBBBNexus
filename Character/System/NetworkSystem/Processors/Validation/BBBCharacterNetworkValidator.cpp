@@ -1,24 +1,27 @@
 
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Validation/BBBCharacterNetworkValidator.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 
 //校验网络包
-void FBBBCharacterNetworkValidator::Update(
+TArray<FBBBEquipmentNetworkPacket> FBBBCharacterNetworkValidator::Update(
     FBBBNetworkRuntimeData &NetworkData,
-    UBBBCharacterNetworkComponent &NetworkComponent) const
+    const UBBBEquipmentCatalog &EquipmentCatalog) const
 {
-
     TArray<FBBBEquipmentNetworkPacket> PendingPackets = NetworkData.ValidationEquipmentPackets();
+    TArray<FBBBEquipmentNetworkPacket> ValidPackets;
+    ValidPackets.Reserve(PendingPackets.Num());
 
-    for (const FBBBEquipmentNetworkPacket &Packet : PendingPackets)
+    for (FBBBEquipmentNetworkPacket &Packet : PendingPackets)
     {
-        if (!EquipmentValidationProcessor.Update(Packet))
+        if (!EquipmentValidationProcessor.Update(Packet, EquipmentCatalog))
         {
             UE_LOG(LogTemp, Warning, TEXT("Rejected invalid equipment network packet"));
             continue;
         }
-        //校验通过就广播
-        NetworkComponent.MulticastEquipmentPacket(Packet);
+
+        ValidPackets.Add(MoveTemp(Packet));
     }
+
+    return ValidPackets;
 }

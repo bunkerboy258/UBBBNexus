@@ -18,7 +18,7 @@ public:
      * @param EquipmentHandle	装备句柄 对应装备配置的 EquipmentId
      * @return 匹配的装备静态配置 未找到时返回 nullptr
      */
-    UBBBEquipmentDefinition *FindDefinition(FName EquipmentHandle);
+    UBBBEquipmentDefinition *FindDefinition(FName EquipmentHandle) const;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
     TArray<TObjectPtr<UBBBEquipmentDefinition>> Definitions;

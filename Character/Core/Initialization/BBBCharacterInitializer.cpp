@@ -76,9 +76,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character,
         Config.Equipment);
     
-    Character.CharacterNetworkComponent->Initialize(
-        Character.RuntimeData.Network);
-
     Character.NetworkSystem.Initialize(
         Character.RuntimeData.Network,
         Character.RuntimeData.Aim,
@@ -89,6 +86,9 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Equipment.Commands,
         Character.RuntimeData.Equipment.Results,
         Config.Network);
+
+    Character.CharacterNetworkComponent->Initialize(
+        Character.NetworkSystem);
     
     Character.AnimationSystem.Initialize(
         *Character.GetMesh(),

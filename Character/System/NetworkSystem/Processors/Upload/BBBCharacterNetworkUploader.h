@@ -5,7 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBFireUploadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBEquipmentUploadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Processors/Upload/Processors/BBBReloadUploadProcessor.h"
-class UBBBCharacterNetworkComponent;
+class FBBBCharacterNetworkSystem;
 struct FBBBCharacterNetworkConfig;
 struct FBBBAimRuntimeData;
 struct FBBBCharacterEquipmentState;
@@ -24,7 +24,7 @@ public:
      * @param NetworkConfig	网络配置
      * @param EquipmentState	角色装备状态
      * @param EquipmentResults	装备动作结果
-     * @param NetworkComponent	角色网络组件
+     * @param NetworkSystem	角色网络系统
      */
     void Update(
         FBBBNetworkRuntimeData &NetworkData,
@@ -33,7 +33,7 @@ public:
         const FBBBCharacterNetworkConfig &NetworkConfig,
         const FBBBCharacterEquipmentState &EquipmentState,
         const FBBBCharacterEquipmentResults &EquipmentResults,
-        UBBBCharacterNetworkComponent &NetworkComponent) const;
+        FBBBCharacterNetworkSystem &NetworkSystem) const;
 private:
 
     FBBBEquipmentUploadProcessor EquipmentUploadProcessor;

@@ -8,11 +8,11 @@ void FBBBCharacterNetworkUploader::Update(
     const FBBBCharacterNetworkConfig &NetworkConfig,
     const FBBBCharacterEquipmentState &EquipmentState,
     const FBBBCharacterEquipmentResults &EquipmentResults,
-    UBBBCharacterNetworkComponent &NetworkComponent) const
+    FBBBCharacterNetworkSystem &NetworkSystem) const
 {
 
-    EquipmentUploadProcessor.Update(EquipmentState, NetworkData, NetworkComponent);
-    FireUploadProcessor.Update(EquipmentResults, NetworkComponent);
-    ReloadUploadProcessor.Update(EquipmentResults, NetworkComponent);
-    AimUploadProcessor.Update(AimData, NetworkConfig, WorldTimeSeconds, NetworkData, NetworkComponent);
+    EquipmentUploadProcessor.Update(EquipmentState, NetworkData, NetworkSystem);
+    FireUploadProcessor.Update(EquipmentResults, NetworkSystem);
+    ReloadUploadProcessor.Update(EquipmentResults, NetworkSystem);
+    AimUploadProcessor.Update(AimData, NetworkConfig, WorldTimeSeconds, NetworkData, NetworkSystem);
 }

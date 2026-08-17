@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/States/BBBAimStates.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 namespace
 {
@@ -45,7 +45,7 @@ void FBBBAimUploadProcessor::Update(
     const FBBBCharacterNetworkConfig &NetworkConfig,
     float WorldTimeSeconds,
     FBBBNetworkRuntimeData &NetworkData,
-    UBBBCharacterNetworkComponent &NetworkComponent) const
+    FBBBCharacterNetworkSystem &NetworkSystem) const
 {
 
     //上次上传的瞄准状态数据
@@ -69,5 +69,5 @@ void FBBBAimUploadProcessor::Update(
 
     NetworkData.CommitAimObserverState(Observer);
 
-    NetworkComponent.SendAimState(AimState);
+    NetworkSystem.SubmitAimState(AimState);
 }

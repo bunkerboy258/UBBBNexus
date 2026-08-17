@@ -45,6 +45,9 @@ private:
     /** 角色骨骼网格 */
     USkeletalMeshComponent *CharacterMesh = nullptr;
 
+    /** 装备实例生命周期所有者 */
+    UObject *EquipmentOuter = nullptr;
+
     /** 右手装备挂接插槽 */
     FName RightHandWeaponSocketName = NAME_None;
 
