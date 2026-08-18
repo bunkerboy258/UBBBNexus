@@ -48,6 +48,15 @@ void FBBBCharacterFacingProcessor::Update(
         return;
     }
 
+    //非瞄准原地状态不执行身体追赶
+    if (!IntentData.WantsAim()
+        && !IntentData.WantsFire())
+    {
+        StopIdleTurn(State);
+        UseMovementDirection(Movement);
+        return;
+    }
+
     //移动期间不经过原地滞回，持续快速追赶相机水平朝向
     if (IntentData.HasMoveInput())
     {
