@@ -152,10 +152,13 @@ void FBBBCharacterLocomotionFactsProcessor::Update(
     }
 
     //动画系统只根据角色本体实际转速生成方向信号，不读取相机或控制器
-    const bool bIsTurningLeft = bIsGrounded
+    const bool bIsAiming = AimData.GetState().bIsAiming;
+    const bool bIsTurningLeft = bIsAiming
+        && bIsGrounded
         && !bIsMoving
         && TurnRate < -AnimationConfig.TurnSignalRateThreshold;
-    const bool bIsTurningRight = bIsGrounded
+    const bool bIsTurningRight = bIsAiming
+        && bIsGrounded
         && !bIsMoving
         && TurnRate > AnimationConfig.TurnSignalRateThreshold;
 
