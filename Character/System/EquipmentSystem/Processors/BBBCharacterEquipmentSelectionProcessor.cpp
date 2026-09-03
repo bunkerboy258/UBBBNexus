@@ -79,7 +79,6 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         if (!DesiredEquipmentSystem->Equip(CharacterMesh, AttachmentSocketName))
         {
             EquipmentState.ActiveMainHandInstance = nullptr;
-            Character.SetLinkedAnimationLayerClass(nullptr);
             return;
         }
 
@@ -87,11 +86,8 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         if (!ensureMsgf(Definition, TEXT("[UBBBC]Active equipment definition is null after equip")))
         {
             EquipmentState.ActiveMainHandInstance = nullptr;
-            Character.SetLinkedAnimationLayerClass(nullptr);
             return;
         }
-
-        Character.SetLinkedAnimationLayerClass(Definition->CharacterAnimationLayerClass);
 
         if (!bRestoringEquipment)
         {
@@ -113,6 +109,4 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
 
         return;
     }
-
-    Character.SetLinkedAnimationLayerClass(nullptr);
 }

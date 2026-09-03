@@ -19,7 +19,6 @@
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
-class UAnimInstance;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class UCameraComponent;
@@ -79,13 +78,6 @@ public:
      */
     virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
-    /**
-     * 请求角色链接装备指定的动画层，空类恢复角色默认动画层
-     * @param AnimationLayerClass 要链接的动画层类
-     */
-    UFUNCTION(BlueprintCallable, Category = "ABBB|Animation")
-    void SetLinkedAnimationLayerClass(TSubclassOf<UAnimInstance> AnimationLayerClass);
-    
     /**
      * 获取角色静态配置
      * @return 角色配置常量引用

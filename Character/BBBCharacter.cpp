@@ -145,10 +145,3 @@ void ABBBCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCompon
     Super::SetupPlayerInputComponent(PlayerInputComponent);
     FBBBCharacterInitializer::BindInput(*this, PlayerInputComponent);
 }
-
-//------------------------------------------------------------------------------
-
-void ABBBCharacter::SetLinkedAnimationLayerClass(TSubclassOf<UAnimInstance> AnimationLayerClass)
-{
-    AnimationSystem.SetLinkedAnimationLayerClass(AnimationLayerClass);
-}

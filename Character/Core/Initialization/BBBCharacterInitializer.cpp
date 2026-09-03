@@ -87,6 +87,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Character.GetMesh(),
         Character.RuntimeData.Animation,
         Character.RuntimeData.Equipment.Events,
+        Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.WorldData,
         Config.Animation);
     

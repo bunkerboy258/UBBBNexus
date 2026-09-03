@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationSystem::Initialize(
@@ -15,6 +16,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     USkeletalMeshComponent &InCharacterMesh,
     FBBBAnimationRuntimeData &InAnimationData,
     const FBBBCharacterEquipmentEvents &InEquipmentEvents,
+    const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBCharacterAnimationConfig &InAnimationConfig)
 {
@@ -23,9 +25,9 @@ void FBBBCharacterAnimationSystem::Initialize(
     CharacterMesh = &InCharacterMesh;
     AnimationData = &InAnimationData;
     EquipmentEvents = &InEquipmentEvents;
+    EquipmentState = &InEquipmentState;
     WorldData = &InWorldData;
     AnimationConfig = &InAnimationConfig;
-    AnimationData->RequestedAnimationLayerClass = AnimationConfig->DefaultAnimationLayerClass;
 }
 
 //------------------------------------------------------------------------------
@@ -37,6 +39,7 @@ void FBBBCharacterAnimationSystem::Update()
             && Character
             && RuntimeData
             && EquipmentEvents
+            && EquipmentState
             && CharacterMesh
             && WorldData
             && AnimationConfig,
@@ -53,7 +56,11 @@ void FBBBCharacterAnimationSystem::Update()
         return;
     }
 
-    RefreshLinkedAnimationLayer();
+    LayerProcessor.Update(
+        *EquipmentState,
+        *AnimationConfig,
+        *AnimationData,
+        *CharacterMesh);
     ActionProcessor.Update(
         *AnimInstance,
         *EquipmentEvents,
@@ -64,45 +71,4 @@ void FBBBCharacterAnimationSystem::Update()
         AnimationData->Facts,
         WorldData->GetFrameDeltaSeconds());
     AnimInstance->PublishAnimationFacts(AnimationData->Facts);
-}
-
-//------------------------------------------------------------------------------
-
-void FBBBCharacterAnimationSystem::RefreshLinkedAnimationLayer()
-{
-    TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationData->RequestedAnimationLayerClass;
-
-    if (!ensureMsgf(
-        DesiredLayerClass,
-        TEXT("[UBBBC]No animation layer is configured for the character or active equipment")))
-    {
-        return;
-    }
-
-    if (AnimationData->LinkedAnimationLayerClass == DesiredLayerClass)
-    {
-        return;
-    }
-
-    CharacterMesh->LinkAnimClassLayers(DesiredLayerClass);
-    AnimationData->LinkedAnimationLayerClass = DesiredLayerClass;
-}
-
-//------------------------------------------------------------------------------
-
-void FBBBCharacterAnimationSystem::SetLinkedAnimationLayerClass(
-    TSubclassOf<UAnimInstance> AnimationLayerClass)
-{
-    if (!ensureMsgf(
-        AnimationData && AnimationConfig,
-        TEXT("[UBBBC]Animation layer request failed because animation system is not initialized")))
-    {
-        return;
-    }
-
-    AnimationData->RequestedAnimationLayerClass = AnimationLayerClass
-        ? AnimationLayerClass
-        : AnimationConfig->DefaultAnimationLayerClass;
-
-    RefreshLinkedAnimationLayer();
 }

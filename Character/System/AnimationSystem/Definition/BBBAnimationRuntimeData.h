@@ -5,6 +5,7 @@
 #include "BBBAnimationRuntimeData.generated.h"
 
 class FBBBCharacterAnimationFactProcessor;
+class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterInitializer;
 class UAnimInstance;
@@ -18,6 +19,7 @@ struct FBBBAnimationRuntimeData
 private:
     friend class FBBBCharacterAnimationSystem;
     friend class FBBBCharacterAnimationFactProcessor;
+    friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterInitializer;
 
     /** 当前帧提交给动画实例的角色事实 */
@@ -28,7 +30,4 @@ private:
     UPROPERTY(Transient)
     TSubclassOf<UAnimInstance> LinkedAnimationLayerClass;
 
-    /** 装备通过角色接口请求链接的动画层类 */
-    UPROPERTY(Transient)
-    TSubclassOf<UAnimInstance> RequestedAnimationLayerClass;
 };
