@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 
-class FBBBCharacterExternalAPI;
 class USkeletalMeshComponent;
+class ABBBCharacter;
 struct FBBBCharacterEquipmentCommands;
+struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
 
 /** 维护角色期望装备与当前装备的一致性 */
@@ -21,10 +22,11 @@ public:
      * @param CharacterAPI		角色能力接口
      */
     void Update(
+        ABBBCharacter &Character,
         USkeletalMeshComponent &CharacterMesh,
         FName AttachmentSocketName,
-        UObject &EquipmentOuter,
+        float WorldTimeSeconds,
         FBBBCharacterEquipmentCommands &EquipmentCommands,
         FBBBCharacterEquipmentState &EquipmentState,
-        FBBBCharacterExternalAPI &CharacterAPI) const;
+        FBBBCharacterEquipmentEvents &EquipmentEvents) const;
 };

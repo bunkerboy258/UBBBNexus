@@ -8,23 +8,8 @@
 #include "StructUtils/InstancedStruct.h"
 #include "BBBEquipmentDefinition.generated.h"
 
-class UAnimSequence;
 class UTexture2D;
-
-/** 装备提供给角色的持续上半身动画配置 */
-USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBEquipmentUpperBodyAnimationConfig
-{
-    GENERATED_BODY()
-
-    /** 普通持有装备时使用的上半身动画 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
-    TObjectPtr<UAnimSequence> HoldingAnimation = nullptr;
-
-    /** 瞄准时使用的上半身动画 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
-    TObjectPtr<UAnimSequence> AimingAnimation = nullptr;
-};
+class UAnimInstance;
 
 /** 装备静态配置与领域插槽 */
 UCLASS(BlueprintType)
@@ -49,9 +34,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
     TObjectPtr<UTexture2D> Icon;
 
-    /** 装备提供给角色的持续上半身动画 */
+    /** 装备后要求角色链接的动画层类 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
-    FBBBEquipmentUpperBodyAnimationConfig UpperBodyAnimation;
+    TSubclassOf<UAnimInstance> CharacterAnimationLayerClass;
 
     /** 装备领域 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))

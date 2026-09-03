@@ -2,12 +2,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
-#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdateTickFunction.h"
@@ -21,6 +19,7 @@
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
+class UAnimInstance;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class UCameraComponent;
@@ -71,11 +70,21 @@ public:
      */
     virtual void RegisterActorTickFunctions(bool bRegister) override;
 
+    /** @return 始终返回true以向模拟代理复制真实移动加速度 */
+    virtual bool ShouldReplicateAcceleration() const override;
+
     /**
      * 绑定玩家输入到输入管线
      * @param PlayerInputComponent	玩家输入组件
      */
     virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
+
+    /**
+     * 请求角色链接装备指定的动画层，空类恢复角色默认动画层
+     * @param AnimationLayerClass 要链接的动画层类
+     */
+    UFUNCTION(BlueprintCallable, Category = "ABBB|Animation")
+    void SetLinkedAnimationLayerClass(TSubclassOf<UAnimInstance> AnimationLayerClass);
     
     /**
      * 获取角色静态配置
@@ -90,16 +99,6 @@ private:
 
     /** 在移动组件完成本帧移动后驱动主管线LateUpdate */
     void LateUpdate();
-
-    /**
-     * 获取动画表现状态
-     * @return 管线提交后的动画状态常量引用
-     */
-    const FBBBCharacterAnimationState &GetAnimationState() const
-    {
-        //动画只读取管线提交后的表现数据
-        return RuntimeData.GetAnimationState();
-    }
 
 protected:
     
@@ -122,15 +121,10 @@ private:
     UPROPERTY(Transient)
     FBBBCharacterRuntimeData RuntimeData;
     
-    FBBBCharacterExternalAPI CharacterExternalAPI;
-    
     FBBBCharacterCameraSystem CameraSystem;
     
     FBBBCharacterAimSystem AimSystem;
 
-    /** 角色身体朝向系统 */
-    FBBBCharacterFacingSystem FacingSystem;
-    
     FBBBCharacterLocomotionSystem LocomotionSystem;
     
     FBBBCharacterEquipmentSystem EquipmentSystem;

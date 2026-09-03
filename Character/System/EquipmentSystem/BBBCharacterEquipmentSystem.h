@@ -5,11 +5,12 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
-class FBBBCharacterExternalAPI;
 class FBBBCharacterInitializer;
+class ABBBCharacter;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
+struct FBBBCharacterWorldRuntimeData;
 
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentSystem final
@@ -32,21 +33,21 @@ private:
     void Initialize(
         USkeletalMeshComponent &InCharacterMesh,
         FBBBCharacterEquipmentRuntimeData &InEquipmentData,
-        FBBBCharacterExternalAPI &InCharacterAPI,
-        UObject &InEquipmentOuter,
+        const FBBBCharacterWorldRuntimeData &InWorldData,
+        ABBBCharacter &InCharacter,
         const FBBBCharacterEquipmentConfig &InEquipmentConfig);
 
     /** 角色装备黑板 */
     FBBBCharacterEquipmentRuntimeData *EquipmentData = nullptr;
 
-    /** 角色能力接口 */
-    FBBBCharacterExternalAPI *CharacterAPI = nullptr;
+    /** 角色世界运行时数据 */
+    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
 
     /** 角色骨骼网格 */
     USkeletalMeshComponent *CharacterMesh = nullptr;
 
     /** 装备实例生命周期所有者 */
-    UObject *EquipmentOuter = nullptr;
+    ABBBCharacter *Character = nullptr;
 
     /** 右手装备挂接插槽 */
     FName RightHandWeaponSocketName = NAME_None;

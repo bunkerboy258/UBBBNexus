@@ -5,7 +5,6 @@
 
 class ABBBEquipmentPresentationActor;
 class ABBBMagazinePresentationActor;
-class FBBBCharacterExternalAPI;
 class UBBBMagazineRuntimeData;
 
 /** 弹匣操作域基类 */
@@ -44,19 +43,13 @@ public:
      * @param RuntimeData			弹匣操作域运行数据
      * @return 是否成功开始换弹
      */
-    virtual bool Reload(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const;
+    virtual bool CanStartReload(const UBBBMagazineRuntimeData &RuntimeData) const;
 
     /**
      * 播放一次换弹表现
      * @param CharacterAPI	角色能力接口
      */
-    virtual void PresentReload(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const;
+    virtual void CommitReload(UBBBMagazineRuntimeData &RuntimeData) const;
 
     /**
      * 更新弹匣操作域
@@ -64,10 +57,14 @@ public:
      * @param PresentationActor	装备表现实体
      * @param RuntimeData			弹匣操作域运行数据
      */
-    virtual void Update(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const;
+    /** @return 换弹动作持续时间 */
+    virtual float GetReloadDuration() const;
+
+    /** @return 弹匣卸下归一化时刻 */
+    virtual float GetMagazineRemoveNormalizedTime() const;
+
+    /** @return 弹匣生成归一化时刻 */
+    virtual float GetMagazineSpawnNormalizedTime() const;
 
     /**
      * 生成并装入弹匣表现实体

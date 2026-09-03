@@ -5,10 +5,7 @@
 #include "BBBEquipFragment.generated.h"
 
 class ABBBEquipmentPresentationActor;
-class FBBBCharacterExternalAPI;
-class UAnimMontage;
 class UBBBEquipRuntimeData;
-class UCurveFloat;
 class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
@@ -36,21 +33,10 @@ public:
     virtual ABBBEquipmentPresentationActor *Equip(
         UBBBEquipRuntimeData &RuntimeData,
         USkeletalMeshComponent &CharacterMesh,
-        FBBBCharacterExternalAPI &CharacterAPI,
         FName AttachmentSocketName) const override;
 
-    /**
-     * 更新装备过渡
-     * @param PresentationActor	装备表现实体
-     * @param RuntimeData		装备领域运行数据
-     */
-    virtual void Update(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBEquipRuntimeData &RuntimeData) const override;
-
-    /** @return 是否启用左手逆向动力学 */
-    virtual bool IsLeftHandIKEnabled() const override;
+    /** @return 装备动作持续时间 */
+    virtual float GetEquipDuration() const override;
 
     /** 装备表现实体类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
@@ -60,27 +46,12 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     FTransform SpawnOffset = FTransform::Identity;
 
-    /** 装备过渡动画 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
-    TObjectPtr<UAnimMontage> EquipMontage = nullptr;
-
-    /** 装备期间左手IK权重曲线，横轴为归一化装备进度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
-    TObjectPtr<UCurveFloat> EquipLeftHandIKAlphaCurve = nullptr;
+    /** 装备动作持续时间 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip", meta = (ClampMin = "0.01"))
+    float EquipDuration = 0.8f;
 
     /** 瞄准来源插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
     FName AimSourceSocketName = TEXT("Muzzle");
 
-    /** 左手握持插槽 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    FName LeftHandGripSocketName = TEXT("LeftHand");
-
-    /** 左手握持插槽修正 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    FTransform LeftHandGripSocketLocalOffset = FTransform::Identity;
-
-    /** 是否启用左手逆向动力学 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    bool bEnableLeftHandIK = true;
 };

@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -35,10 +36,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //确保角色黑板更新完成后再启动骨骼动画更新
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
     
-    Character.CharacterExternalAPI.Initialize(
-        Character.RuntimeData.Animation.Commands,
-        Character.RuntimeData.Camera.Commands);
-    
     Character.CameraSystem.Initialize(
         Character,
         *Character.CameraBoom,
@@ -46,6 +43,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Input,
         Character.RuntimeData.Intent,
+        Character.RuntimeData.Equipment.Events,
         Config.Camera);
     
     Character.AimSystem.Initialize(
@@ -54,53 +52,43 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Intent,
         Config.Aim);
 
-    Character.FacingSystem.Initialize(
-        Character,
-        *Movement,
-        Character.RuntimeData.Intent,
-        Character.RuntimeData.Facing,
-        Config.Facing);
-    
     Character.LocomotionSystem.Initialize(
         Character,
         *Movement,
+        Character.RuntimeData.Locomotion,
         Character.RuntimeData.Intent,
-        Character.RuntimeData.Aim,
-        Character.RuntimeData.Equipment.Equipment,
         Config.Locomotion);
     
     Character.EquipmentSystem.Initialize(
         *Character.GetMesh(),
         Character.RuntimeData.Equipment,
-        Character.CharacterExternalAPI,
+        Character.RuntimeData.WorldData,
         Character,
         Config.Equipment);
     
     Character.NetworkSystem.Initialize(
         Character.RuntimeData.Network,
         Character.RuntimeData.Aim,
+        Character.RuntimeData.Locomotion,
         Character.RuntimeData.Equipment.Equipment,
         *Character.CharacterNetworkComponent,
         *Config.Equipment.EquipmentCatalog,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Equipment.Commands,
-        Character.RuntimeData.Equipment.Results,
+        Character.RuntimeData.Equipment.Events,
         Config.Network);
 
     Character.CharacterNetworkComponent->Initialize(
         Character.NetworkSystem);
     
     Character.AnimationSystem.Initialize(
+        Character,
+        Character.RuntimeData,
         *Character.GetMesh(),
-        *Movement,
         Character.RuntimeData.Animation,
-        Character.RuntimeData.AnimationState,
+        Character.RuntimeData.Equipment.Events,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.Aim,
-        Character.RuntimeData.Equipment.Equipment,
-        Config.Locomotion,
-        Config.Animation,
-        Config.AimAnimation);
+        Config.Animation);
     
     Character.InputPipeline.Initialize(
         Character.RuntimeData.Input,
@@ -131,7 +119,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData,
         Character.CameraSystem,
         Character.AimSystem,
-        Character.FacingSystem,
         Character.LocomotionSystem,
         Character.EquipmentSystem,
         Character.NetworkSystem,
@@ -174,23 +161,35 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.FollowCamera->SetRelativeLocation(Config.Camera.CameraRelativeLocation);
     }
 
-    //使用最小正值防止非法配置彻底冻结移动组件
-    Movement->MaxWalkSpeed = FMath::Max(Config.Locomotion.Unarmed.RunSpeed, 1.0f);
+    Character.GetCapsuleComponent()->SetCapsuleSize(
+        FMath::Max(Config.Locomotion.CapsuleRadius, 1.0f),
+        FMath::Max(Config.Locomotion.CapsuleHalfHeight, 1.0f));
 
-    //将角色加速度配置同步到引擎移动组件
-    Movement->MaxAcceleration = FMath::Max(Config.Locomotion.Unarmed.RunAcceleration, 0.0f);
-
-    //启用引擎原生蹲伏能力
-    Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
-
-    //设置蹲伏状态下的移动速度
-    Movement->MaxWalkSpeedCrouched = FMath::Max(Config.Locomotion.CrouchSpeed, 1.0f);
-
-    //设置蹲伏状态下的碰撞胶囊半高
-    Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
-
-    //将角色起跳速度配置同步到引擎移动组件
+    Movement->MaxWalkSpeed = FMath::Max(Config.Locomotion.RunSpeeds.X, 1.0f);
+    Movement->MaxWalkSpeedCrouched = FMath::Max(Config.Locomotion.CrouchSpeeds.X, 1.0f);
+    Movement->MinAnalogWalkSpeed = FMath::Max(Config.Locomotion.MinAnalogWalkSpeed, 0.0f);
+    Movement->MaxAcceleration = FMath::Max(Config.Locomotion.MaxAcceleration, 0.0f);
+    Movement->BrakingDecelerationWalking = FMath::Max(
+        Config.Locomotion.BrakingDeceleration,
+        0.0f);
+    Movement->GroundFriction = FMath::Max(Config.Locomotion.GroundFriction, 0.0f);
+    Movement->BrakingFriction = FMath::Max(Config.Locomotion.BrakingFriction, 0.0f);
+    Movement->BrakingFrictionFactor = FMath::Max(
+        Config.Locomotion.BrakingFrictionFactor,
+        0.0f);
+    Movement->bUseSeparateBrakingFriction = false;
+    Movement->BrakingSubStepTime = Config.Locomotion.BrakingSubStepTime;
+    Movement->AirControl = Config.Locomotion.AirControl;
+    Movement->GravityScale = Config.Locomotion.GravityScale;
+    Movement->MaxStepHeight = Config.Locomotion.MaxStepHeight;
+    Movement->SetWalkableFloorAngle(Config.Locomotion.WalkableFloorAngle);
     Movement->JumpZVelocity = Config.Locomotion.JumpZVelocity;
+    Movement->bOrientRotationToMovement = false;
+    Movement->bUseControllerDesiredRotation = false;
+    Movement->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+
+    Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
+    Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
 }
 
 void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputComponent *PlayerInputComponent)
@@ -347,6 +346,33 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
     
+    if (Config.WalkAction)
+    {
+        Input->BindActionValueLambda(
+            Config.WalkAction,
+            ETriggerEvent::Started,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.SetWalkHeld(true);
+            });
+
+        Input->BindActionValueLambda(
+            Config.WalkAction,
+            ETriggerEvent::Completed,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.SetWalkHeld(false);
+            });
+
+        Input->BindActionValueLambda(
+            Config.WalkAction,
+            ETriggerEvent::Canceled,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.SetWalkHeld(false);
+            });
+    }
+
     if (Config.SprintAction)
     {
         Input->BindActionValueLambda(

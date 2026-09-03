@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Camera/BBBCameraConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Facing/BBBCharacterFacingConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Input/BBBInputConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
@@ -31,10 +30,6 @@ struct FBBBCharacterConfig
     /** 角色动画事实识别配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterAnimationConfig Animation;
-
-    /** 角色身体朝向配置 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    FBBBCharacterFacingConfig Facing;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterCameraConfig Camera;

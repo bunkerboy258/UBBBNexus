@@ -18,6 +18,9 @@ struct FBBBCharacterIntentState
     //当前帧是否需要进入瞄准姿态
     bool bWantsAim = false;
 
+    /** 当前帧是否请求行走速度 */
+    bool bWantsWalk = false;
+
     //当前帧是否请求冲刺速度
     bool bWantsSprint = false;
 
@@ -45,6 +48,7 @@ struct FBBBCharacterIntentState
         RuntimeData.bHasMoveInput = bHasMoveInput;
         RuntimeData.bWantsFire = bWantsFire;
         RuntimeData.bWantsAim = bWantsAim;
+        RuntimeData.bWantsWalk = bWantsWalk;
         RuntimeData.bWantsSprint = bWantsSprint;
         RuntimeData.bWantsCrouch = bWantsCrouch;
         RuntimeData.bWantsJump = bWantsJump;

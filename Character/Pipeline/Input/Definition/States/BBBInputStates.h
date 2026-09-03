@@ -41,6 +41,10 @@ struct FBBBRawInputFrame
     UPROPERTY(BlueprintReadOnly)
     bool bPrecisionAimCompleted = false;
 
+    /** 标记行走按键当前保持状态 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bWalkHeld = false;
+
     //标记冲刺按键当前保持状态
     UPROPERTY(BlueprintReadOnly)
     bool bSprintHeld = false;
@@ -115,6 +119,10 @@ struct FBBBProcessedInputFrame
     //保存精确瞄准按键本帧下降沿
     UPROPERTY(BlueprintReadOnly)
     bool bPrecisionAimReleased = false;
+
+    /** 保存行走按键当前保持状态 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bWalkHeld = false;
 
     //保存冲刺按键当前保持状态
     UPROPERTY(BlueprintReadOnly)

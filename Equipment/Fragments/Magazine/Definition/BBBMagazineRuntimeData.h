@@ -13,6 +13,7 @@ class ABBB_EVAC_API UBBBMagazineRuntimeData final : public UObject
 {
     GENERATED_BODY()
 
+public:
 private:
     friend struct FBBBMagazineFragment;
 
@@ -23,16 +24,6 @@ private:
     /** 当前备用弹药 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     int32 ReserveAmmo = 0;
-
-    /** 是否正在换弹 */
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    bool bIsReloading = false;
-
-    /** 换弹结束时间 */
-    float ReloadEndTime = 0.0f;
-
-    /** 换弹表现关闭IK的结束时间 */
-    float ReloadIKBlockEndTime = 0.0f;
 
     /** 当前安装在武器上的弹匣表现实体 */
     UPROPERTY()

@@ -6,8 +6,7 @@
 
 class ABBBBulletActor;
 class ABBBEquipmentPresentationActor;
-class FBBBCharacterExternalAPI;
-class UAnimMontage;
+struct FBBBEquipmentFireResult;
 class UBBBFireRuntimeData;
 class USoundBase;
 
@@ -36,9 +35,9 @@ public:
      * @return 是否成功开火
      */
     virtual bool Fire(
-        FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBFireRuntimeData &RuntimeData) const override;
+        UBBBFireRuntimeData &RuntimeData,
+        FBBBEquipmentFireResult &OutResult) const override;
 
     /**
      * 播放一次远端开火表现
@@ -46,8 +45,8 @@ public:
      * @param PresentationActor	装备表现实体
      */
     virtual void Present(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor) const override;
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBFireRuntimeData &RuntimeData) const override;
 
     /** 最短开火间隔 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.01"))
@@ -64,10 +63,6 @@ public:
     /** 枪口插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")
     FName MuzzleSocketName = TEXT("Muzzle");
-
-    /** 开火动画 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")
-    TObjectPtr<UAnimMontage> FireMontage = nullptr;
 
     /** 开火音效 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")

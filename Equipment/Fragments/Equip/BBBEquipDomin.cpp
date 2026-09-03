@@ -13,7 +13,6 @@ UBBBEquipRuntimeData *FBBBEquipDomin::InitializeRuntimeData(UObject &Outer) cons
 ABBBEquipmentPresentationActor *FBBBEquipDomin::Equip(
     UBBBEquipRuntimeData &RuntimeData,
     USkeletalMeshComponent &CharacterMesh,
-    FBBBCharacterExternalAPI &CharacterAPI,
     FName AttachmentSocketName) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
@@ -24,23 +23,12 @@ ABBBEquipmentPresentationActor *FBBBEquipDomin::Equip(
     return nullptr;
 }
 
-void FBBBEquipDomin::Update(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBEquipRuntimeData &RuntimeData) const
+float FBBBEquipDomin::GetEquipDuration() const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
     {
-        return;
-    }
-}
-
-bool FBBBEquipDomin::IsLeftHandIKEnabled() const
-{
-    if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
-    {
-        return false;
+        return 0.0f;
     }
 
-    return false;
+    return 0.0f;
 }

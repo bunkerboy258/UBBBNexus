@@ -4,7 +4,7 @@
 #include "UObject/Object.h"
 #include "BBBEquipmentSystem.generated.h"
 
-class FBBBCharacterExternalAPI;
+struct FBBBEquipmentFireResult;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
 class UBBBEquipmentRuntimeData;
@@ -24,48 +24,43 @@ public:
      * @param CharacterAPI          角色能力接口
      * @param AttachmentSocketName  装备挂接插槽
      */
-    void Equip(
+    bool Equip(
         USkeletalMeshComponent &CharacterMesh,
-        FBBBCharacterExternalAPI &CharacterAPI,
         FName AttachmentSocketName);
-
-    /**
-     * 更新装备内部领域
-     * @param CharacterAPI  角色能力接口
-     */
-    void Update(FBBBCharacterExternalAPI &CharacterAPI);
 
     /**
      * 响应本地开火命令
      * @param CharacterAPI  角色能力接口
      * @return 是否成功开火
      */
-    bool Fire(FBBBCharacterExternalAPI &CharacterAPI);
+    bool Fire(FBBBEquipmentFireResult &OutResult);
 
-    /**
-     * 响应本地换弹命令
-     * @param CharacterAPI  角色能力接口
-     * @return 是否成功开始换弹
-     */
-    bool Reload(FBBBCharacterExternalAPI &CharacterAPI);
+    /** @return 当前装备是否允许开始换弹 */
+    bool CanStartReload() const;
+
+    /** 完成换弹弹药结算 */
+    void CommitReload();
 
     /**
      * 响应远端开火表现命令
      * @param CharacterAPI  角色能力接口
      */
-    void PresentFire(FBBBCharacterExternalAPI &CharacterAPI);
-
-    /**
-     * 响应远端换弹表现命令
-     * @param CharacterAPI  角色能力接口
-     */
-    void PresentReload(FBBBCharacterExternalAPI &CharacterAPI);
+    void PresentFire();
 
     /** 释放表现实体并保留运行数据 */
     void ReleasePresentation();
 
-    /** @return 当前是否处于装备过渡 */
-    bool IsEquipping() const;
+    /** @return 装备动作持续时间 */
+    float GetEquipDuration() const;
+
+    /** @return 换弹动作持续时间 */
+    float GetReloadDuration() const;
+
+    /** @return 弹匣卸下归一化时刻 */
+    float GetMagazineRemoveNormalizedTime() const;
+
+    /** @return 弹匣生成归一化时刻 */
+    float GetMagazineSpawnNormalizedTime() const;
 
     /**
      * 查询瞄准来源相对右手骨骼的固定变换
@@ -75,14 +70,11 @@ public:
     bool TryGetAimSourceRightHandBoneSpace(FTransform &OutTransform) const;
 
     /**
-     * 查询左手目标相对右手骨骼的固定变换
-     * @param OutTransform	接收右手骨骼空间变换
-     * @return 固定变换有效时返回true
+     * 查询距离上次开火的时间
+     * @param WorldTimeSeconds 当前世界时间
+     * @return 未曾开火时返回一个足够大的安全值
      */
-    bool TryGetLeftHandTargetRightHandBoneSpace(FTransform &OutTransform) const;
-
-    /** @return 是否启用左手逆向动力学 */
-    bool IsLeftHandIKEnabled() const;
+    float GetTimeSinceLastFire(float WorldTimeSeconds) const;
 
 private:
     friend class UBBBEquipmentInstance;

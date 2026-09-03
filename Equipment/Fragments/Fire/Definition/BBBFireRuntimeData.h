@@ -12,6 +12,13 @@ class ABBB_EVAC_API UBBBFireRuntimeData final : public UObject
 {
     GENERATED_BODY()
 
+public:
+    /** @return 上次本地成功开火或远端开火表现的世界时间 */
+    float GetLastFireTime() const
+    {
+        return LastFireTime;
+    }
+
 private:
     friend struct FBBBSingleProjectileFireFragment;
 

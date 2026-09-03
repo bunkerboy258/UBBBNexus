@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBCharacterEquipmentCommands.generated.h"
 
 class FBBBCharacterEquipmentActionProcessor;
 class FBBBCharacterEquipmentSelectionProcessor;
-class FBBBFireRestoreProcessor;
 class FBBBEquipmentActionExecutor;
-class FBBBReloadRestoreProcessor;
+class FBBBEquipmentActionRestoreProcessor;
 class FBBBEquipmentRestoreProcessor;
 class UBBBEquipmentDefinition;
 class UBBBAnimInstance;
@@ -23,9 +23,8 @@ private:
 
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
-    friend class FBBBFireRestoreProcessor;
     friend class FBBBEquipmentActionExecutor;
-    friend class FBBBReloadRestoreProcessor;
+    friend class FBBBEquipmentActionRestoreProcessor;
     friend class FBBBEquipmentRestoreProcessor;
     friend class UBBBAnimInstance;
     friend struct FBBBCharacterEquipmentRuntimeData;
@@ -42,16 +41,13 @@ private:
         bActivateReload = true;
     }
 
-    /** 提交本帧开火表现命令 */
-    void SubmitFirePresentation()
+    /**
+     * 提交远端已确认动作
+     * @param Event 远端动作事件
+     */
+    void SubmitRestoredAction(FBBBEquipmentActionEvent Event)
     {
-        bPresentFire = true;
-    }
-
-    /** 提交本帧换弹表现命令 */
-    void SubmitReloadPresentation()
-    {
-        bPresentReload = true;
+        PendingRestoredActions.Add(MoveTemp(Event));
     }
 
     /**
@@ -61,18 +57,6 @@ private:
     void SubmitRestoredEquipment(UBBBEquipmentDefinition &Definition)
     {
         PendingRestoredEquipment = &Definition;
-    }
-
-    /** 提交等待消费的拔出弹匣动作 */
-    void SubmitRemoveMagazine()
-    {
-        bPendingRemoveMagazine = true;
-    }
-
-    /** 提交等待消费的生成弹匣动作 */
-    void SubmitSpawnMagazine()
-    {
-        bPendingSpawnMagazine = true;
     }
 
     /** @return 本帧是否存在待执行开火命令 */
@@ -91,20 +75,10 @@ private:
         return bShouldActivateReload;
     }
 
-    /** @return 本帧是否存在待表现开火命令 */
-    bool ConsumeFirePresentation()
+    /** @return 本帧待恢复动作 */
+    TArray<FBBBEquipmentActionEvent> ConsumeRestoredActions()
     {
-        const bool bShouldPresentFire = bPresentFire;
-        bPresentFire = false;
-        return bShouldPresentFire;
-    }
-
-    /** @return 本帧是否存在待表现换弹命令 */
-    bool ConsumeReloadPresentation()
-    {
-        const bool bShouldPresentReload = bPresentReload;
-        bPresentReload = false;
-        return bShouldPresentReload;
+        return MoveTemp(PendingRestoredActions);
     }
 
     /** @return 等待装备系统创建实例的远端装备配置 */
@@ -115,29 +89,12 @@ private:
         return Definition;
     }
 
-    /** @return 是否存在等待消费的拔出弹匣动作 */
-    bool ConsumeRemoveMagazine()
-    {
-        const bool bShouldRemoveMagazine = bPendingRemoveMagazine;
-        bPendingRemoveMagazine = false;
-        return bShouldRemoveMagazine;
-    }
-
-    /** @return 是否存在等待消费的生成弹匣动作 */
-    bool ConsumeSpawnMagazine()
-    {
-        const bool bShouldSpawnMagazine = bPendingSpawnMagazine;
-        bPendingSpawnMagazine = false;
-        return bShouldSpawnMagazine;
-    }
-
     /** 清理本帧全部物品命令 */
     void CleanFrame()
     {
         bActivateFire = false;
         bActivateReload = false;
-        bPresentFire = false;
-        bPresentReload = false;
+        PendingRestoredActions.Reset();
         PendingRestoredEquipment = nullptr;
     }
 
@@ -149,23 +106,12 @@ private:
     UPROPERTY()
     bool bActivateReload = false;
 
-    /** 是否存在待表现开火命令 */
+    /** 本帧待恢复动作 */
     UPROPERTY()
-    bool bPresentFire = false;
-
-    /** 是否存在待表现换弹命令 */
-    UPROPERTY()
-    bool bPresentReload = false;
+    TArray<FBBBEquipmentActionEvent> PendingRestoredActions;
 
     /** 等待装备系统创建实例的远端装备配置 */
     UPROPERTY()
     TObjectPtr<UBBBEquipmentDefinition> PendingRestoredEquipment = nullptr;
 
-    /** 是否存在等待消费的拔出弹匣动作 */
-    UPROPERTY()
-    bool bPendingRemoveMagazine = false;
-
-    /** 是否存在等待消费的生成弹匣动作 */
-    UPROPERTY()
-    bool bPendingSpawnMagazine = false;
 };

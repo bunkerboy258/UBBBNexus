@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Fragment/BBBSingleProjectileFireFragment.h"
 
-#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireResults.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
@@ -79,9 +78,9 @@ UBBBFireRuntimeData *FBBBSingleProjectileFireFragment::InitializeRuntimeData(UOb
 }
 
 bool FBBBSingleProjectileFireFragment::Fire(
-    FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBFireRuntimeData &RuntimeData) const
+    UBBBFireRuntimeData &RuntimeData,
+    FBBBEquipmentFireResult &OutResult) const
 {
     UWorld *World = PresentationActor.GetWorld();
     UStaticMeshComponent *EquipmentMesh = PresentationActor.GetEquipmentMesh();
@@ -110,32 +109,23 @@ bool FBBBSingleProjectileFireFragment::Fire(
 
     RuntimeData.LastFireTime = CurrentTime;
 
-    if (FireMontage)
-    {
-        FBBBCharacterAnimationRequest Request;
-        Request.Montage = FireMontage;
-        CharacterAPI.QueueMontage(Request);
-    }
-
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
 
-    const FVector2D RecoilImpulse(
+    OutResult.RecoilImpulse = FVector2D(
         VerticalRecoilAmount + FMath::FRandRange(-VerticalRecoilRandom, VerticalRecoilRandom),
         HorizontalRecoilAmount + FMath::FRandRange(-HorizontalRecoilRandom, HorizontalRecoilRandom));
-
-    CharacterAPI.SubmitCameraRecoil(RecoilImpulse, RecoilRecoverySpeed);
+    OutResult.RecoilRecoverySpeed = RecoilRecoverySpeed;
     return true;
 }
 
 void FBBBSingleProjectileFireFragment::Present(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor) const
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBFireRuntimeData &RuntimeData) const
 {
-    if (FireMontage)
+    UWorld *World = PresentationActor.GetWorld();
+    if (ensureMsgf(World, TEXT("[UBBBE]Presented fire world is unavailable")))
     {
-        FBBBCharacterAnimationRequest Request;
-        Request.Montage = FireMontage;
-        CharacterAPI.QueueMontage(Request);
+        RuntimeData.LastFireTime = World->GetTimeSeconds();
     }
 
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);

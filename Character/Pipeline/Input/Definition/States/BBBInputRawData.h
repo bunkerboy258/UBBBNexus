@@ -59,6 +59,15 @@ struct FBBBInputRawData
     }
 
     /**
+     * 更新行走按住状态
+     * @param bHeld	是否按住行走
+     */
+    void SetWalkHeld(bool bHeld)
+    {
+        RawInput.bWalkHeld = bHeld;
+    }
+
+    /**
      * 标记本帧精确瞄准按下
      */
     void MarkPrecisionAimStarted()

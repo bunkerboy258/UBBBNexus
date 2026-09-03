@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -16,6 +17,7 @@ void FBBBCharacterCameraSystem::Initialize(
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBInputRuntimeData &InInputData,
     const FBBBIntentRuntimeData &InIntentData,
+    const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterCameraConfig &InConfig)
 {
     Pawn = &InPawn;
@@ -24,12 +26,13 @@ void FBBBCharacterCameraSystem::Initialize(
     WorldData = &InWorldData;
     InputData = &InInputData;
     IntentData = &InIntentData;
+    EquipmentEvents = &InEquipmentEvents;
     Config = &InConfig;
 }
 
 void FBBBCharacterCameraSystem::Update()
 {
-    if (!ensureMsgf(Pawn && CameraBoom && WorldData && InputData && IntentData && CameraData && Config, TEXT("[UBBBC]Camera system update failed because dependencies are null")))
+    if (!ensureMsgf(Pawn && CameraBoom && WorldData && InputData && IntentData && EquipmentEvents && CameraData && Config, TEXT("[UBBBC]Camera system update failed because dependencies are null")))
     { return; }
     const float DeltaSeconds = WorldData->GetFrameDeltaSeconds();
     const FBBBProcessedInputFrame &ProcessedInput = InputData->GetProcessedInput();
@@ -49,22 +52,21 @@ void FBBBCharacterCameraSystem::Update()
         DeltaSeconds,
         Config->AimBoomInterpSpeed);
     FBBBCameraState State = CameraData->GetState();
-    const FBBBCameraCommands Commands = CameraData->ConsumeRecoilRequest();
-    if (!Commands.PendingRecoilImpulse.IsNearlyZero())
+    for (const FBBBEquipmentRecoilEvent &Event : EquipmentEvents->GetRecoilEvents())
     {
-        if (Commands.PendingRecoilRecoverySpeed > 0.0f)
+        if (Event.RecoverySpeed > 0.0f)
         {
-            State.RecoilRecoverySpeed = Commands.PendingRecoilRecoverySpeed;
+            State.RecoilRecoverySpeed = Event.RecoverySpeed;
         }
         if (AController *Controller = Pawn->GetController())
         {
             FRotator Rotation = Controller->GetControlRotation();
-            Rotation.Pitch += Commands.PendingRecoilImpulse.X;
-            Rotation.Yaw += Commands.PendingRecoilImpulse.Y;
+            Rotation.Pitch += Event.Impulse.X;
+            Rotation.Yaw += Event.Impulse.Y;
 
             Controller->SetControlRotation(Rotation);
         }
-        State.AppliedRecoilOffset += Commands.PendingRecoilImpulse;
+        State.AppliedRecoilOffset += Event.Impulse;
     }
     const FVector2D NewOffset(
         FMath::FInterpTo(State.AppliedRecoilOffset.X, 0.0f, DeltaSeconds, State.RecoilRecoverySpeed),

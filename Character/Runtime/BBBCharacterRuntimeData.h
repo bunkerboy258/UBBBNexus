@@ -6,13 +6,13 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/Definition/BBBCharacterFacingRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
+class FBBBCharacterAnimationFactProcessor;
 class ABBBCharacter;
 class UBBBAnimInstance;
 
@@ -27,14 +27,9 @@ struct FBBBCharacterRuntimeData
      */
     void Clean();
 
-    /** @return 动画蓝图读取的最终表现状态 */
-    const FBBBCharacterAnimationState &GetAnimationState() const
-    {
-        return AnimationState;
-    }
-
 private:
     friend class ABBBCharacter;
+    friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
     friend class UBBBAnimInstance;
 
@@ -58,17 +53,9 @@ private:
     UPROPERTY(Transient)
     FBBBAimRuntimeData Aim;
 
-    /** 角色身体朝向状态 */
-    UPROPERTY(Transient)
-    FBBBCharacterFacingRuntimeData Facing;
-
     //保存动画命令与处理状态
     UPROPERTY(Transient)
     FBBBAnimationRuntimeData Animation;
-
-    //保存动画蓝图最终表现状态
-    UPROPERTY(Transient)
-    FBBBCharacterAnimationState AnimationState;
 
     //保存相机命令与状态
     UPROPERTY(Transient)
@@ -77,6 +64,10 @@ private:
     //保存角色物品状态与命令
     UPROPERTY(Transient)
     FBBBCharacterEquipmentRuntimeData Equipment;
+
+    //保存角色本地计算或网络恢复后的移动步态
+    UPROPERTY(Transient)
+    FBBBCharacterLocomotionRuntimeData Locomotion;
 
     //保存角色网络队列与观测状态
     UPROPERTY(Transient)

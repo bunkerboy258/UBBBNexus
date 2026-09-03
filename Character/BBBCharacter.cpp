@@ -27,15 +27,16 @@ ABBBCharacter::ABBBCharacter()
     Movement->bTickBeforeOwner = false;
     Movement->PrimaryComponentTick.AddPrerequisite(this, PrimaryActorTick);
 
-    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->bOrientRotationToMovement = false;
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
     //限制自动转向速度
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
     //保留空中调整移动方向的能力
-    GetCharacterMovement()->AirControl = 0.35f;
+    GetCharacterMovement()->AirControl = 0.25f;
     //阻止控制器俯仰直接旋转角色胶囊体
     bUseControllerRotationPitch = false;
     //角色朝向统一交给移动与朝向系统处理
-    bUseControllerRotationYaw = false;
+    bUseControllerRotationYaw = true;
     //阻止控制器横滚直接旋转角色胶囊体
     bUseControllerRotationRoll = false;
 
@@ -127,6 +128,13 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
 
 //------------------------------------------------------------------------------
 
+bool ABBBCharacter::ShouldReplicateAcceleration() const
+{
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
 void ABBBCharacter::LateUpdate()
 {
     CharacterUpdatePipeline.LateUpdate();
@@ -136,4 +144,11 @@ void ABBBCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCompon
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
     FBBBCharacterInitializer::BindInput(*this, PlayerInputComponent);
+}
+
+//------------------------------------------------------------------------------
+
+void ABBBCharacter::SetLinkedAnimationLayerClass(TSubclassOf<UAnimInstance> AnimationLayerClass)
+{
+    AnimationSystem.SetLinkedAnimationLayerClass(AnimationLayerClass);
 }

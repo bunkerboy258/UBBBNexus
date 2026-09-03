@@ -9,6 +9,7 @@ struct FBBBCharacterWorldRuntimeData;
 struct FBBBCameraRuntimeData;
 struct FBBBInputRuntimeData;
 struct FBBBIntentRuntimeData;
+struct FBBBCharacterEquipmentEvents;
 
 class ABBB_EVAC_API FBBBCharacterCameraSystem final
 {
@@ -38,6 +39,7 @@ private:
         const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBInputRuntimeData &InInputData,
         const FBBBIntentRuntimeData &InIntentData,
+        const FBBBCharacterEquipmentEvents &InEquipmentEvents,
         const FBBBCharacterCameraConfig &InConfig);
 
     APawn *Pawn = nullptr;
@@ -49,6 +51,8 @@ private:
     const FBBBInputRuntimeData *InputData = nullptr;
 
     const FBBBIntentRuntimeData *IntentData = nullptr;
+
+    const FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;
 
     FBBBCameraRuntimeData *CameraData = nullptr;
 

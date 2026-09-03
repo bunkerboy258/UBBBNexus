@@ -3,7 +3,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/FacingSystem/BBBCharacterFacingSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
@@ -20,7 +19,6 @@ void FBBBCharacterUpdatePipeline::Initialize(
     FBBBCharacterRuntimeData &InRuntimeData,
     FBBBCharacterCameraSystem &InCameraSystem,
     FBBBCharacterAimSystem &InAimSystem,
-    FBBBCharacterFacingSystem &InFacingSystem,
     FBBBCharacterLocomotionSystem &InLocomotionSystem,
     FBBBCharacterEquipmentSystem &InEquipmentSystem,
     FBBBCharacterNetworkSystem &InNetworkSystem,
@@ -35,7 +33,6 @@ void FBBBCharacterUpdatePipeline::Initialize(
     RuntimeData = &InRuntimeData;
     CameraSystem = &InCameraSystem;
     AimSystem = &InAimSystem;
-    FacingSystem = &InFacingSystem;
     LocomotionSystem = &InLocomotionSystem;
     EquipmentSystem = &InEquipmentSystem;
     NetworkSystem = &InNetworkSystem;
@@ -56,7 +53,6 @@ void FBBBCharacterUpdatePipeline::Update() const
             && RuntimeData
             && CameraSystem
             && AimSystem
-            && FacingSystem
             && LocomotionSystem
             && EquipmentSystem
             && NetworkSystem
@@ -126,8 +122,6 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
 //本地控制且权威
 void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
 {
-    NetworkSystem->UpdateValidation();
-    
     NetworkSystem->UpdateRestore();
     
     InputPipeline->Update();
@@ -144,10 +138,8 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     
     CameraSystem->Update();
 
-    FacingSystem->Update();
-    
     AimSystem->Update();
-    
+
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
@@ -172,10 +164,8 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     
     CameraSystem->Update();
 
-    FacingSystem->Update();
-    
     AimSystem->Update();
-    
+
     LocomotionSystem->Update();
     
     NetworkSystem->UpdateUpload();
@@ -184,10 +174,8 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
 //远端模拟且权威
 void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 {
-    NetworkSystem->UpdateValidation();
-    
     NetworkSystem->UpdateRestore();
-    
+
     EquipmentSystem->Update();
 }
 
@@ -195,6 +183,6 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
 {
     NetworkSystem->UpdateRestore();
-    
+
     EquipmentSystem->Update();
 }

@@ -28,10 +28,7 @@ void FBBBMagazineDomin::ConsumeRound(UBBBMagazineRuntimeData &RuntimeData) const
     }
 }
 
-bool FBBBMagazineDomin::Reload(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBMagazineRuntimeData &RuntimeData) const
+bool FBBBMagazineDomin::CanStartReload(const UBBBMagazineRuntimeData &RuntimeData) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
     {
@@ -41,10 +38,7 @@ bool FBBBMagazineDomin::Reload(
     return false;
 }
 
-void FBBBMagazineDomin::PresentReload(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBMagazineRuntimeData &RuntimeData) const
+void FBBBMagazineDomin::CommitReload(UBBBMagazineRuntimeData &RuntimeData) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
     {
@@ -52,15 +46,34 @@ void FBBBMagazineDomin::PresentReload(
     }
 }
 
-void FBBBMagazineDomin::Update(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBMagazineRuntimeData &RuntimeData) const
+float FBBBMagazineDomin::GetReloadDuration() const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
     {
-        return;
+        return 0.0f;
     }
+
+    return 0.0f;
+}
+
+float FBBBMagazineDomin::GetMagazineRemoveNormalizedTime() const
+{
+    if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
+    {
+        return 0.0f;
+    }
+
+    return 0.0f;
+}
+
+float FBBBMagazineDomin::GetMagazineSpawnNormalizedTime() const
+{
+    if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
+    {
+        return 0.0f;
+    }
+
+    return 0.0f;
 }
 
 bool FBBBMagazineDomin::SpawnMagazine(

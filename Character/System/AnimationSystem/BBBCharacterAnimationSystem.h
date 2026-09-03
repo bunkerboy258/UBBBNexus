@@ -1,70 +1,63 @@
 #pragma once
+
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAimPresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterEquipmentPoseProcessor.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterLocomotionFactsProcessor.h"
-struct FBBBAimAnimationConfig;
-struct FBBBAimRuntimeData;
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
+
+class ABBBCharacter;
+struct FBBBCharacterRuntimeData;
 struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationConfig;
-struct FBBBCharacterAnimationState;
-struct FBBBCharacterLocomotionConfig;
-struct FBBBCharacterEquipmentState;
+struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterWorldRuntimeData;
 class FBBBCharacterInitializer;
-class UCharacterMovementComponent;
 class USkeletalMeshComponent;
 
 //角色动画系统
 class ABBB_EVAC_API FBBBCharacterAnimationSystem final
 {
 public:
+    /** 每帧播放瞬时动画命令并提交动画实例事实快照 */
+    void Update();
 
     /**
-     * 每帧驱动全部动画处理器 更新动画表现状态
+     * 请求链接装备指定的动画层，空类恢复角色默认动画层
+     * @param AnimationLayerClass 要链接的动画层类
      */
-    void Update();
+    void SetLinkedAnimationLayerClass(TSubclassOf<UAnimInstance> AnimationLayerClass);
+
 private:
-    
     friend class FBBBCharacterInitializer;
 
     /**
      * 初始化动画系统依赖与配置
+     * @param InCharacter		角色
+     * @param InRuntimeData	角色运行时数据
      * @param InCharacterMesh	角色骨骼网格组件
-     * @param InMovement	角色移动组件
      * @param InAnimationData	动画运行时数据
-     * @param InAnimationState	动画状态
-     * @param InWorldData	世界运行时数据
-     * @param InAimData	瞄准运行时数据
      * @param InEquipmentState	装备状态
-     * @param InLocomotionConfig	角色移动配置
-     * @param InAimAnimationConfig	瞄准动画配置
+     * @param InWorldData		世界运行时数据
+     * @param InAnimationConfig	动画配置
      */
     void Initialize(
+        ABBBCharacter &InCharacter,
+        FBBBCharacterRuntimeData &InRuntimeData,
         USkeletalMeshComponent &InCharacterMesh,
-        UCharacterMovementComponent &InMovement,
         FBBBAnimationRuntimeData &InAnimationData,
-        FBBBCharacterAnimationState &InAnimationState,
+        const FBBBCharacterEquipmentEvents &InEquipmentEvents,
         const FBBBCharacterWorldRuntimeData &InWorldData,
-        const FBBBAimRuntimeData &InAimData,
-        const FBBBCharacterEquipmentState &InEquipmentState,
-        const FBBBCharacterLocomotionConfig &InLocomotionConfig,
-        const FBBBCharacterAnimationConfig &InAnimationConfig,
-        const FBBBAimAnimationConfig &InAimAnimationConfig);
+        const FBBBCharacterAnimationConfig &InAnimationConfig);
 
+    /** 根据当前装备刷新角色链接动画层 */
+    void RefreshLinkedAnimationLayer();
+
+    ABBBCharacter *Character = nullptr;
+    FBBBCharacterRuntimeData *RuntimeData = nullptr;
     FBBBAnimationRuntimeData *AnimationData = nullptr;
-    FBBBCharacterAnimationState *AnimationState = nullptr;
-    const FBBBAimRuntimeData *AimData = nullptr;
-    const FBBBCharacterEquipmentState *EquipmentState = nullptr;
-    const FBBBCharacterLocomotionConfig *LocomotionConfig = nullptr;
+    const FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
-    UCharacterMovementComponent *Movement = nullptr;
     const FBBBCharacterAnimationConfig *AnimationConfig = nullptr;
-    const FBBBAimAnimationConfig *AimAnimationConfig = nullptr;
-    FBBBCharacterAnimationProcessor AnimationProcessor;
-    FBBBCharacterAimPresentationProcessor AimPresentationProcessor;
-    FBBBCharacterLocomotionFactsProcessor LocomotionFactsProcessor;
-    FBBBCharacterEquipmentPoseProcessor EquipmentPoseProcessor;
+    FBBBCharacterAnimationActionProcessor ActionProcessor;
+    FBBBCharacterAnimationFactProcessor FactProcessor;
 };

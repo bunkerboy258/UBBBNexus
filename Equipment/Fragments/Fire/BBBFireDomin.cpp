@@ -11,9 +11,9 @@ UBBBFireRuntimeData *FBBBFireDomin::InitializeRuntimeData(UObject &Outer) const
 }
 
 bool FBBBFireDomin::Fire(
-    FBBBCharacterExternalAPI &CharacterAPI,
     ABBBEquipmentPresentationActor &PresentationActor,
-    UBBBFireRuntimeData &RuntimeData) const
+    UBBBFireRuntimeData &RuntimeData,
+    FBBBEquipmentFireResult &OutResult) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Fire domin has no fragment implementation")))
     {
@@ -24,8 +24,8 @@ bool FBBBFireDomin::Fire(
 }
 
 void FBBBFireDomin::Present(
-    FBBBCharacterExternalAPI &CharacterAPI,
-    ABBBEquipmentPresentationActor &PresentationActor) const
+    ABBBEquipmentPresentationActor &PresentationActor,
+    UBBBFireRuntimeData &RuntimeData) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Fire domin has no fragment implementation")))
     {

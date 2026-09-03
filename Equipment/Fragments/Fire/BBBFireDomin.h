@@ -4,7 +4,7 @@
 #include "BBBFireDomin.generated.h"
 
 class ABBBEquipmentPresentationActor;
-class FBBBCharacterExternalAPI;
+struct FBBBEquipmentFireResult;
 class UBBBFireRuntimeData;
 
 /** 开火操作域基类 */
@@ -28,12 +28,13 @@ public:
      * @param CharacterAPI		角色能力接口
      * @param PresentationActor	装备表现实体
      * @param RuntimeData			开火操作域运行数据
+     * @param RuntimeData			开火操作域运行数据
      * @return 是否成功开火
      */
     virtual bool Fire(
-        FBBBCharacterExternalAPI &CharacterAPI,
         ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBFireRuntimeData &RuntimeData) const;
+        UBBBFireRuntimeData &RuntimeData,
+        FBBBEquipmentFireResult &OutResult) const;
 
     /**
      * 播放一次开火表现
@@ -41,7 +42,7 @@ public:
      * @param PresentationActor	装备表现实体
      */
     virtual void Present(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor) const;
+        ABBBEquipmentPresentationActor &PresentationActor,
+        UBBBFireRuntimeData &RuntimeData) const;
 
 };

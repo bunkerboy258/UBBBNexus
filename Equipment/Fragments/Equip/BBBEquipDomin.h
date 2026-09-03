@@ -4,7 +4,6 @@
 #include "BBBEquipDomin.generated.h"
 
 class ABBBEquipmentPresentationActor;
-class FBBBCharacterExternalAPI;
 class UBBBEquipRuntimeData;
 class USkeletalMeshComponent;
 
@@ -35,7 +34,6 @@ public:
     virtual ABBBEquipmentPresentationActor *Equip(
         UBBBEquipRuntimeData &RuntimeData,
         USkeletalMeshComponent &CharacterMesh,
-        FBBBCharacterExternalAPI &CharacterAPI,
         FName AttachmentSocketName) const;
 
     /**
@@ -44,12 +42,7 @@ public:
      * @param PresentationActor	装备表现实体
      * @param RuntimeData			装备操作域运行数据
      */
-    virtual void Update(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBEquipRuntimeData &RuntimeData) const;
-
-    /** @return 是否启用左手逆向动力学 */
-    virtual bool IsLeftHandIKEnabled() const;
+    /** @return 装备动作持续时间 */
+    virtual float GetEquipDuration() const;
 
 };

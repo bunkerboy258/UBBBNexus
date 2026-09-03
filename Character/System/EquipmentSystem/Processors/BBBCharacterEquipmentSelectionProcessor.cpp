@@ -1,6 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
@@ -8,18 +10,20 @@
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(
+    ABBBCharacter &Character,
     USkeletalMeshComponent &CharacterMesh,
     FName AttachmentSocketName,
-    UObject &EquipmentOuter,
+    float WorldTimeSeconds,
     FBBBCharacterEquipmentCommands &EquipmentCommands,
     FBBBCharacterEquipmentState &EquipmentState,
-    FBBBCharacterExternalAPI &CharacterAPI) const
+    FBBBCharacterEquipmentEvents &EquipmentEvents) const
 {
+    bool bRestoringEquipment = false;
     UBBBEquipmentDefinition *RestoredDefinition = EquipmentCommands.ConsumeRestoredEquipment();
     if (RestoredDefinition)
     {
         UBBBEquipmentInstance *RestoredInstance = UBBBEquipmentInstance::Create(
-            EquipmentOuter,
+            Character,
             *RestoredDefinition);
 
         if (!ensureMsgf(RestoredInstance, TEXT("[UBBBC]Restored equipment instance creation failed")))
@@ -28,10 +32,16 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         }
 
         EquipmentState.DesiredMainHandInstance = RestoredInstance;
+        bRestoringEquipment = true;
     }
 
     // 期望与当前一致时 直接返回
     if (EquipmentState.ActiveMainHandInstance == EquipmentState.DesiredMainHandInstance)
+    {
+        return;
+    }
+
+    if (EquipmentState.ActionState.IsActive())
     {
         return;
     }
@@ -66,9 +76,43 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     // 如果存在新主手装备 再成实际装备动作
     if (EquipmentState.ActiveMainHandInstance)
     {
-        DesiredEquipmentSystem->Equip(
-            CharacterMesh,
-            CharacterAPI,
-            AttachmentSocketName);
+        if (!DesiredEquipmentSystem->Equip(CharacterMesh, AttachmentSocketName))
+        {
+            EquipmentState.ActiveMainHandInstance = nullptr;
+            Character.SetLinkedAnimationLayerClass(nullptr);
+            return;
+        }
+
+        UBBBEquipmentDefinition *Definition = EquipmentState.ActiveMainHandInstance->GetDefinition();
+        if (!ensureMsgf(Definition, TEXT("[UBBBC]Active equipment definition is null after equip")))
+        {
+            EquipmentState.ActiveMainHandInstance = nullptr;
+            Character.SetLinkedAnimationLayerClass(nullptr);
+            return;
+        }
+
+        Character.SetLinkedAnimationLayerClass(Definition->CharacterAnimationLayerClass);
+
+        if (!bRestoringEquipment)
+        {
+            const int32 Sequence = EquipmentState.NextActionSequence++;
+            const float DurationSeconds = DesiredEquipmentSystem->GetEquipDuration();
+            EquipmentState.ActionState.Begin(
+                EBBBCharacterActionType::Equip,
+                WorldTimeSeconds,
+                DurationSeconds,
+                Sequence);
+
+            FBBBEquipmentActionEvent Event;
+            Event.ActionType = EBBBCharacterActionType::Equip;
+            Event.EquipmentId = EquipmentState.ActiveMainHandInstance->GetDefinition()->EquipmentId;
+            Event.Sequence = Sequence;
+            Event.DurationSeconds = DurationSeconds;
+            EquipmentEvents.AddAction(MoveTemp(Event));
+        }
+
+        return;
     }
+
+    Character.SetLinkedAnimationLayerClass(nullptr);
 }

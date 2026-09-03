@@ -1,91 +1,108 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
+
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
-#include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/System/AimSystem/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 void FBBBCharacterAnimationSystem::Initialize(
+    ABBBCharacter &InCharacter,
+    FBBBCharacterRuntimeData &InRuntimeData,
     USkeletalMeshComponent &InCharacterMesh,
-    UCharacterMovementComponent &InMovement,
     FBBBAnimationRuntimeData &InAnimationData,
-    FBBBCharacterAnimationState &InAnimationState,
+    const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterWorldRuntimeData &InWorldData,
-    const FBBBAimRuntimeData &InAimData,
-    const FBBBCharacterEquipmentState &InEquipmentState,
-    const FBBBCharacterLocomotionConfig &InLocomotionConfig,
-    const FBBBCharacterAnimationConfig &InAnimationConfig,
-    const FBBBAimAnimationConfig &InAimAnimationConfig)
+    const FBBBCharacterAnimationConfig &InAnimationConfig)
 {
+    Character = &InCharacter;
+    RuntimeData = &InRuntimeData;
     CharacterMesh = &InCharacterMesh;
-    Movement = &InMovement;
     AnimationData = &InAnimationData;
-    AnimationState = &InAnimationState;
+    EquipmentEvents = &InEquipmentEvents;
     WorldData = &InWorldData;
-    AimData = &InAimData;
-    EquipmentState = &InEquipmentState;
-    LocomotionConfig = &InLocomotionConfig;
     AnimationConfig = &InAnimationConfig;
-    AimAnimationConfig = &InAimAnimationConfig;
+    AnimationData->RequestedAnimationLayerClass = AnimationConfig->DefaultAnimationLayerClass;
 }
+
+//------------------------------------------------------------------------------
 
 void FBBBCharacterAnimationSystem::Update()
 {
     if (!ensureMsgf(
         AnimationData
-            && AnimationState
-            && AimData
-            && EquipmentState
-            && LocomotionConfig
+            && Character
+            && RuntimeData
+            && EquipmentEvents
             && CharacterMesh
             && WorldData
-            && Movement
-            && AnimationConfig
-            && AimAnimationConfig,
+            && AnimationConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
     {
         return;
     }
 
+    UBBBAnimInstance *AnimInstance = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
     if (!ensureMsgf(
-        AnimationConfig->TurnSignalRateThreshold > 0.0f
-            && AnimationConfig->TurnRateSmoothingTime > 0.0f
-            && AnimationConfig->MaxTurnRateChangeSpeed > 0.0f,
-        TEXT("[UBBBC]Animation system update failed because turn configuration is invalid")))
+        AnimInstance,
+        TEXT("[UBBBC]Character mesh must use UBBBAnimInstance or a derived animation blueprint")))
     {
         return;
     }
 
-    AimPresentationProcessor.Update(
-        *CharacterMesh,
-        WorldData->GetFrameDeltaSeconds(),
-        *AimAnimationConfig,
-        *AimData,
-        AnimationData->GetCommands(),
-        *AnimationData,
-        *AnimationState);
+    RefreshLinkedAnimationLayer();
+    ActionProcessor.Update(
+        *AnimInstance,
+        *EquipmentEvents,
+        *AnimationConfig);
+    FactProcessor.Update(
+        *Character,
+        *RuntimeData,
+        AnimationData->Facts,
+        WorldData->GetFrameDeltaSeconds());
+    AnimInstance->PublishAnimationFacts(AnimationData->Facts);
+}
 
-    LocomotionFactsProcessor.Update(
-        *Movement,
-        *AimData,
-        *EquipmentState,
-        *LocomotionConfig,
-        *AnimationConfig,
-        WorldData->GetFrameDeltaSeconds(),
-        *AnimationData,
-        *AnimationState);
+//------------------------------------------------------------------------------
 
-    AnimationProcessor.Update(
-        *CharacterMesh,
-        AnimationData->GetCommands());
+void FBBBCharacterAnimationSystem::RefreshLinkedAnimationLayer()
+{
+    TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationData->RequestedAnimationLayerClass;
 
-    EquipmentPoseProcessor.Update(
-        *EquipmentState,
-        AnimationData->GetCommands(),
-        *AnimationState);
+    if (!ensureMsgf(
+        DesiredLayerClass,
+        TEXT("[UBBBC]No animation layer is configured for the character or active equipment")))
+    {
+        return;
+    }
+
+    if (AnimationData->LinkedAnimationLayerClass == DesiredLayerClass)
+    {
+        return;
+    }
+
+    CharacterMesh->LinkAnimClassLayers(DesiredLayerClass);
+    AnimationData->LinkedAnimationLayerClass = DesiredLayerClass;
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBCharacterAnimationSystem::SetLinkedAnimationLayerClass(
+    TSubclassOf<UAnimInstance> AnimationLayerClass)
+{
+    if (!ensureMsgf(
+        AnimationData && AnimationConfig,
+        TEXT("[UBBBC]Animation layer request failed because animation system is not initialized")))
+    {
+        return;
+    }
+
+    AnimationData->RequestedAnimationLayerClass = AnimationLayerClass
+        ? AnimationLayerClass
+        : AnimationConfig->DefaultAnimationLayerClass;
+
+    RefreshLinkedAnimationLayer();
 }

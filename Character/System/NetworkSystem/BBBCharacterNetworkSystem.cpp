@@ -1,48 +1,38 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
-#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 
 void FBBBCharacterNetworkSystem::Initialize(
     FBBBNetworkRuntimeData &InNetworkData,
     FBBBAimRuntimeData &InAimData,
+    FBBBCharacterLocomotionRuntimeData &InLocomotionData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     UBBBCharacterNetworkComponent &InNetworkComponent,
     UBBBEquipmentCatalog &InEquipmentCatalog,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     FBBBCharacterEquipmentCommands &InEquipmentCommands,
-    const FBBBCharacterEquipmentResults &InEquipmentResults,
+    const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterNetworkConfig &InNetworkConfig)
 {
     NetworkData = &InNetworkData;
     AimData = &InAimData;
+    LocomotionData = &InLocomotionData;
     EquipmentState = &InEquipmentState;
     NetworkComponent = &InNetworkComponent;
     EquipmentCatalog = &InEquipmentCatalog;
     WorldData = &InWorldData;
     EquipmentCommands = &InEquipmentCommands;
-    EquipmentResults = &InEquipmentResults;
+    EquipmentEvents = &InEquipmentEvents;
     NetworkConfig = &InNetworkConfig;
-}
-
-void FBBBCharacterNetworkSystem::UpdateValidation()
-{
-    if (!ensureMsgf(NetworkData && NetworkComponent && EquipmentCatalog, TEXT("[UBBBC]Network validation dependencies are null")))
-    {
-        return;
-    }
-
-    TArray<FBBBEquipmentNetworkPacket> ValidPackets = Validator.Update(*NetworkData, *EquipmentCatalog);
-    for (FBBBEquipmentNetworkPacket &Packet : ValidPackets)
-    {
-        NetworkComponent->MulticastEquipmentPacket(MoveTemp(Packet));
-    }
 }
 
 void FBBBCharacterNetworkSystem::UpdateRestore()
 {
-    if (!ensureMsgf(NetworkData && AimData && EquipmentCommands && EquipmentCatalog, TEXT("[UBBBC]Network restore dependencies are null")))
+    if (!ensureMsgf(NetworkData && AimData && LocomotionData && EquipmentCommands && EquipmentCatalog, TEXT("[UBBBC]Network restore dependencies are null")))
     {
         return;
     }
@@ -50,13 +40,14 @@ void FBBBCharacterNetworkSystem::UpdateRestore()
     Restorer.Update(
         *NetworkData,
         *AimData,
+        *LocomotionData,
         *EquipmentCommands,
         *EquipmentCatalog);
 }
 
 void FBBBCharacterNetworkSystem::UpdateUpload()
 {
-    if (!ensureMsgf(NetworkData && WorldData && AimData && NetworkConfig && EquipmentState && EquipmentResults && NetworkComponent, TEXT("[UBBBC]Network upload dependencies are null")))
+    if (!ensureMsgf(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig && EquipmentState && EquipmentEvents && NetworkComponent, TEXT("[UBBBC]Network upload dependencies are null")))
     {
         return;
     }
@@ -65,9 +56,10 @@ void FBBBCharacterNetworkSystem::UpdateUpload()
         *NetworkData,
         WorldData->GetWorldTimeSeconds(),
         *AimData,
+        *LocomotionData,
         *NetworkConfig,
         *EquipmentState,
-        *EquipmentResults,
+        *EquipmentEvents,
         *this);
 }
 
@@ -80,43 +72,77 @@ void FBBBCharacterNetworkSystem::SubmitEquipmentPacket(FBBBEquipmentNetworkPacke
 
     if (NetworkComponent->IsOwnerAuthority())
     {
-        ReceiveEquipmentForValidation(MoveTemp(Packet));
+        ReceiveEquipmentForDistribution(MoveTemp(Packet));
         return;
     }
 
     NetworkComponent->ServerUploadEquipmentPacket(MoveTemp(Packet));
 }
 
-void FBBBCharacterNetworkSystem::SubmitFirePacket(FBBBFireNetworkPacket Packet)
+void FBBBCharacterNetworkSystem::SubmitEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet)
 {
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Fire packet cannot be submitted")))
+    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment action packet cannot be submitted")))
     {
         return;
     }
 
     if (NetworkComponent->IsOwnerAuthority())
     {
-        ReceiveFireForDistribution(MoveTemp(Packet));
+        ReceiveEquipmentActionForDistribution(MoveTemp(Packet));
         return;
     }
 
-    NetworkComponent->ServerUploadFirePacket(MoveTemp(Packet));
+    NetworkComponent->ServerUploadEquipmentActionPacket(MoveTemp(Packet));
 }
 
-void FBBBCharacterNetworkSystem::SubmitReloadPacket(FBBBReloadNetworkPacket Packet)
+void FBBBCharacterNetworkSystem::ReceiveEquipmentForDistribution(FBBBEquipmentNetworkPacket Packet)
 {
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Reload packet cannot be submitted")))
+    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment packet cannot be distributed")))
     {
         return;
     }
 
-    if (NetworkComponent->IsOwnerAuthority())
+    NetworkComponent->MulticastEquipmentPacket(MoveTemp(Packet));
+}
+
+void FBBBCharacterNetworkSystem::ReceiveEquipmentForRestore(FBBBEquipmentNetworkPacket Packet)
+{
+    if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Equipment restore packet cannot be queued")))
     {
-        ReceiveReloadForDistribution(MoveTemp(Packet));
         return;
     }
 
-    NetworkComponent->ServerUploadReloadPacket(MoveTemp(Packet));
+    if (NetworkComponent->IsOwnerLocallyControlled())
+    {
+        return;
+    }
+
+    NetworkData->EnqueueRestoreEquipmentPacket(MoveTemp(Packet));
+}
+
+void FBBBCharacterNetworkSystem::ReceiveEquipmentActionForDistribution(FBBBEquipmentActionNetworkPacket Packet)
+{
+    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment action packet cannot be distributed")))
+    {
+        return;
+    }
+
+    NetworkComponent->MulticastEquipmentActionPacket(MoveTemp(Packet));
+}
+
+void FBBBCharacterNetworkSystem::ReceiveEquipmentActionForRestore(FBBBEquipmentActionNetworkPacket Packet)
+{
+    if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Equipment action restore packet cannot be queued")))
+    {
+        return;
+    }
+
+    if (NetworkComponent->IsOwnerLocallyControlled())
+    {
+        return;
+    }
+
+    NetworkData->EnqueueRestoreEquipmentActionPacket(MoveTemp(Packet));
 }
 
 void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimState)
@@ -135,79 +161,20 @@ void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimSt
     NetworkComponent->ServerSubmitAimState(AimState);
 }
 
-void FBBBCharacterNetworkSystem::ReceiveEquipmentForValidation(FBBBEquipmentNetworkPacket Packet)
+void FBBBCharacterNetworkSystem::SubmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
-    if (!ensureMsgf(NetworkData, TEXT("[UBBBC]Equipment validation packet cannot be queued")))
+    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Locomotion state cannot be submitted")))
     {
         return;
     }
 
-    NetworkData->EnqueueValidationEquipmentPacket(MoveTemp(Packet));
-}
-
-void FBBBCharacterNetworkSystem::ReceiveEquipmentForRestore(FBBBEquipmentNetworkPacket Packet)
-{
-    if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Equipment restore packet cannot be queued")))
+    if (NetworkComponent->IsOwnerAuthority())
     {
+        ReceiveSubmittedLocomotionState(LocomotionState);
         return;
     }
 
-    if (NetworkComponent->IsOwnerLocallyControlled())
-    {
-        return;
-    }
-
-    NetworkData->EnqueueRestoreEquipmentPacket(MoveTemp(Packet));
-}
-
-void FBBBCharacterNetworkSystem::ReceiveFireForDistribution(FBBBFireNetworkPacket Packet)
-{
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Fire packet cannot be distributed")))
-    {
-        return;
-    }
-
-    NetworkComponent->MulticastFirePacket(MoveTemp(Packet));
-}
-
-void FBBBCharacterNetworkSystem::ReceiveFireForRestore(FBBBFireNetworkPacket Packet)
-{
-    if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Fire restore packet cannot be queued")))
-    {
-        return;
-    }
-
-    if (NetworkComponent->IsOwnerLocallyControlled())
-    {
-        return;
-    }
-
-    NetworkData->EnqueueRestoreFirePacket(MoveTemp(Packet));
-}
-
-void FBBBCharacterNetworkSystem::ReceiveReloadForDistribution(FBBBReloadNetworkPacket Packet)
-{
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Reload packet cannot be distributed")))
-    {
-        return;
-    }
-
-    NetworkComponent->MulticastReloadPacket(MoveTemp(Packet));
-}
-
-void FBBBCharacterNetworkSystem::ReceiveReloadForRestore(FBBBReloadNetworkPacket Packet)
-{
-    if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Reload restore packet cannot be queued")))
-    {
-        return;
-    }
-
-    if (NetworkComponent->IsOwnerLocallyControlled())
-    {
-        return;
-    }
-
-    NetworkData->EnqueueRestoreReloadPacket(MoveTemp(Packet));
+    NetworkComponent->ServerSubmitLocomotionState(LocomotionState);
 }
 
 void FBBBCharacterNetworkSystem::ReceiveSubmittedAimState(const FBBBAimNetworkState &AimState)
@@ -218,21 +185,38 @@ void FBBBCharacterNetworkSystem::ReceiveSubmittedAimState(const FBBBAimNetworkSt
     }
 
     NetworkComponent->SetReplicatedAimState(AimState);
-
-    if (NetworkComponent->IsOwnerLocallyControlled())
+    if (!NetworkComponent->IsOwnerLocallyControlled())
     {
-        return;
+        NetworkData->SetPendingRestoreAimState(AimState);
     }
-
-    NetworkData->SetPendingRestoreAimState(AimState);
 }
 
 void FBBBCharacterNetworkSystem::ReceiveReplicatedAimState(const FBBBAimNetworkState &AimState)
 {
-    if (!ensureMsgf(NetworkData, TEXT("[UBBBC]Replicated aim state cannot be queued")))
+    if (ensureMsgf(NetworkData, TEXT("[UBBBC]Replicated aim state cannot be queued")))
+    {
+        NetworkData->SetPendingRestoreAimState(AimState);
+    }
+}
+
+void FBBBCharacterNetworkSystem::ReceiveSubmittedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+{
+    if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Submitted locomotion state cannot be processed")))
     {
         return;
     }
 
-    NetworkData->SetPendingRestoreAimState(AimState);
+    NetworkComponent->SetReplicatedLocomotionState(LocomotionState);
+    if (!NetworkComponent->IsOwnerLocallyControlled())
+    {
+        NetworkData->SetPendingRestoreLocomotionState(LocomotionState);
+    }
+}
+
+void FBBBCharacterNetworkSystem::ReceiveReplicatedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+{
+    if (ensureMsgf(NetworkData, TEXT("[UBBBC]Replicated locomotion state cannot be queued")))
+    {
+        NetworkData->SetPendingRestoreLocomotionState(LocomotionState);
+    }
 }

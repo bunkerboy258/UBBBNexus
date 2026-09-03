@@ -43,6 +43,10 @@ struct FBBBCharacterInputConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> PrecisionAimAction;
 
+    /** 行走输入动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UInputAction> WalkAction;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> SprintAction;
 

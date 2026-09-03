@@ -6,8 +6,6 @@
 
 class ABBBEquipmentPresentationActor;
 class ABBBMagazinePresentationActor;
-class FBBBCharacterExternalAPI;
-class UAnimMontage;
 class UBBBMagazineRuntimeData;
 
 /** 弹匣与换弹领域 */
@@ -44,19 +42,13 @@ public:
      * @param RuntimeData		弹匣运行数据
      * @return 是否成功开始换弹
      */
-    virtual bool Reload(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const override;
+    virtual bool CanStartReload(const UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
      * 响应一次远端换弹表现
      * @param CharacterAPI	角色能力接口
      */
-    virtual void PresentReload(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const override;
+    virtual void CommitReload(UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
      * 更新换弹过程
@@ -64,10 +56,14 @@ public:
      * @param PresentationActor	装备表现实体
      * @param RuntimeData		弹匣运行数据
      */
-    virtual void Update(
-        FBBBCharacterExternalAPI &CharacterAPI,
-        ABBBEquipmentPresentationActor &PresentationActor,
-        UBBBMagazineRuntimeData &RuntimeData) const override;
+    /** @return 换弹动作持续时间 */
+    virtual float GetReloadDuration() const override;
+
+    /** @return 弹匣卸下归一化时刻 */
+    virtual float GetMagazineRemoveNormalizedTime() const override;
+
+    /** @return 弹匣生成归一化时刻 */
+    virtual float GetMagazineSpawnNormalizedTime() const override;
 
     /**
      * 生成并装入弹匣表现实体
@@ -99,9 +95,17 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0"))
     int32 InitialReserveAmmo = 90;
 
-    /** 换弹动画 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
-    TObjectPtr<UAnimMontage> ReloadMontage = nullptr;
+    /** 换弹动作持续时间 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.01"))
+    float ReloadDuration = 2.2f;
+
+    /** 弹匣卸下归一化时刻 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float MagazineRemoveNormalizedTime = 0.35f;
+
+    /** 弹匣生成归一化时刻 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float MagazineSpawnNormalizedTime = 0.75f;
 
     /** 弹匣表现实体类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")

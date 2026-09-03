@@ -1,13 +1,13 @@
-
 #pragma once
+
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/Commands/BBBCharacterAnimationCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimationRuntimeData.generated.h"
-class FBBBCharacterAimPresentationProcessor;
-class FBBBCharacterEquipmentPoseProcessor;
+
+class FBBBCharacterAnimationFactProcessor;
+class FBBBCharacterAnimationSystem;
 class FBBBCharacterInitializer;
-class FBBBCharacterLocomotionFactsProcessor;
+class UAnimInstance;
 
 USTRUCT(BlueprintType)
 //角色运行时动画数据
@@ -15,36 +15,20 @@ struct FBBBAnimationRuntimeData
 {
     GENERATED_BODY()
 
-    /**
-     * 读取动画命令缓冲的第一级封装
-     * @return 动画命令容器
-     */
-    const FBBBCharacterAnimationCommands &GetCommands() const
-    {
-        return Commands;
-    }
-
-    /**
-     * 清理本帧动画命令
-     */
-    void CleanFrame()
-    {
-        Commands.CleanFrame();
-    }
 private:
-    friend class FBBBCharacterAimPresentationProcessor;
-    friend class FBBBCharacterEquipmentPoseProcessor;
+    friend class FBBBCharacterAnimationSystem;
+    friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterLocomotionFactsProcessor;
 
-    /** 动画命令缓冲 */
-    UPROPERTY()
-    FBBBCharacterAnimationCommands Commands;
-    /** 瞄准表现处理器的跨帧平滑状态 */
-    FBBBAimPresentationRuntimeState AimPresentation;
+    /** 当前帧提交给动画实例的角色事实 */
+    UPROPERTY(Transient)
+    FBBBCharacterAnimationFacts Facts;
 
-    /** 实际转向速度计算使用的跨帧状态 */
-    FBBBCharacterTurnTrackingState TurnTracking;
+    /** 当前已经链接到角色主动画蓝图的动画层类 */
+    UPROPERTY(Transient)
+    TSubclassOf<UAnimInstance> LinkedAnimationLayerClass;
 
+    /** 装备通过角色接口请求链接的动画层类 */
+    UPROPERTY(Transient)
+    TSubclassOf<UAnimInstance> RequestedAnimationLayerClass;
 };
-

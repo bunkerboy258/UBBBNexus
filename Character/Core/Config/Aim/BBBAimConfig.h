@@ -25,10 +25,6 @@ struct FBBBAimAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FName AimIKOriginBoneName = FName("spine_03");
 
-    /** 动画水平瞄准偏角的插值速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimOffsetYawInterpSpeed = 15.0f;
-
     /** 是否平滑瞄准IK目标 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     bool bEnableAimIKTargetSmoothing = true;

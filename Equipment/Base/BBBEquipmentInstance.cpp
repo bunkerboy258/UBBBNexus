@@ -61,19 +61,6 @@ UBBBEquipmentDefinition *UBBBEquipmentInstance::GetDefinition() const
 
 //------------------------------------------------------------------------------
 
-const FBBBEquipmentUpperBodyAnimationConfig &UBBBEquipmentInstance::GetUpperBodyAnimationConfig() const
-{
-    if (!ensureMsgf(Definition, TEXT("[UBBBE]Equipment upper body animation config is unavailable")))
-    {
-        static const FBBBEquipmentUpperBodyAnimationConfig EmptyConfig;
-        return EmptyConfig;
-    }
-
-    return Definition->UpperBodyAnimation;
-}
-
-//------------------------------------------------------------------------------
-
 UBBBEquipmentSystem *UBBBEquipmentInstance::GetEquipmentSystem() const
 {
     return EquipmentSystem;

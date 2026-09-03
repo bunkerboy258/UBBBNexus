@@ -1,6 +1,5 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/Commands/BBBCameraCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/Definition/States/BBBCameraStates.h"
 #include "BBBCameraRuntimeData.generated.h"
 class FBBBCharacterInitializer;
@@ -10,13 +9,6 @@ USTRUCT(BlueprintType)
 struct FBBBCameraRuntimeData
 {
     GENERATED_BODY()
-
-    FBBBCameraCommands ConsumeRecoilRequest()
-    {
-        const FBBBCameraCommands PendingCommands = Commands;
-        Commands = FBBBCameraCommands();
-        return PendingCommands;
-    }
 
     const FBBBCameraState &GetState() const
     {
@@ -30,9 +22,6 @@ struct FBBBCameraRuntimeData
 
 private:
     friend class FBBBCharacterInitializer;
-
-    UPROPERTY()
-    FBBBCameraCommands Commands;
 
     UPROPERTY()
     FBBBCameraState State;

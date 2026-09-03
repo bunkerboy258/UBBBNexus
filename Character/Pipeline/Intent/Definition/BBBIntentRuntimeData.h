@@ -46,6 +46,12 @@ struct FBBBIntentRuntimeData
         return bWantsAim;
     }
 
+    /** @return 当前帧是否请求行走速度 */
+    bool WantsWalk() const
+    {
+        return bWantsWalk;
+    }
+
     /**
      * 判断当前帧是否请求冲刺速度
      * @return 是否请求冲刺
@@ -120,6 +126,10 @@ private:
     //瞄准姿态请求
     UPROPERTY()
     bool bWantsAim = false;
+
+    /** 行走速度请求 */
+    UPROPERTY()
+    bool bWantsWalk = false;
 
     //冲刺速度请求
     UPROPERTY()

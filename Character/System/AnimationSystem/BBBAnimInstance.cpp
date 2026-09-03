@@ -1,63 +1,99 @@
-
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
+
+#include "Animation/AnimInstanceProxy.h"
+#include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
 
 void UBBBAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
 
-    RefreshCachedReferences();
-}
-
-void UBBBAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
-{
-    Super::NativeUpdateAnimation(DeltaSeconds);
-    if (!AnimationState || !EquipmentCommands)
-    {
-
-        RefreshCachedReferences();
-    }
-}
-
-void UBBBAnimInstance::RefreshCachedReferences()
-{
-
-    ABBBCharacter *Character = Cast<ABBBCharacter>(TryGetPawnOwner());
-    AnimationState = Character
-        ? &Character->GetAnimationState()
-        : nullptr;
-    EquipmentCommands = Character
-        ? &Character->RuntimeData.Equipment.Commands
-        : nullptr;
-}
-
-const FBBBCharacterAnimationState &UBBBAnimInstance::GetAnimationState() const
-{
-    if (AnimationState)
-    {
-        return *AnimationState;
-    }
-    static const FBBBCharacterAnimationState EmptyState;
-    return EmptyState;
+    LocomotionRuntimeProbe.Reset();
 }
 
 //------------------------------------------------------------------------------
 
-void UBBBAnimInstance::SubmitRemoveMagazine()
+void UBBBAnimInstance::NativePostEvaluateAnimation()
 {
-    if (EquipmentCommands)
+    Super::NativePostEvaluateAnimation();
+
+    if (!FBBBLocomotionRuntimeProbe::IsEnabled())
     {
-        EquipmentCommands->SubmitRemoveMagazine();
+        return;
+    }
+
+    const FAnimInstanceProxy &MainProxy = GetProxyOnGameThread<FAnimInstanceProxy>();
+    LocomotionRuntimeProbe.CaptureMainInstance(*this, MainProxy);
+
+    const USkeletalMeshComponent *Mesh = GetSkelMeshComponent();
+    if (!Mesh)
+    {
+        return;
+    }
+
+    for (UAnimInstance *LinkedInstance : Mesh->GetLinkedAnimInstances())
+    {
+        if (!LinkedInstance)
+        {
+            continue;
+        }
+
+        const FAnimInstanceProxy *LinkedProxy = GetProxyOnGameThreadStatic<FAnimInstanceProxy>(
+            LinkedInstance);
+        if (!LinkedProxy)
+        {
+            continue;
+        }
+
+        LocomotionRuntimeProbe.CaptureLinkedInstance(
+            *LinkedInstance,
+            *LinkedProxy);
     }
 }
 
 //------------------------------------------------------------------------------
 
-void UBBBAnimInstance::SubmitSpawnMagazine()
+void UBBBAnimInstance::PublishAnimationFacts(
+    const FBBBCharacterAnimationFacts &Facts)
 {
-    if (EquipmentCommands)
-    {
-        EquipmentCommands->SubmitSpawnMagazine();
-    }
+    AnimationFacts = Facts;
+
+    SourceActorLocation = Facts.ActorLocation;
+    SourceActorRotation = Facts.ActorRotation;
+    SourceVelocity = Facts.Velocity;
+    SourceLastUpdateVelocity = Facts.LastUpdateVelocity;
+    SourceAcceleration = Facts.Acceleration;
+    SourceMovementMode = Facts.MovementMode;
+
+    SourceGroundFriction = Facts.GroundFriction;
+    SourceBrakingFriction = Facts.BrakingFriction;
+    SourceBrakingFrictionFactor = Facts.BrakingFrictionFactor;
+    SourceBrakingDecelerationWalking = Facts.BrakingDecelerationWalking;
+    bSourceUseSeparateBrakingFriction = Facts.bUseSeparateBrakingFriction;
+    SourceGravityZ = Facts.GravityZ;
+
+    bSourceMovingOnGround = Facts.bIsMovingOnGround;
+    bSourceCrouching = Facts.bIsCrouching;
+    GroundDistance = Facts.GroundDistance;
+}
+
+//------------------------------------------------------------------------------
+
+void UBBBAnimInstance::PublishEquipmentAction(
+    EBBBCharacterActionType ActionType,
+    int32 Sequence,
+    float Duration,
+    UAnimMontage &Montage,
+    float PlayRate)
+{
+    EquipmentActionType = ActionType;
+    EquipmentActionSequence = Sequence;
+    EquipmentActionDuration = Duration;
+    EquipmentActionMontage = &Montage;
+    EquipmentActionPlayRate = PlayRate;
+
+    ExecuteEquipmentActionMontage(
+        EquipmentActionType,
+        EquipmentActionMontage,
+        EquipmentActionPlayRate);
 }

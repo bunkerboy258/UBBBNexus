@@ -7,7 +7,6 @@ class FBBBCharacterAimSystem;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterCameraSystem;
 class FBBBCharacterEquipmentSystem;
-class FBBBCharacterFacingSystem;
 class FBBBCharacterLocomotionSystem;
 class FBBBCharacterNetworkSystem;
 class FBBBCharacterInitializer;
@@ -56,7 +55,6 @@ private:
         FBBBCharacterRuntimeData &InRuntimeData,
         FBBBCharacterCameraSystem &InCameraSystem,
         FBBBCharacterAimSystem &InAimSystem,
-        FBBBCharacterFacingSystem &InFacingSystem,
         FBBBCharacterLocomotionSystem &InLocomotionSystem,
         FBBBCharacterEquipmentSystem &InEquipmentSystem,
         FBBBCharacterNetworkSystem &InNetworkSystem,
@@ -94,9 +92,6 @@ private:
     FBBBCharacterCameraSystem *CameraSystem = nullptr;
 
     FBBBCharacterAimSystem *AimSystem = nullptr;
-
-    /** 本地角色身体朝向系统 */
-    FBBBCharacterFacingSystem *FacingSystem = nullptr;
 
     FBBBCharacterLocomotionSystem *LocomotionSystem = nullptr;
 

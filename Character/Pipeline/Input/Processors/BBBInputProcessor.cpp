@@ -68,7 +68,8 @@ void FBBBInputProcessor::Update(
     Processed.bPrecisionAimHeld = Raw.bPrecisionAimHeld;
     Processed.bPrecisionAimPressed = Raw.bPrecisionAimStarted;
     Processed.bPrecisionAimReleased = Raw.bPrecisionAimCompleted;
-    
+
+    Processed.bWalkHeld = Raw.bWalkHeld;
     Processed.bSprintHeld = Raw.bSprintHeld;
     Processed.bCrouchHeld = Raw.bCrouchHeld;
     Processed.bJumpPressed = Raw.bJumpPressed;

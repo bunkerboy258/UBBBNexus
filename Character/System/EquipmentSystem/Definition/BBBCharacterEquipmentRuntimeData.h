@@ -2,11 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Results/BBBCharacterEquipmentResults.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBCharacterEquipmentRuntimeData.generated.h"
 
 class FBBBCharacterDefaultEquipmentInitializer;
+class FBBBCharacterAnimationFactProcessor;
 class FBBBCharacterEquipmentSystem;
 class FBBBCharacterInitializer;
 class UBBBAnimInstance;
@@ -21,11 +22,12 @@ struct FBBBCharacterEquipmentRuntimeData
     void CleanFrame()
     {
         Commands.CleanFrame();
-        Results.CleanFrame();
+        Events.CleanFrame();
     }
 
 private:
     friend class FBBBCharacterDefaultEquipmentInitializer;
+    friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterInitializer;
     friend class UBBBAnimInstance;
@@ -42,7 +44,7 @@ private:
     UPROPERTY()
     FBBBCharacterEquipmentCommands Commands;
 
-    /** 本帧装备执行结果 */
+    /** 本帧装备事件 */
     UPROPERTY()
-    FBBBCharacterEquipmentResults Results;
+    FBBBCharacterEquipmentEvents Events;
 };

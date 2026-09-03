@@ -1,190 +1,92 @@
-
 #pragma once
+
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
-class UAnimSequence;
-
-/** 角色最后一次有效水平移动的本地方向 */
-UENUM(BlueprintType)
-enum class EBBBCharacterMoveDirection : uint8
-{
-    /** 前方 */
-    Forward,
-
-    /** 后方 */
-    Backward,
-
-    /** 左方 */
-    Left,
-
-    /** 右方 */
-    Right
-};
-
-/** 角色实际发生过的移动模式 */
-UENUM(BlueprintType)
-enum class EBBBCharacterMovementMode : uint8
-{
-    /** 行走 */
-    Walk,
-
-    /** 奔跑 */
-    Run,
-
-    /** 蹲伏 */
-    Crouch
-};
-
+/** 游戏线程提交给动画实例的只读角色事实 */
 USTRUCT(BlueprintType)
-//角色动画状态封装
-struct FBBBCharacterAnimationState
+struct FBBBCharacterAnimationFacts
 {
     GENERATED_BODY()
 
-    /** 是否存在实际水平移动 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsMoving = false;
+    FVector ActorLocation = FVector::ZeroVector;
 
-    /** 是否仍在移动但移动组件已经停止主动驱动 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsStopping = false;
+    FRotator ActorRotation = FRotator::ZeroRotator;
 
-    /** 是否存在水平移动且移动组件仍在主动驱动 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsMovementDriven = false;
+    FVector Velocity = FVector::ZeroVector;
 
-    /** 是否接触地面 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsGrounded = true;
+    FVector LastUpdateVelocity = FVector::ZeroVector;
 
-    /** 是否实际处于蹲伏状态 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsCrouching = false;
+    FVector Acceleration = FVector::ZeroVector;
 
-    /** 最后一次由移动组件主动驱动时的移动模式 */
-    UPROPERTY(BlueprintReadOnly)
-    EBBBCharacterMovementMode LastDrivenMovementMode = EBBBCharacterMovementMode::Walk;
-
-    /** 主手是否持有装备 */
-    UPROPERTY(BlueprintReadOnly)
-    bool bHasMainHandEquipment = false;
-
-    /** 是否应该播放向左原地转身表现 */
-    UPROPERTY(BlueprintReadOnly)
-    bool bIsTurningLeft = false;
-
-    /** 是否应该播放向右原地转身表现 */
-    UPROPERTY(BlueprintReadOnly)
-    bool bIsTurningRight = false;
-
-    /** 当前装备提供的普通握持上半身动画 */
-    UPROPERTY(BlueprintReadOnly)
-    TObjectPtr<UAnimSequence> HoldingUpperBodyAnimation = nullptr;
-
-    /** 当前装备提供的瞄准上半身动画 */
-    UPROPERTY(BlueprintReadOnly)
-    TObjectPtr<UAnimSequence> AimingUpperBodyAnimation = nullptr;
-
-    /** 玩家瞄准意图的连续强度 */
-    UPROPERTY(BlueprintReadOnly)
-    float AimIntentAlpha = 0.0f;
-
-    /** 身体是否正在原地转向 */
-    /** 实际水平移动速度 */
-    UPROPERTY(BlueprintReadOnly)
-    float GroundSpeed = 0.0f;
-
-    /** 角色局部前后速度 */
-    UPROPERTY(BlueprintReadOnly)
-    float LocalForwardSpeed = 0.0f;
-
-    /** 角色局部左右速度 */
-    UPROPERTY(BlueprintReadOnly)
-    float LocalRightSpeed = 0.0f;
-
-    /** 最后一次有效水平移动的本地方向 */
-    UPROPERTY(BlueprintReadOnly)
-    EBBBCharacterMoveDirection LastMoveDirection = EBBBCharacterMoveDirection::Forward;
-
-    /** 角色实际水平转向速度，单位为度每秒 */
-    UPROPERTY(BlueprintReadOnly)
-    float TurnRate = 0.0f;
-
-    /** 实际垂直移动速度 */
-    UPROPERTY(BlueprintReadOnly)
-    float VerticalSpeed = 0.0f;
-
-    /** 相对角色前轴的水平瞄准角 */
-    UPROPERTY(BlueprintReadOnly)
-    float AimOffsetYaw = 0.0f;
-
-    /** 瞄准IK权重 */
-    UPROPERTY(BlueprintReadOnly)
-    float AimIKAlpha = 0.0f;
-
-    /** 左手IK权重 */
-    UPROPERTY(BlueprintReadOnly)
-    float LeftHandIKAlpha = 0.0f;
-
-    /** 组件空间的瞄准目标点 */
     UPROPERTY(BlueprintReadOnly)
     FVector AimTargetComponentSpace = FVector::ZeroVector;
 
-    /** 瞄准来源相对瞄准骨骼的本地变换 */
     UPROPERTY(BlueprintReadOnly)
     FTransform AimSourceLocalTransform = FTransform::Identity;
 
-    /** 瞄准目标点是否有效 */
+    UPROPERTY(BlueprintReadOnly)
+    EBBBCharacterGait Gait = EBBBCharacterGait::Run;
+
+    UPROPERTY(BlueprintReadOnly)
+    TEnumAsByte<EMovementMode> MovementMode = MOVE_None;
+
+    UPROPERTY(BlueprintReadOnly)
+    float GroundFriction = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float BrakingFriction = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float BrakingFrictionFactor = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float BrakingDecelerationWalking = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float GravityZ = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float GroundDistance = -1.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float AimIntentAlpha = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float AimIKAlpha = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly)
+    float TimeSinceLastFire = BIG_NUMBER;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bUseSeparateBrakingFriction = false;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsMovingOnGround = false;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsCrouching = false;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsAiming = false;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bHasMainHandEquipment = false;
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsReloading = false;
+
     UPROPERTY(BlueprintReadOnly)
     bool bHasValidAimTarget = false;
 
-    /** 瞄准来源是否有效 */
     UPROPERTY(BlueprintReadOnly)
     bool bHasValidAimSource = false;
 
-    /** 左手IK目标在右手骨骼空间的完整变换 */
-    UPROPERTY(BlueprintReadOnly)
-    FTransform LeftHandTargetRightHandBoneSpace = FTransform::Identity;
-
-    UPROPERTY(BlueprintReadOnly)
-    //关闭boolHasValidLeftHand目标
-    bool bHasValidLeftHandTarget = false;
-};
-
-/**
- * 保存实际转向速度计算所需的跨帧朝向
- */
-struct FBBBCharacterTurnTrackingState
-{
-    /** 上一次采样的角色水平朝向 */
-    float PreviousActorYaw = 0.0f;
-
-    /** 动画系统跨帧维护的稳定角色水平转速 */
-    float SmoothedTurnRate = 0.0f;
-
-    /** 是否已有可用于计算的上一帧朝向 */
-    bool bHasPreviousActorYaw = false;
-};
-
-//保存瞄准表现处理器的跨帧平滑状态
-struct FBBBAimPresentationRuntimeState
-{
-    /** 平滑后的组件空间瞄准目标点 */
-    FVector SmoothedAimTargetComponentSpace = FVector::ZeroVector;
-
-    /** 瞄准目标平滑算法的速度状态 */
-    FVector AimTargetSmoothVelocity = FVector::ZeroVector;
-
-    /** 平滑后的瞄准意图强度 */
-    float SmoothedAimIntentAlpha = 0.0f;
-
-    /** 平滑后的瞄准IK锁值 */
-    float SmoothedAimIKLockAlpha = 1.0f;
-
-    /** 平滑后的动画水平瞄准偏角 */
-    float SmoothedAimOffsetYaw = 0.0f;
-
-    /** 是否已有平滑瞄准目标 */
-    bool bHasSmoothedAimTarget = false;
 };

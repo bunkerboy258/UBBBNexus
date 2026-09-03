@@ -13,7 +13,6 @@ void FBBBCharacterRuntimeData::Clean()
     Intent.CleanFrame();
 
     //动画播放请求提交后立即清空
-    Animation.CleanFrame();
 
     //物品命令与事件完成处理后立即清空
     Equipment.CleanFrame();

@@ -1,6 +1,17 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBNetworkStates.generated.h"
+
+/** 需要从控制端同步到模拟端的移动状态 */
+USTRUCT()
+struct FBBBLocomotionNetworkState
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    EBBBCharacterGait Gait = EBBBCharacterGait::Run;
+};
 
 USTRUCT()
 struct FBBBAimNetworkState
@@ -24,4 +35,13 @@ struct FBBBAimNetworkObserverState
     TOptional<FBBBAimNetworkState> LastObservedState;
 
     float LastUploadTime = -1000.0f;
+};
+
+/** 移动状态上传器的跨帧观测值 */
+USTRUCT()
+struct FBBBLocomotionNetworkObserverState
+{
+    GENERATED_BODY()
+
+    TOptional<FBBBLocomotionNetworkState> LastObservedState;
 };
