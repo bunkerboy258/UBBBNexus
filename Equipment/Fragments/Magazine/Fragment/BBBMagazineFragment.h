@@ -115,9 +115,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
     FName MagazineSocketName = TEXT("Magazine");
 
-    /** 弹匣挂接到装备插槽后的局部修正 */
+    /** 弹匣相对 Socket 的武器坐标空间位置偏移 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
-    FTransform MagazineSocketOffset = FTransform::Identity;
+    FVector MagazineSocketOffset = FVector::ZeroVector;
 
     /** 弹匣是否每帧重读局部修正，仅用于调试 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")

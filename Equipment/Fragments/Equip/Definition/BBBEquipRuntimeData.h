@@ -6,6 +6,7 @@
 
 struct FBBBEquipFragment;
 class UBBBEquipmentSystem;
+class USkeletalMeshComponent;
 
 /** 装备过渡运行数据 */
 UCLASS(BlueprintType)
@@ -23,11 +24,14 @@ private:
     /** 瞄准来源固定变换是否有效 */
     bool bHasValidAimSource = false;
 
-    /** 左手 IK 目标相对右手骨骼的静态 Socket 缓存 */
+    /** 左手 IK 目标相对右手骨骼的 Socket 缓存 */
     FTransform LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
 
-    /** 左手 IK 目标 Socket 局部空间的运行时偏移 */
-    FTransform LeftHandIKRuntimeSocketOffset = FTransform::Identity;
+    /** 左手 IK 目标重建所需的角色骨骼网格 */
+    USkeletalMeshComponent *CharacterMesh = nullptr;
+
+    /** 左手 IK 目标重建所需的右手参考骨骼 */
+    FName RightHandBoneName = NAME_None;
 
     /** 左手 IK 目标固定变换是否有效 */
     bool bHasValidLeftHandIKTarget = false;

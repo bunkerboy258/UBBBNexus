@@ -16,7 +16,7 @@ bool TryBuildSocketBoneSpaceTransform(
     UStaticMeshComponent &EquipmentMesh,
     FName ReferenceBoneName,
     FName EquipmentSocketName,
-    const FTransform &SocketOffset,
+    const FVector &SocketOffset,
     FTransform &OutTransform)
 {
     OutTransform = FTransform::Identity;
@@ -29,8 +29,11 @@ bool TryBuildSocketBoneSpaceTransform(
         return false;
     }
 
-    const FTransform SocketWorld = EquipmentMesh.GetSocketTransform(EquipmentSocketName, RTS_World)
-        * SocketOffset;
+    FTransform SocketComponent = EquipmentMesh.GetSocketTransform(
+        EquipmentSocketName,
+        RTS_Component);
+    SocketComponent.AddToTranslation(SocketOffset);
+    const FTransform SocketWorld = EquipmentMesh.GetComponentTransform() * SocketComponent;
     const FTransform ReferenceBoneWorld = CharacterMesh.GetBoneTransform(ReferenceBoneName, RTS_World);
     OutTransform = SocketWorld.GetRelativeTransform(ReferenceBoneWorld);
     return true;
@@ -85,7 +88,8 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
     RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
-    RuntimeData.LeftHandIKRuntimeSocketOffset = FTransform::Identity;
+    RuntimeData.CharacterMesh = &CharacterMesh;
+    RuntimeData.RightHandBoneName = RightHandBoneName;
     RuntimeData.bHasValidLeftHandIKTarget = false;
 
     UStaticMeshComponent *EquipmentMesh = PresentationActor->GetEquipmentMesh();
@@ -102,10 +106,10 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 
     if (bHasValidReferenceBone)
     {
-        FTransform CachedLeftHandGripSocketOffset = LeftHandGripSocketOffset;
+        FVector CachedLeftHandGripSocketOffset = LeftHandGripSocketOffset;
         if (bRefreshLeftHandGripSocketOffsetEveryFrame)
         {
-            CachedLeftHandGripSocketOffset = FTransform::Identity;
+            CachedLeftHandGripSocketOffset = FVector::ZeroVector;
             UE_LOG(
                 LogBBBEquipmentPose,
                 Warning,
@@ -117,7 +121,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             *EquipmentMesh,
             RightHandBoneName,
             AimSourceSocketName,
-            FTransform::Identity,
+            FVector::ZeroVector,
             RuntimeData.AimSourceRightHandBoneSpace);
 
         if (!LeftHandGripSocketName.IsNone())

@@ -25,9 +25,6 @@ private:
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     int32 ReserveAmmo = 0;
 
-    /** 弹匣插槽的运行时偏移 */
-    FTransform RuntimeSocketOffset = FTransform::Identity;
-
     /** 当前安装在武器上的弹匣表现实体 */
     UPROPERTY()
     TObjectPtr<ABBBMagazinePresentationActor> LoadedMagazineActor = nullptr;
