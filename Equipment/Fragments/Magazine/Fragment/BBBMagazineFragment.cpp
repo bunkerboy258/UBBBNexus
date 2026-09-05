@@ -67,6 +67,8 @@ bool FBBBMagazineFragment::SpawnMagazine(
 {
     if (RuntimeData.LoadedMagazineActor)
     {
+        RuntimeData.LoadedMagazineActor->SetActorRelativeTransform(
+            MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
         return true;
     }
 

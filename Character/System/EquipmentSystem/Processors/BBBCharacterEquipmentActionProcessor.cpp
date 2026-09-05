@@ -72,6 +72,14 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         }
     }
 
+    if (EquipmentSystem
+        && (!ActionState.IsActive()
+            || ActionState.ActiveAction != EBBBCharacterActionType::Reload
+            || ActionState.bMagazineSpawned))
+    {
+        EquipmentSystem->SpawnMagazine();
+    }
+
     TArray<FBBBEquipmentActionEvent> RestoredActions = EquipmentCommands.ConsumeRestoredActions();
     for (FBBBEquipmentActionEvent &RestoredAction : RestoredActions)
     {
