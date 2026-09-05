@@ -205,6 +205,13 @@ float UBBBEquipmentSystem::GetMagazineSpawnNormalizedTime() const
 
 void UBBBEquipmentSystem::ReleasePresentation()
 {
+    if (RuntimeData && RuntimeData->GetEquip())
+    {
+        UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData->GetEquip();
+        EquipRuntimeData->LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
+        EquipRuntimeData->bHasValidLeftHandIKTarget = false;
+    }
+
     if (!Instance || !Instance->PresentationActor)
     {
         return;
@@ -270,6 +277,26 @@ bool UBBBEquipmentSystem::TryGetAimSourceRightHandBoneSpace(FTransform &OutTrans
     }
 
     OutTransform = EquipRuntimeData->AimSourceRightHandBoneSpace;
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &OutTransform) const
+{
+    OutTransform = FTransform::Identity;
+
+    const UBBBEquipRuntimeData *EquipRuntimeData = nullptr;
+    if (RuntimeData)
+    {
+        EquipRuntimeData = RuntimeData->GetEquip();
+    }
+    if (!EquipRuntimeData || !EquipRuntimeData->bHasValidLeftHandIKTarget)
+    {
+        return false;
+    }
+
+    OutTransform = EquipRuntimeData->LeftHandIKTargetRightHandBoneSpace;
     return true;
 }
 

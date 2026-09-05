@@ -54,4 +54,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
     FName AimSourceSocketName = TEXT("Muzzle");
 
+    /** 左手 IK 目标插槽 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
+    FName LeftHandGripSocketName = NAME_None;
+
 };

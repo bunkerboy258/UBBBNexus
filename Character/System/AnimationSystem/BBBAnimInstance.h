@@ -160,6 +160,20 @@ public:
         return AnimationFacts.bHasValidAimSource;
     }
 
+    /** @return 左手 IK 目标相对右手骨骼的变换 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Hand IK", meta = (BlueprintThreadSafe))
+    FTransform GetLeftHandIKTargetRightHandBoneSpace() const
+    {
+        return AnimationFacts.LeftHandIKTargetRightHandBoneSpace;
+    }
+
+    /** @return 左手 IK 目标是否有效 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Hand IK", meta = (BlueprintThreadSafe))
+    bool HasValidLeftHandIKTarget() const
+    {
+        return AnimationFacts.bHasValidLeftHandIKTarget;
+    }
+
     /** @return 主手是否持有装备 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     bool HasMainHandEquipment() const

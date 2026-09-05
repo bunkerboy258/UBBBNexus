@@ -22,4 +22,10 @@ private:
 
     /** 瞄准来源固定变换是否有效 */
     bool bHasValidAimSource = false;
+
+    /** 左手 IK 目标相对右手骨骼的固定变换 */
+    FTransform LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
+
+    /** 左手 IK 目标固定变换是否有效 */
+    bool bHasValidLeftHandIKTarget = false;
 };

@@ -82,6 +82,8 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
+    RuntimeData.LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
+    RuntimeData.bHasValidLeftHandIKTarget = false;
 
     UStaticMeshComponent *EquipmentMesh = PresentationActor->GetEquipmentMesh();
     const FName RightHandBoneName = CharacterMesh.GetSocketBoneName(AttachmentSocketName);
@@ -104,6 +106,17 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             AimSourceSocketName,
             FTransform::Identity,
             RuntimeData.AimSourceRightHandBoneSpace);
+
+        if (!LeftHandGripSocketName.IsNone())
+        {
+            RuntimeData.bHasValidLeftHandIKTarget = TryBuildSocketBoneSpaceTransform(
+                CharacterMesh,
+                *EquipmentMesh,
+                RightHandBoneName,
+                LeftHandGripSocketName,
+                FTransform::Identity,
+                RuntimeData.LeftHandIKTargetRightHandBoneSpace);
+        }
     }
 
     return PresentationActor;

@@ -32,6 +32,10 @@ struct FBBBCharacterAnimationFacts
     UPROPERTY(BlueprintReadOnly)
     FTransform AimSourceLocalTransform = FTransform::Identity;
 
+    /** 左手 IK 目标相对右手骨骼的变换 */
+    UPROPERTY(BlueprintReadOnly)
+    FTransform LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
+
     UPROPERTY(BlueprintReadOnly)
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
 
@@ -88,5 +92,9 @@ struct FBBBCharacterAnimationFacts
 
     UPROPERTY(BlueprintReadOnly)
     bool bHasValidAimSource = false;
+
+    /** 左手 IK 目标是否有效 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bHasValidLeftHandIKTarget = false;
 
 };

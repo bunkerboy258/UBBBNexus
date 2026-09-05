@@ -70,6 +70,13 @@ public:
     bool TryGetAimSourceRightHandBoneSpace(FTransform &OutTransform) const;
 
     /**
+     * 查询左手 IK 目标相对右手骨骼的固定变换
+     * @param OutTransform	接收右手骨骼空间变换
+     * @return 固定变换有效时返回true
+     */
+    bool TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &OutTransform) const;
+
+    /**
      * 查询距离上次开火的时间
      * @param WorldTimeSeconds 当前世界时间
      * @return 未曾开火时返回一个足够大的安全值
