@@ -7,6 +7,7 @@
 struct FBBBEquipmentFireResult;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
+class UBBBMagazineRuntimeData;
 class UBBBEquipmentRuntimeData;
 class FBBBCharacterEquipmentActionProcessor;
 class USkeletalMeshComponent;
@@ -75,6 +76,18 @@ public:
      * @return 固定变换有效时返回true
      */
     bool TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &OutTransform) const;
+
+    /**
+     * 设置左手 IK 目标相对右手骨骼空间的运行时偏移
+     * @param Offset	右手骨骼空间中的增量变换
+     */
+    void SetLeftHandIKRuntimeOffsetRightHandBoneSpace(const FTransform &Offset);
+
+    /**
+     * 设置弹匣插槽的运行时偏移
+     * @param Offset	弹匣插槽局部空间中的增量变换
+     */
+    void SetMagazineRuntimeSocketOffset(const FTransform &Offset);
 
     /**
      * 查询距离上次开火的时间

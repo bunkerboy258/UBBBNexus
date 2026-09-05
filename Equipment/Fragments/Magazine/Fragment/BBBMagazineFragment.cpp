@@ -103,10 +103,24 @@ bool FBBBMagazineFragment::SpawnMagazine(
         EquipmentMesh,
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
         MagazineSocketName);
-    MagazineActor->SetActorRelativeTransform(MagazineSocketOffset);
+    MagazineActor->SetActorRelativeTransform(
+        MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
 
     RuntimeData.LoadedMagazineActor = MagazineActor;
     return true;
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBMagazineFragment::ApplyRuntimeSocketOffset(UBBBMagazineRuntimeData &RuntimeData) const
+{
+    if (!RuntimeData.LoadedMagazineActor)
+    {
+        return;
+    }
+
+    RuntimeData.LoadedMagazineActor->SetActorRelativeTransform(
+        MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
 }
 
 //------------------------------------------------------------------------------

@@ -82,7 +82,8 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
-    RuntimeData.LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
+    RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
+    RuntimeData.LeftHandIKRuntimeOffsetRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidLeftHandIKTarget = false;
 
     UStaticMeshComponent *EquipmentMesh = PresentationActor->GetEquipmentMesh();
@@ -115,7 +116,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
                 RightHandBoneName,
                 LeftHandGripSocketName,
                 FTransform::Identity,
-                RuntimeData.LeftHandIKTargetRightHandBoneSpace);
+                RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace);
         }
     }
 
