@@ -88,10 +88,6 @@ bool FBBBMagazineDomin::SpawnMagazine(
     return false;
 }
 
-void FBBBMagazineDomin::ApplyRuntimeSocketOffset(UBBBMagazineRuntimeData &) const
-{
-}
-
 void FBBBMagazineDomin::RemoveMagazine(UBBBMagazineRuntimeData &RuntimeData) const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))

@@ -16,7 +16,6 @@ class ABBB_EVAC_API UBBBMagazineRuntimeData final : public UObject
 public:
 private:
     friend struct FBBBMagazineFragment;
-    friend class UBBBEquipmentSystem;
 
     /** 当前弹匣弹药 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

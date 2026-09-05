@@ -76,12 +76,6 @@ public:
         UBBBMagazineRuntimeData &RuntimeData) const override;
 
     /**
-     * 应用弹匣挂接的运行时偏移
-     * @param RuntimeData	弹匣运行数据
-     */
-    virtual void ApplyRuntimeSocketOffset(UBBBMagazineRuntimeData &RuntimeData) const override;
-
-    /**
      * 拔出并掉落当前弹匣表现实体
      * @param RuntimeData    弹匣运行数据
      */

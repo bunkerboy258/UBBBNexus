@@ -213,11 +213,6 @@ void UBBBEquipmentSystem::ReleasePresentation()
         EquipRuntimeData->bHasValidLeftHandIKTarget = false;
     }
 
-    if (RuntimeData && RuntimeData->GetMagazine())
-    {
-        RuntimeData->GetMagazine()->RuntimeSocketOffset = FTransform::Identity;
-    }
-
     if (!Instance || !Instance->PresentationActor)
     {
         return;
@@ -306,41 +301,6 @@ bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &O
         * EquipRuntimeData->LeftHandIKBaseTargetRightHandBoneSpace;
     return true;
 }
-
-//------------------------------------------------------------------------------
-
-void UBBBEquipmentSystem::SetLeftHandIKRuntimeOffsetRightHandBoneSpace(const FTransform &Offset)
-{
-    if (!ensureMsgf(
-        RuntimeData && RuntimeData->GetEquip(),
-        TEXT("[UBBBE]Left hand IK runtime data is unavailable")))
-    {
-        return;
-    }
-
-    RuntimeData->GetEquip()->LeftHandIKRuntimeOffsetRightHandBoneSpace = Offset;
-}
-
-//------------------------------------------------------------------------------
-
-void UBBBEquipmentSystem::SetMagazineRuntimeSocketOffset(const FTransform &Offset)
-{
-    if (!ensureMsgf(
-        Definition
-            && Definition->MagazineDomin.IsValid()
-            && RuntimeData
-            && RuntimeData->GetMagazine(),
-        TEXT("[UBBBE]Magazine runtime data is unavailable")))
-    {
-        return;
-    }
-
-    UBBBMagazineRuntimeData *MagazineRuntimeData = RuntimeData->GetMagazine();
-    MagazineRuntimeData->RuntimeSocketOffset = Offset;
-    Definition->MagazineDomin.Get().ApplyRuntimeSocketOffset(*MagazineRuntimeData);
-}
-
-//------------------------------------------------------------------------------
 
 float UBBBEquipmentSystem::GetTimeSinceLastFire(const float WorldTimeSeconds) const
 {

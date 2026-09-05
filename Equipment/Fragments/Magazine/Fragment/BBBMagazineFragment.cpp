@@ -110,21 +110,6 @@ bool FBBBMagazineFragment::SpawnMagazine(
     return true;
 }
 
-//------------------------------------------------------------------------------
-
-void FBBBMagazineFragment::ApplyRuntimeSocketOffset(UBBBMagazineRuntimeData &RuntimeData) const
-{
-    if (!RuntimeData.LoadedMagazineActor)
-    {
-        return;
-    }
-
-    RuntimeData.LoadedMagazineActor->SetActorRelativeTransform(
-        MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
-}
-
-//------------------------------------------------------------------------------
-
 void FBBBMagazineFragment::RemoveMagazine(UBBBMagazineRuntimeData &RuntimeData) const
 {
     ABBBMagazinePresentationActor *MagazineActor = RuntimeData.LoadedMagazineActor;
