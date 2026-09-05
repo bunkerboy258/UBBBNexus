@@ -26,8 +26,8 @@ private:
     /** 左手 IK 目标相对右手骨骼的静态 Socket 缓存 */
     FTransform LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
 
-    /** 左手 IK 目标相对右手骨骼的运行时偏移 */
-    FTransform LeftHandIKRuntimeOffsetRightHandBoneSpace = FTransform::Identity;
+    /** 左手 IK 目标 Socket 局部空间的运行时偏移 */
+    FTransform LeftHandIKRuntimeSocketOffset = FTransform::Identity;
 
     /** 左手 IK 目标固定变换是否有效 */
     bool bHasValidLeftHandIKTarget = false;

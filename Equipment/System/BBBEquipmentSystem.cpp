@@ -210,7 +210,7 @@ void UBBBEquipmentSystem::ReleasePresentation()
     {
         UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData->GetEquip();
         EquipRuntimeData->LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
-        EquipRuntimeData->LeftHandIKRuntimeOffsetRightHandBoneSpace = FTransform::Identity;
+        EquipRuntimeData->LeftHandIKRuntimeSocketOffset = FTransform::Identity;
         EquipRuntimeData->bHasValidLeftHandIKTarget = false;
     }
 
@@ -310,8 +310,7 @@ bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &O
         }
     }
 
-    OutTransform = EquipRuntimeData->LeftHandIKRuntimeOffsetRightHandBoneSpace
-        * CurrentTarget;
+    OutTransform = CurrentTarget * EquipRuntimeData->LeftHandIKRuntimeSocketOffset;
     return true;
 }
 
