@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireResults.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Fragment/BBBEquipFragment.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
@@ -297,8 +298,17 @@ bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &O
         return false;
     }
 
+    FTransform CurrentTarget = EquipRuntimeData->LeftHandIKBaseTargetRightHandBoneSpace;
+    const FBBBEquipFragment *EquipFragment = Definition
+        ? Definition->EquipDomin.GetPtr<FBBBEquipFragment>()
+        : nullptr;
+    if (EquipFragment)
+    {
+        CurrentTarget = CurrentTarget * EquipFragment->LeftHandGripSocketOffset;
+    }
+
     OutTransform = EquipRuntimeData->LeftHandIKRuntimeOffsetRightHandBoneSpace
-        * EquipRuntimeData->LeftHandIKBaseTargetRightHandBoneSpace;
+        * CurrentTarget;
     return true;
 }
 

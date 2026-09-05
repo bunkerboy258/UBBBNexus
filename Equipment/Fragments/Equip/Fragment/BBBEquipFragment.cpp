@@ -115,7 +115,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
                 *EquipmentMesh,
                 RightHandBoneName,
                 LeftHandGripSocketName,
-                LeftHandGripSocketOffset,
+                FTransform::Identity,
                 RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace);
         }
     }
