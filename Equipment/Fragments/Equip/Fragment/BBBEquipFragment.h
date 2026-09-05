@@ -58,4 +58,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
     FName LeftHandGripSocketName = NAME_None;
 
+    /** 左手 IK 目标插槽局部修正 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
+    FTransform LeftHandGripSocketOffset = FTransform::Identity;
+
 };

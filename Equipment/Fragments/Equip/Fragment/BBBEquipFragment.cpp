@@ -27,8 +27,8 @@ bool TryBuildSocketBoneSpaceTransform(
         return false;
     }
 
-    const FTransform SocketWorld = SocketOffset
-        * EquipmentMesh.GetSocketTransform(EquipmentSocketName, RTS_World);
+    const FTransform SocketWorld = EquipmentMesh.GetSocketTransform(EquipmentSocketName, RTS_World)
+        * SocketOffset;
     const FTransform ReferenceBoneWorld = CharacterMesh.GetBoneTransform(ReferenceBoneName, RTS_World);
     OutTransform = SocketWorld.GetRelativeTransform(ReferenceBoneWorld);
     return true;
@@ -115,7 +115,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
                 *EquipmentMesh,
                 RightHandBoneName,
                 LeftHandGripSocketName,
-                FTransform::Identity,
+                LeftHandGripSocketOffset,
                 RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace);
         }
     }
