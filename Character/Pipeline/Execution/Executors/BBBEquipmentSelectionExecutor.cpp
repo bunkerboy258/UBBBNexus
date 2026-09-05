@@ -29,7 +29,7 @@ void FBBBEquipmentSelectionExecutor::Update(
             }
 
             UBBBEquipmentInstance *EquipmentInstance = InventoryState.QuickAccessBindings[QuickAccessSlot];
-            if (!ensureMsgf(EquipmentInstance, TEXT("[UBBBC]Requested quick access item instance is null")))
+            if (!EquipmentInstance)
             {
                 continue;
             }
