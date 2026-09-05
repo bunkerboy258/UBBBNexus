@@ -119,6 +119,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
     FTransform MagazineSocketOffset = FTransform::Identity;
 
+    /** 弹匣是否每帧重读局部修正，仅用于调试 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine")
+    bool bRefreshMagazineSocketOffsetEveryFrame = false;
+
     /** 掉落弹匣自动销毁前的保留时长 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.1"))
     float DroppedMagazineLifeSeconds = 5.0f;

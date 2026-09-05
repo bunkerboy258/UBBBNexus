@@ -7,6 +7,8 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogBBBEquipmentPose, Log, All);
+
 namespace
 {
 bool TryBuildSocketBoneSpaceTransform(
@@ -100,6 +102,16 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 
     if (bHasValidReferenceBone)
     {
+        FTransform CachedLeftHandGripSocketOffset = LeftHandGripSocketOffset;
+        if (bRefreshLeftHandGripSocketOffsetEveryFrame)
+        {
+            CachedLeftHandGripSocketOffset = FTransform::Identity;
+            UE_LOG(
+                LogBBBEquipmentPose,
+                Warning,
+                TEXT("[UBBBE]Left hand grip socket offset refresh is enabled for debugging only"));
+        }
+
         RuntimeData.bHasValidAimSource = TryBuildSocketBoneSpaceTransform(
             CharacterMesh,
             *EquipmentMesh,
@@ -115,7 +127,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
                 *EquipmentMesh,
                 RightHandBoneName,
                 LeftHandGripSocketName,
-                FTransform::Identity,
+                CachedLeftHandGripSocketOffset,
                 RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace);
         }
     }

@@ -304,7 +304,10 @@ bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &O
         : nullptr;
     if (EquipFragment)
     {
-        CurrentTarget = CurrentTarget * EquipFragment->LeftHandGripSocketOffset;
+        if (EquipFragment->bRefreshLeftHandGripSocketOffsetEveryFrame)
+        {
+            CurrentTarget = CurrentTarget * EquipFragment->LeftHandGripSocketOffset;
+        }
     }
 
     OutTransform = EquipRuntimeData->LeftHandIKRuntimeOffsetRightHandBoneSpace

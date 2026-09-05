@@ -6,6 +6,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogBBBMagazinePose, Log, All);
+
 UBBBMagazineRuntimeData *FBBBMagazineFragment::InitializeRuntimeData(UObject &Outer) const
 {
     UBBBMagazineRuntimeData *RuntimeData = NewObject<UBBBMagazineRuntimeData>(&Outer);
@@ -67,8 +69,12 @@ bool FBBBMagazineFragment::SpawnMagazine(
 {
     if (RuntimeData.LoadedMagazineActor)
     {
-        RuntimeData.LoadedMagazineActor->SetActorRelativeTransform(
-            MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
+        if (bRefreshMagazineSocketOffsetEveryFrame)
+        {
+            RuntimeData.LoadedMagazineActor->SetActorRelativeTransform(
+                MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
+        }
+
         return true;
     }
 
@@ -107,6 +113,14 @@ bool FBBBMagazineFragment::SpawnMagazine(
         MagazineSocketName);
     MagazineActor->SetActorRelativeTransform(
         MagazineSocketOffset * RuntimeData.RuntimeSocketOffset);
+
+    if (bRefreshMagazineSocketOffsetEveryFrame)
+    {
+        UE_LOG(
+            LogBBBMagazinePose,
+            Warning,
+            TEXT("[UBBBE]Magazine socket offset refresh is enabled for debugging only"));
+    }
 
     RuntimeData.LoadedMagazineActor = MagazineActor;
     return true;

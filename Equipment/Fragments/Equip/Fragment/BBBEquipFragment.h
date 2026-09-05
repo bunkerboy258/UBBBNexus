@@ -62,4 +62,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
     FTransform LeftHandGripSocketOffset = FTransform::Identity;
 
+    /** 左手 IK 目标是否每帧重读局部修正，仅用于调试 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
+    bool bRefreshLeftHandGripSocketOffsetEveryFrame = false;
+
 };
