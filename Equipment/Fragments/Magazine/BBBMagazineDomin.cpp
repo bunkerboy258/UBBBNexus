@@ -56,6 +56,19 @@ float FBBBMagazineDomin::GetReloadDuration() const
     return 0.0f;
 }
 
+//------------------------------------------------------------------------------
+
+void FBBBMagazineDomin::BuildReloadActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = nullptr;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))
+    {
+        return;
+    }
+}
+
 float FBBBMagazineDomin::GetMagazineRemoveNormalizedTime() const
 {
     if (!ensureMsgf(false, TEXT("[UBBBE]Magazine domin has no fragment implementation")))

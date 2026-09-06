@@ -170,6 +170,21 @@ float UBBBEquipmentSystem::GetEquipDuration() const
 
 //------------------------------------------------------------------------------
 
+void UBBBEquipmentSystem::BuildEquipActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = nullptr;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ensureMsgf(Definition && Definition->EquipDomin.IsValid(), TEXT("[UBBBE]Equipment equip action presentation is unavailable")))
+    {
+        return;
+    }
+
+    Definition->EquipDomin.Get().BuildEquipActionPresentation(OutPresentation);
+}
+
+//------------------------------------------------------------------------------
+
 float UBBBEquipmentSystem::GetReloadDuration() const
 {
     if (!ensureMsgf(Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment reload duration is unavailable")))
@@ -178,6 +193,36 @@ float UBBBEquipmentSystem::GetReloadDuration() const
     }
 
     return Definition->MagazineDomin.Get().GetReloadDuration();
+}
+
+//------------------------------------------------------------------------------
+
+void UBBBEquipmentSystem::BuildReloadActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = nullptr;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ensureMsgf(Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment reload action presentation is unavailable")))
+    {
+        return;
+    }
+
+    Definition->MagazineDomin.Get().BuildReloadActionPresentation(OutPresentation);
+}
+
+//------------------------------------------------------------------------------
+
+void UBBBEquipmentSystem::BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = nullptr;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ensureMsgf(Definition && Definition->FireDomin.IsValid(), TEXT("[UBBBE]Equipment fire action presentation is unavailable")))
+    {
+        return;
+    }
+
+    Definition->FireDomin.Get().BuildFireActionPresentation(OutPresentation);
 }
 
 //------------------------------------------------------------------------------

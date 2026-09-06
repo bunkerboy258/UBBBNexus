@@ -32,3 +32,16 @@ void FBBBFireDomin::Present(
         return;
     }
 }
+
+//------------------------------------------------------------------------------
+
+void FBBBFireDomin::BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = nullptr;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ensureMsgf(false, TEXT("[UBBBE]Fire domin has no fragment implementation")))
+    {
+        return;
+    }
+}

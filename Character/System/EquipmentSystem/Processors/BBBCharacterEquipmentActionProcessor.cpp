@@ -91,6 +91,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         if (RestoredAction.ActionType == EBBBCharacterActionType::Fire)
         {
             EquipmentSystem->PresentFire();
+            EquipmentSystem->BuildFireActionPresentation(RestoredAction.Presentation);
             EquipmentEvents.AddAction(MoveTemp(RestoredAction));
             continue;
         }
@@ -111,6 +112,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
                 DurationSeconds,
                 RestoredAction.Sequence);
             RestoredAction.DurationSeconds = DurationSeconds;
+            EquipmentSystem->BuildEquipActionPresentation(RestoredAction.Presentation);
             EquipmentEvents.AddAction(MoveTemp(RestoredAction));
             continue;
         }
@@ -128,6 +130,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
                 EquipmentSystem->GetMagazineRemoveNormalizedTime(),
                 EquipmentSystem->GetMagazineSpawnNormalizedTime());
             RestoredAction.DurationSeconds = DurationSeconds;
+            EquipmentSystem->BuildReloadActionPresentation(RestoredAction.Presentation);
             EquipmentEvents.AddAction(MoveTemp(RestoredAction));
         }
     }
@@ -150,6 +153,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
             ActionEvent.ActionType = EBBBCharacterActionType::Fire;
             ActionEvent.EquipmentId = GetEquipmentId(*ActiveInstance);
             ActionEvent.Sequence = Sequence;
+            EquipmentSystem->BuildFireActionPresentation(ActionEvent.Presentation);
             EquipmentEvents.AddAction(MoveTemp(ActionEvent));
 
             FBBBEquipmentRecoilEvent RecoilEvent;
@@ -176,6 +180,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         ActionEvent.EquipmentId = GetEquipmentId(*ActiveInstance);
         ActionEvent.Sequence = Sequence;
         ActionEvent.DurationSeconds = DurationSeconds;
+        EquipmentSystem->BuildReloadActionPresentation(ActionEvent.Presentation);
         EquipmentEvents.AddAction(MoveTemp(ActionEvent));
     }
 }

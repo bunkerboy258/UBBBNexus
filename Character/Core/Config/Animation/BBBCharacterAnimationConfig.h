@@ -4,28 +4,6 @@
 #include "BBBCharacterAnimationConfig.generated.h"
 
 class UAnimInstance;
-class UAnimMontage;
-
-/** 武器动作动画配置 */
-USTRUCT(BlueprintType)
-struct FBBBCharacterWeaponAnimationConfig
-{
-    GENERATED_BODY()
-
-    /** 装备蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Weapon")
-    TObjectPtr<UAnimMontage> EquipMontage;
-
-    /** 换弹蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Weapon")
-    TObjectPtr<UAnimMontage> ReloadMontage;
-
-    /** 开火蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Weapon")
-    TObjectPtr<UAnimMontage> FireMontage;
-
-};
-
 /**
  * 配置动画系统从角色实际运动中识别表现事实所需的阈值
  */
@@ -37,10 +15,6 @@ struct FBBBCharacterAnimationConfig
     /** 未装备专用动画层时链接的默认动画层 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Layer")
     TSubclassOf<UAnimInstance> DefaultAnimationLayerClass;
-
-    /** 当前角色完整武器动作动画组 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Weapon")
-    FBBBCharacterWeaponAnimationConfig Weapon;
 
     /** 角色实际水平转速超过该值时生成对应方向的原地转身信号，单位为度每秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Facing", meta = (ClampMin = "0.0"))

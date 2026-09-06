@@ -6,6 +6,7 @@
 
 class ABBBEquipmentPresentationActor;
 class UBBBEquipRuntimeData;
+class UAnimMontage;
 class USkeletalMeshComponent;
 
 /** 装备生成、挂接与过渡领域 */
@@ -38,6 +39,13 @@ public:
     /** @return 装备动作持续时间 */
     virtual float GetEquipDuration() const override;
 
+    /**
+     * 构造一次装备动作的人物表现数据
+     * @param OutPresentation 接收装备动作表现数据
+     * @return 无
+     */
+    virtual void BuildEquipActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const override;
+
     /** 装备表现实体类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     TSubclassOf<ABBBEquipmentPresentationActor> PresentationActorClass;
@@ -49,6 +57,10 @@ public:
     /** 装备动作持续时间 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip", meta = (ClampMin = "0.01"))
     float EquipDuration = 0.8f;
+
+    /** 装备人物动作蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
+    TObjectPtr<UAnimMontage> EquipMontage = nullptr;
 
     /** 瞄准来源插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")

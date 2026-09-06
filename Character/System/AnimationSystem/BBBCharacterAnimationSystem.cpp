@@ -63,8 +63,7 @@ void FBBBCharacterAnimationSystem::Update()
         *CharacterMesh);
     ActionProcessor.Update(
         *AnimInstance,
-        *EquipmentEvents,
-        *AnimationConfig);
+        *EquipmentEvents);
     FactProcessor.Update(
         *Character,
         *RuntimeData,

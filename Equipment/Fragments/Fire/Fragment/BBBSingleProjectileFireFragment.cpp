@@ -130,3 +130,11 @@ void FBBBSingleProjectileFireFragment::Present(
 
     PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
 }
+
+//------------------------------------------------------------------------------
+
+void FBBBSingleProjectileFireFragment::BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = FireMontage;
+    OutPresentation.PlayRate = 1.0f;
+}

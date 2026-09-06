@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Fragment/BBBMagazineFragment.h"
 
+#include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/Magazine/BBBMagazinePresentationActor.h"
@@ -49,6 +50,23 @@ void FBBBMagazineFragment::CommitReload(UBBBMagazineRuntimeData &RuntimeData) co
 float FBBBMagazineFragment::GetReloadDuration() const
 {
     return FMath::Max(ReloadDuration, 0.01f);
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBMagazineFragment::BuildReloadActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = ReloadMontage;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ReloadMontage)
+    {
+        return;
+    }
+
+    OutPresentation.PlayRate = FMath::Max(
+        ReloadMontage->GetPlayLength() / GetReloadDuration(),
+        0.01f);
 }
 
 float FBBBMagazineFragment::GetMagazineRemoveNormalizedTime() const

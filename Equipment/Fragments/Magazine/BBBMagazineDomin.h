@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Definition/Events/BBBEquipmentActionPresentation.h"
 #include "BBBMagazineDomin.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -59,6 +60,13 @@ public:
      */
     /** @return 换弹动作持续时间 */
     virtual float GetReloadDuration() const;
+
+    /**
+     * 构造一次换弹动作的人物表现数据
+     * @param OutPresentation 接收换弹动作表现数据
+     * @return 无
+     */
+    virtual void BuildReloadActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
 
     /** @return 弹匣卸下归一化时刻 */
     virtual float GetMagazineRemoveNormalizedTime() const;

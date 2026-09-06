@@ -32,3 +32,16 @@ float FBBBEquipDomin::GetEquipDuration() const
 
     return 0.0f;
 }
+
+//------------------------------------------------------------------------------
+
+void FBBBEquipDomin::BuildEquipActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = nullptr;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!ensureMsgf(false, TEXT("[UBBBE]Equip domin has no fragment implementation")))
+    {
+        return;
+    }
+}

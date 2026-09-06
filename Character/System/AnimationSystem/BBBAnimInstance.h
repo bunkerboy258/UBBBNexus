@@ -4,12 +4,12 @@
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Diagnostics/BBBLocomotionRuntimeProbe.h"
 #include "BBBAnimInstance.generated.h"
 
 class FBBBCharacterAnimationActionProcessor;
 class FBBBCharacterAnimationSystem;
 class UAnimMontage;
+struct FBBBEquipmentActionEvent;
 
 /** 角色动画事实快照、蓝图读取与瞬时动作转发入口 */
 UCLASS()
@@ -17,16 +17,9 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
 {
     GENERATED_BODY()
 
-    friend class FBBBCharacterAnimationActionProcessor;
     friend class FBBBCharacterAnimationSystem;
 
 public:
-    /** @return 无 */
-    virtual void NativeInitializeAnimation() override;
-
-    /** @return 无 */
-    virtual void NativePostEvaluateAnimation() override;
-
     /** 本帧角色世界位置 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
     FVector SourceActorLocation = FVector::ZeroVector;
@@ -254,6 +247,13 @@ public:
         UAnimMontage *Montage,
         float PlayRate);
 
+    /**
+     * 提交武器领域已经选定的装备动作蒙太奇
+     * @param Event 武器领域生成的装备动作事件
+     * @return 无
+     */
+    void SubmitEquipmentActionMontage(const FBBBEquipmentActionEvent &Event);
+
     /** 角色胶囊体底部到地面的距离，供动画属性存取节点直接读取 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
     float GroundDistance = 0.0f;
@@ -264,21 +264,6 @@ private:
      * @param Facts 新事实快照
      */
     void PublishAnimationFacts(const FBBBCharacterAnimationFacts &Facts);
-
-    /**
-     * 提交已经通过角色仲裁的动作信号并通知动画蓝图执行
-     * @param ActionType	动作类型
-     * @param Sequence		动作序号
-     * @param Duration		动作时长
-     * @param Montage		人物动作蒙太奇
-     * @param PlayRate		播放倍率
-     */
-    void PublishEquipmentAction(
-        EBBBCharacterActionType ActionType,
-        int32 Sequence,
-        float Duration,
-        UAnimMontage &Montage,
-        float PlayRate);
 
     UPROPERTY(Transient)
     FBBBCharacterAnimationFacts AnimationFacts;
@@ -298,5 +283,4 @@ private:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     float EquipmentActionPlayRate = 1.0f;
 
-    FBBBLocomotionRuntimeProbe LocomotionRuntimeProbe;
 };

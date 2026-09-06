@@ -4,6 +4,7 @@
 #include "UObject/Object.h"
 #include "BBBEquipmentSystem.generated.h"
 
+struct FBBBEquipmentActionPresentation;
 struct FBBBEquipmentFireResult;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
@@ -53,8 +54,29 @@ public:
     /** @return 装备动作持续时间 */
     float GetEquipDuration() const;
 
+    /**
+     * 构造一次装备动作的人物表现数据
+     * @param OutPresentation 接收装备动作表现数据
+     * @return 无
+     */
+    void BuildEquipActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
+
     /** @return 换弹动作持续时间 */
     float GetReloadDuration() const;
+
+    /**
+     * 构造一次换弹动作的人物表现数据
+     * @param OutPresentation 接收换弹动作表现数据
+     * @return 无
+     */
+    void BuildReloadActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
+
+    /**
+     * 构造一次开火动作的人物表现数据
+     * @param OutPresentation 接收开火动作表现数据
+     * @return 无
+     */
+    void BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
 
     /** @return 弹匣卸下归一化时刻 */
     float GetMagazineRemoveNormalizedTime() const;

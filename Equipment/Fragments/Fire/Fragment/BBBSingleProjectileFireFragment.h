@@ -8,6 +8,7 @@ class ABBBBulletActor;
 class ABBBEquipmentPresentationActor;
 struct FBBBEquipmentFireResult;
 class UBBBFireRuntimeData;
+class UAnimMontage;
 class USoundBase;
 
 /** 单投射物开火领域 */
@@ -48,6 +49,13 @@ public:
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBFireRuntimeData &RuntimeData) const override;
 
+    /**
+     * 构造一次开火动作的人物表现数据
+     * @param OutPresentation 接收开火动作表现数据
+     * @return 无
+     */
+    virtual void BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const override;
+
     /** 最短开火间隔 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.01"))
     float FireInterval = 0.2f;
@@ -67,6 +75,10 @@ public:
     /** 开火音效 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")
     TObjectPtr<USoundBase> FireSound = nullptr;
+
+    /** 开火人物动作蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire|Animation")
+    TObjectPtr<UAnimMontage> FireMontage = nullptr;
 
     /** 垂直后坐力基础值 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.0"))

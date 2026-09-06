@@ -104,6 +104,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
             Event.EquipmentId = EquipmentState.ActiveMainHandInstance->GetDefinition()->EquipmentId;
             Event.Sequence = Sequence;
             Event.DurationSeconds = DurationSeconds;
+            DesiredEquipmentSystem->BuildEquipActionPresentation(Event.Presentation);
             EquipmentEvents.AddAction(MoveTemp(Event));
         }
 

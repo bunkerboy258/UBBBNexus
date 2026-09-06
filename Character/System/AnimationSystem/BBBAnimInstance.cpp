@@ -1,57 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 
-#include "Animation/AnimInstanceProxy.h"
-#include "Animation/AnimMontage.h"
-#include "Components/SkeletalMeshComponent.h"
-
-void UBBBAnimInstance::NativeInitializeAnimation()
-{
-    Super::NativeInitializeAnimation();
-
-    LocomotionRuntimeProbe.Reset();
-}
-
-//------------------------------------------------------------------------------
-
-void UBBBAnimInstance::NativePostEvaluateAnimation()
-{
-    Super::NativePostEvaluateAnimation();
-
-    if (!FBBBLocomotionRuntimeProbe::IsEnabled())
-    {
-        return;
-    }
-
-    const FAnimInstanceProxy &MainProxy = GetProxyOnGameThread<FAnimInstanceProxy>();
-    LocomotionRuntimeProbe.CaptureMainInstance(*this, MainProxy);
-
-    const USkeletalMeshComponent *Mesh = GetSkelMeshComponent();
-    if (!Mesh)
-    {
-        return;
-    }
-
-    for (UAnimInstance *LinkedInstance : Mesh->GetLinkedAnimInstances())
-    {
-        if (!LinkedInstance)
-        {
-            continue;
-        }
-
-        const FAnimInstanceProxy *LinkedProxy = GetProxyOnGameThreadStatic<FAnimInstanceProxy>(
-            LinkedInstance);
-        if (!LinkedProxy)
-        {
-            continue;
-        }
-
-        LocomotionRuntimeProbe.CaptureLinkedInstance(
-            *LinkedInstance,
-            *LinkedProxy);
-    }
-}
-
-//------------------------------------------------------------------------------
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 
 void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFacts &Facts)
@@ -79,18 +28,18 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-void UBBBAnimInstance::PublishEquipmentAction(
-    EBBBCharacterActionType ActionType,
-    int32 Sequence,
-    float Duration,
-    UAnimMontage &Montage,
-    float PlayRate)
+void UBBBAnimInstance::SubmitEquipmentActionMontage(const FBBBEquipmentActionEvent &Event)
 {
-    EquipmentActionType = ActionType;
-    EquipmentActionSequence = Sequence;
-    EquipmentActionDuration = Duration;
-    EquipmentActionMontage = &Montage;
-    EquipmentActionPlayRate = PlayRate;
+    if (!ensureMsgf(Event.Presentation.Montage, TEXT("[UBBBC]Equipment action presentation montage is null")))
+    {
+        return;
+    }
+
+    EquipmentActionType = Event.ActionType;
+    EquipmentActionSequence = Event.Sequence;
+    EquipmentActionDuration = Event.DurationSeconds;
+    EquipmentActionMontage = Event.Presentation.Montage;
+    EquipmentActionPlayRate = Event.Presentation.PlayRate;
 
     ExecuteEquipmentActionMontage(
         EquipmentActionType,

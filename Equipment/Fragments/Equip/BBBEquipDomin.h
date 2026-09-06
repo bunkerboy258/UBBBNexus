@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Definition/Events/BBBEquipmentActionPresentation.h"
 #include "BBBEquipDomin.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -44,5 +45,12 @@ public:
      */
     /** @return 装备动作持续时间 */
     virtual float GetEquipDuration() const;
+
+    /**
+     * 构造一次装备动作的人物表现数据
+     * @param OutPresentation 接收装备动作表现数据
+     * @return 无
+     */
+    virtual void BuildEquipActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
 
 };

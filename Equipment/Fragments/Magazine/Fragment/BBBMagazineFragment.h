@@ -7,6 +7,7 @@
 class ABBBEquipmentPresentationActor;
 class ABBBMagazinePresentationActor;
 class UBBBMagazineRuntimeData;
+class UAnimMontage;
 
 /** 弹匣与换弹领域 */
 USTRUCT(BlueprintType)
@@ -59,6 +60,13 @@ public:
     /** @return 换弹动作持续时间 */
     virtual float GetReloadDuration() const override;
 
+    /**
+     * 构造一次换弹动作的人物表现数据
+     * @param OutPresentation 接收换弹动作表现数据
+     * @return 无
+     */
+    virtual void BuildReloadActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const override;
+
     /** @return 弹匣卸下归一化时刻 */
     virtual float GetMagazineRemoveNormalizedTime() const override;
 
@@ -98,6 +106,10 @@ public:
     /** 换弹动作持续时间 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.01"))
     float ReloadDuration = 2.2f;
+
+    /** 换弹人物动作蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine|Animation")
+    TObjectPtr<UAnimMontage> ReloadMontage = nullptr;
 
     /** 弹匣卸下归一化时刻 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Magazine", meta = (ClampMin = "0.0", ClampMax = "1.0"))

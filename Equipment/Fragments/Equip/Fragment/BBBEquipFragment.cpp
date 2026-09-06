@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Fragment/BBBEquipFragment.h"
 
+#include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -142,4 +143,21 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 float FBBBEquipFragment::GetEquipDuration() const
 {
     return FMath::Max(EquipDuration, 0.01f);
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBEquipFragment::BuildEquipActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const
+{
+    OutPresentation.Montage = EquipMontage;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!EquipMontage)
+    {
+        return;
+    }
+
+    OutPresentation.PlayRate = FMath::Max(
+        EquipMontage->GetPlayLength() / GetEquipDuration(),
+        0.01f);
 }

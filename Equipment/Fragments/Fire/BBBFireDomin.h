@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Definition/Events/BBBEquipmentActionPresentation.h"
 #include "BBBFireDomin.generated.h"
 
 class ABBBEquipmentPresentationActor;
@@ -44,5 +45,12 @@ public:
     virtual void Present(
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBFireRuntimeData &RuntimeData) const;
+
+    /**
+     * 构造一次开火动作的人物表现数据
+     * @param OutPresentation 接收开火动作表现数据
+     * @return 无
+     */
+    virtual void BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
 
 };
