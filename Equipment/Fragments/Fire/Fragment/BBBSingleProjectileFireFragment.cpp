@@ -63,9 +63,9 @@ void PlayFireSound(
         return;
     }
 
-    USceneComponent *EquipmentMesh = PresentationActor.GetEquipmentAttachmentComponent();
-    const FVector SoundLocation = EquipmentMesh && EquipmentMesh->DoesSocketExist(SocketName)
-        ? EquipmentMesh->GetSocketLocation(SocketName)
+    USceneComponent *EquipmentComponent = PresentationActor.GetEquipmentAttachmentComponent();
+    const FVector SoundLocation = EquipmentComponent && EquipmentComponent->DoesSocketExist(SocketName)
+        ? EquipmentComponent->GetSocketLocation(SocketName)
         : PresentationActor.GetActorLocation();
 
     UGameplayStatics::SpawnSoundAtLocation(PresentationActor.GetWorld(), Sound, SoundLocation);
@@ -88,9 +88,9 @@ bool FBBBSingleProjectileFireFragment::Fire(
     FBBBEquipmentFireResult &OutResult) const
 {
     UWorld *World = PresentationActor.GetWorld();
-    UStaticMeshComponent *EquipmentMesh = PresentationActor.GetEquipmentMesh();
+    USceneComponent *EquipmentComponent = PresentationActor.GetEquipmentAttachmentComponent();
 
-    if (!ensureMsgf(World && EquipmentMesh, TEXT("[UBBBE]Projectile fire dependencies are invalid")))
+    if (!ensureMsgf(World && EquipmentComponent, TEXT("[UBBBE]Projectile fire dependencies are invalid")))
     {
         return false;
     }
@@ -103,13 +103,13 @@ bool FBBBSingleProjectileFireFragment::Fire(
 
     const FName SharedMuzzleSocketName = PresentationActor.GetMuzzleSocketName();
     if (!ensureMsgf(
-        !SharedMuzzleSocketName.IsNone() && EquipmentMesh->DoesSocketExist(SharedMuzzleSocketName),
+        !SharedMuzzleSocketName.IsNone() && EquipmentComponent->DoesSocketExist(SharedMuzzleSocketName),
         TEXT("[UBBBE]Projectile fire shared muzzle socket is missing")))
     {
         return false;
     }
 
-    const FTransform MuzzleTransform = EquipmentMesh->GetSocketTransform(SharedMuzzleSocketName, RTS_World);
+    const FTransform MuzzleTransform = EquipmentComponent->GetSocketTransform(SharedMuzzleSocketName, RTS_World);
     if (!SpawnProjectile(PresentationActor, BulletActorClass, MuzzleTransform, MuzzleSpeed))
     {
         return false;

@@ -5,7 +5,6 @@
 #include "BBBEquipmentPresentationActor.generated.h"
 
 class UArrowComponent;
-class UStaticMeshComponent;
 class USceneComponent;
 
 /** 装备在虚幻世界中的纯表现实体 */
@@ -17,9 +16,6 @@ class ABBB_EVAC_API ABBBEquipmentPresentationActor : public AActor
 public:
     /** 构造装备表现组件 */
     ABBBEquipmentPresentationActor();
-
-    /** @return 装备显示网格 */
-    UStaticMeshComponent *GetEquipmentMesh() const;
 
     /** @return 装备姿态与插槽使用的组件 */
     virtual USceneComponent *GetEquipmentAttachmentComponent() const;
@@ -43,10 +39,6 @@ private:
     /** 装备组件根 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UArrowComponent> EquipmentRoot;
-
-    /** 装备显示网格 */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UStaticMeshComponent> EquipmentMesh;
 
     /** 枪口与瞄准来源共用插槽 */
     FName MuzzleSocketName = NAME_None;

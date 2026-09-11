@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
@@ -15,7 +14,7 @@ namespace
 {
 bool TryBuildSocketBoneSpaceTransform(
     USkeletalMeshComponent &CharacterMesh,
-    USceneComponent &EquipmentMesh,
+    USceneComponent &EquipmentComponent,
     FName ReferenceBoneName,
     FName EquipmentSocketName,
     const FVector &SocketOffset,
@@ -24,18 +23,18 @@ bool TryBuildSocketBoneSpaceTransform(
     OutTransform = FTransform::Identity;
 
     if (!ensureMsgf(
-        EquipmentMesh.DoesSocketExist(EquipmentSocketName),
+        EquipmentComponent.DoesSocketExist(EquipmentSocketName),
         TEXT("[UBBBE]Equipment pose socket '%s' is missing"),
         *EquipmentSocketName.ToString()))
     {
         return false;
     }
 
-    FTransform SocketComponent = EquipmentMesh.GetSocketTransform(
+    FTransform SocketComponent = EquipmentComponent.GetSocketTransform(
         EquipmentSocketName,
         RTS_Component);
     SocketComponent.AddToTranslation(SocketOffset);
-    const FTransform SocketWorld = EquipmentMesh.GetComponentTransform() * SocketComponent;
+    const FTransform SocketWorld = SocketComponent * EquipmentComponent.GetComponentTransform();
     const FTransform ReferenceBoneWorld = CharacterMesh.GetBoneTransform(ReferenceBoneName, RTS_World);
     OutTransform = SocketWorld.GetRelativeTransform(ReferenceBoneWorld);
     return true;
@@ -96,8 +95,8 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     RuntimeData.RightHandBoneName = RightHandBoneName;
     RuntimeData.bHasValidLeftHandIKTarget = false;
 
-    USceneComponent *EquipmentMesh = PresentationActor->GetEquipmentAttachmentComponent();
-    const bool bHasValidReferenceBone = EquipmentMesh
+    USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
+    const bool bHasValidReferenceBone = EquipmentComponent
         && RightHandBoneName != NAME_None
         && CharacterMesh.GetBoneIndex(RightHandBoneName) != INDEX_NONE;
     if (!ensureMsgf(
@@ -121,7 +120,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 
         RuntimeData.bHasValidAimSource = TryBuildSocketBoneSpaceTransform(
             CharacterMesh,
-            *EquipmentMesh,
+            *EquipmentComponent,
             RightHandBoneName,
             RuntimeData.MuzzleSocketName,
             FVector::ZeroVector,
@@ -131,7 +130,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
         {
             RuntimeData.bHasValidLeftHandIKTarget = TryBuildSocketBoneSpaceTransform(
                 CharacterMesh,
-                *EquipmentMesh,
+                *EquipmentComponent,
                 RightHandBoneName,
                 LeftHandGripSocketName,
                 CachedLeftHandGripSocketOffset,
