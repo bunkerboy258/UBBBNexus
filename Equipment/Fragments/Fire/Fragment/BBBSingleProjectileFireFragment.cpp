@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -20,7 +20,12 @@ bool SpawnProjectile(
     APawn *OwnerPawn = Cast<APawn>(PresentationActor.GetOwner());
     UWorld *World = PresentationActor.GetWorld();
 
-    if (!ensureMsgf(BulletActorClass && OwnerPawn && World, TEXT("[UBBBE]Projectile spawn dependencies are invalid")))
+    if (!BulletActorClass)
+    {
+        return true;
+    }
+
+    if (!ensureMsgf(OwnerPawn && World, TEXT("[UBBBE]Projectile spawn dependencies are invalid")))
     {
         return false;
     }
@@ -58,7 +63,7 @@ void PlayFireSound(
         return;
     }
 
-    UStaticMeshComponent *EquipmentMesh = PresentationActor.GetEquipmentMesh();
+    USceneComponent *EquipmentMesh = PresentationActor.GetEquipmentAttachmentComponent();
     const FVector SoundLocation = EquipmentMesh && EquipmentMesh->DoesSocketExist(SocketName)
         ? EquipmentMesh->GetSocketLocation(SocketName)
         : PresentationActor.GetActorLocation();
@@ -96,12 +101,15 @@ bool FBBBSingleProjectileFireFragment::Fire(
         return false;
     }
 
-    if (!ensureMsgf(EquipmentMesh->DoesSocketExist(MuzzleSocketName), TEXT("[UBBBE]Projectile fire muzzle socket is missing")))
+    const FName SharedMuzzleSocketName = PresentationActor.GetMuzzleSocketName();
+    if (!ensureMsgf(
+        !SharedMuzzleSocketName.IsNone() && EquipmentMesh->DoesSocketExist(SharedMuzzleSocketName),
+        TEXT("[UBBBE]Projectile fire shared muzzle socket is missing")))
     {
         return false;
     }
 
-    const FTransform MuzzleTransform = EquipmentMesh->GetSocketTransform(MuzzleSocketName, RTS_World);
+    const FTransform MuzzleTransform = EquipmentMesh->GetSocketTransform(SharedMuzzleSocketName, RTS_World);
     if (!SpawnProjectile(PresentationActor, BulletActorClass, MuzzleTransform, MuzzleSpeed))
     {
         return false;
@@ -109,7 +117,7 @@ bool FBBBSingleProjectileFireFragment::Fire(
 
     RuntimeData.LastFireTime = CurrentTime;
 
-    PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
+    PlayFireSound(PresentationActor, FireSound, SharedMuzzleSocketName);
 
     OutResult.RecoilImpulse = FVector2D(
         VerticalRecoilAmount + FMath::FRandRange(-VerticalRecoilRandom, VerticalRecoilRandom),
@@ -128,7 +136,7 @@ void FBBBSingleProjectileFireFragment::Present(
         RuntimeData.LastFireTime = World->GetTimeSeconds();
     }
 
-    PlayFireSound(PresentationActor, FireSound, MuzzleSocketName);
+    PlayFireSound(PresentationActor, FireSound, PresentationActor.GetMuzzleSocketName());
 }
 
 //------------------------------------------------------------------------------

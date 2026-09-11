@@ -49,6 +49,12 @@ public:
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBFireRuntimeData &RuntimeData) const override;
 
+    /** @return 枪口与瞄准来源共用插槽 */
+    virtual FName GetMuzzleSocketName() const override
+    {
+        return MuzzleSocketName;
+    }
+
     /**
      * 构造一次开火动作的人物表现数据
      * @param OutPresentation 接收开火动作表现数据
@@ -68,7 +74,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.01"))
     float MuzzleSpeed = 30000.0f;
 
-    /** 枪口插槽 */
+    /** 枪口与瞄准来源共用插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")
     FName MuzzleSocketName = TEXT("Muzzle");
 

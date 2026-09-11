@@ -9,7 +9,6 @@ class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
 class UBBBEquipmentSystem;
 class UBBBFireRuntimeData;
-class UBBBMagazineRuntimeData;
 
 /** 装备各领域运行数据根 */
 UCLASS(BlueprintType)
@@ -33,9 +32,6 @@ private:
     /** @return 开火领域运行数据 */
     UBBBFireRuntimeData *GetFire() const;
 
-    /** @return 弹匣领域运行数据 */
-    UBBBMagazineRuntimeData *GetMagazine() const;
-
     /** 装备领域运行数据 */
     UPROPERTY(Instanced)
     TObjectPtr<UBBBEquipRuntimeData> Equip = nullptr;
@@ -44,7 +40,4 @@ private:
     UPROPERTY(Instanced)
     TObjectPtr<UBBBFireRuntimeData> Fire = nullptr;
 
-    /** 弹匣领域运行数据 */
-    UPROPERTY(Instanced)
-    TObjectPtr<UBBBMagazineRuntimeData> Magazine = nullptr;
 };

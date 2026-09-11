@@ -62,10 +62,6 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
     TObjectPtr<UAnimMontage> EquipMontage = nullptr;
 
-    /** 瞄准来源插槽 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    FName AimSourceSocketName = TEXT("Muzzle");
-
     /** 左手 IK 目标插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
     FName LeftHandGripSocketName = NAME_None;

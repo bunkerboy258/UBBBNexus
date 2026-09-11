@@ -3,6 +3,7 @@
 #include "Animation/AnimMontage.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
+#include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
@@ -14,7 +15,7 @@ namespace
 {
 bool TryBuildSocketBoneSpaceTransform(
     USkeletalMeshComponent &CharacterMesh,
-    UStaticMeshComponent &EquipmentMesh,
+    USceneComponent &EquipmentMesh,
     FName ReferenceBoneName,
     FName EquipmentSocketName,
     const FVector &SocketOffset,
@@ -85,6 +86,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
         AttachmentSocketName);
 
     PresentationActor->SetActorRelativeTransform(SpawnOffset);
+    PresentationActor->SetMuzzleSocketName(RuntimeData.MuzzleSocketName);
 
     const FName RightHandBoneName = CharacterMesh.GetSocketBoneName(AttachmentSocketName);
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
@@ -94,7 +96,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     RuntimeData.RightHandBoneName = RightHandBoneName;
     RuntimeData.bHasValidLeftHandIKTarget = false;
 
-    UStaticMeshComponent *EquipmentMesh = PresentationActor->GetEquipmentMesh();
+    USceneComponent *EquipmentMesh = PresentationActor->GetEquipmentAttachmentComponent();
     const bool bHasValidReferenceBone = EquipmentMesh
         && RightHandBoneName != NAME_None
         && CharacterMesh.GetBoneIndex(RightHandBoneName) != INDEX_NONE;
@@ -121,7 +123,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             CharacterMesh,
             *EquipmentMesh,
             RightHandBoneName,
-            AimSourceSocketName,
+            RuntimeData.MuzzleSocketName,
             FVector::ZeroVector,
             RuntimeData.AimSourceRightHandBoneSpace);
 

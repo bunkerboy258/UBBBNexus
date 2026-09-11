@@ -6,6 +6,7 @@
 
 struct FBBBEquipFragment;
 class UBBBEquipmentSystem;
+class UBBBEquipmentRuntimeData;
 class USkeletalMeshComponent;
 
 /** 装备过渡运行数据 */
@@ -16,7 +17,11 @@ class ABBB_EVAC_API UBBBEquipRuntimeData final : public UObject
 
 private:
     friend struct FBBBEquipFragment;
+    friend class UBBBEquipmentRuntimeData;
     friend class UBBBEquipmentSystem;
+
+    /** 开火领域提供的枪口与瞄准来源共用插槽 */
+    FName MuzzleSocketName = NAME_None;
 
     /** 瞄准来源相对右手骨骼的固定变换 */
     FTransform AimSourceRightHandBoneSpace = FTransform::Identity;

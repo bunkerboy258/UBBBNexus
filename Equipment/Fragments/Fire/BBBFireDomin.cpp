@@ -33,6 +33,11 @@ void FBBBFireDomin::Present(
     }
 }
 
+FName FBBBFireDomin::GetMuzzleSocketName() const
+{
+    return NAME_None;
+}
+
 //------------------------------------------------------------------------------
 
 void FBBBFireDomin::BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const

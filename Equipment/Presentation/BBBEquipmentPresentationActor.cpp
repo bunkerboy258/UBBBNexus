@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 
 #include "Components/ArrowComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 
 ABBBEquipmentPresentationActor::ABBBEquipmentPresentationActor()
@@ -21,4 +22,31 @@ ABBBEquipmentPresentationActor::ABBBEquipmentPresentationActor()
 UStaticMeshComponent *ABBBEquipmentPresentationActor::GetEquipmentMesh() const
 {
     return EquipmentMesh;
+}
+
+USceneComponent *ABBBEquipmentPresentationActor::GetEquipmentAttachmentComponent() const
+{
+    return EquipmentMesh;
+}
+
+void ABBBEquipmentPresentationActor::SetMuzzleSocketName(const FName InSocketName)
+{
+    MuzzleSocketName = InSocketName;
+}
+
+FName ABBBEquipmentPresentationActor::GetMuzzleSocketName() const
+{
+    return MuzzleSocketName;
+}
+
+void ABBBEquipmentPresentationActor::NotifyFire(float WorldTimeSeconds)
+{
+}
+
+void ABBBEquipmentPresentationActor::NotifyReloadStarted(float WorldTimeSeconds, float DurationSeconds)
+{
+}
+
+void ABBBEquipmentPresentationActor::NotifyReloadCompleted(float WorldTimeSeconds)
+{
 }

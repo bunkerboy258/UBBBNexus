@@ -9,11 +9,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireResults.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Fragment/BBBEquipFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/Definition/BBBMagazineRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
 
 bool UBBBEquipmentSystem::Initialize(
     UBBBEquipmentInstance &InInstance,
@@ -26,8 +24,7 @@ bool UBBBEquipmentSystem::Initialize(
 
     if (!ensureMsgf(
         RuntimeData->GetEquip()
-            && (!Definition->FireDomin.IsValid() || RuntimeData->GetFire())
-            && (!Definition->MagazineDomin.IsValid() || RuntimeData->GetMagazine()),
+            && (!Definition->FireDomin.IsValid() || RuntimeData->GetFire()),
         TEXT("[UBBBE]Equipment fragment runtime data is incomplete")))
     {
         return false;
@@ -67,16 +64,6 @@ bool UBBBEquipmentSystem::Equip(
         return false;
     }
 
-    if (Definition->MagazineDomin.IsValid()
-        && !Definition->MagazineDomin.Get().SpawnMagazine(
-            *Instance->PresentationActor,
-            *RuntimeData->GetMagazine()))
-    {
-        Instance->PresentationActor->Destroy();
-        Instance->PresentationActor = nullptr;
-        return false;
-    }
-
     return true;
 }
 
@@ -89,19 +76,6 @@ bool UBBBEquipmentSystem::Fire(FBBBEquipmentFireResult &OutResult)
         return false;
     }
 
-    if (Definition->MagazineDomin.IsValid())
-    {
-        if (!ensureMsgf(RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine runtime data is unavailable during fire")))
-        {
-            return false;
-        }
-
-        if (!Definition->MagazineDomin.Get().CanConsumeRound(*RuntimeData->GetMagazine()))
-        {
-            return false;
-        }
-    }
-
     if (!Definition->FireDomin.Get().Fire(
         *Instance->PresentationActor,
         *RuntimeData->GetFire(),
@@ -110,10 +84,8 @@ bool UBBBEquipmentSystem::Fire(FBBBEquipmentFireResult &OutResult)
         return false;
     }
 
-    if (Definition->MagazineDomin.IsValid())
-    {
-        Definition->MagazineDomin.Get().ConsumeRound(*RuntimeData->GetMagazine());
-    }
+    Instance->PresentationActor->NotifyFire(
+        Instance->PresentationActor->GetWorld()->GetTimeSeconds());
 
     return true;
 }
@@ -122,24 +94,26 @@ bool UBBBEquipmentSystem::Fire(FBBBEquipmentFireResult &OutResult)
 
 bool UBBBEquipmentSystem::CanStartReload() const
 {
-    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition && RuntimeData && Definition->MagazineDomin.IsValid() && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine domin is unavailable")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor && Definition, TEXT("[UBBBE]Equipment reload presentation is unavailable")))
     {
         return false;
     }
 
-    return Definition->MagazineDomin.Get().CanStartReload(*RuntimeData->GetMagazine());
+    return Definition->ReloadDuration > 0.0f;
 }
 
 //------------------------------------------------------------------------------
 
-void UBBBEquipmentSystem::CommitReload()
+void UBBBEquipmentSystem::BeginReload(const float WorldTimeSeconds)
 {
-    if (!ensureMsgf(Definition && RuntimeData && Definition->MagazineDomin.IsValid() && RuntimeData->GetMagazine(), TEXT("[UBBBE]Equipment magazine domin is unavailable during commit reload")))
+    if (!ensureMsgf(Instance && Instance->PresentationActor, TEXT("[UBBBE]Equipment reload start presentation is unavailable")))
     {
         return;
     }
 
-    Definition->MagazineDomin.Get().CommitReload(*RuntimeData->GetMagazine());
+    Instance->PresentationActor->NotifyReloadStarted(
+        WorldTimeSeconds,
+        GetReloadDuration());
 }
 
 //------------------------------------------------------------------------------
@@ -154,6 +128,21 @@ void UBBBEquipmentSystem::PresentFire()
     Definition->FireDomin.Get().Present(
         *Instance->PresentationActor,
         *RuntimeData->GetFire());
+
+    Instance->PresentationActor->NotifyFire(
+        Instance->PresentationActor->GetWorld()->GetTimeSeconds());
+}
+
+//------------------------------------------------------------------------------
+
+void UBBBEquipmentSystem::CompleteReload(const float WorldTimeSeconds)
+{
+    if (!ensureMsgf(Instance && Instance->PresentationActor, TEXT("[UBBBE]Equipment reload completion presentation is unavailable")))
+    {
+        return;
+    }
+
+    Instance->PresentationActor->NotifyReloadCompleted(WorldTimeSeconds);
 }
 
 //------------------------------------------------------------------------------
@@ -187,12 +176,12 @@ void UBBBEquipmentSystem::BuildEquipActionPresentation(FBBBEquipmentActionPresen
 
 float UBBBEquipmentSystem::GetReloadDuration() const
 {
-    if (!ensureMsgf(Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment reload duration is unavailable")))
+    if (!ensureMsgf(Definition, TEXT("[UBBBE]Equipment reload duration is unavailable")))
     {
         return 0.0f;
     }
 
-    return Definition->MagazineDomin.Get().GetReloadDuration();
+    return FMath::Max(Definition->ReloadDuration, 0.01f);
 }
 
 //------------------------------------------------------------------------------
@@ -202,12 +191,22 @@ void UBBBEquipmentSystem::BuildReloadActionPresentation(FBBBEquipmentActionPrese
     OutPresentation.Montage = nullptr;
     OutPresentation.PlayRate = 1.0f;
 
-    if (!ensureMsgf(Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment reload action presentation is unavailable")))
+    if (!ensureMsgf(Definition, TEXT("[UBBBE]Equipment reload action presentation is unavailable")))
     {
         return;
     }
 
-    Definition->MagazineDomin.Get().BuildReloadActionPresentation(OutPresentation);
+    OutPresentation.Montage = Definition->ReloadMontage;
+    OutPresentation.PlayRate = 1.0f;
+
+    if (!Definition->ReloadMontage)
+    {
+        return;
+    }
+
+    OutPresentation.PlayRate = FMath::Max(
+        Definition->ReloadMontage->GetPlayLength() / GetReloadDuration(),
+        0.01f);
 }
 
 //------------------------------------------------------------------------------
@@ -223,30 +222,6 @@ void UBBBEquipmentSystem::BuildFireActionPresentation(FBBBEquipmentActionPresent
     }
 
     Definition->FireDomin.Get().BuildFireActionPresentation(OutPresentation);
-}
-
-//------------------------------------------------------------------------------
-
-float UBBBEquipmentSystem::GetMagazineRemoveNormalizedTime() const
-{
-    if (!ensureMsgf(Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment magazine remove time is unavailable")))
-    {
-        return 0.0f;
-    }
-
-    return Definition->MagazineDomin.Get().GetMagazineRemoveNormalizedTime();
-}
-
-//------------------------------------------------------------------------------
-
-float UBBBEquipmentSystem::GetMagazineSpawnNormalizedTime() const
-{
-    if (!ensureMsgf(Definition && Definition->MagazineDomin.IsValid(), TEXT("[UBBBE]Equipment magazine spawn time is unavailable")))
-    {
-        return 0.0f;
-    }
-
-    return Definition->MagazineDomin.Get().GetMagazineSpawnNormalizedTime();
 }
 
 //------------------------------------------------------------------------------
@@ -267,50 +242,9 @@ void UBBBEquipmentSystem::ReleasePresentation()
         return;
     }
 
-    if (Definition
-        && RuntimeData
-        && Definition->MagazineDomin.IsValid()
-        && RuntimeData->GetMagazine())
-    {
-        Definition->MagazineDomin.Get().DestroyLoadedMagazine(*RuntimeData->GetMagazine());
-    }
-
     Instance->PresentationActor->Destroy();
     Instance->PresentationActor = nullptr;
 }
-
-//------------------------------------------------------------------------------
-
-void UBBBEquipmentSystem::RemoveMagazine()
-{
-    if (!Definition || !RuntimeData || !Definition->MagazineDomin.IsValid() || !RuntimeData->GetMagazine())
-    {
-        return;
-    }
-
-    Definition->MagazineDomin.Get().RemoveMagazine(*RuntimeData->GetMagazine());
-}
-
-//------------------------------------------------------------------------------
-
-void UBBBEquipmentSystem::SpawnMagazine()
-{
-    if (!Instance
-        || !Instance->PresentationActor
-        || !Definition
-        || !RuntimeData
-        || !Definition->MagazineDomin.IsValid()
-        || !RuntimeData->GetMagazine())
-    {
-        return;
-    }
-
-    Definition->MagazineDomin.Get().SpawnMagazine(
-        *Instance->PresentationActor,
-        *RuntimeData->GetMagazine());
-}
-
-//------------------------------------------------------------------------------
 
 bool UBBBEquipmentSystem::TryGetAimSourceRightHandBoneSpace(FTransform &OutTransform) const
 {
@@ -352,8 +286,8 @@ bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &O
         : nullptr;
     if (EquipFragment && EquipFragment->bRefreshLeftHandGripSocketOffsetEveryFrame)
     {
-        UStaticMeshComponent *EquipmentMesh = Instance && Instance->PresentationActor
-            ? Instance->PresentationActor->GetEquipmentMesh()
+        USceneComponent *EquipmentMesh = Instance && Instance->PresentationActor
+            ? Instance->PresentationActor->GetEquipmentAttachmentComponent()
             : nullptr;
         USkeletalMeshComponent *CharacterMesh = EquipRuntimeData->CharacterMesh;
         if (!ensureMsgf(

@@ -44,40 +44,15 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         const float ElapsedSeconds = FMath::Max(WorldTimeSeconds - ActionState.StartTimeSeconds, 0.0f);
         const float NormalizedTime = FMath::Clamp(ElapsedSeconds / ActionState.DurationSeconds, 0.0f, 1.0f);
 
-        if (ActionState.ActiveAction == EBBBCharacterActionType::Reload)
-        {
-            if (!ActionState.bMagazineRemoved
-                && NormalizedTime >= ActionState.MagazineRemoveNormalizedTime)
-            {
-                EquipmentSystem->RemoveMagazine();
-                ActionState.bMagazineRemoved = true;
-            }
-
-            if (!ActionState.bMagazineSpawned
-                && NormalizedTime >= ActionState.MagazineSpawnNormalizedTime)
-            {
-                EquipmentSystem->SpawnMagazine();
-                ActionState.bMagazineSpawned = true;
-            }
-        }
-
         if (NormalizedTime >= 1.0f)
         {
             if (ActionState.ActiveAction == EBBBCharacterActionType::Reload)
             {
-                EquipmentSystem->CommitReload();
+                EquipmentSystem->CompleteReload(WorldTimeSeconds);
             }
 
             ActionState.Reset();
         }
-    }
-
-    if (EquipmentSystem
-        && (!ActionState.IsActive()
-            || ActionState.ActiveAction != EBBBCharacterActionType::Reload
-            || ActionState.bMagazineSpawned))
-    {
-        EquipmentSystem->SpawnMagazine();
     }
 
     TArray<FBBBEquipmentActionEvent> RestoredActions = EquipmentCommands.ConsumeRestoredActions();
@@ -126,9 +101,8 @@ void FBBBCharacterEquipmentActionProcessor::Update(
                 EBBBCharacterActionType::Reload,
                 WorldTimeSeconds,
                 DurationSeconds,
-                RestoredAction.Sequence,
-                EquipmentSystem->GetMagazineRemoveNormalizedTime(),
-                EquipmentSystem->GetMagazineSpawnNormalizedTime());
+                RestoredAction.Sequence);
+            EquipmentSystem->BeginReload(WorldTimeSeconds);
             RestoredAction.DurationSeconds = DurationSeconds;
             EquipmentSystem->BuildReloadActionPresentation(RestoredAction.Presentation);
             EquipmentEvents.AddAction(MoveTemp(RestoredAction));
@@ -171,9 +145,8 @@ void FBBBCharacterEquipmentActionProcessor::Update(
             EBBBCharacterActionType::Reload,
             WorldTimeSeconds,
             DurationSeconds,
-            Sequence,
-            EquipmentSystem->GetMagazineRemoveNormalizedTime(),
-            EquipmentSystem->GetMagazineSpawnNormalizedTime());
+            Sequence);
+        EquipmentSystem->BeginReload(WorldTimeSeconds);
 
         FBBBEquipmentActionEvent ActionEvent;
         ActionEvent.ActionType = EBBBCharacterActionType::Reload;

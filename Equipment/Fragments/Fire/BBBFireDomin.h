@@ -46,6 +46,9 @@ public:
         ABBBEquipmentPresentationActor &PresentationActor,
         UBBBFireRuntimeData &RuntimeData) const;
 
+    /** @return 开火领域提供的枪口与瞄准来源共用插槽 */
+    virtual FName GetMuzzleSocketName() const;
+
     /**
      * 构造一次开火动作的人物表现数据
      * @param OutPresentation 接收开火动作表现数据

@@ -39,8 +39,11 @@ public:
     /** @return 当前装备是否允许开始换弹 */
     bool CanStartReload() const;
 
-    /** 完成换弹弹药结算 */
-    void CommitReload();
+    /** 通知装备表现实体换弹开始 */
+    void BeginReload(float WorldTimeSeconds);
+
+    /** 通知装备表现实体换弹完成 */
+    void CompleteReload(float WorldTimeSeconds);
 
     /**
      * 响应远端开火表现命令
@@ -78,12 +81,6 @@ public:
      */
     void BuildFireActionPresentation(FBBBEquipmentActionPresentation &OutPresentation) const;
 
-    /** @return 弹匣卸下归一化时刻 */
-    float GetMagazineRemoveNormalizedTime() const;
-
-    /** @return 弹匣生成归一化时刻 */
-    float GetMagazineSpawnNormalizedTime() const;
-
     /**
      * 查询瞄准来源相对右手骨骼的固定变换
      * @param OutTransform	接收右手骨骼空间变换
@@ -108,12 +105,6 @@ public:
 private:
     friend class UBBBEquipmentInstance;
     friend class FBBBCharacterEquipmentActionProcessor;
-
-    /** 拔出并掉落当前弹匣表现 */
-    void RemoveMagazine();
-
-    /** 生成并装入新弹匣表现 */
-    void SpawnMagazine();
 
     /**
      * 注入单件装备永久依赖

@@ -63,18 +63,12 @@ private:
         EBBBCharacterActionType InAction,
         float InStartTimeSeconds,
         float InDurationSeconds,
-        int32 InSequence,
-        float InMagazineRemoveNormalizedTime = 0.0f,
-        float InMagazineSpawnNormalizedTime = 0.0f)
+        int32 InSequence)
     {
         ActiveAction = InAction;
         StartTimeSeconds = InStartTimeSeconds;
         DurationSeconds = FMath::Max(InDurationSeconds, 0.01f);
         Sequence = InSequence;
-        MagazineRemoveNormalizedTime = FMath::Clamp(InMagazineRemoveNormalizedTime, 0.0f, 1.0f);
-        MagazineSpawnNormalizedTime = FMath::Clamp(InMagazineSpawnNormalizedTime, 0.0f, 1.0f);
-        bMagazineRemoved = false;
-        bMagazineSpawned = false;
     }
 
     /** 清除持续动作 */
@@ -84,10 +78,6 @@ private:
         StartTimeSeconds = 0.0f;
         DurationSeconds = 0.0f;
         Sequence = 0;
-        MagazineRemoveNormalizedTime = 0.0f;
-        MagazineSpawnNormalizedTime = 0.0f;
-        bMagazineRemoved = false;
-        bMagazineSpawned = false;
     }
 
     UPROPERTY()
@@ -102,17 +92,6 @@ private:
     UPROPERTY()
     int32 Sequence = 0;
 
-    UPROPERTY()
-    float MagazineRemoveNormalizedTime = 0.0f;
-
-    UPROPERTY()
-    float MagazineSpawnNormalizedTime = 0.0f;
-
-    UPROPERTY()
-    bool bMagazineRemoved = false;
-
-    UPROPERTY()
-    bool bMagazineSpawned = false;
 };
 
 /** 角色拥有的装备及快捷访问绑定 */

@@ -4,11 +4,17 @@
 
 #include "MonsterMassTrait.generated.h"
 
+class UMonsterRuntimeData;
+
 /** 定义小怪实体模板的核心组成 */
 UCLASS(BlueprintType, EditInlineNew, meta = (DisplayName = "Monster Core"))
 class ABBB_EVAC_API UMonsterMassTrait final : public UMassEntityTraitBase
 {
     GENERATED_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster")
+    TObjectPtr<UMonsterRuntimeData> RuntimeData;
 
 protected:
     /**

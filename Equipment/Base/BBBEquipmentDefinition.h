@@ -3,13 +3,13 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
 #include "Engine/DataAsset.h"
 #include "StructUtils/InstancedStruct.h"
 #include "BBBEquipmentDefinition.generated.h"
 
 class UTexture2D;
 class UAnimInstance;
+class UAnimMontage;
 
 /** 装备静态配置与领域插槽 */
 UCLASS(BlueprintType)
@@ -46,7 +46,11 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
     TInstancedStruct<FBBBFireDomin> FireDomin;
 
-    /** 弹匣领域 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fragment", meta = (ExcludeBaseStruct))
-    TInstancedStruct<FBBBMagazineDomin> MagazineDomin;
+    /** 换弹动作持续时间 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation", meta = (ClampMin = "0.01"))
+    float ReloadDuration = 2.2f;
+
+    /** 换弹人物动作蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
+    TObjectPtr<UAnimMontage> ReloadMontage = nullptr;
 };

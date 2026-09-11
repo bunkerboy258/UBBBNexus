@@ -2,8 +2,8 @@
 
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Magazine/BBBMagazineDomin.h"
 
 void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definition)
 {
@@ -17,10 +17,11 @@ void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definit
         Fire = Definition.FireDomin.Get().InitializeRuntimeData(*this);
     }
 
-    if (Definition.MagazineDomin.IsValid())
+    if (Equip && Definition.FireDomin.IsValid())
     {
-        Magazine = Definition.MagazineDomin.Get().InitializeRuntimeData(*this);
+        Equip->MuzzleSocketName = Definition.FireDomin.Get().GetMuzzleSocketName();
     }
+
 }
 
 UBBBEquipRuntimeData *UBBBEquipmentRuntimeData::GetEquip() const
@@ -33,7 +34,3 @@ UBBBFireRuntimeData *UBBBEquipmentRuntimeData::GetFire() const
     return Fire;
 }
 
-UBBBMagazineRuntimeData *UBBBEquipmentRuntimeData::GetMagazine() const
-{
-    return Magazine;
-}
