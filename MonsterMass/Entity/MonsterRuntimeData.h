@@ -15,18 +15,23 @@ class ABBB_EVAC_API UMonsterRuntimeData final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    /** 小怪生命配置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Runtime")
     FMonsterHealthFragment Health;
 
+    /** 小怪移动配置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Runtime")
     FMonsterMovementFragment Movement;
 
+    /** 小怪感知配置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Runtime")
     FMonsterPerceptionFragment Perception;
 
+    /** 小怪战斗配置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Runtime")
     FMonsterCombatFragment Combat;
 
+    /** 小怪避让配置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Runtime")
     FMonsterAvoidanceFragment Avoidance;
 };

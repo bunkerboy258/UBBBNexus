@@ -1,8 +1,8 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterPresentationStateProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPresentationStateProcessor.h"
 
 #include "MassExecutionContext.h"
 #include "MassMovementFragments.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterPresentationStateProcessor::UMonsterPresentationStateProcessor()
     : MonsterQuery(*this)
@@ -24,6 +24,7 @@ void UMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityManag
 {
     MonsterQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& ChunkContext)
     {
+        // 把权威状态转换为表现层可安全读取的快照
         const TConstArrayView<FMassVelocityFragment> Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();
         const TConstArrayView<FMonsterStateFragment> States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
         TArrayView<FMonsterPresentationStateFragment> PresentationStates = ChunkContext.GetMutableFragmentView<FMonsterPresentationStateFragment>();

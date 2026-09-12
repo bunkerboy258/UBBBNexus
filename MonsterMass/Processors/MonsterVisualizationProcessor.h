@@ -11,8 +11,10 @@ class ABBB_EVAC_API UMonsterVisualizationProcessor final : public UMassVisualiza
     GENERATED_BODY()
 
 public:
+    /** 创建小怪可视表现处理器 */
     UMonsterVisualizationProcessor();
 
 protected:
+    /** 将小怪标签加入表现查询 */
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
 };

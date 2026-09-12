@@ -1,12 +1,12 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterPresentationProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPresentationProcessor.h"
 
 #include "MassActorSubsystem.h"
 #include "MassExecutionContext.h"
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Presentation/MonsterBasicActor.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Presentation/MonsterPresentationComponent.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterAvoidanceProcessor.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterAvoidanceProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterPresentationProcessor::UMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -31,6 +31,7 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
 {
     MonsterQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& ChunkContext)
     {
+        // 表现层只读取逻辑结果，不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
         const TConstArrayView<FTransformFragment> Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const TConstArrayView<FMassVelocityFragment> Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();
@@ -47,6 +48,7 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
             }
 
             const FTransform& MonsterTransform = Transforms[Index].GetTransform();
+            // 同步实体位置和朝向到骨骼表现 Actor
             MonsterActor->SetActorLocationAndRotation(
                 MonsterTransform.GetLocation(),
                 MonsterTransform.GetRotation(),
@@ -63,6 +65,7 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
             }
 
             const FMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
+            // 将状态和速度交给表现组件选择动画
             Presentation->ApplyPresentationState(
                 PresentationState.State,
                 Velocities[Index].Value.Size2D(),

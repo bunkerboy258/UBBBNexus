@@ -13,6 +13,7 @@ void UMonsterPresentationComponent::ApplyPresentationState(
     const float InSpeed,
     const float InStateTime)
 {
+    // 保存 Mass 提供的只读快照，供蓝图或调试读取
     MonsterState = InState;
     MovementSpeed = FMath::Max(InSpeed, 0.0f);
     StateEnteredTime = InStateTime;
@@ -22,6 +23,7 @@ void UMonsterPresentationComponent::ApplyPresentationState(
         return;
     }
 
+    // 仅在状态切换时重新播放动画，避免每帧重置时间轴
     UAnimSequenceBase* const Animation = GetAnimationForState(InState);
 
     if (!ensureMsgf(Animation != nullptr, TEXT("[UBBBM]Monster presentation requires an animation for state %d"), static_cast<int32>(InState)))
@@ -36,6 +38,7 @@ void UMonsterPresentationComponent::ApplyPresentationState(
         return;
     }
 
+    // 移动相关状态循环播放，其余状态只播放一次
     const bool bLooping = InState == EMonsterState::Idle || InState == EMonsterState::Scout || InState == EMonsterState::Chase;
     MonsterMesh->PlayAnimation(Animation, bLooping);
     LastPlayedState = InState;

@@ -14,6 +14,7 @@ class ABBB_EVAC_API UMonsterPresentationComponent final : public UActorComponent
     GENERATED_BODY()
 
 public:
+    /** 创建小怪表现状态组件 */
     UMonsterPresentationComponent();
 
     /**
@@ -43,34 +44,45 @@ private:
     /** 根据逻辑状态选择表现动画 */
     UAnimSequenceBase* GetAnimationForState(EMonsterState InState) const;
 
+    /** 待机状态循环动画 */
     UPROPERTY(EditAnywhere, Category = "Monster|Animation")
     TObjectPtr<UAnimSequenceBase> IdleAnimation;
 
+    /** 侦察状态循环动画 */
     UPROPERTY(EditAnywhere, Category = "Monster|Animation")
     TObjectPtr<UAnimSequenceBase> ScoutAnimation;
 
+    /** 追击状态循环动画 */
     UPROPERTY(EditAnywhere, Category = "Monster|Animation")
     TObjectPtr<UAnimSequenceBase> ChaseAnimation;
 
+    /** 攻击状态动画 */
     UPROPERTY(EditAnywhere, Category = "Monster|Animation")
     TObjectPtr<UAnimSequenceBase> AttackAnimation;
 
+    /** 受伤状态动画 */
     UPROPERTY(EditAnywhere, Category = "Monster|Animation")
     TObjectPtr<UAnimSequenceBase> HurtAnimation;
 
+    /** 死亡状态动画 */
     UPROPERTY(EditAnywhere, Category = "Monster|Animation")
     TObjectPtr<UAnimSequenceBase> DeadAnimation;
 
+    /** 当前逻辑状态 */
     UPROPERTY(Transient)
     EMonsterState MonsterState = EMonsterState::Idle;
 
+    /** 当前移动速度 */
     UPROPERTY(Transient)
     float MovementSpeed = 0.0f;
 
+    /** 当前状态进入时间 */
     UPROPERTY(Transient)
     float StateEnteredTime = 0.0f;
 
+    /** 上一次已播放动画对应的状态 */
     EMonsterState LastPlayedState = EMonsterState::Idle;
 
+    /** 是否已经向网格应用过动画 */
     bool bHasAppliedAnimation = false;
 };

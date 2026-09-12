@@ -1,12 +1,12 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterNavigationProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterNavigationProcessor.h"
 
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
 #include "MassMovementFragments.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterPerceptionProcessor.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPerceptionProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterNavigationProcessor::UMonsterNavigationProcessor()
     : MonsterQuery(*this)
@@ -52,6 +52,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
 
     const float WorldTime = World->GetTimeSeconds();
 
+    // 感知之后更新路径、位置、速度和朝向
     MonsterQuery.ForEachEntityChunk(Context, [DeltaTime, NavigationSystem, World, WorldTime](FMassExecutionContext& ChunkContext)
     {
         TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
@@ -80,6 +81,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
 
             const float StopRadius = FMath::Max(Movement.StopRadius, 0.0f);
 
+            // 进入停止半径后交给战斗处理器
             if (ToTarget.SizeSquared() <= FMath::Square(StopRadius))
             {
                 State.State = EMonsterState::Attack;
@@ -90,6 +92,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
 
             if (WorldTime >= Movement.NextPathRefreshTime)
             {
+                // 按固定间隔重新查询到玩家的导航路径
                 const UNavigationPath* Path = NavigationSystem->FindPathToLocationSynchronously(
                     World,
                     CurrentLocation,
@@ -121,6 +124,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
             const float MoveDistance = FMath::Min(MoveSpeed * DeltaTime, ToPathPoint.Size());
             const FVector NewLocation = CurrentLocation + PathDirection * MoveDistance;
 
+            // 逻辑层直接写入 Mass 变换，表现层随后读取该结果
             Transform.SetLocation(NewLocation);
             Transform.SetRotation(PathDirection.ToOrientationQuat());
             Velocity.Value = PathDirection * MoveSpeed;

@@ -11,8 +11,10 @@ class ABBB_EVAC_API UMonsterVisualizationLODProcessor final : public UMassVisual
     GENERATED_BODY()
 
 public:
+    /** 创建小怪可视 LOD 处理器 */
     UMonsterVisualizationLODProcessor();
 
 protected:
+    /** 将小怪标签加入各级可视查询 */
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
 };

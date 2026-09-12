@@ -1,7 +1,7 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterVisualizationLODProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterVisualizationLODProcessor.h"
 
 #include "MassCommonTypes.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterVisualizationLODProcessor::UMonsterVisualizationLODProcessor()
 {
@@ -11,6 +11,7 @@ UMonsterVisualizationLODProcessor::UMonsterVisualizationLODProcessor()
 
 void UMonsterVisualizationLODProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
+    // 为近处、远处和调试查询统一添加小怪标签
     Super::ConfigureQueries(EntityManager);
 
     CloseEntityQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);

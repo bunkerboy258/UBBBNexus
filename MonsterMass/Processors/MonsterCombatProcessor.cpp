@@ -1,11 +1,11 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterCombatProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterCombatProcessor.h"
 
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterNavigationProcessor.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterNavigationProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterCombatProcessor::UMonsterCombatProcessor()
     : MonsterQuery(*this)
@@ -36,6 +36,7 @@ void UMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
 
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0);
 
+    // 没有玩家时不执行任何攻击判定
     if (!IsValid(PlayerPawn))
     {
         return;
@@ -45,6 +46,7 @@ void UMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
 
     MonsterQuery.ForEachEntityChunk(Context, [PlayerPawn, WorldTime, this](FMassExecutionContext& ChunkContext)
     {
+        // 只处理已经进入攻击状态且冷却完成的实体
         const TConstArrayView<FTransformFragment> Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const TConstArrayView<FMonsterTargetRequestFragment> Targets = ChunkContext.GetFragmentView<FMonsterTargetRequestFragment>();
         TArrayView<FMonsterCombatFragment> Combats = ChunkContext.GetMutableFragmentView<FMonsterCombatFragment>();
@@ -70,6 +72,7 @@ void UMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
                 continue;
             }
 
+            // 伤害通过 UE 标准接口发送给玩家
             UGameplayStatics::ApplyDamage(PlayerPawn, FMath::Max(Combat.AttackDamage, 0.0f), nullptr, nullptr, nullptr);
             Combat.NextAttackTime = WorldTime + FMath::Max(Combat.AttackCooldown, 0.0f);
             State.StateEnteredTime = WorldTime;

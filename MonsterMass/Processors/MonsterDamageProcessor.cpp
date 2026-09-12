@@ -1,7 +1,7 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterDamageProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterDamageProcessor.h"
 
 #include "MassExecutionContext.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterDamageProcessor::UMonsterDamageProcessor()
     : MonsterQuery(*this)
@@ -31,6 +31,7 @@ void UMonsterDamageProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
 
     const float WorldTime = World->GetTimeSeconds();
 
+    // 逐帧消费实体积累的待处理伤害
     MonsterQuery.ForEachEntityChunk(Context, [WorldTime](FMassExecutionContext& ChunkContext)
     {
         TArrayView<FMonsterHealthFragment> Healths = ChunkContext.GetMutableFragmentView<FMonsterHealthFragment>();
@@ -47,6 +48,7 @@ void UMonsterDamageProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
                 continue;
             }
 
+            // 先扣除累计伤害，再根据剩余生命切换状态
             FMonsterHealthFragment& Health = Healths[Index];
             FMonsterDeathEventFragment& DeathEvent = DeathEvents[Index];
             FMonsterStateFragment& State = States[Index];

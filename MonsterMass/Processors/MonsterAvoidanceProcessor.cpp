@@ -1,9 +1,9 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterAvoidanceProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterAvoidanceProcessor.h"
 
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterNavigationProcessor.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterNavigationProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterAvoidanceProcessor::UMonsterAvoidanceProcessor()
     : MonsterQuery(*this)
@@ -24,6 +24,7 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
 {
     float CellSize = 1.0f;
 
+    // 使用最大邻居范围作为空间分桶尺寸
     MonsterQuery.ForEachEntityChunk(Context, [&CellSize](FMassExecutionContext& ChunkContext)
     {
         const TConstArrayView<FMonsterAvoidanceFragment> Avoidances = ChunkContext.GetFragmentView<FMonsterAvoidanceFragment>();
@@ -36,6 +37,7 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
 
     TMap<FIntPoint, TArray<FVector>> SpatialBuckets;
 
+    // 第一遍遍历建立二维空间桶
     MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
     {
         TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
@@ -50,6 +52,7 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
         }
     });
 
+    // 第二遍遍历计算分离方向并修正位置
     MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
     {
         TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();

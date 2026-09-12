@@ -1,7 +1,7 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterVisualizationProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterVisualizationProcessor.h"
 
 #include "MassCommonTypes.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterVisualizationProcessor::UMonsterVisualizationProcessor()
 {
@@ -12,6 +12,7 @@ UMonsterVisualizationProcessor::UMonsterVisualizationProcessor()
 
 void UMonsterVisualizationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
+    // 保留引擎表现查询后，仅筛选小怪实体
     Super::ConfigureQueries(EntityManager);
 
     EntityQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);

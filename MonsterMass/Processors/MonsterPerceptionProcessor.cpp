@@ -1,10 +1,10 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterPerceptionProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPerceptionProcessor.h"
 
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterPerceptionProcessor::UMonsterPerceptionProcessor()
     : MonsterQuery(*this)
@@ -34,6 +34,7 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
 
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0);
 
+    // 每帧根据视野范围更新目标请求
     MonsterQuery.ForEachEntityChunk(Context, [PlayerPawn, World](FMassExecutionContext& ChunkContext)
     {
         const TConstArrayView<FTransformFragment> Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
@@ -49,6 +50,7 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
             const float SightRange = FMath::Max(Perceptions[Index].SightRange, 0.0f);
             const FVector MonsterLocation = Transforms[Index].GetTransform().GetLocation();
 
+            // 玩家无效或超出范围时清除目标并进入侦察状态
             if (!IsValid(PlayerPawn) || FVector::DistSquared2D(MonsterLocation, PlayerPawn->GetActorLocation()) > FMath::Square(SightRange))
             {
                 Target.bHasTarget = false;
@@ -62,6 +64,7 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
                 continue;
             }
 
+            // 记录玩家当前位置供导航处理器使用
             Target.TargetLocation = PlayerPawn->GetActorLocation();
             Target.LastSeenTime = World->GetTimeSeconds();
             Target.bHasTarget = true;

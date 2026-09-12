@@ -13,6 +13,7 @@ class ABBB_EVAC_API UMonsterMassTrait final : public UMassEntityTraitBase
     GENERATED_BODY()
 
 public:
+    /** 实体模板使用的运行时数据根 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster")
     TObjectPtr<UMonsterRuntimeData> RuntimeData;
 

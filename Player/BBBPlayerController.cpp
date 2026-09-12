@@ -14,7 +14,7 @@ ABBBPlayerController::ABBBPlayerController()
     //允许控制器参与服务器到客户端的属性复制
     bReplicates = true;
     //在类默认对象构造期间加载所需资源
-    static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/Input/IMC_Default.IMC_Default"));
+    static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/_Project/Input/IMC_Default.IMC_Default"));
     //资源加载成功后缓存角色使用的默认输入映射
     if (DefaultMappingContextAsset.Succeeded())
     {

@@ -1,7 +1,7 @@
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterLifecycleProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterLifecycleProcessor.h"
 
 #include "MassExecutionContext.h"
-#include "BBBWork/UBBBNexus/MonsterMass/MonsterRuntimeData.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterLifecycleProcessor::UMonsterLifecycleProcessor()
     : MonsterQuery(*this)
@@ -29,6 +29,7 @@ void UMonsterLifecycleProcessor::Execute(FMassEntityManager& EntityManager, FMas
 
     const float WorldTime = World->GetTimeSeconds();
 
+    // 维护受伤硬直恢复和死亡实体延迟回收
     MonsterQuery.ForEachEntityChunk(Context, [WorldTime](FMassExecutionContext& ChunkContext)
     {
         TArrayView<FMonsterDeathEventFragment> DeathEvents = ChunkContext.GetMutableFragmentView<FMonsterDeathEventFragment>();
@@ -41,12 +42,14 @@ void UMonsterLifecycleProcessor::Execute(FMassEntityManager& EntityManager, FMas
 
             if (State.State == EMonsterState::Hurt && WorldTime >= State.StateEnteredTime + 0.2f)
             {
+                // 受伤硬直结束后恢复追击状态
                 State.State = EMonsterState::Chase;
                 State.StateEnteredTime = WorldTime;
             }
 
             if (State.State == EMonsterState::Dead && DeathEvent.DestroyAtTime >= 0.0f && WorldTime >= DeathEvent.DestroyAtTime)
             {
+                // 使用延迟命令安全销毁当前遍历中的实体
                 ChunkContext.Defer().DestroyEntity(ChunkContext.GetEntity(Index));
             }
         }

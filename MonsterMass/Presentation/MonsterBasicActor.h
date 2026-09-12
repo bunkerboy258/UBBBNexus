@@ -15,6 +15,7 @@ class ABBB_EVAC_API AMonsterBasicActor final : public AActor
     GENERATED_BODY()
 
 public:
+    /** 创建小怪表现 Actor 及其组件 */
     AMonsterBasicActor();
 
     /**
@@ -43,12 +44,15 @@ public:
     void SetCollisionRadius(float Radius);
 
 private:
+    /** 小怪使用的骨骼网格组件 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Monster|Presentation", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<USkeletalMeshComponent> MonsterMesh;
 
+    /** 小怪用于查询和阻挡的球形碰撞组件 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Monster|Collision", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<USphereComponent> MonsterCollision;
 
+    /** 小怪状态与动画表现组件 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Monster|Presentation", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UMonsterPresentationComponent> MonsterPresentation;
 };
