@@ -8,8 +8,6 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogBBBEquipmentPose, Log, All);
-
 namespace
 {
 bool TryBuildSocketBoneSpaceTransform(
@@ -90,10 +88,8 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     const FName RightHandBoneName = CharacterMesh.GetSocketBoneName(AttachmentSocketName);
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
-    RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
     RuntimeData.CharacterMesh = &CharacterMesh;
     RuntimeData.RightHandBoneName = RightHandBoneName;
-    RuntimeData.bHasValidLeftHandIKTarget = false;
 
     USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
     const bool bHasValidReferenceBone = EquipmentComponent
@@ -108,16 +104,6 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
 
     if (bHasValidReferenceBone)
     {
-        FVector CachedLeftHandGripSocketOffset = LeftHandGripSocketOffset;
-        if (bRefreshLeftHandGripSocketOffsetEveryFrame)
-        {
-            CachedLeftHandGripSocketOffset = FVector::ZeroVector;
-            UE_LOG(
-                LogBBBEquipmentPose,
-                Warning,
-                TEXT("[UBBBE]Left hand grip socket offset refresh is enabled for debugging only"));
-        }
-
         RuntimeData.bHasValidAimSource = TryBuildSocketBoneSpaceTransform(
             CharacterMesh,
             *EquipmentComponent,
@@ -126,16 +112,6 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             FVector::ZeroVector,
             RuntimeData.AimSourceRightHandBoneSpace);
 
-        if (!LeftHandGripSocketName.IsNone())
-        {
-            RuntimeData.bHasValidLeftHandIKTarget = TryBuildSocketBoneSpaceTransform(
-                CharacterMesh,
-                *EquipmentComponent,
-                RightHandBoneName,
-                LeftHandGripSocketName,
-                CachedLeftHandGripSocketOffset,
-                RuntimeData.LeftHandIKBaseTargetRightHandBoneSpace);
-        }
     }
 
     return PresentationActor;

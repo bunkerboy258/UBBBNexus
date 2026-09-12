@@ -231,10 +231,8 @@ void UBBBEquipmentSystem::ReleasePresentation()
     if (RuntimeData && RuntimeData->GetEquip())
     {
         UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData->GetEquip();
-        EquipRuntimeData->LeftHandIKBaseTargetRightHandBoneSpace = FTransform::Identity;
         EquipRuntimeData->CharacterMesh = nullptr;
         EquipRuntimeData->RightHandBoneName = NAME_None;
-        EquipRuntimeData->bHasValidLeftHandIKTarget = false;
     }
 
     if (!Instance || !Instance->PresentationActor)
@@ -275,45 +273,38 @@ bool UBBBEquipmentSystem::TryGetLeftHandIKTargetRightHandBoneSpace(FTransform &O
     {
         EquipRuntimeData = RuntimeData->GetEquip();
     }
-    if (!EquipRuntimeData || !EquipRuntimeData->bHasValidLeftHandIKTarget)
+    const FBBBEquipFragment *EquipFragment = Definition
+        ? Definition->EquipDomin.GetPtr<FBBBEquipFragment>()
+        : nullptr;
+    if (!EquipRuntimeData || !EquipFragment || EquipFragment->LeftHandGripSocketName.IsNone())
     {
         return false;
     }
 
-    FTransform CurrentTarget = EquipRuntimeData->LeftHandIKBaseTargetRightHandBoneSpace;
-    const FBBBEquipFragment *EquipFragment = Definition
-        ? Definition->EquipDomin.GetPtr<FBBBEquipFragment>()
+    USceneComponent *EquipmentComponent = Instance && Instance->PresentationActor
+        ? Instance->PresentationActor->GetEquipmentAttachmentComponent()
         : nullptr;
-    if (EquipFragment && EquipFragment->bRefreshLeftHandGripSocketOffsetEveryFrame)
+    USkeletalMeshComponent *CharacterMesh = EquipRuntimeData->CharacterMesh;
+    if (!ensureMsgf(
+        EquipmentComponent
+            && CharacterMesh
+            && !EquipRuntimeData->RightHandBoneName.IsNone()
+            && EquipmentComponent->DoesSocketExist(EquipFragment->LeftHandGripSocketName)
+            && CharacterMesh->GetBoneIndex(EquipRuntimeData->RightHandBoneName) != INDEX_NONE,
+        TEXT("[UBBBE]Left hand IK rebuild dependencies are invalid")))
     {
-        USceneComponent *EquipmentComponent = Instance && Instance->PresentationActor
-            ? Instance->PresentationActor->GetEquipmentAttachmentComponent()
-            : nullptr;
-        USkeletalMeshComponent *CharacterMesh = EquipRuntimeData->CharacterMesh;
-        if (!ensureMsgf(
-            EquipmentComponent
-                && CharacterMesh
-                && !EquipRuntimeData->RightHandBoneName.IsNone()
-                && !EquipFragment->LeftHandGripSocketName.IsNone()
-                && EquipmentComponent->DoesSocketExist(EquipFragment->LeftHandGripSocketName)
-                && CharacterMesh->GetBoneIndex(EquipRuntimeData->RightHandBoneName) != INDEX_NONE,
-            TEXT("[UBBBE]Left hand IK debug rebuild dependencies are invalid")))
-        {
-            return false;
-        }
-
-        FTransform SocketComponent = EquipmentComponent->GetSocketTransform(
-            EquipFragment->LeftHandGripSocketName,
-            RTS_Component);
-        SocketComponent.AddToTranslation(EquipFragment->LeftHandGripSocketOffset);
-        const FTransform SocketWorld = SocketComponent * EquipmentComponent->GetComponentTransform();
-        const FTransform ReferenceBoneWorld = CharacterMesh->GetBoneTransform(
-            EquipRuntimeData->RightHandBoneName,
-            RTS_World);
-        CurrentTarget = SocketWorld.GetRelativeTransform(ReferenceBoneWorld);
+        return false;
     }
 
-    OutTransform = CurrentTarget;
+    FTransform SocketComponent = EquipmentComponent->GetSocketTransform(
+        EquipFragment->LeftHandGripSocketName,
+        RTS_Component);
+    SocketComponent.AddToTranslation(EquipFragment->LeftHandGripSocketOffset);
+    const FTransform SocketWorld = SocketComponent * EquipmentComponent->GetComponentTransform();
+    const FTransform ReferenceBoneWorld = CharacterMesh->GetBoneTransform(
+        EquipRuntimeData->RightHandBoneName,
+        RTS_World);
+    OutTransform = SocketWorld.GetRelativeTransform(ReferenceBoneWorld);
     return true;
 }
 

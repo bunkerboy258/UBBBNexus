@@ -69,9 +69,4 @@ public:
     /** 左手 IK 目标相对 Socket 的武器坐标空间位置偏移 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
     FVector LeftHandGripSocketOffset = FVector::ZeroVector;
-
-    /** 左手 IK 目标是否每帧重读局部修正，仅用于调试 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    bool bRefreshLeftHandGripSocketOffsetEveryFrame = false;
-
 };
