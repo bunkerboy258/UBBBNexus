@@ -33,6 +33,13 @@ public:
     /** @return 单件装备行为系统 */
     UBBBEquipmentSystem *GetEquipmentSystem() const;
 
+    /** @return 当前装备表现实体 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    ABBBEquipmentPresentationActor *GetPresentationActor() const
+    {
+        return PresentationActor;
+    }
+
 private:
     friend class UBBBEquipmentSystem;
 
@@ -53,6 +60,6 @@ private:
     TObjectPtr<UBBBEquipmentSystem> EquipmentSystem = nullptr;
 
     /** 当前装备表现实体 */
-    UPROPERTY()
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
 };
