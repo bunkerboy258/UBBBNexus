@@ -14,9 +14,9 @@ ABBBCharacter::ABBBCharacter()
     PrimaryActorTick.bCanEverTick = true;
 
     //LateUpdate与主管线处于同一更新组并通过依赖关系固定顺序
-    LateUpdateTickFunction.bCanEverTick = true;
-    LateUpdateTickFunction.bStartWithTickEnabled = false;
-    LateUpdateTickFunction.TickGroup = TG_PrePhysics;
+    LateUpdateTick.bCanEverTick = true;
+    LateUpdateTick.bStartWithTickEnabled = false;
+    LateUpdateTick.TickGroup = TG_PrePhysics;
     //允许网络同步
     bReplicates = true;
     //由引擎同步角色根组件的位置与旋转
@@ -64,7 +64,7 @@ void ABBBCharacter::BeginPlay()
     FBBBCharacterInitializer::Initialize(*this);
 
     //全部运行依赖注入完成后才允许执行LateUpdate
-    LateUpdateTickFunction.SetTickFunctionEnable(true);
+    LateUpdateTick.SetTickFunctionEnable(true);
 }
 
 //------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ void ABBBCharacter::BeginPlay()
 void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     //世界清理前停止LateUpdate访问角色运行数据
-    LateUpdateTickFunction.SetTickFunctionEnable(false);
+    LateUpdateTick.SetTickFunctionEnable(false);
 
     Super::EndPlay(EndPlayReason);
 }
@@ -110,20 +110,20 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
 
     if (bRegister)
     {
-        LateUpdateTickFunction.Target = this;
-        LateUpdateTickFunction.SetTickFunctionEnable(HasActorBegunPlay());
-        LateUpdateTickFunction.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
-        LateUpdateTickFunction.RegisterTickFunction(GetLevel());
+        LateUpdateTick.Target = this;
+        LateUpdateTick.SetTickFunctionEnable(HasActorBegunPlay());
+        LateUpdateTick.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
+        LateUpdateTick.RegisterTickFunction(GetLevel());
 
         //骨骼网格必须等待LateUpdate提交最终动画事实后才能更新动画图
-        CharacterMesh->PrimaryComponentTick.AddPrerequisite(this, LateUpdateTickFunction);
+        CharacterMesh->PrimaryComponentTick.AddPrerequisite(this, LateUpdateTick);
         return;
     }
 
-    CharacterMesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTickFunction);
-    LateUpdateTickFunction.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
-    LateUpdateTickFunction.UnRegisterTickFunction();
-    LateUpdateTickFunction.Target = nullptr;
+    CharacterMesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTick);
+    LateUpdateTick.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
+    LateUpdateTick.UnRegisterTickFunction();
+    LateUpdateTick.Target = nullptr;
 }
 
 //------------------------------------------------------------------------------

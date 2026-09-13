@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/EngineBaseTypes.h"
-#include "BBBCharacterLateUpdateTickFunction.generated.h"
+#include "BBBCharacterLateUpdate.generated.h"
 
 class ABBBCharacter;
 
@@ -10,7 +10,7 @@ class ABBBCharacter;
  * 在角色移动组件完成本帧移动后驱动角色LateUpdate
  */
 USTRUCT()
-struct ABBB_EVAC_API FBBBCharacterLateUpdateTickFunction final : public FTickFunction
+struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FTickFunction
 {
     GENERATED_BODY()
 
@@ -42,8 +42,8 @@ struct ABBB_EVAC_API FBBBCharacterLateUpdateTickFunction final : public FTickFun
 };
 
 template<>
-struct TStructOpsTypeTraits<FBBBCharacterLateUpdateTickFunction>
-    : public TStructOpsTypeTraitsBase2<FBBBCharacterLateUpdateTickFunction>
+struct TStructOpsTypeTraits<FBBBCharacterLateUpdate>
+    : public TStructOpsTypeTraitsBase2<FBBBCharacterLateUpdate>
 {
     enum
     {

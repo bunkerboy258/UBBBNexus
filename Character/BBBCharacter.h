@@ -8,7 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdateTickFunction.h"
+#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdate.h"
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Arbitration/BBBArbitrationPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Execution/BBBExecutionPipeline.h"
@@ -34,7 +34,7 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
     /** 允许移动后更新函数调用角色LateUpdate */
-    friend struct FBBBCharacterLateUpdateTickFunction;
+    friend struct FBBBCharacterLateUpdate;
 
     /** 允许动画实例只读角色表现状态 */
     friend class UBBBAnimInstance;
@@ -136,7 +136,7 @@ private:
     FBBBExecutionPipeline ExecutionPipeline;
 
     /** 驱动角色移动后更新阶段的独立更新函数 */
-    FBBBCharacterLateUpdateTickFunction LateUpdateTickFunction;
+    FBBBCharacterLateUpdate LateUpdateTick;
     
     FBBBCharacterUpdatePipeline CharacterUpdatePipeline;
 };

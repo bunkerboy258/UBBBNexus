@@ -1,8 +1,8 @@
-#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdateTickFunction.h"
+#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdate.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBCharacterLateUpdateTickFunction::ExecuteTick(
+void FBBBCharacterLateUpdate::ExecuteTick(
     float DeltaTime,
     ELevelTick TickType,
     ENamedThreads::Type CurrentThread,
@@ -18,14 +18,14 @@ void FBBBCharacterLateUpdateTickFunction::ExecuteTick(
 
 //------------------------------------------------------------------------------
 
-FString FBBBCharacterLateUpdateTickFunction::DiagnosticMessage()
+FString FBBBCharacterLateUpdate::DiagnosticMessage()
 {
     return GetFullNameSafe(Target) + TEXT("[ABBBCharacter::LateUpdate]");
 }
 
 //------------------------------------------------------------------------------
 
-FName FBBBCharacterLateUpdateTickFunction::DiagnosticContext(bool bDetailed)
+FName FBBBCharacterLateUpdate::DiagnosticContext(bool bDetailed)
 {
     if (bDetailed)
     {
