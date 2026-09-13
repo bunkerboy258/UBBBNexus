@@ -57,6 +57,16 @@ bool UBBBEquipmentSystem::Equip(
         CharacterMesh,
         AttachmentSocketName);
 
+    UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData->GetEquip();
+    if (!ensureMsgf(EquipRuntimeData, TEXT("[UBBBE]Equipment equip runtime data is unavailable after equip")))
+    {
+        return false;
+    }
+
+    Instance->SetLeftHandIKOffsetRightHand(
+        EquipRuntimeData->LeftHandIKOffsetRightHand,
+        EquipRuntimeData->bHasValidLeftHandIKOffset);
+
     if (!Instance->PresentationActor)
     {
         return false;

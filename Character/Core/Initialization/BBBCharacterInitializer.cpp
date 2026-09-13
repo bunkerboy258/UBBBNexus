@@ -89,6 +89,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Equipment.Events,
         Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.WorldData,
+        Character.RuntimeData.Intent,
         Config.Animation);
     
     Character.InputPipeline.Initialize(
@@ -436,6 +437,28 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             [&Character](const FInputActionValue &Value)
             {
                 Character.RuntimeData.Input.RawInputData.MarkJumpPressed();
+            });
+    }
+
+    if (Config.DashAction)
+    {
+        Input->BindActionValueLambda(
+            Config.DashAction,
+            ETriggerEvent::Started,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.MarkDashPressed();
+            });
+    }
+
+    if (Config.SlideAction)
+    {
+        Input->BindActionValueLambda(
+            Config.SlideAction,
+            ETriggerEvent::Started,
+            [&Character](const FInputActionValue &Value)
+            {
+                Character.RuntimeData.Input.RawInputData.MarkSlidePressed();
             });
     }
 }

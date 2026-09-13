@@ -66,4 +66,12 @@ struct FBBBCharacterInputConfig
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> EquipSlot2Action;
+
+    /** Dash 输入动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UInputAction> DashAction;
+
+    /** 滑铲输入动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UInputAction> SlideAction;
 };

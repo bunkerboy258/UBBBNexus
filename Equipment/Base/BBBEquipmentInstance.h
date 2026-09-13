@@ -40,8 +40,28 @@ public:
         return PresentationActor;
     }
 
+    /** @return 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    FVector GetLeftHandIKOffsetRightHand() const
+    {
+        return LeftHandIKOffsetRightHand;
+    }
+
+    /** @return 装备初始化时缓存的左手 IK 位置是否有效 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool HasValidLeftHandIKOffset() const
+    {
+        return bHasValidLeftHandIKOffset;
+    }
+
 private:
     friend class UBBBEquipmentSystem;
+
+    void SetLeftHandIKOffsetRightHand(const FVector &InOffset, bool bInValid)
+    {
+        LeftHandIKOffsetRightHand = InOffset;
+        bHasValidLeftHandIKOffset = bInValid;
+    }
 
     /** 实例唯一标识 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -62,4 +82,10 @@ private:
     /** 当前装备表现实体 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
+
+    /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
+    FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
+
+    /** 装备初始化时缓存的左手 IK 位置是否有效 */
+    bool bHasValidLeftHandIKOffset = false;
 };

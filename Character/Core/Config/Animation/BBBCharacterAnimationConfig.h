@@ -4,6 +4,7 @@
 #include "BBBCharacterAnimationConfig.generated.h"
 
 class UAnimInstance;
+class UAnimMontage;
 /**
  * 配置动画系统从角色实际运动中识别表现事实所需的阈值
  */
@@ -27,4 +28,24 @@ struct FBBBCharacterAnimationConfig
     /** 动画转速每秒允许变化的最大幅度，单位为度每平方秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Facing", meta = (ClampMin = "0.0"))
     float MaxTurnRateChangeSpeed = 720.0f;
+
+    /** 前向 Dash 全身蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
+    TObjectPtr<UAnimMontage> DashForwardMontage = nullptr;
+
+    /** 后向 Dash 全身蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
+    TObjectPtr<UAnimMontage> DashBackwardMontage = nullptr;
+
+    /** 左向 Dash 全身蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
+    TObjectPtr<UAnimMontage> DashLeftMontage = nullptr;
+
+    /** 右向 Dash 全身蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
+    TObjectPtr<UAnimMontage> DashRightMontage = nullptr;
+
+    /** 滑铲全身蒙太奇 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
+    TObjectPtr<UAnimMontage> SlideMontage = nullptr;
 };

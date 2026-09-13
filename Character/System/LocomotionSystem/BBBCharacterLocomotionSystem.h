@@ -46,4 +46,8 @@ private:
     const FBBBCharacterLocomotionConfig *Config = nullptr;
 
     const UCurveFloat *StrafeSpeedMapCurve = nullptr;
+
+    float SlideRemainingSeconds = 0.0f;
+
+    FVector SlideDirection = FVector::ForwardVector;
 };

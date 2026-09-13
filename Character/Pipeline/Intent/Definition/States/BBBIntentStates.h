@@ -30,6 +30,12 @@ struct FBBBCharacterIntentState
     /** 当前帧是否请求角色跳跃 */
     bool bWantsJump = false;
 
+    /** 当前帧是否请求 Dash */
+    bool bWantsDash = false;
+
+    /** 当前帧是否请求滑铲 */
+    bool bWantsSlide = false;
+
     //当前帧是否请求武器换弹
     bool bWantsReload = false;
 
@@ -52,6 +58,8 @@ struct FBBBCharacterIntentState
         RuntimeData.bWantsSprint = bWantsSprint;
         RuntimeData.bWantsCrouch = bWantsCrouch;
         RuntimeData.bWantsJump = bWantsJump;
+        RuntimeData.bWantsDash = bWantsDash;
+        RuntimeData.bWantsSlide = bWantsSlide;
         RuntimeData.bWantsReload = bWantsReload;
         RuntimeData.RequestedEquipSlot = RequestedEquipSlot;
         

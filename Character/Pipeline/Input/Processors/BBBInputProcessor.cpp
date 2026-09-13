@@ -76,6 +76,8 @@ void FBBBInputProcessor::Update(
     Processed.bReloadPressed = Raw.bReloadPressed;
     Processed.bEquipSlot1Pressed = Raw.bEquipSlot1Pressed;
     Processed.bEquipSlot2Pressed = Raw.bEquipSlot2Pressed;
+    Processed.bDashPressed = Raw.bDashPressed;
+    Processed.bSlidePressed = Raw.bSlidePressed;
 
     InputData.CommitProcessedInput(
         Processed,

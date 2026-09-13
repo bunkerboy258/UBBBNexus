@@ -15,4 +15,6 @@ void FBBBInputIntentProcessor::Update(
     Intent.bWantsSprint = Input.bSprintHeld;
     Intent.bWantsCrouch = Input.bCrouchHeld;
     Intent.bWantsJump = Input.bJumpPressed;
+    Intent.bWantsDash = Input.bDashPressed;
+    Intent.bWantsSlide = Input.bSlidePressed;
 }

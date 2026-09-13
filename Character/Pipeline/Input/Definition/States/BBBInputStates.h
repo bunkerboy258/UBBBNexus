@@ -68,6 +68,14 @@ struct FBBBRawInputFrame
     //标记二号装备槽按键本帧被按下
     UPROPERTY(BlueprintReadOnly)
     bool bEquipSlot2Pressed = false;
+
+    /** 标记本帧 Dash 输入 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bDashPressed = false;
+
+    /** 标记本帧滑铲输入 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bSlidePressed = false;
 };
 
 USTRUCT(BlueprintType)
@@ -147,4 +155,12 @@ struct FBBBProcessedInputFrame
     //保存本帧二号槽切换请求
     UPROPERTY(BlueprintReadOnly)
     bool bEquipSlot2Pressed = false;
+
+    /** 保存本帧一次性 Dash 输入 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bDashPressed = false;
+
+    /** 保存本帧一次性滑铲输入 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bSlidePressed = false;
 };

@@ -73,6 +73,18 @@ struct FBBBCharacterLocomotionConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Air", meta = (ClampMin = "0.0"))
     float GravityScale = 1.0f;
 
+    /** Dash 初速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Actions", meta = (ClampMin = "0.0"))
+    float DashSpeed = 900.0f;
+
+    /** 滑铲期间保持蹲伏的时长 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Actions", meta = (ClampMin = "0.0"))
+    float SlideDurationSeconds = 2.4f;
+
+    /** 滑铲期间的水平移动速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Actions", meta = (ClampMin = "0.0"))
+    float SlideSpeed = 280.0f;
+
     /** 最小模拟摇杆移动速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|CMC", meta = (ClampMin = "0.0"))
     float MinAnalogWalkSpeed = 150.0f;

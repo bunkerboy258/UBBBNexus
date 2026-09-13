@@ -10,6 +10,8 @@
 
 namespace
 {
+const FName LeftHandIKSocketName(TEXT("LeftHand"));
+
 bool TryBuildSocketBoneSpaceTransform(
     USkeletalMeshComponent &CharacterMesh,
     USceneComponent &EquipmentComponent,
@@ -88,6 +90,8 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     const FName RightHandBoneName = CharacterMesh.GetSocketBoneName(AttachmentSocketName);
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
+    RuntimeData.LeftHandIKOffsetRightHand = FVector::ZeroVector;
+    RuntimeData.bHasValidLeftHandIKOffset = false;
 
     USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
     const bool bHasValidReferenceBone = EquipmentComponent
@@ -109,6 +113,16 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             RuntimeData.MuzzleSocketName,
             FVector::ZeroVector,
             RuntimeData.AimSourceRightHandBoneSpace);
+
+        FTransform LeftHandIKRightHandSpace = FTransform::Identity;
+        RuntimeData.bHasValidLeftHandIKOffset = TryBuildSocketBoneSpaceTransform(
+            CharacterMesh,
+            *EquipmentComponent,
+            RightHandBoneName,
+            LeftHandIKSocketName,
+            FVector::ZeroVector,
+            LeftHandIKRightHandSpace);
+        RuntimeData.LeftHandIKOffsetRightHand = LeftHandIKRightHandSpace.GetTranslation();
     }
 
     return PresentationActor;

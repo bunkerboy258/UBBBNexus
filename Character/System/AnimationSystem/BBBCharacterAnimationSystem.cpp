@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationSystem::Initialize(
@@ -18,6 +19,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
+    const FBBBIntentRuntimeData &InIntentData,
     const FBBBCharacterAnimationConfig &InAnimationConfig)
 {
     Character = &InCharacter;
@@ -27,6 +29,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     EquipmentEvents = &InEquipmentEvents;
     EquipmentState = &InEquipmentState;
     WorldData = &InWorldData;
+    IntentData = &InIntentData;
     AnimationConfig = &InAnimationConfig;
 }
 
@@ -42,6 +45,7 @@ void FBBBCharacterAnimationSystem::Update()
             && EquipmentState
             && CharacterMesh
             && WorldData
+            && IntentData
             && AnimationConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
     {
@@ -64,6 +68,31 @@ void FBBBCharacterAnimationSystem::Update()
     ActionProcessor.Update(
         *AnimInstance,
         *EquipmentEvents);
+
+    if (IntentData->WantsDash())
+    {
+        const FVector2D MoveInput = IntentData->GetMoveInput();
+        UAnimMontage *DashMontage = AnimationConfig->DashForwardMontage;
+
+        if (FMath::Abs(MoveInput.X) > FMath::Abs(MoveInput.Y))
+        {
+            DashMontage = MoveInput.X < 0.0f
+                ? AnimationConfig->DashLeftMontage
+                : AnimationConfig->DashRightMontage;
+        }
+
+        if (MoveInput.Y < -0.5f)
+        {
+            DashMontage = AnimationConfig->DashBackwardMontage;
+        }
+
+        AnimInstance->PlayMovementActionMontage(DashMontage);
+    }
+
+    if (IntentData->WantsSlide())
+    {
+        AnimInstance->PlayMovementActionMontage(AnimationConfig->SlideMontage);
+    }
     FactProcessor.Update(
         *Character,
         *RuntimeData,

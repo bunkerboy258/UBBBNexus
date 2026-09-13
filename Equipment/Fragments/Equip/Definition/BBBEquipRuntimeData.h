@@ -28,4 +28,10 @@ private:
     /** 瞄准来源固定变换是否有效 */
     bool bHasValidAimSource = false;
 
+    /** 左手 IK 相对右手骨骼的固定位置 */
+    FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
+
+    /** 左手 IK 固定位置是否有效 */
+    bool bHasValidLeftHandIKOffset = false;
+
 };

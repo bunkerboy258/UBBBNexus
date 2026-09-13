@@ -46,3 +46,19 @@ void UBBBAnimInstance::SubmitEquipmentActionMontage(const FBBBEquipmentActionEve
         EquipmentActionMontage,
         EquipmentActionPlayRate);
 }
+
+//------------------------------------------------------------------------------
+
+void UBBBAnimInstance::PlayMovementActionMontage(UAnimMontage *Montage, float PlayRate)
+{
+    if (!ensureMsgf(Montage, TEXT("[UBBBC]Movement action montage is null")))
+    {
+        return;
+    }
+
+    const float PlayedLength = Montage_Play(Montage, FMath::Max(PlayRate, 0.01f));
+    ensureMsgf(
+        PlayedLength > 0.0f,
+        TEXT("[UBBBC]Movement action montage '%s' failed to play"),
+        *Montage->GetPathName());
+}

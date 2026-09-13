@@ -143,7 +143,22 @@ void FBBBCharacterLocomotionSystem::Update()
         return;
     }
 
-    const bool bWantsCrouch = IntentData->WantsCrouch();
+    const UWorld *World = Character->GetWorld();
+    const float DeltaSeconds = World ? World->GetDeltaSeconds() : 0.0f;
+    SlideRemainingSeconds = FMath::Max(SlideRemainingSeconds - DeltaSeconds, 0.0f);
+
+    if (IntentData->WantsSlide() && Movement->IsMovingOnGround())
+    {
+        SlideRemainingSeconds = FMath::Max(Config->SlideDurationSeconds, 0.0f);
+        SlideDirection = ResolveWorldMoveDirection(*Character, *IntentData);
+        if (SlideDirection.IsNearlyZero())
+        {
+            SlideDirection = Character->GetActorForwardVector();
+        }
+    }
+
+    const bool bSlideActive = SlideRemainingSeconds > 0.0f;
+    const bool bWantsCrouch = IntentData->WantsCrouch() || bSlideActive;
     if (bWantsCrouch)
     {
         Character->Crouch();
@@ -172,6 +187,11 @@ void FBBBCharacterLocomotionSystem::Update()
     Movement->MaxWalkSpeedCrouched = FMath::Max(
         ResolveDirectionalSpeed(Config->CrouchSpeeds, DirectionMap),
         1.0f);
+
+    if (bSlideActive)
+    {
+        Movement->MaxWalkSpeedCrouched = FMath::Max(Config->SlideSpeed, 1.0f);
+    }
     Movement->MaxAcceleration = FMath::Max(Config->MaxAcceleration, 0.0f);
     Movement->BrakingDecelerationWalking = FMath::Max(Config->BrakingDeceleration, 0.0f);
     Movement->GroundFriction = FMath::Max(Config->GroundFriction, 0.0f);
@@ -179,9 +199,29 @@ void FBBBCharacterLocomotionSystem::Update()
     Movement->BrakingFrictionFactor = FMath::Max(Config->BrakingFrictionFactor, 0.0f);
     Movement->bUseSeparateBrakingFriction = false;
 
+    if (IntentData->WantsDash() && Movement->IsMovingOnGround())
+    {
+        FVector DashDirection = ResolveWorldMoveDirection(*Character, *IntentData);
+        if (DashDirection.IsNearlyZero())
+        {
+            DashDirection = Character->GetActorForwardVector();
+        }
+
+        Character->LaunchCharacter(
+            DashDirection * FMath::Max(Config->DashSpeed, 0.0f),
+            false,
+            false);
+    }
+
     if (!bWantsCrouch && IntentData->WantsJump())
     {
         Character->Jump();
+    }
+
+    if (bSlideActive)
+    {
+        Character->AddMovementInput(SlideDirection, 1.0f);
+        return;
     }
 
     if (!IntentData->HasMoveInput())

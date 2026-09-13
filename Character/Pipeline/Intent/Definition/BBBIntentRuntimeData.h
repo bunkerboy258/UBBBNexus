@@ -73,6 +73,18 @@ struct FBBBIntentRuntimeData
         return bWantsJump;
     }
 
+    /** @return 当前帧是否请求 Dash */
+    bool WantsDash() const
+    {
+        return bWantsDash;
+    }
+
+    /** @return 当前帧是否请求滑铲 */
+    bool WantsSlide() const
+    {
+        return bWantsSlide;
+    }
+
     /**
      * 判断当前帧是否请求换弹
      * @return 是否请求换弹
@@ -142,6 +154,14 @@ private:
     /** 跳跃请求 */
     UPROPERTY()
     bool bWantsJump = false;
+
+    /** Dash 请求 */
+    UPROPERTY()
+    bool bWantsDash = false;
+
+    /** 滑铲请求 */
+    UPROPERTY()
+    bool bWantsSlide = false;
 
     //换弹请求
     UPROPERTY()

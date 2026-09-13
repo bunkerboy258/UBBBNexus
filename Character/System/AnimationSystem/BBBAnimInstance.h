@@ -162,7 +162,7 @@ public:
     }
 
     /** @return 当前主手装备实例 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     UBBBEquipmentInstance *GetMainHandEquipmentInstance() const
     {
         return AnimationFacts.MainHandEquipmentInstance;
@@ -247,6 +247,13 @@ public:
      * @return 无
      */
     void SubmitEquipmentActionMontage(const FBBBEquipmentActionEvent &Event);
+
+    /**
+     * 播放角色移动动作蒙太奇
+     * @param Montage	移动动作蒙太奇
+     * @param PlayRate	播放倍率
+     */
+    void PlayMovementActionMontage(UAnimMontage *Montage, float PlayRate = 1.0f);
 
     /** 角色胶囊体底部到地面的距离，供动画属性存取节点直接读取 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")

@@ -131,6 +131,18 @@ struct FBBBInputRawData
         RawInput.bEquipSlot2Pressed = true;
     }
 
+    /** 标记本帧 Dash 按下 */
+    void MarkDashPressed()
+    {
+        RawInput.bDashPressed = true;
+    }
+
+    /** 标记本帧滑铲按下 */
+    void MarkSlidePressed()
+    {
+        RawInput.bSlidePressed = true;
+    }
+
     /**
      * 读取累积的原始输入帧
      * @return 原始输入帧
@@ -163,6 +175,10 @@ struct FBBBInputRawData
         RawInput.bEquipSlot1Pressed = false;
 
         RawInput.bEquipSlot2Pressed = false;
+
+        RawInput.bDashPressed = false;
+
+        RawInput.bSlidePressed = false;
     }
     
 private:
