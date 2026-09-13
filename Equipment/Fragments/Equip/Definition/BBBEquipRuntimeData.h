@@ -7,7 +7,6 @@
 struct FBBBEquipFragment;
 class UBBBEquipmentSystem;
 class UBBBEquipmentRuntimeData;
-class USkeletalMeshComponent;
 
 /** 装备过渡运行数据 */
 UCLASS(BlueprintType)
@@ -29,9 +28,4 @@ private:
     /** 瞄准来源固定变换是否有效 */
     bool bHasValidAimSource = false;
 
-    /** 左手 IK 目标重建所需的角色骨骼网格 */
-    USkeletalMeshComponent *CharacterMesh = nullptr;
-
-    /** 左手 IK 目标重建所需的右手参考骨骼 */
-    FName RightHandBoneName = NAME_None;
 };

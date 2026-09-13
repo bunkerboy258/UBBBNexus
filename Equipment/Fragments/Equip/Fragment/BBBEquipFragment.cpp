@@ -88,8 +88,6 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     const FName RightHandBoneName = CharacterMesh.GetSocketBoneName(AttachmentSocketName);
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
-    RuntimeData.CharacterMesh = &CharacterMesh;
-    RuntimeData.RightHandBoneName = RightHandBoneName;
 
     USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
     const bool bHasValidReferenceBone = EquipmentComponent
@@ -111,7 +109,6 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             RuntimeData.MuzzleSocketName,
             FVector::ZeroVector,
             RuntimeData.AimSourceRightHandBoneSpace);
-
     }
 
     return PresentationActor;

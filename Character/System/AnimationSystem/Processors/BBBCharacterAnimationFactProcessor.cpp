@@ -77,9 +77,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     FTransform AimSourceLocalTransform = FTransform::Identity;
-    FTransform LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
     bool bHasValidAimSource = false;
-    bool bHasValidLeftHandIKTarget = false;
     bool bIsReloading = false;
     float TimeSinceLastFire = BIG_NUMBER;
 
@@ -92,8 +90,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
         {
             bHasValidAimSource = EquipmentSystem->TryGetAimSourceRightHandBoneSpace(
                 AimSourceLocalTransform);
-            bHasValidLeftHandIKTarget = EquipmentSystem->TryGetLeftHandIKTargetRightHandBoneSpace(
-                LeftHandIKTargetRightHandBoneSpace);
             bIsReloading = EquipmentState.IsReloading();
             TimeSinceLastFire = EquipmentSystem->GetTimeSinceLastFire(World->GetTimeSeconds());
         }
@@ -149,7 +145,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.Acceleration = Movement->GetCurrentAcceleration();
     OutFacts.AimTargetComponentSpace = SmoothedAimTargetComponentSpace;
     OutFacts.AimSourceLocalTransform = AimSourceLocalTransform;
-    OutFacts.LeftHandIKTargetRightHandBoneSpace = LeftHandIKTargetRightHandBoneSpace;
+    OutFacts.MainHandEquipmentInstance = ActiveInstance;
     OutFacts.Gait = RuntimeData.Locomotion.GetGait();
     OutFacts.MovementMode = Movement->MovementMode;
     OutFacts.GroundFriction = Movement->GroundFriction;
@@ -170,7 +166,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.bIsReloading = bIsReloading;
     OutFacts.bHasValidAimTarget = bHasValidAimTarget;
     OutFacts.bHasValidAimSource = bHasValidAimSource;
-    OutFacts.bHasValidLeftHandIKTarget = bHasValidLeftHandIKTarget;
 }
 
 //------------------------------------------------------------------------------

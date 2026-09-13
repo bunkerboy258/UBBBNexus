@@ -5,6 +5,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
+class UBBBEquipmentInstance;
+
 /** 游戏线程提交给动画实例的只读角色事实 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterAnimationFacts
@@ -32,9 +34,9 @@ struct FBBBCharacterAnimationFacts
     UPROPERTY(BlueprintReadOnly)
     FTransform AimSourceLocalTransform = FTransform::Identity;
 
-    /** 左手 IK 目标相对右手骨骼的变换 */
-    UPROPERTY(BlueprintReadOnly)
-    FTransform LeftHandIKTargetRightHandBoneSpace = FTransform::Identity;
+    /** 当前主手装备实例 */
+    UPROPERTY()
+    TObjectPtr<UBBBEquipmentInstance> MainHandEquipmentInstance = nullptr;
 
     UPROPERTY(BlueprintReadOnly)
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
@@ -92,9 +94,5 @@ struct FBBBCharacterAnimationFacts
 
     UPROPERTY(BlueprintReadOnly)
     bool bHasValidAimSource = false;
-
-    /** 左手 IK 目标是否有效 */
-    UPROPERTY(BlueprintReadOnly)
-    bool bHasValidLeftHandIKTarget = false;
 
 };

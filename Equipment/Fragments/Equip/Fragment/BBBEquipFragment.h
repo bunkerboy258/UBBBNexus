@@ -62,11 +62,4 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
     TObjectPtr<UAnimMontage> EquipMontage = nullptr;
 
-    /** 左手 IK 目标插槽 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    FName LeftHandGripSocketName = NAME_None;
-
-    /** 左手 IK 目标相对 Socket 的武器坐标空间位置偏移 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Pose")
-    FVector LeftHandGripSocketOffset = FVector::ZeroVector;
 };
