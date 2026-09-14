@@ -2,6 +2,19 @@
 
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 
+UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
+{
+    UBBBAnimInstance *MainAnimInstance = Cast<UBBBAnimInstance>(Blueprint_GetMainAnimInstance());
+    if (MainAnimInstance)
+    {
+        return MainAnimInstance;
+    }
+
+    return const_cast<UBBBAnimInstance *>(this);
+}
+
+//------------------------------------------------------------------------------
+
 void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFacts &Facts)
 {
