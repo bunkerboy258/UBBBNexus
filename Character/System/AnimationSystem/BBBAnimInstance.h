@@ -172,6 +172,14 @@ public:
         return AnimationFacts.MainHandEquipmentInstance;
     }
 
+    /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment")
+    FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
+
+    /** 装备初始化时缓存的左手 IK 目标是否有效 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment")
+    bool bHasValidLeftHandIKTarget = false;
+
     /** @return 当前本地或远端恢复的换弹是否仍在进行 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     bool IsReloading() const

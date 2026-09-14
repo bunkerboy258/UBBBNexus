@@ -38,6 +38,14 @@ struct FBBBCharacterAnimationFacts
     UPROPERTY()
     TObjectPtr<UBBBEquipmentInstance> MainHandEquipmentInstance = nullptr;
 
+    /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
+    UPROPERTY(BlueprintReadOnly)
+    FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
+
+    /** 装备初始化时缓存的左手 IK 目标是否有效 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bHasValidLeftHandIKTarget = false;
+
     UPROPERTY(BlueprintReadOnly)
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
 

@@ -26,6 +26,8 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceLastUpdateVelocity = Facts.LastUpdateVelocity;
     SourceAcceleration = Facts.Acceleration;
     SourceMovementMode = Facts.MovementMode;
+    LeftHandIKOffsetRightHand = Facts.LeftHandIKOffsetRightHand;
+    bHasValidLeftHandIKTarget = Facts.bHasValidLeftHandIKTarget;
 
     SourceGroundFriction = Facts.GroundFriction;
     SourceBrakingFriction = Facts.BrakingFriction;

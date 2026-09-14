@@ -146,6 +146,14 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.AimTargetComponentSpace = SmoothedAimTargetComponentSpace;
     OutFacts.AimSourceLocalTransform = AimSourceLocalTransform;
     OutFacts.MainHandEquipmentInstance = ActiveInstance;
+    OutFacts.LeftHandIKOffsetRightHand = FVector::ZeroVector;
+    OutFacts.bHasValidLeftHandIKTarget = false;
+
+    if (ActiveInstance)
+    {
+        OutFacts.LeftHandIKOffsetRightHand = ActiveInstance->GetLeftHandIKOffsetRightHand();
+        OutFacts.bHasValidLeftHandIKTarget = ActiveInstance->HasValidLeftHandIKTarget();
+    }
     OutFacts.Gait = RuntimeData.Locomotion.GetGait();
     OutFacts.MovementMode = Movement->MovementMode;
     OutFacts.GroundFriction = Movement->GroundFriction;
