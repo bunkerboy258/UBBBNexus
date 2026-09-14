@@ -63,8 +63,9 @@ bool UBBBEquipmentSystem::Equip(
         return false;
     }
 
-    Instance->SetLeftHandIKOffsetRightHand(
+    Instance->SetLeftHandIKData(
         EquipRuntimeData->LeftHandIKOffsetRightHand,
+        EquipRuntimeData->LeftHandIKSocketOffset,
         EquipRuntimeData->bHasValidLeftHandIKTarget);
 
     if (!Instance->PresentationActor)

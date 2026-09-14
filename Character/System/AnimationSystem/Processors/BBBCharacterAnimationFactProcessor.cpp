@@ -151,8 +151,12 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     if (ActiveInstance)
     {
-        OutFacts.LeftHandIKOffsetRightHand = ActiveInstance->GetLeftHandIKOffsetRightHand();
         OutFacts.bHasValidLeftHandIKTarget = ActiveInstance->HasValidLeftHandIKTarget();
+
+        if (OutFacts.bHasValidLeftHandIKTarget)
+        {
+            OutFacts.LeftHandIKOffsetRightHand = ActiveInstance->GetLeftHandIKOffsetRightHand();
+        }
     }
     OutFacts.Gait = RuntimeData.Locomotion.GetGait();
     OutFacts.MovementMode = Movement->MovementMode;

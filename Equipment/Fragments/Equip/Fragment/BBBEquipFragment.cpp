@@ -91,6 +91,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
     RuntimeData.LeftHandIKOffsetRightHand = FVector::ZeroVector;
+    RuntimeData.LeftHandIKSocketOffset = LeftHandIKSocketOffset;
     RuntimeData.bHasValidLeftHandIKTarget = false;
 
     USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
@@ -120,7 +121,7 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
             *EquipmentComponent,
             RightHandBoneName,
             LeftHandIKSocketName,
-            FVector::ZeroVector,
+            RuntimeData.LeftHandIKSocketOffset,
             LeftHandIKRightHandSpace);
         RuntimeData.LeftHandIKOffsetRightHand = LeftHandIKRightHandSpace.GetTranslation();
     }

@@ -31,6 +31,9 @@ private:
     /** 左手 IK 相对右手骨骼的固定位置 */
     FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
 
+    /** 左手 IK 插槽在装备组件空间中的附加偏移 */
+    FVector LeftHandIKSocketOffset = FVector::ZeroVector;
+
     /** 左手 IK 固定位置是否有效 */
     bool bHasValidLeftHandIKTarget = false;
 

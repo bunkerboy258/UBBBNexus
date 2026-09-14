@@ -172,6 +172,13 @@ public:
         return AnimationFacts.MainHandEquipmentInstance;
     }
 
+    /**
+     * 实时计算左手 IK 插槽加附加偏移后相对右手骨骼的位置
+     * @return 右手骨骼空间中的左手 IK 目标位置，无有效装备或目标时返回零向量
+     */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Debug")
+    FVector GetLiveLeftHandIKTargetRightHandBoneSpace() const;
+
     /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment")
     FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;

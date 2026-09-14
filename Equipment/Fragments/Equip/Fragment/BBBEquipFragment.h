@@ -54,6 +54,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     FTransform SpawnOffset = FTransform::Identity;
 
+    /** 左手 IK 插槽在装备组件空间中的附加偏移 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|IK")
+    FVector LeftHandIKSocketOffset = FVector::ZeroVector;
+
     /** 装备动作持续时间 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip", meta = (ClampMin = "0.01"))
     float EquipDuration = 0.8f;

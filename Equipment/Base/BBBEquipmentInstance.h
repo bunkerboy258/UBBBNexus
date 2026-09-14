@@ -47,6 +47,13 @@ public:
         return LeftHandIKOffsetRightHand;
     }
 
+    /** @return 左手 IK 插槽在装备组件空间中的附加偏移 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    FVector GetLeftHandIKSocketOffset() const
+    {
+        return LeftHandIKSocketOffset;
+    }
+
     /** @return 装备初始化时缓存的左手 IK 位置是否有效 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     bool HasValidLeftHandIKTarget() const
@@ -57,9 +64,13 @@ public:
 private:
     friend class UBBBEquipmentSystem;
 
-    void SetLeftHandIKOffsetRightHand(const FVector &InOffset, bool bInValid)
+    void SetLeftHandIKData(
+        const FVector &InTargetRightHand,
+        const FVector &InSocketOffset,
+        bool bInValid)
     {
-        LeftHandIKOffsetRightHand = InOffset;
+        LeftHandIKOffsetRightHand = InTargetRightHand;
+        LeftHandIKSocketOffset = InSocketOffset;
         bHasValidLeftHandIKTarget = bInValid;
     }
 
@@ -85,6 +96,9 @@ private:
 
     /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
     FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
+
+    /** 装备初始化时使用的左手 IK 插槽附加偏移 */
+    FVector LeftHandIKSocketOffset = FVector::ZeroVector;
 
     /** 装备初始化时缓存的左手 IK 位置是否有效 */
     bool bHasValidLeftHandIKTarget = false;
