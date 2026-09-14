@@ -49,9 +49,9 @@ public:
 
     /** @return 装备初始化时缓存的左手 IK 位置是否有效 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool HasValidLeftHandIKOffset() const
+    bool HasValidLeftHandIKTarget() const
     {
-        return bHasValidLeftHandIKOffset;
+        return bHasValidLeftHandIKTarget;
     }
 
 private:
@@ -60,7 +60,7 @@ private:
     void SetLeftHandIKOffsetRightHand(const FVector &InOffset, bool bInValid)
     {
         LeftHandIKOffsetRightHand = InOffset;
-        bHasValidLeftHandIKOffset = bInValid;
+        bHasValidLeftHandIKTarget = bInValid;
     }
 
     /** 实例唯一标识 */
@@ -87,5 +87,5 @@ private:
     FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
 
     /** 装备初始化时缓存的左手 IK 位置是否有效 */
-    bool bHasValidLeftHandIKOffset = false;
+    bool bHasValidLeftHandIKTarget = false;
 };

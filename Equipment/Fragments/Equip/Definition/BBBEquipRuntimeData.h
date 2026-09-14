@@ -32,6 +32,6 @@ private:
     FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
 
     /** 左手 IK 固定位置是否有效 */
-    bool bHasValidLeftHandIKOffset = false;
+    bool bHasValidLeftHandIKTarget = false;
 
 };
