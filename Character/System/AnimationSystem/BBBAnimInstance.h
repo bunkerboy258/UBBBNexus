@@ -169,23 +169,42 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     UBBBEquipmentInstance *GetMainHandEquipmentInstance() const
     {
-        return AnimationFacts.MainHandEquipmentInstance;
+        return MainHandEquipmentInstance;
     }
 
     /**
-     * 实时计算左手 IK 插槽加附加偏移后相对右手骨骼的位置
-     * @return 右手骨骼空间中的左手 IK 目标位置，无有效装备或目标时返回零向量
+     * 查询角色骨骼的当前世界变换
+     * @param BoneName        角色骨骼名称
+     * @param OutBoneWorld    接收骨骼世界变换
+     * @return 角色网格与骨骼是否有效
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Debug")
-    FVector GetLiveLeftHandIKTargetRightHandBoneSpace() const;
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool TryGetCharacterBoneWorldTransform(
+        FName BoneName,
+        FTransform &OutBoneWorld) const;
 
-    /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment")
-    FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
+    /**
+     * 查询当前左手 IK 空间转换所需的实时源数据
+     * @param SocketName                    装备左手 IK 插槽名称
+     * @param ReferenceBoneName             角色参考骨骼名称
+     * @param OutSocketComponentSpace       接收插槽组件空间变换
+     * @param OutSocketOffset               接收插槽组件空间附加偏移
+     * @param OutEquipmentWorld             接收装备组件世界变换
+     * @param OutReferenceBoneWorld         接收参考骨骼世界变换
+     * @return 当前装备、插槽与参考骨骼是否有效
+     */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool TryGetCurrentLeftHandIKSourceData(
+        FName SocketName,
+        FName ReferenceBoneName,
+        FTransform &OutSocketComponentSpace,
+        FVector &OutSocketOffset,
+        FTransform &OutEquipmentWorld,
+        FTransform &OutReferenceBoneWorld) const;
 
-    /** 装备初始化时缓存的左手 IK 目标是否有效 */
+    /** 当前主手装备实例 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment")
-    bool bHasValidLeftHandIKTarget = false;
+    TObjectPtr<UBBBEquipmentInstance> MainHandEquipmentInstance = nullptr;
 
     /** @return 当前本地或远端恢复的换弹是否仍在进行 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))

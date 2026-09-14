@@ -2,8 +2,6 @@
 
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
-#include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
@@ -30,8 +28,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceLastUpdateVelocity = Facts.LastUpdateVelocity;
     SourceAcceleration = Facts.Acceleration;
     SourceMovementMode = Facts.MovementMode;
-    LeftHandIKOffsetRightHand = Facts.LeftHandIKOffsetRightHand;
-    bHasValidLeftHandIKTarget = Facts.bHasValidLeftHandIKTarget;
+    MainHandEquipmentInstance = Facts.MainHandEquipmentInstance;
 
     SourceGroundFriction = Facts.GroundFriction;
     SourceBrakingFriction = Facts.BrakingFriction;
@@ -47,61 +44,68 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-FVector UBBBAnimInstance::GetLiveLeftHandIKTargetRightHandBoneSpace() const
+bool UBBBAnimInstance::TryGetCharacterBoneWorldTransform(
+    const FName BoneName,
+    FTransform &OutBoneWorld) const
 {
-    const UBBBEquipmentInstance *EquipmentInstance = AnimationFacts.MainHandEquipmentInstance;
-    if (!EquipmentInstance)
-    {
-        return FVector::ZeroVector;
-    }
+    OutBoneWorld = FTransform::Identity;
 
     USkeletalMeshComponent *CharacterMesh = GetOwningComponent();
-    if (!ensureMsgf(CharacterMesh, TEXT("[UBBBC]Character animation owning mesh is null during live left hand IK query")))
+    if (!ensureMsgf(CharacterMesh, TEXT("[UBBBC]Character animation owning mesh is null during bone query")))
     {
-        return FVector::ZeroVector;
+        return false;
     }
 
-    ABBBEquipmentPresentationActor *PresentationActor = EquipmentInstance->GetPresentationActor();
-    if (!ensureMsgf(PresentationActor, TEXT("[UBBBC]Main hand equipment presentation actor is null during live left hand IK query")))
-    {
-        return FVector::ZeroVector;
-    }
-
-    USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
-    if (!ensureMsgf(EquipmentComponent, TEXT("[UBBBC]Main hand equipment attachment component is null during live left hand IK query")))
-    {
-        return FVector::ZeroVector;
-    }
-
-    const FName AttachmentSocketName = PresentationActor->GetRootComponent()
-        ? PresentationActor->GetRootComponent()->GetAttachSocketName()
-        : NAME_None;
-    const FName ReferenceBoneName = CharacterMesh->GetSocketBoneName(AttachmentSocketName);
     if (!ensureMsgf(
-        ReferenceBoneName != NAME_None
-        && CharacterMesh->GetBoneIndex(ReferenceBoneName) != INDEX_NONE,
-        TEXT("[UBBBC]Live left hand IK reference bone is invalid")))
+        BoneName != NAME_None
+        && CharacterMesh->GetBoneIndex(BoneName) != INDEX_NONE,
+        TEXT("[UBBBC]Character bone '%s' is invalid"),
+        *BoneName.ToString()))
     {
-        return FVector::ZeroVector;
+        return false;
     }
 
-    static const FName LeftHandIKSocketName(TEXT("LeftHand"));
-    if (!ensureMsgf(
-        EquipmentComponent->DoesSocketExist(LeftHandIKSocketName),
-        TEXT("[UBBBC]Live left hand IK socket '%s' is missing"),
-        *LeftHandIKSocketName.ToString()))
+    OutBoneWorld = CharacterMesh->GetBoneTransform(BoneName, RTS_World);
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool UBBBAnimInstance::TryGetCurrentLeftHandIKSourceData(
+    const FName SocketName,
+    const FName ReferenceBoneName,
+    FTransform &OutSocketComponentSpace,
+    FVector &OutSocketOffset,
+    FTransform &OutEquipmentWorld,
+    FTransform &OutReferenceBoneWorld) const
+{
+    OutSocketComponentSpace = FTransform::Identity;
+    OutSocketOffset = FVector::ZeroVector;
+    OutEquipmentWorld = FTransform::Identity;
+    OutReferenceBoneWorld = FTransform::Identity;
+
+    if (!MainHandEquipmentInstance)
     {
-        return FVector::ZeroVector;
+        return false;
     }
 
-    FTransform SocketComponent = EquipmentComponent->GetSocketTransform(
-        LeftHandIKSocketName,
-        RTS_Component);
-    SocketComponent.AddToTranslation(EquipmentInstance->GetLeftHandIKSocketOffset());
+    if (!MainHandEquipmentInstance->TryGetSocketTransforms(
+        SocketName,
+        OutSocketComponentSpace,
+        OutEquipmentWorld))
+    {
+        return false;
+    }
 
-    const FTransform SocketWorld = SocketComponent * EquipmentComponent->GetComponentTransform();
-    const FTransform ReferenceBoneWorld = CharacterMesh->GetBoneTransform(ReferenceBoneName, RTS_World);
-    return SocketWorld.GetRelativeTransform(ReferenceBoneWorld).GetTranslation();
+    if (!TryGetCharacterBoneWorldTransform(
+        ReferenceBoneName,
+        OutReferenceBoneWorld))
+    {
+        return false;
+    }
+
+    OutSocketOffset = MainHandEquipmentInstance->GetLeftHandIKSocketOffset();
+    return true;
 }
 
 //------------------------------------------------------------------------------

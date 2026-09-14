@@ -40,13 +40,6 @@ public:
         return PresentationActor;
     }
 
-    /** @return 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    FVector GetLeftHandIKOffsetRightHand() const
-    {
-        return LeftHandIKOffsetRightHand;
-    }
-
     /** @return 左手 IK 插槽在装备组件空间中的附加偏移 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     FVector GetLeftHandIKSocketOffset() const
@@ -54,24 +47,25 @@ public:
         return LeftHandIKSocketOffset;
     }
 
-    /** @return 装备初始化时缓存的左手 IK 位置是否有效 */
+    /**
+     * 查询装备插槽的当前组件空间变换与装备世界变换
+     * @param SocketName                    装备插槽名称
+     * @param OutSocketComponentSpace       接收插槽组件空间变换
+     * @param OutEquipmentWorld             接收装备组件世界变换
+     * @return 插槽与装备组件是否有效
+     */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool HasValidLeftHandIKTarget() const
-    {
-        return bHasValidLeftHandIKTarget;
-    }
+    bool TryGetSocketTransforms(
+        FName SocketName,
+        FTransform &OutSocketComponentSpace,
+        FTransform &OutEquipmentWorld) const;
 
 private:
     friend class UBBBEquipmentSystem;
 
-    void SetLeftHandIKData(
-        const FVector &InTargetRightHand,
-        const FVector &InSocketOffset,
-        bool bInValid)
+    void SetLeftHandIKSocketOffset(const FVector &InSocketOffset)
     {
-        LeftHandIKOffsetRightHand = InTargetRightHand;
         LeftHandIKSocketOffset = InSocketOffset;
-        bHasValidLeftHandIKTarget = bInValid;
     }
 
     /** 实例唯一标识 */
@@ -94,12 +88,6 @@ private:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
 
-    /** 装备初始化时缓存的左手 IK 相对右手骨骼位置 */
-    FVector LeftHandIKOffsetRightHand = FVector::ZeroVector;
-
     /** 装备初始化时使用的左手 IK 插槽附加偏移 */
     FVector LeftHandIKSocketOffset = FVector::ZeroVector;
-
-    /** 装备初始化时缓存的左手 IK 位置是否有效 */
-    bool bHasValidLeftHandIKTarget = false;
 };
