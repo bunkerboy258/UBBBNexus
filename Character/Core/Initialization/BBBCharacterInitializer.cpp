@@ -210,25 +210,25 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.MoveAction,
             ETriggerEvent::Triggered,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetMoveAxis(Value.Get<FVector2D>());
+                CharacterPtr->RuntimeData.Input.RawInputData.SetMoveAxis(Value.Get<FVector2D>());
             });
         
         Input->BindActionValueLambda(
             Config.MoveAction,
             ETriggerEvent::Completed,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
             });
         
         Input->BindActionValueLambda(
             Config.MoveAction,
             ETriggerEvent::Canceled,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
             });
     }
     
@@ -237,9 +237,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.LookAction,
             ETriggerEvent::Triggered,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetLookAxis(Value.Get<FVector2D>());
+                CharacterPtr->RuntimeData.Input.RawInputData.SetLookAxis(Value.Get<FVector2D>());
             });
     }
     
@@ -248,36 +248,36 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.FireAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
                 //设置连续开火状态为1
-                Character.RuntimeData.Input.RawInputData.SetFireHeld(true);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetFireHeld(true);
 
                 //触发开火开始的边沿事件
-                Character.RuntimeData.Input.RawInputData.MarkFireStarted();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkFireStarted();
             });
         
         Input->BindActionValueLambda(
             Config.FireAction,
             ETriggerEvent::Completed,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
                 //设置连续开火状态为0
-                Character.RuntimeData.Input.RawInputData.SetFireHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetFireHeld(false);
 
                 //触发开火结束的边沿事件
-                Character.RuntimeData.Input.RawInputData.MarkFireCompleted();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkFireCompleted();
             });
 
         //输入被取消时 执行与正常结束相同的状态收束
         Input->BindActionValueLambda(
             Config.FireAction,
             ETriggerEvent::Canceled,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetFireHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetFireHeld(false);
 
-                Character.RuntimeData.Input.RawInputData.MarkFireCompleted();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkFireCompleted();
             });
     }
     
@@ -286,9 +286,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.ReloadAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.MarkReloadPressed();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkReloadPressed();
             });
     }
     
@@ -297,9 +297,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.EquipSlot1Action,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.MarkEquipSlot1Pressed();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkEquipSlot1Pressed();
             });
     }
     
@@ -308,9 +308,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.EquipSlot2Action,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.MarkEquipSlot2Pressed();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkEquipSlot2Pressed();
             });
     }
     
@@ -320,31 +320,31 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.PrecisionAimAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetPrecisionAimHeld(true);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetPrecisionAimHeld(true);
                 
-                Character.RuntimeData.Input.RawInputData.MarkPrecisionAimStarted();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkPrecisionAimStarted();
             });
         
         Input->BindActionValueLambda(
             Config.PrecisionAimAction,
             ETriggerEvent::Completed,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
                 
-                Character.RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
             });
         
         Input->BindActionValueLambda(
             Config.PrecisionAimAction,
             ETriggerEvent::Canceled,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
                 
-                Character.RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
             });
     }
     
@@ -353,25 +353,25 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.WalkAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetWalkHeld(true);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetWalkHeld(true);
             });
 
         Input->BindActionValueLambda(
             Config.WalkAction,
             ETriggerEvent::Completed,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetWalkHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetWalkHeld(false);
             });
 
         Input->BindActionValueLambda(
             Config.WalkAction,
             ETriggerEvent::Canceled,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetWalkHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetWalkHeld(false);
             });
     }
 
@@ -380,25 +380,25 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.SprintAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetSprintHeld(true);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetSprintHeld(true);
             });
         
         Input->BindActionValueLambda(
             Config.SprintAction,
             ETriggerEvent::Completed,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetSprintHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetSprintHeld(false);
             });
         
         Input->BindActionValueLambda(
             Config.SprintAction,
             ETriggerEvent::Canceled,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetSprintHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetSprintHeld(false);
             });
     }
 
@@ -407,25 +407,25 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.CrouchAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetCrouchHeld(true);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetCrouchHeld(true);
             });
 
         Input->BindActionValueLambda(
             Config.CrouchAction,
             ETriggerEvent::Completed,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetCrouchHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetCrouchHeld(false);
             });
 
         Input->BindActionValueLambda(
             Config.CrouchAction,
             ETriggerEvent::Canceled,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.SetCrouchHeld(false);
+                CharacterPtr->RuntimeData.Input.RawInputData.SetCrouchHeld(false);
             });
     }
 
@@ -434,9 +434,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.JumpAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.MarkJumpPressed();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkJumpPressed();
             });
     }
 
@@ -445,9 +445,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.DashAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.MarkDashPressed();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkDashPressed();
             });
     }
 
@@ -456,9 +456,9 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
         Input->BindActionValueLambda(
             Config.SlideAction,
             ETriggerEvent::Started,
-            [&Character](const FInputActionValue &Value)
+            [CharacterPtr = &Character](const FInputActionValue &Value)
             {
-                Character.RuntimeData.Input.RawInputData.MarkSlidePressed();
+                CharacterPtr->RuntimeData.Input.RawInputData.MarkSlidePressed();
             });
     }
 }
