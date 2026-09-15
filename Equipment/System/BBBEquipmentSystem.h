@@ -8,6 +8,8 @@ struct FBBBEquipmentActionPresentation;
 struct FBBBEquipmentFireResult;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
+class UBBBAnimInstance;
+class UBBBEquipmentAnimInstance;
 class UBBBEquipmentRuntimeData;
 class FBBBCharacterEquipmentActionProcessor;
 class USkeletalMeshComponent;
@@ -96,6 +98,14 @@ public:
     float GetTimeSinceLastFire(float WorldTimeSeconds) const;
 
 private:
+    /** 当前绑定的角色主动画实例 */
+    UPROPERTY(Transient)
+    TWeakObjectPtr<UBBBAnimInstance> BoundCharacterAnimInstance;
+
+    /** 随本件武器表现实体创建的动画实例 */
+    UPROPERTY(Transient)
+    TWeakObjectPtr<UBBBEquipmentAnimInstance> BoundWeaponAnimInstance;
+
     friend class UBBBEquipmentInstance;
     friend class FBBBCharacterEquipmentActionProcessor;
 

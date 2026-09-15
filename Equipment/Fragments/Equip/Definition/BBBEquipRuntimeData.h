@@ -28,7 +28,4 @@ private:
     /** 瞄准来源固定变换是否有效 */
     bool bHasValidAimSource = false;
 
-    /** 左手 IK 插槽在装备组件空间中的附加偏移 */
-    FVector LeftHandIKSocketOffset = FVector::ZeroVector;
-
 };

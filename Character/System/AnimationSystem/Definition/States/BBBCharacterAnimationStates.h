@@ -5,8 +5,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBCharacterAnimationStates.generated.h"
 
-class UBBBEquipmentInstance;
-
 /** 游戏线程提交给动画实例的只读角色事实 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterAnimationFacts
@@ -27,16 +25,6 @@ struct FBBBCharacterAnimationFacts
 
     UPROPERTY(BlueprintReadOnly)
     FVector Acceleration = FVector::ZeroVector;
-
-    UPROPERTY(BlueprintReadOnly)
-    FVector AimTargetComponentSpace = FVector::ZeroVector;
-
-    UPROPERTY(BlueprintReadOnly)
-    FTransform AimSourceLocalTransform = FTransform::Identity;
-
-    /** 当前主手装备实例 */
-    UPROPERTY()
-    TObjectPtr<UBBBEquipmentInstance> MainHandEquipmentInstance = nullptr;
 
     UPROPERTY(BlueprintReadOnly)
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
@@ -63,15 +51,6 @@ struct FBBBCharacterAnimationFacts
     float GroundDistance = -1.0f;
 
     UPROPERTY(BlueprintReadOnly)
-    float AimIntentAlpha = 0.0f;
-
-    UPROPERTY(BlueprintReadOnly)
-    float AimIKAlpha = 0.0f;
-
-    UPROPERTY(BlueprintReadOnly)
-    float TimeSinceLastFire = BIG_NUMBER;
-
-    UPROPERTY(BlueprintReadOnly)
     bool bUseSeparateBrakingFriction = false;
 
     UPROPERTY(BlueprintReadOnly)
@@ -80,19 +59,20 @@ struct FBBBCharacterAnimationFacts
     UPROPERTY(BlueprintReadOnly)
     bool bIsCrouching = false;
 
+    /** 当前是否具有瞄准意图 */
     UPROPERTY(BlueprintReadOnly)
     bool bIsAiming = false;
 
+    /** 平滑后的角色瞄准意图权重 */
     UPROPERTY(BlueprintReadOnly)
-    bool bHasMainHandEquipment = false;
+    float AimIntentAlpha = 0.0f;
 
+    /** 角色计算的瞄准 IK 最终权重 */
     UPROPERTY(BlueprintReadOnly)
-    bool bIsReloading = false;
+    float AimIKAlpha = 0.0f;
 
+    /** 角色组件空间中的瞄准目标 */
     UPROPERTY(BlueprintReadOnly)
-    bool bHasValidAimTarget = false;
-
-    UPROPERTY(BlueprintReadOnly)
-    bool bHasValidAimSource = false;
+    FVector AimTargetComponentSpace = FVector::ZeroVector;
 
 };

@@ -88,7 +88,6 @@ ABBBEquipmentPresentationActor *FBBBEquipFragment::Equip(
     const FName RightHandBoneName = CharacterMesh.GetSocketBoneName(AttachmentSocketName);
     RuntimeData.AimSourceRightHandBoneSpace = FTransform::Identity;
     RuntimeData.bHasValidAimSource = false;
-    RuntimeData.LeftHandIKSocketOffset = LeftHandIKSocketOffset;
 
     USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
     const bool bHasValidReferenceBone = EquipmentComponent

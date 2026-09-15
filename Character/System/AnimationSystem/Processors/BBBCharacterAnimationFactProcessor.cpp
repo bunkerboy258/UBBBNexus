@@ -5,8 +5,8 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Presentation/Animation/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -37,7 +37,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const FBBBAimRuntimeState &AimState = RuntimeData.Aim.GetState();
     const FBBBCharacterEquipmentState &EquipmentState = RuntimeData.Equipment.Equipment;
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
-    UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    const bool bHasActiveMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
 
     FVector AimOrigin = CharacterMesh->GetComponentLocation() + FVector(0.0f, 0.0f, 50.0f);
     if (!AimConfig.AimIKOriginBoneName.IsNone()
@@ -47,10 +47,12 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     const FVector AimTargetWorld = AimState.AimTargetWorld;
-    const bool bHasValidAimTarget = !AimTargetWorld.IsNearlyZero()
+    const bool bCanUseAimTarget = !AimTargetWorld.ContainsNaN()
+        && !AimOrigin.ContainsNaN()
         && !(AimTargetWorld - AimOrigin).IsNearlyZero();
-    const FVector RawAimTargetComponentSpace = CharacterMesh->GetComponentTransform().InverseTransformPosition(
-        AimTargetWorld);
+    const FVector RawAimTargetComponentSpace = bCanUseAimTarget
+        ? CharacterMesh->GetComponentTransform().InverseTransformPosition(AimTargetWorld)
+        : FVector::ZeroVector;
 
     if (!bHasSmoothedAimTarget)
     {
@@ -69,30 +71,11 @@ void FBBBCharacterAnimationFactProcessor::Update(
             DeltaSeconds);
     }
 
-    if (!bHasValidAimTarget)
+    if (!bCanUseAimTarget)
     {
         SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
         AimTargetSmoothVelocity = FVector::ZeroVector;
         bHasSmoothedAimTarget = false;
-    }
-
-    FTransform AimSourceLocalTransform = FTransform::Identity;
-    bool bHasValidAimSource = false;
-    bool bIsReloading = false;
-    float TimeSinceLastFire = BIG_NUMBER;
-
-    if (ActiveInstance)
-    {
-        UBBBEquipmentSystem *EquipmentSystem = ActiveInstance->GetEquipmentSystem();
-        if (ensureMsgf(
-            EquipmentSystem,
-            TEXT("[UBBBC]Animation fact capture failed because equipment system is null")))
-        {
-            bHasValidAimSource = EquipmentSystem->TryGetAimSourceRightHandBoneSpace(
-                AimSourceLocalTransform);
-            bIsReloading = EquipmentState.IsReloading();
-            TimeSinceLastFire = EquipmentSystem->GetTimeSinceLastFire(World->GetTimeSeconds());
-        }
     }
 
     float GroundDistance = 0.0f;
@@ -138,14 +121,26 @@ void FBBBCharacterAnimationFactProcessor::Update(
         DeltaSeconds,
         AimConfig.AimIKLockAlphaInterpSpeed);
 
+    UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
+    UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->GetWeaponAnimInstance() : nullptr;
+    OutFacts.bIsAiming = AimState.bIsAiming;
+    OutFacts.AimIntentAlpha = FMath::Clamp(SmoothedAimIntentAlpha, 0.0f, 1.0f);
+    OutFacts.AimIKAlpha = 0.0f;
+    OutFacts.AimTargetComponentSpace = SmoothedAimTargetComponentSpace;
+    if (bHasActiveMainHandEquipment
+        && WeaponAnim
+        && bCanUseAimTarget
+        && WeaponAnim->HasValidAimSource()
+        && WeaponAnim->GetAimSourceLocalTransform().IsValid())
+    {
+        OutFacts.AimIKAlpha = OutFacts.AimIntentAlpha * FMath::Clamp(SmoothedAimIKLockAlpha, 0.0f, 1.0f);
+    }
+
     OutFacts.ActorLocation = Character.GetActorLocation();
     OutFacts.ActorRotation = Character.GetActorRotation();
     OutFacts.Velocity = Movement->Velocity;
     OutFacts.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
     OutFacts.Acceleration = Movement->GetCurrentAcceleration();
-    OutFacts.AimTargetComponentSpace = SmoothedAimTargetComponentSpace;
-    OutFacts.AimSourceLocalTransform = AimSourceLocalTransform;
-    OutFacts.MainHandEquipmentInstance = ActiveInstance;
     OutFacts.Gait = RuntimeData.Locomotion.GetGait();
     OutFacts.MovementMode = Movement->MovementMode;
     OutFacts.GroundFriction = Movement->GroundFriction;
@@ -154,18 +149,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.BrakingDecelerationWalking = Movement->BrakingDecelerationWalking;
     OutFacts.GravityZ = Movement->GetGravityZ();
     OutFacts.GroundDistance = GroundDistance;
-    OutFacts.AimIntentAlpha = FMath::Clamp(SmoothedAimIntentAlpha, 0.0f, 1.0f);
-    OutFacts.AimIKAlpha = OutFacts.AimIntentAlpha
-        * FMath::Clamp(SmoothedAimIKLockAlpha, 0.0f, 1.0f);
-    OutFacts.TimeSinceLastFire = TimeSinceLastFire;
     OutFacts.bUseSeparateBrakingFriction = Movement->bUseSeparateBrakingFriction;
     OutFacts.bIsMovingOnGround = Movement->IsMovingOnGround();
     OutFacts.bIsCrouching = Movement->IsCrouching();
-    OutFacts.bIsAiming = AimState.bIsAiming;
-    OutFacts.bHasMainHandEquipment = ActiveInstance != nullptr;
-    OutFacts.bIsReloading = bIsReloading;
-    OutFacts.bHasValidAimTarget = bHasValidAimTarget;
-    OutFacts.bHasValidAimSource = bHasValidAimSource;
 }
 
 //------------------------------------------------------------------------------

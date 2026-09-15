@@ -10,6 +10,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireResults.h"
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Presentation/Animation/BBBEquipmentAnimInstance.h"
 
 bool UBBBEquipmentSystem::Initialize(
     UBBBEquipmentInstance &InInstance,
@@ -57,18 +59,35 @@ bool UBBBEquipmentSystem::Equip(
         CharacterMesh,
         AttachmentSocketName);
 
-    UBBBEquipRuntimeData *EquipRuntimeData = RuntimeData->GetEquip();
-    if (!ensureMsgf(EquipRuntimeData, TEXT("[UBBBE]Equipment equip runtime data is unavailable after equip")))
-    {
-        return false;
-    }
-
-    Instance->SetLeftHandIKSocketOffset(EquipRuntimeData->LeftHandIKSocketOffset);
-
     if (!Instance->PresentationActor)
     {
         return false;
     }
+
+    USkeletalMeshComponent *WeaponMesh = Cast<USkeletalMeshComponent>(Instance->PresentationActor->GetEquipmentAttachmentComponent());
+    UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
+        ? Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance())
+        : nullptr;
+    UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh.GetAnimInstance());
+    if (!ensureMsgf(WeaponAnim && CharacterAnim, TEXT("[UBBBE]Equipped weapon or character animation instance has an invalid class")))
+    {
+        ReleasePresentation();
+        return false;
+    }
+
+    if (!WeaponAnim->BindCharacterMesh(&CharacterMesh))
+    {
+        ReleasePresentation();
+        return false;
+    }
+
+    FTransform AimSourceLocalTransform = FTransform::Identity;
+    const bool bHasValidAimSource = TryGetAimSourceRightHandBoneSpace(AimSourceLocalTransform);
+    WeaponAnim->BindAimSource(AimSourceLocalTransform, bHasValidAimSource);
+
+    BoundCharacterAnimInstance = CharacterAnim;
+    BoundWeaponAnimInstance = WeaponAnim;
+    CharacterAnim->BindWeaponAnimInstance(WeaponAnim);
 
     return true;
 }
@@ -234,6 +253,21 @@ void UBBBEquipmentSystem::BuildFireActionPresentation(FBBBEquipmentActionPresent
 
 void UBBBEquipmentSystem::ReleasePresentation()
 {
+    UBBBAnimInstance *CharacterAnim = BoundCharacterAnimInstance.Get();
+    UBBBEquipmentAnimInstance *WeaponAnim = BoundWeaponAnimInstance.Get();
+    if (CharacterAnim && CharacterAnim->GetWeaponAnimInstance() == WeaponAnim)
+    {
+        CharacterAnim->BindWeaponAnimInstance(nullptr);
+    }
+
+    if (WeaponAnim)
+    {
+        WeaponAnim->BindCharacterMesh(nullptr);
+    }
+
+    BoundCharacterAnimInstance.Reset();
+    BoundWeaponAnimInstance.Reset();
+
     if (!Instance || !Instance->PresentationActor)
     {
         return;

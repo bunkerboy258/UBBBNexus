@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Presentation/Animation/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
@@ -28,7 +28,6 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceLastUpdateVelocity = Facts.LastUpdateVelocity;
     SourceAcceleration = Facts.Acceleration;
     SourceMovementMode = Facts.MovementMode;
-    MainHandEquipmentInstance = Facts.MainHandEquipmentInstance;
 
     SourceGroundFriction = Facts.GroundFriction;
     SourceBrakingFriction = Facts.BrakingFriction;
@@ -44,71 +43,15 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-bool UBBBAnimInstance::TryGetCharacterBoneWorldTransform(
-    const FName BoneName,
-    FTransform &OutBoneWorld) const
+UBBBEquipmentAnimInstance *UBBBAnimInstance::GetWeaponAnimInstance() const
 {
-    OutBoneWorld = FTransform::Identity;
-
-    USkeletalMeshComponent *CharacterMesh = GetOwningComponent();
-    if (!ensureMsgf(CharacterMesh, TEXT("[UBBBC]Character animation owning mesh is null during bone query")))
-    {
-        return false;
-    }
-
-    if (!ensureMsgf(
-        BoneName != NAME_None
-        && CharacterMesh->GetBoneIndex(BoneName) != INDEX_NONE,
-        TEXT("[UBBBC]Character bone '%s' is invalid"),
-        *BoneName.ToString()))
-    {
-        return false;
-    }
-
-    OutBoneWorld = CharacterMesh->GetBoneTransform(BoneName, RTS_World);
-    return true;
+    return GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance.Get();
 }
 
-//------------------------------------------------------------------------------
-
-bool UBBBAnimInstance::TryGetCurrentLeftHandIKSourceData(
-    const FName SocketName,
-    const FName ReferenceBoneName,
-    FTransform &OutSocketComponentSpace,
-    FVector &OutSocketOffset,
-    FTransform &OutEquipmentWorld,
-    FTransform &OutReferenceBoneWorld) const
+void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance)
 {
-    OutSocketComponentSpace = FTransform::Identity;
-    OutSocketOffset = FVector::ZeroVector;
-    OutEquipmentWorld = FTransform::Identity;
-    OutReferenceBoneWorld = FTransform::Identity;
-
-    if (!MainHandEquipmentInstance)
-    {
-        return false;
-    }
-
-    if (!MainHandEquipmentInstance->TryGetSocketTransforms(
-        SocketName,
-        OutSocketComponentSpace,
-        OutEquipmentWorld))
-    {
-        return false;
-    }
-
-    if (!TryGetCharacterBoneWorldTransform(
-        ReferenceBoneName,
-        OutReferenceBoneWorld))
-    {
-        return false;
-    }
-
-    OutSocketOffset = MainHandEquipmentInstance->GetLeftHandIKSocketOffset();
-    return true;
+    GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance = InWeaponAnimInstance;
 }
-
-//------------------------------------------------------------------------------
 
 void UBBBAnimInstance::SubmitEquipmentActionMontage(const FBBBEquipmentActionEvent &Event)
 {
@@ -117,16 +60,14 @@ void UBBBAnimInstance::SubmitEquipmentActionMontage(const FBBBEquipmentActionEve
         return;
     }
 
-    EquipmentActionType = Event.ActionType;
-    EquipmentActionSequence = Event.Sequence;
-    EquipmentActionDuration = Event.DurationSeconds;
-    EquipmentActionMontage = Event.Presentation.Montage;
-    EquipmentActionPlayRate = Event.Presentation.PlayRate;
+    UBBBEquipmentAnimInstance *Weapon = GetWeaponAnimInstance();
+    if (!ensureMsgf(Weapon, TEXT("[UBBBC]Equipment montage has no bound weapon animation instance")))
+    {
+        return;
+    }
 
-    ExecuteEquipmentActionMontage(
-        EquipmentActionType,
-        EquipmentActionMontage,
-        EquipmentActionPlayRate);
+    Weapon->PublishEquipmentAction(Event);
+    ExecuteEquipmentActionMontage(Event.ActionType, Event.Presentation.Montage, Event.Presentation.PlayRate);
 }
 
 //------------------------------------------------------------------------------

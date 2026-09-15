@@ -8,7 +8,7 @@
 
 class FBBBCharacterAnimationActionProcessor;
 class FBBBCharacterAnimationSystem;
-class UBBBEquipmentInstance;
+class UBBBEquipmentAnimInstance;
 class UAnimMontage;
 struct FBBBEquipmentActionEvent;
 
@@ -113,158 +113,40 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
     bool IsAiming() const
     {
-        return AnimationFacts.bIsAiming;
+        return GetBBBMainAnimInstanceThreadSafe()->AnimationFacts.bIsAiming;
     }
 
     /** @return 玩家瞄准意图的连续强度 */
     UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
     float GetAimIntentAlpha() const
     {
-        return AnimationFacts.AimIntentAlpha;
+        return GetBBBMainAnimInstanceThreadSafe()->AnimationFacts.AimIntentAlpha;
     }
 
     /** @return 瞄准 IK 权重 */
     UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
     float GetAimIKAlpha() const
     {
-        return AnimationFacts.AimIKAlpha;
+        return GetBBBMainAnimInstanceThreadSafe()->AnimationFacts.AimIKAlpha;
     }
 
     /** @return 组件空间的瞄准目标点 */
     UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
     FVector GetAimTargetComponentSpace() const
     {
-        return AnimationFacts.AimTargetComponentSpace;
+        return GetBBBMainAnimInstanceThreadSafe()->AnimationFacts.AimTargetComponentSpace;
     }
 
-    /** @return 瞄准来源相对右手骨骼的本地变换 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    FTransform GetAimSourceLocalTransform() const
-    {
-        return AnimationFacts.AimSourceLocalTransform;
-    }
-
-    /** @return 瞄准目标点是否有效 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    bool HasValidAimTarget() const
-    {
-        return AnimationFacts.bHasValidAimTarget;
-    }
-
-    /** @return 瞄准来源是否有效 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    bool HasValidAimSource() const
-    {
-        return AnimationFacts.bHasValidAimSource;
-    }
-
-    /** @return 主手是否持有装备 */
+    /** @return 当前装备的实际武器动画实例，链接层自动读取主实例绑定 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool HasMainHandEquipment() const
-    {
-        return AnimationFacts.bHasMainHandEquipment;
-    }
-
-    /** @return 当前主手装备实例 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    UBBBEquipmentInstance *GetMainHandEquipmentInstance() const
-    {
-        return MainHandEquipmentInstance;
-    }
+    UBBBEquipmentAnimInstance *GetWeaponAnimInstance() const;
 
     /**
-     * 查询角色骨骼的当前世界变换
-     * @param BoneName        角色骨骼名称
-     * @param OutBoneWorld    接收骨骼世界变换
-     * @return 角色网格与骨骼是否有效
+     * 绑定装备实际使用的武器动画实例
+     * @param InWeaponAnimInstance	武器动画实例，卸下时传入空
+     * @return 无
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool TryGetCharacterBoneWorldTransform(
-        FName BoneName,
-        FTransform &OutBoneWorld) const;
-
-    /**
-     * 查询当前左手 IK 空间转换所需的实时源数据
-     * @param SocketName                    装备左手 IK 插槽名称
-     * @param ReferenceBoneName             角色参考骨骼名称
-     * @param OutSocketComponentSpace       接收插槽组件空间变换
-     * @param OutSocketOffset               接收插槽组件空间附加偏移
-     * @param OutEquipmentWorld             接收装备组件世界变换
-     * @param OutReferenceBoneWorld         接收参考骨骼世界变换
-     * @return 当前装备、插槽与参考骨骼是否有效
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool TryGetCurrentLeftHandIKSourceData(
-        FName SocketName,
-        FName ReferenceBoneName,
-        FTransform &OutSocketComponentSpace,
-        FVector &OutSocketOffset,
-        FTransform &OutEquipmentWorld,
-        FTransform &OutReferenceBoneWorld) const;
-
-    /** 当前主手装备实例 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment")
-    TObjectPtr<UBBBEquipmentInstance> MainHandEquipmentInstance = nullptr;
-
-    /** @return 当前本地或远端恢复的换弹是否仍在进行 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool IsReloading() const
-    {
-        return AnimationFacts.bIsReloading;
-    }
-
-    /** @return 距离上次本地或远端开火经过的秒数 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    float GetTimeSinceLastFire() const
-    {
-        return AnimationFacts.TimeSinceLastFire;
-    }
-
-    /**
-     * 判断最近一次开火是否仍应维持上半身持枪姿势
-     * @param Duration	持枪姿势维持时长
-     * @return 是否仍处于指定维持时间内
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool ShouldRaiseWeaponAfterFiring(float Duration) const
-    {
-        return AnimationFacts.TimeSinceLastFire < FMath::Max(Duration, 0.0f);
-    }
-
-    /** @return 最近一次通过角色仲裁的装备动作类型 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
-    EBBBCharacterActionType GetEquipmentActionType() const
-    {
-        return EquipmentActionType;
-    }
-
-    /** @return 最近一次通过角色仲裁的装备动作序号 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
-    int32 GetEquipmentActionSequence() const
-    {
-        return EquipmentActionSequence;
-    }
-
-    /** @return 最近一次通过角色仲裁的装备动作时长 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
-    float GetEquipmentActionDuration() const
-    {
-        return EquipmentActionDuration;
-    }
-
-    /** @return 最近一次通过角色仲裁的人物动作蒙太奇 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
-    UAnimMontage *GetEquipmentActionMontage() const
-    {
-        return EquipmentActionMontage;
-    }
-
-    /** @return 最近一次通过角色仲裁的人物动作播放倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
-    float GetEquipmentActionPlayRate() const
-    {
-        return EquipmentActionPlayRate;
-    }
+    void BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance);
 
     /**
      * 执行角色代码已经选定的人物动作蒙太奇
@@ -307,19 +189,7 @@ private:
     UPROPERTY(Transient)
     FBBBCharacterAnimationFacts AnimationFacts;
 
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
-    EBBBCharacterActionType EquipmentActionType = EBBBCharacterActionType::None;
-
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
-    int32 EquipmentActionSequence = INDEX_NONE;
-
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
-    float EquipmentActionDuration = 0.0f;
-
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UAnimMontage> EquipmentActionMontage = nullptr;
-
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
-    float EquipmentActionPlayRate = 1.0f;
-
+    /** 当前主手武器实际使用的动画实例 */
+    UPROPERTY(Transient)
+    TWeakObjectPtr<UBBBEquipmentAnimInstance> WeaponAnimInstance;
 };

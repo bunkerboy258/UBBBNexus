@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Presentation/BBBEquipmentPresentationActor.h"
 #include "BBBWork/UBBBNexus/Equipment/RunTime/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
-#include "Components/SceneComponent.h"
 
 UBBBEquipmentInstance *UBBBEquipmentInstance::Create(
     UObject &Outer,
@@ -66,40 +65,4 @@ UBBBEquipmentDefinition *UBBBEquipmentInstance::GetDefinition() const
 UBBBEquipmentSystem *UBBBEquipmentInstance::GetEquipmentSystem() const
 {
     return EquipmentSystem;
-}
-
-//------------------------------------------------------------------------------
-
-bool UBBBEquipmentInstance::TryGetSocketTransforms(
-    const FName SocketName,
-    FTransform &OutSocketComponentSpace,
-    FTransform &OutEquipmentWorld) const
-{
-    OutSocketComponentSpace = FTransform::Identity;
-    OutEquipmentWorld = FTransform::Identity;
-
-    if (!ensureMsgf(PresentationActor, TEXT("[UBBBE]Equipment presentation actor is null during socket query")))
-    {
-        return false;
-    }
-
-    USceneComponent *EquipmentComponent = PresentationActor->GetEquipmentAttachmentComponent();
-    if (!ensureMsgf(EquipmentComponent, TEXT("[UBBBE]Equipment attachment component is null during socket query")))
-    {
-        return false;
-    }
-
-    if (!ensureMsgf(
-        EquipmentComponent->DoesSocketExist(SocketName),
-        TEXT("[UBBBE]Equipment socket '%s' is missing"),
-        *SocketName.ToString()))
-    {
-        return false;
-    }
-
-    OutSocketComponentSpace = EquipmentComponent->GetSocketTransform(
-        SocketName,
-        RTS_Component);
-    OutEquipmentWorld = EquipmentComponent->GetComponentTransform();
-    return true;
 }

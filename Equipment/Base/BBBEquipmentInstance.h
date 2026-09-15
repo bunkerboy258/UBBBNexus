@@ -40,33 +40,8 @@ public:
         return PresentationActor;
     }
 
-    /** @return 左手 IK 插槽在装备组件空间中的附加偏移 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    FVector GetLeftHandIKSocketOffset() const
-    {
-        return LeftHandIKSocketOffset;
-    }
-
-    /**
-     * 查询装备插槽的当前组件空间变换与装备世界变换
-     * @param SocketName                    装备插槽名称
-     * @param OutSocketComponentSpace       接收插槽组件空间变换
-     * @param OutEquipmentWorld             接收装备组件世界变换
-     * @return 插槽与装备组件是否有效
-     */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool TryGetSocketTransforms(
-        FName SocketName,
-        FTransform &OutSocketComponentSpace,
-        FTransform &OutEquipmentWorld) const;
-
 private:
     friend class UBBBEquipmentSystem;
-
-    void SetLeftHandIKSocketOffset(const FVector &InSocketOffset)
-    {
-        LeftHandIKSocketOffset = InSocketOffset;
-    }
 
     /** 实例唯一标识 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -88,6 +63,4 @@ private:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<ABBBEquipmentPresentationActor> PresentationActor = nullptr;
 
-    /** 装备初始化时使用的左手 IK 插槽附加偏移 */
-    FVector LeftHandIKSocketOffset = FVector::ZeroVector;
 };
