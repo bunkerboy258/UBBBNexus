@@ -14,18 +14,6 @@ class ABBB_EVAC_API FBBBCharacterExternalAPI final
 {
 public:
     /**
-     * 注入角色运行依赖
-     * @param Character	角色实例
-     * @param Animation	动画数据
-     * @param Input	输入数据
-     * @param Events	装备事件
-     * @return 无
-     */
-    void Initialize(ABBBCharacterInstance &Character, FBBBAnimationRuntimeData &Animation,
-        FBBBInputRuntimeData &Input, FBBBCharacterEquipmentEvents &Events,
-        FBBBCharacterEquipmentState &EquipmentState);
-
-    /**
      * 提交人物蒙太奇贡献
      * @param Montage	蒙太奇资源
      * @param PlayRate	播放倍率
@@ -66,6 +54,20 @@ public:
     void SubmitEquipmentRecoil(FVector2D Impulse, float RecoverySpeed);
 
 private:
+    friend class FBBBCharacterInitializer;
+
+    /**
+     * 注入角色运行依赖
+     * @param Character	角色实例
+     * @param Animation	动画数据
+     * @param Input	输入数据
+     * @param Events	装备事件
+     * @return 无
+     */
+    void Initialize(ABBBCharacterInstance &Character, FBBBAnimationRuntimeData &Animation,
+        FBBBInputRuntimeData &Input, FBBBCharacterEquipmentEvents &Events,
+        FBBBCharacterEquipmentState &EquipmentState);
+
     void SubmitReloadInput(int32 Sequence, EBBBCharacterReloadAnimationPhase Phase);
     ABBBCharacterInstance *Owner = nullptr;
     FBBBAnimationRuntimeData *AnimationData = nullptr;

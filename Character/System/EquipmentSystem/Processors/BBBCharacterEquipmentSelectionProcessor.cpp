@@ -9,9 +9,7 @@
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
-namespace
-{
-void UnbindWeaponAnimation(
+void FBBBCharacterEquipmentSelectionProcessor::UnbindWeaponAnimation(
     USkeletalMeshComponent &CharacterMesh,
     ABBBEquipmentInstance &Equipment)
 {
@@ -33,7 +31,7 @@ void UnbindWeaponAnimation(
     }
 }
 
-bool BindWeaponAnimation(
+bool FBBBCharacterEquipmentSelectionProcessor::BindWeaponAnimation(
     USkeletalMeshComponent &CharacterMesh,
     ABBBEquipmentInstance &Equipment)
 {
@@ -54,7 +52,6 @@ bool BindWeaponAnimation(
         &CharacterMesh,
         CharacterMesh.PrimaryComponentTick);
     return true;
-}
 }
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(

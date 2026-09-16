@@ -20,6 +20,7 @@
 #include "GameFramework/Character.h"
 #include "BBBCharacterInstance.generated.h"
 class FBBBCharacterInitializer;
+class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class UCameraComponent;
@@ -32,6 +33,7 @@ class ABBB_EVAC_API ABBBCharacterInstance : public ACharacter
 
     /** 允许初始化器装配私有运行时对象 */
     friend class FBBBCharacterInitializer;
+    friend class FBBBCharacterShutdown;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
     /** 允许移动后更新函数调用角色LateUpdate */

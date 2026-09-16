@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "Camera/CameraComponent.h"
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
+#include "BBBWork/UBBBNexus/Character/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -71,10 +72,7 @@ void ABBBCharacterInstance::BeginPlay()
 
 void ABBBCharacterInstance::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    //世界清理前停止LateUpdate访问角色运行数据
-    LateUpdateTick.SetTickFunctionEnable(false);
-
-    EquipmentSystem.Shutdown();
+    FBBBCharacterShutdown::Shutdown(*this);
 
     Super::EndPlay(EndPlayReason);
 }

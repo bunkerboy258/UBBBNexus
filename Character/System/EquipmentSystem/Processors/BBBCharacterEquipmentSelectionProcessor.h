@@ -4,6 +4,7 @@
 
 class USkeletalMeshComponent;
 class ABBBCharacterInstance;
+class ABBBEquipmentInstance;
 struct FBBBCharacterEquipmentCommands;
 struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
@@ -28,4 +29,8 @@ public:
         FBBBCharacterEquipmentCommands &EquipmentCommands,
         FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterEquipmentEvents &EquipmentEvents) const;
+
+private:
+    static void UnbindWeaponAnimation(USkeletalMeshComponent &CharacterMesh, ABBBEquipmentInstance &Equipment);
+    static bool BindWeaponAnimation(USkeletalMeshComponent &CharacterMesh, ABBBEquipmentInstance &Equipment);
 };

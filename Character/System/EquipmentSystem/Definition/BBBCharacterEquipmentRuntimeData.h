@@ -6,10 +6,10 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBCharacterEquipmentRuntimeData.generated.h"
 
-class FBBBCharacterDefaultEquipmentInitializer;
 class FBBBCharacterAnimationFactProcessor;
 class FBBBCharacterEquipmentSystem;
 class FBBBCharacterInitializer;
+class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 
 /** 角色装备领域唯一数据根 */
@@ -26,10 +26,10 @@ struct FBBBCharacterEquipmentRuntimeData
     }
 
 private:
-    friend class FBBBCharacterDefaultEquipmentInitializer;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterInitializer;
+    friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
 
     /** 角色装备容器 */

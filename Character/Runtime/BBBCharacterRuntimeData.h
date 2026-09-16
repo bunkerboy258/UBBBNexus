@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
+class FBBBCharacterShutdown;
 class FBBBCharacterAnimationFactProcessor;
 class ABBBCharacterInstance;
 class UBBBAnimInstance;
@@ -31,6 +32,7 @@ private:
     friend class ABBBCharacterInstance;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
+    friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
 
     //保存当前帧世界时间快照

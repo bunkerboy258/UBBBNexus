@@ -10,13 +10,6 @@ class ABBB_EVAC_API FBBBEquipmentExternalAPI final
 {
 public:
     /**
-     * 绑定装备实例
-     * @param InInstance	装备实例
-     * @return 无
-     */
-    void Initialize(ABBBEquipmentInstance &InInstance);
-
-    /**
      * 提交装备表现
      * @param Sequence	角色操作序号
      * @return 无
@@ -66,6 +59,15 @@ public:
     void ApplySnapshot(const FBBBEquipmentActionEvent &Snapshot);
 
 private:
+    friend class ABBBEquipmentInstance;
+
+    /**
+     * 绑定装备实例
+     * @param InInstance	装备实例
+     * @return 无
+     */
+    void Initialize(ABBBEquipmentInstance &InInstance);
+
     void Enqueue(EBBBEquipmentCommandType Type, int32 Sequence);
     ABBBEquipmentInstance *Instance = nullptr;
 };

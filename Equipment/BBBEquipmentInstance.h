@@ -19,6 +19,12 @@ class UArrowComponent;
 class USkeletalMeshComponent;
 class FBBBEquipmentInitializer;
 class FBBBEquipmentUpdatePipeline;
+class FBBBCharacterShutdown;
+class FBBBCharacterEquipmentSelectionProcessor;
+class FBBBCharacterEquipmentActionProcessor;
+class FBBBCharacterAnimationLayerProcessor;
+class FBBBEquipmentUploadProcessor;
+class FBBBCharacterExternalAPI;
 
 /** 单件装备的实体、运行数据与公开操作入口 */
 UCLASS(BlueprintType)
@@ -28,6 +34,23 @@ class ABBB_EVAC_API ABBBEquipmentInstance final : public AActor
 
 public:
     ABBBEquipmentInstance();
+
+    /** @return 装备命令入口 */
+    FBBBEquipmentExternalAPI &GetExternalAPI()
+    {
+        return ExternalAPI;
+    }
+
+protected:
+    virtual void BeginPlay() override;
+
+private:
+    friend class FBBBCharacterShutdown;
+    friend class FBBBCharacterEquipmentSelectionProcessor;
+    friend class FBBBCharacterEquipmentActionProcessor;
+    friend class FBBBCharacterAnimationLayerProcessor;
+    friend class FBBBEquipmentUploadProcessor;
+    friend class FBBBCharacterExternalAPI;
 
     /**
      * 创建引用配置的装备实体
@@ -51,7 +74,6 @@ public:
     TSubclassOf<UAnimInstance> GetCharacterAnimationLayerClass() const;
 
     /** @return 装备骨骼网格 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment")
     USkeletalMeshComponent *GetEquipmentSkeletalMesh() const;
 
     /**
@@ -71,12 +93,6 @@ public:
     /** 清理装备持有关系并销毁实体 */
     void Shutdown();
 
-    /** @return 装备命令入口 */
-    FBBBEquipmentExternalAPI &GetExternalAPI()
-    {
-        return ExternalAPI;
-    }
-
     /**
      * 在角色骨骼更新完成后消费命令并发布快照
      * @param DeltaSeconds	帧间隔
@@ -84,10 +100,6 @@ public:
      */
     virtual void Tick(float DeltaSeconds) override;
 
-protected:
-    virtual void BeginPlay() override;
-
-private:
     friend class FBBBEquipmentExternalAPI;
     friend class FBBBEquipmentCommandExecutor;
     friend class FBBBEquipmentInitializer;

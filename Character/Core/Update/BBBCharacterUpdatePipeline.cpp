@@ -65,8 +65,6 @@ void FBBBCharacterUpdatePipeline::Update() const
         TEXT("[UBBBC]Pipeline update aborted because injected systems are null")))
     { return; }
 
-    EquipmentSystem->InitializeDefaultEquipment();
-
     //本地控制？
     const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
 

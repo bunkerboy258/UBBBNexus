@@ -78,7 +78,7 @@ bool FBBBEquipmentTickGroupTest::RunTest(const FString &Parameters)
     const ABBBEquipmentInstance *Equipment = GetDefault<ABBBEquipmentInstance>();
     TestTrue(TEXT("装备启用独立更新"), Equipment->PrimaryActorTick.bCanEverTick);
     TestTrue(TEXT("装备逻辑显式位于后更新组"), Equipment->PrimaryActorTick.TickGroup == TG_PostUpdateWork);
-    const USkeletalMeshComponent *Mesh = Equipment->GetEquipmentSkeletalMesh();
+    const USkeletalMeshComponent *Mesh = Equipment->FindComponentByClass<USkeletalMeshComponent>();
     TestNotNull(TEXT("装备网格存在"), Mesh);
     if (Mesh)
     {

@@ -2,11 +2,8 @@
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
-#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "EngineUtils.h"
 
 void FBBBCharacterEquipmentSystem::Initialize(
     USkeletalMeshComponent &InCharacterMesh,
@@ -18,7 +15,6 @@ void FBBBCharacterEquipmentSystem::Initialize(
     EquipmentData = &InEquipmentData;
     Character = &InCharacter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
-    DefaultEquipmentConfig = &InEquipmentConfig;
 
     EquipmentData->Inventory.Slots.Init(
         nullptr,
@@ -29,88 +25,6 @@ void FBBBCharacterEquipmentSystem::Initialize(
         FMath::Max(1, InEquipmentConfig.QuickAccessSlotCount));
 
 }
-
-void FBBBCharacterEquipmentSystem::InitializeDefaultEquipment()
-{
-    if (!ensureMsgf(
-        EquipmentData && Character && DefaultEquipmentConfig,
-        TEXT("[UBBBC]Default equipment initialization dependencies are null")))
-    {
-        return;
-    }
-
-    if (bDefaultEquipmentInitialized)
-    {
-        return;
-    }
-
-    DefaultEquipmentInitializer.Initialize(*EquipmentData, *Character, *DefaultEquipmentConfig);
-    bDefaultEquipmentInitialized = true;
-}
-
-//------------------------------------------------------------------------------
-
-void FBBBCharacterEquipmentSystem::Shutdown()
-{
-    if (!EquipmentData)
-    {
-        return;
-    }
-
-    TSet<ABBBEquipmentInstance *> Instances;
-    for (const TObjectPtr<ABBBEquipmentInstance> &Instance : EquipmentData->Inventory.Slots)
-    {
-        if (Instance)
-        {
-            Instances.Add(Instance);
-        }
-    }
-
-    if (EquipmentData->Equipment.GetActiveMainHandInstance())
-    {
-        ABBBEquipmentInstance *ActiveInstance = EquipmentData->Equipment.GetActiveMainHandInstance();
-        Instances.Add(ActiveInstance);
-
-        USkeletalMeshComponent *WeaponMesh = ActiveInstance->GetEquipmentSkeletalMesh();
-        if (CharacterMesh && WeaponMesh)
-        {
-            WeaponMesh->PrimaryComponentTick.RemovePrerequisite(
-                CharacterMesh,
-                CharacterMesh->PrimaryComponentTick);
-        }
-
-        UBBBAnimInstance *CharacterAnim = CharacterMesh
-            ? Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance())
-            : nullptr;
-        if (CharacterAnim)
-        {
-            CharacterAnim->BindWeaponAnimInstance(nullptr);
-        }
-    }
-
-    if (EquipmentData->Equipment.GetDesiredMainHandInstance())
-    {
-        Instances.Add(EquipmentData->Equipment.GetDesiredMainHandInstance());
-    }
-
-    if (Character && Character->GetWorld())
-    {
-        for (TActorIterator<ABBBEquipmentInstance> It(Character->GetWorld()); It; ++It)
-        {
-            if (It->GetOwner() == Character)
-            {
-                Instances.Add(*It);
-            }
-        }
-    }
-
-    for (ABBBEquipmentInstance *Instance : Instances)
-    {
-        Instance->Shutdown();
-    }
-}
-
-//------------------------------------------------------------------------------
 
 void FBBBCharacterEquipmentSystem::Update()
 {

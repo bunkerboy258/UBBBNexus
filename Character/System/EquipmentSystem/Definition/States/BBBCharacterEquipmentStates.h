@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
-class FBBBCharacterDefaultEquipmentInitializer;
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterEquipmentActionProcessor;
 class FBBBCharacterExternalAPI;
@@ -58,7 +57,6 @@ struct FBBBCharacterEquipmentState
     }
 
 private:
-    friend class FBBBCharacterDefaultEquipmentInitializer;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterExternalAPI;
