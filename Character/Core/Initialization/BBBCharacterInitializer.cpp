@@ -37,7 +37,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacterInstance &Character)
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
 
     Character.ExternalAPI.Initialize(Character, Character.RuntimeData.Animation,
-        Character.RuntimeData.Input, Character.RuntimeData.Equipment.Events);
+        Character.RuntimeData.Input, Character.RuntimeData.Equipment.Events,
+        Character.RuntimeData.Equipment.Equipment);
     
     Character.CameraSystem.Initialize(
         Character,
@@ -65,7 +66,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacterInstance &Character)
     Character.EquipmentSystem.Initialize(
         *Character.GetMesh(),
         Character.RuntimeData.Equipment,
-        Character.RuntimeData.WorldData,
         Character,
         Config.Equipment);
     

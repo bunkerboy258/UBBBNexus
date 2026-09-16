@@ -6,6 +6,7 @@ class UAnimMontage;
 struct FBBBAnimationRuntimeData;
 struct FBBBInputRuntimeData;
 struct FBBBCharacterEquipmentEvents;
+struct FBBBCharacterEquipmentState;
 struct FBBBEquipmentActionEvent;
 
 /** 角色外部输入与装备结果入口 */
@@ -21,7 +22,8 @@ public:
      * @return 无
      */
     void Initialize(ABBBCharacterInstance &Character, FBBBAnimationRuntimeData &Animation,
-        FBBBInputRuntimeData &Input, FBBBCharacterEquipmentEvents &Events);
+        FBBBInputRuntimeData &Input, FBBBCharacterEquipmentEvents &Events,
+        FBBBCharacterEquipmentState &EquipmentState);
 
     /**
      * 提交人物蒙太奇贡献
@@ -69,4 +71,5 @@ private:
     FBBBAnimationRuntimeData *AnimationData = nullptr;
     FBBBInputRuntimeData *InputData = nullptr;
     FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;
+    FBBBCharacterEquipmentState *CharacterEquipmentState = nullptr;
 };

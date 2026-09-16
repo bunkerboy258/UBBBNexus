@@ -10,7 +10,6 @@ class ABBBCharacterInstance;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
-struct FBBBCharacterWorldRuntimeData;
 
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentSystem final
@@ -19,10 +18,10 @@ public:
     /** 角色结束时清理所有持有装备 */
     void Shutdown();
 
-    /** 在角色动作仲裁前推进持续装备状态 */
-    void PrepareUpdate();
+    /** 在首次角色仲裁前按本地控制关系创建出生装备 */
+    void InitializeDefaultEquipment();
 
-    /** 更新装备选择、领域状态与本帧命令 */
+    /** 维护装备选择并将本帧命令转发至装备 API */
     void Update();
 
 private:
@@ -39,15 +38,11 @@ private:
     void Initialize(
         USkeletalMeshComponent &InCharacterMesh,
         FBBBCharacterEquipmentRuntimeData &InEquipmentData,
-        const FBBBCharacterWorldRuntimeData &InWorldData,
         ABBBCharacterInstance &InCharacter,
         const FBBBCharacterEquipmentConfig &InEquipmentConfig);
 
     /** 角色装备黑板 */
     FBBBCharacterEquipmentRuntimeData *EquipmentData = nullptr;
-
-    /** 角色世界运行时数据 */
-    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
 
     /** 角色骨骼网格 */
     USkeletalMeshComponent *CharacterMesh = nullptr;

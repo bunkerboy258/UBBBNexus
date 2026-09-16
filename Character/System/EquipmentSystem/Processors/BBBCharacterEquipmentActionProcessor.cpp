@@ -1,31 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
-#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
-
-void FBBBCharacterEquipmentActionProcessor::ApplyOutcomes(
-    const FBBBCharacterEquipmentEvents &Events, FBBBCharacterEquipmentState &State) const
-{
-    ABBBEquipmentInstance *Equipment = State.GetActiveMainHandInstance();
-    for (const FBBBEquipmentActionEvent &Event : Events.GetActionEvents())
-    {
-        if (!Equipment || Event.EquipmentId != Equipment->GetEquipmentId())
-        {
-            continue;
-        }
-        if (Event.Phase == EBBBCharacterEquipmentPhase::ReloadStarted)
-        {
-            State.ReloadSequence = Event.Sequence;
-        }
-        if ((Event.Phase == EBBBCharacterEquipmentPhase::MagazineLoaded
-            || Event.Phase == EBBBCharacterEquipmentPhase::ReloadCancelled)
-            && Event.Sequence == State.ReloadSequence)
-        {
-            State.ReloadSequence = INDEX_NONE;
-        }
-    }
-}
 
 void FBBBCharacterEquipmentActionProcessor::Update(
     FBBBCharacterEquipmentCommands &Commands, FBBBCharacterEquipmentState &State) const

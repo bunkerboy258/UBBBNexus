@@ -8,6 +8,7 @@
 class FBBBCharacterDefaultEquipmentInitializer;
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterEquipmentActionProcessor;
+class FBBBCharacterExternalAPI;
 class FBBBEquipmentRestoreProcessor;
 class FBBBEquipmentSelectionExecutor;
 
@@ -60,6 +61,7 @@ private:
     friend class FBBBCharacterDefaultEquipmentInitializer;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
+    friend class FBBBCharacterExternalAPI;
     friend class FBBBEquipmentRestoreProcessor;
     friend class FBBBEquipmentSelectionExecutor;
 

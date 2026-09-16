@@ -3,7 +3,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -12,13 +11,11 @@
 void FBBBCharacterEquipmentSystem::Initialize(
     USkeletalMeshComponent &InCharacterMesh,
     FBBBCharacterEquipmentRuntimeData &InEquipmentData,
-    const FBBBCharacterWorldRuntimeData &InWorldData,
     ABBBCharacterInstance &InCharacter,
     const FBBBCharacterEquipmentConfig &InEquipmentConfig)
 {
     CharacterMesh = &InCharacterMesh;
     EquipmentData = &InEquipmentData;
-    WorldData = &InWorldData;
     Character = &InCharacter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
     DefaultEquipmentConfig = &InEquipmentConfig;
@@ -33,22 +30,22 @@ void FBBBCharacterEquipmentSystem::Initialize(
 
 }
 
-void FBBBCharacterEquipmentSystem::PrepareUpdate()
+void FBBBCharacterEquipmentSystem::InitializeDefaultEquipment()
 {
     if (!ensureMsgf(
-        EquipmentData && WorldData && Character && DefaultEquipmentConfig,
-        TEXT("[UBBBC]Equipment action advance dependencies are null")))
+        EquipmentData && Character && DefaultEquipmentConfig,
+        TEXT("[UBBBC]Default equipment initialization dependencies are null")))
     {
         return;
     }
 
-    if (!bDefaultEquipmentInitialized)
+    if (bDefaultEquipmentInitialized)
     {
-        DefaultEquipmentInitializer.Initialize(*EquipmentData, *Character, *DefaultEquipmentConfig);
-        bDefaultEquipmentInitialized = true;
+        return;
     }
 
-    ActionProcessor.ApplyOutcomes(EquipmentData->Events, EquipmentData->Equipment);
+    DefaultEquipmentInitializer.Initialize(*EquipmentData, *Character, *DefaultEquipmentConfig);
+    bDefaultEquipmentInitialized = true;
 }
 
 //------------------------------------------------------------------------------
@@ -117,7 +114,7 @@ void FBBBCharacterEquipmentSystem::Shutdown()
 
 void FBBBCharacterEquipmentSystem::Update()
 {
-    if (!ensureMsgf(EquipmentData && WorldData && CharacterMesh && Character, TEXT("[UBBBC]Equipment system update dependencies are null")))
+    if (!ensureMsgf(EquipmentData && CharacterMesh && Character, TEXT("[UBBBC]Equipment system update dependencies are null")))
     {
         return;
     }

@@ -129,5 +129,4 @@ void ABBBEquipmentInstance::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     FBBBEquipmentUpdatePipeline::Update(*this, GetWorld()->GetTimeSeconds());
-    FBBBEquipmentUpdatePipeline::LateUpdate(*this, GetWorld()->GetTimeSeconds());
 }

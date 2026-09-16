@@ -2,16 +2,19 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/BBBInputRuntimeData.h"
 #include "Animation/AnimMontage.h"
 
 void FBBBCharacterExternalAPI::Initialize(ABBBCharacterInstance &Character, FBBBAnimationRuntimeData &Animation,
-    FBBBInputRuntimeData &Input, FBBBCharacterEquipmentEvents &Events)
+    FBBBInputRuntimeData &Input, FBBBCharacterEquipmentEvents &Events,
+    FBBBCharacterEquipmentState &EquipmentState)
 {
     Owner = &Character;
     AnimationData = &Animation;
     InputData = &Input;
     EquipmentEvents = &Events;
+    CharacterEquipmentState = &EquipmentState;
 }
 
 bool FBBBCharacterExternalAPI::SubmitEquipmentMontage(UAnimMontage *Montage, const float PlayRate,
@@ -72,9 +75,25 @@ void FBBBCharacterExternalAPI::SubmitReloadEndNotify(const int32 Sequence, const
 
 void FBBBCharacterExternalAPI::PublishEquipmentEvent(const FBBBEquipmentActionEvent &Event)
 {
-    if (ensureMsgf(IsInGameThread() && EquipmentEvents, TEXT("[UBBBC]Equipment result sink is unavailable")))
+    if (ensureMsgf(IsInGameThread() && EquipmentEvents && CharacterEquipmentState,
+        TEXT("[UBBBC]Equipment result sink is unavailable")))
     {
         EquipmentEvents->AddAction(Event);
+        ABBBEquipmentInstance *ActiveEquipment = CharacterEquipmentState->GetActiveMainHandInstance();
+        if (ActiveEquipment && Event.EquipmentId == ActiveEquipment->GetEquipmentId())
+        {
+            if (Event.Phase == EBBBCharacterEquipmentPhase::ReloadStarted)
+            {
+                CharacterEquipmentState->ReloadSequence = Event.Sequence;
+            }
+            if ((Event.Phase == EBBBCharacterEquipmentPhase::MagazineLoaded
+                || Event.Phase == EBBBCharacterEquipmentPhase::ReloadCancelled)
+                && Event.Sequence == CharacterEquipmentState->ReloadSequence)
+            {
+                CharacterEquipmentState->ReloadSequence = INDEX_NONE;
+            }
+        }
+
         if (Event.Phase == EBBBCharacterEquipmentPhase::ReloadCancelled && AnimationData)
         {
             AnimationData->MontageQueue.RemoveAll([&Event](const FBBBCharacterMontagePacket &Packet)

@@ -65,6 +65,8 @@ void FBBBCharacterUpdatePipeline::Update() const
         TEXT("[UBBBC]Pipeline update aborted because injected systems are null")))
     { return; }
 
+    EquipmentSystem->InitializeDefaultEquipment();
+
     //本地控制？
     const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
 
@@ -130,8 +132,6 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     
     RequestPipeline->Update();
     
-    EquipmentSystem->PrepareUpdate();
-
     ArbitrationPipeline->Update();
     
     ExecutionPipeline->Update();
@@ -158,8 +158,6 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     
     RequestPipeline->Update();
     
-    EquipmentSystem->PrepareUpdate();
-
     ArbitrationPipeline->Update();
     
     ExecutionPipeline->Update();
@@ -180,8 +178,6 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 {
     NetworkSystem->UpdateRestore();
 
-    EquipmentSystem->PrepareUpdate();
-
     EquipmentSystem->Update();
 }
 
@@ -189,8 +185,6 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
 {
     NetworkSystem->UpdateRestore();
-
-    EquipmentSystem->PrepareUpdate();
 
     EquipmentSystem->Update();
 }

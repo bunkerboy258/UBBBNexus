@@ -4,10 +4,9 @@
 
 class ABBBEquipmentInstance;
 
-/** 由角色更新组调度的装备阶段管线 */
+/** 装备实例自主驱动的唯一更新管线 */
 class ABBB_EVAC_API FBBBEquipmentUpdatePipeline final
 {
 public:
     static void Update(ABBBEquipmentInstance &Instance, float WorldTimeSeconds);
-    static void LateUpdate(ABBBEquipmentInstance &Instance, float WorldTimeSeconds);
 };

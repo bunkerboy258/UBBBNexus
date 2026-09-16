@@ -44,12 +44,7 @@ void FBBBEquipmentUpdatePipeline::Update(
             UE_LOG(LogTemp, Warning, TEXT("[UBBBE]Reload rejected: no montage configured"));
         }
     }
-}
 
-void FBBBEquipmentUpdatePipeline::LateUpdate(
-    ABBBEquipmentInstance &Instance,
-    const float WorldTimeSeconds)
-{
     if (!Instance.bIsActive)
     {
         return;
