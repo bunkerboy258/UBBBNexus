@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
 #include "Camera/CameraComponent.h"
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/NetworkSystem/BBBCharacterNetworkComponent.h"
@@ -12,7 +12,7 @@
 #include "InputAction.h"
 #include "InputActionValue.h"
 
-void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
+void FBBBCharacterInitializer::Initialize(ABBBCharacterInstance &Character)
 {
     const FBBBCharacterConfig &Config = Character.CharacterConfig;
 
@@ -194,7 +194,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
 }
 
-void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputComponent *PlayerInputComponent)
+void FBBBCharacterInitializer::BindInput(ABBBCharacterInstance &Character, UInputComponent *PlayerInputComponent)
 {
     //项目只支持增强输入组件 拒绝普通输入组件
     UEnhancedInputComponent *Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);

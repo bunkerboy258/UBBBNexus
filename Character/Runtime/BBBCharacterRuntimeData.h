@@ -13,7 +13,7 @@
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterAnimationFactProcessor;
-class ABBBCharacter;
+class ABBBCharacterInstance;
 class UBBBAnimInstance;
 
 USTRUCT()
@@ -28,7 +28,7 @@ struct FBBBCharacterRuntimeData
     void Clean();
 
 private:
-    friend class ABBBCharacter;
+    friend class ABBBCharacterInstance;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
     friend class UBBBAnimInstance;

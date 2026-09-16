@@ -1,12 +1,12 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Presentation/Animation/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -18,7 +18,7 @@ constexpr float GroundTraceDistance = 100000.0f;
 }
 
 void FBBBCharacterAnimationFactProcessor::Update(
-    ABBBCharacter &Character,
+    ABBBCharacterInstance &Character,
     FBBBCharacterRuntimeData &RuntimeData,
     FBBBCharacterAnimationFacts &OutFacts,
     float DeltaSeconds)

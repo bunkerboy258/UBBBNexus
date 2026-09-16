@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
 class FBBBCharacterDefaultEquipmentInitializer;
@@ -101,11 +101,11 @@ struct FBBBCharacterEquipmentInventoryState
 
     /** 角色拥有的全部装备实例 */
     UPROPERTY(BlueprintReadOnly)
-    TArray<TObjectPtr<UBBBEquipmentInstance>> Slots;
+    TArray<TObjectPtr<ABBBEquipmentInstance>> Slots;
 
     /** 直接引用装备实例的快捷操作槽位 */
     UPROPERTY(BlueprintReadOnly)
-    TArray<TObjectPtr<UBBBEquipmentInstance>> QuickAccessBindings;
+    TArray<TObjectPtr<ABBBEquipmentInstance>> QuickAccessBindings;
 };
 
 /** 角色期望与当前主手装备状态 */
@@ -115,13 +115,13 @@ struct FBBBCharacterEquipmentState
     GENERATED_BODY()
 
     /** @return 角色期望装备的主手实例 */
-    UBBBEquipmentInstance *GetDesiredMainHandInstance() const
+    ABBBEquipmentInstance *GetDesiredMainHandInstance() const
     {
         return DesiredMainHandInstance;
     }
 
     /** @return 角色当前装备的主手实例 */
-    UBBBEquipmentInstance *GetActiveMainHandInstance() const
+    ABBBEquipmentInstance *GetActiveMainHandInstance() const
     {
         return ActiveMainHandInstance;
     }
@@ -153,11 +153,11 @@ private:
 
     /** 角色期望装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UBBBEquipmentInstance> DesiredMainHandInstance = nullptr;
+    TObjectPtr<ABBBEquipmentInstance> DesiredMainHandInstance = nullptr;
 
     /** 角色当前装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UBBBEquipmentInstance> ActiveMainHandInstance = nullptr;
+    TObjectPtr<ABBBEquipmentInstance> ActiveMainHandInstance = nullptr;
 
     /** 当前装备持续动作 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

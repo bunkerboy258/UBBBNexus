@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdate.h"
 
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 
 void FBBBCharacterLateUpdate::ExecuteTick(
     float DeltaTime,
@@ -20,7 +20,7 @@ void FBBBCharacterLateUpdate::ExecuteTick(
 
 FString FBBBCharacterLateUpdate::DiagnosticMessage()
 {
-    return GetFullNameSafe(Target) + TEXT("[ABBBCharacter::LateUpdate]");
+    return GetFullNameSafe(Target) + TEXT("[ABBBCharacterInstance::LateUpdate]");
 }
 
 //------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 
 void FBBBEquipmentSelectionExecutor::Update(
     FBBBDecisionRuntimeData &DecisionData,
@@ -28,7 +28,7 @@ void FBBBEquipmentSelectionExecutor::Update(
                 continue;
             }
 
-            UBBBEquipmentInstance *EquipmentInstance = InventoryState.QuickAccessBindings[QuickAccessSlot];
+            ABBBEquipmentInstance *EquipmentInstance = InventoryState.QuickAccessBindings[QuickAccessSlot];
             if (!EquipmentInstance)
             {
                 continue;

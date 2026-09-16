@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 
 class USkeletalMeshComponent;
-class ABBBCharacter;
+class ABBBCharacterInstance;
 struct FBBBCharacterEquipmentCommands;
 struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
@@ -22,7 +22,7 @@ public:
      * @param CharacterAPI		角色能力接口
      */
     void Update(
-        ABBBCharacter &Character,
+        ABBBCharacterInstance &Character,
         USkeletalMeshComponent &CharacterMesh,
         FName AttachmentSocketName,
         float WorldTimeSeconds,

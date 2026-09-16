@@ -1,6 +1,6 @@
 
 #pragma once
-class ABBBCharacter;
+class ABBBCharacterInstance;
 class UInputComponent;
 struct FBBBCharacterConfig;
 
@@ -19,12 +19,12 @@ public:
      * 初始化角色各系统与管线 注入运行时数据与配置
      * @param Character	目标角色
      */
-    static void Initialize(ABBBCharacter &Character);
+    static void Initialize(ABBBCharacterInstance &Character);
     /**
      * 将配置中的输入动作绑定到增强输入组件
      * @param Character	目标角色
      * @param PlayerInputComponent	玩家输入组件
      */
-    static void BindInput(ABBBCharacter &Character, UInputComponent *PlayerInputComponent);
+    static void BindInput(ABBBCharacterInstance &Character, UInputComponent *PlayerInputComponent);
     
 };

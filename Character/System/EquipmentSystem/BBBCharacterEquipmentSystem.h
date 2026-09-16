@@ -4,10 +4,9 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Initialization/BBBCharacterDefaultEquipmentInitializer.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/System/Animation/BBBEquipmentAnimationSystem.h"
 
 class FBBBCharacterInitializer;
-class ABBBCharacter;
+class ABBBCharacterInstance;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
@@ -44,7 +43,7 @@ private:
         USkeletalMeshComponent &InCharacterMesh,
         FBBBCharacterEquipmentRuntimeData &InEquipmentData,
         const FBBBCharacterWorldRuntimeData &InWorldData,
-        ABBBCharacter &InCharacter,
+        ABBBCharacterInstance &InCharacter,
         const FBBBCharacterEquipmentConfig &InEquipmentConfig);
 
     /** 角色装备黑板 */
@@ -57,7 +56,7 @@ private:
     USkeletalMeshComponent *CharacterMesh = nullptr;
 
     /** 装备实例生命周期所有者 */
-    ABBBCharacter *Character = nullptr;
+    ABBBCharacterInstance *Character = nullptr;
 
     /** 右手装备挂接插槽 */
     FName RightHandWeaponSocketName = NAME_None;
@@ -65,12 +64,16 @@ private:
     /** 默认装备初始化器 */
     FBBBCharacterDefaultEquipmentInitializer DefaultEquipmentInitializer;
 
+    /** 首次角色更新时才按最终本地控制关系创建镜像装备 */
+    bool bDefaultEquipmentInitialized = false;
+
+    /** 默认装备配置 */
+    const FBBBCharacterEquipmentConfig *DefaultEquipmentConfig = nullptr;
+
     /** 装备选择处理器 */
     FBBBCharacterEquipmentSelectionProcessor SelectionProcessor;
 
     /** 装备动作处理器 */
     FBBBCharacterEquipmentActionProcessor ActionProcessor;
 
-    /** 装备动画事实采集与发布系统 */
-    FBBBEquipmentAnimationSystem AnimationSystem;
 };

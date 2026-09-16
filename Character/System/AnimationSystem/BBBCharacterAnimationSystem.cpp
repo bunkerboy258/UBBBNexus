@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
@@ -12,7 +12,7 @@
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationSystem::Initialize(
-    ABBBCharacter &InCharacter,
+    ABBBCharacterInstance &InCharacter,
     FBBBCharacterRuntimeData &InRuntimeData,
     USkeletalMeshComponent &InCharacterMesh,
     FBBBAnimationRuntimeData &InAnimationData,

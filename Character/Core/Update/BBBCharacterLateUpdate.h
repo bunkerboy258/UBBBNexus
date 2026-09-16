@@ -4,7 +4,7 @@
 #include "Engine/EngineBaseTypes.h"
 #include "BBBCharacterLateUpdate.generated.h"
 
-class ABBBCharacter;
+class ABBBCharacterInstance;
 
 /**
  * 在角色移动组件完成本帧移动后驱动角色LateUpdate
@@ -15,7 +15,7 @@ struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FTickFunction
     GENERATED_BODY()
 
     /** 执行LateUpdate的所属角色 */
-    ABBBCharacter *Target = nullptr;
+    ABBBCharacterInstance *Target = nullptr;
 
     /**
      * 执行角色移动后的更新阶段

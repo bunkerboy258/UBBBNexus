@@ -5,7 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 
-class ABBBCharacter;
+class ABBBCharacterInstance;
 struct FBBBCharacterRuntimeData;
 struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationConfig;
@@ -38,7 +38,7 @@ private:
      * @param InAnimationConfig	动画配置
      */
     void Initialize(
-        ABBBCharacter &InCharacter,
+        ABBBCharacterInstance &InCharacter,
         FBBBCharacterRuntimeData &InRuntimeData,
         USkeletalMeshComponent &InCharacterMesh,
         FBBBAnimationRuntimeData &InAnimationData,
@@ -48,7 +48,7 @@ private:
         const FBBBIntentRuntimeData &InIntentData,
         const FBBBCharacterAnimationConfig &InAnimationConfig);
 
-    ABBBCharacter *Character = nullptr;
+    ABBBCharacterInstance *Character = nullptr;
     FBBBCharacterRuntimeData *RuntimeData = nullptr;
     FBBBAnimationRuntimeData *AnimationData = nullptr;
     const FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;

@@ -3,8 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationLayerProcessor::Update(
@@ -14,21 +13,14 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     USkeletalMeshComponent &CharacterMesh) const
 {
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
-    UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    ABBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
 
     if (ActiveInstance)
     {
-        UBBBEquipmentDefinition *Definition = ActiveInstance->GetDefinition();
-        if (!ensureMsgf(
-            Definition,
-            TEXT("[UBBBC]Animation layer selection failed because active equipment definition is null")))
+        const TSubclassOf<UAnimInstance> EquipmentLayerClass = ActiveInstance->GetCharacterAnimationLayerClass();
+        if (EquipmentLayerClass)
         {
-            return;
-        }
-
-        if (Definition->CharacterAnimationLayerClass)
-        {
-            DesiredLayerClass = Definition->CharacterAnimationLayerClass;
+            DesiredLayerClass = EquipmentLayerClass;
         }
     }
 

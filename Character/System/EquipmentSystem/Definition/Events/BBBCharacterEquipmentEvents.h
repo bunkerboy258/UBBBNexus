@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/Events/BBBEquipmentActionPresentation.h"
+#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionPresentation.h"
 #include "BBBCharacterEquipmentEvents.generated.h"
 
 /** 单次成功装备动作事件 */
@@ -66,7 +66,6 @@ struct FBBBCharacterEquipmentEvents
     }
 
 private:
-    friend class UBBBEquipmentInstance;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend struct FBBBCharacterEquipmentRuntimeData;

@@ -1,17 +1,18 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "EngineUtils.h"
 
 void FBBBCharacterEquipmentSystem::Initialize(
     USkeletalMeshComponent &InCharacterMesh,
     FBBBCharacterEquipmentRuntimeData &InEquipmentData,
     const FBBBCharacterWorldRuntimeData &InWorldData,
-    ABBBCharacter &InCharacter,
+    ABBBCharacterInstance &InCharacter,
     const FBBBCharacterEquipmentConfig &InEquipmentConfig)
 {
     CharacterMesh = &InCharacterMesh;
@@ -19,6 +20,7 @@ void FBBBCharacterEquipmentSystem::Initialize(
     WorldData = &InWorldData;
     Character = &InCharacter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
+    DefaultEquipmentConfig = &InEquipmentConfig;
 
     EquipmentData->Inventory.Slots.Init(
         nullptr,
@@ -28,17 +30,21 @@ void FBBBCharacterEquipmentSystem::Initialize(
         nullptr,
         FMath::Max(1, InEquipmentConfig.QuickAccessSlotCount));
 
-    DefaultEquipmentInitializer.Initialize(
-        *EquipmentData,
-        InCharacter,
-        InEquipmentConfig);
 }
 
 void FBBBCharacterEquipmentSystem::AdvanceActions()
 {
-    if (!ensureMsgf(EquipmentData && WorldData, TEXT("[UBBBC]Equipment action advance dependencies are null")))
+    if (!ensureMsgf(
+        EquipmentData && WorldData && Character && DefaultEquipmentConfig,
+        TEXT("[UBBBC]Equipment action advance dependencies are null")))
     {
         return;
+    }
+
+    if (!bDefaultEquipmentInitialized)
+    {
+        DefaultEquipmentInitializer.Initialize(*EquipmentData, *Character, *DefaultEquipmentConfig);
+        bDefaultEquipmentInitialized = true;
     }
 
     ActionProcessor.Advance(
@@ -55,8 +61,8 @@ void FBBBCharacterEquipmentSystem::Shutdown()
         return;
     }
 
-    TSet<UBBBEquipmentInstance *> Instances;
-    for (const TObjectPtr<UBBBEquipmentInstance> &Instance : EquipmentData->Inventory.Slots)
+    TSet<ABBBEquipmentInstance *> Instances;
+    for (const TObjectPtr<ABBBEquipmentInstance> &Instance : EquipmentData->Inventory.Slots)
     {
         if (Instance)
         {
@@ -74,7 +80,18 @@ void FBBBCharacterEquipmentSystem::Shutdown()
         Instances.Add(EquipmentData->Equipment.GetDesiredMainHandInstance());
     }
 
-    for (UBBBEquipmentInstance *Instance : Instances)
+    if (Character && Character->GetWorld())
+    {
+        for (TActorIterator<ABBBEquipmentInstance> It(Character->GetWorld()); It; ++It)
+        {
+            if (It->GetOwner() == Character)
+            {
+                Instances.Add(*It);
+            }
+        }
+    }
+
+    for (ABBBEquipmentInstance *Instance : Instances)
     {
         Instance->Shutdown();
     }
@@ -114,9 +131,9 @@ void FBBBCharacterEquipmentSystem::UpdateAnimation()
         return;
     }
 
-    AnimationSystem.Update(
-        *CharacterMesh,
-        EquipmentData->Equipment,
-        EquipmentData->Events,
-        WorldData->GetWorldTimeSeconds());
+    ABBBEquipmentInstance *ActiveInstance = EquipmentData->Equipment.GetActiveMainHandInstance();
+    if (ActiveInstance)
+    {
+        ActiveInstance->PublishAnimationFacts(WorldData->GetWorldTimeSeconds());
+    }
 }

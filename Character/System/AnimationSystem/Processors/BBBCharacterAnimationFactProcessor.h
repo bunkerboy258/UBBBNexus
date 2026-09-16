@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-class ABBBCharacter;
+class ABBBCharacterInstance;
 struct FBBBCharacterAnimationFacts;
 struct FBBBCharacterRuntimeData;
 
@@ -19,7 +19,7 @@ public:
      * @return 无
      */
     void Update(
-        ABBBCharacter &Character,
+        ABBBCharacterInstance &Character,
         FBBBCharacterRuntimeData &RuntimeData,
         FBBBCharacterAnimationFacts &OutFacts,
         float DeltaSeconds);

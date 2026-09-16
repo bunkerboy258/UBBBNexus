@@ -3,6 +3,8 @@
 struct FBBBCharacterEquipmentCommands;
 struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
+struct FBBBEquipmentActionEvent;
+struct FBBBEquipmentActionResult;
 
 /** 驱动装备持续动作并产生本帧事件 */
 class FBBBCharacterEquipmentActionProcessor final
@@ -28,4 +30,10 @@ public:
         FBBBCharacterEquipmentCommands &EquipmentCommands,
         FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterEquipmentEvents &EquipmentEvents) const;
+
+private:
+    void PublishAction(
+        FBBBCharacterEquipmentEvents &EquipmentEvents,
+        FBBBEquipmentActionEvent Event,
+        const FBBBEquipmentActionResult &Result) const;
 };

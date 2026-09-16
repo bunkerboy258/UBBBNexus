@@ -1,7 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBCharacterWorldRuntimeData.generated.h"
-class ABBBCharacter;
+class ABBBCharacterInstance;
 
 /** 角色当前帧读取的世界时间快照 */
 USTRUCT()
@@ -21,7 +21,7 @@ public:
         return WorldTimeSeconds;
     }
 private:
-    friend class ABBBCharacter;
+    friend class ABBBCharacterInstance;
 
     /**
      * 更新当前帧世界时间

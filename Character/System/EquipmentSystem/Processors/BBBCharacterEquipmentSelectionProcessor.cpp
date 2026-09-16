@@ -1,15 +1,14 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(
-    ABBBCharacter &Character,
+    ABBBCharacterInstance &Character,
     USkeletalMeshComponent &CharacterMesh,
     const FName AttachmentSocketName,
     const float WorldTimeSeconds,
@@ -21,9 +20,10 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     UBBBEquipmentDefinition *RestoredDefinition = EquipmentCommands.ConsumeRestoredEquipment();
     if (RestoredDefinition)
     {
-        UBBBEquipmentInstance *RestoredInstance = UBBBEquipmentInstance::Create(
+        ABBBEquipmentInstance *RestoredInstance = ABBBEquipmentInstance::Create(
             Character,
-            *RestoredDefinition);
+            *RestoredDefinition,
+            true);
         if (!ensureMsgf(RestoredInstance, TEXT("[UBBBC]Restored equipment instance creation failed")))
         {
             return;
@@ -31,6 +31,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
 
         if (!RestoredInstance->BindHolder(CharacterMesh, AttachmentSocketName))
         {
+            RestoredInstance->Shutdown();
             return;
         }
 
@@ -55,7 +56,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     }
 
     EquipmentState.ActiveMainHandInstance = EquipmentState.DesiredMainHandInstance;
-    UBBBEquipmentInstance *DesiredInstance = EquipmentState.ActiveMainHandInstance;
+    ABBBEquipmentInstance *DesiredInstance = EquipmentState.ActiveMainHandInstance;
     if (!DesiredInstance)
     {
         return;
@@ -68,32 +69,29 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
-    UBBBEquipmentDefinition *Definition = DesiredInstance->GetDefinition();
-    if (!ensureMsgf(Definition, TEXT("[UBBBC]Active equipment definition is null after equip")))
-    {
-        DesiredInstance->Deactivate();
-        EquipmentState.ActiveMainHandInstance = nullptr;
-        return;
-    }
-
     if (bRestoringEquipment)
     {
         return;
     }
 
     const int32 Sequence = EquipmentState.NextActionSequence++;
-    const float DurationSeconds = DesiredInstance->GetEquipDuration();
+    FBBBEquipmentActionResult Result;
+    if (!DesiredInstance->BeginEquipAction(Sequence, 0.0f, Result))
+    {
+        return;
+    }
+
     EquipmentState.ActionState.Begin(
         EBBBCharacterActionType::Equip,
         WorldTimeSeconds,
-        DurationSeconds,
+        Result.DurationSeconds,
         Sequence);
 
     FBBBEquipmentActionEvent Event;
     Event.ActionType = EBBBCharacterActionType::Equip;
-    Event.EquipmentId = Definition->EquipmentId;
+    Event.EquipmentId = DesiredInstance->GetEquipmentId();
     Event.Sequence = Sequence;
-    Event.DurationSeconds = DurationSeconds;
-    DesiredInstance->BuildEquipActionPresentation(Event.Presentation);
+    Event.DurationSeconds = Result.DurationSeconds;
+    Event.Presentation = Result.Presentation;
     EquipmentEvents.AddAction(MoveTemp(Event));
 }

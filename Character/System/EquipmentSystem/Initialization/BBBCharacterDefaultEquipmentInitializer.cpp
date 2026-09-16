@@ -1,14 +1,14 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Initialization/BBBCharacterDefaultEquipmentInitializer.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 
 void FBBBCharacterDefaultEquipmentInitializer::Initialize(
     FBBBCharacterEquipmentRuntimeData &EquipmentData,
-    ABBBCharacter &EquipmentHolder,
+    ABBBCharacterInstance &EquipmentHolder,
     const FBBBCharacterEquipmentConfig &EquipmentConfig) const
 {
     FBBBCharacterEquipmentInventoryState &Inventory = EquipmentData.Inventory;
@@ -20,9 +20,10 @@ void FBBBCharacterDefaultEquipmentInitializer::Initialize(
             continue;
         }
 
-        UBBBEquipmentInstance *NewInstance = UBBBEquipmentInstance::Create(
+        ABBBEquipmentInstance *NewInstance = ABBBEquipmentInstance::Create(
             EquipmentHolder,
-            *DefaultEquipment.Definition);
+            *DefaultEquipment.Definition,
+            !EquipmentHolder.IsLocallyControlled());
 
         if (!NewInstance)
         {
@@ -33,17 +34,19 @@ void FBBBCharacterDefaultEquipmentInitializer::Initialize(
         if (!ensureMsgf(CharacterMesh, TEXT("[UBBBC]Default equipment holder has no skeletal mesh"))
             || !NewInstance->BindHolder(*CharacterMesh, EquipmentConfig.RightHandWeaponSocketName))
         {
+            NewInstance->Shutdown();
             continue;
         }
 
-        TObjectPtr<UBBBEquipmentInstance> *EmptySlot = Inventory.Slots.FindByPredicate(
-            [](const TObjectPtr<UBBBEquipmentInstance> &Slot)
+        TObjectPtr<ABBBEquipmentInstance> *EmptySlot = Inventory.Slots.FindByPredicate(
+            [](const TObjectPtr<ABBBEquipmentInstance> &Slot)
             {
                 return Slot == nullptr;
             });
 
         if (!ensureMsgf(EmptySlot, TEXT("[UBBBC]Equipment inventory has no empty slot")))
         {
+            NewInstance->Shutdown();
             continue;
         }
 
