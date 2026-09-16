@@ -10,7 +10,6 @@ class FBBBCharacterAnimationActionProcessor;
 class FBBBCharacterAnimationSystem;
 class UBBBEquipmentAnimInstance;
 class UAnimMontage;
-struct FBBBEquipmentActionEvent;
 
 /** 角色动画事实快照、蓝图读取与瞬时动作转发入口 */
 UCLASS()
@@ -176,13 +175,6 @@ public:
         EBBBCharacterActionType ActionType,
         UAnimMontage *Montage,
         float PlayRate);
-
-    /**
-     * 提交武器领域已经选定的装备动作蒙太奇
-     * @param Event 武器领域生成的装备动作事件
-     * @return 无
-     */
-    void SubmitEquipmentActionMontage(const FBBBEquipmentActionEvent &Event);
 
     /**
      * 播放角色移动动作蒙太奇

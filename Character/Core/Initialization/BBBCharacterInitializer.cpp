@@ -35,6 +35,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacterInstance &Character)
 
     //确保角色黑板更新完成后再启动骨骼动画更新
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
+
+    Character.ExternalAPI.Initialize(Character.RuntimeData.Animation);
     
     Character.CameraSystem.Initialize(
         Character,
@@ -86,7 +88,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacterInstance &Character)
         Character.RuntimeData,
         *Character.GetMesh(),
         Character.RuntimeData.Animation,
-        Character.RuntimeData.Equipment.Events,
         Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.WorldData,
         Character.RuntimeData.Intent,

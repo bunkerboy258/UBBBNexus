@@ -49,6 +49,7 @@ ABBBEquipmentInstance *ABBBEquipmentInstance::Create(
     Instance->InstanceId = FGuid::NewGuid();
     Instance->Definition = &InDefinition;
     Instance->bIsMirror = bInIsMirror;
+    Instance->CharacterAPI = &Holder.GetExternalAPI();
     UGameplayStatics::FinishSpawningActor(Instance, FTransform::Identity);
     return Instance;
 }

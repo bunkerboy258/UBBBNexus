@@ -1,6 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 
-#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -96,24 +95,6 @@ void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeapo
 {
     GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance = InWeaponAnimInstance;
 }
-
-void UBBBAnimInstance::SubmitEquipmentActionMontage(const FBBBEquipmentActionEvent &Event)
-{
-    if (!ensureMsgf(Event.Presentation.Montage, TEXT("[UBBBC]Equipment action presentation montage is null")))
-    {
-        return;
-    }
-
-    UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
-    if (!Weapon)
-    {
-        return;
-    }
-
-    ExecuteEquipmentActionMontage(Event.ActionType, Event.Presentation.Montage, Event.Presentation.PlayRate);
-}
-
-//------------------------------------------------------------------------------
 
 void UBBBAnimInstance::PlayMovementActionMontage(UAnimMontage *Montage, float PlayRate)
 {

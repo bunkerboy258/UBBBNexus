@@ -1,8 +1,9 @@
 #include "BBBWork/UBBBNexus/Equipment/System/FireSystem/BBBEquipmentFireSystem.h"
 
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -76,7 +77,14 @@ bool FBBBEquipmentFireSystem::Fire(
     }
 
     OutResult = FBBBEquipmentActionResult();
-    OutResult.Presentation.Montage = Config.FireMontage;
+    if (ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
+    {
+        Instance.CharacterAPI->SubmitEquipmentMontage(
+            EBBBEquipmentActionType::Fire,
+            Config.FireMontage,
+            1.0f);
+    }
+
     if (!Instance.bIsMirror)
     {
         OutResult.RecoilImpulse = FVector2D(

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionResult.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionType.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionType.h"
 #include "BBBWork/UBBBNexus/Equipment/Runtime/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/System/EquipSystem/BBBEquipmentEquipSystem.h"
@@ -12,7 +12,7 @@
 #include "BBBEquipmentInstance.generated.h"
 
 class ABBBCharacterInstance;
-class UBBBAnimInstance;
+class FBBBCharacterExternalAPI;
 class UBBBEquipmentAnimInstance;
 class UBBBEquipmentDefinition;
 class UArrowComponent;
@@ -143,13 +143,9 @@ private:
     TWeakObjectPtr<USkeletalMeshComponent> HolderMesh;
 
     UPROPERTY(Transient)
-    TWeakObjectPtr<UBBBAnimInstance> BoundCharacterAnimInstance;
-
-    UPROPERTY(Transient)
-    TWeakObjectPtr<UBBBEquipmentAnimInstance> BoundWeaponAnimInstance;
-
-    UPROPERTY(Transient)
     FBBBEquipmentRuntimeData RuntimeData;
+
+    FBBBCharacterExternalAPI *CharacterAPI = nullptr;
 
     FName AttachmentSocketName = NAME_None;
     bool bIsMirror = false;

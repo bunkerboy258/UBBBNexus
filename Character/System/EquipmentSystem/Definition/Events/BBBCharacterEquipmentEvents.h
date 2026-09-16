@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionPresentation.h"
 #include "BBBCharacterEquipmentEvents.generated.h"
 
 /** 单次成功装备动作事件 */
@@ -27,9 +26,6 @@ struct FBBBEquipmentActionEvent
     UPROPERTY(BlueprintReadOnly)
     float DurationSeconds = 0.0f;
 
-    /** 仅本地使用的动作表现数据 */
-    UPROPERTY(BlueprintReadOnly)
-    FBBBEquipmentActionPresentation Presentation;
 };
 
 /** 单次本地后坐力事件 */

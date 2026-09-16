@@ -140,7 +140,6 @@ void FBBBCharacterEquipmentActionProcessor::PublishAction(
     const FBBBEquipmentActionResult &Result) const
 {
     Event.DurationSeconds = Result.DurationSeconds;
-    Event.Presentation = Result.Presentation;
     EquipmentEvents.AddAction(MoveTemp(Event));
 
     if (!Result.RecoilImpulse.IsNearlyZero())

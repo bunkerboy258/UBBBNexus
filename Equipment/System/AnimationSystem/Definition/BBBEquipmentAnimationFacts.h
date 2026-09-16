@@ -1,10 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionType.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionType.h"
 #include "BBBEquipmentAnimationFacts.generated.h"
 
-class UAnimMontage;
 
 /** 装备动画单帧事实快照 */
 USTRUCT(BlueprintType)
@@ -57,9 +56,4 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
     UPROPERTY(BlueprintReadOnly)
     float EquipmentActionDuration = 0.0f;
 
-    UPROPERTY(BlueprintReadOnly)
-    TObjectPtr<UAnimMontage> EquipmentActionMontage = nullptr;
-
-    UPROPERTY(BlueprintReadOnly)
-    float EquipmentActionPlayRate = 1.0f;
 };

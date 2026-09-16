@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionResult.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -14,8 +14,6 @@ void FBBBEquipmentAnimationSystem::RecordAction(
     Facts.EquipmentActionType = Type;
     Facts.EquipmentActionSequence = Sequence;
     Facts.EquipmentActionDuration = Result.DurationSeconds;
-    Facts.EquipmentActionMontage = Result.Presentation.Montage;
-    Facts.EquipmentActionPlayRate = Result.Presentation.PlayRate;
 
     if (Type == EBBBEquipmentActionType::Fire)
     {

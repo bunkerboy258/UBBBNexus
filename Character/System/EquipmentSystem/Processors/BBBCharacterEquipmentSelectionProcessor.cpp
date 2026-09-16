@@ -1,11 +1,61 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
+
+namespace
+{
+void UnbindWeaponAnimation(
+    USkeletalMeshComponent &CharacterMesh,
+    ABBBEquipmentInstance &Equipment)
+{
+    USkeletalMeshComponent *WeaponMesh = Equipment.GetEquipmentSkeletalMesh();
+    if (WeaponMesh)
+    {
+        WeaponMesh->PrimaryComponentTick.RemovePrerequisite(
+            &CharacterMesh,
+            CharacterMesh.PrimaryComponentTick);
+    }
+
+    UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh.GetAnimInstance());
+    UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
+        ? Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance())
+        : nullptr;
+    if (CharacterAnim && CharacterAnim->TryGetWeaponAnimInstance() == WeaponAnim)
+    {
+        CharacterAnim->BindWeaponAnimInstance(nullptr);
+    }
+}
+
+bool BindWeaponAnimation(
+    USkeletalMeshComponent &CharacterMesh,
+    ABBBEquipmentInstance &Equipment)
+{
+    USkeletalMeshComponent *WeaponMesh = Equipment.GetEquipmentSkeletalMesh();
+    UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
+        ? Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance())
+        : nullptr;
+    UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh.GetAnimInstance());
+    if (!ensureMsgf(
+        CharacterAnim && WeaponAnim,
+        TEXT("[UBBBC]Character and weapon animation instances must use BBB base classes")))
+    {
+        return false;
+    }
+
+    CharacterAnim->BindWeaponAnimInstance(WeaponAnim);
+    WeaponMesh->PrimaryComponentTick.AddPrerequisite(
+        &CharacterMesh,
+        CharacterMesh.PrimaryComponentTick);
+    return true;
+}
+}
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(
     ABBBCharacterInstance &Character,
@@ -52,6 +102,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
 
     if (EquipmentState.ActiveMainHandInstance)
     {
+        UnbindWeaponAnimation(CharacterMesh, *EquipmentState.ActiveMainHandInstance);
         EquipmentState.ActiveMainHandInstance->Deactivate();
     }
 
@@ -63,8 +114,10 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     }
 
     if (!DesiredInstance->BindHolder(CharacterMesh, AttachmentSocketName)
-        || !DesiredInstance->Activate())
+        || !DesiredInstance->Activate()
+        || !BindWeaponAnimation(CharacterMesh, *DesiredInstance))
     {
+        DesiredInstance->Deactivate();
         EquipmentState.ActiveMainHandInstance = nullptr;
         return;
     }
@@ -92,6 +145,5 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     Event.EquipmentId = DesiredInstance->GetEquipmentId();
     Event.Sequence = Sequence;
     Event.DurationSeconds = Result.DurationSeconds;
-    Event.Presentation = Result.Presentation;
     EquipmentEvents.AddAction(MoveTemp(Event));
 }

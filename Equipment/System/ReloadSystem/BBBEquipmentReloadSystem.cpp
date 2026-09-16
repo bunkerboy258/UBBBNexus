@@ -1,8 +1,9 @@
 #include "BBBWork/UBBBNexus/Equipment/System/ReloadSystem/BBBEquipmentReloadSystem.h"
 
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentActionResult.h"
 
 bool FBBBEquipmentReloadSystem::Begin(
     ABBBEquipmentInstance &Instance,
@@ -33,7 +34,14 @@ bool FBBBEquipmentReloadSystem::Begin(
 
     OutResult = FBBBEquipmentActionResult();
     OutResult.DurationSeconds = Reload.DurationSeconds;
-    OutResult.Presentation.Montage = Config.Montage;
+    if (ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
+    {
+        Instance.CharacterAPI->SubmitEquipmentMontage(
+            EBBBEquipmentActionType::Reload,
+            Config.Montage,
+            1.0f);
+    }
+
     Instance.RecordAction(EBBBEquipmentActionType::Reload, Sequence, OutResult);
     return true;
 }

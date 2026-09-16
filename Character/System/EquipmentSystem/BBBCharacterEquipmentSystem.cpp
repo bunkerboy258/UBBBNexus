@@ -2,6 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
+#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
@@ -72,7 +73,24 @@ void FBBBCharacterEquipmentSystem::Shutdown()
 
     if (EquipmentData->Equipment.GetActiveMainHandInstance())
     {
-        Instances.Add(EquipmentData->Equipment.GetActiveMainHandInstance());
+        ABBBEquipmentInstance *ActiveInstance = EquipmentData->Equipment.GetActiveMainHandInstance();
+        Instances.Add(ActiveInstance);
+
+        USkeletalMeshComponent *WeaponMesh = ActiveInstance->GetEquipmentSkeletalMesh();
+        if (CharacterMesh && WeaponMesh)
+        {
+            WeaponMesh->PrimaryComponentTick.RemovePrerequisite(
+                CharacterMesh,
+                CharacterMesh->PrimaryComponentTick);
+        }
+
+        UBBBAnimInstance *CharacterAnim = CharacterMesh
+            ? Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance())
+            : nullptr;
+        if (CharacterAnim)
+        {
+            CharacterAnim->BindWeaponAnimInstance(nullptr);
+        }
     }
 
     if (EquipmentData->Equipment.GetDesiredMainHandInstance())

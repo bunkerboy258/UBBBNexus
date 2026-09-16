@@ -124,20 +124,6 @@ public:
         return AnimationFacts.EquipmentActionDuration;
     }
 
-    /** @return 最近一次装备动作蒙太奇 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    UAnimMontage *GetEquipmentActionMontage() const
-    {
-        return AnimationFacts.EquipmentActionMontage;
-    }
-
-    /** @return 最近一次装备动作播放倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    float GetEquipmentActionPlayRate() const
-    {
-        return AnimationFacts.EquipmentActionPlayRate;
-    }
-
     /**
      * 一次性发布本帧装备动画事实
      * @param Facts	装备动画系统计算完成的事实

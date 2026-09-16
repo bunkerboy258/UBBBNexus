@@ -2,6 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Character/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/System/CameraSystem/BBBCharacterCameraSystem.h"
@@ -87,6 +88,12 @@ public:
         return CharacterConfig;
     }
 
+    /** @return 装备向角色提交表现贡献的入口 */
+    FBBBCharacterExternalAPI &GetExternalAPI()
+    {
+        return ExternalAPI;
+    }
+
 private:
 
     /** 在移动组件完成本帧移动后驱动主管线LateUpdate */
@@ -120,6 +127,9 @@ private:
     FBBBCharacterLocomotionSystem LocomotionSystem;
     
     FBBBCharacterEquipmentSystem EquipmentSystem;
+
+    /** 接收装备提交的角色表现贡献 */
+    FBBBCharacterExternalAPI ExternalAPI;
     
     FBBBCharacterAnimationSystem AnimationSystem;
     

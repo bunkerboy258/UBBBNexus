@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -16,7 +15,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     FBBBCharacterRuntimeData &InRuntimeData,
     USkeletalMeshComponent &InCharacterMesh,
     FBBBAnimationRuntimeData &InAnimationData,
-    const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBIntentRuntimeData &InIntentData,
@@ -26,7 +24,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     RuntimeData = &InRuntimeData;
     CharacterMesh = &InCharacterMesh;
     AnimationData = &InAnimationData;
-    EquipmentEvents = &InEquipmentEvents;
     EquipmentState = &InEquipmentState;
     WorldData = &InWorldData;
     IntentData = &InIntentData;
@@ -41,7 +38,6 @@ void FBBBCharacterAnimationSystem::Update()
         AnimationData
             && Character
             && RuntimeData
-            && EquipmentEvents
             && EquipmentState
             && CharacterMesh
             && WorldData
@@ -67,7 +63,7 @@ void FBBBCharacterAnimationSystem::Update()
         *CharacterMesh);
     ActionProcessor.Update(
         *AnimInstance,
-        *EquipmentEvents);
+        *AnimationData);
 
     if (IntentData->WantsDash())
     {

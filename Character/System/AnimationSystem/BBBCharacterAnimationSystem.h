@@ -9,7 +9,6 @@ class ABBBCharacterInstance;
 struct FBBBCharacterRuntimeData;
 struct FBBBAnimationRuntimeData;
 struct FBBBCharacterAnimationConfig;
-struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBIntentRuntimeData;
@@ -32,7 +31,6 @@ private:
      * @param InRuntimeData	角色运行时数据
      * @param InCharacterMesh	角色骨骼网格组件
      * @param InAnimationData	动画运行时数据
-     * @param InEquipmentEvents	装备事件
      * @param InEquipmentState	装备状态
      * @param InWorldData		世界运行时数据
      * @param InAnimationConfig	动画配置
@@ -42,7 +40,6 @@ private:
         FBBBCharacterRuntimeData &InRuntimeData,
         USkeletalMeshComponent &InCharacterMesh,
         FBBBAnimationRuntimeData &InAnimationData,
-        const FBBBCharacterEquipmentEvents &InEquipmentEvents,
         const FBBBCharacterEquipmentState &InEquipmentState,
         const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBIntentRuntimeData &InIntentData,
@@ -51,7 +48,6 @@ private:
     ABBBCharacterInstance *Character = nullptr;
     FBBBCharacterRuntimeData *RuntimeData = nullptr;
     FBBBAnimationRuntimeData *AnimationData = nullptr;
-    const FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;
     const FBBBCharacterEquipmentState *EquipmentState = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
