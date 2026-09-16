@@ -62,4 +62,16 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
     TObjectPtr<UAnimMontage> EquipMontage = nullptr;
 
+    /** 武器网格中的左手握持插槽 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
+    FName LeftHandSocketName = TEXT("LeftHand");
+
+    /** 左手插槽在武器组件空间中的附加位置偏移 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
+    FVector LeftHandSocketOffset = FVector::ZeroVector;
+
+    /** 左手 IK 目标在角色 hand_r 骨骼空间中的附加位置偏移 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
+    FVector LeftHandIKOffset = FVector::ZeroVector;
+
 };

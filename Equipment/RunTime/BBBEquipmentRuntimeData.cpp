@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/BBBEquipDomin.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Equip/Definition/BBBEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/BBBFireDomin.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragments/Reload/Definition/BBBReloadRuntimeData.h"
 
 void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definition)
 {
@@ -15,6 +16,11 @@ void UBBBEquipmentRuntimeData::Initialize(const UBBBEquipmentDefinition &Definit
     if (Definition.FireDomin.IsValid())
     {
         Fire = Definition.FireDomin.Get().InitializeRuntimeData(*this);
+    }
+
+    if (Definition.ReloadDomain.IsValid())
+    {
+        Reload = NewObject<UBBBReloadRuntimeData>(this);
     }
 
     if (Equip && Definition.FireDomin.IsValid())
@@ -32,5 +38,10 @@ UBBBEquipRuntimeData *UBBBEquipmentRuntimeData::GetEquip() const
 UBBBFireRuntimeData *UBBBEquipmentRuntimeData::GetFire() const
 {
     return Fire;
+}
+
+UBBBReloadRuntimeData *UBBBEquipmentRuntimeData::GetReload() const
+{
+    return Reload;
 }
 

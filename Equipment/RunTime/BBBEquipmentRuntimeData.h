@@ -7,8 +7,9 @@
 class UBBBEquipRuntimeData;
 class UBBBEquipmentDefinition;
 class UBBBEquipmentInstance;
-class UBBBEquipmentSystem;
 class UBBBFireRuntimeData;
+class UBBBReloadRuntimeData;
+class FBBBEquipmentAnimationSystem;
 
 /** 装备各领域运行数据根 */
 UCLASS(BlueprintType)
@@ -18,7 +19,7 @@ class ABBB_EVAC_API UBBBEquipmentRuntimeData final : public UObject
 
 private:
     friend class UBBBEquipmentInstance;
-    friend class UBBBEquipmentSystem;
+    friend class FBBBEquipmentAnimationSystem;
 
     /**
      * 根据装备领域创建运行数据
@@ -32,6 +33,9 @@ private:
     /** @return 开火领域运行数据 */
     UBBBFireRuntimeData *GetFire() const;
 
+    /** @return 换弹领域运行数据 */
+    UBBBReloadRuntimeData *GetReload() const;
+
     /** 装备领域运行数据 */
     UPROPERTY(Instanced)
     TObjectPtr<UBBBEquipRuntimeData> Equip = nullptr;
@@ -39,5 +43,9 @@ private:
     /** 开火领域运行数据 */
     UPROPERTY(Instanced)
     TObjectPtr<UBBBFireRuntimeData> Fire = nullptr;
+
+    /** 换弹领域运行数据 */
+    UPROPERTY(Instanced)
+    TObjectPtr<UBBBReloadRuntimeData> Reload = nullptr;
 
 };

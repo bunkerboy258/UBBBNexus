@@ -139,7 +139,23 @@ public:
 
     /** @return 当前装备的实际武器动画实例，链接层自动读取主实例绑定 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    UBBBEquipmentAnimInstance *GetWeaponAnimInstance() const;
+    UBBBEquipmentAnimInstance *TryGetWeaponAnimInstance() const;
+
+    /** @return 武器瞄准来源本地变换，未装备时返回单位变换 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    FTransform TryGetWeaponAimSourceLocalTransform() const;
+
+    /** @return 左手目标在右手骨骼空间中的位置，未装备时返回零向量 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    FVector TryGetWeaponLeftHandTargetHandRSpace() const;
+
+    /** @return 武器左手目标是否有效，未装备时返回 false */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool TryHasWeaponLeftHandTarget() const;
+
+    /** @return 武器是否正在换弹，未装备时返回 false */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool TryGetWeaponReloading() const;
 
     /**
      * 绑定装备实际使用的武器动画实例

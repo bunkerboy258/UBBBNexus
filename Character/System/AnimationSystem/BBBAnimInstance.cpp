@@ -43,9 +43,53 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-UBBBEquipmentAnimInstance *UBBBAnimInstance::GetWeaponAnimInstance() const
+UBBBEquipmentAnimInstance *UBBBAnimInstance::TryGetWeaponAnimInstance() const
 {
     return GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance.Get();
+}
+
+FTransform UBBBAnimInstance::TryGetWeaponAimSourceLocalTransform() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->GetAimSourceLocalTransform();
+    }
+
+    return FTransform::Identity;
+}
+
+FVector UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpace() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->GetLeftHandTargetHandRSpace();
+    }
+
+    return FVector::ZeroVector;
+}
+
+bool UBBBAnimInstance::TryHasWeaponLeftHandTarget() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->HasLeftHandTarget();
+    }
+
+    return false;
+}
+
+bool UBBBAnimInstance::TryGetWeaponReloading() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->IsReloading();
+    }
+
+    return false;
 }
 
 void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance)
@@ -60,13 +104,12 @@ void UBBBAnimInstance::SubmitEquipmentActionMontage(const FBBBEquipmentActionEve
         return;
     }
 
-    UBBBEquipmentAnimInstance *Weapon = GetWeaponAnimInstance();
-    if (!ensureMsgf(Weapon, TEXT("[UBBBC]Equipment montage has no bound weapon animation instance")))
+    UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (!Weapon)
     {
         return;
     }
 
-    Weapon->PublishEquipmentAction(Event);
     ExecuteEquipmentActionMontage(Event.ActionType, Event.Presentation.Montage, Event.Presentation.PlayRate);
 }
 

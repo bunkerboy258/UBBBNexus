@@ -74,6 +74,8 @@ void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
     //世界清理前停止LateUpdate访问角色运行数据
     LateUpdateTick.SetTickFunctionEnable(false);
 
+    EquipmentSystem.Shutdown();
+
     Super::EndPlay(EndPlayReason);
 }
 

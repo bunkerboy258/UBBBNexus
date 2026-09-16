@@ -1,13 +1,14 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Initialization/BBBCharacterDefaultEquipmentInitializer.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
 
 void FBBBCharacterDefaultEquipmentInitializer::Initialize(
     FBBBCharacterEquipmentRuntimeData &EquipmentData,
-    UObject &EquipmentOuter,
+    ABBBCharacter &EquipmentHolder,
     const FBBBCharacterEquipmentConfig &EquipmentConfig) const
 {
     FBBBCharacterEquipmentInventoryState &Inventory = EquipmentData.Inventory;
@@ -20,10 +21,17 @@ void FBBBCharacterDefaultEquipmentInitializer::Initialize(
         }
 
         UBBBEquipmentInstance *NewInstance = UBBBEquipmentInstance::Create(
-            EquipmentOuter,
+            EquipmentHolder,
             *DefaultEquipment.Definition);
 
         if (!NewInstance)
+        {
+            continue;
+        }
+
+        USkeletalMeshComponent *CharacterMesh = EquipmentHolder.GetMesh();
+        if (!ensureMsgf(CharacterMesh, TEXT("[UBBBC]Default equipment holder has no skeletal mesh"))
+            || !NewInstance->BindHolder(*CharacterMesh, EquipmentConfig.RightHandWeaponSocketName))
         {
             continue;
         }

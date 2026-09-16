@@ -9,6 +9,14 @@ class FBBBCharacterEquipmentActionProcessor final
 {
 public:
     /**
+     * 在动作仲裁前推进装备持续状态
+     * @param WorldTimeSeconds	当前世界时间
+     * @param EquipmentState	角色装备选择状态
+     * @return 无
+     */
+    void Advance(float WorldTimeSeconds, FBBBCharacterEquipmentState &EquipmentState) const;
+
+    /**
      * 更新当前装备动作
      * @param WorldTimeSeconds   当前世界时间
      * @param EquipmentCommands 角色装备命令

@@ -5,19 +5,26 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragments/Fire/Definition/BBBFireResults.h"
-#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 
-namespace
+void FBBBCharacterEquipmentActionProcessor::Advance(
+    const float WorldTimeSeconds,
+    FBBBCharacterEquipmentState &EquipmentState) const
 {
-    FName GetEquipmentId(const UBBBEquipmentInstance &Instance)
+    UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    if (ActiveInstance)
     {
-        const UBBBEquipmentDefinition *Definition = Instance.GetDefinition();
-        return Definition
-            ? Definition->EquipmentId
-            : NAME_None;
+        ActiveInstance->AdvanceAction(WorldTimeSeconds);
+    }
+
+    FBBBCharacterEquipmentActionState &ActionState = EquipmentState.ActionState;
+    if (ActionState.IsActive()
+        && WorldTimeSeconds - ActionState.StartTimeSeconds >= ActionState.DurationSeconds)
+    {
+        ActionState.Reset();
     }
 }
+
+//------------------------------------------------------------------------------
 
 void FBBBCharacterEquipmentActionProcessor::Update(
     const float WorldTimeSeconds,
@@ -26,134 +33,73 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     FBBBCharacterEquipmentEvents &EquipmentEvents) const
 {
     UBBBEquipmentInstance *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
-    UBBBEquipmentSystem *EquipmentSystem = ActiveInstance
-        ? ActiveInstance->GetEquipmentSystem()
-        : nullptr;
-
     FBBBCharacterEquipmentActionState &ActionState = EquipmentState.ActionState;
-    if (ActionState.IsActive())
-    {
-        if (!ensureMsgf(EquipmentSystem, TEXT("[UBBBC]Persistent equipment action has no active equipment system")))
-        {
-            ActionState.Reset();
-        }
-    }
-
-    if (ActionState.IsActive())
-    {
-        const float ElapsedSeconds = FMath::Max(WorldTimeSeconds - ActionState.StartTimeSeconds, 0.0f);
-        const float NormalizedTime = FMath::Clamp(ElapsedSeconds / ActionState.DurationSeconds, 0.0f, 1.0f);
-
-        if (NormalizedTime >= 1.0f)
-        {
-            if (ActionState.ActiveAction == EBBBCharacterActionType::Reload)
-            {
-                EquipmentSystem->CompleteReload(WorldTimeSeconds);
-            }
-
-            ActionState.Reset();
-        }
-    }
 
     TArray<FBBBEquipmentActionEvent> RestoredActions = EquipmentCommands.ConsumeRestoredActions();
-    for (FBBBEquipmentActionEvent &RestoredAction : RestoredActions)
+    for (const FBBBEquipmentActionEvent &RestoredAction : RestoredActions)
     {
-        if (!EquipmentSystem)
-        {
-            continue;
-        }
-
-        if (RestoredAction.ActionType == EBBBCharacterActionType::Fire)
-        {
-            EquipmentSystem->PresentFire();
-            EquipmentSystem->BuildFireActionPresentation(RestoredAction.Presentation);
-            EquipmentEvents.AddAction(MoveTemp(RestoredAction));
-            continue;
-        }
-
-        if (ActionState.IsActive())
+        if (!ActiveInstance || !ActiveInstance->GetDefinition()
+            || RestoredAction.EquipmentId != ActiveInstance->GetDefinition()->EquipmentId)
         {
             continue;
         }
 
         if (RestoredAction.ActionType == EBBBCharacterActionType::Equip)
         {
+            if (ActionState.IsActive() || ActiveInstance->IsReloading())
+            {
+                continue;
+            }
+
             const float DurationSeconds = RestoredAction.DurationSeconds > 0.0f
                 ? RestoredAction.DurationSeconds
-                : EquipmentSystem->GetEquipDuration();
+                : ActiveInstance->GetEquipDuration();
             ActionState.Begin(
                 EBBBCharacterActionType::Equip,
                 WorldTimeSeconds,
                 DurationSeconds,
                 RestoredAction.Sequence);
-            RestoredAction.DurationSeconds = DurationSeconds;
-            EquipmentSystem->BuildEquipActionPresentation(RestoredAction.Presentation);
-            EquipmentEvents.AddAction(MoveTemp(RestoredAction));
+
+            FBBBEquipmentActionEvent PresentedAction = RestoredAction;
+            PresentedAction.DurationSeconds = DurationSeconds;
+            ActiveInstance->BuildEquipActionPresentation(PresentedAction.Presentation);
+            EquipmentEvents.AddAction(MoveTemp(PresentedAction));
             continue;
         }
 
-        if (RestoredAction.ActionType == EBBBCharacterActionType::Reload)
+        if (RestoredAction.ActionType == EBBBCharacterActionType::Fire)
         {
-            const float DurationSeconds = RestoredAction.DurationSeconds > 0.0f
-                ? RestoredAction.DurationSeconds
-                : EquipmentSystem->GetReloadDuration();
-            ActionState.Begin(
-                EBBBCharacterActionType::Reload,
-                WorldTimeSeconds,
-                DurationSeconds,
-                RestoredAction.Sequence);
-            EquipmentSystem->BeginReload(WorldTimeSeconds);
-            RestoredAction.DurationSeconds = DurationSeconds;
-            EquipmentSystem->BuildReloadActionPresentation(RestoredAction.Presentation);
-            EquipmentEvents.AddAction(MoveTemp(RestoredAction));
+            ActiveInstance->ApplyRestoredAction(RestoredAction, WorldTimeSeconds);
+            continue;
+        }
+
+        if (RestoredAction.ActionType == EBBBCharacterActionType::Reload
+            && !ActionState.IsActive()
+            && !ActiveInstance->IsReloading())
+        {
+            ActiveInstance->ApplyRestoredAction(RestoredAction, WorldTimeSeconds);
         }
     }
 
     const bool bShouldFire = EquipmentCommands.ConsumeFire();
     const bool bShouldReload = EquipmentCommands.ConsumeReload();
-    if (!EquipmentSystem || ActionState.IsActive())
+    if (ActiveInstance && !ActionState.IsActive() && !ActiveInstance->IsReloading())
     {
-        return;
-    }
-
-    if (bShouldFire)
-    {
-        FBBBEquipmentFireResult FireResult;
-        if (EquipmentSystem->Fire(FireResult))
+        if (bShouldFire && ActiveInstance->SubmitFire(EquipmentState.NextActionSequence))
         {
-            const int32 Sequence = EquipmentState.NextActionSequence++;
+            EquipmentState.NextActionSequence++;
+        }
 
-            FBBBEquipmentActionEvent ActionEvent;
-            ActionEvent.ActionType = EBBBCharacterActionType::Fire;
-            ActionEvent.EquipmentId = GetEquipmentId(*ActiveInstance);
-            ActionEvent.Sequence = Sequence;
-            EquipmentSystem->BuildFireActionPresentation(ActionEvent.Presentation);
-            EquipmentEvents.AddAction(MoveTemp(ActionEvent));
-
-            FBBBEquipmentRecoilEvent RecoilEvent;
-            RecoilEvent.Impulse = FireResult.RecoilImpulse;
-            RecoilEvent.RecoverySpeed = FireResult.RecoilRecoverySpeed;
-            EquipmentEvents.AddRecoil(MoveTemp(RecoilEvent));
+        if (bShouldReload && ActiveInstance->SubmitReload(
+            WorldTimeSeconds,
+            EquipmentState.NextActionSequence))
+        {
+            EquipmentState.NextActionSequence++;
         }
     }
 
-    if (bShouldReload && EquipmentSystem->CanStartReload())
+    if (ActiveInstance)
     {
-        const int32 Sequence = EquipmentState.NextActionSequence++;
-        const float DurationSeconds = EquipmentSystem->GetReloadDuration();
-        ActionState.Begin(
-            EBBBCharacterActionType::Reload,
-            WorldTimeSeconds,
-            DurationSeconds,
-            Sequence);
-        EquipmentSystem->BeginReload(WorldTimeSeconds);
-
-        FBBBEquipmentActionEvent ActionEvent;
-        ActionEvent.ActionType = EBBBCharacterActionType::Reload;
-        ActionEvent.EquipmentId = GetEquipmentId(*ActiveInstance);
-        ActionEvent.Sequence = Sequence;
-        ActionEvent.DurationSeconds = DurationSeconds;
-        EquipmentSystem->BuildReloadActionPresentation(ActionEvent.Presentation);
-        EquipmentEvents.AddAction(MoveTemp(ActionEvent));
+        ActiveInstance->ConsumeEvents(EquipmentEvents);
     }
 }

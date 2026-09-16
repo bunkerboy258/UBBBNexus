@@ -47,6 +47,10 @@ UBBBEquipRuntimeData *FBBBEquipFragment::InitializeRuntimeData(UObject &Outer) c
         return nullptr;
     }
 
+    RuntimeData->LeftHandSocketName = LeftHandSocketName;
+    RuntimeData->LeftHandSocketOffset = LeftHandSocketOffset;
+    RuntimeData->LeftHandIKOffset = LeftHandIKOffset;
+
     return RuntimeData;
 }
 

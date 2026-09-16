@@ -8,7 +8,7 @@ void FBBBCharacterEquipmentStateArbitrator::Update(
     const FBBBCharacterEquipmentState &EquipmentState) const
 {
     //装备稳定时不限制
-    if (!EquipmentState.GetActionState().IsActive())
+    if (!EquipmentState.GetActionState().IsActive() && !EquipmentState.IsReloading())
     { return; }
 
     for (int32 Index = 0; Index < DecisionData.GetRequestCount(); ++Index)

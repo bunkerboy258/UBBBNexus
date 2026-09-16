@@ -27,15 +27,3 @@ FName ABBBEquipmentPresentationActor::GetMuzzleSocketName() const
 {
     return MuzzleSocketName;
 }
-
-void ABBBEquipmentPresentationActor::NotifyFire(float WorldTimeSeconds)
-{
-}
-
-void ABBBEquipmentPresentationActor::NotifyReloadStarted(float WorldTimeSeconds, float DurationSeconds)
-{
-}
-
-void ABBBEquipmentPresentationActor::NotifyReloadCompleted(float WorldTimeSeconds)
-{
-}

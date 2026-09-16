@@ -66,6 +66,7 @@ struct FBBBCharacterEquipmentEvents
     }
 
 private:
+    friend class UBBBEquipmentInstance;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend struct FBBBCharacterEquipmentRuntimeData;

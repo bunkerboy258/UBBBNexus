@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/System/BBBEquipmentSystem.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
 class FBBBCharacterDefaultEquipmentInitializer;
@@ -136,7 +135,7 @@ struct FBBBCharacterEquipmentState
     /** @return 当前是否处于换弹动作 */
     bool IsReloading() const
     {
-        return ActionState.GetActiveAction() == EBBBCharacterActionType::Reload;
+        return ActiveMainHandInstance && ActiveMainHandInstance->IsReloading();
     }
 
     /** @return 当前装备持续动作状态 */

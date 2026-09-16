@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Initialization/BBBCharacterDefaultEquipmentInitializer.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
+#include "BBBWork/UBBBNexus/Equipment/System/Animation/BBBEquipmentAnimationSystem.h"
 
 class FBBBCharacterInitializer;
 class ABBBCharacter;
@@ -16,8 +17,17 @@ struct FBBBCharacterWorldRuntimeData;
 class ABBB_EVAC_API FBBBCharacterEquipmentSystem final
 {
 public:
+    /** 角色结束时清理所有持有装备 */
+    void Shutdown();
+
+    /** 在角色动作仲裁前推进持续装备状态 */
+    void AdvanceActions();
+
     /** 更新装备选择、领域状态与本帧命令 */
     void Update();
+
+    /** 在 TG_PrePhysics 移动完成后发布装备动画事实 */
+    void UpdateAnimation();
 
 private:
     friend class FBBBCharacterInitializer;
@@ -60,4 +70,7 @@ private:
 
     /** 装备动作处理器 */
     FBBBCharacterEquipmentActionProcessor ActionProcessor;
+
+    /** 装备动画事实采集与发布系统 */
+    FBBBEquipmentAnimationSystem AnimationSystem;
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-class UObject;
+class ABBBCharacter;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
 
@@ -16,6 +16,6 @@ public:
      */
     void Initialize(
         FBBBCharacterEquipmentRuntimeData &EquipmentData,
-        UObject &EquipmentOuter,
+        ABBBCharacter &EquipmentHolder,
         const FBBBCharacterEquipmentConfig &EquipmentConfig) const;
 };

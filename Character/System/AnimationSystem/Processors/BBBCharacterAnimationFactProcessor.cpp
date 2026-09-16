@@ -108,7 +108,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     const FBBBCharacterEquipmentActionState &ActionState = EquipmentState.GetActionState();
     const float TargetAimIntentAlpha = AimState.bIsAiming ? 1.0f : 0.0f;
-    const float TargetAimIKLockAlpha = ActionState.IsActive() ? 0.0f : 1.0f;
+    const float TargetAimIKLockAlpha = ActionState.IsActive() || EquipmentState.IsReloading()
+        ? 0.0f
+        : 1.0f;
 
     SmoothedAimIntentAlpha = FMath::FInterpTo(
         SmoothedAimIntentAlpha,
@@ -122,7 +124,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
         AimConfig.AimIKLockAlphaInterpSpeed);
 
     UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
-    UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->GetWeaponAnimInstance() : nullptr;
+    UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->TryGetWeaponAnimInstance() : nullptr;
     OutFacts.bIsAiming = AimState.bIsAiming;
     OutFacts.AimIntentAlpha = FMath::Clamp(SmoothedAimIntentAlpha, 0.0f, 1.0f);
     OutFacts.AimIKAlpha = 0.0f;
