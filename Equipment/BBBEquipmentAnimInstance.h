@@ -68,32 +68,18 @@ public:
         return AnimationFacts.LastFireTimeSeconds;
     }
 
-    /** @return 最近一次换弹序号 */
+    /** @return 本帧已装填弹量 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    int32 GetReloadSequence() const
+    int32 GetLoadedAmmo() const
     {
-        return AnimationFacts.ReloadSequence;
+        return AnimationFacts.LoadedAmmo;
     }
 
-    /** @return 本帧是否正在换弹 */
+    /** @return 配置弹药容量 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    bool IsReloading() const
+    int32 GetAmmoCapacity() const
     {
-        return AnimationFacts.bIsReloading;
-    }
-
-    /** @return 换弹开始世界时间 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    float GetReloadStartTimeSeconds() const
-    {
-        return AnimationFacts.ReloadStartTimeSeconds;
-    }
-
-    /** @return 换弹动作持续时间 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    float GetReloadDurationSeconds() const
-    {
-        return AnimationFacts.ReloadDurationSeconds;
+        return AnimationFacts.AmmoCapacity;
     }
 
     /** @return 本帧世界时间 */

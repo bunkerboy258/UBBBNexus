@@ -61,7 +61,6 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     ABBBCharacterInstance &Character,
     USkeletalMeshComponent &CharacterMesh,
     const FName AttachmentSocketName,
-    const float WorldTimeSeconds,
     FBBBCharacterEquipmentCommands &EquipmentCommands,
     FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterEquipmentEvents &EquipmentEvents) const
@@ -94,18 +93,13 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
-    if (EquipmentState.ActionState.IsActive()
-        || (EquipmentState.ActiveMainHandInstance && EquipmentState.ActiveMainHandInstance->IsReloading()))
-    {
-        return;
-    }
-
     if (EquipmentState.ActiveMainHandInstance)
     {
         UnbindWeaponAnimation(CharacterMesh, *EquipmentState.ActiveMainHandInstance);
         EquipmentState.ActiveMainHandInstance->Deactivate();
     }
 
+    EquipmentState.ReloadSequence = INDEX_NONE;
     EquipmentState.ActiveMainHandInstance = EquipmentState.DesiredMainHandInstance;
     ABBBEquipmentInstance *DesiredInstance = EquipmentState.ActiveMainHandInstance;
     if (!DesiredInstance)
@@ -127,23 +121,5 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
-    const int32 Sequence = EquipmentState.NextActionSequence++;
-    FBBBEquipmentActionResult Result;
-    if (!DesiredInstance->BeginEquipAction(0.0f, Result))
-    {
-        return;
-    }
-
-    EquipmentState.ActionState.Begin(
-        EBBBCharacterActionType::Equip,
-        WorldTimeSeconds,
-        Result.DurationSeconds,
-        Sequence);
-
-    FBBBEquipmentActionEvent Event;
-    Event.ActionType = EBBBCharacterActionType::Equip;
-    Event.EquipmentId = DesiredInstance->GetEquipmentId();
-    Event.Sequence = Sequence;
-    Event.DurationSeconds = Result.DurationSeconds;
-    EquipmentEvents.AddAction(MoveTemp(Event));
+    DesiredInstance->GetExternalAPI().SubmitEquip(EquipmentState.NextActionSequence++);
 }

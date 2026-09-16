@@ -12,6 +12,7 @@ class FBBBCharacterInitializer;
 class FBBBCharacterExternalAPI;
 class FBBBCharacterAnimationActionProcessor;
 class UAnimInstance;
+class UBBBReloadMontagePlayback;
 
 USTRUCT(BlueprintType)
 //角色运行时动画数据
@@ -38,5 +39,10 @@ private:
     /** 当前帧尚未应用的人物蒙太奇贡献 */
     UPROPERTY(Transient)
     TArray<FBBBCharacterMontagePacket> MontageQueue;
+
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UBBBReloadMontagePlayback>> ReloadPlaybacks;
+
+    TArray<int32> CancelledReloadSequences;
 
 };

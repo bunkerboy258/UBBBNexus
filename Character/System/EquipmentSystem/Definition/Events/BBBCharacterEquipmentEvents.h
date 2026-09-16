@@ -1,32 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterEquipmentEvent.h"
 #include "BBBCharacterEquipmentEvents.generated.h"
-
-/** 单次成功装备动作事件 */
-USTRUCT(BlueprintType)
-struct FBBBEquipmentActionEvent
-{
-    GENERATED_BODY()
-
-    /** 动作类型 */
-    UPROPERTY(BlueprintReadOnly)
-    EBBBCharacterActionType ActionType = EBBBCharacterActionType::None;
-
-    /** 装备配置标识 */
-    UPROPERTY(BlueprintReadOnly)
-    FName EquipmentId = NAME_None;
-
-    /** 动作顺序号 */
-    UPROPERTY(BlueprintReadOnly)
-    int32 Sequence = 0;
-
-    /** 动作持续时间 */
-    UPROPERTY(BlueprintReadOnly)
-    float DurationSeconds = 0.0f;
-
-};
 
 /** 单次本地后坐力事件 */
 USTRUCT(BlueprintType)
@@ -62,6 +38,7 @@ struct FBBBCharacterEquipmentEvents
     }
 
 private:
+    friend class FBBBCharacterExternalAPI;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend struct FBBBCharacterEquipmentRuntimeData;

@@ -11,7 +11,9 @@
 
 ABBBEquipmentInstance::ABBBEquipmentInstance()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+    PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
     SetActorEnableCollision(false);
     SetActorHiddenInGame(true);
 
@@ -20,6 +22,9 @@ ABBBEquipmentInstance::ABBBEquipmentInstance()
 
     EquipmentSkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EquipmentSkeletalMesh"));
     EquipmentSkeletalMesh->SetupAttachment(EquipmentRoot);
+    EquipmentSkeletalMesh->PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
+    EquipmentSkeletalMesh->PrimaryComponentTick.EndTickGroup = TG_PostUpdateWork;
+    EquipmentSkeletalMesh->PrimaryComponentTick.AddPrerequisite(this, PrimaryActorTick);
     EquipmentSkeletalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     EquipmentSkeletalMesh->SetGenerateOverlapEvents(false);
 }
@@ -46,6 +51,8 @@ ABBBEquipmentInstance *ABBBEquipmentInstance::Create(
         return nullptr;
     }
 
+    Instance->PrimaryActorTick.AddPrerequisite(&Holder, Holder.PrimaryActorTick);
+    Instance->ExternalAPI.Initialize(*Instance);
     Instance->InstanceId = FGuid::NewGuid();
     Instance->Definition = &InDefinition;
     Instance->bIsMirror = bInIsMirror;
@@ -89,7 +96,12 @@ bool ABBBEquipmentInstance::BindHolder(
         return false;
     }
 
+    if (USkeletalMeshComponent *PreviousMesh = HolderMesh.Get())
+    {
+        PrimaryActorTick.RemovePrerequisite(PreviousMesh, PreviousMesh->PrimaryComponentTick);
+    }
     HolderMesh = &InCharacterMesh;
+    PrimaryActorTick.AddPrerequisite(&InCharacterMesh, InCharacterMesh.PrimaryComponentTick);
     AttachmentSocketName = InAttachmentSocketName;
     return true;
 }
@@ -113,39 +125,9 @@ void ABBBEquipmentInstance::Shutdown()
     Destroy();
 }
 
-bool ABBBEquipmentInstance::BeginEquipAction(
-    const float DurationOverride,
-    FBBBEquipmentActionResult &OutResult)
+void ABBBEquipmentInstance::Tick(const float DeltaSeconds)
 {
-    return EquipSystem.BeginAction(*this, DurationOverride, OutResult);
-}
-
-bool ABBBEquipmentInstance::SubmitFire(
-    FBBBEquipmentActionResult &OutResult)
-{
-    return FireSystem.Fire(*this, OutResult);
-}
-
-bool ABBBEquipmentInstance::SubmitReload(
-    const float WorldTimeSeconds,
-    const int32 Sequence,
-    const float DurationOverride,
-    FBBBEquipmentActionResult &OutResult)
-{
-    return ReloadSystem.Begin(*this, WorldTimeSeconds, Sequence, DurationOverride, OutResult);
-}
-
-void ABBBEquipmentInstance::AdvanceAction(const float WorldTimeSeconds)
-{
-    FBBBEquipmentUpdatePipeline::Advance(*this, WorldTimeSeconds);
-}
-
-void ABBBEquipmentInstance::PublishAnimationFacts(const float WorldTimeSeconds)
-{
-    FBBBEquipmentUpdatePipeline::LateUpdate(*this, WorldTimeSeconds);
-}
-
-bool ABBBEquipmentInstance::IsReloading() const
-{
-    return RuntimeData.Reload.bIsReloading;
+    Super::Tick(DeltaSeconds);
+    FBBBEquipmentUpdatePipeline::Update(*this, GetWorld()->GetTimeSeconds());
+    FBBBEquipmentUpdatePipeline::LateUpdate(*this, GetWorld()->GetTimeSeconds());
 }

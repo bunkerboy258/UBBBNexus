@@ -25,7 +25,6 @@ public:
         ABBBCharacterInstance &Character,
         USkeletalMeshComponent &CharacterMesh,
         FName AttachmentSocketName,
-        float WorldTimeSeconds,
         FBBBCharacterEquipmentCommands &EquipmentCommands,
         FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterEquipmentEvents &EquipmentEvents) const;

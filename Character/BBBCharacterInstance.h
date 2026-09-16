@@ -94,6 +94,23 @@ public:
         return ExternalAPI;
     }
 
+    /**
+     * 接收换弹卸下关键帧
+     * @param Sequence	播放时保存的操作序号
+     * @return 无
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|Animation Input")
+    void ReportReloadStartNotify(int32 Sequence);
+
+    /**
+     * 接收换弹装填或中断事件
+     * @param Sequence	播放时保存的操作序号
+     * @param EndReason	结束原因
+     * @return 无
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|Animation Input")
+    void ReportReloadEndNotify(int32 Sequence, EBBBCharacterReloadEndReason EndReason);
+
 private:
 
     /** 在移动组件完成本帧移动后驱动主管线LateUpdate */

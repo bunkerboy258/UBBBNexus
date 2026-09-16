@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
+#include "BBBWork/UBBBNexus/Equipment/Pipeline/Execution/BBBEquipmentCommandExecutor.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -63,6 +63,14 @@ bool FBBBEquipmentEquipSystem::Activate(ABBBEquipmentInstance &Instance) const
 
 void FBBBEquipmentEquipSystem::Deactivate(ABBBEquipmentInstance &Instance) const
 {
+    if (!Instance.bIsMirror && Instance.RuntimeData.Reload.bIsReloading)
+    {
+        FBBBEquipmentCommand Command;
+        Command.Type = EBBBEquipmentCommandType::CancelReload;
+        Command.Sequence = Instance.RuntimeData.Reload.Sequence;
+        FBBBEquipmentCommandExecutor::Execute(Instance, Command);
+    }
+    Instance.PendingCommands.Reset();
     Instance.RuntimeData.Equip = FBBBEquipmentEquipRuntimeData();
     Instance.RuntimeData.Reload.bIsReloading = false;
     Instance.bIsActive = false;
@@ -71,36 +79,14 @@ void FBBBEquipmentEquipSystem::Deactivate(ABBBEquipmentInstance &Instance) const
     Instance.AnimationSystem.Reset();
 }
 
-bool FBBBEquipmentEquipSystem::BeginAction(
-    ABBBEquipmentInstance &Instance,
-    const float DurationOverride,
-    FBBBEquipmentActionResult &OutResult) const
+bool FBBBEquipmentEquipSystem::SubmitEquipMontage(ABBBEquipmentInstance &Instance, const int32 Sequence) const
 {
-    const UBBBEquipmentDefinition *Definition = Instance.Definition;
-    if (!ensureMsgf(Instance.bIsActive && Definition, TEXT("[UBBBE]Equipment action requires active equipment")))
+    if (!ensureMsgf(Instance.bIsActive && Instance.Definition && Instance.CharacterAPI,
+        TEXT("[UBBBE]Equipment presentation dependencies are invalid")))
     {
         return false;
     }
 
-    OutResult = FBBBEquipmentActionResult();
-    OutResult.DurationSeconds = DurationOverride > 0.0f
-        ? DurationOverride
-        : FMath::Max(Definition->EquipConfig.EquipDuration, 0.01f);
-    float PlayRate = 1.0f;
-    if (Definition->EquipConfig.EquipMontage)
-    {
-        PlayRate = FMath::Max(
-            Definition->EquipConfig.EquipMontage->GetPlayLength() / OutResult.DurationSeconds,
-            0.01f);
-    }
-
-    if (Definition->EquipConfig.EquipMontage
-        && ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
-    {
-        Instance.CharacterAPI->SubmitEquipmentMontage(
-            Definition->EquipConfig.EquipMontage,
-            PlayRate);
-    }
-
-    return true;
+    UAnimMontage *Montage = Instance.Definition->EquipConfig.EquipMontage;
+    return !Montage || Instance.CharacterAPI->SubmitEquipmentMontage(Montage, 1.0f, Sequence);
 }

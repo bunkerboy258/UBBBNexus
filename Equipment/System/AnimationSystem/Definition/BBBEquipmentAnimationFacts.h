@@ -32,16 +32,10 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
     float LastFireTimeSeconds = -1000.0f;
 
     UPROPERTY(BlueprintReadOnly)
-    int32 ReloadSequence = 0;
+    int32 LoadedAmmo = 0;
 
     UPROPERTY(BlueprintReadOnly)
-    bool bIsReloading = false;
-
-    UPROPERTY(BlueprintReadOnly)
-    float ReloadStartTimeSeconds = 0.0f;
-
-    UPROPERTY(BlueprintReadOnly)
-    float ReloadDurationSeconds = 0.0f;
+    int32 AmmoCapacity = 0;
 
     UPROPERTY(BlueprintReadOnly)
     float CurrentWorldTimeSeconds = 0.0f;

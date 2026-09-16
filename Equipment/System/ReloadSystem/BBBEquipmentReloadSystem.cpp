@@ -1,62 +1,40 @@
 #include "BBBWork/UBBBNexus/Equipment/System/ReloadSystem/BBBEquipmentReloadSystem.h"
-
-#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 
-bool FBBBEquipmentReloadSystem::Begin(
-    ABBBEquipmentInstance &Instance,
-    const float WorldTimeSeconds,
-    const int32 Sequence,
-    const float DurationOverride,
-    FBBBEquipmentActionResult &OutResult) const
+bool FBBBEquipmentReloadSystem::Begin(ABBBEquipmentInstance &Instance, const int32 Sequence) const
 {
-    const UBBBEquipmentDefinition *Definition = Instance.Definition;
-    if (!ensureMsgf(Instance.bIsActive && Definition, TEXT("[UBBBE]Equipment reload requires active equipment")))
+    if (!ensureMsgf(Instance.Definition && Instance.CharacterAPI, TEXT("[UBBBE]Reload dependencies are invalid")))
     {
         return false;
     }
 
-    FBBBEquipmentReloadRuntimeData &Reload = Instance.RuntimeData.Reload;
-    if (Reload.bIsReloading)
+    if (!Instance.CharacterAPI->SubmitEquipmentMontage(Instance.Definition->ReloadConfig.Montage, 1.0f, Sequence, true))
     {
         return false;
     }
 
-    const FBBBEquipmentReloadConfig &Config = Definition->ReloadConfig;
-    Reload.bIsReloading = true;
-    Reload.StartTimeSeconds = WorldTimeSeconds;
-    Reload.DurationSeconds = DurationOverride > 0.0f
-        ? DurationOverride
-        : FMath::Max(Config.DurationSeconds, 0.01f);
-    Reload.Sequence = Sequence;
-
-    OutResult = FBBBEquipmentActionResult();
-    OutResult.DurationSeconds = Reload.DurationSeconds;
-    if (Config.Montage
-        && ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
-    {
-        Instance.CharacterAPI->SubmitEquipmentMontage(
-            Config.Montage,
-            1.0f);
-    }
-
+    Instance.RuntimeData.Reload.bIsReloading = true;
+    Instance.RuntimeData.Reload.bMagazineDetached = false;
+    Instance.RuntimeData.Reload.Sequence = Sequence;
     return true;
 }
 
-void FBBBEquipmentReloadSystem::Advance(
-    ABBBEquipmentInstance &Instance,
-    const float WorldTimeSeconds) const
-{
-    FBBBEquipmentReloadRuntimeData &Reload = Instance.RuntimeData.Reload;
-    if (!Reload.bIsReloading)
-    {
-        return;
-    }
 
-    if (WorldTimeSeconds - Reload.StartTimeSeconds >= Reload.DurationSeconds)
-    {
-        Reload.bIsReloading = false;
-    }
+void FBBBEquipmentReloadSystem::DetachMagazine(FBBBEquipmentRuntimeData &Runtime) const
+{
+    Runtime.Ammo.LoadedAmmo = 0;
+    Runtime.Reload.bMagazineDetached = true;
+}
+
+void FBBBEquipmentReloadSystem::LoadMagazine(FBBBEquipmentRuntimeData &Runtime, const FBBBEquipmentAmmoConfig &Config) const
+{
+    Runtime.Ammo.LoadedAmmo = Config.AmmoCapacity;
+    Runtime.Reload.bIsReloading = false;
+}
+
+void FBBBEquipmentReloadSystem::Cancel(FBBBEquipmentRuntimeData &Runtime) const
+{
+    Runtime.Reload.bIsReloading = false;
 }

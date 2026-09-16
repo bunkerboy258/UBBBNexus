@@ -1,7 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
+#include "BBBWork/UBBBNexus/Equipment/ExternalAPI/BBBEquipmentExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterEquipmentEvent.h"
 #include "BBBWork/UBBBNexus/Equipment/Runtime/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/System/EquipSystem/BBBEquipmentEquipSystem.h"
@@ -70,48 +71,25 @@ public:
     /** 清理装备持有关系并销毁实体 */
     void Shutdown();
 
-    /**
-     * 发布一次装备人物表现
-     * @param DurationOverride  角色给出的持续时间，非正值使用配置
-     * @param OutResult         装备决定的人物表现
-     * @return 是否发布成功
-     */
-    bool BeginEquipAction(float DurationOverride, FBBBEquipmentActionResult &OutResult);
+    /** @return 装备命令入口 */
+    FBBBEquipmentExternalAPI &GetExternalAPI()
+    {
+        return ExternalAPI;
+    }
 
     /**
-     * 执行一次开火
-     * @param OutResult         装备决定的人物表现与本地后坐力
-     * @return 是否成功执行
+     * 在角色骨骼更新完成后消费命令并发布快照
+     * @param DeltaSeconds	帧间隔
+     * @return 无
      */
-    bool SubmitFire(FBBBEquipmentActionResult &OutResult);
-
-    /**
-     * 开始一次换弹
-     * @param WorldTimeSeconds  当前世界时间
-     * @param Sequence          角色分配的操作序号
-     * @param DurationOverride  角色给出的持续时间，非正值使用配置
-     * @param OutResult         装备决定的人物表现
-     * @return 是否成功开始
-     */
-    bool SubmitReload(
-        float WorldTimeSeconds,
-        int32 Sequence,
-        float DurationOverride,
-        FBBBEquipmentActionResult &OutResult);
-
-    /** 推进持续操作状态 */
-    void AdvanceAction(float WorldTimeSeconds);
-
-    /** 在角色移动后一次性发布动画事实 */
-    void PublishAnimationFacts(float WorldTimeSeconds);
-
-    /** @return 当前是否正在换弹 */
-    bool IsReloading() const;
+    virtual void Tick(float DeltaSeconds) override;
 
 protected:
     virtual void BeginPlay() override;
 
 private:
+    friend class FBBBEquipmentExternalAPI;
+    friend class FBBBEquipmentCommandExecutor;
     friend class FBBBEquipmentInitializer;
     friend class FBBBEquipmentUpdatePipeline;
     friend class FBBBEquipmentEquipSystem;
@@ -138,6 +116,9 @@ private:
     FBBBEquipmentRuntimeData RuntimeData;
 
     FBBBCharacterExternalAPI *CharacterAPI = nullptr;
+    FBBBEquipmentExternalAPI ExternalAPI;
+    TArray<FBBBEquipmentCommand> PendingCommands;
+    TArray<FBBBEquipmentActionEvent> PendingSnapshots;
 
     FName AttachmentSocketName = NAME_None;
     bool bIsMirror = false;

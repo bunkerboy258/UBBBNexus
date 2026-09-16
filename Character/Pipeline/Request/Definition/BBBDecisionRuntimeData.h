@@ -1,6 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterReloadAnimationInput.h"
 #include "BBBDecisionRuntimeData.generated.h"
 class FBBBCharacterActionDomainArbitrator;
 class FBBBCharacterActionPriorityArbitrator;
@@ -195,6 +196,8 @@ USTRUCT(BlueprintType)
 struct FBBBDecisionRuntimeData
 {
     GENERATED_BODY()
+
+    TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
 private:
     friend class FBBBCharacterActionPlanner;
 
@@ -261,6 +264,7 @@ private:
         }
 
         Requests.Reset();
+        ReloadInputs.Reset();
     }
     
     friend class FBBBCharacterActionDomainArbitrator;

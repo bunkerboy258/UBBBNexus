@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterEquipmentEvent.h"
 #include "BBBEquipmentActionNetworkPacket.generated.h"
 
 /** 单次装备动作网络包 */
@@ -20,5 +20,8 @@ struct FBBBEquipmentActionNetworkPacket
     int32 Sequence = 0;
 
     UPROPERTY()
-    float DurationSeconds = 0.0f;
+    EBBBCharacterEquipmentPhase Phase = EBBBCharacterEquipmentPhase::Performed;
+
+    UPROPERTY()
+    int32 LoadedAmmo = 0;
 };

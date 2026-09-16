@@ -14,9 +14,6 @@ struct ABBB_EVAC_API FBBBEquipmentEquipConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
     FTransform SpawnOffset = FTransform::Identity;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip", meta = (ClampMin = "0.01"))
-    float EquipDuration = 0.8f;
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip|Animation")
     TObjectPtr<UAnimMontage> EquipMontage = nullptr;
 

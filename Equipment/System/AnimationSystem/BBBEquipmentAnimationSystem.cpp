@@ -56,10 +56,8 @@ void FBBBEquipmentAnimationSystem::Update(
     }
 
     Facts.LastFireTimeSeconds = Instance.RuntimeData.Fire.LastFireTimeSeconds;
-    Facts.bIsReloading = Instance.RuntimeData.Reload.bIsReloading;
-    Facts.ReloadStartTimeSeconds = Instance.RuntimeData.Reload.StartTimeSeconds;
-    Facts.ReloadDurationSeconds = Instance.RuntimeData.Reload.DurationSeconds;
-    Facts.ReloadSequence = Instance.RuntimeData.Reload.Sequence;
+    Facts.LoadedAmmo = Instance.RuntimeData.Ammo.LoadedAmmo;
+    Facts.AmmoCapacity = Definition->AmmoConfig.AmmoCapacity;
     AnimInstance->PublishAnimationFacts(Facts);
 }
 

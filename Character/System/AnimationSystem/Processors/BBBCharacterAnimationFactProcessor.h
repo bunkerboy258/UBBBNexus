@@ -47,7 +47,6 @@ private:
 
     float SmoothedAimIntentAlpha = 0.0f;
 
-    float SmoothedAimIKLockAlpha = 1.0f;
 
     bool bHasSmoothedAimTarget = false;
 };

@@ -16,4 +16,10 @@ struct FBBBCharacterMontagePacket
 
     UPROPERTY()
     float PlayRate = 1.0f;
+
+    UPROPERTY()
+    int32 Sequence = INDEX_NONE;
+
+    UPROPERTY()
+    bool bReload = false;
 };

@@ -37,7 +37,4 @@ struct FBBBAimAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimIntentAlphaInterpSpeed = 8.0f;
 
-    /** 瞄准IK锁值的插值速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimIKLockAlphaInterpSpeed = 8.0f;
 };

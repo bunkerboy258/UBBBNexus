@@ -17,4 +17,5 @@ void FBBBRequestPipeline::Update() const
     { return; }
 
     ActionPlanner.Update(*IntentData, *DecisionData);
+    DecisionData->ReloadInputs = IntentData->ReloadInputs;
 }

@@ -19,6 +19,8 @@ struct FBBBCharacterEquipmentCommands
 {
     GENERATED_BODY()
 
+    TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
+
 private:
 
     friend class FBBBCharacterEquipmentActionProcessor;
@@ -95,6 +97,7 @@ private:
         bActivateFire = false;
         bActivateReload = false;
         PendingRestoredActions.Reset();
+        ReloadInputs.Reset();
         PendingRestoredEquipment = nullptr;
     }
 

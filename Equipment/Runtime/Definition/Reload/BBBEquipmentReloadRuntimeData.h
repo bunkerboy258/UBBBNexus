@@ -10,7 +10,6 @@ struct FBBBEquipmentReloadRuntimeData
     GENERATED_BODY()
 
     bool bIsReloading = false;
-    float StartTimeSeconds = 0.0f;
-    float DurationSeconds = 0.0f;
+    bool bMagazineDetached = false;
     int32 Sequence = 0;
 };

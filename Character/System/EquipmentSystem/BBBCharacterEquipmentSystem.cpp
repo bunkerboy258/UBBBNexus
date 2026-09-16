@@ -33,7 +33,7 @@ void FBBBCharacterEquipmentSystem::Initialize(
 
 }
 
-void FBBBCharacterEquipmentSystem::AdvanceActions()
+void FBBBCharacterEquipmentSystem::PrepareUpdate()
 {
     if (!ensureMsgf(
         EquipmentData && WorldData && Character && DefaultEquipmentConfig,
@@ -48,9 +48,7 @@ void FBBBCharacterEquipmentSystem::AdvanceActions()
         bDefaultEquipmentInitialized = true;
     }
 
-    ActionProcessor.Advance(
-        WorldData->GetWorldTimeSeconds(),
-        EquipmentData->Equipment);
+    ActionProcessor.ApplyOutcomes(EquipmentData->Events, EquipmentData->Equipment);
 }
 
 //------------------------------------------------------------------------------
@@ -128,30 +126,11 @@ void FBBBCharacterEquipmentSystem::Update()
         *Character,
         *CharacterMesh,
         RightHandWeaponSocketName,
-        WorldData->GetWorldTimeSeconds(),
         EquipmentData->Commands,
         EquipmentData->Equipment,
         EquipmentData->Events);
 
     ActionProcessor.Update(
-        WorldData->GetWorldTimeSeconds(),
         EquipmentData->Commands,
-        EquipmentData->Equipment,
-        EquipmentData->Events);
-}
-
-//------------------------------------------------------------------------------
-
-void FBBBCharacterEquipmentSystem::UpdateAnimation()
-{
-    if (!ensureMsgf(EquipmentData && WorldData && CharacterMesh, TEXT("[UBBBC]Equipment animation update dependencies are null")))
-    {
-        return;
-    }
-
-    ABBBEquipmentInstance *ActiveInstance = EquipmentData->Equipment.GetActiveMainHandInstance();
-    if (ActiveInstance)
-    {
-        ActiveInstance->PublishAnimationFacts(WorldData->GetWorldTimeSeconds());
-    }
+        EquipmentData->Equipment);
 }

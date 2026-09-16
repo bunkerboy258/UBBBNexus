@@ -1,39 +1,25 @@
 #pragma once
-
 struct FBBBCharacterEquipmentCommands;
 struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
-struct FBBBEquipmentActionEvent;
-struct FBBBEquipmentActionResult;
 
-/** 驱动装备持续动作并产生本帧事件 */
+/** 转发角色装备命令并整理装备已确认结果 */
 class FBBBCharacterEquipmentActionProcessor final
 {
 public:
     /**
-     * 在动作仲裁前推进装备持续状态
-     * @param WorldTimeSeconds	当前世界时间
-     * @param EquipmentState	角色装备选择状态
+     * 转发已批准输入
+     * @param Commands	角色命令
+     * @param State	角色装备选择
      * @return 无
      */
-    void Advance(float WorldTimeSeconds, FBBBCharacterEquipmentState &EquipmentState) const;
+    void Update(FBBBCharacterEquipmentCommands &Commands, FBBBCharacterEquipmentState &State) const;
 
     /**
-     * 更新当前装备动作
-     * @param WorldTimeSeconds   当前世界时间
-     * @param EquipmentCommands 角色装备命令
-     * @param EquipmentState    角色装备状态
-     * @param EquipmentEvents   角色装备事件
+     * 在本帧输入仲裁之前接收上一轮装备更新的结果
+     * @param Events	装备已执行事件
+     * @param State	角色换弹状态
+     * @return 无
      */
-    void Update(
-        float WorldTimeSeconds,
-        FBBBCharacterEquipmentCommands &EquipmentCommands,
-        FBBBCharacterEquipmentState &EquipmentState,
-        FBBBCharacterEquipmentEvents &EquipmentEvents) const;
-
-private:
-    void PublishAction(
-        FBBBCharacterEquipmentEvents &EquipmentEvents,
-        FBBBEquipmentActionEvent Event,
-        const FBBBEquipmentActionResult &Result) const;
+    void ApplyOutcomes(const FBBBCharacterEquipmentEvents &Events, FBBBCharacterEquipmentState &State) const;
 };

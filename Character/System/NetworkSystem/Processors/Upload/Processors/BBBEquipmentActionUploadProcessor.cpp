@@ -14,7 +14,8 @@ void FBBBEquipmentActionUploadProcessor::Update(
         Packet.ActionType = Event.ActionType;
         Packet.EquipmentId = Event.EquipmentId;
         Packet.Sequence = Event.Sequence;
-        Packet.DurationSeconds = Event.DurationSeconds;
+        Packet.Phase = Event.Phase;
+        Packet.LoadedAmmo = Event.LoadedAmmo;
         NetworkSystem.SubmitEquipmentActionPacket(MoveTemp(Packet));
     }
 }

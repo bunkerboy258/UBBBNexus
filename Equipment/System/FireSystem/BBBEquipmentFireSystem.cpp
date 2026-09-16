@@ -2,7 +2,6 @@
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -12,7 +11,7 @@
 
 bool FBBBEquipmentFireSystem::Fire(
     ABBBEquipmentInstance &Instance,
-    FBBBEquipmentActionResult &OutResult) const
+    const int32 Sequence) const
 {
     UWorld *World = Instance.GetWorld();
     USkeletalMeshComponent *WeaponMesh = Instance.EquipmentSkeletalMesh;
@@ -26,12 +25,6 @@ bool FBBBEquipmentFireSystem::Fire(
 
     const FBBBEquipmentFireConfig &Config = Definition->FireConfig;
     const float CurrentTime = World->GetTimeSeconds();
-    if (!Instance.bIsMirror
-        && CurrentTime - Instance.RuntimeData.Fire.LastFireTimeSeconds < FMath::Max(Config.FireInterval, 0.01f))
-    {
-        return false;
-    }
-
     if (!ensureMsgf(
         !Config.MuzzleSocketName.IsNone() && WeaponMesh->DoesSocketExist(Config.MuzzleSocketName),
         TEXT("[UBBBE]Equipment muzzle socket '%s' is missing"),
@@ -75,21 +68,24 @@ bool FBBBEquipmentFireSystem::Fire(
         UGameplayStatics::SpawnSoundAtLocation(World, Config.FireSound, MuzzleTransform.GetLocation());
     }
 
-    OutResult = FBBBEquipmentActionResult();
     if (Config.FireMontage
         && ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
     {
         Instance.CharacterAPI->SubmitEquipmentMontage(
             Config.FireMontage,
-            1.0f);
+            1.0f, Sequence);
     }
 
     if (!Instance.bIsMirror)
     {
-        OutResult.RecoilImpulse = FVector2D(
+        const FVector2D RecoilImpulse(
             Config.VerticalRecoilAmount + FMath::FRandRange(-Config.VerticalRecoilRandom, Config.VerticalRecoilRandom),
             Config.HorizontalRecoilAmount + FMath::FRandRange(-Config.HorizontalRecoilRandom, Config.HorizontalRecoilRandom));
-        OutResult.RecoilRecoverySpeed = Config.RecoilRecoverySpeed;
+        Instance.RuntimeData.Ammo.LoadedAmmo--;
+        if (ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Missing character recoil sink")))
+        {
+            Instance.CharacterAPI->SubmitEquipmentRecoil(RecoilImpulse, Config.RecoilRecoverySpeed);
+        }
     }
 
     Instance.AnimationSystem.RecordFire();

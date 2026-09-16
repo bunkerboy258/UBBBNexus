@@ -8,6 +8,6 @@ class ABBBEquipmentInstance;
 class ABBB_EVAC_API FBBBEquipmentUpdatePipeline final
 {
 public:
-    static void Advance(ABBBEquipmentInstance &Instance, float WorldTimeSeconds);
+    static void Update(ABBBEquipmentInstance &Instance, float WorldTimeSeconds);
     static void LateUpdate(ABBBEquipmentInstance &Instance, float WorldTimeSeconds);
 };

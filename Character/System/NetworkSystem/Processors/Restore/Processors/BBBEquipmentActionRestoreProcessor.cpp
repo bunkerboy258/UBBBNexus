@@ -11,6 +11,7 @@ void FBBBEquipmentActionRestoreProcessor::Update(
     Event.ActionType = Packet.ActionType;
     Event.EquipmentId = Packet.EquipmentId;
     Event.Sequence = Packet.Sequence;
-    Event.DurationSeconds = Packet.DurationSeconds;
+    Event.Phase = Packet.Phase;
+    Event.LoadedAmmo = Packet.LoadedAmmo;
     EquipmentCommands.SubmitRestoredAction(MoveTemp(Event));
 }

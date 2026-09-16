@@ -1,6 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterReloadAnimationInput.h"
 #include "BBBIntentRuntimeData.generated.h"
 struct FBBBCharacterIntentState;
 
@@ -9,6 +10,8 @@ USTRUCT(BlueprintType)
 struct FBBBIntentRuntimeData
 {
     GENERATED_BODY()
+
+    TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
 
     /**
      * 读取即时二维移动输入

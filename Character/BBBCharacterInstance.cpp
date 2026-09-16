@@ -147,3 +147,13 @@ void ABBBCharacterInstance::SetupPlayerInputComponent(UInputComponent *PlayerInp
     Super::SetupPlayerInputComponent(PlayerInputComponent);
     FBBBCharacterInitializer::BindInput(*this, PlayerInputComponent);
 }
+
+void ABBBCharacterInstance::ReportReloadStartNotify(const int32 Sequence)
+{
+    ExternalAPI.SubmitReloadStartNotify(Sequence);
+}
+
+void ABBBCharacterInstance::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReason EndReason)
+{
+    ExternalAPI.SubmitReloadEndNotify(Sequence, EndReason);
+}

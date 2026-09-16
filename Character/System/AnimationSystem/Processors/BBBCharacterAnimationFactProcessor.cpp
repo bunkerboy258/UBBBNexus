@@ -106,22 +106,13 @@ void FBBBCharacterAnimationFactProcessor::Update(
         }
     }
 
-    const FBBBCharacterEquipmentActionState &ActionState = EquipmentState.GetActionState();
     const float TargetAimIntentAlpha = AimState.bIsAiming ? 1.0f : 0.0f;
-    const float TargetAimIKLockAlpha = ActionState.IsActive() || EquipmentState.IsReloading()
-        ? 0.0f
-        : 1.0f;
 
     SmoothedAimIntentAlpha = FMath::FInterpTo(
         SmoothedAimIntentAlpha,
         TargetAimIntentAlpha,
         DeltaSeconds,
         AimConfig.AimIntentAlphaInterpSpeed);
-    SmoothedAimIKLockAlpha = FMath::FInterpTo(
-        SmoothedAimIKLockAlpha,
-        TargetAimIKLockAlpha,
-        DeltaSeconds,
-        AimConfig.AimIKLockAlphaInterpSpeed);
 
     UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
     UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->TryGetWeaponAnimInstance() : nullptr;
@@ -135,7 +126,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
         && WeaponAnim->HasValidAimSource()
         && WeaponAnim->GetAimSourceLocalTransform().IsValid())
     {
-        OutFacts.AimIKAlpha = OutFacts.AimIntentAlpha * FMath::Clamp(SmoothedAimIKLockAlpha, 0.0f, 1.0f);
+        OutFacts.AimIKAlpha = OutFacts.AimIntentAlpha;
     }
 
     OutFacts.ActorLocation = Character.GetActorLocation();

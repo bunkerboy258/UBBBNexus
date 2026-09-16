@@ -32,6 +32,11 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipmentInstance &Instance)
     WeaponMesh->SetSkeletalMeshAsset(Definition->EquipmentMesh);
     WeaponMesh->SetAnimInstanceClass(Definition->EquipmentAnimationClass);
     Instance.RuntimeData = FBBBEquipmentRuntimeData();
+    if (!ensureMsgf(Definition->AmmoConfig.AmmoCapacity > 0, TEXT("[UBBBE]Ammo capacity must be positive")))
+    {
+        return false;
+    }
+    Instance.RuntimeData.Ammo.LoadedAmmo = Definition->AmmoConfig.AmmoCapacity;
     Instance.AnimationSystem.Reset();
     return true;
 }

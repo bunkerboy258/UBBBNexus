@@ -11,9 +11,6 @@ struct ABBB_EVAC_API FBBBEquipmentReloadConfig
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Reload", meta = (ClampMin = "0.01"))
-    float DurationSeconds = 2.2f;
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Reload")
     TObjectPtr<UAnimMontage> Montage = nullptr;
 };

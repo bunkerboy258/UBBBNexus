@@ -11,88 +11,6 @@ class FBBBCharacterEquipmentActionProcessor;
 class FBBBEquipmentRestoreProcessor;
 class FBBBEquipmentSelectionExecutor;
 
-/** 角色装备持续动作状态 */
-USTRUCT(BlueprintType)
-struct FBBBCharacterEquipmentActionState
-{
-    GENERATED_BODY()
-
-    /** @return 当前持续动作 */
-    EBBBCharacterActionType GetActiveAction() const
-    {
-        return ActiveAction;
-    }
-
-    /** @return 当前是否存在持续动作 */
-    bool IsActive() const
-    {
-        return ActiveAction != EBBBCharacterActionType::None;
-    }
-
-    /** @return 动作开始时间 */
-    float GetStartTimeSeconds() const
-    {
-        return StartTimeSeconds;
-    }
-
-    /** @return 动作持续时间 */
-    float GetDurationSeconds() const
-    {
-        return DurationSeconds;
-    }
-
-    /** @return 当前动作顺序号 */
-    int32 GetSequence() const
-    {
-        return Sequence;
-    }
-
-private:
-    friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterEquipmentSelectionProcessor;
-
-    /**
-     * 启动持续动作
-     * @param InAction 动作类型
-     * @param InStartTimeSeconds 开始时间
-     * @param InDurationSeconds 持续时间
-     * @param InSequence 动作顺序号
-     */
-    void Begin(
-        EBBBCharacterActionType InAction,
-        float InStartTimeSeconds,
-        float InDurationSeconds,
-        int32 InSequence)
-    {
-        ActiveAction = InAction;
-        StartTimeSeconds = InStartTimeSeconds;
-        DurationSeconds = FMath::Max(InDurationSeconds, 0.01f);
-        Sequence = InSequence;
-    }
-
-    /** 清除持续动作 */
-    void Reset()
-    {
-        ActiveAction = EBBBCharacterActionType::None;
-        StartTimeSeconds = 0.0f;
-        DurationSeconds = 0.0f;
-        Sequence = 0;
-    }
-
-    UPROPERTY()
-    EBBBCharacterActionType ActiveAction = EBBBCharacterActionType::None;
-
-    UPROPERTY()
-    float StartTimeSeconds = 0.0f;
-
-    UPROPERTY()
-    float DurationSeconds = 0.0f;
-
-    UPROPERTY()
-    int32 Sequence = 0;
-
-};
-
 /** 角色拥有的装备及快捷访问绑定 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterEquipmentInventoryState
@@ -126,22 +44,16 @@ struct FBBBCharacterEquipmentState
         return ActiveMainHandInstance;
     }
 
-    /** @return 当前装备是否仍在执行装备过渡 */
-    bool IsEquipping() const
-    {
-        return ActionState.GetActiveAction() == EBBBCharacterActionType::Equip;
-    }
-
-    /** @return 当前是否处于换弹动作 */
+    /** @return 角色正在等待换弹动画阶段 */
     bool IsReloading() const
     {
-        return ActiveMainHandInstance && ActiveMainHandInstance->IsReloading();
+        return ReloadSequence > 0;
     }
 
-    /** @return 当前装备持续动作状态 */
-    const FBBBCharacterEquipmentActionState &GetActionState() const
+    /** @return 当前换弹身份 */
+    int32 GetReloadSequence() const
     {
-        return ActionState;
+        return ReloadSequence;
     }
 
 private:
@@ -161,7 +73,7 @@ private:
 
     /** 当前装备持续动作 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    FBBBCharacterEquipmentActionState ActionState;
+    int32 ReloadSequence = INDEX_NONE;
 
     /** 下一个本地动作顺序号 */
     int32 NextActionSequence = 1;

@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/Equip/BBBEquipmentEquipConfig.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/Fire/BBBEquipmentFireConfig.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/Reload/BBBEquipmentReloadConfig.h"
+#include "BBBWork/UBBBNexus/Equipment/Core/Config/Ammo/BBBEquipmentAmmoConfig.h"
 #include "Engine/DataAsset.h"
 #include "BBBEquipmentDefinition.generated.h"
 
@@ -47,4 +48,7 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Reload")
     FBBBEquipmentReloadConfig ReloadConfig;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Ammo")
+    FBBBEquipmentAmmoConfig AmmoConfig;
 };

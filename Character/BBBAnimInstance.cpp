@@ -80,17 +80,6 @@ bool UBBBAnimInstance::TryHasWeaponLeftHandTarget() const
     return false;
 }
 
-bool UBBBAnimInstance::TryGetWeaponReloading() const
-{
-    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
-    if (Weapon)
-    {
-        return Weapon->IsReloading();
-    }
-
-    return false;
-}
-
 void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance)
 {
     GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance = InWeaponAnimInstance;

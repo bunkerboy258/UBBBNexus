@@ -113,8 +113,6 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
     }
 
     //移动组件完成本帧位置与旋转后再生成最终动画事实
-    EquipmentSystem->UpdateAnimation();
-
     AnimationSystem->Update();
 
     //所有本帧消费者执行完成后统一清理角色黑板
@@ -132,7 +130,7 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
     
     RequestPipeline->Update();
     
-    EquipmentSystem->AdvanceActions();
+    EquipmentSystem->PrepareUpdate();
 
     ArbitrationPipeline->Update();
     
@@ -160,7 +158,7 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
     
     RequestPipeline->Update();
     
-    EquipmentSystem->AdvanceActions();
+    EquipmentSystem->PrepareUpdate();
 
     ArbitrationPipeline->Update();
     
@@ -182,7 +180,7 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 {
     NetworkSystem->UpdateRestore();
 
-    EquipmentSystem->AdvanceActions();
+    EquipmentSystem->PrepareUpdate();
 
     EquipmentSystem->Update();
 }
@@ -192,7 +190,7 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
 {
     NetworkSystem->UpdateRestore();
 
-    EquipmentSystem->AdvanceActions();
+    EquipmentSystem->PrepareUpdate();
 
     EquipmentSystem->Update();
 }

@@ -33,4 +33,5 @@ void FBBBIntentPipeline::Update() const
 
     //所有处理器结束后一次性发布完整意图快照
     IntentData->CommitFrame(Intent.ToRuntimeData());
+    IntentData->ReloadInputs = InputData->ReloadInputs;
 }

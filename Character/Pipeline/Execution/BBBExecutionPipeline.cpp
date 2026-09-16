@@ -25,6 +25,8 @@ void FBBBExecutionPipeline::Update() const
         TEXT("[UBBBC]Execution pipeline update failed because dependencies are null")))
     { return; }
 
+    EquipmentCommands->ReloadInputs = MoveTemp(DecisionData->ReloadInputs);
+
     SelectionExecutor.Update(
         *DecisionData,
         *InventoryState,

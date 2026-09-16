@@ -20,13 +20,10 @@ public:
     void Shutdown();
 
     /** 在角色动作仲裁前推进持续装备状态 */
-    void AdvanceActions();
+    void PrepareUpdate();
 
     /** 更新装备选择、领域状态与本帧命令 */
     void Update();
-
-    /** 在 TG_PrePhysics 移动完成后发布装备动画事实 */
-    void UpdateAnimation();
 
 private:
     friend class FBBBCharacterInitializer;

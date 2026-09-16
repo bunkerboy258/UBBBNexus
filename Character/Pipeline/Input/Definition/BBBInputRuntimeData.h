@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Pipeline/Input/Definition/States/BBBInputStates.h"
+#include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterReloadAnimationInput.h"
 #include "BBBInputRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 struct FBBBCharacterRuntimeData;
@@ -12,6 +13,8 @@ USTRUCT(BlueprintType)
 struct FBBBInputRuntimeData
 {
     GENERATED_BODY()
+
+    TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
 
     /**
      * 读取当前处理后输入帧
@@ -80,7 +83,12 @@ struct FBBBInputRuntimeData
     
 private:
 
+    friend class FBBBInputPipeline;
+    friend class FBBBCharacterExternalAPI;
     friend class FBBBCharacterInitializer;
+
+    /** 待消费通知跨帧保留，帧末清理不得清除此队列 */
+    TArray<FBBBCharacterReloadAnimationInput> PendingReloadInputs;
     friend struct FBBBCharacterRuntimeData;
 
     //保存增强输入回调直接写入的原始输入
