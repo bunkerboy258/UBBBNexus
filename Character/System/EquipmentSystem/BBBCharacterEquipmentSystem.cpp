@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"

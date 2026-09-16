@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
-#include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBEquipmentAnimationSystem::RecordAction(

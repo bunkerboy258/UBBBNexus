@@ -1,6 +1,6 @@
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 
-#include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const

@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/Packets/BBBCharacterMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/System/AnimationSystem/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 
 void FBBBCharacterAnimationActionProcessor::Update(
