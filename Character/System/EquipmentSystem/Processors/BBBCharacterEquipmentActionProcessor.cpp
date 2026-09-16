@@ -51,7 +51,6 @@ void FBBBCharacterEquipmentActionProcessor::Update(
             }
 
             if (!ActiveInstance->BeginEquipAction(
-                RestoredAction.Sequence,
                 RestoredAction.DurationSeconds,
                 Result))
             {
@@ -69,7 +68,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
 
         if (RestoredAction.ActionType == EBBBCharacterActionType::Fire)
         {
-            if (ActiveInstance->SubmitFire(RestoredAction.Sequence, Result))
+            if (ActiveInstance->SubmitFire(Result))
             {
                 PublishAction(EquipmentEvents, RestoredAction, Result);
             }
@@ -103,7 +102,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     {
         FBBBEquipmentActionResult Result;
         const int32 Sequence = EquipmentState.NextActionSequence;
-        if (ActiveInstance->SubmitFire(Sequence, Result))
+        if (ActiveInstance->SubmitFire(Result))
         {
             EquipmentState.NextActionSequence++;
 

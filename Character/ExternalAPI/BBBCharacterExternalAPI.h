@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionType.h"
 
 class UAnimMontage;
 struct FBBBAnimationRuntimeData;
@@ -19,13 +18,11 @@ public:
 
     /**
      * 提交一条武器决定的蒙太奇贡献
-     * @param ActionType         装备操作类型
      * @param Montage            人物动作蒙太奇
      * @param PlayRate           播放倍率
      * @return 是否成功入队
      */
     bool SubmitEquipmentMontage(
-        EBBBEquipmentActionType ActionType,
         UAnimMontage *Montage,
         float PlayRate);
 

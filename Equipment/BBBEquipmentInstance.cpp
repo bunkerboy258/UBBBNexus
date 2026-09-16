@@ -114,18 +114,16 @@ void ABBBEquipmentInstance::Shutdown()
 }
 
 bool ABBBEquipmentInstance::BeginEquipAction(
-    const int32 Sequence,
     const float DurationOverride,
     FBBBEquipmentActionResult &OutResult)
 {
-    return EquipSystem.BeginAction(*this, Sequence, DurationOverride, OutResult);
+    return EquipSystem.BeginAction(*this, DurationOverride, OutResult);
 }
 
 bool ABBBEquipmentInstance::SubmitFire(
-    const int32 Sequence,
     FBBBEquipmentActionResult &OutResult)
 {
-    return FireSystem.Fire(*this, Sequence, OutResult);
+    return FireSystem.Fire(*this, OutResult);
 }
 
 bool ABBBEquipmentInstance::SubmitReload(
@@ -150,17 +148,4 @@ void ABBBEquipmentInstance::PublishAnimationFacts(const float WorldTimeSeconds)
 bool ABBBEquipmentInstance::IsReloading() const
 {
     return RuntimeData.Reload.bIsReloading;
-}
-
-float ABBBEquipmentInstance::GetEquipDuration() const
-{
-    return Definition ? FMath::Max(Definition->EquipConfig.EquipDuration, 0.01f) : 0.0f;
-}
-
-void ABBBEquipmentInstance::RecordAction(
-    const EBBBEquipmentActionType Type,
-    const int32 Sequence,
-    const FBBBEquipmentActionResult &Result)
-{
-    AnimationSystem.RecordAction(Type, Sequence, Result);
 }

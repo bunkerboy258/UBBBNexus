@@ -20,28 +20,7 @@ void FBBBCharacterAnimationActionProcessor::Update(
             continue;
         }
 
-        EBBBCharacterActionType CharacterAction = EBBBCharacterActionType::None;
-        switch (Packet.ActionType)
-        {
-        case EBBBEquipmentActionType::Equip:
-            CharacterAction = EBBBCharacterActionType::Equip;
-            break;
-
-        case EBBBEquipmentActionType::Fire:
-            CharacterAction = EBBBCharacterActionType::Fire;
-            break;
-
-        case EBBBEquipmentActionType::Reload:
-            CharacterAction = EBBBCharacterActionType::Reload;
-            break;
-
-        default:
-            ensureMsgf(false, TEXT("[UBBBC]Queued equipment montage has no supported action type"));
-            continue;
-        }
-
         AnimInstance.ExecuteEquipmentActionMontage(
-            CharacterAction,
             Packet.Montage,
             Packet.PlayRate);
     }

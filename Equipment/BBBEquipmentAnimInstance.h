@@ -103,27 +103,6 @@ public:
         return AnimationFacts.CurrentWorldTimeSeconds;
     }
 
-    /** @return 最近一次装备动作类型 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    EBBBEquipmentActionType GetEquipmentActionType() const
-    {
-        return AnimationFacts.EquipmentActionType;
-    }
-
-    /** @return 最近一次装备动作序号 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    int32 GetEquipmentActionSequence() const
-    {
-        return AnimationFacts.EquipmentActionSequence;
-    }
-
-    /** @return 最近一次装备动作时长 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    float GetEquipmentActionDuration() const
-    {
-        return AnimationFacts.EquipmentActionDuration;
-    }
-
     /**
      * 一次性发布本帧装备动画事实
      * @param Facts	装备动画系统计算完成的事实

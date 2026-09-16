@@ -12,7 +12,6 @@
 
 bool FBBBEquipmentFireSystem::Fire(
     ABBBEquipmentInstance &Instance,
-    const int32 Sequence,
     FBBBEquipmentActionResult &OutResult) const
 {
     UWorld *World = Instance.GetWorld();
@@ -77,10 +76,10 @@ bool FBBBEquipmentFireSystem::Fire(
     }
 
     OutResult = FBBBEquipmentActionResult();
-    if (ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
+    if (Config.FireMontage
+        && ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
     {
         Instance.CharacterAPI->SubmitEquipmentMontage(
-            EBBBEquipmentActionType::Fire,
             Config.FireMontage,
             1.0f);
     }
@@ -93,6 +92,6 @@ bool FBBBEquipmentFireSystem::Fire(
         OutResult.RecoilRecoverySpeed = Config.RecoilRecoverySpeed;
     }
 
-    Instance.RecordAction(EBBBEquipmentActionType::Fire, Sequence, OutResult);
+    Instance.AnimationSystem.RecordFire();
     return true;
 }

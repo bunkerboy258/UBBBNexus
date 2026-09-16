@@ -73,7 +73,6 @@ void FBBBEquipmentEquipSystem::Deactivate(ABBBEquipmentInstance &Instance) const
 
 bool FBBBEquipmentEquipSystem::BeginAction(
     ABBBEquipmentInstance &Instance,
-    const int32 Sequence,
     const float DurationOverride,
     FBBBEquipmentActionResult &OutResult) const
 {
@@ -95,14 +94,13 @@ bool FBBBEquipmentEquipSystem::BeginAction(
             0.01f);
     }
 
-    if (ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
+    if (Definition->EquipConfig.EquipMontage
+        && ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
     {
         Instance.CharacterAPI->SubmitEquipmentMontage(
-            EBBBEquipmentActionType::Equip,
             Definition->EquipConfig.EquipMontage,
             PlayRate);
     }
 
-    Instance.RecordAction(EBBBEquipmentActionType::Equip, Sequence, OutResult);
     return true;
 }

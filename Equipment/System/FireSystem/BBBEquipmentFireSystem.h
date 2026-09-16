@@ -9,5 +9,5 @@ struct FBBBEquipmentActionResult;
 class ABBB_EVAC_API FBBBEquipmentFireSystem final
 {
 public:
-    bool Fire(ABBBEquipmentInstance &Instance, int32 Sequence, FBBBEquipmentActionResult &OutResult) const;
+    bool Fire(ABBBEquipmentInstance &Instance, FBBBEquipmentActionResult &OutResult) const;
 };

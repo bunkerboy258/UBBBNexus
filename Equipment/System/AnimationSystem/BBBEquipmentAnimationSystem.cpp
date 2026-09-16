@@ -2,23 +2,12 @@
 
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBEquipmentAnimationSystem::RecordAction(
-    const EBBBEquipmentActionType Type,
-    const int32 Sequence,
-    const FBBBEquipmentActionResult &Result)
+void FBBBEquipmentAnimationSystem::RecordFire()
 {
-    Facts.EquipmentActionType = Type;
-    Facts.EquipmentActionSequence = Sequence;
-    Facts.EquipmentActionDuration = Result.DurationSeconds;
-
-    if (Type == EBBBEquipmentActionType::Fire)
-    {
-        Facts.FireSequence++;
-    }
+    Facts.FireSequence++;
 }
 
 void FBBBEquipmentAnimationSystem::Update(

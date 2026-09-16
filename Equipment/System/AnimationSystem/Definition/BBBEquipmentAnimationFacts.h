@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionType.h"
 #include "BBBEquipmentAnimationFacts.generated.h"
 
 
@@ -46,14 +45,5 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
 
     UPROPERTY(BlueprintReadOnly)
     float CurrentWorldTimeSeconds = 0.0f;
-
-    UPROPERTY(BlueprintReadOnly)
-    EBBBEquipmentActionType EquipmentActionType = EBBBEquipmentActionType::None;
-
-    UPROPERTY(BlueprintReadOnly)
-    int32 EquipmentActionSequence = INDEX_NONE;
-
-    UPROPERTY(BlueprintReadOnly)
-    float EquipmentActionDuration = 0.0f;
 
 };

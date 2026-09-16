@@ -10,7 +10,6 @@ void FBBBCharacterExternalAPI::Initialize(FBBBAnimationRuntimeData &InAnimationD
 }
 
 bool FBBBCharacterExternalAPI::SubmitEquipmentMontage(
-    const EBBBEquipmentActionType ActionType,
     UAnimMontage *Montage,
     const float PlayRate)
 {
@@ -20,14 +19,13 @@ bool FBBBCharacterExternalAPI::SubmitEquipmentMontage(
     }
 
     if (!ensureMsgf(
-        ActionType != EBBBEquipmentActionType::None && Montage && FMath::IsFinite(PlayRate) && PlayRate > 0.0f,
+        Montage && FMath::IsFinite(PlayRate) && PlayRate > 0.0f,
         TEXT("[UBBBC]Equipment montage contribution is invalid")))
     {
         return false;
     }
 
     FBBBCharacterMontagePacket Packet;
-    Packet.ActionType = ActionType;
     Packet.Montage = Montage;
     Packet.PlayRate = PlayRate;
     AnimationData->MontageQueue.Add(MoveTemp(Packet));

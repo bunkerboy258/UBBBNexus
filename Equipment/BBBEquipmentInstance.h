@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionResult.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentActionType.h"
 #include "BBBWork/UBBBNexus/Equipment/Runtime/BBBEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/System/EquipSystem/BBBEquipmentEquipSystem.h"
@@ -73,20 +72,18 @@ public:
 
     /**
      * 发布一次装备人物表现
-     * @param Sequence          角色分配的操作序号
      * @param DurationOverride  角色给出的持续时间，非正值使用配置
      * @param OutResult         装备决定的人物表现
      * @return 是否发布成功
      */
-    bool BeginEquipAction(int32 Sequence, float DurationOverride, FBBBEquipmentActionResult &OutResult);
+    bool BeginEquipAction(float DurationOverride, FBBBEquipmentActionResult &OutResult);
 
     /**
      * 执行一次开火
-     * @param Sequence          角色分配的操作序号
      * @param OutResult         装备决定的人物表现与本地后坐力
      * @return 是否成功执行
      */
-    bool SubmitFire(int32 Sequence, FBBBEquipmentActionResult &OutResult);
+    bool SubmitFire(FBBBEquipmentActionResult &OutResult);
 
     /**
      * 开始一次换弹
@@ -111,9 +108,6 @@ public:
     /** @return 当前是否正在换弹 */
     bool IsReloading() const;
 
-    /** @return 装备动作持续时间 */
-    float GetEquipDuration() const;
-
 protected:
     virtual void BeginPlay() override;
 
@@ -124,8 +118,6 @@ private:
     friend class FBBBEquipmentFireSystem;
     friend class FBBBEquipmentReloadSystem;
     friend class FBBBEquipmentAnimationSystem;
-
-    void RecordAction(EBBBEquipmentActionType Type, int32 Sequence, const FBBBEquipmentActionResult &Result);
 
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     FGuid InstanceId;

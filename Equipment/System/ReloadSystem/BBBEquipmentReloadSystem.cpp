@@ -34,15 +34,14 @@ bool FBBBEquipmentReloadSystem::Begin(
 
     OutResult = FBBBEquipmentActionResult();
     OutResult.DurationSeconds = Reload.DurationSeconds;
-    if (ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
+    if (Config.Montage
+        && ensureMsgf(Instance.CharacterAPI, TEXT("[UBBBE]Equipment has no character external API")))
     {
         Instance.CharacterAPI->SubmitEquipmentMontage(
-            EBBBEquipmentActionType::Reload,
             Config.Montage,
             1.0f);
     }
 
-    Instance.RecordAction(EBBBEquipmentActionType::Reload, Sequence, OutResult);
     return true;
 }
 

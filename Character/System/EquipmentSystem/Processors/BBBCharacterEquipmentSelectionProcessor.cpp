@@ -129,7 +129,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
 
     const int32 Sequence = EquipmentState.NextActionSequence++;
     FBBBEquipmentActionResult Result;
-    if (!DesiredInstance->BeginEquipAction(Sequence, 0.0f, Result))
+    if (!DesiredInstance->BeginEquipAction(0.0f, Result))
     {
         return;
     }

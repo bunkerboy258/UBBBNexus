@@ -13,7 +13,6 @@ public:
     void Deactivate(ABBBEquipmentInstance &Instance) const;
     bool BeginAction(
         ABBBEquipmentInstance &Instance,
-        int32 Sequence,
         float DurationOverride,
         FBBBEquipmentActionResult &OutResult) const;
 };

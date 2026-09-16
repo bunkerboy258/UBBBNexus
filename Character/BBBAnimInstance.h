@@ -165,14 +165,12 @@ public:
 
     /**
      * 执行角色代码已经选定的人物动作蒙太奇
-     * @param ActionType	动作类型
      * @param Montage		人物动作蒙太奇
      * @param PlayRate		播放倍率
      * @return 无
      */
     UFUNCTION(BlueprintImplementableEvent, Category = "BBB|Equipment")
     void ExecuteEquipmentActionMontage(
-        EBBBCharacterActionType ActionType,
         UAnimMontage *Montage,
         float PlayRate);
 
