@@ -13,6 +13,7 @@
 ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
     ABBBCharacter &Character, UBBBEquipmentDefinition &Definition, const bool bIsMirror)
 {
+    // 创建装备前确认世界和角色网格有效
     UWorld *World = Character.GetWorld();
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
     if (!ensureMsgf(World && CharacterMesh, TEXT("[UBBBC]Equipment creation dependencies are invalid")))
@@ -28,6 +29,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
         return nullptr;
     }
 
+    // 先写入实例定义和镜像状态再完成演员生成
     Equipment->Definition = &Definition;
     Equipment->InstanceId = FGuid::NewGuid();
     Equipment->bIsMirror = bIsMirror;
@@ -35,11 +37,13 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
     if (!FBBBEquipmentInitializer::Initialize(*Equipment, *CharacterMesh, Character.GetExternalAPI()))
     {
+        // 初始化失败时立即销毁未完成的装备演员
         UE_LOG(LogTemp, Error, TEXT("[UBBBC]Equipment initialization failed Definition=%s"), *Definition.GetPathName());
         Equipment->Destroy();
         return nullptr;
     }
 
+    // 建立装备演员与角色和网格的更新依赖
     Equipment->PrimaryActorTick.AddPrerequisite(&Character, Character.PrimaryActorTick);
     Equipment->PrimaryActorTick.AddPrerequisite(CharacterMesh, CharacterMesh->PrimaryComponentTick);
     Equipment->SetActorTickEnabled(true);
@@ -49,6 +53,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
 bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
     USkeletalMeshComponent &CharacterMesh, const FName AttachmentSocketName, ABBBEquipment &Equipment)
 {
+    // 附着前确认动画实例装备定义和插槽全部有效
     USkeletalMeshComponent *WeaponMesh = Equipment.GetEquipmentSkeletalMesh();
     UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh.GetAnimInstance());
     UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
@@ -70,9 +75,11 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
         return false;
     }
 
+    // 应用装备生成偏移并绑定武器动画实例
     Equipment.SetActorRelativeTransform(Equipment.Definition->EquipFragment.Get().GetSpawnOffset());
     Equipment.SetActorHiddenInGame(false);
     CharacterAnim->BindWeaponAnimInstance(WeaponAnim);
+    // 让武器网格等待角色网格完成更新
     WeaponMesh->PrimaryComponentTick.AddPrerequisite(&CharacterMesh, CharacterMesh.PrimaryComponentTick);
     return true;
 }
@@ -80,6 +87,7 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
 void FBBBCharacterEquipmentLifecycleProcessor::Detach(
     USkeletalMeshComponent *CharacterMesh, ABBBEquipment &Equipment)
 {
+    // 分离前移除武器网格对角色网格的更新依赖
     USkeletalMeshComponent *WeaponMesh = Equipment.GetEquipmentSkeletalMesh();
     if (CharacterMesh && WeaponMesh)
     {
@@ -88,10 +96,12 @@ void FBBBCharacterEquipmentLifecycleProcessor::Detach(
         UBBBEquipmentAnimInstance *WeaponAnim = Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance());
         if (CharacterAnim && CharacterAnim->TryGetWeaponAnimInstance() == WeaponAnim)
         {
+            // 只有当前绑定的武器动画实例才允许被清空
             CharacterAnim->BindWeaponAnimInstance(nullptr);
         }
     }
 
+    // 取消装备待处理动作并隐藏后保持世界位置分离
     Equipment.GetExternalAPI().SubmitCancelPendingActions();
     Equipment.SetActorHiddenInGame(true);
     Equipment.DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
@@ -100,6 +110,7 @@ void FBBBCharacterEquipmentLifecycleProcessor::Detach(
 void FBBBCharacterEquipmentLifecycleProcessor::Destroy(
     USkeletalMeshComponent *CharacterMesh, ABBBEquipment &Equipment)
 {
+    // 销毁前先执行统一分离流程
     Detach(CharacterMesh, Equipment);
     Equipment.SetActorTickEnabled(false);
     if (CharacterMesh)
@@ -110,5 +121,6 @@ void FBBBCharacterEquipmentLifecycleProcessor::Destroy(
     {
         Equipment.PrimaryActorTick.RemovePrerequisite(Holder, Holder->PrimaryActorTick);
     }
+    // 移除全部更新依赖后销毁装备演员
     Equipment.Destroy();
 }

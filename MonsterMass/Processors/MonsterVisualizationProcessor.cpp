@@ -15,5 +15,6 @@ void UMonsterVisualizationProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     // 保留引擎表现查询后，仅筛选小怪实体
     Super::ConfigureQueries(EntityManager);
 
+    // 让可视化查询只处理小怪实体
     EntityQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
 }

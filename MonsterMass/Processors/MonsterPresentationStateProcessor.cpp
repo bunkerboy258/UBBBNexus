@@ -29,6 +29,7 @@ void UMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityManag
         const TConstArrayView<FMonsterStateFragment> States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
         TArrayView<FMonsterPresentationStateFragment> PresentationStates = ChunkContext.GetMutableFragmentView<FMonsterPresentationStateFragment>();
 
+        // 逐个实体复制状态快照数据
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
             FMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];

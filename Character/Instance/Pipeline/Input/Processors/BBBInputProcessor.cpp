@@ -11,6 +11,7 @@ void FBBBInputProcessor::Update(
     const FBBBInputPipelineConfig &Config,
     float DeltaSeconds) const
 {
+    // 固定读取本帧原始输入快照避免处理期间受到回调写入影响
     const FBBBRawInputFrame &Raw = InputRawData.GetAccumulatedRawInput();
     FBBBProcessedInputFrame Processed;
 
@@ -24,6 +25,7 @@ void FBBBInputProcessor::Update(
     float FireRaisedGraceTimer = InputData.GetFireRaisedGraceTimer();
 
 
+    // 只有超过移动死区的输入才会建立移动有效状态
     const bool bRawHasMove = Raw.MoveAxis.SizeSquared() > FMath::Square(Config.MoveDeadZone);
 
     if (bRawHasMove)
@@ -65,6 +67,7 @@ void FBBBInputProcessor::Update(
 
     Processed.bFireRaisedGraceActive = FireRaisedGraceTimer > 0.0f;
     
+    // 其余输入状态直接沿用原始输入的本帧结果
     Processed.bPrecisionAimHeld = Raw.bPrecisionAimHeld;
     Processed.bPrecisionAimPressed = Raw.bPrecisionAimStarted;
     Processed.bPrecisionAimReleased = Raw.bPrecisionAimCompleted;
@@ -79,6 +82,7 @@ void FBBBInputProcessor::Update(
     Processed.bDashPressed = Raw.bDashPressed;
     Processed.bSlidePressed = Raw.bSlidePressed;
 
+    // 一次提交处理结果和缓冲计时器供下一帧继承
     InputData.CommitProcessedInput(
         Processed,
         FireRaisedGraceTimer,

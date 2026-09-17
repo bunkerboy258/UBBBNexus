@@ -48,6 +48,7 @@ void FBBBAimUploadProcessor::Update(
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
 
+    // 读取上次观察结果用于判断本次是否需要上传
     //上次上传的瞄准状态数据
     FBBBAimNetworkObserverState Observer = NetworkData.GetAimObserverState();
 
@@ -58,6 +59,7 @@ void FBBBAimUploadProcessor::Update(
     AimState.bIsAiming = State.bIsAiming;
     AimState.AimTargetWorld = State.AimTargetWorld;
 
+    // 状态未达到提交条件时保持上次观察结果
     const float Now = WorldTimeSeconds;
 
     if (!ShouldSubmitAimState(Observer, AimState, NetworkConfig, Now))
@@ -67,6 +69,7 @@ void FBBBAimUploadProcessor::Update(
 
     Observer.LastUploadTime = Now;
 
+    // 先记录本次观察结果再提交网络状态
     NetworkData.CommitAimObserverState(Observer);
 
     NetworkSystem.SubmitAimState(AimState);

@@ -20,6 +20,7 @@ void UMonsterLifecycleProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
 
 void UMonsterLifecycleProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
+    // 获取生命周期处理使用的世界时间
     UWorld* World = Context.GetWorld();
 
     if (!ensureMsgf(World != nullptr, TEXT("[UBBBM]Monster lifecycle requires a valid world")))

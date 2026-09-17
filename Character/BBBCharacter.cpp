@@ -72,6 +72,7 @@ void ABBBCharacter::BeginPlay()
 
 void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    // 结束游戏时先停止延迟更新并收束装备实例
     FBBBCharacterShutdown::Shutdown(*this);
 
     Super::EndPlay(EndPlayReason);
@@ -80,6 +81,7 @@ void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ABBBCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    // 主更新只在角色所属世界有效时推进运行时状态
     //读取角色所属世界
     const UWorld *World = GetWorld();
 
@@ -110,6 +112,7 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
 
     if (bRegister)
     {
+        // 注册时建立移动延迟更新和动画更新的依赖顺序
         LateUpdateTick.Target = this;
         LateUpdateTick.SetTickFunctionEnable(HasActorBegunPlay());
         LateUpdateTick.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
@@ -120,6 +123,7 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
         return;
     }
 
+    // 注销时移除全部更新依赖避免引擎继续回调角色
     CharacterMesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTick);
     LateUpdateTick.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
     LateUpdateTick.UnRegisterTickFunction();
@@ -137,6 +141,7 @@ bool ABBBCharacter::ShouldReplicateAcceleration() const
 
 void ABBBCharacter::LateUpdate()
 {
+    // 将移动完成后的更新转交角色更新管线
     CharacterUpdatePipeline.LateUpdate();
 }
 

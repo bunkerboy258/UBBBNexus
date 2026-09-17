@@ -11,6 +11,7 @@
 
 FBBBSingleProjectileFireFragment::FBBBSingleProjectileFireFragment()
 {
+    // 使用默认的子弹演员作为投射物实现
     BulletActorClass = ABBBBulletActor::StaticClass();
 }
 
@@ -19,12 +20,14 @@ bool FBBBSingleProjectileFireFragment::CanFire(
     const float LastFireTimeSeconds,
     const float WorldTime) const
 {
+    // 弹药充足且达到开火间隔时才允许开火
     return LoadedAmmo > 0
         && WorldTime - LastFireTimeSeconds >= FMath::Max(FireInterval, 0.01f);
 }
 
 bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) const
 {
+    // 开火前确认枪口插槽可用
     if (!ensureMsgf(!MuzzleSocketName.IsNone() && Context.WeaponMesh.DoesSocketExist(MuzzleSocketName),
         TEXT("[UBBBE]Equipment muzzle socket '%s' is missing"), *MuzzleSocketName.ToString()))
     {
@@ -34,6 +37,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
     const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(MuzzleSocketName, RTS_World);
     if (!Context.bIsMirror)
     {
+        // 本地实例负责生成投射物并设置归属
         if (!ensureMsgf(BulletActorClass, TEXT("[UBBBE]Projectile fire requires a bullet class")))
         {
             return false;
@@ -63,6 +67,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
             &Context.Instance);
     }
 
+    // 本地和镜像实例都播放开火表现
     if (FireSound)
     {
         UGameplayStatics::SpawnSoundAtLocation(&Context.World, FireSound, MuzzleTransform.GetLocation());
@@ -73,6 +78,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
         Context.CharacterAPI.SubmitEquipmentMontage(FireMontage, 1.0f, Context.Sequence);
     }
 
+    // 本地实例负责消耗弹药并提交后坐力
     if (!Context.bIsMirror)
     {
         const FVector2D RecoilImpulse(
@@ -82,6 +88,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
         Context.CharacterAPI.SubmitEquipmentRecoil(RecoilImpulse, RecoilRecoverySpeed);
     }
 
+    // 记录本次开火时间供下一次开火判断
     Context.LastFireTimeSeconds = Context.World.GetTimeSeconds();
     return true;
 }

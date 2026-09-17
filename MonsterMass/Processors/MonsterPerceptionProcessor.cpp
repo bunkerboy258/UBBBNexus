@@ -32,6 +32,7 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
         return;
     }
 
+    // 获取当前世界中的玩家目标
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0);
 
     // 每帧根据视野范围更新目标请求

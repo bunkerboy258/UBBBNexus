@@ -12,11 +12,13 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     FBBBAnimationRuntimeData &AnimationData,
     USkeletalMeshComponent &CharacterMesh) const
 {
+    // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
     ABBBEquipment *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
 
     if (ActiveInstance)
     {
+        // 已装备武器时优先使用武器指定的角色动画层
         const TSubclassOf<UAnimInstance> EquipmentLayerClass = ActiveInstance->GetCharacterAnimationLayerClass();
         if (EquipmentLayerClass)
         {
@@ -31,11 +33,13 @@ void FBBBCharacterAnimationLayerProcessor::Update(
         return;
     }
 
+    // 动画层未变化时避免重复重连
     if (AnimationData.LinkedAnimationLayerClass == DesiredLayerClass)
     {
         return;
     }
 
+    // 重连动画层后保存当前类用于下一帧比较
     CharacterMesh.LinkAnimClassLayers(DesiredLayerClass);
     AnimationData.LinkedAnimationLayerClass = DesiredLayerClass;
 }

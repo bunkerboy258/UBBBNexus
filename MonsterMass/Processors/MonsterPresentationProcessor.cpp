@@ -40,6 +40,7 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
+            // 取得实体对应的表现演员
             AMonsterBasicActor* MonsterActor = Cast<AMonsterBasicActor>(Actors[Index].GetMutable());
 
             if (!IsValid(MonsterActor))
@@ -57,6 +58,7 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
                 ETeleportType::TeleportPhysics);
             MonsterActor->SetCollisionRadius(Avoidances[Index].CollisionRadius);
 
+            // 取得表现组件同步状态和移动速度
             UMonsterPresentationComponent* Presentation = MonsterActor->GetMonsterPresentation();
 
             if (!ensureMsgf(Presentation != nullptr, TEXT("[UBBBM]Monster actor requires MonsterPresentationComponent")))

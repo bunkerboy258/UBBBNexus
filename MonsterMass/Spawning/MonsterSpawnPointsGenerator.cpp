@@ -11,12 +11,14 @@ void UMonsterSpawnPointsGenerator::Generate(
     const int32 Count,
     FFinishedGeneratingSpawnDataSignature& FinishedGeneratingSpawnPointsDelegate) const
 {
+    // 没有生成数量时直接结束生成请求
     if (Count <= 0)
     {
         FinishedGeneratingSpawnPointsDelegate.Execute(TArray<FMassEntitySpawnDataGeneratorResult>());
         return;
     }
 
+    // 生成位置必须来自演员拥有者
     const AActor* SpawnOwner = Cast<AActor>(&QueryOwner);
 
     if (!ensureMsgf(SpawnOwner != nullptr, TEXT("[UBBBM]Spawn point generator owner must be an actor")))
@@ -25,6 +27,7 @@ void UMonsterSpawnPointsGenerator::Generate(
         return;
     }
 
+    // 按实体类型构建生成结果
     TArray<FMassEntitySpawnDataGeneratorResult> Results;
     BuildResultsFromEntityTypes(Count, EntityTypes, Results);
 

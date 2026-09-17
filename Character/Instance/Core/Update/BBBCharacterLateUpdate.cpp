@@ -8,11 +8,13 @@ void FBBBCharacterLateUpdate::ExecuteTick(
     ENamedThreads::Type CurrentThread,
     const FGraphEventRef &MyCompletionGraphEvent)
 {
+    // 引擎延迟更新必须拥有有效角色目标
     if (!ensureMsgf(Target, TEXT("[UBBBC]Character LateUpdate failed because target is null")))
     {
         return;
     }
 
+    // 将移动完成后的回调转交角色对象
     Target->LateUpdate();
 }
 

@@ -11,6 +11,7 @@ void FBBBEquipmentReloadProcessor::Update(
     const FBBBEquipmentReloadFragment &Fragment, FBBBCharacterExternalAPI &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
+    // 按输入顺序处理换弹阶段
     for (const FBBBEquipmentInput &Input : Data.Inputs)
     {
         const bool bCancelPending = Input.Type == EBBBEquipmentInputType::CancelPendingActions;
@@ -18,6 +19,7 @@ void FBBBEquipmentReloadProcessor::Update(
         FBBBEquipmentReloadContext Context{
             CharacterAPI, Fire.LoadedAmmo, Fire.AmmoCapacity, Data.bIsReloading,
             Data.bMagazineDetached, Data.Sequence, Sequence, bIsMirror};
+        // 镜像实例只重放换弹开始表现
         if (bIsMirror)
         {
             if (!Fragment.Begin(Context))
@@ -27,6 +29,7 @@ void FBBBEquipmentReloadProcessor::Update(
             continue;
         }
 
+        // 为本地换弹操作准备同步事件
         FBBBEquipmentActionEvent Event;
         Event.EquipmentId = EquipmentId;
         Event.Sequence = Sequence;
@@ -34,6 +37,7 @@ void FBBBEquipmentReloadProcessor::Update(
 
         if (Input.Type == EBBBEquipmentInputType::Reload)
         {
+            // 换弹开始前确认当前状态和弹药条件
             if (Data.bIsReloading || !Fragment.CanReload(Fire.LoadedAmmo, Fire.AmmoCapacity))
             {
                 continue;
@@ -46,12 +50,14 @@ void FBBBEquipmentReloadProcessor::Update(
                 continue;
             }
 
+            // 发布换弹开始事件
             Event.Phase = EBBBCharacterEquipmentPhase::ReloadStarted;
             Event.LoadedAmmo = Fire.LoadedAmmo;
             CharacterAPI.PublishEquipmentEvent(Event);
             continue;
         }
 
+        // 后续换弹阶段必须匹配当前换弹序号
         if (!Data.bIsReloading || Data.Sequence != Sequence)
         {
             if (!bCancelPending)
@@ -62,6 +68,7 @@ void FBBBEquipmentReloadProcessor::Update(
             continue;
         }
 
+        // 根据输入执行脱匣装匣或取消阶段
         bool bSucceeded = false;
         switch (Input.Type)
         {
@@ -95,6 +102,7 @@ void FBBBEquipmentReloadProcessor::Update(
             continue;
         }
 
+        // 发布换弹阶段完成事件
         Event.LoadedAmmo = Fire.LoadedAmmo;
         CharacterAPI.PublishEquipmentEvent(Event);
     }

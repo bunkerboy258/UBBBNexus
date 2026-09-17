@@ -14,12 +14,14 @@ void FBBBEquipmentFireProcessor::Update(
     const FBBBEquipmentFireFragment &Fragment, FBBBCharacterExternalAPI &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
+    // 开火处理需要有效世界对象
     UWorld *World = Instance.GetWorld();
     if (!ensureMsgf(World, TEXT("[UBBBE]Fire update requires a world")))
     {
         return;
     }
 
+    // 按输入顺序处理开火请求
     for (const FBBBEquipmentInput &Input : Data.Inputs)
     {
         if (!bIsMirror && (Reload.bIsReloading
@@ -31,6 +33,7 @@ void FBBBEquipmentFireProcessor::Update(
         FBBBEquipmentFireContext Context{
             Instance, *World, WeaponMesh, CharacterAPI, Data.LoadedAmmo,
             Data.LastFireTimeSeconds, Input.Sequence, bIsMirror};
+        // 由装备片段执行具体开火行为
         if (!Fragment.Fire(Context))
         {
             UE_LOG(LogTemp, Warning, TEXT("[UBBBE]Fire failed Equipment=%s Sequence=%d"),
@@ -38,9 +41,11 @@ void FBBBEquipmentFireProcessor::Update(
             continue;
         }
 
+        // 记录成功开火并同步本地事件
         Data.FireSequence++;
         if (bIsMirror)
         {
+            // 镜像实例不重复发布网络事件
             continue;
         }
 

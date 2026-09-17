@@ -22,6 +22,7 @@ void UMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityManag
 
 void UMonsterDamageProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
+    // 获取伤害处理使用的世界时间
     UWorld* World = Context.GetWorld();
 
     if (!ensureMsgf(World != nullptr, TEXT("[UBBBM]Monster damage requires a valid world")))
@@ -63,6 +64,7 @@ void UMonsterDamageProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
                 continue;
             }
 
+            // 生命归零后进入死亡状态并延迟回收
             State.State = EMonsterState::Dead;
             DeathEvent.DestroyAtTime = WorldTime + 3.0f;
         }

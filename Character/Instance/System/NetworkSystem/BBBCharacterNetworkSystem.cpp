@@ -32,6 +32,7 @@ void FBBBCharacterNetworkSystem::Initialize(
 
 void FBBBCharacterNetworkSystem::UpdateRestore()
 {
+    // 恢复阶段先确认网络数据和装备解析依赖有效
     if (!ensureMsgf(NetworkData && AimData && LocomotionData && EquipmentCommands && EquipmentCatalog, TEXT("[UBBBC]Network restore dependencies are null")))
     {
         return;
@@ -47,6 +48,7 @@ void FBBBCharacterNetworkSystem::UpdateRestore()
 
 void FBBBCharacterNetworkSystem::UpdateUpload()
 {
+    // 上传阶段需要世界时间网络组件和可复制状态全部有效
     if (!ensureMsgf(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig && EquipmentState && EquipmentEvents && NetworkComponent, TEXT("[UBBBC]Network upload dependencies are null")))
     {
         return;
@@ -65,6 +67,7 @@ void FBBBCharacterNetworkSystem::UpdateUpload()
 
 void FBBBCharacterNetworkSystem::SubmitEquipmentPacket(FBBBEquipmentNetworkPacket Packet)
 {
+    // 权威端直接分发装备状态非权威端通过服务端提交
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment packet cannot be submitted")))
     {
         return;
@@ -81,6 +84,7 @@ void FBBBCharacterNetworkSystem::SubmitEquipmentPacket(FBBBEquipmentNetworkPacke
 
 void FBBBCharacterNetworkSystem::SubmitEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet)
 {
+    // 权威端直接分发装备动作非权威端通过服务端提交
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment action packet cannot be submitted")))
     {
         return;
@@ -107,6 +111,7 @@ void FBBBCharacterNetworkSystem::ReceiveEquipmentForDistribution(FBBBEquipmentNe
 
 void FBBBCharacterNetworkSystem::ReceiveEquipmentForRestore(FBBBEquipmentNetworkPacket Packet)
 {
+    // 装备状态只进入远端角色的恢复队列
     if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Equipment restore packet cannot be queued")))
     {
         return;
@@ -132,6 +137,7 @@ void FBBBCharacterNetworkSystem::ReceiveEquipmentActionForDistribution(FBBBEquip
 
 void FBBBCharacterNetworkSystem::ReceiveEquipmentActionForRestore(FBBBEquipmentActionNetworkPacket Packet)
 {
+    // 装备动作只进入远端角色的恢复队列
     if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Equipment action restore packet cannot be queued")))
     {
         return;
@@ -147,6 +153,7 @@ void FBBBCharacterNetworkSystem::ReceiveEquipmentActionForRestore(FBBBEquipmentA
 
 void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimState)
 {
+    // 权威端直接接收瞄准状态非权威端通过服务端提交
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Aim state cannot be submitted")))
     {
         return;
@@ -163,6 +170,7 @@ void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimSt
 
 void FBBBCharacterNetworkSystem::SubmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
+    // 权威端直接接收移动状态非权威端通过服务端提交
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Locomotion state cannot be submitted")))
     {
         return;
@@ -179,6 +187,7 @@ void FBBBCharacterNetworkSystem::SubmitLocomotionState(const FBBBLocomotionNetwo
 
 void FBBBCharacterNetworkSystem::ReceiveSubmittedAimState(const FBBBAimNetworkState &AimState)
 {
+    // 权威端保存复制状态并为远端角色安排恢复
     if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Submitted aim state cannot be processed")))
     {
         return;
@@ -193,6 +202,7 @@ void FBBBCharacterNetworkSystem::ReceiveSubmittedAimState(const FBBBAimNetworkSt
 
 void FBBBCharacterNetworkSystem::ReceiveReplicatedAimState(const FBBBAimNetworkState &AimState)
 {
+    // 远端复制属性进入待恢复瞄准状态
     if (ensureMsgf(NetworkData, TEXT("[UBBBC]Replicated aim state cannot be queued")))
     {
         NetworkData->SetPendingRestoreAimState(AimState);
@@ -201,6 +211,7 @@ void FBBBCharacterNetworkSystem::ReceiveReplicatedAimState(const FBBBAimNetworkS
 
 void FBBBCharacterNetworkSystem::ReceiveSubmittedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
+    // 权威端保存复制状态并为远端角色安排恢复
     if (!ensureMsgf(NetworkData && NetworkComponent, TEXT("[UBBBC]Submitted locomotion state cannot be processed")))
     {
         return;
@@ -215,6 +226,7 @@ void FBBBCharacterNetworkSystem::ReceiveSubmittedLocomotionState(const FBBBLocom
 
 void FBBBCharacterNetworkSystem::ReceiveReplicatedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
+    // 远端复制属性进入待恢复移动状态
     if (ensureMsgf(NetworkData, TEXT("[UBBBC]Replicated locomotion state cannot be queued")))
     {
         NetworkData->SetPendingRestoreLocomotionState(LocomotionState);

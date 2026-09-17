@@ -13,6 +13,7 @@ void FBBBEquipmentAnimationFactProcessor::Update(
     FBBBEquipmentAnimationRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
     const FBBBEquipmentEquipFragment &EquipFragment, const FBBBEquipmentFireFragment &FireFragment) const
 {
+    // 取得装备动画实例和世界时间来源
     UBBBEquipmentAnimInstance *AnimInstance = Cast<UBBBEquipmentAnimInstance>(WeaponMesh.GetAnimInstance());
     UWorld *World = WeaponMesh.GetWorld();
     if (!ensureMsgf(AnimInstance && World, TEXT("[UBBBE]Equipment animation snapshot dependencies are invalid")))
@@ -20,6 +21,7 @@ void FBBBEquipmentAnimationFactProcessor::Update(
         return;
     }
 
+    // 重建装备动画事实避免残留上一帧数据
     FBBBEquipmentAnimationFacts &Facts = Data.Facts;
     Facts = FBBBEquipmentAnimationFacts();
     Facts.CurrentWorldTimeSeconds = World->GetTimeSeconds();
@@ -28,6 +30,7 @@ void FBBBEquipmentAnimationFactProcessor::Update(
     Facts.LoadedAmmo = Fire.LoadedAmmo;
     Facts.AmmoCapacity = Fire.AmmoCapacity;
 
+    // 根据右手骨骼和枪口插槽计算瞄准来源
     const FName RightHandBone = TEXT("hand_r");
     const bool bHasRightHandBone = CharacterMesh.GetBoneIndex(RightHandBone) != INDEX_NONE;
     Facts.bHasValidAimSource = bHasRightHandBone
@@ -39,6 +42,7 @@ void FBBBEquipmentAnimationFactProcessor::Update(
                 CharacterMesh.GetBoneTransform(RightHandBone, RTS_World));
     }
 
+    // 根据左手插槽计算双手瞄准目标
     Facts.bHasLeftHandTarget = bHasRightHandBone
         && WeaponMesh.DoesSocketExist(EquipFragment.GetLeftHandSocketName());
     if (Facts.bHasLeftHandTarget)
@@ -51,6 +55,7 @@ void FBBBEquipmentAnimationFactProcessor::Update(
             RightHandBone, RTS_World).InverseTransformPosition(TargetWorld) + EquipFragment.GetLeftHandIKOffset();
     }
 
+    // 缺少动画所需骨骼或插槽时触发防呆报警
     ensureMsgf(Facts.bHasValidAimSource, TEXT("[UBBBE]Equipment muzzle or character hand_r bone is missing"));
     ensureMsgf(Facts.bHasLeftHandTarget, TEXT("[UBBBE]Weapon left hand socket or character hand_r bone is missing"));
     AnimInstance->PublishAnimationFacts(Facts);

@@ -23,6 +23,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FBBBCharacterAnimationFacts &OutFacts,
     float DeltaSeconds)
 {
+    // 采集动画事实前确认角色组件和世界对象有效
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
     UWorld *World = Character.GetWorld();
@@ -39,6 +40,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
     const bool bHasActiveMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
 
+    // 优先使用配置骨骼作为瞄准起点否则使用角色网格位置
     FVector AimOrigin = CharacterMesh->GetComponentLocation() + FVector(0.0f, 0.0f, 50.0f);
     if (!AimConfig.AimIKOriginBoneName.IsNone()
         && CharacterMesh->DoesSocketExist(AimConfig.AimIKOriginBoneName))
@@ -54,6 +56,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
         ? CharacterMesh->GetComponentTransform().InverseTransformPosition(AimTargetWorld)
         : FVector::ZeroVector;
 
+    // 首次采集时直接建立平滑目标的初始值
     if (!bHasSmoothedAimTarget)
     {
         SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
@@ -63,6 +66,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     if (AimConfig.bEnableAimIKTargetSmoothing
         && AimConfig.AimIKTargetSmoothTime > 0.0f)
     {
+        // 按配置时间平滑瞄准目标避免目标点瞬移
         SmoothedAimTargetComponentSpace = SmoothAimTarget(
             SmoothedAimTargetComponentSpace,
             RawAimTargetComponentSpace,
@@ -73,6 +77,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     if (!bCanUseAimTarget)
     {
+        // 目标无效时清除平滑速度并等待下一次有效目标
         SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
         AimTargetSmoothVelocity = FVector::ZeroVector;
         bHasSmoothedAimTarget = false;
@@ -81,6 +86,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     float GroundDistance = 0.0f;
     if (!Movement->IsMovingOnGround())
     {
+        // 空中状态向下追踪地面距离供动画判断下落高度
         const FVector TraceStart = Character.GetActorLocation();
         const FVector TraceEnd = TraceStart - FVector(
             0.0f,
@@ -108,6 +114,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     const float TargetAimIntentAlpha = AimState.bIsAiming ? 1.0f : 0.0f;
 
+    // 平滑瞄准意图权重供动画层渐进过渡
     SmoothedAimIntentAlpha = FMath::FInterpTo(
         SmoothedAimIntentAlpha,
         TargetAimIntentAlpha,
@@ -120,6 +127,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.AimIntentAlpha = FMath::Clamp(SmoothedAimIntentAlpha, 0.0f, 1.0f);
     OutFacts.AimIKAlpha = 0.0f;
     OutFacts.AimTargetComponentSpace = SmoothedAimTargetComponentSpace;
+    // 只有装备和瞄准来源都有效时才启用瞄准逆向运动学
     if (bHasActiveMainHandEquipment
         && WeaponAnim
         && bCanUseAimTarget
@@ -156,6 +164,7 @@ FVector FBBBCharacterAnimationFactProcessor::SmoothAimTarget(
     float SmoothTime,
     float DeltaSeconds) const
 {
+    // 没有有效帧间隔时保持当前平滑结果
     if (DeltaSeconds <= 0.0f)
     {
         return Current;
@@ -170,6 +179,7 @@ FVector FBBBCharacterAnimationFactProcessor::SmoothAimTarget(
     Velocity = (Velocity - Omega * Temp) * Exp;
     FVector Output = Target + (Change + Temp) * Exp;
 
+    // 越过目标时直接收敛并清除剩余速度
     if (FVector::DotProduct(Target - Current, Output - Target) > 0.0f)
     {
         Output = Target;

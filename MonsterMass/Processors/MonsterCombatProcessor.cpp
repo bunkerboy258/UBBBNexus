@@ -27,6 +27,7 @@ void UMonsterCombatProcessor::ConfigureQueries(const TSharedRef<FMassEntityManag
 
 void UMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
+    // 获取攻击判定使用的世界
     UWorld* World = Context.GetWorld();
 
     if (!ensureMsgf(World != nullptr, TEXT("[UBBBM]Monster combat requires a valid world")))
@@ -42,6 +43,7 @@ void UMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
         return;
     }
 
+    // 使用同一时间值处理当前批次
     const float WorldTime = World->GetTimeSeconds();
 
     MonsterQuery.ForEachEntityChunk(Context, [PlayerPawn, WorldTime, this](FMassExecutionContext& ChunkContext)

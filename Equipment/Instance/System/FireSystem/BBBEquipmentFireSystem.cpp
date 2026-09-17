@@ -17,11 +17,13 @@ void FBBBEquipmentFireSystem::Initialize(ABBBEquipment &InInstance, USkeletalMes
 
 void FBBBEquipmentFireSystem::Update() const
 {
+    // 开火更新需要装备网格和换弹状态有效
     if (!ensureMsgf(Instance && WeaponMesh && Data && Reload && Fragment && CharacterAPI,
         TEXT("[UBBBE]Fire update dependencies are invalid")))
     {
         return;
     }
 
+    // 处理开火输入并同步开火事件
     Processor.Update(*Instance, *WeaponMesh, *Data, *Reload, *Fragment, *CharacterAPI, EquipmentId, bIsMirror);
 }

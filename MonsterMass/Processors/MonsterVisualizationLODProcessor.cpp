@@ -18,5 +18,6 @@ void UMonsterVisualizationLODProcessor::ConfigureQueries(const TSharedRef<FMassE
     CloseEntityAdjustDistanceQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
     FarEntityQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
     DebugEntityQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
+    // 记录筛选标签供可视化查询使用
     FilterTag = FMonsterTag::StaticStruct();
 }

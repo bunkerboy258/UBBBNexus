@@ -8,11 +8,14 @@
 
 void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
 {
+    // 先停止移动完成后的更新避免收束期间访问即将销毁的装备
     Character.LateUpdateTick.SetTickFunctionEnable(false);
 
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
     FBBBCharacterEquipmentRuntimeData &EquipmentData = Character.RuntimeData.Equipment;
+    // 使用集合合并所有装备引用避免同一实例被重复收束
     TSet<ABBBEquipment *> Instances;
+    // 收集库存中的装备补齐正常持有实例
     for (const TObjectPtr<ABBBEquipment> &Instance : EquipmentData.Inventory.Slots)
     {
         if (Instance)
@@ -21,6 +24,7 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
         }
     }
 
+    // 当前装备和目标装备可能尚未写回库存因此需要单独收集
     ABBBEquipment *ActiveInstance = EquipmentData.Equipment.GetActiveMainHandInstance();
     if (ActiveInstance)
     {
@@ -33,6 +37,7 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
         Instances.Add(DesiredInstance);
     }
 
+    // 扫描角色拥有的装备演员补齐尚未登记的实例
     if (UWorld *World = Character.GetWorld())
     {
         for (TActorIterator<ABBBEquipment> It(World); It; ++It)
@@ -44,6 +49,7 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
         }
     }
 
+    // 通过统一生命周期处理器收束仍然有效的装备
     for (ABBBEquipment *Instance : Instances)
     {
         if (IsValid(Instance))

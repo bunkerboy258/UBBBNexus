@@ -9,6 +9,7 @@ void FBBBEquipmentExternalAPI::Initialize(FBBBEquipmentInputRuntimeData &InInput
 
 void FBBBEquipmentExternalAPI::Enqueue(const EBBBEquipmentInputType Type, const int32 Sequence)
 {
+    // 外部输入必须在游戏线程提交有效序号
     if (!ensureMsgf(IsInGameThread() && Input
         && (Sequence > 0 || Type == EBBBEquipmentInputType::CancelPendingActions),
         TEXT("[UBBBE]Invalid equipment input")))
@@ -18,9 +19,11 @@ void FBBBEquipmentExternalAPI::Enqueue(const EBBBEquipmentInputType Type, const 
 
     if (bIsMirror)
     {
+        // 镜像装备只接收网络恢复输入
         return;
     }
 
+    // 将输入封装后放入装备待处理队列
     FBBBEquipmentInput Entry;
     Entry.Type = Type;
     Entry.Sequence = Sequence;
@@ -64,11 +67,13 @@ void FBBBEquipmentExternalAPI::SubmitCancelPendingActions()
 
 void FBBBEquipmentExternalAPI::ApplySnapshot(const FBBBEquipmentActionEvent &Snapshot)
 {
+    // 镜像装备只允许接收恢复快照
     if (!ensureMsgf(IsInGameThread() && Input && bIsMirror, TEXT("[UBBBE]Snapshot input requires a mirror instance")))
     {
         return;
     }
 
+    // 将恢复快照放入待处理队列
     FBBBEquipmentInput Entry;
     Entry.Type = EBBBEquipmentInputType::Snapshot;
     Entry.Sequence = Snapshot.Sequence;

@@ -7,6 +7,7 @@
 
 void UMonsterMassTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildContext, const UWorld& World) const
 {
+    // 运行数据是构建实体模板的唯一配置来源
     if (!ensureMsgf(RuntimeData != nullptr, TEXT("[UBBBM]Monster trait requires MonsterRuntimeData")))
     {
         return;

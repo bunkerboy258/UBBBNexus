@@ -5,6 +5,7 @@
 
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 {
+    // 优先取得骨骼网格上的主动画实例保证链接层读取统一状态
     UBBBAnimInstance *MainAnimInstance = Cast<UBBBAnimInstance>(Blueprint_GetMainAnimInstance());
     if (MainAnimInstance)
     {
@@ -19,6 +20,7 @@ UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFacts &Facts)
 {
+    // 将角色运行事实复制到动画实例供动画图安全读取
     AnimationFacts = Facts;
 
     SourceActorLocation = Facts.ActorLocation;
@@ -44,6 +46,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 UBBBEquipmentAnimInstance *UBBBAnimInstance::TryGetWeaponAnimInstance() const
 {
+    // 武器动画实例允许为空未装备时由调用方获得默认回退
     return GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance.Get();
 }
 
@@ -87,6 +90,7 @@ void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeapo
 
 void UBBBAnimInstance::PlayMovementActionMontage(UAnimMontage *Montage, float PlayRate)
 {
+    // 播放请求来自代码动作资源无效时直接拒绝
     if (!ensureMsgf(Montage, TEXT("[UBBBC]Movement action montage is null")))
     {
         return;

@@ -6,6 +6,7 @@
 
 UBBBEquipmentDefinition::UBBBEquipmentDefinition()
 {
+    // 为装备提供默认的装备开火和换弹实现
     EquipFragment.InitializeAs<FBBBStandardEquipFragment>();
     FireFragment.InitializeAs<FBBBSingleProjectileFireFragment>();
     ReloadFragment.InitializeAs<FBBBMagazineReloadFragment>();

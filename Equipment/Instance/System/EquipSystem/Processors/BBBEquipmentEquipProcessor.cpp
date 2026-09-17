@@ -10,6 +10,7 @@ void FBBBEquipmentEquipProcessor::Update(
     const FBBBEquipmentEquipFragment &Fragment, FBBBCharacterExternalAPI &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
+    // 按输入顺序提交装备切换表现
     for (const FBBBEquipmentInput &Input : Data.Inputs)
     {
         if (!Fragment.SubmitMontage(CharacterAPI, Input.Sequence))
@@ -21,9 +22,11 @@ void FBBBEquipmentEquipProcessor::Update(
 
         if (bIsMirror)
         {
+            // 镜像装备只执行表现不发布本地事件
             continue;
         }
 
+        // 发布本地装备切换事件
         FBBBEquipmentActionEvent Event;
         Event.EquipmentId = EquipmentId;
         Event.Sequence = Input.Sequence;

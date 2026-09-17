@@ -9,6 +9,7 @@
 
 namespace
 {
+// 将二维移动意图转换为控制器朝向下的世界方向
 FVector ResolveWorldMoveDirection(
     const ACharacter &Character,
     const FBBBIntentRuntimeData &IntentData)
@@ -20,6 +21,7 @@ FVector ResolveWorldMoveDirection(
         + Right * IntentData.GetMoveInput().X).GetSafeNormal2D();
 }
 
+// 检查冲刺意图和移动方向是否满足冲刺条件
 bool CanSprint(
     const ACharacter &Character,
     const FBBBIntentRuntimeData &IntentData,
@@ -43,6 +45,7 @@ bool CanSprint(
     return DirectionDelta < Config.SprintDirectionLimit;
 }
 
+// 根据瞄准和移动输入选择当前步态
 EBBBCharacterGait ResolveGait(
     const ACharacter &Character,
     const FBBBIntentRuntimeData &IntentData,
@@ -84,6 +87,7 @@ EBBBCharacterGait ResolveGait(
     return EBBBCharacterGait::Walk;
 }
 
+// 根据局部速度和方向曲线得到方向映射值
 float ResolveDirectionMap(
     const ACharacter &Character,
     const UCharacterMovementComponent &Movement,
@@ -96,6 +100,7 @@ float ResolveDirectionMap(
     return FMath::Clamp(DirectionCurve.GetFloatValue(DirectionAngle), 0.0f, 2.0f);
 }
 
+// 在不同方向速度之间进行插值
 float ResolveDirectionalSpeed(const FVector &Speeds, const float DirectionMap)
 {
     if (DirectionMap < 1.0f)
@@ -106,6 +111,7 @@ float ResolveDirectionalSpeed(const FVector &Speeds, const float DirectionMap)
     return FMath::Lerp(Speeds.Y, Speeds.Z, DirectionMap - 1.0f);
 }
 
+// 根据步态选择速度配置并提供默认步行速度
 float ResolveMaxSpeed(
     const FBBBCharacterLocomotionConfig &Config,
     const EBBBCharacterGait Gait,
@@ -138,6 +144,7 @@ void FBBBCharacterLocomotionSystem::Initialize(
     const FBBBIntentRuntimeData &InIntentData,
     const FBBBCharacterLocomotionConfig &InConfig)
 {
+    // 保存移动依赖并同步加载方向速度曲线
     Character = &InCharacter;
     Movement = &InMovement;
     RuntimeData = &InRuntimeData;
@@ -152,6 +159,7 @@ void FBBBCharacterLocomotionSystem::Initialize(
 
 void FBBBCharacterLocomotionSystem::Update()
 {
+    // 移动更新需要角色组件意图状态和速度曲线全部有效
     if (!ensureMsgf(
         Character && Movement && RuntimeData && IntentData && Config && StrafeSpeedMapCurve,
         TEXT("[UBBBC]Locomotion system update failed because dependencies are null")))
@@ -161,8 +169,10 @@ void FBBBCharacterLocomotionSystem::Update()
 
     const UWorld *World = Character->GetWorld();
     const float DeltaSeconds = World ? World->GetDeltaSeconds() : 0.0f;
+    // 按世界帧间隔递减滑铲剩余时间
     SlideRemainingSeconds = FMath::Max(SlideRemainingSeconds - DeltaSeconds, 0.0f);
 
+    // 地面滑铲意图建立新的滑铲方向和持续时间
     if (IntentData->WantsSlide() && Movement->IsMovingOnGround())
     {
         SlideRemainingSeconds = FMath::Max(Config->SlideDurationSeconds, 0.0f);
@@ -175,6 +185,7 @@ void FBBBCharacterLocomotionSystem::Update()
 
     const bool bSlideActive = SlideRemainingSeconds > 0.0f;
     const bool bWantsCrouch = IntentData->WantsCrouch() || bSlideActive;
+    // 滑铲期间强制保持蹲伏状态
     if (bWantsCrouch)
     {
         Character->Crouch();
@@ -197,6 +208,7 @@ void FBBBCharacterLocomotionSystem::Update()
         Gait = EBBBCharacterGait::Crouch;
     }
 
+    // 计算并提交当前步态和方向速度映射
     RuntimeData->CommitGait(Gait);
     const float DirectionMap = ResolveDirectionMap(
         *Character,
@@ -221,6 +233,7 @@ void FBBBCharacterLocomotionSystem::Update()
     Movement->BrakingFrictionFactor = FMath::Max(Config->BrakingFrictionFactor, 0.0f);
     Movement->bUseSeparateBrakingFriction = false;
 
+    // 地面冲刺使用移动方向没有方向时使用角色前方
     if (IntentData->WantsDash() && Movement->IsMovingOnGround())
     {
         FVector DashDirection = ResolveWorldMoveDirection(*Character, *IntentData);
@@ -235,11 +248,13 @@ void FBBBCharacterLocomotionSystem::Update()
             false);
     }
 
+    // 蹲伏期间不允许同帧跳跃
     if (!bWantsCrouch && IntentData->WantsJump())
     {
         Character->Jump();
     }
 
+    // 滑铲使用固定方向并结束本帧移动处理
     if (bSlideActive)
     {
         Character->AddMovementInput(SlideDirection, 1.0f);
@@ -251,6 +266,7 @@ void FBBBCharacterLocomotionSystem::Update()
         return;
     }
 
+    // 普通移动按控制器水平朝向写入两个方向分量
     const FRotator YawRotation(0.0f, Character->GetControlRotation().Yaw, 0.0f);
     Character->AddMovementInput(
         FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X),

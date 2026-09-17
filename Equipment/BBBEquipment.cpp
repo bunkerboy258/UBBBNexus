@@ -8,12 +8,14 @@
 
 ABBBEquipment::ABBBEquipment()
 {
+    // 装备演员使用独立更新阶段驱动装备系统
     PrimaryActorTick.bCanEverTick = true;
     PrimaryActorTick.bStartWithTickEnabled = false;
     PrimaryActorTick.TickGroup = TG_PostUpdateWork;
     PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
     SetActorEnableCollision(false);
 
+    // 创建装备根组件和装备网格
     EquipmentRoot = CreateDefaultSubobject<UArrowComponent>(TEXT("EquipmentRoot"));
     SetRootComponent(EquipmentRoot);
 
@@ -49,5 +51,7 @@ USkeletalMeshComponent *ABBBEquipment::GetEquipmentSkeletalMesh() const
 void ABBBEquipment::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+
+    // 装备每帧更新交给装备更新管线
     UpdatePipeline.Update();
 }

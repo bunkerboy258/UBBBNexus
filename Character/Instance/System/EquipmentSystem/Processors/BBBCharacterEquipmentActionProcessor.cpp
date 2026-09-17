@@ -6,15 +6,18 @@
 void FBBBCharacterEquipmentActionProcessor::Update(
     FBBBCharacterEquipmentCommands &Commands, FBBBCharacterEquipmentState &State) const
 {
+    // 先取得当前主手装备并消费本帧恢复和动作命令
     ABBBEquipment *Equipment = State.GetActiveMainHandInstance();
     TArray<FBBBEquipmentActionEvent> Restored = Commands.ConsumeRestoredActions();
     const bool bFire = Commands.ConsumeFire();
     const bool bReload = Commands.ConsumeReload();
     if (!Equipment)
     {
+        // 未装备时仍然消费命令但不向空装备提交动作
         return;
     }
 
+    // 只把属于当前装备的恢复事实交给装备接口
     FBBBEquipmentExternalAPI &API = Equipment->GetExternalAPI();
     for (const FBBBEquipmentActionEvent &Event : Restored)
     {
@@ -24,6 +27,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         }
     }
 
+    // 将换弹动画通知映射为装备接口的对应阶段
     for (const FBBBCharacterReloadAnimationInput &Input : Commands.ReloadInputs)
     {
         switch (Input.Phase)
@@ -40,6 +44,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         }
     }
 
+    // 使用递增序号提交本帧开火和换弹动作
     if (bFire)
     {
         API.SubmitFire(State.NextActionSequence++);

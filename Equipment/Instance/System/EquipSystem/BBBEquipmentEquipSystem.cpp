@@ -14,11 +14,13 @@ void FBBBEquipmentEquipSystem::Initialize(FBBBEquipmentEquipRuntimeData &InData,
 
 void FBBBEquipmentEquipSystem::Update() const
 {
+    // 装备切换更新需要运行数据和角色接口有效
     if (!ensureMsgf(Data && Fire && Fragment && CharacterAPI,
         TEXT("[UBBBE]Equip update dependencies are invalid")))
     {
         return;
     }
 
+    // 处理装备切换并发布表现事件
     Processor.Update(*Data, *Fire, *Fragment, *CharacterAPI, EquipmentId, bIsMirror);
 }

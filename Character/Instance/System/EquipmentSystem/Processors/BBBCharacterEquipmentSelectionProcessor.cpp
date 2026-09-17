@@ -17,6 +17,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     FBBBCharacterEquipmentState &EquipmentState,
     FBBBCharacterEquipmentEvents &EquipmentEvents) const
 {
+    // 先处理网络恢复的装备实例
     bool bRestoringEquipment = false;
     UBBBEquipmentDefinition *RestoredDefinition = EquipmentCommands.ConsumeRestoredEquipment();
     if (RestoredDefinition)
@@ -30,6 +31,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
             return;
         }
 
+        // 恢复实例作为新的目标装备等待后续附着
         EquipmentState.DesiredMainHandInstance = RestoredInstance;
         bRestoringEquipment = true;
     }
@@ -39,6 +41,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
+    // 目标变化时先收束当前主手装备
     if (EquipmentState.ActiveMainHandInstance)
     {
         if (bRestoringEquipment)
@@ -51,6 +54,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         }
     }
 
+    // 清除旧装备的换弹序号并切换当前实例引用
     EquipmentState.ReloadSequence = INDEX_NONE;
     EquipmentState.ActiveMainHandInstance = EquipmentState.DesiredMainHandInstance;
     ABBBEquipment *DesiredInstance = EquipmentState.ActiveMainHandInstance;
@@ -59,6 +63,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
+    // 附着失败时清理目标装备并回到未装备状态
     if (!FBBBCharacterEquipmentLifecycleProcessor::Attach(CharacterMesh, AttachmentSocketName, *DesiredInstance))
     {
         FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *DesiredInstance);
@@ -71,5 +76,6 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
+    // 普通装备切换完成后提交装备动作序号
     DesiredInstance->GetExternalAPI().SubmitEquip(EquipmentState.NextActionSequence++);
 }

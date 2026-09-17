@@ -36,6 +36,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
         return;
     }
 
+    // 获取导航系统用于查询目标路径
     UNavigationSystemV1* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
 
     if (!ensureMsgf(NavigationSystem != nullptr, TEXT("[UBBBM]Monster navigation requires NavigationSystem")))
@@ -43,6 +44,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
         return;
     }
 
+    // 使用处理器时间步长更新移动距离
     const float DeltaTime = Context.GetDeltaTimeSeconds();
 
     if (!ensureMsgf(DeltaTime >= 0.0f, TEXT("[UBBBM]Monster navigation delta time must not be negative")))
@@ -69,6 +71,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
             FMonsterMovementFragment& Movement = Movements[Index];
             FMonsterStateFragment& State = States[Index];
 
+            // 无目标或受控状态下停止移动
             if (!Target.bHasTarget || State.State == EMonsterState::Dead || State.State == EMonsterState::Hurt)
             {
                 Velocity.Value = FVector::ZeroVector;

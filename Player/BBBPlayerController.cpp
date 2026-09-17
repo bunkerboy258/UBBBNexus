@@ -6,6 +6,7 @@
 #include "InputMappingContext.h"
 #include "UObject/ConstructorHelpers.h"
 //定义当前编译单元使用的日志分类
+// 声明控制器专用日志分类
 DEFINE_LOG_CATEGORY_STATIC(LogBBBPlayerController, Log, All);
 
 //创建并配置ABBB玩家控制器

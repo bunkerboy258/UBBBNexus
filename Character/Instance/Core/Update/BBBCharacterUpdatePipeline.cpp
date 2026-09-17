@@ -48,6 +48,7 @@ void FBBBCharacterUpdatePipeline::Initialize(
 
 void FBBBCharacterUpdatePipeline::Update() const
 {
+    // 总更新必须在全部系统注入完成后执行
     if (!ensureMsgf(
         Pawn
             && RuntimeData
@@ -65,6 +66,7 @@ void FBBBCharacterUpdatePipeline::Update() const
         TEXT("[UBBBC]Pipeline update aborted because injected systems are null")))
     { return; }
 
+    // 根据角色网络身份选择唯一更新分支
     //本地控制？
     const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
 
@@ -105,6 +107,7 @@ void FBBBCharacterUpdatePipeline::Update() const
 
 void FBBBCharacterUpdatePipeline::LateUpdate() const
 {
+    // 延迟更新只处理动画事实和帧数据清理
     if (!ensureMsgf(
         RuntimeData && AnimationSystem && EquipmentSystem,
         TEXT("[UBBBC]Pipeline LateUpdate aborted because injected dependencies are null")))
@@ -122,6 +125,7 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
 //本地控制且权威
 void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
 {
+    // 本地权威先恢复网络状态再执行本地请求链路
     NetworkSystem->UpdateRestore();
     
     InputPipeline->Update();
@@ -142,12 +146,14 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAuthority() const
 
     LocomotionSystem->Update();
     
+    // 本地完整状态更新结束后上传可复制数据
     NetworkSystem->UpdateUpload();
 }
 
 //本地控制但不权威
 void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
 {
+    // 本地自主使用本地输入链路并同步可复制结果
     NetworkSystem->UpdateRestore();
     
     InputPipeline->Update();
@@ -174,6 +180,7 @@ void FBBBCharacterUpdatePipeline::UpdateLocalAutonomous() const
 //远端模拟且权威
 void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 {
+    // 远端权威只恢复网络状态并驱动装备更新
     NetworkSystem->UpdateRestore();
 
     EquipmentSystem->Update();
@@ -182,6 +189,7 @@ void FBBBCharacterUpdatePipeline::UpdateRemoteAuthority() const
 //远端模拟且不权威
 void FBBBCharacterUpdatePipeline::UpdateRemoteSimulated() const
 {
+    // 远端模拟只消费网络恢复结果不生成本地请求
     NetworkSystem->UpdateRestore();
 
     EquipmentSystem->Update();

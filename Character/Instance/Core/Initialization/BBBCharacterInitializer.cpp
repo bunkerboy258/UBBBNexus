@@ -16,6 +16,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 {
     const FBBBCharacterConfig &Config = Character.CharacterConfig;
 
+    // 初始化开始先确认网络组件和配置资源有效
     //网络组件存在？
     if (!ensureMsgf(Character.CharacterNetworkComponent, TEXT("[UBBBC]Character initialization failed: CharacterNetworkComponent is null")))
     { return; }
@@ -36,6 +37,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //确保角色黑板更新完成后再启动骨骼动画更新
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
 
+    // 先注入外部接口让装备和动画能够提交运行结果
     Character.ExternalAPI.Initialize(Character, Character.RuntimeData.Animation,
         Character.RuntimeData.Input, Character.RuntimeData.Equipment.Events,
         Character.RuntimeData.Equipment.Equipment);
@@ -50,6 +52,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Equipment.Events,
         Config.Camera);
     
+    // 按固定顺序注入各角色系统和运行数据
     Character.AimSystem.Initialize(
         Character,
         Character.RuntimeData.Aim,
@@ -118,6 +121,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.Equipment.Inventory);
     
+    // 最后注入总更新管线确保全部依赖已经就绪
     Character.CharacterUpdatePipeline.Initialize(
         Character,
         Character.RuntimeData,
@@ -133,6 +137,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.ArbitrationPipeline,
         Character.ExecutionPipeline);
 
+    // 将配置中的碰撞参数和移动参数应用到引擎组件
     //把相机配置应用到构造阶段创建的弹簧臂
     if (Character.CameraBoom)
     {
@@ -207,6 +212,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
     
     const FBBBCharacterInputConfig &Config = Character.CharacterConfig.Input;
     
+    // 移动输入持续写入原始移动轴并在结束时清零
     if (Config.MoveAction)
     {
         Input->BindActionValueLambda(
@@ -234,6 +240,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
     
+    // 视角输入持续写入原始视角增量
     if (Config.LookAction)
     {
         Input->BindActionValueLambda(
@@ -245,6 +252,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
     
+    // 开火同时维护持续状态和开始结束边沿
     if (Config.FireAction)
     {
         Input->BindActionValueLambda(
@@ -283,6 +291,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
     
+    // 换弹和装备槽位只提交按下事件
     if (Config.ReloadAction)
     {
         Input->BindActionValueLambda(
@@ -316,6 +325,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
     
+    // 瞄准同时维护持续状态和开始结束边沿
     //瞄准逻辑与开火同理
     if (Config.PrecisionAimAction)
     {
@@ -350,6 +360,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
     
+    // 移动方式输入维护持续状态
     if (Config.WalkAction)
     {
         Input->BindActionValueLambda(
@@ -431,6 +442,7 @@ void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputCompone
             });
     }
 
+    // 跳跃冲刺和滑铲只提交按下事件
     if (Config.JumpAction)
     {
         Input->BindActionValueLambda(

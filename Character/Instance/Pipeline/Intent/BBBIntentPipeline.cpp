@@ -14,9 +14,11 @@ void FBBBIntentPipeline::Initialize(
 
 void FBBBIntentPipeline::Update() const
 {
+    // 意图生成需要稳定输入和可写的意图运行时数据
     if (!ensureMsgf(InputData && IntentData, TEXT("[UBBBC]Intent pipeline update failed because dependencies are null")))
     { return; }
 
+    // 在本地中间状态中合成完整意图避免发布半成品数据
     FBBBCharacterIntentState Intent;
 
     //复制基础输入(为了保持数据流向一致)
@@ -33,5 +35,6 @@ void FBBBIntentPipeline::Update() const
 
     //所有处理器结束后一次性发布完整意图快照
     IntentData->CommitFrame(Intent.ToRuntimeData());
+    // 换弹通知与意图快照使用同一帧边界进入后续请求链路
     IntentData->ReloadInputs = InputData->ReloadInputs;
 }

@@ -3,6 +3,7 @@
 
 void FBBBCharacterRuntimeData::Clean()
 {
+    // 按角色帧生命周期清理所有临时数据
     //动作请求与仲裁结果只允许在当前帧消费
     Decision.CleanFrame();
 

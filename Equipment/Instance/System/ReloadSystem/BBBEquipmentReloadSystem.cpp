@@ -14,11 +14,13 @@ void FBBBEquipmentReloadSystem::Initialize(FBBBEquipmentReloadRuntimeData &InDat
 
 void FBBBEquipmentReloadSystem::Update() const
 {
+    // 换弹更新需要运行数据和角色接口有效
     if (!ensureMsgf(Data && Fire && Fragment && CharacterAPI,
         TEXT("[UBBBE]Reload update dependencies are invalid")))
     {
         return;
     }
 
+    // 处理换弹阶段并同步换弹事件
     Processor.Update(*Data, *Fire, *Fragment, *CharacterAPI, EquipmentId, bIsMirror);
 }

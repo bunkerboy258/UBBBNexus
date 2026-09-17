@@ -7,6 +7,7 @@
 
 ABBBBulletActor::ABBBBulletActor()
 {
+    // 子弹演员只负责碰撞表现和投射物移动
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;
     SetReplicateMovement(false);
@@ -33,6 +34,7 @@ ABBBBulletActor::ABBBBulletActor()
 void ABBBBulletActor::BeginPlay()
 {
     Super::BeginPlay();
+    // 初始化弹道拖尾和生命周期
     if (TrailComponent && TrailEffect)
     {
         TrailComponent->SetAsset(TrailEffect);
@@ -42,6 +44,7 @@ void ABBBBulletActor::BeginPlay()
     {
         SetLifeSpan(LifeSeconds);
     }
+    // 绑定投射物停止后的销毁处理
     if (ProjectileMovementComponent)
     {
         ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ABBBBulletActor::HandleProjectileStop);
@@ -50,6 +53,7 @@ void ABBBBulletActor::BeginPlay()
 
 void ABBBBulletActor::InitializeBullet(FVector InitialVelocity, AActor *IgnoredOwner, AActor *IgnoredEquipmentActor)
 {
+    // 忽略发射者和装备演员避免初始碰撞
     if (CollisionComponent)
     {
         if (IgnoredOwner)
@@ -61,6 +65,7 @@ void ABBBBulletActor::InitializeBullet(FVector InitialVelocity, AActor *IgnoredO
             CollisionComponent->IgnoreActorWhenMoving(IgnoredEquipmentActor, true);
         }
     }
+    // 根据初速度启动投射物移动
     if (ProjectileMovementComponent)
     {
         const float Speed = InitialVelocity.Size();
@@ -73,6 +78,7 @@ void ABBBBulletActor::InitializeBullet(FVector InitialVelocity, AActor *IgnoredO
 
 void ABBBBulletActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    // 离开场景时停止拖尾表现
     if (TrailComponent)
     {
         TrailComponent->DeactivateImmediate();
@@ -83,5 +89,6 @@ void ABBBBulletActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ABBBBulletActor::HandleProjectileStop(const FHitResult &ImpactResult)
 {
 
+    // 投射物停止后销毁子弹演员
     Destroy();
 }

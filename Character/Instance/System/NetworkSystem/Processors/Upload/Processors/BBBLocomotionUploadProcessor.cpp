@@ -9,6 +9,7 @@ void FBBBLocomotionUploadProcessor::Update(
     FBBBNetworkRuntimeData &NetworkData,
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
+    // 读取上次步态观察结果判断是否发生变化
     const FBBBLocomotionNetworkObserverState &PreviousObserverState =
         NetworkData.GetLocomotionObserverState();
     const EBBBCharacterGait CurrentGait = LocomotionData.GetGait();
@@ -16,14 +17,17 @@ void FBBBLocomotionUploadProcessor::Update(
     if (PreviousObserverState.LastObservedState.IsSet()
         && PreviousObserverState.LastObservedState->Gait == CurrentGait)
     {
+        // 步态未变化时不重复提交网络状态
         return;
     }
 
+    // 将当前步态封装为网络状态并提交
     FBBBLocomotionNetworkState State;
     State.Gait = CurrentGait;
     NetworkSystem.SubmitLocomotionState(State);
 
     FBBBLocomotionNetworkObserverState ObserverState;
     ObserverState.LastObservedState = State;
+    // 保存最新观察结果供下一帧比较
     NetworkData.CommitLocomotionObserverState(ObserverState);
 }

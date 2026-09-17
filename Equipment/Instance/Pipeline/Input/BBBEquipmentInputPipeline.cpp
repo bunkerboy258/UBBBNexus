@@ -15,11 +15,13 @@ void FBBBEquipmentInputPipeline::Initialize(FBBBEquipmentInputRuntimeData &InInp
 
 void FBBBEquipmentInputPipeline::Update() const
 {
+    // 装备输入处理需要全部运行数据有效
     if (!ensureMsgf(Input && Equip && Fire && Reload && CharacterAPI,
         TEXT("[UBBBE]Input update dependencies are invalid")))
     {
         return;
     }
 
+    // 将待处理输入分发到各装备系统
     Processor.Update(*Input, *Equip, *Fire, *Reload, *CharacterAPI, EquipmentId, bIsMirror);
 }

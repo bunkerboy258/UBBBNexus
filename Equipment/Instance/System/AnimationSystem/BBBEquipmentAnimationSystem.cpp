@@ -16,11 +16,13 @@ void FBBBEquipmentAnimationSystem::Initialize(USkeletalMeshComponent &InCharacte
 
 void FBBBEquipmentAnimationSystem::Update() const
 {
+    // 装备动画更新需要角色网格装备网格和运行数据有效
     if (!ensureMsgf(CharacterMesh.IsValid() && WeaponMesh && Data && Fire && EquipFragment && FireFragment,
         TEXT("[UBBBE]Animation update dependencies are invalid")))
     {
         return;
     }
 
+    // 根据装备状态生成当前动画事实
     Processor.Update(*CharacterMesh.Get(), *WeaponMesh, *Data, *Fire, *EquipFragment, *FireFragment);
 }

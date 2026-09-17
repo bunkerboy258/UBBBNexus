@@ -12,6 +12,7 @@ void FBBBCharacterNetworkUploader::Update(
     const FBBBCharacterEquipmentEvents &EquipmentEvents,
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
+    // 按装备动作瞄准和移动顺序上传本帧网络状态
     EquipmentUploadProcessor.Update(EquipmentState, NetworkData, NetworkSystem);
     EquipmentActionUploadProcessor.Update(EquipmentEvents, NetworkSystem);
     AimUploadProcessor.Update(AimData, NetworkConfig, WorldTimeSeconds, NetworkData, NetworkSystem);

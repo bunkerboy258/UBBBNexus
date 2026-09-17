@@ -44,6 +44,7 @@ float AMonsterBasicActor::TakeDamage(
 {
     const float AcceptedDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
+    // 无效伤害不进入实体事件
     if (DamageAmount <= 0.0f)
     {
         return AcceptedDamage;
@@ -56,6 +57,7 @@ float AMonsterBasicActor::TakeDamage(
         return AcceptedDamage;
     }
 
+    // 通过表现演员反查对应实体
     UMassEntitySubsystem* EntitySubsystem = UWorld::GetSubsystem<UMassEntitySubsystem>(World);
     UMassActorSubsystem* ActorSubsystem = UWorld::GetSubsystem<UMassActorSubsystem>(World);
 
@@ -71,6 +73,7 @@ float AMonsterBasicActor::TakeDamage(
         return AcceptedDamage;
     }
 
+    // 取得实体受伤事件片段
     FMassEntityManager& EntityManager = EntitySubsystem->GetMutableEntityManager();
     FMonsterDamageEventFragment* DamageEventFragment = EntityManager.GetFragmentDataPtr<FMonsterDamageEventFragment>(Entity);
 
@@ -90,6 +93,7 @@ float AMonsterBasicActor::TakeDamage(
         DamageAmount,
         *GetNameSafe(DamageCauser));
 
+    // 返回已接受的伤害数值
     return DamageAmount;
 }
 

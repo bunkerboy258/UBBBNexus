@@ -8,9 +8,11 @@ void FBBBAimRestoreProcessor::Update(
     const FBBBAimNetworkState &AimState) const
 {
 
+    // 将网络瞄准状态转换为本地远端表现状态
     FBBBRemoteAimState RemoteState;
     RemoteState.bIsAiming = AimState.bIsAiming;
     RemoteState.AimTargetWorld = AimState.AimTargetWorld;
 
+    // 提交远端瞄准状态供表现系统读取
     AimData.RestoreRemoteState(RemoteState);
 }

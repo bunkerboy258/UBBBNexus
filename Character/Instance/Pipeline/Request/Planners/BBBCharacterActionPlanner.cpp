@@ -7,6 +7,7 @@ void FBBBCharacterActionPlanner::Update(
     const FBBBIntentRuntimeData &Intent,
     FBBBDecisionRuntimeData &DecisionData) const
 {
+    // 规划器只生成候选请求最终结果由后续仲裁和执行阶段决定
     //装备切换占用全身动作域 并拥有最高优先级
     if (Intent.GetRequestedEquipSlot() != INDEX_NONE)
     {

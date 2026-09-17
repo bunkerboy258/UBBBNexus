@@ -8,6 +8,7 @@ void FBBBEquipmentActionUploadProcessor::Update(
     const FBBBCharacterEquipmentEvents &EquipmentEvents,
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
+    // 将本帧装备事件逐条转换为网络动作包
     for (const FBBBEquipmentActionEvent &Event : EquipmentEvents.GetActionEvents())
     {
         FBBBEquipmentActionNetworkPacket Packet;
@@ -16,6 +17,7 @@ void FBBBEquipmentActionUploadProcessor::Update(
         Packet.Sequence = Event.Sequence;
         Packet.Phase = Event.Phase;
         Packet.LoadedAmmo = Event.LoadedAmmo;
+        // 通过网络系统统一处理权威端和非权威端路径
         NetworkSystem.SubmitEquipmentActionPacket(MoveTemp(Packet));
     }
 }

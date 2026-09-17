@@ -22,6 +22,7 @@ void UMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
 
 void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
+    // 先确定空间分桶使用的最大搜索尺寸
     float CellSize = 1.0f;
 
     // 使用最大邻居范围作为空间分桶尺寸
@@ -70,6 +71,7 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
             FVector Separation = FVector::ZeroVector;
             float ClosestNeighborDistance = PersonalSpace;
 
+            // 只检查当前实体周边的相邻空间桶
             for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
             {
                 for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
@@ -106,6 +108,7 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
                 continue;
             }
 
+            // 按分离方向将过近实体推开
             const float CorrectionDistance = (PersonalSpace - ClosestNeighborDistance) * 0.5f;
             FTransform& Transform = Transforms[Index].GetMutableTransform();
             Transform.SetLocation(Location + Avoidances[Index].SeparationDirection * CorrectionDistance);

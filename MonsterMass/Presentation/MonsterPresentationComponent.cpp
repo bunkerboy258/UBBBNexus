@@ -5,6 +5,7 @@
 
 UMonsterPresentationComponent::UMonsterPresentationComponent()
 {
+    // 表现组件不单独参与组件更新
     PrimaryComponentTick.bCanEverTick = false;
 }
 
@@ -47,6 +48,7 @@ void UMonsterPresentationComponent::ApplyPresentationState(
 
 UAnimSequenceBase* UMonsterPresentationComponent::GetAnimationForState(const EMonsterState InState) const
 {
+    // 根据当前状态选择对应动画
     switch (InState)
     {
         case EMonsterState::Idle:
