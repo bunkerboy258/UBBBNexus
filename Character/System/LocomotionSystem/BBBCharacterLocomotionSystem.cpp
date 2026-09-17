@@ -46,9 +46,25 @@ bool CanSprint(
 EBBBCharacterGait ResolveGait(
     const ACharacter &Character,
     const FBBBIntentRuntimeData &IntentData,
-    const FBBBCharacterLocomotionConfig &Config)
+    const FBBBCharacterLocomotionConfig &Config,
+    EBBBCharacterGait PreviousGait,
+    const FVector &CurrentVelocity)
 {
     const bool bFullMovementInput = IntentData.GetMoveInput().Size() >= Config.AnalogRunThreshold;
+
+    // ADS 使用步行档位，并优先于冲刺
+    if (IntentData.WantsAim())
+    {
+        return EBBBCharacterGait::Walk;
+    }
+
+    // 松开输入后保持实际奔跑档位，直到地面制动结束
+    if (!IntentData.HasMoveInput()
+        && CurrentVelocity.SizeSquared2D() > FMath::Square(1.0f)
+        && (PreviousGait == EBBBCharacterGait::Run || PreviousGait == EBBBCharacterGait::Sprint))
+    {
+        return PreviousGait;
+    }
 
     if (CanSprint(Character, IntentData, Config) && bFullMovementInput)
     {
@@ -169,7 +185,13 @@ void FBBBCharacterLocomotionSystem::Update()
         Character->UnCrouch();
     }
 
-    EBBBCharacterGait Gait = ResolveGait(*Character, *IntentData, *Config);
+    const EBBBCharacterGait PreviousGait = RuntimeData->GetGait();
+    EBBBCharacterGait Gait = ResolveGait(
+        *Character,
+        *IntentData,
+        *Config,
+        PreviousGait,
+        Movement->Velocity);
     if (bWantsCrouch)
     {
         Gait = EBBBCharacterGait::Crouch;
