@@ -8,7 +8,7 @@ class UCurveFloat;
 class FBBBCharacterInitializer;
 struct FBBBCharacterLocomotionConfig;
 struct FBBBCharacterLocomotionRuntimeData;
-struct FBBBIntentRuntimeData;
+struct FBBBCharacterControlState;
 
 /** 按官方运动样例规则驱动角色移动组件 */
 class ABBB_EVAC_API FBBBCharacterLocomotionSystem final
@@ -32,7 +32,7 @@ private:
         ACharacter &InCharacter,
         UCharacterMovementComponent &InMovement,
         FBBBCharacterLocomotionRuntimeData &InRuntimeData,
-        const FBBBIntentRuntimeData &InIntentData,
+        const FBBBCharacterControlState &InIntentData,
         const FBBBCharacterLocomotionConfig &InConfig);
 
     ACharacter *Character = nullptr;
@@ -41,13 +41,11 @@ private:
 
     FBBBCharacterLocomotionRuntimeData *RuntimeData = nullptr;
 
-    const FBBBIntentRuntimeData *IntentData = nullptr;
+    const FBBBCharacterControlState *ControlData = nullptr;
 
     const FBBBCharacterLocomotionConfig *Config = nullptr;
 
     const UCurveFloat *StrafeSpeedMapCurve = nullptr;
 
-    float SlideRemainingSeconds = 0.0f;
 
-    FVector SlideDirection = FVector::ForwardVector;
 };

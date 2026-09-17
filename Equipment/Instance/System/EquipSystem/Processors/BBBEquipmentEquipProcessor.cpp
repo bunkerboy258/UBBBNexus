@@ -1,13 +1,13 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Processors/BBBEquipmentEquipProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/BBBCharacterExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Fragment/BBBEquipmentEquipFragment.h"
 
 void FBBBEquipmentEquipProcessor::Update(
     FBBBEquipmentEquipRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
-    const FBBBEquipmentEquipFragment &Fragment, FBBBCharacterExternalAPI &CharacterAPI,
+    const FBBBEquipmentEquipFragment &Fragment, FBBBCharacterInput &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
     // 按输入顺序提交装备切换表现
@@ -32,6 +32,6 @@ void FBBBEquipmentEquipProcessor::Update(
         Event.Sequence = Input.Sequence;
         Event.ActionType = EBBBCharacterActionType::Equip;
         Event.LoadedAmmo = Fire.LoadedAmmo;
-        CharacterAPI.PublishEquipmentEvent(Event);
+        CharacterAPI.Submit(Event);
     }
 }

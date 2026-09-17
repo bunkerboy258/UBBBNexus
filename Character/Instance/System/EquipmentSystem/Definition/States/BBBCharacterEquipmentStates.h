@@ -1,15 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterEquipmentActionProcessor;
-class FBBBCharacterExternalAPI;
-class FBBBEquipmentRestoreProcessor;
-class FBBBEquipmentSelectionExecutor;
+class FBBBCharacterInput;
+
+
 
 /** 角色拥有的装备及快捷访问绑定 */
 USTRUCT(BlueprintType)
@@ -44,24 +44,21 @@ struct FBBBCharacterEquipmentState
         return ActiveMainHandInstance;
     }
 
-    /** @return 角色正在等待换弹动画阶段 */
-    bool IsReloading() const
+    /** @return 当前装备定义标识 */
+    FName GetActiveEquipmentId() const
     {
-        return ReloadSequence > 0;
-    }
-
-    /** @return 当前换弹身份 */
-    int32 GetReloadSequence() const
-    {
-        return ReloadSequence;
+        return ActiveEquipmentId;
     }
 
 private:
+    FName ActiveEquipmentId = NAME_None;
+    friend class FBBBExecutionPipeline;
+    friend class FBBBArbitrationPipeline;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterExternalAPI;
-    friend class FBBBEquipmentRestoreProcessor;
-    friend class FBBBEquipmentSelectionExecutor;
+    friend class FBBBCharacterInput;
+
+
 
     /** 角色期望装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -70,10 +67,6 @@ private:
     /** 角色当前装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     TObjectPtr<ABBBEquipment> ActiveMainHandInstance = nullptr;
-
-    /** 当前装备持续动作 */
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-    int32 ReloadSequence = INDEX_NONE;
 
     /** 下一个本地动作顺序号 */
     int32 NextActionSequence = 1;

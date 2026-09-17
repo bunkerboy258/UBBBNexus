@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Fragment/BBBMagazineReloadFragment.h"
 
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/BBBCharacterExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
 
 bool FBBBMagazineReloadFragment::CanReload(
@@ -14,7 +14,7 @@ bool FBBBMagazineReloadFragment::CanReload(
 bool FBBBMagazineReloadFragment::Begin(FBBBEquipmentReloadContext &Context) const
 {
     // 先提交换弹动画确认表现可以开始
-    if (!Montage || !Context.CharacterAPI.SubmitEquipmentMontage(Montage, 1.0f, Context.Sequence, true))
+    if (!Montage || !Context.CharacterAPI.Submit(FBBBCharacterMontagePacket{Montage, 1.0f, Context.Sequence, true}))
     {
         return false;
     }

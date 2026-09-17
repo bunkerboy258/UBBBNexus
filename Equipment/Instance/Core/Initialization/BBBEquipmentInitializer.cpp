@@ -6,7 +6,7 @@
 #include "Components/SkeletalMeshComponent.h"
 
 bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Instance,
-    USkeletalMeshComponent &CharacterMesh, FBBBCharacterExternalAPI &CharacterAPI)
+    USkeletalMeshComponent &CharacterMesh, FBBBCharacterInput &CharacterAPI)
 {
     // 先取得装备定义和装备网格
     UBBBEquipmentDefinition *Definition = Instance.Definition;

@@ -15,14 +15,6 @@ struct FBBBAimRuntimeState
 
     //理想瞄准目标点的世界坐标
     UPROPERTY(BlueprintReadOnly)
-    FVector_NetQuantize AimTargetWorld = FVector::ZeroVector;
-
-};
-
-//保存远端同步后交给瞄准领域的状态
-struct FBBBRemoteAimState
-{
-    bool bIsAiming = false;
-
     FVector AimTargetWorld = FVector::ZeroVector;
+
 };

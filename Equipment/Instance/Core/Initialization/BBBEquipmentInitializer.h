@@ -4,7 +4,7 @@
 
 class ABBBEquipment;
 class USkeletalMeshComponent;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 class FBBBCharacterEquipmentLifecycleProcessor;
 
 /** 在配置注入后装配装备组件与运行数据 */
@@ -15,5 +15,5 @@ private:
 
     /** 校验配置并初始化固定系统 */
     static bool Initialize(ABBBEquipment &Instance,
-        USkeletalMeshComponent &CharacterMesh, FBBBCharacterExternalAPI &CharacterAPI);
+        USkeletalMeshComponent &CharacterMesh, FBBBCharacterInput &CharacterAPI);
 };

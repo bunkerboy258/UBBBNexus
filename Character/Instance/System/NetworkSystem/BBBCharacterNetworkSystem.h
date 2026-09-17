@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/Processors/Upload/BBBCharacterNetworkUploader.h"
 
 class FBBBCharacterInitializer;
+class FBBBCharacterInput;
 class UBBBCharacterNetworkComponent;
 class UBBBEquipmentCatalog;
 struct FBBBAimRuntimeData;
@@ -58,7 +59,7 @@ private:
         UBBBCharacterNetworkComponent &InNetworkComponent,
         UBBBEquipmentCatalog &InEquipmentCatalog,
         const FBBBCharacterWorldRuntimeData &InWorldData,
-        FBBBCharacterEquipmentCommands &InEquipmentCommands,
+        FBBBCharacterInput &InInput,
         const FBBBCharacterEquipmentEvents &InEquipmentEvents,
         const FBBBCharacterNetworkConfig &InNetworkConfig);
 
@@ -102,7 +103,7 @@ private:
 
     FBBBCharacterLocomotionRuntimeData *LocomotionData = nullptr;
 
-    FBBBCharacterEquipmentCommands *EquipmentCommands = nullptr;
+    FBBBCharacterInput *Input = nullptr;
 
     const FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;
 

@@ -1,16 +1,10 @@
 
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Initialization/BBBCharacterInitializer.h"
-#include "Camera/CameraComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/Definition/States/BBBInputRawData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "EnhancedInputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "InputAction.h"
-#include "InputActionValue.h"
 
 void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 {
@@ -31,39 +25,28 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
 
     //相机骨骼网格与移动组件存在？
-    if (!ensureMsgf(Character.CameraBoom && Character.GetMesh() && Movement, TEXT("[UBBBC]Character initialization failed because engine components are null")))
+    if (!ensureMsgf(Character.GetMesh() && Movement, TEXT("[UBBBC]Character initialization failed because engine components are null")))
     { return; }
 
     //确保角色黑板更新完成后再启动骨骼动画更新
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
 
-    // 先注入外部接口让装备和动画能够提交运行结果
-    Character.ExternalAPI.Initialize(Character, Character.RuntimeData.Animation,
-        Character.RuntimeData.Input, Character.RuntimeData.Equipment.Events,
-        Character.RuntimeData.Equipment.Equipment);
-    
-    Character.CameraSystem.Initialize(
-        Character,
-        *Character.CameraBoom,
-        Character.RuntimeData.Camera,
-        Character.RuntimeData.WorldData,
-        Character.RuntimeData.Input,
-        Character.RuntimeData.Intent,
-        Character.RuntimeData.Equipment.Events,
-        Config.Camera);
+    Character.Input.Initialize(Character.RuntimeData.Input);
+    FBBBCharacterControlInput InitialControl;
+    InitialControl.FacingWorld = Character.GetActorRotation();
+    Character.Input.Submit(InitialControl);
+    Character.bUseControllerRotationYaw = false;
     
     // 按固定顺序注入各角色系统和运行数据
     Character.AimSystem.Initialize(
-        Character,
         Character.RuntimeData.Aim,
-        Character.RuntimeData.Intent,
-        Config.Aim);
+        Character.RuntimeData.Control);
 
     Character.LocomotionSystem.Initialize(
         Character,
         *Movement,
         Character.RuntimeData.Locomotion,
-        Character.RuntimeData.Intent,
+        Character.RuntimeData.Control,
         Config.Locomotion);
     
     Character.EquipmentSystem.Initialize(
@@ -80,7 +63,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Character.CharacterNetworkComponent,
         *Config.Equipment.EquipmentCatalog,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.Equipment.Commands,
+        Character.Input,
         Character.RuntimeData.Equipment.Events,
         Config.Network);
 
@@ -94,81 +77,12 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Animation,
         Character.RuntimeData.Equipment.Equipment,
         Character.RuntimeData.WorldData,
-        Character.RuntimeData.Intent,
         Config.Animation);
     
-    Character.InputPipeline.Initialize(
-        Character.RuntimeData.Input,
-        Character.RuntimeData.WorldData,
-        Character.RuntimeData.Input.RawInputData,
-        Config.Input.Pipeline);
-    
-    Character.IntentPipeline.Initialize(
-        Character.RuntimeData.Intent,
-        Character.RuntimeData.Input);
-    
-    Character.RequestPipeline.Initialize(
-        Character.RuntimeData.Decision,
-        Character.RuntimeData.Intent);
-    
-    Character.ArbitrationPipeline.Initialize(
-        Character.RuntimeData.Decision,
-        Character.RuntimeData.Equipment.Equipment);
-    
-    Character.ExecutionPipeline.Initialize(
-        Character.RuntimeData.Decision,
-        Character.RuntimeData.Equipment.Commands,
-        Character.RuntimeData.Equipment.Equipment,
-        Character.RuntimeData.Equipment.Inventory);
-    
-    // 最后注入总更新管线确保全部依赖已经就绪
-    Character.CharacterUpdatePipeline.Initialize(
-        Character,
-        Character.RuntimeData,
-        Character.CameraSystem,
-        Character.AimSystem,
-        Character.LocomotionSystem,
-        Character.EquipmentSystem,
-        Character.NetworkSystem,
-        Character.AnimationSystem,
-        Character.InputPipeline,
-        Character.IntentPipeline,
-        Character.RequestPipeline,
-        Character.ArbitrationPipeline,
-        Character.ExecutionPipeline);
-
-    // 将配置中的碰撞参数和移动参数应用到引擎组件
-    //把相机配置应用到构造阶段创建的弹簧臂
-    if (Character.CameraBoom)
-    {
-        //设置相机与角色之间的基础距离
-        Character.CameraBoom->TargetArmLength = Config.Camera.CameraBoomLength;
-
-        //设置弹簧臂末端相机插槽偏移
-        Character.CameraBoom->SocketOffset = Config.Camera.CameraBoomSocketOffset;
-
-        //设置弹簧臂相对角色根组件的目标偏移
-        Character.CameraBoom->TargetOffset = Config.Camera.CameraBoomTargetOffset;
-
-        //让弹簧臂跟随控制器视角旋转
-        Character.CameraBoom->bUsePawnControlRotation = true;
-
-        //按配置启用相机位置滞后
-        Character.CameraBoom->bEnableCameraLag = Config.Camera.bCameraLag;
-
-        //设置相机滞后追赶速度
-        Character.CameraBoom->CameraLagSpeed = Config.Camera.CameraLagSpeed;
-    }
-
-    //把相机配置应用到弹簧臂末端的实际相机
-    if (Character.FollowCamera)
-    {
-        //避免相机与弹簧臂同时应用控制器旋转
-        Character.FollowCamera->bUsePawnControlRotation = false;
-
-        //设置相机相对弹簧臂插槽的局部偏移
-        Character.FollowCamera->SetRelativeLocation(Config.Camera.CameraRelativeLocation);
-    }
+    Character.InputPipeline.Data = &Character.RuntimeData;
+    Character.ArbitrationPipeline.Data = &Character.RuntimeData;
+    Character.ExecutionPipeline.Data = &Character.RuntimeData;
+    Character.CharacterUpdatePipeline.Initialize(Character);
 
     Character.GetCapsuleComponent()->SetCapsuleSize(
         FMath::Max(Config.Locomotion.CapsuleRadius, 1.0f),
@@ -199,280 +113,4 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 
     Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
     Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
-}
-
-void FBBBCharacterInitializer::BindInput(ABBBCharacter &Character, UInputComponent *PlayerInputComponent)
-{
-    //项目只支持增强输入组件 拒绝普通输入组件
-    UEnhancedInputComponent *Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-
-    //类型不匹配时 不建立任何不完整绑定
-    if (!Input)
-    { return; }
-    
-    const FBBBCharacterInputConfig &Config = Character.CharacterConfig.Input;
-    
-    // 移动输入持续写入原始移动轴并在结束时清零
-    if (Config.MoveAction)
-    {
-        Input->BindActionValueLambda(
-            Config.MoveAction,
-            ETriggerEvent::Triggered,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetMoveAxis(Value.Get<FVector2D>());
-            });
-        
-        Input->BindActionValueLambda(
-            Config.MoveAction,
-            ETriggerEvent::Completed,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
-            });
-        
-        Input->BindActionValueLambda(
-            Config.MoveAction,
-            ETriggerEvent::Canceled,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetMoveAxis(FVector2D::ZeroVector);
-            });
-    }
-    
-    // 视角输入持续写入原始视角增量
-    if (Config.LookAction)
-    {
-        Input->BindActionValueLambda(
-            Config.LookAction,
-            ETriggerEvent::Triggered,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetLookAxis(Value.Get<FVector2D>());
-            });
-    }
-    
-    // 开火同时维护持续状态和开始结束边沿
-    if (Config.FireAction)
-    {
-        Input->BindActionValueLambda(
-            Config.FireAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                //设置连续开火状态为1
-                CharacterPtr->RuntimeData.Input.RawInputData.SetFireHeld(true);
-
-                //触发开火开始的边沿事件
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkFireStarted();
-            });
-        
-        Input->BindActionValueLambda(
-            Config.FireAction,
-            ETriggerEvent::Completed,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                //设置连续开火状态为0
-                CharacterPtr->RuntimeData.Input.RawInputData.SetFireHeld(false);
-
-                //触发开火结束的边沿事件
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkFireCompleted();
-            });
-
-        //输入被取消时 执行与正常结束相同的状态收束
-        Input->BindActionValueLambda(
-            Config.FireAction,
-            ETriggerEvent::Canceled,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetFireHeld(false);
-
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkFireCompleted();
-            });
-    }
-    
-    // 换弹和装备槽位只提交按下事件
-    if (Config.ReloadAction)
-    {
-        Input->BindActionValueLambda(
-            Config.ReloadAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkReloadPressed();
-            });
-    }
-    
-    if (Config.EquipSlot1Action)
-    {
-        Input->BindActionValueLambda(
-            Config.EquipSlot1Action,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkEquipSlot1Pressed();
-            });
-    }
-    
-    if (Config.EquipSlot2Action)
-    {
-        Input->BindActionValueLambda(
-            Config.EquipSlot2Action,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkEquipSlot2Pressed();
-            });
-    }
-    
-    // 瞄准同时维护持续状态和开始结束边沿
-    //瞄准逻辑与开火同理
-    if (Config.PrecisionAimAction)
-    {
-        Input->BindActionValueLambda(
-            Config.PrecisionAimAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetPrecisionAimHeld(true);
-                
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkPrecisionAimStarted();
-            });
-        
-        Input->BindActionValueLambda(
-            Config.PrecisionAimAction,
-            ETriggerEvent::Completed,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
-                
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
-            });
-        
-        Input->BindActionValueLambda(
-            Config.PrecisionAimAction,
-            ETriggerEvent::Canceled,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetPrecisionAimHeld(false);
-                
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkPrecisionAimCompleted();
-            });
-    }
-    
-    // 移动方式输入维护持续状态
-    if (Config.WalkAction)
-    {
-        Input->BindActionValueLambda(
-            Config.WalkAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetWalkHeld(true);
-            });
-
-        Input->BindActionValueLambda(
-            Config.WalkAction,
-            ETriggerEvent::Completed,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetWalkHeld(false);
-            });
-
-        Input->BindActionValueLambda(
-            Config.WalkAction,
-            ETriggerEvent::Canceled,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetWalkHeld(false);
-            });
-    }
-
-    if (Config.SprintAction)
-    {
-        Input->BindActionValueLambda(
-            Config.SprintAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetSprintHeld(true);
-            });
-        
-        Input->BindActionValueLambda(
-            Config.SprintAction,
-            ETriggerEvent::Completed,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetSprintHeld(false);
-            });
-        
-        Input->BindActionValueLambda(
-            Config.SprintAction,
-            ETriggerEvent::Canceled,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetSprintHeld(false);
-            });
-    }
-
-    if (Config.CrouchAction)
-    {
-        Input->BindActionValueLambda(
-            Config.CrouchAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetCrouchHeld(true);
-            });
-
-        Input->BindActionValueLambda(
-            Config.CrouchAction,
-            ETriggerEvent::Completed,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetCrouchHeld(false);
-            });
-
-        Input->BindActionValueLambda(
-            Config.CrouchAction,
-            ETriggerEvent::Canceled,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.SetCrouchHeld(false);
-            });
-    }
-
-    // 跳跃冲刺和滑铲只提交按下事件
-    if (Config.JumpAction)
-    {
-        Input->BindActionValueLambda(
-            Config.JumpAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkJumpPressed();
-            });
-    }
-
-    if (Config.DashAction)
-    {
-        Input->BindActionValueLambda(
-            Config.DashAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkDashPressed();
-            });
-    }
-
-    if (Config.SlideAction)
-    {
-        Input->BindActionValueLambda(
-            Config.SlideAction,
-            ETriggerEvent::Started,
-            [CharacterPtr = &Character](const FInputActionValue &Value)
-            {
-                CharacterPtr->RuntimeData.Input.RawInputData.MarkSlidePressed();
-            });
-    }
 }

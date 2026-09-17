@@ -1,5 +1,6 @@
 
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
+#include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -14,6 +15,7 @@ ABBBPlayerController::ABBBPlayerController()
 {
     //允许控制器参与服务器到客户端的属性复制
     bReplicates = true;
+    PlayerInputSystem = CreateDefaultSubobject<UBBBPlayerInputSystem>(TEXT("PlayerInputSystem"));
     //在类默认对象构造期间加载所需资源
     static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/_Project/Input/IMC_Default.IMC_Default"));
     //资源加载成功后缓存角色使用的默认输入映射
@@ -94,6 +96,7 @@ void ABBBPlayerController::SetupInputComponent()
         //结束当前绑定玩家输入动作流程
         return;
     }
+    PlayerInputSystem->Bind(*EnhancedInput);
     //把输入动作绑定到对应的控制器回调
     EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Started, this, &ABBBPlayerController::ToggleMouseCursor);
 }
@@ -114,6 +117,7 @@ void ABBBPlayerController::ToggleMouseCursor()
 //切换鼠标菜单输入模式
 void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
 {
+    PlayerInputSystem->SetInputEnabled(!bEnabled);
     //启用菜单模式时同时保留界面与游戏输入
     if (bEnabled)
     {

@@ -2,17 +2,18 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/Packets/BBBCharacterMontagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterMontagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBCharacterMontageSlotState.h"
 #include "BBBAnimationRuntimeData.generated.h"
 
 class FBBBCharacterAnimationFactProcessor;
 class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterInitializer;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 class FBBBCharacterAnimationActionProcessor;
 class UAnimInstance;
-class UBBBReloadMontagePlayback;
+class UBBBMontagePlayback;
 
 USTRUCT(BlueprintType)
 //角色运行时动画数据
@@ -25,7 +26,7 @@ private:
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterExternalAPI;
+    friend class FBBBExecutionPipeline;
     friend class FBBBCharacterAnimationActionProcessor;
 
     /** 当前帧提交给动画实例的角色事实 */
@@ -36,13 +37,13 @@ private:
     UPROPERTY(Transient)
     TSubclassOf<UAnimInstance> LinkedAnimationLayerClass;
 
-    /** 当前帧尚未应用的人物蒙太奇贡献 */
+    /** 每个实际动画槽位只保存一个期望蒙太奇 */
     UPROPERTY(Transient)
-    TArray<FBBBCharacterMontagePacket> MontageQueue;
+    TArray<FBBBCharacterMontageSlotState> Slots;
 
+    /** 一个播放对象可以同时占用多个槽位 */
     UPROPERTY(Transient)
-    TArray<TObjectPtr<UBBBReloadMontagePlayback>> ReloadPlaybacks;
+    TArray<TObjectPtr<UBBBMontagePlayback>> Playbacks;
 
-    TArray<int32> CancelledReloadSequences;
-
+    uint64 NextRevision = 1;
 };

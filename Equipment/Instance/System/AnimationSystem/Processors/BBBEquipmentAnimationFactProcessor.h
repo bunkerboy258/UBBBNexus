@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 
 class ABBBEquipment;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;

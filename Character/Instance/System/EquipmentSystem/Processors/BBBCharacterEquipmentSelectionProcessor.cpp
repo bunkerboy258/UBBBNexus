@@ -55,9 +55,9 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     }
 
     // 清除旧装备的换弹序号并切换当前实例引用
-    EquipmentState.ReloadSequence = INDEX_NONE;
     EquipmentState.ActiveMainHandInstance = EquipmentState.DesiredMainHandInstance;
     ABBBEquipment *DesiredInstance = EquipmentState.ActiveMainHandInstance;
+    EquipmentState.ActiveEquipmentId = DesiredInstance ? DesiredInstance->GetEquipmentId() : NAME_None;
     if (!DesiredInstance)
     {
         return;
@@ -68,6 +68,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     {
         FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *DesiredInstance);
         EquipmentState.ActiveMainHandInstance = nullptr;
+        EquipmentState.ActiveEquipmentId = NAME_None;
         return;
     }
 

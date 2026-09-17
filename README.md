@@ -1,60 +1,44 @@
 # UBBBNexus
 
-UBBBNexus 是面向 Unreal Engine 5.6 的多人第三人称角色、装备与物品架构基础。目前作为 `ABBB_Evac` 工程中的运行时源码边界开发，并以清晰的数据流、严格的职责划分和长期可维护性为主要目标。
+Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
 
-## 目录
+## 结构
 
-- `Character/`：角色黑板、控制管线、领域系统、动画表现与网络桥接
-- `Equipment/`：装备实例、装备系统、表现实体和能力 Fragment
-- `Item/`：基础物品定义及投射物等物品实现
+- `Character/Input/`：角色定义的固定类型输入与入口 `GetInput().Submit(Packet)`
+- `Character/Instance/Pipeline/`：Input 整理、Arbitration 生命周期与冲突、Execution 应用黑板
+- `Character/Instance/System/`：根据黑板维护行为 不读取玩家按键和视点
+- `PlayerInput/`：控制器持有的输入组件 负责增强输入、屏蔽、解绑及世界空间数据组装
+- `PlayerCamera/`：独立相机 Actor 负责跟随角色与消费相机输入
+- `Equipment/`：独立 Tick 与固定系统和 Fragment 配置 本轮仅迁移角色入口引用
 - `Player/`：玩家控制器与玩家状态
+- `Item/`：投射物等基础实现
 
-## 角色架构
-
-角色由固定顺序的 Pipeline 和按领域内聚的 System 共同驱动：
-
-```text
-Input → Intent → Request → Arbitration → Execution
-      → Equipment / Camera / Aim / Locomotion / Facing
-      → Network / Animation → RuntimeData Clean
-```
-
-- Pipeline 负责阶段明确的数据转换和请求处理
-- System 负责稳定维护一个领域的状态并响应角色黑板
-- RuntimeData 是角色长期状态、帧数据和跨系统事实的统一数据根
-- `FBBBCharacterInitializer` 在初始化阶段注入依赖
-- `FBBBCharacterUpdatePipeline` 根据角色控制身份调度固定更新路径
-
-AimSystem 仅在本地控制角色上生成瞄准事实，并按移动状态分流身体朝向处理。远端角色依赖 UE Character Movement 同步位置和旋转，AnimationSystem 根据同步后的世界事实重建动画偏角与 IK 表现。
-
-## 装备与物品
-
-装备实例是装备的运行根，持有配置、运行数据、表现实体与装备系统。装备能力通过显式 Fragment 插槽组合，当前覆盖装备、开火、弹匣、换弹、动画姿态和左手 IK 等领域。
-
-角色侧只维护物品容器、期望装备和当前装备，并通过装备实例的公开能力发起操作；弹药、射击间隔、投射物生成和换弹规则由装备自身负责。
-
-## 网络模型
-
-角色网络采用 UE Listen Server 主机模型，并坚持本地因果与最小权威校验：
-
-- `UBBBCharacterNetworkComponent` 只提供 RPC 与属性复制能力
-- `FBBBCharacterNetworkSystem` 持有网络处理逻辑
-- Uploader 观察黑板并生成上行数据
-- Validator 在权威端校验需要校验的数据
-- Restorer 将保留的数据还原到本地黑板或装备实例
-- 位置和角色旋转交给 UE Character Movement 同步
-- 连续瞄准状态只传输必要目标数据，各端自行重建动画表现
-
-## 当前阶段
-
-当前已完成角色数据黑板、输入到执行管线、主要角色系统、装备 Fragment 组合、基础开火与换弹链、网络上传/校验/还原链，以及代码到动画蓝图的只读表现桥接。
-
-项目仍处于架构筑基与联机验证阶段，后续重点是继续收紧数据访问边界、完善装备能力、验证多人状态一致性并清理历史遗留实现。
-
-## 宿主工程
-
-当前开发宿主为 Unreal Engine 5.6 工程 `ABBB_Evac`。在宿主工程中的集成位置为：
+## 更新顺序
 
 ```text
-Source/ABBB_Evac/BBBWork/UBBBNexus
+控制器采样 → PlayerInput → 角色根管线
+    网络收件转换 → Input → Arbitration → Execution 写黑板
+    → Equipment → 本地 Aim / Locomotion → 本地网络上传
+    → 移动组件 → LateUpdate 动画事实与蒙太奇 → 角色骨骼动画
+    → 装备独立 TG_PostUpdateWork → 装备动画快照
 ```
+
+装备与动画回调只投递收件箱 收件箱不参与角色帧末清理 下一帧统一消费 相机在 TG_PostUpdateWork 跟随角色 不成为输入 Tick 的前置依赖
+
+## 规则
+
+优先级由 C++ 固定为结果还原、已接受反馈、普通请求 调用者不能自行提高优先级
+
+有效切换立即结束原换弹 空快捷槽不取消换弹 换弹优先于开火且换弹期间阻止开火 瞄准优先于冲刺 一次性失败请求不缓存 持续输入保留 没有通用能力任务或效果框架
+
+蒙太奇按实际五个 Slot 保存空或一个蒙太奇 多轨蒙太奇共享播放修订号与一个 UBBBMontagePlayback 沿用资产 Group 互斥 旧播放结束不能清掉新修订号
+
+## 网络
+
+保持本地控制端完成因果、服务器分发、镜像还原的现有模型 RPC 与网络身份只由 NetworkSystem 和根管线处理 传输格式转换为 FBBBCharacterRestoreInput 后通过受限入口投递 Execution 只写黑板 镜像不重新发起玩法 位置和旋转继续由 CharacterMovement 同步
+
+## 迁移与检查
+
+见 [角色输入迁移说明](Character/Input/README.md) 本次不自动修改资产 不保留旧接口兼容层
+
+编译目标为 ABBB_EvacEditor Win64 Development 固定冲突规则测试为 BBB.Character.Input.ConflictRules 不替代 PIE 或联机运行验证

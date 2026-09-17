@@ -1,40 +1,132 @@
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Execution/BBBExecutionPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/Commands/BBBCharacterEquipmentCommands.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-
-void FBBBExecutionPipeline::Initialize(
-    FBBBDecisionRuntimeData &InDecisionData,
-    FBBBCharacterEquipmentCommands &InEquipmentCommands,
-    FBBBCharacterEquipmentState &InEquipmentState,
-    const FBBBCharacterEquipmentInventoryState &InInventoryState)
-{
-    DecisionData = &InDecisionData;
-    EquipmentCommands = &InEquipmentCommands;
-    EquipmentState = &InEquipmentState;
-    InventoryState = &InInventoryState;
-}
+#include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
+#include "Animation/AnimMontage.h"
 
 void FBBBExecutionPipeline::Update() const
 {
-    // 执行阶段需要仲裁结果装备命令和装备状态完整有效
-    if (!ensureMsgf(
-        DecisionData
-            && EquipmentCommands
-            && InventoryState
-            && EquipmentState,
-        TEXT("[UBBBC]Execution pipeline update failed because dependencies are null")))
-    { return; }
+    if (!ensureMsgf(Data, TEXT("[UBBBC]Execution pipeline is uninitialized")))
+    {
+        return;
+    }
+    FBBBCharacterOperationState &Operation = Data->Operation;
+    FBBBInputBatch &Frame = Data->Input.Frame;
+    FBBBAnimationRuntimeData &Animation = Data->Animation;
+    FBBBCharacterEquipmentCommands &Commands = Data->Equipment.Commands;
 
-    // 将换弹通知移交给装备命令完成输入所有权转移
-    EquipmentCommands->ReloadInputs = MoveTemp(DecisionData->ReloadInputs);
+    // 最高优先级还原只覆盖黑板 不执行装备接口或动画引擎函数
+    for (const FBBBCharacterRestoreInput &Restore : Frame.Restores)
+    {
+        if (!Operation.bRestoreMode)
+        {
+            continue;
+        }
+        if (Restore.bEquipmentChanged)
+        {
+            Commands.PendingRestoredEquipment = Restore.Equipment;
+        }
+        for (const FBBBEquipmentActionEvent &Action : Restore.Actions)
+        {
+            Commands.SubmitRestoredAction(Action);
+        }
+        if (Restore.Aim.IsSet())
+        {
+            Data->Aim.ApplyRestoredState(Restore.Aim.GetValue());
+        }
+        if (Restore.Gait.IsSet())
+        {
+            Data->Locomotion.CommitGait(Restore.Gait.GetValue());
+        }
+    }
 
-    // 先执行装备选择再执行开火和换弹动作
-    SelectionExecutor.Update(
-        *DecisionData,
-        *InventoryState,
-        *EquipmentState);
+    for (const FBBBEquipmentActionEvent &Result : Frame.Results)
+    {
+        Data->Equipment.Events.AddAction(Result);
+    }
+    if (!Operation.bRestoreMode)
+    {
+        Data->Control.Value = Operation.Control;
+        Commands.ReloadInputs = Frame.Notifications;
+        if (Operation.SelectedEquipment)
+        {
+            Data->Equipment.Equipment.DesiredMainHandInstance = Operation.SelectedEquipment;
+        }
+        if (Operation.bFire)
+        {
+            Commands.SubmitFire();
+        }
+        if (Operation.bReload)
+        {
+            Commands.SubmitReload();
+        }
+        Data->CameraContributions = Frame.Camera;
+    }
 
-    // 将批准请求转换为装备系统命令
-    ActionExecutor.Update(*DecisionData, *EquipmentCommands);
+    if (Animation.Slots.IsEmpty())
+    {
+        for (const FName Slot : {FName(TEXT("FullBody")), FName(TEXT("UpperBody")),
+            FName(TEXT("FullBodyAdditivePreAim")), FName(TEXT("UpperBodyAdditive")),
+            FName(TEXT("AdditiveHitReact"))})
+        {
+            FBBBCharacterMontageSlotState &State = Animation.Slots.AddDefaulted_GetRef();
+            State.Slot = Slot;
+        }
+    }
+    for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
+    {
+        if (Operation.SelectedEquipment
+            || (Operation.CancelReloadSequence > 0 && Slot.Desired.bReload
+                && Slot.Desired.Sequence == Operation.CancelReloadSequence))
+        {
+            Slot.Desired = FBBBCharacterMontagePacket();
+            Slot.Revision = 0;
+        }
+    }
+
+    for (const FBBBCharacterMontagePacket &Packet : Frame.Montages)
+    {
+        if (Operation.SelectedEquipment || !IsValid(Packet.Montage))
+        {
+            continue;
+        }
+        if (Packet.bReload && (Packet.Sequence == Operation.CancelReloadSequence
+            || (!Operation.bRestoreMode && Packet.Sequence != Operation.ReloadSequence)))
+        {
+            continue;
+        }
+        UAnimMontage &Montage = *Packet.Montage;
+        bool bValidSlots = !Montage.SlotAnimTracks.IsEmpty();
+        for (const FSlotAnimationTrack &Track : Montage.SlotAnimTracks)
+        {
+            bValidSlots &= Animation.Slots.ContainsByPredicate([&Track](const FBBBCharacterMontageSlotState &Slot)
+            {
+                return Slot.Slot == Track.SlotName;
+            });
+        }
+        if (!ensureMsgf(bValidSlots, TEXT("[UBBBC]Montage uses unsupported slots Asset=%s"), *Montage.GetPathName()))
+        {
+            continue;
+        }
+
+        // 保留引擎同组互斥规则 一次覆盖该组旧期望 再为新蒙太奇全部轨道写入同一修订号
+        for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
+        {
+            if (Slot.Desired.Montage && Slot.Desired.Montage->GetGroupName() == Montage.GetGroupName())
+            {
+                Slot.Desired = FBBBCharacterMontagePacket();
+                Slot.Revision = 0;
+            }
+        }
+        const uint64 Revision = Animation.NextRevision++;
+        for (const FSlotAnimationTrack &Track : Montage.SlotAnimTracks)
+        {
+            for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
+            {
+                if (Slot.Slot == Track.SlotName)
+                {
+                    Slot.Desired = Packet;
+                    Slot.Revision = Revision;
+                }
+            }
+        }
+    }
 }

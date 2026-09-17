@@ -1,59 +1,63 @@
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
-
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/Packets/BBBCharacterMontagePacket.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Playback/BBBReloadMontagePlayback.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Playback/BBBMontagePlayback.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 
 void FBBBCharacterAnimationActionProcessor::Update(
-    UBBBAnimInstance &AnimInstance,
-    FBBBAnimationRuntimeData &AnimationData) const
+    UBBBAnimInstance &AnimInstance, FBBBAnimationRuntimeData &AnimationData) const
 {
-    // 先取消已经标记的换弹播放实例
-    for (const int32 Sequence : AnimationData.CancelledReloadSequences)
+    // 播放结束只清理属于自身修订号的槽 新播放不能被旧回调清空
+    for (UBBBMontagePlayback *Playback : AnimationData.Playbacks)
     {
-        for (UBBBReloadMontagePlayback *Playback : AnimationData.ReloadPlaybacks)
+        if (!Playback)
         {
-            if (Playback)
+            continue;
+        }
+        if (Playback->IsFinished())
+        {
+            for (FBBBCharacterMontageSlotState &Slot : AnimationData.Slots)
             {
-                Playback->Cancel(Sequence);
+                if (Slot.Revision == Playback->GetRevision())
+                {
+                    Slot.Desired = FBBBCharacterMontagePacket();
+                    Slot.Revision = 0;
+                }
             }
         }
+        const bool bDesired = AnimationData.Slots.ContainsByPredicate(
+            [Playback](const FBBBCharacterMontageSlotState &Slot)
+            {
+                return Slot.Revision == Playback->GetRevision();
+            });
+        if (!bDesired)
+        {
+            Playback->Stop();
+        }
     }
-    AnimationData.CancelledReloadSequences.Reset();
-
-    // 移除无效或已经结束的换弹播放对象
-    AnimationData.ReloadPlaybacks.RemoveAll([](const TObjectPtr<UBBBReloadMontagePlayback> &Playback)
+    AnimationData.Playbacks.RemoveAll([](UBBBMontagePlayback *Playback)
     {
         return !Playback || Playback->IsFinished();
     });
 
-    // 取出当前动画队列并清空原队列避免重复播放
-    TArray<FBBBCharacterMontagePacket> Packets = MoveTemp(AnimationData.MontageQueue);
-    AnimationData.MontageQueue.Reset();
-
-    for (const FBBBCharacterMontagePacket &Packet : Packets)
+    // 同一蒙太奇的多个槽共享修订号 仅创建一次引擎播放实例
+    for (const FBBBCharacterMontageSlotState &Slot : AnimationData.Slots)
     {
-        // 无效动画请求不能进入播放系统
-        if (!ensureMsgf(
-            Packet.Montage && FMath::IsFinite(Packet.PlayRate) && Packet.PlayRate > 0.0f,
-            TEXT("[UBBBC]Queued equipment montage packet is invalid")))
+        if (!Slot.Desired.Montage || Slot.Revision == 0)
         {
             continue;
         }
-
-        if (Packet.bReload)
+        const bool bPlaying = AnimationData.Playbacks.ContainsByPredicate(
+            [&Slot](const UBBBMontagePlayback *Playback)
+            {
+                return Playback && Playback->GetRevision() == Slot.Revision;
+            });
+        if (bPlaying)
         {
-            // 换弹动画使用独立播放对象接收关键帧通知
-            UBBBReloadMontagePlayback *Playback = NewObject<UBBBReloadMontagePlayback>(&AnimInstance);
-            AnimationData.ReloadPlaybacks.Add(Playback);
-            Playback->Start(AnimInstance, *Packet.Montage, Packet.PlayRate, Packet.Sequence);
             continue;
         }
-
-        // 普通装备动作直接交给角色动画实例播放
-        AnimInstance.ExecuteEquipmentActionMontage(
-            Packet.Montage,
-            Packet.PlayRate);
+        UBBBMontagePlayback *Playback = NewObject<UBBBMontagePlayback>(&AnimInstance);
+        AnimationData.Playbacks.Add(Playback);
+        Playback->Start(AnimInstance, *Slot.Desired.Montage, Slot.Desired.PlayRate,
+            Slot.Desired.Sequence, Slot.Revision, Slot.Desired.bReload);
     }
 }

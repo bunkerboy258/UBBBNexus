@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Fragment/BBBSingleProjectileFireFragment.h"
 
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/BBBCharacterExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireContext.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
@@ -75,7 +75,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
 
     if (FireMontage)
     {
-        Context.CharacterAPI.SubmitEquipmentMontage(FireMontage, 1.0f, Context.Sequence);
+        Context.CharacterAPI.Submit(FBBBCharacterMontagePacket{FireMontage, 1.0f, Context.Sequence, false});
     }
 
     // 本地实例负责消耗弹药并提交后坐力
@@ -85,7 +85,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
             VerticalRecoilAmount + FMath::FRandRange(-VerticalRecoilRandom, VerticalRecoilRandom),
             HorizontalRecoilAmount + FMath::FRandRange(-HorizontalRecoilRandom, HorizontalRecoilRandom));
         Context.LoadedAmmo--;
-        Context.CharacterAPI.SubmitEquipmentRecoil(RecoilImpulse, RecoilRecoverySpeed);
+        Context.CharacterAPI.Submit(FBBBPlayerCameraInput{RecoilImpulse, RecoilRecoverySpeed});
     }
 
     // 记录本次开火时间供下一次开火判断

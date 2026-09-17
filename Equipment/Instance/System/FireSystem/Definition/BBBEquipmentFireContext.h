@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 
 class ABBBEquipment;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 class UWorld;
 class USkeletalMeshComponent;
 
@@ -13,7 +13,7 @@ struct FBBBEquipmentFireContext
     ABBBEquipment &Instance;
     UWorld &World;
     USkeletalMeshComponent &WeaponMesh;
-    FBBBCharacterExternalAPI &CharacterAPI;
+    FBBBCharacterInput &CharacterAPI;
     int32 &LoadedAmmo;
     float &LastFireTimeSeconds;
     int32 Sequence;

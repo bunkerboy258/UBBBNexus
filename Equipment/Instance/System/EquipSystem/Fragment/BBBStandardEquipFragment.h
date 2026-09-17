@@ -16,7 +16,7 @@ struct ABBB_EVAC_API FBBBStandardEquipFragment final : public FBBBEquipmentEquip
         return SpawnOffset;
     }
 
-    virtual bool SubmitMontage(FBBBCharacterExternalAPI &CharacterAPI, int32 Sequence) const override;
+    virtual bool SubmitMontage(FBBBCharacterInput &CharacterAPI, int32 Sequence) const override;
 
     virtual FName GetLeftHandSocketName() const override
     {

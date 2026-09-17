@@ -2,7 +2,7 @@
 
 void FBBBEquipmentInputPipeline::Initialize(FBBBEquipmentInputRuntimeData &InInput, FBBBEquipmentEquipRuntimeData &InEquip,
         FBBBEquipmentFireRuntimeData &InFire, FBBBEquipmentReloadRuntimeData &InReload,
-        FBBBCharacterExternalAPI &InCharacterAPI, FName InEquipmentId, bool bInIsMirror)
+        FBBBCharacterInput &InCharacterAPI, FName InEquipmentId, bool bInIsMirror)
 {
     Input = &InInput;
     Equip = &InEquip;

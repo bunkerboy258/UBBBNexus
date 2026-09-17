@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkSystem.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Network/BBBNetworkConfig.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
@@ -14,7 +15,7 @@ void FBBBCharacterNetworkSystem::Initialize(
     UBBBCharacterNetworkComponent &InNetworkComponent,
     UBBBEquipmentCatalog &InEquipmentCatalog,
     const FBBBCharacterWorldRuntimeData &InWorldData,
-    FBBBCharacterEquipmentCommands &InEquipmentCommands,
+    FBBBCharacterInput &InInput,
     const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterNetworkConfig &InNetworkConfig)
 {
@@ -25,25 +26,23 @@ void FBBBCharacterNetworkSystem::Initialize(
     NetworkComponent = &InNetworkComponent;
     EquipmentCatalog = &InEquipmentCatalog;
     WorldData = &InWorldData;
-    EquipmentCommands = &InEquipmentCommands;
+    Input = &InInput;
     EquipmentEvents = &InEquipmentEvents;
     NetworkConfig = &InNetworkConfig;
 }
 
 void FBBBCharacterNetworkSystem::UpdateRestore()
 {
-    // 恢复阶段先确认网络数据和装备解析依赖有效
-    if (!ensureMsgf(NetworkData && AimData && LocomotionData && EquipmentCommands && EquipmentCatalog, TEXT("[UBBBC]Network restore dependencies are null")))
+    // 网络系统只负责解包和入口投递 黑板由角色管线统一应用
+    if (!ensureMsgf(NetworkData && Input && EquipmentCatalog, TEXT("[UBBBC]Restore dependencies are null")))
     {
         return;
     }
-
-    Restorer.Update(
-        *NetworkData,
-        *AimData,
-        *LocomotionData,
-        *EquipmentCommands,
-        *EquipmentCatalog);
+    const FBBBCharacterRestoreInput Packet = Restorer.Build(*NetworkData, *EquipmentCatalog);
+    if (Packet.bEquipmentChanged || !Packet.Actions.IsEmpty() || Packet.Aim.IsSet() || Packet.Gait.IsSet())
+    {
+        Input->SubmitRestore(Packet);
+    }
 }
 
 void FBBBCharacterNetworkSystem::UpdateUpload()

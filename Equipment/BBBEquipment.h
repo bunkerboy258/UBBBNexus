@@ -13,7 +13,7 @@
 #include "BBBEquipment.generated.h"
 
 class ABBBCharacter;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 class UBBBEquipmentAnimInstance;
 class UBBBEquipmentDefinition;
 class UArrowComponent;
@@ -26,7 +26,7 @@ class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterEquipmentActionProcessor;
 class FBBBCharacterAnimationLayerProcessor;
 class FBBBEquipmentUploadProcessor;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 
 /** 单件装备的实体、运行数据与公开操作入口 */
 UCLASS(BlueprintType)
@@ -50,7 +50,7 @@ private:
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBEquipmentUploadProcessor;
-    friend class FBBBCharacterExternalAPI;
+    friend class FBBBCharacterInput;
 
     /** @return 实例唯一标识 */
     const FGuid &GetInstanceId() const;

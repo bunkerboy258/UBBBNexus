@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
@@ -12,27 +12,23 @@ namespace
 // 将二维移动意图转换为控制器朝向下的世界方向
 FVector ResolveWorldMoveDirection(
     const ACharacter &Character,
-    const FBBBIntentRuntimeData &IntentData)
+    const FBBBCharacterControlState &ControlData)
 {
-    const FRotator YawRotation(0.0f, Character.GetControlRotation().Yaw, 0.0f);
-    const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-    const FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-    return (Forward * IntentData.GetMoveInput().Y
-        + Right * IntentData.GetMoveInput().X).GetSafeNormal2D();
+    return ControlData.GetMoveInput().GetSafeNormal2D();
 }
 
 // 检查冲刺意图和移动方向是否满足冲刺条件
 bool CanSprint(
     const ACharacter &Character,
-    const FBBBIntentRuntimeData &IntentData,
+    const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config)
 {
-    if (!IntentData.WantsSprint())
+    if (!ControlData.WantsSprint())
     {
         return false;
     }
 
-    const FVector WorldMoveDirection = ResolveWorldMoveDirection(Character, IntentData);
+    const FVector WorldMoveDirection = ResolveWorldMoveDirection(Character, ControlData);
     if (WorldMoveDirection.IsNearlyZero())
     {
         return false;
@@ -48,33 +44,33 @@ bool CanSprint(
 // 根据瞄准和移动输入选择当前步态
 EBBBCharacterGait ResolveGait(
     const ACharacter &Character,
-    const FBBBIntentRuntimeData &IntentData,
+    const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config,
     EBBBCharacterGait PreviousGait,
     const FVector &CurrentVelocity)
 {
-    const bool bFullMovementInput = IntentData.GetMoveInput().Size() >= Config.AnalogRunThreshold;
+    const bool bFullMovementInput = ControlData.GetMoveInput().Size() >= Config.AnalogRunThreshold;
 
     // ADS 使用步行档位，并优先于冲刺
-    if (IntentData.WantsAim())
+    if (ControlData.WantsAim())
     {
         return EBBBCharacterGait::Walk;
     }
 
     // 松开输入后保持实际奔跑档位，直到地面制动结束
-    if (!IntentData.HasMoveInput()
+    if (!ControlData.HasMoveInput()
         && CurrentVelocity.SizeSquared2D() > FMath::Square(1.0f)
         && (PreviousGait == EBBBCharacterGait::Run || PreviousGait == EBBBCharacterGait::Sprint))
     {
         return PreviousGait;
     }
 
-    if (CanSprint(Character, IntentData, Config) && bFullMovementInput)
+    if (CanSprint(Character, ControlData, Config) && bFullMovementInput)
     {
         return EBBBCharacterGait::Sprint;
     }
 
-    if (IntentData.WantsWalk())
+    if (ControlData.WantsWalk())
     {
         return EBBBCharacterGait::Walk;
     }
@@ -141,14 +137,14 @@ void FBBBCharacterLocomotionSystem::Initialize(
     ACharacter &InCharacter,
     UCharacterMovementComponent &InMovement,
     FBBBCharacterLocomotionRuntimeData &InRuntimeData,
-    const FBBBIntentRuntimeData &InIntentData,
+    const FBBBCharacterControlState &InIntentData,
     const FBBBCharacterLocomotionConfig &InConfig)
 {
     // 保存移动依赖并同步加载方向速度曲线
     Character = &InCharacter;
     Movement = &InMovement;
     RuntimeData = &InRuntimeData;
-    IntentData = &InIntentData;
+    ControlData = &InIntentData;
     Config = &InConfig;
     StrafeSpeedMapCurve = InConfig.StrafeSpeedMapCurve.LoadSynchronous();
 
@@ -161,31 +157,15 @@ void FBBBCharacterLocomotionSystem::Update()
 {
     // 移动更新需要角色组件意图状态和速度曲线全部有效
     if (!ensureMsgf(
-        Character && Movement && RuntimeData && IntentData && Config && StrafeSpeedMapCurve,
+        Character && Movement && RuntimeData && ControlData && Config && StrafeSpeedMapCurve,
         TEXT("[UBBBC]Locomotion system update failed because dependencies are null")))
     {
         return;
     }
 
-    const UWorld *World = Character->GetWorld();
-    const float DeltaSeconds = World ? World->GetDeltaSeconds() : 0.0f;
-    // 按世界帧间隔递减滑铲剩余时间
-    SlideRemainingSeconds = FMath::Max(SlideRemainingSeconds - DeltaSeconds, 0.0f);
-
-    // 地面滑铲意图建立新的滑铲方向和持续时间
-    if (IntentData->WantsSlide() && Movement->IsMovingOnGround())
-    {
-        SlideRemainingSeconds = FMath::Max(Config->SlideDurationSeconds, 0.0f);
-        SlideDirection = ResolveWorldMoveDirection(*Character, *IntentData);
-        if (SlideDirection.IsNearlyZero())
-        {
-            SlideDirection = Character->GetActorForwardVector();
-        }
-    }
-
-    const bool bSlideActive = SlideRemainingSeconds > 0.0f;
-    const bool bWantsCrouch = IntentData->WantsCrouch() || bSlideActive;
-    // 滑铲期间强制保持蹲伏状态
+    // 朝向来自外部提交的世界空间事实 不读取玩家控制器
+    Character->SetActorRotation(FRotator(0.0f, ControlData->GetFacingWorld().Yaw, 0.0f));
+    const bool bWantsCrouch = ControlData->WantsCrouch();
     if (bWantsCrouch)
     {
         Character->Crouch();
@@ -199,7 +179,7 @@ void FBBBCharacterLocomotionSystem::Update()
     const EBBBCharacterGait PreviousGait = RuntimeData->GetGait();
     EBBBCharacterGait Gait = ResolveGait(
         *Character,
-        *IntentData,
+        *ControlData,
         *Config,
         PreviousGait,
         Movement->Velocity);
@@ -222,10 +202,6 @@ void FBBBCharacterLocomotionSystem::Update()
         ResolveDirectionalSpeed(Config->CrouchSpeeds, DirectionMap),
         1.0f);
 
-    if (bSlideActive)
-    {
-        Movement->MaxWalkSpeedCrouched = FMath::Max(Config->SlideSpeed, 1.0f);
-    }
     Movement->MaxAcceleration = FMath::Max(Config->MaxAcceleration, 0.0f);
     Movement->BrakingDecelerationWalking = FMath::Max(Config->BrakingDeceleration, 0.0f);
     Movement->GroundFriction = FMath::Max(Config->GroundFriction, 0.0f);
@@ -233,45 +209,18 @@ void FBBBCharacterLocomotionSystem::Update()
     Movement->BrakingFrictionFactor = FMath::Max(Config->BrakingFrictionFactor, 0.0f);
     Movement->bUseSeparateBrakingFriction = false;
 
-    // 地面冲刺使用移动方向没有方向时使用角色前方
-    if (IntentData->WantsDash() && Movement->IsMovingOnGround())
-    {
-        FVector DashDirection = ResolveWorldMoveDirection(*Character, *IntentData);
-        if (DashDirection.IsNearlyZero())
-        {
-            DashDirection = Character->GetActorForwardVector();
-        }
-
-        Character->LaunchCharacter(
-            DashDirection * FMath::Max(Config->DashSpeed, 0.0f),
-            false,
-            false);
-    }
-
     // 蹲伏期间不允许同帧跳跃
-    if (!bWantsCrouch && IntentData->WantsJump())
+    if (!bWantsCrouch && ControlData->WantsJump())
     {
         Character->Jump();
     }
 
-    // 滑铲使用固定方向并结束本帧移动处理
-    if (bSlideActive)
-    {
-        Character->AddMovementInput(SlideDirection, 1.0f);
-        return;
-    }
 
-    if (!IntentData->HasMoveInput())
+    if (!ControlData->HasMoveInput())
     {
         return;
     }
-
-    // 普通移动按控制器水平朝向写入两个方向分量
-    const FRotator YawRotation(0.0f, Character->GetControlRotation().Yaw, 0.0f);
-    Character->AddMovementInput(
-        FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X),
-        IntentData->GetMoveInput().Y);
-    Character->AddMovementInput(
-        FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y),
-        IntentData->GetMoveInput().X);
+    // 保留模拟输入强度 归一化只用于方向而不用于移动量
+    const FVector MoveWorld = ControlData->GetMoveInput();
+    Character->AddMovementInput(MoveWorld.GetSafeNormal(), MoveWorld.Size());
 }

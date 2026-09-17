@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/Processors/BBBEquipmentInputProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/BBBCharacterExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/Definition/BBBEquipmentInputRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
@@ -9,7 +9,7 @@
 void FBBBEquipmentInputProcessor::Update(
     FBBBEquipmentInputRuntimeData &Input, FBBBEquipmentEquipRuntimeData &Equip,
     FBBBEquipmentFireRuntimeData &Fire, FBBBEquipmentReloadRuntimeData &Reload,
-    FBBBCharacterExternalAPI &CharacterAPI, const FName EquipmentId, const bool bIsMirror) const
+    FBBBCharacterInput &CharacterAPI, const FName EquipmentId, const bool bIsMirror) const
 {
     // 取出本帧输入并清空原始队列
     TArray<FBBBEquipmentInput> Pending = MoveTemp(Input.Pending);
@@ -70,7 +70,7 @@ void FBBBEquipmentInputProcessor::Update(
             }
 
             // 将恢复事件发布到角色外部接口
-            CharacterAPI.PublishEquipmentEvent(Snapshot);
+            CharacterAPI.Submit(Snapshot);
             continue;
         }
 

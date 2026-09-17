@@ -2,10 +2,9 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Config/BBBCharacterConfig.h"
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/BBBCharacterExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/BBBCharacterAnimationSystem.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/CameraSystem/BBBCharacterCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkSystem.h"
@@ -14,8 +13,6 @@
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/BBBArbitrationPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Execution/BBBExecutionPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/BBBInputPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Intent/BBBIntentPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Request/BBBRequestPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
@@ -23,8 +20,7 @@ class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
-class UCameraComponent;
-class USpringArmComponent;
+class ABBBPlayerCameraSystem;
 
 UCLASS()
 class ABBB_EVAC_API ABBBCharacter : public ACharacter
@@ -41,6 +37,7 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
 
     /** 允许动画实例只读角色表现状态 */
     friend class UBBBAnimInstance;
+    friend class ABBBPlayerCameraSystem;
 
     
 public:
@@ -76,12 +73,6 @@ public:
     virtual bool ShouldReplicateAcceleration() const override;
 
     /**
-     * 绑定玩家输入到输入管线
-     * @param PlayerInputComponent	玩家输入组件
-     */
-    virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
-
-    /**
      * 获取角色静态配置
      * @return 角色配置常量引用
      */
@@ -91,9 +82,9 @@ public:
     }
 
     /** @return 装备向角色提交表现贡献的入口 */
-    FBBBCharacterExternalAPI &GetExternalAPI()
+    FBBBCharacterInput &GetInput()
     {
-        return ExternalAPI;
+        return Input;
     }
 
     /**
@@ -123,12 +114,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|Config")
     FBBBCharacterConfig CharacterConfig;
     
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ABBB|Camera")
-    TObjectPtr<USpringArmComponent> CameraBoom;
-    
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ABBB|Camera")
-    TObjectPtr<UCameraComponent> FollowCamera;
-    
     UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
     TObjectPtr<UBBBCharacterNetworkComponent> CharacterNetworkComponent;
     /*分类命名为ABBB是为了快点找到（bushi*/
@@ -139,7 +124,6 @@ private:
     UPROPERTY(Transient)
     FBBBCharacterRuntimeData RuntimeData;
     
-    FBBBCharacterCameraSystem CameraSystem;
     
     FBBBCharacterAimSystem AimSystem;
 
@@ -148,7 +132,7 @@ private:
     FBBBCharacterEquipmentSystem EquipmentSystem;
 
     /** 接收装备提交的角色表现贡献 */
-    FBBBCharacterExternalAPI ExternalAPI;
+    FBBBCharacterInput Input;
     
     FBBBCharacterAnimationSystem AnimationSystem;
     
@@ -156,9 +140,7 @@ private:
     
     FBBBInputPipeline InputPipeline;
     
-    FBBBIntentPipeline IntentPipeline;
     
-    FBBBRequestPipeline RequestPipeline;
     
     FBBBArbitrationPipeline ArbitrationPipeline;
     

@@ -1,20 +1,7 @@
-
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
 
 void FBBBCharacterRuntimeData::Clean()
 {
-    // 按角色帧生命周期清理所有临时数据
-    //动作请求与仲裁结果只允许在当前帧消费
-    Decision.CleanFrame();
-
-    //按下松开等输入边沿只允许触发一次
-    Input.RawInputData.CleanFrameInput();
-
-    //行为意图由下一帧输入重新生成
-    Intent.CleanFrame();
-
-    //动画播放请求提交后立即清空
-
-    //物品命令与事件完成处理后立即清空
+    // 收件箱与期望槽位跨帧保留 仅清理已经交给系统消费的帧命令
     Equipment.CleanFrame();
 }

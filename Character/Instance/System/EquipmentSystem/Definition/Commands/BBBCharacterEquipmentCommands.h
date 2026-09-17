@@ -2,13 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/Events/BBBCharacterEquipmentEvents.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterAnimationInput.h"
 #include "BBBCharacterEquipmentCommands.generated.h"
 
 class FBBBCharacterEquipmentActionProcessor;
 class FBBBCharacterEquipmentSelectionProcessor;
-class FBBBEquipmentActionExecutor;
-class FBBBEquipmentActionRestoreProcessor;
-class FBBBEquipmentRestoreProcessor;
+
 class UBBBEquipmentDefinition;
 class UBBBAnimInstance;
 struct FBBBCharacterEquipmentRuntimeData;
@@ -22,12 +21,12 @@ struct FBBBCharacterEquipmentCommands
     TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
 
 private:
+    friend class FBBBExecutionPipeline;
+    friend class FBBBArbitrationPipeline;
 
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
-    friend class FBBBEquipmentActionExecutor;
-    friend class FBBBEquipmentActionRestoreProcessor;
-    friend class FBBBEquipmentRestoreProcessor;
+
     friend class UBBBAnimInstance;
     friend struct FBBBCharacterEquipmentRuntimeData;
 

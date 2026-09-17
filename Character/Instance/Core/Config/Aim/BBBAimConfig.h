@@ -3,18 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBAimConfig.generated.h"
 
-/** 瞄准系统配置 */
-USTRUCT(BlueprintType)
-struct FBBBAimConfig
-{
-    GENERATED_BODY()
-
-    /** 瞄准目标沿控制器视线投射的距离 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
-    float AimTargetDistance = 10000.0f;
-
-};
-
 /** 瞄准动画表现配置 */
 USTRUCT(BlueprintType)
 struct FBBBAimAnimationConfig

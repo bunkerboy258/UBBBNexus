@@ -26,6 +26,8 @@ struct FBBBCharacterEquipmentRuntimeData
     }
 
 private:
+    friend class FBBBExecutionPipeline;
+    friend class FBBBArbitrationPipeline;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterInitializer;

@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Processors/BBBEquipmentReloadProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/BBBCharacterExternalAPI.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
@@ -8,7 +8,7 @@
 
 void FBBBEquipmentReloadProcessor::Update(
     FBBBEquipmentReloadRuntimeData &Data, FBBBEquipmentFireRuntimeData &Fire,
-    const FBBBEquipmentReloadFragment &Fragment, FBBBCharacterExternalAPI &CharacterAPI,
+    const FBBBEquipmentReloadFragment &Fragment, FBBBCharacterInput &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
     // 按输入顺序处理换弹阶段
@@ -53,7 +53,7 @@ void FBBBEquipmentReloadProcessor::Update(
             // 发布换弹开始事件
             Event.Phase = EBBBCharacterEquipmentPhase::ReloadStarted;
             Event.LoadedAmmo = Fire.LoadedAmmo;
-            CharacterAPI.PublishEquipmentEvent(Event);
+            CharacterAPI.Submit(Event);
             continue;
         }
 
@@ -104,6 +104,6 @@ void FBBBEquipmentReloadProcessor::Update(
 
         // 发布换弹阶段完成事件
         Event.LoadedAmmo = Fire.LoadedAmmo;
-        CharacterAPI.PublishEquipmentEvent(Event);
+        CharacterAPI.Submit(Event);
     }
 }

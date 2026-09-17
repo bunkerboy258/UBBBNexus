@@ -1,12 +1,11 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/Definition/BBBInputRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Request/Definition/BBBDecisionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterControlState.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/Definition/BBBCharacterOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AimSystem/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/CameraSystem/Definition/BBBCameraRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
@@ -30,6 +29,10 @@ struct FBBBCharacterRuntimeData
 
 private:
     friend class ABBBCharacter;
+    friend class ABBBPlayerCameraSystem;
+    friend class FBBBInputPipeline;
+    friend class FBBBArbitrationPipeline;
+    friend class FBBBExecutionPipeline;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
@@ -45,11 +48,11 @@ private:
 
     //保存角色行为意图
     UPROPERTY(Transient)
-    FBBBIntentRuntimeData Intent;
+    FBBBCharacterControlState Control;
 
     //保存动作请求与仲裁结果
     UPROPERTY(Transient)
-    FBBBDecisionRuntimeData Decision;
+    FBBBCharacterOperationState Operation;
 
     //保存角色瞄准状态
     UPROPERTY(Transient)
@@ -61,7 +64,7 @@ private:
 
     //保存相机命令与状态
     UPROPERTY(Transient)
-    FBBBCameraRuntimeData Camera;
+    TArray<FBBBPlayerCameraInput> CameraContributions;
 
     //保存角色物品状态与命令
     UPROPERTY(Transient)

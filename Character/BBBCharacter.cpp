@@ -1,12 +1,10 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "Camera/CameraComponent.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 ABBBCharacter::ABBBCharacter()
@@ -37,7 +35,7 @@ ABBBCharacter::ABBBCharacter()
     //阻止控制器俯仰直接旋转角色胶囊体
     bUseControllerRotationPitch = false;
     //角色朝向统一交给移动与朝向系统处理
-    bUseControllerRotationYaw = true;
+    bUseControllerRotationYaw = false;
     //阻止控制器横滚直接旋转角色胶囊体
     bUseControllerRotationRoll = false;
 
@@ -47,14 +45,6 @@ ABBBCharacter::ABBBCharacter()
     GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
     /*其实非必要 一般是蓝图里调整*/
 
-    //创建第三人称相机弹簧臂
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    //将弹簧臂绑定到角色根组件
-    CameraBoom->SetupAttachment(GetRootComponent());
-    //创建跟随相机
-    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    //将相机绑定到弹簧臂末端插槽
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     //创建负责收发角色状态的网络组件
     CharacterNetworkComponent = CreateDefaultSubobject<UBBBCharacterNetworkComponent>(TEXT("CharacterNetworkComponent"));
 }
@@ -145,18 +135,23 @@ void ABBBCharacter::LateUpdate()
     CharacterUpdatePipeline.LateUpdate();
 }
 
-void ABBBCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent)
-{
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
-    FBBBCharacterInitializer::BindInput(*this, PlayerInputComponent);
-}
-
 void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
 {
-    ExternalAPI.SubmitReloadStartNotify(Sequence);
+    FBBBCharacterReloadAnimationInput Packet;
+    Packet.Sequence = Sequence;
+    Packet.Phase = EBBBCharacterReloadAnimationPhase::Start;
+    Input.Submit(Packet);
 }
 
 void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReason EndReason)
 {
-    ExternalAPI.SubmitReloadEndNotify(Sequence, EndReason);
+    if (EndReason == EBBBCharacterReloadEndReason::PlaybackFailed)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[UBBBC]Reload playback failed Sequence=%d"), Sequence);
+    }
+    FBBBCharacterReloadAnimationInput Packet;
+    Packet.Sequence = Sequence;
+    Packet.Phase = EndReason == EBBBCharacterReloadEndReason::Loaded
+        ? EBBBCharacterReloadAnimationPhase::End : EBBBCharacterReloadAnimationPhase::Interrupted;
+    Input.Submit(Packet);
 }

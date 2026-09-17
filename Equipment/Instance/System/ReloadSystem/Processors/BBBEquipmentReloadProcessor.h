@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 
 class ABBBEquipment;
-class FBBBCharacterExternalAPI;
+class FBBBCharacterInput;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;
@@ -24,6 +24,6 @@ private:
 
     /** 处理本帧系统数据 */
     void Update(FBBBEquipmentReloadRuntimeData &Data, FBBBEquipmentFireRuntimeData &Fire,
-        const FBBBEquipmentReloadFragment &Fragment, FBBBCharacterExternalAPI &CharacterAPI,
+        const FBBBEquipmentReloadFragment &Fragment, FBBBCharacterInput &CharacterAPI,
         FName EquipmentId, bool bIsMirror) const;
 };

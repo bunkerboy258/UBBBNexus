@@ -1,22 +1,16 @@
 #pragma once
-
-class APawn;
+struct FBBBCharacterControlState;
 struct FBBBAimRuntimeState;
 
-/**
- * 根据控制器视线生成远距瞄准目标
- */
+/** 从控制黑板采集世界空间瞄准目标 */
 class FBBBCharacterAimTargetProcessor final
 {
 public:
     /**
-     * 沿控制器视线投射瞄准目标
-     * @param Pawn              所属角色
-     * @param AimTargetDistance 目标投射距离
-     * @param State             瞄准状态
+     * 更新瞄准目标
+     * @param Control	已裁决控制状态
+     * @param State	瞄准运行事实
+     * @return 无
      */
-    void Update(
-        APawn &Pawn,
-        float AimTargetDistance,
-        FBBBAimRuntimeState &State) const;
+    void Update(const FBBBCharacterControlState &Control, FBBBAimRuntimeState &State) const;
 };

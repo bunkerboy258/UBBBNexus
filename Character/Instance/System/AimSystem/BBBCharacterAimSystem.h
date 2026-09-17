@@ -6,9 +6,8 @@
 
 class APawn;
 class FBBBCharacterInitializer;
-struct FBBBAimConfig;
 struct FBBBAimRuntimeData;
-struct FBBBIntentRuntimeData;
+struct FBBBCharacterControlState;
 
 /**
  * 按角色瞄准状态分流各个瞄准处理器
@@ -33,15 +32,11 @@ private:
      * @param InAimConfig  瞄准配置
      */
     void Initialize(
-        APawn &InPawn,
         FBBBAimRuntimeData &InAimData,
-        const FBBBIntentRuntimeData &InIntentData,
-        const FBBBAimConfig &InAimConfig);
+        const FBBBCharacterControlState &InIntentData);
 
-    APawn *Pawn = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
-    const FBBBIntentRuntimeData *IntentData = nullptr;
-    const FBBBAimConfig *AimConfig = nullptr;
+    const FBBBCharacterControlState *ControlData = nullptr;
 
     FBBBCharacterAimStateProcessor AimStateProcessor;
     FBBBCharacterAimTargetProcessor AimTargetProcessor;

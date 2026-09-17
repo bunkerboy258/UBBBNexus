@@ -7,6 +7,7 @@
 class UInputMappingContext;
 //封装InputAction的数据与行为
 class UInputAction;
+class UBBBPlayerInputSystem;
 
 //将下方类型注册为受虚幻对象系统管理的类
 UCLASS()
@@ -49,6 +50,9 @@ protected:
     //更新int32MappingContextPriority供后续步骤读取
     int32 MappingContextPriority = 0;
 private:
+    UPROPERTY(VisibleAnywhere, Category = "BBB|Input")
+    TObjectPtr<UBBBPlayerInputSystem> PlayerInputSystem;
+
 
     //让下方成员按照所列规则参与编辑序列化或网络复制
     UPROPERTY()

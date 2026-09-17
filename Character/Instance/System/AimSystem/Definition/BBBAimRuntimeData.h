@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AimSystem/Definition/States/BBBAimStates.h"
 #include "BBBAimRuntimeData.generated.h"
-class FBBBAimRestoreProcessor;
+
 class FBBBCharacterAimSystem;
 
 USTRUCT(BlueprintType)
@@ -22,7 +22,9 @@ struct FBBBAimRuntimeData
     }
 
 private:
-    friend class FBBBAimRestoreProcessor;
+    friend class FBBBExecutionPipeline;
+    friend class FBBBArbitrationPipeline;
+
     friend class FBBBCharacterAimSystem;
 
     /**
@@ -38,7 +40,7 @@ private:
      * 用远端同步的瞄准状态还原本地运行时数据
      * @param RemoteState	远端传来的瞄准状态
      */
-    void RestoreRemoteState(const FBBBRemoteAimState &RemoteState)
+    void ApplyRestoredState(const FBBBAimRuntimeState &RemoteState)
     {
         State.bIsAiming = RemoteState.bIsAiming;
         State.AimTargetWorld = RemoteState.AimTargetWorld;

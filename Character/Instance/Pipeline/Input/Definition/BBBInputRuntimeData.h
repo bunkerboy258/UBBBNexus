@@ -1,109 +1,55 @@
-
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/Definition/States/BBBInputRawData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/Definition/States/BBBInputStates.h"
-#include "BBBWork/UBBBNexus/Character/Instance/ExternalAPI/Packets/BBBCharacterReloadAnimationInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterAnimationInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterMontagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterRestoreInput.h"
+#include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 #include "BBBInputRuntimeData.generated.h"
-class FBBBCharacterInitializer;
-struct FBBBCharacterRuntimeData;
+class FBBBCharacterInput;
+class FBBBInputPipeline;
+class FBBBArbitrationPipeline;
+class FBBBExecutionPipeline;
 
-USTRUCT(BlueprintType)
-//输入后处理数据
+/** 输入入口持有的待消费数据与当前批次 */
+USTRUCT()
+struct FBBBInputBatch
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<FBBBCharacterEquipmentInput> Equipment;
+    UPROPERTY()
+    TArray<FBBBEquipmentActionEvent> Results;
+    UPROPERTY()
+    TArray<FBBBCharacterReloadAnimationInput> Notifications;
+    UPROPERTY()
+    TArray<FBBBCharacterMontagePacket> Montages;
+    UPROPERTY()
+    TArray<FBBBCharacterRestoreInput> Restores;
+    UPROPERTY()
+    TArray<FBBBPlayerCameraInput> Camera;
+};
+
+/** 输入收件箱不在帧末清理以保留动画后装备提交的结果 */
+USTRUCT()
 struct FBBBInputRuntimeData
 {
     GENERATED_BODY()
 
-    TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
-
-    /**
-     * 读取当前处理后输入帧
-     * @return 处理后输入帧
-     */
-    const FBBBProcessedInputFrame &GetProcessedInput() const
-    {
-        return ProcessedInput;
-    }
-
-    /**
-     * 读取上一轮处理后输入帧
-     * @return 上一轮处理后输入帧
-     */
-    const FBBBProcessedInputFrame &GetLastProcessedInput() const
-    {
-        return LastProcessedInput;
-    }
-
-    /**
-     * 读取开火松开宽限剩余时间
-     * @return 宽限剩余秒数
-     */
-    float GetFireRaisedGraceTimer() const
-    {
-        return FireRaisedGraceTimer;
-    }
-
-    /**
-     * 读取移动闪断缓冲剩余时间
-     * @return 缓冲剩余秒数
-     */
-    float GetMoveFlickerBufferTimer() const
-    {
-        return MoveFlickerBufferTimer;
-    }
-
-    /**
-     * 读取输入处理帧序号
-     * @return 帧序号
-     */
-    int32 GetFrameCounter() const
-    {
-        return FrameCounter;
-    }
-
-    /**
-     * 提交本帧处理后输入与容错计时状态
-     * @param Processed	处理后输入帧
-     * @param InFireRaisedGraceTimer	开火松开宽限计时
-     * @param InMoveFlickerBufferTimer	移动闪断缓冲计时
-     * @param InFrameCounter	帧序号
-     */
-    void CommitProcessedInput(
-        const FBBBProcessedInputFrame &Processed,
-        float InFireRaisedGraceTimer,
-        float InMoveFlickerBufferTimer,
-        int32 InFrameCounter)
-    {
-        ProcessedInput = Processed;
-        LastProcessedInput = Processed;
-        FireRaisedGraceTimer = InFireRaisedGraceTimer;
-        MoveFlickerBufferTimer = InMoveFlickerBufferTimer;
-        FrameCounter = InFrameCounter;
-    }
-    
 private:
-
+    friend class FBBBCharacterInput;
     friend class FBBBInputPipeline;
-    friend class FBBBCharacterExternalAPI;
-    friend class FBBBCharacterInitializer;
-
-    /** 待消费通知跨帧保留，帧末清理不得清除此队列 */
-    TArray<FBBBCharacterReloadAnimationInput> PendingReloadInputs;
-    friend struct FBBBCharacterRuntimeData;
-
-    //保存增强输入回调直接写入的原始输入
-    FBBBInputRawData RawInputData;
+    friend class FBBBArbitrationPipeline;
+    friend class FBBBExecutionPipeline;
 
     UPROPERTY()
-    FBBBProcessedInputFrame ProcessedInput;
-    //上一轮的
-    FBBBProcessedInputFrame LastProcessedInput;
-
-    //开火松开后的短时宽限计时
-    float FireRaisedGraceTimer = 0.0f;
-    //移动轴短时归零的容错计时
-    float MoveFlickerBufferTimer = 0.0f;
-
-    //输入处理次数生成的帧序号
-    int32 FrameCounter = 0;
+    FBBBCharacterControlInput Control;
+    UPROPERTY()
+    FBBBCharacterControlInput FrameControl;
+    UPROPERTY()
+    FBBBInputBatch Pending;
+    UPROPERTY()
+    FBBBInputBatch Frame;
 };

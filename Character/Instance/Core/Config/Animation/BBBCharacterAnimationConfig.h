@@ -29,23 +29,4 @@ struct FBBBCharacterAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Facing", meta = (ClampMin = "0.0"))
     float MaxTurnRateChangeSpeed = 720.0f;
 
-    /** 前向 Dash 全身蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
-    TObjectPtr<UAnimMontage> DashForwardMontage = nullptr;
-
-    /** 后向 Dash 全身蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
-    TObjectPtr<UAnimMontage> DashBackwardMontage = nullptr;
-
-    /** 左向 Dash 全身蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
-    TObjectPtr<UAnimMontage> DashLeftMontage = nullptr;
-
-    /** 右向 Dash 全身蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
-    TObjectPtr<UAnimMontage> DashRightMontage = nullptr;
-
-    /** 滑铲全身蒙太奇 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Actions")
-    TObjectPtr<UAnimMontage> SlideMontage = nullptr;
 };

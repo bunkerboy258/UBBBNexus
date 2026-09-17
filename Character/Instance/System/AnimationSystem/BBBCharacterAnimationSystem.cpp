@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Intent/Definition/BBBIntentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterControlState.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationSystem::Initialize(
@@ -17,7 +17,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     FBBBAnimationRuntimeData &InAnimationData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
-    const FBBBIntentRuntimeData &InIntentData,
     const FBBBCharacterAnimationConfig &InAnimationConfig)
 {
     Character = &InCharacter;
@@ -26,7 +25,6 @@ void FBBBCharacterAnimationSystem::Initialize(
     AnimationData = &InAnimationData;
     EquipmentState = &InEquipmentState;
     WorldData = &InWorldData;
-    IntentData = &InIntentData;
     AnimationConfig = &InAnimationConfig;
 }
 
@@ -42,7 +40,6 @@ void FBBBCharacterAnimationSystem::Update()
             && EquipmentState
             && CharacterMesh
             && WorldData
-            && IntentData
             && AnimationConfig,
         TEXT("[UBBBC]Animation system update failed because dependencies are null")))
     {
@@ -69,32 +66,6 @@ void FBBBCharacterAnimationSystem::Update()
         *AnimInstance,
         *AnimationData);
 
-    if (IntentData->WantsDash())
-    {
-        // 根据移动输入选择对应方向的冲刺动画
-        const FVector2D MoveInput = IntentData->GetMoveInput();
-        UAnimMontage *DashMontage = AnimationConfig->DashForwardMontage;
-
-        if (FMath::Abs(MoveInput.X) > FMath::Abs(MoveInput.Y))
-        {
-            DashMontage = MoveInput.X < 0.0f
-                ? AnimationConfig->DashLeftMontage
-                : AnimationConfig->DashRightMontage;
-        }
-
-        if (MoveInput.Y < -0.5f)
-        {
-            DashMontage = AnimationConfig->DashBackwardMontage;
-        }
-
-        AnimInstance->PlayMovementActionMontage(DashMontage);
-    }
-
-    if (IntentData->WantsSlide())
-    {
-        // 滑铲意图触发一次滑铲动画
-        AnimInstance->PlayMovementActionMontage(AnimationConfig->SlideMontage);
-    }
     // 在移动完成后采集角色动画事实
     FactProcessor.Update(
         *Character,
