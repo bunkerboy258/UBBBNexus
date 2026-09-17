@@ -1,5 +1,7 @@
 # 装备 API 与动画驱动换弹
 
+`ABBBEquipment` 位于 `Equipment/` 根目录；装备实例的 Core、ExternalAPI、Pipeline、Runtime 和 System 位于 `Equipment/Instance/`。`Catalog/` 保留在根目录。角色采用同样的 `Character/BBBCharacter` 与 `Character/Instance/` 结构。
+
 角色向 `FBBBEquipmentExternalAPI` 提交 Equip、Fire、Reload、DetachMagazine、LoadMagazine、CancelReload 请求，内部统一写入有序 Input 队列。API 入队不表示请求已经成功；系统 Processor 完成裁决和执行后，才通过角色 ExternalAPI 发布事件与后坐力。`SubmitCancelPendingActions()` 取消它之前尚未执行的操作，并取消未完成的换弹。
 
 ## 更新顺序

@@ -1,0 +1,42 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Animation/BBBCharacterAnimationConfig.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Camera/BBBCameraConfig.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Equipment/BBBEquipmentConfig.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Input/BBBInputConfig.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Locomotion/BBBLocomotionConfig.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Network/BBBNetworkConfig.h"
+#include "BBBCharacterConfig.generated.h"
+
+USTRUCT(BlueprintType)
+//聚合角色全部可编辑运行配置
+struct FBBBCharacterConfig
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterInputConfig Input;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterLocomotionConfig Locomotion;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBAimConfig Aim;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBAimAnimationConfig AimAnimation;
+
+    /** 角色动画事实识别配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterAnimationConfig Animation;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterCameraConfig Camera;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterEquipmentConfig Equipment;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    FBBBCharacterNetworkConfig Network;
+};
