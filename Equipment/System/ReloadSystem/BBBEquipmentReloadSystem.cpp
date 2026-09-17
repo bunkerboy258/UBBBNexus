@@ -1,40 +1,58 @@
 #include "BBBWork/UBBBNexus/Equipment/System/ReloadSystem/BBBEquipmentReloadSystem.h"
+
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Definition/BBBEquipmentFragmentContexts.h"
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 
 bool FBBBEquipmentReloadSystem::Begin(ABBBEquipmentInstance &Instance, const int32 Sequence) const
 {
-    if (!ensureMsgf(Instance.Definition && Instance.CharacterAPI, TEXT("[UBBBE]Reload dependencies are invalid")))
+    if (!ensureMsgf(Instance.Definition && Instance.CharacterAPI && Instance.Definition->ReloadFragment.IsValid(),
+        TEXT("[UBBBE]Reload dependencies are invalid")))
     {
         return false;
     }
 
-    if (!Instance.CharacterAPI->SubmitEquipmentMontage(Instance.Definition->ReloadConfig.Montage, 1.0f, Sequence, true))
+    FBBBEquipmentReloadContext Context{
+        Instance.RuntimeData, *Instance.CharacterAPI, Instance.Definition->AmmoConfig, Sequence};
+    return Instance.Definition->ReloadFragment.Get().Begin(Context);
+}
+
+bool FBBBEquipmentReloadSystem::DetachMagazine(ABBBEquipmentInstance &Instance, const int32 Sequence) const
+{
+    if (!ensureMsgf(Instance.Definition && Instance.CharacterAPI && Instance.Definition->ReloadFragment.IsValid(),
+        TEXT("[UBBBE]Reload detach dependencies are invalid")))
     {
         return false;
     }
 
-    Instance.RuntimeData.Reload.bIsReloading = true;
-    Instance.RuntimeData.Reload.bMagazineDetached = false;
-    Instance.RuntimeData.Reload.Sequence = Sequence;
-    return true;
+    FBBBEquipmentReloadContext Context{
+        Instance.RuntimeData, *Instance.CharacterAPI, Instance.Definition->AmmoConfig, Sequence};
+    return Instance.Definition->ReloadFragment.Get().DetachMagazine(Context);
 }
 
-
-void FBBBEquipmentReloadSystem::DetachMagazine(FBBBEquipmentRuntimeData &Runtime) const
+bool FBBBEquipmentReloadSystem::LoadMagazine(ABBBEquipmentInstance &Instance, const int32 Sequence) const
 {
-    Runtime.Ammo.LoadedAmmo = 0;
-    Runtime.Reload.bMagazineDetached = true;
+    if (!ensureMsgf(Instance.Definition && Instance.CharacterAPI && Instance.Definition->ReloadFragment.IsValid(),
+        TEXT("[UBBBE]Reload load dependencies are invalid")))
+    {
+        return false;
+    }
+
+    FBBBEquipmentReloadContext Context{
+        Instance.RuntimeData, *Instance.CharacterAPI, Instance.Definition->AmmoConfig, Sequence};
+    return Instance.Definition->ReloadFragment.Get().LoadMagazine(Context);
 }
 
-void FBBBEquipmentReloadSystem::LoadMagazine(FBBBEquipmentRuntimeData &Runtime, const FBBBEquipmentAmmoConfig &Config) const
+bool FBBBEquipmentReloadSystem::Cancel(ABBBEquipmentInstance &Instance, const int32 Sequence) const
 {
-    Runtime.Ammo.LoadedAmmo = Config.AmmoCapacity;
-    Runtime.Reload.bIsReloading = false;
-}
+    if (!ensureMsgf(Instance.Definition && Instance.CharacterAPI && Instance.Definition->ReloadFragment.IsValid(),
+        TEXT("[UBBBE]Reload cancel dependencies are invalid")))
+    {
+        return false;
+    }
 
-void FBBBEquipmentReloadSystem::Cancel(FBBBEquipmentRuntimeData &Runtime) const
-{
-    Runtime.Reload.bIsReloading = false;
+    FBBBEquipmentReloadContext Context{
+        Instance.RuntimeData, *Instance.CharacterAPI, Instance.Definition->AmmoConfig, Sequence};
+    return Instance.Definition->ReloadFragment.Get().Cancel(Context);
 }

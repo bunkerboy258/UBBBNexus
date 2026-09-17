@@ -16,7 +16,7 @@
 
 ## 蒙太奇资产配置
 
-在装备配置指定的换弹蒙太奇上添加两个 **Montage Notify**，使用标准 Play Montage Notify 类型：
+在装备配置的 `ReloadFragment` 指定的换弹蒙太奇上添加两个 **Montage Notify**，使用标准 Play Montage Notify 类型：
 
 - 卸下弹夹关键帧：Notify Name 为 `BBB.Reload.Start`
 - 装填弹夹关键帧：Notify Name 为 `BBB.Reload.End`
@@ -36,7 +36,7 @@
 
 ## 弹药与配置
 
-`UBBBEquipmentDefinition` 仍由实例引用，目录接受该类型及其派生配置对象。新增 `AmmoConfig.AmmoCapacity`，默认 30；初始化装满。成功开火扣 1，卸下清空，装填补满当前配置容量。当前没有备用弹药、实体弹匣或拾取逻辑。
+`UBBBEquipmentDefinition` 仍由实例引用，目录接受该类型及其派生配置对象。装备、开火、换弹分别由 `EquipFragment`、`FireFragment`、`ReloadFragment` 选择实现并保存配置；默认实现为标准挂接、单投射物开火和弹夹换弹。`AmmoConfig.AmmoCapacity` 默认 30，初始化装满。成功开火扣 1，卸下清空，装填补满当前配置容量。当前没有备用弹药、实体弹匣或拾取逻辑。
 
 装备内部仲裁处理弹药不足、满弹换弹、开火间隔、重复换弹及阶段乱序。角色装备处理器不读取弹药来裁决。
 
@@ -48,4 +48,4 @@
 
 已删除装备动作通用 Result、装备／换弹计时参数、计时动画 getter、`TryGetWeaponReloading` 和瞄准 IK 的计时锁权重。使用这些节点的蓝图需要移除旧引用。新增动画事实 getter：`GetLoadedAmmo`、`GetAmmoCapacity`。
 
-自动化测试筛选：`BBB.Equipment`。覆盖弹药／换弹仲裁、阶段执行与取消，以及装备和网格的 Tick 分组。
+`BBBEquipmentReloadTests.cpp` 已按要求删除。代码编译不代表编辑器内配置已经迁移；旧配置字段不会自动写入三个片段，需在装备数据资产中设置片段类型并核对原值。

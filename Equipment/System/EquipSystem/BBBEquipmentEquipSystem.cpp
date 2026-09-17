@@ -3,6 +3,9 @@
 #include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Definition/BBBEquipmentFragmentContexts.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Fire/BBBEquipmentFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Equip/BBBEquipmentEquipFragment.h"
 #include "BBBWork/UBBBNexus/Equipment/Pipeline/Execution/BBBEquipmentCommandExecutor.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -16,45 +19,20 @@ bool FBBBEquipmentEquipSystem::Activate(ABBBEquipmentInstance &Instance) const
 
     USkeletalMeshComponent *CharacterMesh = Instance.HolderMesh.Get();
     USkeletalMeshComponent *WeaponMesh = Instance.EquipmentSkeletalMesh;
-    UBBBEquipmentDefinition *Definition = Instance.Definition;
-    if (!ensureMsgf(
-        CharacterMesh && WeaponMesh && Definition && Definition->EquipmentMesh && Definition->EquipmentAnimationClass,
+    const UBBBEquipmentDefinition *Definition = Instance.Definition;
+    if (!ensureMsgf(CharacterMesh && WeaponMesh && Definition && Instance.CharacterAPI
+        && Definition->EquipFragment.IsValid() && Definition->FireFragment.IsValid(),
         TEXT("[UBBBE]Equipment activation dependencies are invalid")))
     {
         return false;
     }
 
-    if (!ensureMsgf(
-        CharacterMesh->DoesSocketExist(Instance.AttachmentSocketName),
-        TEXT("[UBBBE]Character equipment attachment socket '%s' is missing"),
-        *Instance.AttachmentSocketName.ToString()))
+    FBBBEquipmentEquipContext Context{
+        Instance, *CharacterMesh, *WeaponMesh, Instance.RuntimeData.Equip,
+        Instance.AttachmentSocketName, Definition->FireFragment.Get().GetMuzzleSocketName()};
+    if (!Definition->EquipFragment.Get().Activate(Context))
     {
         return false;
-    }
-
-    Instance.AttachToComponent(
-        CharacterMesh,
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        Instance.AttachmentSocketName);
-    Instance.SetActorRelativeTransform(Definition->EquipConfig.SpawnOffset);
-    Instance.SetActorHiddenInGame(false);
-
-    const FName ReferenceBone = CharacterMesh->GetSocketBoneName(Instance.AttachmentSocketName);
-    const FName MuzzleSocket = Definition->FireConfig.MuzzleSocketName;
-    Instance.RuntimeData.Equip.bHasValidAimSource = ReferenceBone != NAME_None
-        && CharacterMesh->GetBoneIndex(ReferenceBone) != INDEX_NONE
-        && WeaponMesh->DoesSocketExist(MuzzleSocket);
-    Instance.RuntimeData.Equip.AimSourceRightHandBoneSpace = FTransform::Identity;
-    if (Instance.RuntimeData.Equip.bHasValidAimSource)
-    {
-        const FTransform SocketWorld = WeaponMesh->GetSocketTransform(MuzzleSocket, RTS_World);
-        const FTransform BoneWorld = CharacterMesh->GetBoneTransform(ReferenceBone, RTS_World);
-        Instance.RuntimeData.Equip.AimSourceRightHandBoneSpace = SocketWorld.GetRelativeTransform(BoneWorld);
-    }
-
-    if (!ensureMsgf(Instance.RuntimeData.Equip.bHasValidAimSource, TEXT("[UBBBE]Equipment muzzle or right hand reference bone is missing")))
-    {
-        Instance.RuntimeData.Equip.AimSourceRightHandBoneSpace = FTransform::Identity;
     }
 
     Instance.bIsActive = true;
@@ -87,6 +65,10 @@ bool FBBBEquipmentEquipSystem::SubmitEquipMontage(ABBBEquipmentInstance &Instanc
         return false;
     }
 
-    UAnimMontage *Montage = Instance.Definition->EquipConfig.EquipMontage;
-    return !Montage || Instance.CharacterAPI->SubmitEquipmentMontage(Montage, 1.0f, Sequence);
+    if (!ensureMsgf(Instance.Definition->EquipFragment.IsValid(), TEXT("[UBBBE]Equip fragment is missing")))
+    {
+        return false;
+    }
+
+    return Instance.Definition->EquipFragment.Get().SubmitMontage(*Instance.CharacterAPI, Sequence);
 }

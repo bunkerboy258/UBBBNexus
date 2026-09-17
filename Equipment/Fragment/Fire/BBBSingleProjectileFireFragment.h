@@ -1,19 +1,27 @@
 #pragma once
 
-#include "CoreMinimal.h"
-#include "BBBEquipmentFireConfig.generated.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Fire/BBBEquipmentFireFragment.h"
+#include "BBBSingleProjectileFireFragment.generated.h"
 
 class ABBBBulletActor;
 class UAnimMontage;
 class USoundBase;
 
-/** 单投射物开火的静态配置 */
+/** 单投射物开火实现 */
 USTRUCT(BlueprintType)
-struct ABBB_EVAC_API FBBBEquipmentFireConfig
+struct ABBB_EVAC_API FBBBSingleProjectileFireFragment final : public FBBBEquipmentFireFragment
 {
     GENERATED_BODY()
 
-    FBBBEquipmentFireConfig();
+    FBBBSingleProjectileFireFragment();
+
+    virtual bool CanFire(const FBBBEquipmentRuntimeData &Runtime, float WorldTime) const override;
+    virtual bool Fire(FBBBEquipmentFireContext &Context) const override;
+
+    virtual FName GetMuzzleSocketName() const override
+    {
+        return MuzzleSocketName;
+    }
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ClampMin = "0.01"))
     float FireInterval = 0.2f;

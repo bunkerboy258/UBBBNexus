@@ -1,11 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Config/Equip/BBBEquipmentEquipConfig.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Config/Fire/BBBEquipmentFireConfig.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Config/Reload/BBBEquipmentReloadConfig.h"
 #include "BBBWork/UBBBNexus/Equipment/Core/Config/Ammo/BBBEquipmentAmmoConfig.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Equip/BBBEquipmentEquipFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Fire/BBBEquipmentFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/Fragment/Reload/BBBEquipmentReloadFragment.h"
 #include "Engine/DataAsset.h"
+#include "StructUtils/InstancedStruct.h"
 #include "BBBEquipmentDefinition.generated.h"
 
 class UAnimInstance;
@@ -19,6 +20,8 @@ class ABBB_EVAC_API UBBBEquipmentDefinition : public UPrimaryDataAsset
     GENERATED_BODY()
 
 public:
+    UBBBEquipmentDefinition();
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
     FName EquipmentId;
 
@@ -40,14 +43,14 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Visual")
     TObjectPtr<USkeletalMesh> EquipmentMesh = nullptr;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip")
-    FBBBEquipmentEquipConfig EquipConfig;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Equip", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBEquipmentEquipFragment> EquipFragment;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire")
-    FBBBEquipmentFireConfig FireConfig;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Fire", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBEquipmentFireFragment> FireFragment;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Reload")
-    FBBBEquipmentReloadConfig ReloadConfig;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Reload", meta = (ExcludeBaseStruct))
+    TInstancedStruct<FBBBEquipmentReloadFragment> ReloadFragment;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Ammo")
     FBBBEquipmentAmmoConfig AmmoConfig;

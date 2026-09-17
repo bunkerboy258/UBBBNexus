@@ -39,9 +39,10 @@ void FBBBEquipmentUpdatePipeline::Update(
                 static_cast<int32>(Command.Type), Command.Sequence);
         }
 
-        if (Command.Type == EBBBEquipmentCommandType::Reload && !Instance.Definition->ReloadConfig.Montage)
+        if (Command.Type == EBBBEquipmentCommandType::Reload
+            && !Instance.Definition->ReloadFragment.IsValid())
         {
-            UE_LOG(LogTemp, Warning, TEXT("[UBBBE]Reload rejected: no montage configured"));
+            UE_LOG(LogTemp, Warning, TEXT("[UBBBE]Reload rejected: no reload fragment configured"));
         }
     }
 

@@ -17,11 +17,11 @@ bool FBBBEquipmentActionArbitrator::CanExecute(
     case EBBBEquipmentCommandType::Equip:
         return true;
     case EBBBEquipmentCommandType::Fire:
-        return !Runtime.Reload.bIsReloading && Runtime.Ammo.LoadedAmmo > 0
-            && WorldTime - Runtime.Fire.LastFireTimeSeconds >= FMath::Max(Definition.FireConfig.FireInterval, 0.01f);
+        return !Runtime.Reload.bIsReloading && Definition.FireFragment.IsValid()
+            && Definition.FireFragment.Get().CanFire(Runtime, WorldTime);
     case EBBBEquipmentCommandType::Reload:
-        return !Runtime.Reload.bIsReloading && Definition.ReloadConfig.Montage
-            && Runtime.Ammo.LoadedAmmo < Definition.AmmoConfig.AmmoCapacity;
+        return !Runtime.Reload.bIsReloading && Definition.ReloadFragment.IsValid()
+            && Definition.ReloadFragment.Get().CanReload(Runtime, Definition.AmmoConfig);
     case EBBBEquipmentCommandType::DetachMagazine:
         return Runtime.Reload.bIsReloading && Runtime.Reload.Sequence == Command.Sequence
             && !Runtime.Reload.bMagazineDetached;

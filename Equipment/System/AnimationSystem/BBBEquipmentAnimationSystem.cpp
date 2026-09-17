@@ -34,20 +34,25 @@ void FBBBEquipmentAnimationSystem::Update(
         ? Instance.RuntimeData.Equip.AimSourceRightHandBoneSpace
         : FTransform::Identity;
 
-    const FBBBEquipmentEquipConfig &Config = Definition->EquipConfig;
+    if (!ensureMsgf(Definition->EquipFragment.IsValid(), TEXT("[UBBBE]Equip fragment is missing")))
+    {
+        return;
+    }
+
+    const FBBBEquipmentEquipFragment &Config = Definition->EquipFragment.Get();
     Facts.bHasLeftHandTarget = CharacterMesh->GetBoneIndex(TEXT("hand_r")) != INDEX_NONE
-        && WeaponMesh->DoesSocketExist(Config.LeftHandSocketName);
+        && WeaponMesh->DoesSocketExist(Config.GetLeftHandSocketName());
     Facts.LeftHandTargetHandRSpace = FVector::ZeroVector;
     if (Facts.bHasLeftHandTarget)
     {
         const FVector SocketPosition = WeaponMesh->GetSocketTransform(
-            Config.LeftHandSocketName,
+            Config.GetLeftHandSocketName(),
             RTS_Component).GetLocation();
         const FVector TargetWorld = WeaponMesh->GetComponentTransform().TransformPosition(
-            SocketPosition + Config.LeftHandSocketOffset);
+            SocketPosition + Config.GetLeftHandSocketOffset());
         Facts.LeftHandTargetHandRSpace = CharacterMesh->GetBoneTransform(
             TEXT("hand_r"),
-            RTS_World).InverseTransformPosition(TargetWorld) + Config.LeftHandIKOffset;
+            RTS_World).InverseTransformPosition(TargetWorld) + Config.GetLeftHandIKOffset();
     }
 
     if (!ensureMsgf(Facts.bHasLeftHandTarget, TEXT("[UBBBE]Weapon left hand socket or character hand_r bone is missing")))

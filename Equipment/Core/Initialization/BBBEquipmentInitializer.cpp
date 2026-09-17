@@ -29,6 +29,23 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipmentInstance &Instance)
         return false;
     }
 
+    if (!ensureMsgf(Definition->EquipFragment.IsValid() && Definition->FireFragment.IsValid()
+        && Definition->ReloadFragment.IsValid(),
+        TEXT("[UBBBE]Equipment '%s' must configure equip, fire and reload fragments"),
+        *Definition->EquipmentId.ToString()))
+    {
+        return false;
+    }
+
+    if (!ensureMsgf(Definition->EquipFragment.GetScriptStruct() != FBBBEquipmentEquipFragment::StaticStruct()
+        && Definition->FireFragment.GetScriptStruct() != FBBBEquipmentFireFragment::StaticStruct()
+        && Definition->ReloadFragment.GetScriptStruct() != FBBBEquipmentReloadFragment::StaticStruct(),
+        TEXT("[UBBBE]Equipment '%s' must use concrete fragments"),
+        *Definition->EquipmentId.ToString()))
+    {
+        return false;
+    }
+
     WeaponMesh->SetSkeletalMeshAsset(Definition->EquipmentMesh);
     WeaponMesh->SetAnimInstanceClass(Definition->EquipmentAnimationClass);
     Instance.RuntimeData = FBBBEquipmentRuntimeData();

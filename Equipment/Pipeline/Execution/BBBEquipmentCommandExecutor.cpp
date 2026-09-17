@@ -34,15 +34,24 @@ void FBBBEquipmentCommandExecutor::Execute(ABBBEquipmentInstance &Instance, cons
         Event.Phase = EBBBCharacterEquipmentPhase::ReloadStarted;
         break;
     case EBBBEquipmentCommandType::DetachMagazine:
-        Instance.ReloadSystem.DetachMagazine(Instance.RuntimeData);
+        if (!Instance.ReloadSystem.DetachMagazine(Instance, Command.Sequence))
+        {
+            return;
+        }
         Event.Phase = EBBBCharacterEquipmentPhase::MagazineDetached;
         break;
     case EBBBEquipmentCommandType::LoadMagazine:
-        Instance.ReloadSystem.LoadMagazine(Instance.RuntimeData, Instance.Definition->AmmoConfig);
+        if (!Instance.ReloadSystem.LoadMagazine(Instance, Command.Sequence))
+        {
+            return;
+        }
         Event.Phase = EBBBCharacterEquipmentPhase::MagazineLoaded;
         break;
     case EBBBEquipmentCommandType::CancelReload:
-        Instance.ReloadSystem.Cancel(Instance.RuntimeData);
+        if (!Instance.ReloadSystem.Cancel(Instance, Command.Sequence))
+        {
+            return;
+        }
         Event.Phase = EBBBCharacterEquipmentPhase::ReloadCancelled;
         break;
     }
