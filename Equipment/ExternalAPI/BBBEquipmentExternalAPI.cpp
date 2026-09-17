@@ -1,62 +1,77 @@
 #include "BBBWork/UBBBNexus/Equipment/ExternalAPI/BBBEquipmentExternalAPI.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Pipeline/Input/Definition/BBBEquipmentInputRuntimeData.h"
 
-void FBBBEquipmentExternalAPI::Initialize(ABBBEquipmentInstance &InInstance)
+void FBBBEquipmentExternalAPI::Initialize(FBBBEquipmentInputRuntimeData &InInput, const bool bInIsMirror)
 {
-    Instance = &InInstance;
+    Input = &InInput;
+    bIsMirror = bInIsMirror;
 }
 
-void FBBBEquipmentExternalAPI::Enqueue(const EBBBEquipmentCommandType Type, const int32 Sequence)
+void FBBBEquipmentExternalAPI::Enqueue(const EBBBEquipmentInputType Type, const int32 Sequence)
 {
-    if (!ensureMsgf(IsInGameThread() && Instance && Sequence > 0, TEXT("[UBBBE]Invalid equipment command input")))
+    if (!ensureMsgf(IsInGameThread() && Input
+        && (Sequence > 0 || Type == EBBBEquipmentInputType::CancelPendingActions),
+        TEXT("[UBBBE]Invalid equipment input")))
     {
         return;
     }
 
-    if (Instance->bIsMirror)
+    if (bIsMirror)
     {
         return;
     }
 
-    Instance->PendingCommands.Add({Type, Sequence});
+    FBBBEquipmentInput Entry;
+    Entry.Type = Type;
+    Entry.Sequence = Sequence;
+    Input->Pending.Add(MoveTemp(Entry));
 }
 
 void FBBBEquipmentExternalAPI::SubmitEquip(const int32 Sequence)
 {
-    Enqueue(EBBBEquipmentCommandType::Equip, Sequence);
+    Enqueue(EBBBEquipmentInputType::Equip, Sequence);
 }
 
 void FBBBEquipmentExternalAPI::SubmitFire(const int32 Sequence)
 {
-    Enqueue(EBBBEquipmentCommandType::Fire, Sequence);
+    Enqueue(EBBBEquipmentInputType::Fire, Sequence);
 }
 
 void FBBBEquipmentExternalAPI::SubmitReload(const int32 Sequence)
 {
-    Enqueue(EBBBEquipmentCommandType::Reload, Sequence);
+    Enqueue(EBBBEquipmentInputType::Reload, Sequence);
 }
 
 void FBBBEquipmentExternalAPI::SubmitDetachMagazine(const int32 Sequence)
 {
-    Enqueue(EBBBEquipmentCommandType::DetachMagazine, Sequence);
+    Enqueue(EBBBEquipmentInputType::DetachMagazine, Sequence);
 }
 
 void FBBBEquipmentExternalAPI::SubmitLoadMagazine(const int32 Sequence)
 {
-    Enqueue(EBBBEquipmentCommandType::LoadMagazine, Sequence);
+    Enqueue(EBBBEquipmentInputType::LoadMagazine, Sequence);
 }
 
 void FBBBEquipmentExternalAPI::SubmitCancelReload(const int32 Sequence)
 {
-    Enqueue(EBBBEquipmentCommandType::CancelReload, Sequence);
+    Enqueue(EBBBEquipmentInputType::CancelReload, Sequence);
+}
+
+void FBBBEquipmentExternalAPI::SubmitCancelPendingActions()
+{
+    Enqueue(EBBBEquipmentInputType::CancelPendingActions, INDEX_NONE);
 }
 
 void FBBBEquipmentExternalAPI::ApplySnapshot(const FBBBEquipmentActionEvent &Snapshot)
 {
-    if (!ensureMsgf(IsInGameThread() && Instance && Instance->bIsMirror, TEXT("[UBBBE]Snapshot input requires a mirror instance")))
+    if (!ensureMsgf(IsInGameThread() && Input && bIsMirror, TEXT("[UBBBE]Snapshot input requires a mirror instance")))
     {
         return;
     }
 
-    Instance->PendingSnapshots.Add(Snapshot);
+    FBBBEquipmentInput Entry;
+    Entry.Type = EBBBEquipmentInputType::Snapshot;
+    Entry.Sequence = Snapshot.Sequence;
+    Entry.Snapshot = Snapshot;
+    Input->Pending.Add(MoveTemp(Entry));
 }

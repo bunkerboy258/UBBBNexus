@@ -1,10 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Config/Ammo/BBBEquipmentAmmoConfig.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragment/Equip/BBBEquipmentEquipFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragment/Fire/BBBEquipmentFireFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragment/Reload/BBBEquipmentReloadFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/System/EquipSystem/Fragment/BBBEquipmentEquipFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/System/FireSystem/Fragment/BBBEquipmentFireFragment.h"
+#include "BBBWork/UBBBNexus/Equipment/System/ReloadSystem/Fragment/BBBEquipmentReloadFragment.h"
 #include "Engine/DataAsset.h"
 #include "StructUtils/InstancedStruct.h"
 #include "BBBEquipmentDefinition.generated.h"
@@ -52,6 +51,4 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Reload", meta = (ExcludeBaseStruct))
     TInstancedStruct<FBBBEquipmentReloadFragment> ReloadFragment;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Ammo")
-    FBBBEquipmentAmmoConfig AmmoConfig;
 };

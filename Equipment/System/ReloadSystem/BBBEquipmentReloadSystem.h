@@ -1,17 +1,44 @@
 #pragma once
+
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/System/ReloadSystem/Processors/BBBEquipmentReloadProcessor.h"
+
 class ABBBEquipmentInstance;
+class FBBBCharacterExternalAPI;
+class UWorld;
+class USkeletalMeshComponent;
+struct FBBBEquipmentInputRuntimeData;
+struct FBBBEquipmentEquipRuntimeData;
+struct FBBBEquipmentFireRuntimeData;
+struct FBBBEquipmentReloadRuntimeData;
+struct FBBBEquipmentAnimationRuntimeData;
+struct FBBBEquipmentEquipFragment;
+struct FBBBEquipmentFireFragment;
+struct FBBBEquipmentReloadFragment;
+class FBBBEquipmentInitializer;
+class FBBBEquipmentUpdatePipeline;
 
 /** 执行已批准的换弹阶段 */
 class FBBBEquipmentReloadSystem final
 {
-public:
-    /** @return 是否成功发布换弹表现 */
-    bool Begin(ABBBEquipmentInstance &Instance, int32 Sequence) const;
-    /** 卸下弹夹并清空当前弹量 */
-    bool DetachMagazine(ABBBEquipmentInstance &Instance, int32 Sequence) const;
-    /** 装填弹夹并结束换弹 */
-    bool LoadMagazine(ABBBEquipmentInstance &Instance, int32 Sequence) const;
-    /** 取消换弹并保留已执行的弹药结果 */
-    bool Cancel(ABBBEquipmentInstance &Instance, int32 Sequence) const;
+private:
+    friend class FBBBEquipmentInitializer;
+    friend class FBBBEquipmentUpdatePipeline;
+
+    /** 注入本系统所需的数据与行为配置 */
+    void Initialize(FBBBEquipmentReloadRuntimeData &InData, FBBBEquipmentFireRuntimeData &InFire,
+        const FBBBEquipmentReloadFragment &InFragment, FBBBCharacterExternalAPI &InCharacterAPI,
+        FName InEquipmentId, bool bInIsMirror);
+
+    /** 更新本系统 */
+    void Update() const;
+
+    FBBBEquipmentReloadRuntimeData *Data = nullptr;
+    FBBBEquipmentFireRuntimeData *Fire = nullptr;
+    const FBBBEquipmentReloadFragment *Fragment = nullptr;
+    FBBBCharacterExternalAPI *CharacterAPI = nullptr;
+    FName EquipmentId;
+    bool bIsMirror = false;
+
+    FBBBEquipmentReloadProcessor Processor;
 };

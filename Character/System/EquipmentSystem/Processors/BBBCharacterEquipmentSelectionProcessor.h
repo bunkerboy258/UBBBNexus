@@ -30,7 +30,4 @@ public:
         FBBBCharacterEquipmentState &EquipmentState,
         FBBBCharacterEquipmentEvents &EquipmentEvents) const;
 
-private:
-    static void UnbindWeaponAnimation(USkeletalMeshComponent &CharacterMesh, ABBBEquipmentInstance &Equipment);
-    static bool BindWeaponAnimation(USkeletalMeshComponent &CharacterMesh, ABBBEquipmentInstance &Equipment);
 };

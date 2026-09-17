@@ -5,7 +5,8 @@
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
-bool FBBBEquipmentInitializer::Initialize(ABBBEquipmentInstance &Instance)
+bool FBBBEquipmentInitializer::Initialize(ABBBEquipmentInstance &Instance,
+    USkeletalMeshComponent &CharacterMesh, FBBBCharacterExternalAPI &CharacterAPI)
 {
     UBBBEquipmentDefinition *Definition = Instance.Definition;
     USkeletalMeshComponent *WeaponMesh = Instance.EquipmentSkeletalMesh;
@@ -49,11 +50,27 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipmentInstance &Instance)
     WeaponMesh->SetSkeletalMeshAsset(Definition->EquipmentMesh);
     WeaponMesh->SetAnimInstanceClass(Definition->EquipmentAnimationClass);
     Instance.RuntimeData = FBBBEquipmentRuntimeData();
-    if (!ensureMsgf(Definition->AmmoConfig.AmmoCapacity > 0, TEXT("[UBBBE]Ammo capacity must be positive")))
+    if (!ensureMsgf(Definition->FireFragment.Get().AmmoCapacity > 0, TEXT("[UBBBE]Ammo capacity must be positive")))
     {
         return false;
     }
-    Instance.RuntimeData.Ammo.LoadedAmmo = Definition->AmmoConfig.AmmoCapacity;
-    Instance.AnimationSystem.Reset();
+    FBBBEquipmentRuntimeData &Runtime = Instance.RuntimeData;
+    Runtime.Fire.AmmoCapacity = Definition->FireFragment.Get().AmmoCapacity;
+    Runtime.Fire.LoadedAmmo = Runtime.Fire.AmmoCapacity;
+    const FName EquipmentId = Definition->EquipmentId;
+
+    Instance.ExternalAPI.Initialize(Runtime.Input, Instance.bIsMirror);
+    Instance.InputPipeline.Initialize(Runtime.Input, Runtime.Equip, Runtime.Fire, Runtime.Reload,
+        CharacterAPI, EquipmentId, Instance.bIsMirror);
+    Instance.EquipSystem.Initialize(Runtime.Equip, Runtime.Fire, Definition->EquipFragment.Get(),
+        CharacterAPI, EquipmentId, Instance.bIsMirror);
+    Instance.ReloadSystem.Initialize(Runtime.Reload, Runtime.Fire, Definition->ReloadFragment.Get(),
+        CharacterAPI, EquipmentId, Instance.bIsMirror);
+    Instance.FireSystem.Initialize(Instance, *WeaponMesh, Runtime.Fire, Runtime.Reload,
+        Definition->FireFragment.Get(), CharacterAPI, EquipmentId, Instance.bIsMirror);
+    Instance.AnimationSystem.Initialize(CharacterMesh, *WeaponMesh, Runtime.Animation, Runtime.Fire,
+        Definition->EquipFragment.Get(), Definition->FireFragment.Get());
+    Instance.UpdatePipeline.Initialize(Runtime, Instance.InputPipeline, Instance.EquipSystem,
+        Instance.ReloadSystem, Instance.FireSystem, Instance.AnimationSystem);
     return true;
 }

@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Shutdown/BBBCharacterShutdown.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacterInstance.h"
-#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
@@ -26,21 +26,6 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacterInstance &Character)
     {
         Instances.Add(ActiveInstance);
 
-        USkeletalMeshComponent *WeaponMesh = ActiveInstance->GetEquipmentSkeletalMesh();
-        if (CharacterMesh && WeaponMesh)
-        {
-            WeaponMesh->PrimaryComponentTick.RemovePrerequisite(
-                CharacterMesh,
-                CharacterMesh->PrimaryComponentTick);
-        }
-
-        UBBBAnimInstance *CharacterAnim = CharacterMesh
-            ? Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance())
-            : nullptr;
-        if (CharacterAnim)
-        {
-            CharacterAnim->BindWeaponAnimInstance(nullptr);
-        }
     }
 
     if (ABBBEquipmentInstance *DesiredInstance = EquipmentData.Equipment.GetDesiredMainHandInstance())
@@ -63,7 +48,7 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacterInstance &Character)
     {
         if (IsValid(Instance))
         {
-            Instance->Shutdown();
+            FBBBCharacterEquipmentLifecycleProcessor::Destroy(CharacterMesh, *Instance);
         }
     }
 }

@@ -23,9 +23,6 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
     bool bHasLeftHandTarget = false;
 
     UPROPERTY(BlueprintReadOnly)
-    bool bHasMainHandEquipment = false;
-
-    UPROPERTY(BlueprintReadOnly)
     int32 FireSequence = 0;
 
     UPROPERTY(BlueprintReadOnly)

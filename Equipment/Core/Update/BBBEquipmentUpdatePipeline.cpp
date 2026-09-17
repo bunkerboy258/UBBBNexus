@@ -1,55 +1,37 @@
 #include "BBBWork/UBBBNexus/Equipment/Core/Update/BBBEquipmentUpdatePipeline.h"
 
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Pipeline/Arbitration/BBBEquipmentActionArbitrator.h"
-#include "BBBWork/UBBBNexus/Equipment/Pipeline/Execution/BBBEquipmentCommandExecutor.h"
+#include "BBBWork/UBBBNexus/Equipment/Pipeline/Input/BBBEquipmentInputPipeline.h"
+#include "BBBWork/UBBBNexus/Equipment/Runtime/BBBEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/System/EquipSystem/BBBEquipmentEquipSystem.h"
+#include "BBBWork/UBBBNexus/Equipment/System/ReloadSystem/BBBEquipmentReloadSystem.h"
+#include "BBBWork/UBBBNexus/Equipment/System/FireSystem/BBBEquipmentFireSystem.h"
+#include "BBBWork/UBBBNexus/Equipment/System/AnimationSystem/BBBEquipmentAnimationSystem.h"
 
-void FBBBEquipmentUpdatePipeline::Update(
-    ABBBEquipmentInstance &Instance,
-    const float WorldTimeSeconds)
+void FBBBEquipmentUpdatePipeline::Initialize(
+    FBBBEquipmentRuntimeData &InRuntimeData, FBBBEquipmentInputPipeline &InInput,
+    FBBBEquipmentEquipSystem &InEquip, FBBBEquipmentReloadSystem &InReload,
+    FBBBEquipmentFireSystem &InFire, FBBBEquipmentAnimationSystem &InAnimation)
 {
-    if (!ensureMsgf(Instance.Definition, TEXT("[UBBBE]Equipment update has no definition")))
+    RuntimeData = &InRuntimeData;
+    Input = &InInput;
+    Equip = &InEquip;
+    Reload = &InReload;
+    Fire = &InFire;
+    Animation = &InAnimation;
+}
+
+void FBBBEquipmentUpdatePipeline::Update() const
+{
+    if (!ensureMsgf(RuntimeData && Input && Equip && Reload && Fire && Animation,
+        TEXT("[UBBBE]Update pipeline dependencies are invalid")))
     {
         return;
     }
 
-    TArray<FBBBEquipmentActionEvent> Snapshots = MoveTemp(Instance.PendingSnapshots);
-    Instance.PendingSnapshots.Reset();
-    for (const FBBBEquipmentActionEvent &Snapshot : Snapshots)
-    {
-        FBBBEquipmentCommandExecutor::ApplySnapshot(Instance, Snapshot);
-    }
-
-    TArray<FBBBEquipmentCommand> Commands = MoveTemp(Instance.PendingCommands);
-    Instance.PendingCommands.Reset();
-    for (const FBBBEquipmentCommand &Command : Commands)
-    {
-        if (FBBBEquipmentActionArbitrator::CanExecute(Command, Instance.RuntimeData,
-            *Instance.Definition, WorldTimeSeconds, Instance.bIsActive))
-        {
-            FBBBEquipmentCommandExecutor::Execute(Instance, Command);
-            continue;
-        }
-
-        if (Command.Type == EBBBEquipmentCommandType::DetachMagazine
-            || Command.Type == EBBBEquipmentCommandType::LoadMagazine)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[UBBBE]Rejected reload stage Type=%d Sequence=%d"),
-                static_cast<int32>(Command.Type), Command.Sequence);
-        }
-
-        if (Command.Type == EBBBEquipmentCommandType::Reload
-            && !Instance.Definition->ReloadFragment.IsValid())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[UBBBE]Reload rejected: no reload fragment configured"));
-        }
-    }
-
-    if (!Instance.bIsActive)
-    {
-        return;
-    }
-
-    Instance.AnimationSystem.Update(Instance, WorldTimeSeconds);
+    Input->Update();
+    Equip->Update();
+    Reload->Update();
+    Fire->Update();
+    Animation->Update();
+    RuntimeData->CleanFrame();
 }

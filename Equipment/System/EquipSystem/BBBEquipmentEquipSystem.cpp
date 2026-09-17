@@ -1,74 +1,24 @@
 #include "BBBWork/UBBBNexus/Equipment/System/EquipSystem/BBBEquipmentEquipSystem.h"
 
-#include "BBBWork/UBBBNexus/Character/ExternalAPI/BBBCharacterExternalAPI.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragment/Definition/BBBEquipmentFragmentContexts.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragment/Fire/BBBEquipmentFireFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Fragment/Equip/BBBEquipmentEquipFragment.h"
-#include "BBBWork/UBBBNexus/Equipment/Pipeline/Execution/BBBEquipmentCommandExecutor.h"
-#include "Animation/AnimMontage.h"
-#include "Components/SkeletalMeshComponent.h"
-
-bool FBBBEquipmentEquipSystem::Activate(ABBBEquipmentInstance &Instance) const
+void FBBBEquipmentEquipSystem::Initialize(FBBBEquipmentEquipRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
+        const FBBBEquipmentEquipFragment &InFragment, FBBBCharacterExternalAPI &InCharacterAPI,
+        FName InEquipmentId, bool bInIsMirror)
 {
-    if (Instance.bIsActive)
-    {
-        return true;
-    }
-
-    USkeletalMeshComponent *CharacterMesh = Instance.HolderMesh.Get();
-    USkeletalMeshComponent *WeaponMesh = Instance.EquipmentSkeletalMesh;
-    const UBBBEquipmentDefinition *Definition = Instance.Definition;
-    if (!ensureMsgf(CharacterMesh && WeaponMesh && Definition && Instance.CharacterAPI
-        && Definition->EquipFragment.IsValid() && Definition->FireFragment.IsValid(),
-        TEXT("[UBBBE]Equipment activation dependencies are invalid")))
-    {
-        return false;
-    }
-
-    FBBBEquipmentEquipContext Context{
-        Instance, *CharacterMesh, *WeaponMesh, Instance.RuntimeData.Equip,
-        Instance.AttachmentSocketName, Definition->FireFragment.Get().GetMuzzleSocketName()};
-    if (!Definition->EquipFragment.Get().Activate(Context))
-    {
-        return false;
-    }
-
-    Instance.bIsActive = true;
-    return true;
+    Data = &InData;
+    Fire = &InFire;
+    Fragment = &InFragment;
+    CharacterAPI = &InCharacterAPI;
+    EquipmentId = InEquipmentId;
+    bIsMirror = bInIsMirror;
 }
 
-void FBBBEquipmentEquipSystem::Deactivate(ABBBEquipmentInstance &Instance) const
+void FBBBEquipmentEquipSystem::Update() const
 {
-    if (!Instance.bIsMirror && Instance.RuntimeData.Reload.bIsReloading)
+    if (!ensureMsgf(Data && Fire && Fragment && CharacterAPI,
+        TEXT("[UBBBE]Equip update dependencies are invalid")))
     {
-        FBBBEquipmentCommand Command;
-        Command.Type = EBBBEquipmentCommandType::CancelReload;
-        Command.Sequence = Instance.RuntimeData.Reload.Sequence;
-        FBBBEquipmentCommandExecutor::Execute(Instance, Command);
-    }
-    Instance.PendingCommands.Reset();
-    Instance.RuntimeData.Equip = FBBBEquipmentEquipRuntimeData();
-    Instance.RuntimeData.Reload.bIsReloading = false;
-    Instance.bIsActive = false;
-    Instance.SetActorHiddenInGame(true);
-    Instance.DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-    Instance.AnimationSystem.Reset();
-}
-
-bool FBBBEquipmentEquipSystem::SubmitEquipMontage(ABBBEquipmentInstance &Instance, const int32 Sequence) const
-{
-    if (!ensureMsgf(Instance.bIsActive && Instance.Definition && Instance.CharacterAPI,
-        TEXT("[UBBBE]Equipment presentation dependencies are invalid")))
-    {
-        return false;
+        return;
     }
 
-    if (!ensureMsgf(Instance.Definition->EquipFragment.IsValid(), TEXT("[UBBBE]Equip fragment is missing")))
-    {
-        return false;
-    }
-
-    return Instance.Definition->EquipFragment.Get().SubmitMontage(*Instance.CharacterAPI, Sequence);
+    Processor.Update(*Data, *Fire, *Fragment, *CharacterAPI, EquipmentId, bIsMirror);
 }

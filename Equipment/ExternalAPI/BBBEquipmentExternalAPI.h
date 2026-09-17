@@ -1,8 +1,9 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Pipeline/Definition/BBBEquipmentCommand.h"
+#include "BBBWork/UBBBNexus/Equipment/Pipeline/Input/Definition/BBBEquipmentInput.h"
 
-class ABBBEquipmentInstance;
+class FBBBEquipmentInitializer;
+struct FBBBEquipmentInputRuntimeData;
 struct FBBBEquipmentActionEvent;
 
 /** 角色提交装备操作的唯一命令入口 */
@@ -58,16 +59,20 @@ public:
      */
     void ApplySnapshot(const FBBBEquipmentActionEvent &Snapshot);
 
-private:
-    friend class ABBBEquipmentInstance;
-
     /**
-     * 绑定装备实例
-     * @param InInstance	装备实例
+     * 取消此前尚未处理的操作及未结束的换弹
      * @return 无
      */
-    void Initialize(ABBBEquipmentInstance &InInstance);
+    void SubmitCancelPendingActions();
 
-    void Enqueue(EBBBEquipmentCommandType Type, int32 Sequence);
-    ABBBEquipmentInstance *Instance = nullptr;
+private:
+    friend class FBBBEquipmentInitializer;
+
+    /** 绑定外部输入接收区 */
+    void Initialize(FBBBEquipmentInputRuntimeData &InInput, bool bInIsMirror);
+
+    void Enqueue(EBBBEquipmentInputType Type, int32 Sequence);
+
+    FBBBEquipmentInputRuntimeData *Input = nullptr;
+    bool bIsMirror = false;
 };

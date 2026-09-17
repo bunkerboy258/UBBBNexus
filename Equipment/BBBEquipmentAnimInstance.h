@@ -47,13 +47,6 @@ public:
         return AnimationFacts.bHasLeftHandTarget;
     }
 
-    /** @return 本帧是否持有主手装备 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
-    bool HasMainHandEquipment() const
-    {
-        return AnimationFacts.bHasMainHandEquipment;
-    }
-
     /** @return 最近一次开火序号 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
     int32 GetFireSequence() const

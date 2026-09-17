@@ -1,12 +1,47 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/System/FireSystem/Processors/BBBEquipmentFireProcessor.h"
 
 class ABBBEquipmentInstance;
+class FBBBCharacterExternalAPI;
+class UWorld;
+class USkeletalMeshComponent;
+struct FBBBEquipmentInputRuntimeData;
+struct FBBBEquipmentEquipRuntimeData;
+struct FBBBEquipmentFireRuntimeData;
+struct FBBBEquipmentReloadRuntimeData;
+struct FBBBEquipmentAnimationRuntimeData;
+struct FBBBEquipmentEquipFragment;
+struct FBBBEquipmentFireFragment;
+struct FBBBEquipmentReloadFragment;
+class FBBBEquipmentInitializer;
+class FBBBEquipmentUpdatePipeline;
 
 /** 单投射物开火与表现系统 */
-class ABBB_EVAC_API FBBBEquipmentFireSystem final
+class FBBBEquipmentFireSystem final
 {
-public:
-    bool Fire(ABBBEquipmentInstance &Instance, int32 Sequence) const;
+private:
+    friend class FBBBEquipmentInitializer;
+    friend class FBBBEquipmentUpdatePipeline;
+
+    /** 注入本系统所需的数据与行为配置 */
+    void Initialize(ABBBEquipmentInstance &InInstance, USkeletalMeshComponent &InWeaponMesh,
+        FBBBEquipmentFireRuntimeData &InData, const FBBBEquipmentReloadRuntimeData &InReload,
+        const FBBBEquipmentFireFragment &InFragment, FBBBCharacterExternalAPI &InCharacterAPI,
+        FName InEquipmentId, bool bInIsMirror);
+
+    /** 更新本系统 */
+    void Update() const;
+
+    ABBBEquipmentInstance *Instance = nullptr;
+    USkeletalMeshComponent *WeaponMesh = nullptr;
+    FBBBEquipmentFireRuntimeData *Data = nullptr;
+    const FBBBEquipmentReloadRuntimeData *Reload = nullptr;
+    const FBBBEquipmentFireFragment *Fragment = nullptr;
+    FBBBCharacterExternalAPI *CharacterAPI = nullptr;
+    FName EquipmentId;
+    bool bIsMirror = false;
+
+    FBBBEquipmentFireProcessor Processor;
 };
