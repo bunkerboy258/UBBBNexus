@@ -28,6 +28,7 @@ private:
     /** 注入本系统所需的数据与行为配置 */
     void Initialize(USkeletalMeshComponent &InCharacterMesh, USkeletalMeshComponent &InWeaponMesh,
         FBBBEquipmentAnimationRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
+        const FBBBEquipmentReloadRuntimeData &InReload,
         const FBBBEquipmentEquipFragment &InEquipFragment, const FBBBEquipmentFireFragment &InFireFragment);
 
     /** 更新本系统 */
@@ -37,6 +38,7 @@ private:
     USkeletalMeshComponent *WeaponMesh = nullptr;
     FBBBEquipmentAnimationRuntimeData *Data = nullptr;
     const FBBBEquipmentFireRuntimeData *Fire = nullptr;
+    const FBBBEquipmentReloadRuntimeData *Reload = nullptr;
     const FBBBEquipmentEquipFragment *EquipFragment = nullptr;
     const FBBBEquipmentFireFragment *FireFragment = nullptr;
 

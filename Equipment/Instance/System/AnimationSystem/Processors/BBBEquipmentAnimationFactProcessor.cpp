@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/Definition/BBBEquipmentAnimationRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Fragment/BBBEquipmentEquipFragment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Fragment/BBBEquipmentFireFragment.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -11,6 +12,7 @@
 void FBBBEquipmentAnimationFactProcessor::Update(
     USkeletalMeshComponent &CharacterMesh, USkeletalMeshComponent &WeaponMesh,
     FBBBEquipmentAnimationRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
+    const FBBBEquipmentReloadRuntimeData &Reload,
     const FBBBEquipmentEquipFragment &EquipFragment, const FBBBEquipmentFireFragment &FireFragment) const
 {
     // 取得装备动画实例和世界时间来源
@@ -29,6 +31,7 @@ void FBBBEquipmentAnimationFactProcessor::Update(
     Facts.FireSequence = Fire.FireSequence;
     Facts.LoadedAmmo = Fire.LoadedAmmo;
     Facts.AmmoCapacity = Fire.AmmoCapacity;
+    Facts.bIsReloading = Reload.IsReloading();
 
     // 根据右手骨骼和枪口插槽计算瞄准来源
     const FName RightHandBone = TEXT("hand_r");

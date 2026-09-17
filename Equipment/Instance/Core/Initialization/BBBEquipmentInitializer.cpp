@@ -74,7 +74,7 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Instance,
         CharacterAPI, EquipmentId, Instance.bIsMirror);
     Instance.FireSystem.Initialize(Instance, *WeaponMesh, Runtime.Fire, Runtime.Reload,
         Definition->FireFragment.Get(), CharacterAPI, EquipmentId, Instance.bIsMirror);
-    Instance.AnimationSystem.Initialize(CharacterMesh, *WeaponMesh, Runtime.Animation, Runtime.Fire,
+    Instance.AnimationSystem.Initialize(CharacterMesh, *WeaponMesh, Runtime.Animation, Runtime.Fire, Runtime.Reload,
         Definition->EquipFragment.Get(), Definition->FireFragment.Get());
     // 最后注入装备更新管线
     Instance.UpdatePipeline.Initialize(Runtime, Instance.InputPipeline, Instance.EquipSystem,

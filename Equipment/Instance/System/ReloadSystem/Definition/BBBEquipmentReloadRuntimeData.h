@@ -16,6 +16,13 @@ struct FBBBEquipmentReloadRuntimeData
 {
     GENERATED_BODY()
 
+public:
+    /** @return 当前装备是否正在换弹 */
+    bool IsReloading() const
+    {
+        return bIsReloading;
+    }
+
 private:
     friend class FBBBEquipmentInitializer;
     friend class FBBBEquipmentInputProcessor;

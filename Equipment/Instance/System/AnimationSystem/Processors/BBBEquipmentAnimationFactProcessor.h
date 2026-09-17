@@ -25,5 +25,6 @@ private:
     /** 处理本帧系统数据 */
     void Update(USkeletalMeshComponent &CharacterMesh, USkeletalMeshComponent &WeaponMesh,
         FBBBEquipmentAnimationRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
+        const FBBBEquipmentReloadRuntimeData &Reload,
         const FBBBEquipmentEquipFragment &EquipFragment, const FBBBEquipmentFireFragment &FireFragment) const;
 };

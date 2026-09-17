@@ -152,6 +152,14 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     bool TryHasWeaponLeftHandTarget() const;
 
+    /** @return 当前武器是否正在换弹 未装备时返回 false */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    bool TryGetWeaponReloading() const;
+
+    /** @return 距离当前武器上次开火的秒数 未装备时返回极大值 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    float TryGetWeaponTimeSinceLastFireSeconds() const;
+
     /**
      * 绑定装备实际使用的武器动画实例
      * @param InWeaponAnimInstance	武器动画实例，卸下时传入空

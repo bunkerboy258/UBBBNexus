@@ -22,6 +22,10 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
     UPROPERTY(BlueprintReadOnly)
     bool bHasLeftHandTarget = false;
 
+    /** 装备当前是否正在换弹 */
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsReloading = false;
+
     UPROPERTY(BlueprintReadOnly)
     int32 FireSequence = 0;
 

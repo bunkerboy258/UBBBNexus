@@ -83,6 +83,28 @@ bool UBBBAnimInstance::TryHasWeaponLeftHandTarget() const
     return false;
 }
 
+bool UBBBAnimInstance::TryGetWeaponReloading() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->IsReloading();
+    }
+
+    return false;
+}
+
+float UBBBAnimInstance::TryGetWeaponTimeSinceLastFireSeconds() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->GetCurrentWorldTimeSeconds() - Weapon->GetLastFireTimeSeconds();
+    }
+
+    return 1.0e+38f;
+}
+
 void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance)
 {
     GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance = InWeaponAnimInstance;

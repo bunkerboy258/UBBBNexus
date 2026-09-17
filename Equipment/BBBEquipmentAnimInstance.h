@@ -47,6 +47,13 @@ public:
         return AnimationFacts.bHasLeftHandTarget;
     }
 
+    /** @return 装备当前是否正在换弹 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
+    bool IsReloading() const
+    {
+        return AnimationFacts.bIsReloading;
+    }
+
     /** @return 最近一次开火序号 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
     int32 GetFireSequence() const
