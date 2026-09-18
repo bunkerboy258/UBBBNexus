@@ -1,8 +1,8 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Core/Initialization/BBBCharacterInitializer.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Core/Shutdown/BBBCharacterShutdown.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
+#include "BBBWork/UBBBNexus/Character/Core/Shutdown/BBBCharacterShutdown.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"

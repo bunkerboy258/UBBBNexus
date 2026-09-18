@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Controller/AimController/Definition/States/BBBAimStates.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBCharacterInputPackets.generated.h"
 
 class UAnimMontage;

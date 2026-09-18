@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimInstance.generated.h"
 
 class FBBBCharacterAnimationActionProcessor;
