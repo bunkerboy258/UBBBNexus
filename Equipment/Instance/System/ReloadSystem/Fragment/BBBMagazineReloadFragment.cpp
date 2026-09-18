@@ -14,7 +14,17 @@ bool FBBBMagazineReloadFragment::CanReload(
 bool FBBBMagazineReloadFragment::Begin(FBBBEquipmentReloadContext &Context) const
 {
     // 先提交换弹动画确认表现可以开始
-    if (!Montage || !Context.CharacterAPI.Submit(FBBBCharacterMontagePacket{Montage, 1.0f, Context.Sequence, true}))
+    if (!Montage)
+    {
+        return false;
+    }
+
+    FBBBCharacterDiscreteInput Input;
+    Input.Montage = Montage;
+    Input.MontagePlayRate = 1.0f;
+    Input.Sequence = Context.Sequence;
+    Input.bReloadMontage = true;
+    if (!Context.CharacterAPI.Submit(Input))
     {
         return false;
     }

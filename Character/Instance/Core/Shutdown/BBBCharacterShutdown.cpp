@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Shutdown/BBBCharacterShutdown.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/EquipmentController/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"

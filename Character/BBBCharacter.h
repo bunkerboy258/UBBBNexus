@@ -3,15 +3,14 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/AimSystem/BBBCharacterAimSystem.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/AimController/BBBCharacterAimController.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/BBBCharacterAnimationSystem.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/EquipmentController/BBBCharacterEquipmentController.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/LocomotionController/BBBCharacterLocomotionController.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkSystem.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/ParseSystem/BBBCharacterParseSystem.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Update/BBBCharacterLateUpdate.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Update/BBBCharacterUpdatePipeline.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/BBBArbitrationPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/BBBInputPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
@@ -124,24 +123,20 @@ private:
     FBBBCharacterRuntimeData RuntimeData;
     
     
-    FBBBCharacterAimSystem AimSystem;
+    FBBBCharacterAimController AimController;
 
-    FBBBCharacterLocomotionSystem LocomotionSystem;
+    FBBBCharacterLocomotionController LocomotionController;
     
-    FBBBCharacterEquipmentSystem EquipmentSystem;
+    FBBBCharacterEquipmentController EquipmentController;
 
     /** 接收装备提交的角色表现贡献 */
     FBBBCharacterInput Input;
+
+    FBBBCharacterParseSystem ParseSystem;
     
     FBBBCharacterAnimationSystem AnimationSystem;
     
     FBBBCharacterNetworkSystem NetworkSystem;
-    
-    FBBBInputPipeline InputPipeline;
-    
-    
-    
-    FBBBArbitrationPipeline ArbitrationPipeline;
     
 
     /** 驱动角色移动后更新阶段的独立更新函数 */

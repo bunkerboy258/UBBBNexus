@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"

@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterMontagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
 #include "BBBCharacterMontageSlotState.generated.h"
 
 /** 固定槽位期望状态 多槽蒙太奇共享播放修订号 */

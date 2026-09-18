@@ -32,6 +32,8 @@ void FBBBEquipmentEquipProcessor::Update(
         Event.Sequence = Input.Sequence;
         Event.ActionType = EBBBCharacterActionType::Equip;
         Event.LoadedAmmo = Fire.LoadedAmmo;
-        CharacterAPI.Submit(Event);
+        FBBBCharacterDiscreteInput CharacterInput;
+        CharacterInput.EquipmentEvent = Event;
+        CharacterAPI.Submit(CharacterInput);
     }
 }

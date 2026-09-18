@@ -1,14 +1,15 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/Definition/BBBInputRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/Definition/BBBCharacterOperationState.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/ParseSystem/Definition/BBBCharacterParseState.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/Definition/BBBCharacterWorldRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/AimSystem/Definition/BBBAimRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -30,17 +31,13 @@ struct FBBBCharacterRuntimeData
 private:
     friend class ABBBCharacter;
     friend class ABBBPlayerCameraSystem;
-    friend class FBBBInputPipeline;
-    friend class FBBBArbitrationPipeline;
+    friend class FBBBCharacterParseSystem;
+    friend class FBBBCharacterInputProcessor;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
-    friend struct FBBBEquipBehavior;
-    friend struct FBBBFireBehavior;
-    friend struct FBBBReloadBehavior;
     friend struct FBBBCharacterMontagePacket;
-    friend struct FBBBCharacterRestoreInput;
 
     //保存当前帧世界时间快照
     UPROPERTY(Transient)
@@ -48,7 +45,7 @@ private:
 
     //保存原始输入与处理后输入
     UPROPERTY(Transient)
-    FBBBInputRuntimeData Input;
+    FBBBCharacterInputRuntimeData Input;
 
     //保存角色行为意图
     UPROPERTY(Transient)
@@ -56,7 +53,7 @@ private:
 
     //保存动作请求与仲裁结果
     UPROPERTY(Transient)
-    FBBBCharacterOperationState Operation;
+    FBBBCharacterParseState Operation;
 
     //保存角色瞄准状态
     UPROPERTY(Transient)

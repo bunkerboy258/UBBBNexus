@@ -21,7 +21,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     if (ABBBCharacter *Previous = Character.Get())
     {
         // 解绑时释放持续输入 保留最后朝向避免无输入帧将角色转向世界零度
-        FBBBCharacterControlInput ReleasedControl;
+        FBBBCharacterContinuousInput ReleasedControl;
         ReleasedControl.FacingWorld = Previous->GetActorRotation();
         Previous->GetInput().Submit(ReleasedControl);
         Previous->RemoveTickPrerequisiteComponent(this);
@@ -37,7 +37,9 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         Camera = nullptr;
     }
     Character = Target;
-    State = FBBBCharacterControlInput();
+    State = FBBBCharacterContinuousInput();
+    bFire = false;
+    bJump = false;
     MoveAxis = FVector2D::ZeroVector;
     LookAxis = FVector2D::ZeroVector;
     if (!Target || !Controller || !Controller->IsLocalController())
@@ -63,7 +65,9 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     bInputEnabled = bEnabled;
     if (!bEnabled)
     {
-        State = FBBBCharacterControlInput();
+        State = FBBBCharacterContinuousInput();
+        bFire = false;
+        bJump = false;
         MoveAxis = FVector2D::ZeroVector;
         LookAxis = FVector2D::ZeroVector;
     }
@@ -75,7 +79,7 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
     {
         return;
     }
-    FBBBEquipInput Packet;
+    FBBBCharacterDiscreteInput Packet;
     Packet.EquipSlot = Slot;
     Character->GetInput().Submit(Packet);
 }
@@ -86,7 +90,9 @@ void UBBBPlayerInputSystem::SubmitReload()
     {
         return;
     }
-    Character->GetInput().Submit(FBBBReloadInput());
+    FBBBCharacterDiscreteInput Packet;
+    Packet.bReload = true;
+    Character->GetInput().Submit(Packet);
 }
 
 void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
@@ -125,14 +131,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.FireAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.bFire = bInputEnabled;
+                bFire = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.FireAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.bFire = false;
+                    bFire = false;
                 });
         }
     }
@@ -205,7 +211,7 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.JumpAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.bJump = bInputEnabled;
+                bJump = bInputEnabled;
             });
     }
     if (Config.ReloadAction)
@@ -263,7 +269,11 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     State.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
     Character->GetInput().Submit(State);
-    State.bJump = false;
+    FBBBCharacterDiscreteInput Action;
+    Action.bFire = bFire;
+    Action.bJump = bJump;
+    Character->GetInput().Submit(Action);
+    bJump = false;
 }
 
 void UBBBPlayerInputSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)

@@ -32,24 +32,24 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
 
     Character.Input.Initialize(Character.RuntimeData.Input);
-    FBBBCharacterControlInput InitialControl;
+    FBBBCharacterContinuousInput InitialControl;
     InitialControl.FacingWorld = Character.GetActorRotation();
     Character.Input.Submit(InitialControl);
     Character.bUseControllerRotationYaw = false;
     
     // 按固定顺序注入各角色系统和运行数据
-    Character.AimSystem.Initialize(
+    Character.AimController.Initialize(
         Character.RuntimeData.Aim,
         Character.RuntimeData.Control);
 
-    Character.LocomotionSystem.Initialize(
+    Character.LocomotionController.Initialize(
         Character,
         *Movement,
         Character.RuntimeData.Locomotion,
         Character.RuntimeData.Control,
         Config.Locomotion);
     
-    Character.EquipmentSystem.Initialize(
+    Character.EquipmentController.Initialize(
         *Character.GetMesh(),
         Character.RuntimeData.Equipment,
         Character,
@@ -61,14 +61,12 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Locomotion,
         Character.RuntimeData.Equipment.Equipment,
         *Character.CharacterNetworkComponent,
-        *Config.Equipment.EquipmentCatalog,
         Character.RuntimeData.WorldData,
-        Character.Input,
         Character.RuntimeData.Equipment.Events,
         Config.Network);
 
     Character.CharacterNetworkComponent->Initialize(
-        Character.NetworkSystem);
+        Character.Input);
     
     Character.AnimationSystem.Initialize(
         Character,
@@ -79,8 +77,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.WorldData,
         Config.Animation);
     
-    Character.InputPipeline.Data = &Character.RuntimeData;
-    Character.ArbitrationPipeline.Data = &Character.RuntimeData;
+    Character.ParseSystem.Initialize(Character.RuntimeData, *Config.Equipment.EquipmentCatalog);
     Character.CharacterUpdatePipeline.Initialize(Character);
 
     Character.GetCapsuleComponent()->SetCapsuleSize(

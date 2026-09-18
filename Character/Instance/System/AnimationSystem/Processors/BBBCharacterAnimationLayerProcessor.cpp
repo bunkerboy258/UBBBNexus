@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/EquipmentSystem/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 

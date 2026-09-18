@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBCharacterAnimationStates.generated.h"
 

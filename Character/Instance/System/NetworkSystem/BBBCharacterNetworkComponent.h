@@ -8,9 +8,10 @@
 #include "BBBCharacterNetworkComponent.generated.h"
 
 class APawn;
+class FBBBCharacterInput;
 class FBBBCharacterNetworkSystem;
 
-/** 承载角色状态与动作RPC的引擎组件 */
+/** 角色网络传输组件 只收发同步数据 */
 UCLASS(ClassGroup = "BBB")
 class ABBB_EVAC_API UBBBCharacterNetworkComponent final : public UActorComponent
 {
@@ -19,24 +20,16 @@ class ABBB_EVAC_API UBBBCharacterNetworkComponent final : public UActorComponent
 public:
     UBBBCharacterNetworkComponent();
 
-    /** @param InNetworkSystem 角色网络逻辑系统 */
-    void Initialize(FBBBCharacterNetworkSystem &InNetworkSystem);
+    void Initialize(FBBBCharacterInput &InInput);
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
 private:
     friend class FBBBCharacterNetworkSystem;
 
-    /** @return 拥有者是否由本机控制 */
     bool IsOwnerLocallyControlled() const;
-
-    /** @return 拥有者是否具备服务器权威 */
     bool IsOwnerAuthority() const;
-
-    /** @param AimState 权威瞄准状态 */
     void SetReplicatedAimState(const FBBBAimNetworkState &AimState);
-
-    /** @param LocomotionState 权威移动状态 */
     void SetReplicatedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
     UFUNCTION(Server, Reliable)
@@ -63,7 +56,6 @@ private:
     UFUNCTION()
     void OnRep_ReplicatedLocomotionState();
 
-    /** @return 拥有者角色 */
     APawn *GetOwnerPawn() const;
 
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedAimState)
@@ -72,5 +64,5 @@ private:
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedLocomotionState)
     FBBBLocomotionNetworkState ReplicatedLocomotionState;
 
-    FBBBCharacterNetworkSystem *NetworkSystem = nullptr;
+    FBBBCharacterInput *Input = nullptr;
 };

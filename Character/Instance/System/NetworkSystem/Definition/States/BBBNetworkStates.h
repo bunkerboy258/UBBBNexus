@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Instance/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBNetworkStates.generated.h"
 
 /** 需要从控制端同步到模拟端的移动状态 */

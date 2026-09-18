@@ -53,7 +53,9 @@ void FBBBEquipmentReloadProcessor::Update(
             // 发布换弹开始事件
             Event.Phase = EBBBCharacterEquipmentPhase::ReloadStarted;
             Event.LoadedAmmo = Fire.LoadedAmmo;
-            CharacterAPI.Submit(Event);
+            FBBBCharacterDiscreteInput CharacterInput;
+            CharacterInput.EquipmentEvent = Event;
+            CharacterAPI.Submit(CharacterInput);
             continue;
         }
 
@@ -104,6 +106,8 @@ void FBBBEquipmentReloadProcessor::Update(
 
         // 发布换弹阶段完成事件
         Event.LoadedAmmo = Fire.LoadedAmmo;
-        CharacterAPI.Submit(Event);
+        FBBBCharacterDiscreteInput CharacterInput;
+        CharacterInput.EquipmentEvent = Event;
+        CharacterAPI.Submit(CharacterInput);
     }
 }

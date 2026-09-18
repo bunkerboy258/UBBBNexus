@@ -1,6 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-
-#include "BBBWork/UBBBNexus/Character/Instance/System/NetworkSystem/BBBCharacterNetworkSystem.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -10,88 +9,100 @@ UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void UBBBCharacterNetworkComponent::Initialize(FBBBCharacterNetworkSystem &InNetworkSystem)
+void UBBBCharacterNetworkComponent::Initialize(FBBBCharacterInput &InInput)
 {
-    NetworkSystem = &InNetworkSystem;
+    Input = &InInput;
 }
 
 void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-    // 瞄准和移动状态只复制给远端角色所有者不重复接收自身状态
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAimState, COND_SkipOwner);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLocomotionState, COND_SkipOwner);
 }
 
 void UBBBCharacterNetworkComponent::ServerUploadEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
 {
-    // 服务端收到装备状态后交给网络系统分发
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Equipment packet receive failed because network system is null")))
-    {
-        NetworkSystem->ReceiveEquipmentForDistribution(MoveTemp(Packet));
-    }
+    MulticastEquipmentPacket(MoveTemp(Packet));
 }
 
 void UBBBCharacterNetworkComponent::ServerUploadEquipmentActionPacket_Implementation(FBBBEquipmentActionNetworkPacket Packet)
 {
-    // 服务端收到装备动作后交给网络系统分发
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Equipment action packet receive failed because network system is null")))
-    {
-        NetworkSystem->ReceiveEquipmentActionForDistribution(MoveTemp(Packet));
-    }
+    MulticastEquipmentActionPacket(MoveTemp(Packet));
 }
 
 void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
 {
-    // 多播装备状态进入本地网络恢复队列
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Equipment multicast receive failed because network system is null")))
+    if (!Input || IsOwnerLocallyControlled())
     {
-        NetworkSystem->ReceiveEquipmentForRestore(MoveTemp(Packet));
+        return;
     }
+
+    FBBBCharacterRestoreDiscreteInput Restore;
+    Restore.EquipmentHandle = Packet.EquipmentHandle;
+    Input->SubmitRestore(MoveTemp(Restore));
 }
 
 void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementation(FBBBEquipmentActionNetworkPacket Packet)
 {
-    // 多播装备动作进入本地网络恢复队列
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Equipment action multicast receive failed because network system is null")))
+    if (!Input || IsOwnerLocallyControlled())
     {
-        NetworkSystem->ReceiveEquipmentActionForRestore(MoveTemp(Packet));
+        return;
     }
+
+    FBBBCharacterRestoreDiscreteInput Restore;
+    Restore.EquipmentEvent.ActionType = Packet.ActionType;
+    Restore.EquipmentEvent.EquipmentId = Packet.EquipmentId;
+    Restore.EquipmentEvent.Sequence = Packet.Sequence;
+    Restore.EquipmentEvent.Phase = Packet.Phase;
+    Restore.EquipmentEvent.LoadedAmmo = Packet.LoadedAmmo;
+    Input->SubmitRestore(MoveTemp(Restore));
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkState AimState)
 {
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Aim state receive failed because network system is null")))
+    SetReplicatedAimState(AimState);
+    if (Input && !IsOwnerLocallyControlled())
     {
-        NetworkSystem->ReceiveSubmittedAimState(AimState);
+        FBBBCharacterRestoreDiscreteInput Restore;
+        Restore.Aim = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
+        Input->SubmitRestore(MoveTemp(Restore));
     }
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(FBBBLocomotionNetworkState LocomotionState)
 {
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Locomotion state receive failed because network system is null")))
+    SetReplicatedLocomotionState(LocomotionState);
+    if (Input && !IsOwnerLocallyControlled())
     {
-        NetworkSystem->ReceiveSubmittedLocomotionState(LocomotionState);
+        FBBBCharacterRestoreDiscreteInput Restore;
+        Restore.Gait = LocomotionState.Gait;
+        Input->SubmitRestore(MoveTemp(Restore));
     }
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
 {
-    // 属性复制完成后通知网络系统恢复瞄准状态
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Replicated aim state receive failed because network system is null")))
+    if (!Input)
     {
-        NetworkSystem->ReceiveReplicatedAimState(ReplicatedAimState);
+        return;
     }
+
+    FBBBCharacterRestoreDiscreteInput Restore;
+    Restore.Aim = FBBBAimRuntimeState{ReplicatedAimState.bIsAiming, ReplicatedAimState.AimTargetWorld};
+    Input->SubmitRestore(MoveTemp(Restore));
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
 {
-    // 属性复制完成后通知网络系统恢复移动状态
-    if (ensureMsgf(NetworkSystem, TEXT("[UBBBC]Replicated locomotion state receive failed because network system is null")))
+    if (!Input)
     {
-        NetworkSystem->ReceiveReplicatedLocomotionState(ReplicatedLocomotionState);
+        return;
     }
+
+    FBBBCharacterRestoreDiscreteInput Restore;
+    Restore.Gait = ReplicatedLocomotionState.Gait;
+    Input->SubmitRestore(MoveTemp(Restore));
 }
 
 void UBBBCharacterNetworkComponent::SetReplicatedAimState(const FBBBAimNetworkState &AimState)
@@ -118,7 +129,6 @@ bool UBBBCharacterNetworkComponent::IsOwnerAuthority() const
 
 APawn *UBBBCharacterNetworkComponent::GetOwnerPawn() const
 {
-    // 网络组件只允许挂载在角色拥有的控制对象上
     APawn *OwnerPawn = Cast<APawn>(GetOwner());
     ensureMsgf(OwnerPawn, TEXT("[UBBBC]Network component owner is not APawn"));
     return OwnerPawn;

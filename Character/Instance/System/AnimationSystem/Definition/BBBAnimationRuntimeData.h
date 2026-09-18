@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterMontagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/BBBCharacterMontageSlotState.h"
 #include "BBBAnimationRuntimeData.generated.h"
 

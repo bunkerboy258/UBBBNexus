@@ -1,108 +1,64 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/Definition/BBBInputRuntimeData.h"
-#include "Animation/AnimMontage.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputRuntimeData.h"
 
-void FBBBCharacterInput::Initialize(FBBBInputRuntimeData &InData)
+void FBBBCharacterInput::Initialize(FBBBCharacterInputRuntimeData &InData)
 {
     Data = &InData;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterControlInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBCharacterContinuousInput &Packet)
 {
     if (!ensureMsgf(IsInGameThread() && Data && !Packet.MoveWorld.ContainsNaN()
         && !Packet.FacingWorld.ContainsNaN() && !Packet.AimTargetWorld.ContainsNaN(),
-        TEXT("[UBBBC]Invalid control input")))
+        TEXT("[UBBBC]Invalid continuous input")))
     {
         return false;
     }
-    const bool bJump = Data->Control.bJump || Packet.bJump;
-    Data->Control = Packet;
-    Data->Control.MoveWorld = Packet.MoveWorld.GetClampedToMaxSize(1.0f);
-    Data->Control.bJump = bJump;
+
+    Data->Continuous = Packet;
+    Data->Continuous.MoveWorld = Packet.MoveWorld.GetClampedToMaxSize(1.0f);
     return true;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBEquipInput &Packet)
+bool FBBBCharacterInput::Submit(FBBBCharacterDiscreteInput Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Equipment input unavailable")))
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Discrete input unavailable")))
     {
         return false;
     }
-    Data->Pending.Equip.Add(Packet);
-    return true;
-}
 
-bool FBBBCharacterInput::Submit(const FBBBFireInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Fire input unavailable")))
+    if (Packet.EquipmentEvent.ActionType != EBBBCharacterActionType::None
+        && !ensureMsgf(Packet.EquipmentEvent.Sequence > 0, TEXT("[UBBBC]Invalid equipment fact")))
     {
         return false;
     }
-    Data->Pending.Fire.Add(Packet);
-    return true;
-}
 
-bool FBBBCharacterInput::Submit(const FBBBReloadInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Reload input unavailable")))
+    if (Packet.ReloadPhase != EBBBCharacterReloadPhase::None
+        && !ensureMsgf(Packet.Sequence > 0, TEXT("[UBBBC]Invalid reload animation input")))
     {
         return false;
     }
-    Data->Pending.Reload.Add(Packet);
-    return true;
-}
 
-bool FBBBCharacterInput::Submit(const FBBBEquipmentActionEvent &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data && Packet.Sequence > 0,
-        TEXT("[UBBBC]Invalid equipment result")))
+    if (Packet.Montage && !ensureMsgf(FMath::IsFinite(Packet.MontagePlayRate)
+        && Packet.MontagePlayRate > 0.0f, TEXT("[UBBBC]Invalid montage input")))
     {
         return false;
     }
-    Data->Pending.Results.Add(Packet);
-    return true;
-}
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterReloadAnimationInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data && Packet.Sequence > 0,
-        TEXT("[UBBBC]Invalid animation input")))
+    if (Packet.CameraRecoverySpeed > 0.0f && !ensureMsgf(!Packet.CameraImpulse.ContainsNaN()
+        && FMath::IsFinite(Packet.CameraRecoverySpeed), TEXT("[UBBBC]Invalid camera input")))
     {
         return false;
     }
-    Data->Pending.Notifications.Add(Packet);
+
+    Data->PendingDiscrete.Add(MoveTemp(Packet));
     return true;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterMontagePacket &Packet)
+void FBBBCharacterInput::SubmitRestore(FBBBCharacterRestoreDiscreteInput Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Data && IsValid(Packet.Montage)
-        && Packet.Sequence > 0 && FMath::IsFinite(Packet.PlayRate) && Packet.PlayRate > 0.0f,
-        TEXT("[UBBBC]Invalid montage input")))
-    {
-        return false;
-    }
-    Data->Pending.Montages.Add(Packet);
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBPlayerCameraInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data && !Packet.Impulse.ContainsNaN()
-        && FMath::IsFinite(Packet.RecoverySpeed) && Packet.RecoverySpeed > 0.0f,
-        TEXT("[UBBBC]Invalid camera input")))
-    {
-        return false;
-    }
-    Data->Pending.Camera.Add(Packet);
-    return true;
-}
-
-void FBBBCharacterInput::SubmitRestore(const FBBBCharacterRestoreInput &Packet)
-{
-    // 还原入口仅向网络系统开放 普通调用者不能自行提升优先级
     if (ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Restore input unavailable")))
     {
-        Data->Pending.Restores.Add(Packet);
+        Data->PendingRestoreDiscrete.Add(MoveTemp(Packet));
     }
 }

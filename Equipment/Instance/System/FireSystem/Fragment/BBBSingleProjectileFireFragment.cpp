@@ -75,7 +75,11 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
 
     if (FireMontage)
     {
-        Context.CharacterAPI.Submit(FBBBCharacterMontagePacket{FireMontage, 1.0f, Context.Sequence, false});
+        FBBBCharacterDiscreteInput MontageInput;
+        MontageInput.Montage = FireMontage;
+        MontageInput.MontagePlayRate = 1.0f;
+        MontageInput.Sequence = Context.Sequence;
+        Context.CharacterAPI.Submit(MontageInput);
     }
 
     // 本地实例负责消耗弹药并提交后坐力
@@ -85,7 +89,10 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
             VerticalRecoilAmount + FMath::FRandRange(-VerticalRecoilRandom, VerticalRecoilRandom),
             HorizontalRecoilAmount + FMath::FRandRange(-HorizontalRecoilRandom, HorizontalRecoilRandom));
         Context.LoadedAmmo--;
-        Context.CharacterAPI.Submit(FBBBPlayerCameraInput{RecoilImpulse, RecoilRecoverySpeed});
+        FBBBCharacterDiscreteInput CameraInput;
+        CameraInput.CameraImpulse = RecoilImpulse;
+        CameraInput.CameraRecoverySpeed = RecoilRecoverySpeed;
+        Context.CharacterAPI.Submit(CameraInput);
     }
 
     // 记录本次开火时间供下一次开火判断

@@ -14,15 +14,32 @@ void FBBBCharacterUpdatePipeline::Update() const
     }
     // 保留本地控制端完成因果的模型 网络身份仅在根管线与网络系统中判定
     const bool bRestoreMode = !Character->IsLocallyControlled();
-    Character->NetworkSystem.UpdateRestore();
-    Character->InputPipeline.Update();
-    Character->ArbitrationPipeline.Update(bRestoreMode);
-    Character->EquipmentSystem.Update();
+    Character->ParseSystem.Update(bRestoreMode);
+    Character->EquipmentController.Update();
     if (!bRestoreMode)
     {
-        Character->AimSystem.Update();
-        Character->LocomotionSystem.Update();
-        Character->NetworkSystem.UpdateUpload();
+        Character->AimController.Update();
+        Character->LocomotionController.Update();
+    }
+
+    if (Character->HasAuthority() && Character->IsLocallyControlled())
+    {
+        Character->NetworkSystem.UpdateAuthorityLocal();
+    }
+
+    if (Character->HasAuthority() && !Character->IsLocallyControlled())
+    {
+        Character->NetworkSystem.UpdateAuthorityRemote();
+    }
+
+    if (!Character->HasAuthority() && Character->IsLocallyControlled())
+    {
+        Character->NetworkSystem.UpdateClientLocal();
+    }
+
+    if (!Character->HasAuthority() && !Character->IsLocallyControlled())
+    {
+        Character->NetworkSystem.UpdateClientRemote();
     }
 }
 
