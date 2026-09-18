@@ -26,8 +26,8 @@ private:
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterInitializer;
-    friend class FBBBExecutionPipeline;
     friend class FBBBCharacterAnimationActionProcessor;
+    friend struct FBBBCharacterMontagePacket;
 
     /** 当前帧提交给动画实例的角色事实 */
     UPROPERTY(Transient)

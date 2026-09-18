@@ -25,7 +25,13 @@ public:
      * @param Packet	装备操作
      * @return 是否接受输入
      */
-    bool Submit(const FBBBCharacterEquipmentInput &Packet);
+    bool Submit(const FBBBCharacterEquipInput &Packet);
+
+    /** @return 是否接受开火请求 */
+    bool Submit(const FBBBCharacterFireInput &Packet);
+
+    /** @return 是否接受换弹请求 */
+    bool Submit(const FBBBCharacterReloadInput &Packet);
     /**
      * 提交已完成的装备结果
      * @param Packet	装备事实

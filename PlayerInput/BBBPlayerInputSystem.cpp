@@ -69,16 +69,24 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     }
 }
 
-void UBBBPlayerInputSystem::SubmitEquipment(const EBBBCharacterActionType Action, const int32 Slot)
+void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
 {
     if (!bInputEnabled || !Character.IsValid())
     {
         return;
     }
-    FBBBCharacterEquipmentInput Packet;
-    Packet.ActionType = Action;
+    FBBBCharacterEquipInput Packet;
     Packet.EquipSlot = Slot;
     Character->GetInput().Submit(Packet);
+}
+
+void UBBBPlayerInputSystem::SubmitReload()
+{
+    if (!bInputEnabled || !Character.IsValid())
+    {
+        return;
+    }
+    Character->GetInput().Submit(FBBBCharacterReloadInput());
 }
 
 void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
@@ -205,7 +213,7 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.ReloadAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                SubmitEquipment(EBBBCharacterActionType::Reload, -1);
+                SubmitReload();
             });
     }
     if (Config.EquipSlot1Action)
@@ -213,7 +221,7 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.EquipSlot1Action, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                SubmitEquipment(EBBBCharacterActionType::Equip, 0);
+                SubmitEquipSlot(0);
             });
     }
     if (Config.EquipSlot2Action)
@@ -221,7 +229,7 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.EquipSlot2Action, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                SubmitEquipment(EBBBCharacterActionType::Equip, 1);
+                SubmitEquipSlot(1);
             });
     }
 }

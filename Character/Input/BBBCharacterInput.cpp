@@ -23,13 +23,33 @@ bool FBBBCharacterInput::Submit(const FBBBCharacterControlInput &Packet)
     return true;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterEquipmentInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBCharacterEquipInput &Packet)
 {
     if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Equipment input unavailable")))
     {
         return false;
     }
-    Data->Pending.Equipment.Add(Packet);
+    Data->Pending.Equip.Add(Packet);
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBCharacterFireInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Fire input unavailable")))
+    {
+        return false;
+    }
+    Data->Pending.Fire.Add(Packet);
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBCharacterReloadInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Reload input unavailable")))
+    {
+        return false;
+    }
+    Data->Pending.Reload.Add(Packet);
     return true;
 }
 

@@ -5,7 +5,6 @@
 #include "BBBCharacterOperationState.generated.h"
 class ABBBEquipment;
 class FBBBArbitrationPipeline;
-class FBBBExecutionPipeline;
 
 /** 管线持有的操作生命周期与本帧裁决 */
 USTRUCT()
@@ -15,7 +14,14 @@ struct FBBBCharacterOperationState
 
 private:
     friend class FBBBArbitrationPipeline;
-    friend class FBBBExecutionPipeline;
+    friend struct FBBBCharacterControlInput;
+    friend struct FBBBCharacterEquipInput;
+    friend struct FBBBCharacterFireInput;
+    friend struct FBBBCharacterReloadInput;
+    friend struct FBBBEquipmentActionEvent;
+    friend struct FBBBCharacterReloadAnimationInput;
+    friend struct FBBBCharacterMontagePacket;
+    friend struct FBBBCharacterRestoreInput;
 
     UPROPERTY()
     TWeakObjectPtr<ABBBEquipment> ReloadEquipment;

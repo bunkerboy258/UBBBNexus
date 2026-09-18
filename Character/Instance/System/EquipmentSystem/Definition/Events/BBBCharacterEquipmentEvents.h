@@ -17,12 +17,12 @@ struct FBBBCharacterEquipmentEvents
     }
 
 private:
-    friend class FBBBExecutionPipeline;
     friend class FBBBArbitrationPipeline;
     friend class FBBBCharacterInput;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend struct FBBBCharacterEquipmentRuntimeData;
+    friend struct FBBBEquipmentActionEvent;
 
     /** 记录成功动作 */
     void AddAction(FBBBEquipmentActionEvent Event)

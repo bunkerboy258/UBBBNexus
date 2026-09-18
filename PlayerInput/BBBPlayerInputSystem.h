@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
 #include "BBBPlayerInputSystem.generated.h"
 class ABBBCharacter;
 class ABBBPlayerCameraSystem;
@@ -47,7 +46,8 @@ public:
     float AimTargetDistance = 10000.0f;
 
 private:
-    void SubmitEquipment(EBBBCharacterActionType Action, int32 Slot);
+    void SubmitEquipSlot(int32 Slot);
+    void SubmitReload();
     TWeakObjectPtr<ABBBCharacter> Character;
     UPROPERTY()
     TObjectPtr<ABBBPlayerCameraSystem> Camera;

@@ -26,13 +26,18 @@ struct FBBBCharacterEquipmentRuntimeData
     }
 
 private:
-    friend class FBBBExecutionPipeline;
     friend class FBBBArbitrationPipeline;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
+    friend struct FBBBCharacterEquipInput;
+    friend struct FBBBCharacterFireInput;
+    friend struct FBBBCharacterReloadInput;
+    friend struct FBBBEquipmentActionEvent;
+    friend struct FBBBCharacterReloadAnimationInput;
+    friend struct FBBBCharacterRestoreInput;
 
     /** 角色装备容器 */
     UPROPERTY()

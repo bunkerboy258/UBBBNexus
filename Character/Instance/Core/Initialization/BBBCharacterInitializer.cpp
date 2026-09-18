@@ -81,7 +81,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.InputPipeline.Data = &Character.RuntimeData;
     Character.ArbitrationPipeline.Data = &Character.RuntimeData;
-    Character.ExecutionPipeline.Data = &Character.RuntimeData;
     Character.CharacterUpdatePipeline.Initialize(Character);
 
     Character.GetCapsuleComponent()->SetCapsuleSize(

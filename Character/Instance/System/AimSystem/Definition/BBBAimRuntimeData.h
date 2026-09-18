@@ -22,10 +22,10 @@ struct FBBBAimRuntimeData
     }
 
 private:
-    friend class FBBBExecutionPipeline;
     friend class FBBBArbitrationPipeline;
 
     friend class FBBBCharacterAimSystem;
+    friend struct FBBBCharacterRestoreInput;
 
     /**
      * 提交本地计算的瞄准状态

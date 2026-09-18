@@ -10,7 +10,6 @@
 class FBBBCharacterInput;
 class FBBBInputPipeline;
 class FBBBArbitrationPipeline;
-class FBBBExecutionPipeline;
 
 /** 输入入口持有的待消费数据与当前批次 */
 USTRUCT()
@@ -19,7 +18,11 @@ struct FBBBInputBatch
     GENERATED_BODY()
 
     UPROPERTY()
-    TArray<FBBBCharacterEquipmentInput> Equipment;
+    TArray<FBBBCharacterEquipInput> Equip;
+    UPROPERTY()
+    TArray<FBBBCharacterFireInput> Fire;
+    UPROPERTY()
+    TArray<FBBBCharacterReloadInput> Reload;
     UPROPERTY()
     TArray<FBBBEquipmentActionEvent> Results;
     UPROPERTY()
@@ -42,7 +45,6 @@ private:
     friend class FBBBCharacterInput;
     friend class FBBBInputPipeline;
     friend class FBBBArbitrationPipeline;
-    friend class FBBBExecutionPipeline;
 
     UPROPERTY()
     FBBBCharacterControlInput Control;

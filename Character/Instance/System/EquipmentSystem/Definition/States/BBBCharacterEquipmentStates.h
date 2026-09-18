@@ -52,11 +52,11 @@ struct FBBBCharacterEquipmentState
 
 private:
     FName ActiveEquipmentId = NAME_None;
-    friend class FBBBExecutionPipeline;
     friend class FBBBArbitrationPipeline;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterInput;
+    friend struct FBBBCharacterEquipInput;
 
 
 

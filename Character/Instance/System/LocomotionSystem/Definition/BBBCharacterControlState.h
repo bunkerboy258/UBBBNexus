@@ -2,7 +2,6 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
 #include "BBBCharacterControlState.generated.h"
-class FBBBExecutionPipeline;
 
 /** 已裁决的角色控制黑板 */
 USTRUCT()
@@ -62,7 +61,7 @@ struct FBBBCharacterControlState
     }
 
 private:
-    friend class FBBBExecutionPipeline;
+    friend struct FBBBCharacterControlInput;
 
     UPROPERTY()
     FBBBCharacterControlInput Value;

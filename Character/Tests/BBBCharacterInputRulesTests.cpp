@@ -1,13 +1,14 @@
 #include "Misc/AutomationTest.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/Rules/BBBCharacterConflictRules.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBCharacterConflictRulesTest,
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBCharacterInputRulesTest,
     "BBB.Character.Input.ConflictRules",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FBBBCharacterConflictRulesTest::RunTest(const FString &Parameters)
+bool FBBBCharacterInputRulesTest::RunTest(const FString &Parameters)
 {
     // 穷举当前三个阻断条件 防止新增条件时误放行换弹或切换期间的开火
     for (int32 Flags = 0; Flags < 8; ++Flags)
@@ -16,10 +17,10 @@ bool FBBBCharacterConflictRulesTest::RunTest(const FString &Parameters)
         const bool bSwitching = (Flags & 2) != 0;
         const bool bStartingReload = (Flags & 4) != 0;
         TestEqual(FString::Printf(TEXT("Fire rules %d"), Flags),
-            FBBBCharacterConflictRules::AllowsFire(bReloading, bSwitching, bStartingReload), Flags == 0);
+            FBBBCharacterFireInput::AllowsFire(bReloading, bSwitching, bStartingReload), Flags == 0);
     }
-    TestFalse(TEXT("Aim exits sprint"), FBBBCharacterConflictRules::AllowsSprint(true));
-    TestTrue(TEXT("Released aim permits held sprint"), FBBBCharacterConflictRules::AllowsSprint(false));
+    TestFalse(TEXT("Aim exits sprint"), FBBBCharacterControlInput::AllowsSprint(true));
+    TestTrue(TEXT("Released aim permits held sprint"), FBBBCharacterControlInput::AllowsSprint(false));
     return true;
 }
 

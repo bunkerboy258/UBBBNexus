@@ -21,7 +21,6 @@ struct FBBBCharacterEquipmentCommands
     TArray<FBBBCharacterReloadAnimationInput> ReloadInputs;
 
 private:
-    friend class FBBBExecutionPipeline;
     friend class FBBBArbitrationPipeline;
 
     friend class FBBBCharacterEquipmentActionProcessor;
@@ -29,6 +28,9 @@ private:
 
     friend class UBBBAnimInstance;
     friend struct FBBBCharacterEquipmentRuntimeData;
+    friend struct FBBBCharacterFireInput;
+    friend struct FBBBCharacterReloadInput;
+    friend struct FBBBCharacterRestoreInput;
 
     /** 提交本帧开火命令 */
     void SubmitFire()

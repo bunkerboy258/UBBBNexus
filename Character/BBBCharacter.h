@@ -11,7 +11,6 @@
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Update/BBBCharacterLateUpdate.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/BBBArbitrationPipeline.h"
-#include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Execution/BBBExecutionPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Input/BBBInputPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
@@ -144,7 +143,6 @@ private:
     
     FBBBArbitrationPipeline ArbitrationPipeline;
     
-    FBBBExecutionPipeline ExecutionPipeline;
 
     /** 驱动角色移动后更新阶段的独立更新函数 */
     FBBBCharacterLateUpdate LateUpdateTick;

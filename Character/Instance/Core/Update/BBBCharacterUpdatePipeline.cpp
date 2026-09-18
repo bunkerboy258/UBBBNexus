@@ -17,7 +17,6 @@ void FBBBCharacterUpdatePipeline::Update() const
     Character->NetworkSystem.UpdateRestore();
     Character->InputPipeline.Update();
     Character->ArbitrationPipeline.Update(bRestoreMode);
-    Character->ExecutionPipeline.Update();
     Character->EquipmentSystem.Update();
     if (!bRestoreMode)
     {

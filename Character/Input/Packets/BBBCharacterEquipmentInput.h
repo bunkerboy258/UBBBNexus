@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBCharacterEquipmentInput.generated.h"
+struct FBBBCharacterRuntimeData;
 
 /** 角色支持的装备操作 */
 UENUM(BlueprintType)
@@ -16,17 +17,58 @@ enum class EBBBCharacterActionType : uint8
     Reload
 };
 
-/** 外部提交的离散装备操作 */
+/** 外部提交的切换装备请求 */
 USTRUCT(BlueprintType)
-struct FBBBCharacterEquipmentInput
+struct FBBBCharacterEquipInput
 {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    EBBBCharacterActionType ActionType = EBBBCharacterActionType::None;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 EquipSlot = INDEX_NONE;
+
+    /** @return 当前槽位是否可切换 */
+    bool CanApply(const FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    void Apply(FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    static void FinishFrame(FBBBCharacterRuntimeData &Data);
+};
+
+/** 外部提交的开火请求 */
+USTRUCT(BlueprintType)
+struct FBBBCharacterFireInput
+{
+    GENERATED_BODY()
+
+    /** @return 当前冲突条件是否允许开火 */
+    static bool AllowsFire(bool bReloading, bool bSwitching, bool bStartingReload);
+
+    /** @return 当前是否允许开火 */
+    bool CanApply(const FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    void Apply(FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    static void ApplyHeld(FBBBCharacterRuntimeData &Data);
+};
+
+/** 外部提交的换弹请求 */
+USTRUCT(BlueprintType)
+struct FBBBCharacterReloadInput
+{
+    GENERATED_BODY()
+
+    /** @return 当前是否允许换弹 */
+    bool CanApply(const FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    void Apply(FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    static void BeginFrame(FBBBCharacterRuntimeData &Data);
 };
 
 /** 装备已确认的操作阶段 */
@@ -65,4 +107,10 @@ struct FBBBEquipmentActionEvent
 
     UPROPERTY(BlueprintReadOnly)
     int32 LoadedAmmo = 0;
+
+    /** @return 结果是否有有效序号 */
+    bool CanApply(const FBBBCharacterRuntimeData &Data) const;
+
+    /** @param Data 角色黑板 */
+    void Apply(FBBBCharacterRuntimeData &Data) const;
 };
