@@ -7,23 +7,80 @@ void FBBBCharacterInput::Initialize(FBBBInputRuntimeData &InData)
     Data = &InData;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterControlInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBMoveInput &Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Data && !Packet.MoveWorld.ContainsNaN()
-        && !Packet.FacingWorld.ContainsNaN() && !Packet.AimTargetWorld.ContainsNaN(),
-        TEXT("[UBBBC]Invalid control input")))
+    if (!ensureMsgf(IsInGameThread() && Data && !Packet.World.ContainsNaN(),
+        TEXT("[UBBBC]Invalid move input")))
     {
         return false;
     }
-    // 持续状态保留最后一次提交 跳跃边沿不得被同帧后续采样吞掉
-    const bool bJump = Data->Control.bJump || Packet.bJump;
-    Data->Control = Packet;
-    Data->Control.MoveWorld = Packet.MoveWorld.GetClampedToMaxSize(1.0f);
-    Data->Control.bJump = bJump;
+    Data->Continuous.Move = Packet;
+    Data->Continuous.Move.World = Packet.World.GetClampedToMaxSize(1.0f);
     return true;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterEquipInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBViewInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data && !Packet.FacingWorld.ContainsNaN()
+        && !Packet.AimTargetWorld.ContainsNaN(), TEXT("[UBBBC]Invalid view input")))
+    {
+        return false;
+    }
+    Data->Continuous.View = Packet;
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBAimInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Aim input unavailable")))
+    {
+        return false;
+    }
+    Data->Continuous.Aim = Packet;
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBWalkInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Walk input unavailable")))
+    {
+        return false;
+    }
+    Data->Continuous.Walk = Packet;
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBSprintInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Sprint input unavailable")))
+    {
+        return false;
+    }
+    Data->Continuous.Sprint = Packet;
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBCrouchInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Crouch input unavailable")))
+    {
+        return false;
+    }
+    Data->Continuous.Crouch = Packet;
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBJumpInput &Packet)
+{
+    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Jump input unavailable")))
+    {
+        return false;
+    }
+    Data->Pending.Jump.Add(Packet);
+    return true;
+}
+
+bool FBBBCharacterInput::Submit(const FBBBEquipInput &Packet)
 {
     if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Equipment input unavailable")))
     {
@@ -33,7 +90,7 @@ bool FBBBCharacterInput::Submit(const FBBBCharacterEquipInput &Packet)
     return true;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterFireInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBFireInput &Packet)
 {
     if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Fire input unavailable")))
     {
@@ -43,7 +100,7 @@ bool FBBBCharacterInput::Submit(const FBBBCharacterFireInput &Packet)
     return true;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBCharacterReloadInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBReloadInput &Packet)
 {
     if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Reload input unavailable")))
     {

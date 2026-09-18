@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
 #include "BBBWork/UBBBNexus/Character/Instance/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
 #include "BBBAnimInstance.generated.h"
 

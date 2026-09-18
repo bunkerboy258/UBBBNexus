@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
 #include "BBBEquipmentActionNetworkPacket.generated.h"
 
 /** 单次装备动作网络包 */

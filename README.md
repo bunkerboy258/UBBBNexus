@@ -5,7 +5,8 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
 ## 结构
 
 - `Character/Input/`：角色定义的固定类型输入与入口 `GetInput().Submit(Packet)`
-- `Character/Instance/Pipeline/`：Input 整理与 Arbitration 固定顺序调度 包规则负责黑板效果
+- `Character/Input/Behaviors/`：每个输入的数据与固定 C++ 行为规则
+- `Character/Instance/Pipeline/`：Input 整理与 Arbitration 编译期契约调度
 - `Character/Instance/System/`：根据黑板维护行为 不读取玩家按键和视点
 - `PlayerInput/`：控制器持有的输入组件 负责增强输入、屏蔽、解绑及世界空间数据组装
 - `PlayerCamera/`：独立相机 Actor 负责跟随角色与消费相机输入
@@ -17,7 +18,7 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
 
 ```text
 控制器采样 → PlayerInput → 角色根管线
-    网络收件转换 → Input → Arbitration 调用包规则写黑板
+    网络收件转换 → Input → Arbitration 调用行为规则写黑板
     → Equipment → 本地 Aim / Locomotion → 本地网络上传
     → 移动组件 → LateUpdate 动画事实与蒙太奇 → 角色骨骼动画
     → 装备独立 TG_PostUpdateWork → 装备动画快照

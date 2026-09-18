@@ -4,32 +4,21 @@
 
 通过 ABBBCharacter::GetInput().Submit(Packet) 提交固定类型 入口仅校验和入队 不调用系统
 
-| 类型 | 用途 |
-|---|---|
-| FBBBCharacterControlInput | 世界空间移动向量 朝向 瞄准目标 持续控制和跳跃边沿 |
-| FBBBCharacterEquipInput | 选择快捷装备槽位 有效切换中断换弹 |
-| FBBBCharacterFireInput | 离散开火请求 换弹和切换期间拒绝 |
-| FBBBCharacterReloadInput | 离散换弹请求 本帧优先于开火 |
-| FBBBEquipmentActionEvent | 装备已执行结果 |
-| FBBBCharacterMontagePacket | 已获准操作的蒙太奇贡献 |
-| FBBBCharacterReloadAnimationInput | 带操作序号的换弹通知 |
-| FBBBPlayerCameraInput | 相机冲量贡献 |
-| FBBBCharacterRestoreInput | 完成因果的还原事实 仅网络系统可投递 |
+行为输入是小型固定类型值 `FInput` 行为定义是相邻的 `FBBB...Behavior` 两者集中在 Behaviors 文件夹 编译期契约要求每个行为声明 `Policy` `CanStart` `Start` 不使用虚函数对象或每帧动态委托
 
-移动向量保留模拟输入强度 持续控制保留最后提交值 外部控制源解绑必须提交释放状态 PlayerInputSystem 已负责控制目标解绑和菜单禁用 一次性装备请求不缓冲重试
-
-每个包在同名头文件声明固定规则入口 并在相邻 cpp 实现条件和黑板效果 仲裁管线只按固定顺序调用 CanApply 和 Apply 没有每帧动态委托 持续控制包在收尾阶段统一写入控制黑板
-
-| 行为包 | 投递方式 | 拒绝或冲突规则 | 黑板效果 |
+| 输入 | 对应规则 | 提交节奏 | 冲突与黑板效果 |
 |---|---|---|---|
-| FBBBCharacterEquipInput | `Submit(Packet)` 携带 EquipSlot | 空槽 无效装备 当前装备不切换 | 设置期望装备并取消当前换弹和相关蒙太奇 |
-| FBBBCharacterReloadInput | `Submit(Packet)` | 无当前装备 正在切换或换弹时拒绝 | 提交装备换弹命令 |
-| FBBBCharacterFireInput | `Submit(Packet)` 或持续控制的 bFire | 换弹中 本帧换弹或切换时拒绝 | 提交装备开火命令并写入已获准开火事实 |
-| FBBBCharacterControlInput | 每帧 `Submit(Packet)` | 非有限空间数据拒绝 瞄准或已获准开火压制冲刺 | 提交移动 朝向 瞄准 行走 蹲伏 跳跃等控制事实 |
-| FBBBCharacterReloadAnimationInput | 动画通知 `Submit(Packet)` | 旧序号 重复卸匣 装匣早于卸匣拒绝 | 推送本帧装备通知并推进换弹阶段 |
-| FBBBCharacterMontagePacket | 装备 `Submit(Packet)` | 非法槽位 切换中或失效换弹序号拒绝 | 设置对应动画槽位的期望播放 |
-| FBBBCharacterRestoreInput | 网络系统受限入口 | 仅镜像模式接受 | 还原已完成的装备 瞄准和步态事实 |
-| FBBBPlayerCameraInput | `Submit(Packet)` | 非法冲量或恢复速度拒绝 | 写入本帧相机贡献 |
+| FBBBMoveInput FBBBViewInput | FBBBMoveBehavior FBBBViewBehavior | 持续快照 | 校验世界空间数据并写入移动朝向目标 |
+| FBBBAimInput FBBBWalkInput FBBBCrouchInput | 同名 Behavior | 持续快照 | 写入对应角色控制事实 |
+| FBBBSprintInput | FBBBSprintBehavior | 持续快照 | 瞄准或开火时受阻 否则写冲刺事实 |
+| FBBBJumpInput | FBBBJumpBehavior | 单帧请求 | 写入一次跳跃事实 |
+| FBBBEquipInput | FBBBEquipBehavior | 单帧请求 携带 EquipSlot | 有效切换取消换弹并写期望装备 |
+| FBBBReloadInput | FBBBReloadBehavior | 单帧请求 | 切换或换弹中受阻 写换弹命令并接管反馈和动画阶段 |
+| FBBBFireInput | FBBBFireBehavior | 单帧请求 持续按住时每帧提交 | 切换或换弹中受阻 写开火命令及已获准事实 |
+
+输入入口只校验和收件 不表示行为获准 持续快照保留最后提交值 单帧请求按本帧到达顺序消费 不缓冲失败请求 玩家组件解绑时提交释放状态
+
+Policy 中声明固定优先级 BlockedBy 与 Cancels 管线只按这些规则调度 不实现换弹或开火的业务判断 装备成功结果和动画通知属于事件 由 FBBBReloadBehavior 按装备标识和操作序号处理 已获准的蒙太奇与相机输入属于表现贡献 镜像还原只接受网络系统投递的 FBBBCharacterRestoreInput
 
 ## 手动资产迁移
 

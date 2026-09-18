@@ -28,8 +28,8 @@ private:
 
     friend class UBBBAnimInstance;
     friend struct FBBBCharacterEquipmentRuntimeData;
-    friend struct FBBBCharacterFireInput;
-    friend struct FBBBCharacterReloadInput;
+    friend struct FBBBFireBehavior;
+    friend struct FBBBReloadBehavior;
     friend struct FBBBCharacterRestoreInput;
 
     /** 提交本帧开火命令 */

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
@@ -56,7 +56,7 @@ private:
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterInput;
-    friend struct FBBBCharacterEquipInput;
+    friend struct FBBBEquipBehavior;
 
 
 

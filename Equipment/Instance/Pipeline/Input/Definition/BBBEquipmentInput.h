@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterEquipmentInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
 #include "BBBEquipmentInput.generated.h"
 
 /** 装备接收的操作与事实类别 */

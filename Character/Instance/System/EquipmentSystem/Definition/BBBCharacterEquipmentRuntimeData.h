@@ -32,11 +32,10 @@ private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
-    friend struct FBBBCharacterEquipInput;
-    friend struct FBBBCharacterFireInput;
-    friend struct FBBBCharacterReloadInput;
+    friend struct FBBBEquipBehavior;
+    friend struct FBBBFireBehavior;
+    friend struct FBBBReloadBehavior;
     friend struct FBBBEquipmentActionEvent;
-    friend struct FBBBCharacterReloadAnimationInput;
     friend struct FBBBCharacterRestoreInput;
 
     /** 角色装备容器 */

@@ -1,7 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBCharacterAnimationInput.generated.h"
-struct FBBBCharacterRuntimeData;
 
 /** 动画报告的换弹阶段 */
 UENUM(BlueprintType)
@@ -39,9 +38,4 @@ struct FBBBCharacterReloadAnimationInput
     UPROPERTY(BlueprintReadOnly)
     EBBBCharacterReloadAnimationPhase Phase = EBBBCharacterReloadAnimationPhase::Start;
 
-    /** @return 通知是否对应当前换弹操作 */
-    bool CanApply(const FBBBCharacterRuntimeData &Data) const;
-
-    /** @param Data 角色黑板 */
-    void Apply(FBBBCharacterRuntimeData &Data) const;
 };

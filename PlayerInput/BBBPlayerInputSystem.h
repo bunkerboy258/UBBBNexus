@@ -3,11 +3,24 @@
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraConfig.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
 #include "BBBPlayerInputSystem.generated.h"
 class ABBBCharacter;
 class ABBBPlayerCameraSystem;
 class UEnhancedInputComponent;
+
+/** 玩家输入组件自己的持续采样缓存 */
+struct FBBBPlayerInputState
+{
+    FVector MoveWorld = FVector::ZeroVector;
+    FRotator FacingWorld = FRotator::ZeroRotator;
+    FVector AimTargetWorld = FVector::ZeroVector;
+    bool bAim = false;
+    bool bFire = false;
+    bool bWalk = false;
+    bool bSprint = false;
+    bool bCrouch = false;
+    bool bJump = false;
+};
 
 /** 玩家输入适配层只向角色提交约定的数据包 */
 UCLASS(ClassGroup = "BBB")
@@ -51,7 +64,7 @@ private:
     TWeakObjectPtr<ABBBCharacter> Character;
     UPROPERTY()
     TObjectPtr<ABBBPlayerCameraSystem> Camera;
-    FBBBCharacterControlInput State;
+    FBBBPlayerInputState State;
     FVector2D MoveAxis = FVector2D::ZeroVector;
     FVector2D LookAxis = FVector2D::ZeroVector;
     bool bInputEnabled = true;

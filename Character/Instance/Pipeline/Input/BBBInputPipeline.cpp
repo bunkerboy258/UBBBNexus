@@ -10,6 +10,5 @@ void FBBBInputPipeline::Update() const
     // 交换收件箱后新到达的动画与装备反馈进入下一帧 防止重入修改当前批次
     Data->Input.Frame = MoveTemp(Data->Input.Pending);
     Data->Input.Pending = FBBBInputBatch();
-    Data->Input.FrameControl = Data->Input.Control;
-    Data->Input.Control.bJump = false;
+    Data->Input.FrameContinuous = Data->Input.Continuous;
 }
