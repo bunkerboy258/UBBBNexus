@@ -1,6 +1,5 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Behaviors/BBBBehaviorPolicy.h"
 #include "BBBFireBehavior.generated.h"
 
 struct FBBBCharacterRuntimeData;
@@ -16,9 +15,7 @@ struct FBBBFireInput
 struct FBBBFireBehavior
 {
     using FInput = FBBBFireInput;
-    static constexpr FBBBBehaviorPolicy Policy{
-        EBBBBehaviorDelivery::Request, 300,
-        static_cast<uint8>(BBBBehaviorGroup::Reload | BBBBehaviorGroup::Equip), 0};
+    static bool AllowsFire(bool bReloading, bool bSwitching, bool bStartingReload);
     static bool CanStart(const FInput &Input, const FBBBCharacterRuntimeData &Data);
     static void Start(const FInput &Input, FBBBCharacterRuntimeData &Data);
 };

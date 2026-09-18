@@ -21,14 +21,9 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     if (ABBBCharacter *Previous = Character.Get())
     {
         // 解绑时释放持续输入 保留最后朝向避免无输入帧将角色转向世界零度
-        Previous->GetInput().Submit(FBBBMoveInput());
-        FBBBViewInput ReleasedView;
-        ReleasedView.FacingWorld = Previous->GetActorRotation();
-        Previous->GetInput().Submit(ReleasedView);
-        Previous->GetInput().Submit(FBBBAimInput());
-        Previous->GetInput().Submit(FBBBWalkInput());
-        Previous->GetInput().Submit(FBBBSprintInput());
-        Previous->GetInput().Submit(FBBBCrouchInput());
+        FBBBCharacterControlInput ReleasedControl;
+        ReleasedControl.FacingWorld = Previous->GetActorRotation();
+        Previous->GetInput().Submit(ReleasedControl);
         Previous->RemoveTickPrerequisiteComponent(this);
     }
     APlayerController *Controller = Cast<APlayerController>(GetOwner());
@@ -42,7 +37,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         Camera = nullptr;
     }
     Character = Target;
-    State = FBBBPlayerInputState();
+    State = FBBBCharacterControlInput();
     MoveAxis = FVector2D::ZeroVector;
     LookAxis = FVector2D::ZeroVector;
     if (!Target || !Controller || !Controller->IsLocalController())
@@ -68,7 +63,7 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     bInputEnabled = bEnabled;
     if (!bEnabled)
     {
-        State = FBBBPlayerInputState();
+        State = FBBBCharacterControlInput();
         MoveAxis = FVector2D::ZeroVector;
         LookAxis = FVector2D::ZeroVector;
     }
@@ -267,39 +262,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     FRotator ViewRotation;
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     State.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
-    FBBBMoveInput Move;
-    Move.World = State.MoveWorld;
-    Character->GetInput().Submit(Move);
-
-    FBBBViewInput View;
-    View.FacingWorld = State.FacingWorld;
-    View.AimTargetWorld = State.AimTargetWorld;
-    Character->GetInput().Submit(View);
-
-    FBBBAimInput Aim;
-    Aim.bHeld = State.bAim;
-    Character->GetInput().Submit(Aim);
-
-    FBBBWalkInput Walk;
-    Walk.bHeld = State.bWalk;
-    Character->GetInput().Submit(Walk);
-
-    FBBBSprintInput Sprint;
-    Sprint.bHeld = State.bSprint;
-    Character->GetInput().Submit(Sprint);
-
-    FBBBCrouchInput Crouch;
-    Crouch.bHeld = State.bCrouch;
-    Character->GetInput().Submit(Crouch);
-
-    if (State.bFire)
-    {
-        Character->GetInput().Submit(FBBBFireInput());
-    }
-    if (State.bJump)
-    {
-        Character->GetInput().Submit(FBBBJumpInput());
-    }
+    Character->GetInput().Submit(State);
     State.bJump = false;
 }
 

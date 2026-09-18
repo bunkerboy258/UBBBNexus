@@ -32,9 +32,9 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
 
     Character.Input.Initialize(Character.RuntimeData.Input);
-    FBBBViewInput InitialView;
-    InitialView.FacingWorld = Character.GetActorRotation();
-    Character.Input.Submit(InitialView);
+    FBBBCharacterControlInput InitialControl;
+    InitialControl.FacingWorld = Character.GetActorRotation();
+    Character.Input.Submit(InitialControl);
     Character.bUseControllerRotationYaw = false;
     
     // 按固定顺序注入各角色系统和运行数据

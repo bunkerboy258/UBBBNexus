@@ -35,7 +35,6 @@ private:
     friend struct FBBBEquipBehavior;
     friend struct FBBBFireBehavior;
     friend struct FBBBReloadBehavior;
-    friend struct FBBBEquipmentActionEvent;
     friend struct FBBBCharacterRestoreInput;
 
     /** 角色装备容器 */

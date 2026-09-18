@@ -1,57 +1,11 @@
 #include "BBBWork/UBBBNexus/Character/Instance/Pipeline/Arbitration/BBBArbitrationPipeline.h"
 #include "BBBWork/UBBBNexus/Character/Instance/Runtime/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Input/Behaviors/BBBBehaviorContract.h"
-
-class FBBBBehaviorRuleDispatcher final
-{
-public:
-    template <CBBBBehavior TBehavior>
-    static void Process(const typename TBehavior::FInput &Input, FBBBCharacterRuntimeData &Data)
-    {
-        if (TBehavior::Policy.IsBlocked(Data.Operation.ActiveBehaviorGroups)
-            || !TBehavior::CanStart(Input, Data))
-        {
-            return;
-        }
-
-        // 取消语义只负责调度 具体撤销事实由所属行为完成
-        if ((TBehavior::Policy.Cancels & BBBBehaviorGroup::Reload) != 0
-            && (Data.Operation.ActiveBehaviorGroups & BBBBehaviorGroup::Reload) != 0)
-        {
-            FBBBReloadBehavior::Cancel(Data);
-        }
-        TBehavior::Start(Input, Data);
-    }
-
-    template <CBBBBehavior TBehavior>
-    static void ProcessRequests(const TArray<typename TBehavior::FInput> &Inputs,
-        FBBBCharacterRuntimeData &Data)
-    {
-        static_assert(TBehavior::Policy.Delivery == EBBBBehaviorDelivery::Request);
-        for (const typename TBehavior::FInput &Input : Inputs)
-        {
-            Process<TBehavior>(Input, Data);
-        }
-    }
-
-    template <CBBBBehavior TBehavior>
-    static void ProcessSnapshot(const typename TBehavior::FInput &Input, FBBBCharacterRuntimeData &Data)
-    {
-        static_assert(TBehavior::Policy.Delivery == EBBBBehaviorDelivery::Snapshot);
-        Process<TBehavior>(Input, Data);
-    }
-};
 
 namespace
 {
     template <typename TPacket>
     void ApplyContribution(const TArray<TPacket> &Packets, FBBBCharacterRuntimeData &Data)
     {
-        static_assert(requires(const TPacket &Packet, FBBBCharacterRuntimeData &Runtime)
-        {
-            { Packet.CanApply(Runtime) } -> std::convertible_to<bool>;
-            Packet.Apply(Runtime);
-        });
         for (const TPacket &Packet : Packets)
         {
             if (Packet.CanApply(Data))
@@ -60,10 +14,6 @@ namespace
             }
         }
     }
-
-    static_assert(FBBBEquipBehavior::Policy.Priority > FBBBReloadBehavior::Policy.Priority);
-    static_assert(FBBBReloadBehavior::Policy.Priority > FBBBFireBehavior::Policy.Priority);
-    static_assert(FBBBFireBehavior::Policy.Priority > FBBBSprintBehavior::Policy.Priority);
 }
 
 void FBBBArbitrationPipeline::Update(const bool bRestoreMode) const
@@ -80,11 +30,11 @@ void FBBBArbitrationPipeline::Update(const bool bRestoreMode) const
     // 装备已确认结果先记录为事实 再交给持有跨帧状态的行为处理
     for (const FBBBEquipmentActionEvent &Result : Frame.Results)
     {
-        if (!ensureMsgf(Result.IsValid(), TEXT("[UBBBC]Invalid equipment feedback")))
+        if (!ensureMsgf(Result.Sequence > 0, TEXT("[UBBBC]Invalid equipment feedback")))
         {
             continue;
         }
-        Result.Record(*Data);
+        Data->Equipment.Events.AddAction(Result);
         FBBBReloadBehavior::OnEquipmentResult(Result, *Data);
     }
 
@@ -95,27 +45,46 @@ void FBBBArbitrationPipeline::Update(const bool bRestoreMode) const
     }
     else
     {
-        Data->Operation.Control = FBBBCharacterControlFacts();
-        const FBBBContinuousInputState &Control = Data->Input.FrameContinuous;
-        FBBBBehaviorRuleDispatcher::ProcessSnapshot<FBBBMoveBehavior>(Control.Move, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessSnapshot<FBBBViewBehavior>(Control.View, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessSnapshot<FBBBAimBehavior>(Control.Aim, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessSnapshot<FBBBWalkBehavior>(Control.Walk, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessSnapshot<FBBBCrouchBehavior>(Control.Crouch, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessRequests<FBBBJumpBehavior>(Frame.Jump, *Data);
+        Data->Operation.Control = Data->Input.FrameControl;
 
-        FBBBBehaviorRuleDispatcher::ProcessRequests<FBBBEquipBehavior>(Frame.Equip, *Data);
+        // 顺序即冲突规则 切枪优先于换弹 换弹优先于开火
+        for (const FBBBEquipInput &Input : Frame.Equip)
+        {
+            if (FBBBEquipBehavior::CanStart(Input, *Data))
+            {
+                FBBBEquipBehavior::Start(Input, *Data);
+            }
+        }
         for (const FBBBCharacterReloadAnimationInput &Event : Frame.Notifications)
         {
             FBBBReloadBehavior::OnAnimationEvent(Event, *Data);
         }
-        FBBBBehaviorRuleDispatcher::ProcessRequests<FBBBReloadBehavior>(Frame.Reload, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessRequests<FBBBFireBehavior>(Frame.Fire, *Data);
-        FBBBBehaviorRuleDispatcher::ProcessSnapshot<FBBBSprintBehavior>(Control.Sprint, *Data);
-        Data->Control.Value = Data->Operation.Control;
+        for (const FBBBReloadInput &Input : Frame.Reload)
+        {
+            if (FBBBReloadBehavior::CanStart(Input, *Data))
+            {
+                FBBBReloadBehavior::Start(Input, *Data);
+            }
+        }
 
-        FBBBPlayerCameraInput::BeginFrame(*Data);
-        ApplyContribution(Frame.Camera, *Data);
+        const bool bHeldFire = Data->Operation.Control.bFire;
+        Data->Operation.Control.bFire = false;
+        if (bHeldFire && FBBBFireBehavior::CanStart(FBBBFireInput(), *Data))
+        {
+            FBBBFireBehavior::Start(FBBBFireInput(), *Data);
+        }
+        for (const FBBBFireInput &Input : Frame.Fire)
+        {
+            if (!Data->Operation.bFire && FBBBFireBehavior::CanStart(Input, *Data))
+            {
+                FBBBFireBehavior::Start(Input, *Data);
+            }
+        }
+        Data->Operation.Control.bSprint = Data->Operation.Control.bSprint
+            && FBBBCharacterControlRule::AllowsSprint(Data->Operation.Control.bAim,
+                Data->Operation.Control.bFire);
+        Data->Control.Value = Data->Operation.Control;
+        Data->CameraContributions = Frame.Camera;
     }
 
     FBBBCharacterMontagePacket::BeginFrame(*Data);

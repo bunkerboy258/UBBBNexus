@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterControlFacts.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
 #include "BBBCharacterOperationState.generated.h"
 class ABBBEquipment;
 class FBBBArbitrationPipeline;
@@ -13,14 +13,6 @@ struct FBBBCharacterOperationState
 
 private:
     friend class FBBBArbitrationPipeline;
-    friend class FBBBBehaviorRuleDispatcher;
-    friend struct FBBBMoveBehavior;
-    friend struct FBBBViewBehavior;
-    friend struct FBBBAimBehavior;
-    friend struct FBBBWalkBehavior;
-    friend struct FBBBCrouchBehavior;
-    friend struct FBBBJumpBehavior;
-    friend struct FBBBSprintBehavior;
     friend struct FBBBEquipBehavior;
     friend struct FBBBFireBehavior;
     friend struct FBBBReloadBehavior;
@@ -36,10 +28,9 @@ private:
     bool bMagazineDetached = false;
     bool bEndQueued = false;
     bool bRestoreMode = false;
-    uint8 ActiveBehaviorGroups = 0;
 
     UPROPERTY()
-    FBBBCharacterControlFacts Control;
+    FBBBCharacterControlInput Control;
 
     UPROPERTY()
     TObjectPtr<ABBBEquipment> SelectedEquipment = nullptr;

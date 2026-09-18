@@ -7,76 +7,18 @@ void FBBBCharacterInput::Initialize(FBBBInputRuntimeData &InData)
     Data = &InData;
 }
 
-bool FBBBCharacterInput::Submit(const FBBBMoveInput &Packet)
+bool FBBBCharacterInput::Submit(const FBBBCharacterControlInput &Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Data && !Packet.World.ContainsNaN(),
-        TEXT("[UBBBC]Invalid move input")))
+    if (!ensureMsgf(IsInGameThread() && Data && !Packet.MoveWorld.ContainsNaN()
+        && !Packet.FacingWorld.ContainsNaN() && !Packet.AimTargetWorld.ContainsNaN(),
+        TEXT("[UBBBC]Invalid control input")))
     {
         return false;
     }
-    Data->Continuous.Move = Packet;
-    Data->Continuous.Move.World = Packet.World.GetClampedToMaxSize(1.0f);
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBViewInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data && !Packet.FacingWorld.ContainsNaN()
-        && !Packet.AimTargetWorld.ContainsNaN(), TEXT("[UBBBC]Invalid view input")))
-    {
-        return false;
-    }
-    Data->Continuous.View = Packet;
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBAimInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Aim input unavailable")))
-    {
-        return false;
-    }
-    Data->Continuous.Aim = Packet;
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBWalkInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Walk input unavailable")))
-    {
-        return false;
-    }
-    Data->Continuous.Walk = Packet;
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBSprintInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Sprint input unavailable")))
-    {
-        return false;
-    }
-    Data->Continuous.Sprint = Packet;
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBCrouchInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Crouch input unavailable")))
-    {
-        return false;
-    }
-    Data->Continuous.Crouch = Packet;
-    return true;
-}
-
-bool FBBBCharacterInput::Submit(const FBBBJumpInput &Packet)
-{
-    if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Jump input unavailable")))
-    {
-        return false;
-    }
-    Data->Pending.Jump.Add(Packet);
+    const bool bJump = Data->Control.bJump || Packet.bJump;
+    Data->Control = Packet;
+    Data->Control.MoveWorld = Packet.MoveWorld.GetClampedToMaxSize(1.0f);
+    Data->Control.bJump = bJump;
     return true;
 }
 

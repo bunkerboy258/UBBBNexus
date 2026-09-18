@@ -2,7 +2,6 @@
 #include "CoreMinimal.h"
 #include "BBBEquipmentActionEvent.generated.h"
 
-struct FBBBCharacterRuntimeData;
 
 /** 角色支持的装备操作 */
 UENUM(BlueprintType)
@@ -55,9 +54,4 @@ struct FBBBEquipmentActionEvent
     UPROPERTY(BlueprintReadOnly)
     int32 LoadedAmmo = 0;
 
-    /** @return 结果是否有有效序号 */
-    bool IsValid() const;
-
-    /** @param Data 角色黑板 */
-    void Record(FBBBCharacterRuntimeData &Data) const;
 };

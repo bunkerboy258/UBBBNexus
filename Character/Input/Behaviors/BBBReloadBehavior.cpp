@@ -3,14 +3,14 @@
 
 bool FBBBReloadBehavior::CanStart(const FInput &Input, const FBBBCharacterRuntimeData &Data)
 {
-    return Data.Equipment.Equipment.GetActiveMainHandInstance()
-        != nullptr;
+    return Data.Equipment.Equipment.GetActiveMainHandInstance() != nullptr
+        && Data.Operation.SelectedEquipment == nullptr
+        && Data.Operation.ReloadSequence <= 0;
 }
 
 void FBBBReloadBehavior::Start(const FInput &Input, FBBBCharacterRuntimeData &Data)
 {
     Data.Operation.bReload = true;
-    Data.Operation.ActiveBehaviorGroups |= BBBBehaviorGroup::Reload;
     Data.Equipment.Commands.SubmitReload();
 }
 
@@ -21,17 +21,12 @@ void FBBBReloadBehavior::BeginFrame(FBBBCharacterRuntimeData &Data)
     Operation.SelectedEquipment = nullptr;
     Operation.bFire = false;
     Operation.bReload = false;
-    Operation.ActiveBehaviorGroups = 0;
 
     // 旧装备反馈不能复活已经失效的换弹
     if (Operation.ReloadSequence > 0
         && Operation.ReloadEquipment.Get() != Data.Equipment.Equipment.GetActiveMainHandInstance())
     {
         Cancel(Data);
-    }
-    if (Operation.ReloadSequence > 0)
-    {
-        Operation.ActiveBehaviorGroups |= BBBBehaviorGroup::Reload;
     }
 }
 
@@ -53,7 +48,6 @@ void FBBBReloadBehavior::OnEquipmentResult(const FBBBEquipmentActionEvent &Event
         Operation.ReloadEquipment = Data.Equipment.Equipment.GetActiveMainHandInstance();
         Operation.bMagazineDetached = false;
         Operation.bEndQueued = false;
-        Operation.ActiveBehaviorGroups |= BBBBehaviorGroup::Reload;
     }
     if (Event.Sequence != Operation.ReloadSequence)
     {
@@ -73,7 +67,6 @@ void FBBBReloadBehavior::OnEquipmentResult(const FBBBEquipmentActionEvent &Event
         Operation.LastCompletedReloadSequence = Event.Sequence;
         Operation.ReloadSequence = INDEX_NONE;
         Operation.ReloadEquipment.Reset();
-        Operation.ActiveBehaviorGroups &= ~BBBBehaviorGroup::Reload;
     }
 }
 
@@ -119,5 +112,4 @@ void FBBBReloadBehavior::Cancel(FBBBCharacterRuntimeData &Data)
         Operation.LastCompletedReloadSequence, Operation.ReloadSequence);
     Operation.ReloadSequence = INDEX_NONE;
     Operation.ReloadEquipment.Reset();
-    Operation.ActiveBehaviorGroups &= ~BBBBehaviorGroup::Reload;
 }

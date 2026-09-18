@@ -32,25 +32,15 @@ private:
     friend class ABBBPlayerCameraSystem;
     friend class FBBBInputPipeline;
     friend class FBBBArbitrationPipeline;
-    friend class FBBBBehaviorRuleDispatcher;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
-    friend struct FBBBMoveBehavior;
-    friend struct FBBBViewBehavior;
-    friend struct FBBBAimBehavior;
-    friend struct FBBBWalkBehavior;
-    friend struct FBBBCrouchBehavior;
-    friend struct FBBBJumpBehavior;
-    friend struct FBBBSprintBehavior;
     friend struct FBBBEquipBehavior;
     friend struct FBBBFireBehavior;
     friend struct FBBBReloadBehavior;
-    friend struct FBBBEquipmentActionEvent;
     friend struct FBBBCharacterMontagePacket;
     friend struct FBBBCharacterRestoreInput;
-    friend struct FBBBPlayerCameraInput;
 
     //保存当前帧世界时间快照
     UPROPERTY(Transient)

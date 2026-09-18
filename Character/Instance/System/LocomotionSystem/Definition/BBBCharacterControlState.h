@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Instance/System/LocomotionSystem/Definition/BBBCharacterControlFacts.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterControlInput.h"
 #include "BBBCharacterControlState.generated.h"
 
 /** 已裁决的角色控制黑板 */
@@ -64,5 +64,5 @@ private:
     friend class FBBBArbitrationPipeline;
 
     UPROPERTY()
-    FBBBCharacterControlFacts Value;
+    FBBBCharacterControlInput Value;
 };

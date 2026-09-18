@@ -1,6 +1,5 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Behaviors/BBBBehaviorPolicy.h"
 #include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterAnimationInput.h"
 #include "BBBReloadBehavior.generated.h"
@@ -18,9 +17,6 @@ struct FBBBReloadInput
 struct FBBBReloadBehavior
 {
     using FInput = FBBBReloadInput;
-    static constexpr FBBBBehaviorPolicy Policy{
-        EBBBBehaviorDelivery::Request, 400,
-        static_cast<uint8>(BBBBehaviorGroup::Equip | BBBBehaviorGroup::Reload), 0};
     static bool CanStart(const FInput &Input, const FBBBCharacterRuntimeData &Data);
     static void Start(const FInput &Input, FBBBCharacterRuntimeData &Data);
     static void BeginFrame(FBBBCharacterRuntimeData &Data);
