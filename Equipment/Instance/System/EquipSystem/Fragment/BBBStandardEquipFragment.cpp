@@ -12,8 +12,8 @@ bool FBBBStandardEquipFragment::SubmitMontage(FBBBCharacterInput &CharacterAPI, 
     }
 
     FBBBCharacterDiscreteInput Input;
-    Input.Montage = EquipMontage;
-    Input.MontagePlayRate = 1.0f;
-    Input.Sequence = Sequence;
+    Input.Montage.Montage = EquipMontage;
+    Input.Montage.PlayRate = 1.0f;
+    Input.Montage.Sequence = Sequence;
     return CharacterAPI.Submit(Input);
 }

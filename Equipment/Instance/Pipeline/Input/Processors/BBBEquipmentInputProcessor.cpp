@@ -71,7 +71,7 @@ void FBBBEquipmentInputProcessor::Update(
 
             // 将恢复事件发布到角色外部接口
             FBBBCharacterDiscreteInput CharacterInput;
-            CharacterInput.EquipmentEvent = Snapshot;
+            CharacterInput.Equipment.ActionEvent = Snapshot;
             CharacterAPI.Submit(CharacterInput);
             continue;
         }

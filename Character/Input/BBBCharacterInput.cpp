@@ -8,15 +8,15 @@ void FBBBCharacterInput::Initialize(FBBBCharacterInputRuntimeData &InData)
 
 bool FBBBCharacterInput::Submit(const FBBBCharacterContinuousInput &Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Data && !Packet.MoveWorld.ContainsNaN()
-        && !Packet.FacingWorld.ContainsNaN() && !Packet.AimTargetWorld.ContainsNaN(),
+    if (!ensureMsgf(IsInGameThread() && Data && !Packet.Movement.MoveWorld.ContainsNaN()
+        && !Packet.Movement.FacingWorld.ContainsNaN() && !Packet.Aim.AimTargetWorld.ContainsNaN(),
         TEXT("[UBBBC]Invalid continuous input")))
     {
         return false;
     }
 
     Data->Continuous = Packet;
-    Data->Continuous.MoveWorld = Packet.MoveWorld.GetClampedToMaxSize(1.0f);
+    Data->Continuous.Movement.MoveWorld = Packet.Movement.MoveWorld.GetClampedToMaxSize(1.0f);
     return true;
 }
 
@@ -27,26 +27,26 @@ bool FBBBCharacterInput::Submit(FBBBCharacterDiscreteInput Packet)
         return false;
     }
 
-    if (Packet.EquipmentEvent.ActionType != EBBBCharacterActionType::None
-        && !ensureMsgf(Packet.EquipmentEvent.Sequence > 0, TEXT("[UBBBC]Invalid equipment fact")))
+    if (Packet.Equipment.ActionEvent.ActionType != EBBBCharacterActionType::None
+        && !ensureMsgf(Packet.Equipment.ActionEvent.Sequence > 0, TEXT("[UBBBC]Invalid equipment fact")))
     {
         return false;
     }
 
-    if (Packet.ReloadPhase != EBBBCharacterReloadPhase::None
-        && !ensureMsgf(Packet.Sequence > 0, TEXT("[UBBBC]Invalid reload animation input")))
+    if (Packet.Reload.Phase != EBBBCharacterReloadPhase::None
+        && !ensureMsgf(Packet.Reload.Sequence > 0, TEXT("[UBBBC]Invalid reload animation input")))
     {
         return false;
     }
 
-    if (Packet.Montage && !ensureMsgf(FMath::IsFinite(Packet.MontagePlayRate)
-        && Packet.MontagePlayRate > 0.0f, TEXT("[UBBBC]Invalid montage input")))
+    if (Packet.Montage.Montage && !ensureMsgf(FMath::IsFinite(Packet.Montage.PlayRate)
+        && Packet.Montage.PlayRate > 0.0f, TEXT("[UBBBC]Invalid montage input")))
     {
         return false;
     }
 
-    if (Packet.CameraRecoverySpeed > 0.0f && !ensureMsgf(!Packet.CameraImpulse.ContainsNaN()
-        && FMath::IsFinite(Packet.CameraRecoverySpeed), TEXT("[UBBBC]Invalid camera input")))
+    if (Packet.Camera.RecoverySpeed > 0.0f && !ensureMsgf(!Packet.Camera.Impulse.ContainsNaN()
+        && FMath::IsFinite(Packet.Camera.RecoverySpeed), TEXT("[UBBBC]Invalid camera input")))
     {
         return false;
     }

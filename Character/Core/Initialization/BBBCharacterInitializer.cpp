@@ -33,7 +33,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 
     Character.Input.Initialize(Character.RuntimeData.Input);
     FBBBCharacterContinuousInput InitialControl;
-    InitialControl.FacingWorld = Character.GetActorRotation();
+    InitialControl.Movement.FacingWorld = Character.GetActorRotation();
     Character.Input.Submit(InitialControl);
     Character.bUseControllerRotationYaw = false;
     

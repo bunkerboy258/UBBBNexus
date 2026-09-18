@@ -2,12 +2,36 @@
 
 外部只通过 `ABBBCharacter::GetInput()` 提交两个普通输入包
 
+输入定义按语义拆分为独立编译单元
+
+```text
+Input/
+├── Continuous/
+│   ├── Movement/
+│   └── Aim/
+├── Discrete/
+│   ├── Equipment/
+│   ├── Fire/
+│   ├── Reload/
+│   ├── Jump/
+│   ├── Montage/
+│   └── Camera/
+└── RestoreDiscrete/
+    ├── Equipment/
+    ├── Fire/
+    ├── Reload/
+    ├── Aim/
+    └── Locomotion/
+```
+
+每个语义定义都有自己的头文件和 cpp 文件 聚合包只负责组合定义
+
 | 包 | 用途 | 生命周期 |
 | --- | --- | --- |
 | `FBBBCharacterContinuousInput` | 移动 朝向 瞄准和步态的持续事实 | 保留最后一份快照 |
 | `FBBBCharacterDiscreteInput` | 开火 换弹 切换装备 动画通知 蒙太奇和相机表现 | 本帧消费一次 |
 
-网络接收端使用 `FBBBCharacterRestoreDiscreteInput` 表示权威端已经形成的离散事实 它不是外部输入 网络组件将它提交到同一输入入口 解析系统依照镜像规则写入黑板
+网络接收端使用 `FBBBCharacterRestoreDiscreteInput` 表示权威端已经形成的离散事实 它按装备 开火 换弹 瞄准和步态分别保存 它不是外部输入 网络组件将它提交到同一输入入口 解析系统依照镜像规则写入黑板
 
 `FBBBCharacterInput` 只负责校验和收件 `ParseSystem` 中的 `FBBBCharacterInputProcessor` 在主管线的固定位置解析所有包 输入包只携带事实和修改效果 不持有规则对象 不注册委托 不直接调用任一控制器
 

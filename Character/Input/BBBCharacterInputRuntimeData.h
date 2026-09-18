@@ -1,7 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputPackets.h"
+#include "BBBWork/UBBBNexus/Character/Input/Continuous/BBBCharacterContinuousInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Discrete/BBBCharacterDiscreteInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/RestoreDiscrete/BBBCharacterRestoreDiscreteInput.h"
 #include "BBBCharacterInputRuntimeData.generated.h"
 
 class FBBBCharacterInput;

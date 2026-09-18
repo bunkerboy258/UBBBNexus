@@ -138,8 +138,8 @@ void ABBBCharacter::LateUpdate()
 void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
 {
     FBBBCharacterDiscreteInput Packet;
-    Packet.Sequence = Sequence;
-    Packet.ReloadPhase = EBBBCharacterReloadPhase::DetachMagazine;
+    Packet.Reload.Sequence = Sequence;
+    Packet.Reload.Phase = EBBBCharacterReloadPhase::DetachMagazine;
     Input.Submit(Packet);
 }
 
@@ -150,8 +150,8 @@ void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharac
         UE_LOG(LogTemp, Warning, TEXT("[UBBBC]Reload playback failed Sequence=%d"), Sequence);
     }
     FBBBCharacterDiscreteInput Packet;
-    Packet.Sequence = Sequence;
-    Packet.ReloadPhase = EndReason == EBBBCharacterReloadEndReason::Loaded
+    Packet.Reload.Sequence = Sequence;
+    Packet.Reload.Phase = EndReason == EBBBCharacterReloadEndReason::Loaded
         ? EBBBCharacterReloadPhase::LoadMagazine : EBBBCharacterReloadPhase::Interrupted;
     Input.Submit(Packet);
 }

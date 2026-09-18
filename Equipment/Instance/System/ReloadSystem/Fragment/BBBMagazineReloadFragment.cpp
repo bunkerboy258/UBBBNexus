@@ -20,10 +20,10 @@ bool FBBBMagazineReloadFragment::Begin(FBBBEquipmentReloadContext &Context) cons
     }
 
     FBBBCharacterDiscreteInput Input;
-    Input.Montage = Montage;
-    Input.MontagePlayRate = 1.0f;
-    Input.Sequence = Context.Sequence;
-    Input.bReloadMontage = true;
+    Input.Montage.Montage = Montage;
+    Input.Montage.PlayRate = 1.0f;
+    Input.Montage.Sequence = Context.Sequence;
+    Input.Montage.bReload = true;
     if (!Context.CharacterAPI.Submit(Input))
     {
         return false;

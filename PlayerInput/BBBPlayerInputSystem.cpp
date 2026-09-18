@@ -22,7 +22,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     {
         // 解绑时释放持续输入 保留最后朝向避免无输入帧将角色转向世界零度
         FBBBCharacterContinuousInput ReleasedControl;
-        ReleasedControl.FacingWorld = Previous->GetActorRotation();
+        ReleasedControl.Movement.FacingWorld = Previous->GetActorRotation();
         Previous->GetInput().Submit(ReleasedControl);
         Previous->RemoveTickPrerequisiteComponent(this);
     }
@@ -80,7 +80,7 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
         return;
     }
     FBBBCharacterDiscreteInput Packet;
-    Packet.EquipSlot = Slot;
+    Packet.Equipment.EquipSlot = Slot;
     Character->GetInput().Submit(Packet);
 }
 
@@ -91,7 +91,7 @@ void UBBBPlayerInputSystem::SubmitReload()
         return;
     }
     FBBBCharacterDiscreteInput Packet;
-    Packet.bReload = true;
+    Packet.Reload.bPressed = true;
     Character->GetInput().Submit(Packet);
 }
 
@@ -147,14 +147,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.PrecisionAimAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.bAim = bInputEnabled;
+                State.Aim.bAim = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.PrecisionAimAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.bAim = false;
+                    State.Aim.bAim = false;
                 });
         }
     }
@@ -163,14 +163,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.WalkAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.bWalk = bInputEnabled;
+                State.Movement.bWalk = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.WalkAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.bWalk = false;
+                    State.Movement.bWalk = false;
                 });
         }
     }
@@ -179,14 +179,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.SprintAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.bSprint = bInputEnabled;
+                State.Movement.bSprint = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.SprintAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.bSprint = false;
+                    State.Movement.bSprint = false;
                 });
         }
     }
@@ -195,14 +195,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.CrouchAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.bCrouch = bInputEnabled;
+                State.Movement.bCrouch = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.CrouchAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.bCrouch = false;
+                    State.Movement.bCrouch = false;
                 });
         }
     }
@@ -261,17 +261,17 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     LookAxis = FVector2D::ZeroVector;
     const FVector2D Axis = MoveAxis.Size() > Config.MoveDeadZone ? MoveAxis : FVector2D::ZeroVector;
     const FRotator Yaw(0.0f, Facing.Yaw, 0.0f);
-    State.MoveWorld = (Yaw.Vector() * Axis.Y
+    State.Movement.MoveWorld = (Yaw.Vector() * Axis.Y
         + FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y) * Axis.X).GetClampedToMaxSize(1.0f);
-    State.FacingWorld = Facing;
+    State.Movement.FacingWorld = Facing;
     FVector ViewLocation;
     FRotator ViewRotation;
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
-    State.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
+    State.Aim.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
     Character->GetInput().Submit(State);
     FBBBCharacterDiscreteInput Action;
-    Action.bFire = bFire;
-    Action.bJump = bJump;
+    Action.Fire.bPressed = bFire;
+    Action.Jump.bPressed = bJump;
     Character->GetInput().Submit(Action);
     bJump = false;
 }

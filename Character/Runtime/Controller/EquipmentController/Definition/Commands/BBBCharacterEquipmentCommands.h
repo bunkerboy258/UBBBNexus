@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Events/BBBCharacterEquipmentEvents.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputPackets.h"
+#include "BBBWork/UBBBNexus/Character/Input/Discrete/BBBCharacterDiscreteInput.h"
 #include "BBBCharacterEquipmentCommands.generated.h"
 
 class FBBBCharacterEquipmentActionProcessor;

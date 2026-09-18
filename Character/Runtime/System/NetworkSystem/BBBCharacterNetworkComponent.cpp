@@ -39,7 +39,8 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBB
     }
 
     FBBBCharacterRestoreDiscreteInput Restore;
-    Restore.EquipmentHandle = Packet.EquipmentHandle;
+    Restore.Equipment.Emplace();
+    Restore.Equipment->EquipmentHandle = Packet.EquipmentHandle;
     Input->SubmitRestore(MoveTemp(Restore));
 }
 
@@ -51,11 +52,32 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
     }
 
     FBBBCharacterRestoreDiscreteInput Restore;
-    Restore.EquipmentEvent.ActionType = Packet.ActionType;
-    Restore.EquipmentEvent.EquipmentId = Packet.EquipmentId;
-    Restore.EquipmentEvent.Sequence = Packet.Sequence;
-    Restore.EquipmentEvent.Phase = Packet.Phase;
-    Restore.EquipmentEvent.LoadedAmmo = Packet.LoadedAmmo;
+    if (Packet.ActionType == EBBBCharacterActionType::Fire)
+    {
+        Restore.Fire.Emplace();
+        Restore.Fire->EquipmentId = Packet.EquipmentId;
+        Restore.Fire->Sequence = Packet.Sequence;
+        Restore.Fire->LoadedAmmo = Packet.LoadedAmmo;
+    }
+
+    if (Packet.ActionType == EBBBCharacterActionType::Reload)
+    {
+        Restore.Reload.Emplace();
+        Restore.Reload->EquipmentId = Packet.EquipmentId;
+        Restore.Reload->Sequence = Packet.Sequence;
+        Restore.Reload->Phase = Packet.Phase;
+        Restore.Reload->LoadedAmmo = Packet.LoadedAmmo;
+    }
+
+    if (Packet.ActionType == EBBBCharacterActionType::Equip)
+    {
+        Restore.Equipment.Emplace();
+        Restore.Equipment->ActionEvent.ActionType = Packet.ActionType;
+        Restore.Equipment->ActionEvent.EquipmentId = Packet.EquipmentId;
+        Restore.Equipment->ActionEvent.Sequence = Packet.Sequence;
+        Restore.Equipment->ActionEvent.Phase = Packet.Phase;
+        Restore.Equipment->ActionEvent.LoadedAmmo = Packet.LoadedAmmo;
+    }
     Input->SubmitRestore(MoveTemp(Restore));
 }
 
@@ -65,7 +87,8 @@ void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimN
     if (Input && !IsOwnerLocallyControlled())
     {
         FBBBCharacterRestoreDiscreteInput Restore;
-        Restore.Aim = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
+        Restore.Aim.Emplace();
+        Restore.Aim->State = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
         Input->SubmitRestore(MoveTemp(Restore));
     }
 }
@@ -76,7 +99,8 @@ void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(F
     if (Input && !IsOwnerLocallyControlled())
     {
         FBBBCharacterRestoreDiscreteInput Restore;
-        Restore.Gait = LocomotionState.Gait;
+        Restore.Locomotion.Emplace();
+        Restore.Locomotion->Gait = LocomotionState.Gait;
         Input->SubmitRestore(MoveTemp(Restore));
     }
 }
@@ -89,7 +113,8 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
     }
 
     FBBBCharacterRestoreDiscreteInput Restore;
-    Restore.Aim = FBBBAimRuntimeState{ReplicatedAimState.bIsAiming, ReplicatedAimState.AimTargetWorld};
+    Restore.Aim.Emplace();
+    Restore.Aim->State = FBBBAimRuntimeState{ReplicatedAimState.bIsAiming, ReplicatedAimState.AimTargetWorld};
     Input->SubmitRestore(MoveTemp(Restore));
 }
 
@@ -101,7 +126,8 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
     }
 
     FBBBCharacterRestoreDiscreteInput Restore;
-    Restore.Gait = ReplicatedLocomotionState.Gait;
+    Restore.Locomotion.Emplace();
+    Restore.Locomotion->Gait = ReplicatedLocomotionState.Gait;
     Input->SubmitRestore(MoveTemp(Restore));
 }
 

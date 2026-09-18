@@ -30,16 +30,16 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     // 将换弹动画通知映射为装备接口的对应阶段
     for (const FBBBCharacterDiscreteInput &Input : Commands.ReloadInputs)
     {
-        switch (Input.ReloadPhase)
+        switch (Input.Reload.Phase)
         {
         case EBBBCharacterReloadPhase::DetachMagazine:
-            API.SubmitDetachMagazine(Input.Sequence);
+            API.SubmitDetachMagazine(Input.Reload.Sequence);
             break;
         case EBBBCharacterReloadPhase::LoadMagazine:
-            API.SubmitLoadMagazine(Input.Sequence);
+            API.SubmitLoadMagazine(Input.Reload.Sequence);
             break;
         case EBBBCharacterReloadPhase::Interrupted:
-            API.SubmitCancelReload(Input.Sequence);
+            API.SubmitCancelReload(Input.Reload.Sequence);
             break;
         case EBBBCharacterReloadPhase::None:
             break;

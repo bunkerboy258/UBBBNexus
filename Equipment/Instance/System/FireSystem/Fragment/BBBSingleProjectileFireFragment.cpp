@@ -76,9 +76,9 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
     if (FireMontage)
     {
         FBBBCharacterDiscreteInput MontageInput;
-        MontageInput.Montage = FireMontage;
-        MontageInput.MontagePlayRate = 1.0f;
-        MontageInput.Sequence = Context.Sequence;
+        MontageInput.Montage.Montage = FireMontage;
+        MontageInput.Montage.PlayRate = 1.0f;
+        MontageInput.Montage.Sequence = Context.Sequence;
         Context.CharacterAPI.Submit(MontageInput);
     }
 
@@ -90,8 +90,8 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
             HorizontalRecoilAmount + FMath::FRandRange(-HorizontalRecoilRandom, HorizontalRecoilRandom));
         Context.LoadedAmmo--;
         FBBBCharacterDiscreteInput CameraInput;
-        CameraInput.CameraImpulse = RecoilImpulse;
-        CameraInput.CameraRecoverySpeed = RecoilRecoverySpeed;
+        CameraInput.Camera.Impulse = RecoilImpulse;
+        CameraInput.Camera.RecoverySpeed = RecoilRecoverySpeed;
         Context.CharacterAPI.Submit(CameraInput);
     }
 
