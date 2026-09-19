@@ -4,14 +4,14 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 快捷槽切枪请求包 请求带内最高优先级
+ * 执行时取消进行中的换弹并改写期望主手装备
  */
-struct FBBBCameraPacket final
+struct FBBBEquipSlotPacket final
 {
 
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
+    /** 目标快捷槽位 */
+    int32 Slot = INDEX_NONE;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,7 +24,7 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 取消换弹并登记期望主手装备
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;

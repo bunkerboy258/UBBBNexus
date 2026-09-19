@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 class ABBBCharacter;
 class UAnimMontage;

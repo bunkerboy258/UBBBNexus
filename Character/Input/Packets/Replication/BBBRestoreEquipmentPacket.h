@@ -4,14 +4,13 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 网络还原装备选择包 将装备句柄还原为镜像装备创建请求
  */
-struct FBBBCameraPacket final
+struct FBBBRestoreEquipmentPacket final
 {
 
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
+    /** 远端主手装备的句柄 对应装备配置的 EquipmentId */
+    FName EquipmentHandle = NAME_None;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,7 +23,7 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 按句柄查找装备配置并登记镜像创建请求
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;

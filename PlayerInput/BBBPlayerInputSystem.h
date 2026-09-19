@@ -3,8 +3,8 @@
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraConfig.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Base/BBBCharacterAimPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Base/BBBCharacterMovementPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterAimPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterMovementPacket.h"
 #include "BBBPlayerInputSystem.generated.h"
 class ABBBCharacter;
 class ABBBPlayerCameraSystem;

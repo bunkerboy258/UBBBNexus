@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 // TODO: 复制本对文件到对应语义目录并替换类型名
 // TODO: 在FBBBCharacterInputFrame中增加槽位和Submit重载

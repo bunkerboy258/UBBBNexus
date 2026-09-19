@@ -3,15 +3,22 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
+struct FBBBEquipmentActionFact;
+
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 弹匣已卸下事实包 驱动解析状态机记录卸下进度
  */
-struct FBBBCameraPacket final
+struct FBBBMagazineDetachedFactPacket final
 {
 
-    FVector2D Impulse = FVector2D::ZeroVector;
+    /** 线上身份 与网络包 PacketId 对应 */
+    static constexpr uint8 PacketId = 4;
 
-    float RecoverySpeed = 0.0f;
+    FName EquipmentId = NAME_None;
+
+    int32 Sequence = INDEX_NONE;
+
+    int32 LoadedAmmo = 0;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,8 +31,11 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 留档事实并记录卸下进度 还原模式同时下发镜像装备快照
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;
+
+    /** @return 对应的事实记录 */
+    FBBBEquipmentActionFact ToFact() const;
 };

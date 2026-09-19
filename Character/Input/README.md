@@ -6,14 +6,16 @@
 Input/
 ├── BBBCharacterInputFrame       全部固定槽位与提交映射
 ├── BBBCharacterInputSubmit      游戏线程、自检和解析重入守卫
+├── BBBCharacterPacketContext    输入包共享的只读解析上下文
 └── Packets/
-    ├── BBBCharacterPacketContext
-    ├── Base/                    移动与瞄准控制
-    ├── Request/                 切枪、换弹、开火和跳跃请求
-    ├── ReloadPhase/             换弹动画通知
-    ├── Fact/                    已形成的装备事实
-    ├── Restore/                 网络还原状态
-    └── Presentation/            五个独立蒙太奇槽位与相机输入
+    ├── State/                   每帧可持续覆写的移动与瞄准状态
+    ├── Command/                 切枪、换弹、开火和跳跃意图
+    ├── Event/
+    │   ├── Equipment/       已经发生的装备事实
+    │   └── Animation/       动画通知产生的换弹阶段事件
+    ├── Replication/             网络传入的权威状态还原
+    ├── Presentation/            五个独立蒙太奇槽位与相机表现
+    └── _Template/               新输入包模板
 ```
 
 ## 包语义

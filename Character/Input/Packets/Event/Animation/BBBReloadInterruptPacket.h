@@ -4,14 +4,14 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 换弹中断动画通知包
+ * 未收到装填通知的播放结束由此收尾
  */
-struct FBBBCameraPacket final
+struct FBBBReloadInterruptPacket final
 {
 
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
+    /** 播放时保存的换弹序号 */
+    int32 Sequence = INDEX_NONE;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,7 +24,7 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 登记换弹中断并转发装备取消命令
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;

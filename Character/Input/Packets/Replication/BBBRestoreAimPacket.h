@@ -4,14 +4,13 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 网络还原瞄准状态包 直接覆盖瞄准黑板
  */
-struct FBBBCameraPacket final
+struct FBBBRestoreAimPacket final
 {
 
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
+    /** 远端同步的瞄准状态 */
+    FBBBAimRuntimeState State;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,7 +23,7 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 还原瞄准黑板状态
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;

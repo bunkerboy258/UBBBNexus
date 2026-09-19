@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
 

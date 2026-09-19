@@ -4,14 +4,11 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 换弹请求包 请求带内输给切枪
+ * 批准时压过同帧开火
  */
-struct FBBBCameraPacket final
+struct FBBBReloadPacket final
 {
-
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,7 +21,7 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 登记换弹承诺并提交装备换弹命令
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;

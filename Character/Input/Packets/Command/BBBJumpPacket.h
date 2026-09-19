@@ -4,14 +4,10 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketContext.h"
 
 /**
- * 相机表现贡献包 提交一次冲量与恢复速度
+ * 跳跃请求包 与装备动作无冲突
  */
-struct FBBBCameraPacket final
+struct FBBBJumpPacket final
 {
-
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -24,7 +20,7 @@ struct FBBBCameraPacket final
     bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
-     * 追加相机表现贡献
+     * 登记跳跃意图到控制事实
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterPacketContext &Context) const;
