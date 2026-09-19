@@ -6,7 +6,6 @@
 
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterEquipmentActionProcessor;
-class FBBBCharacterInput;
 
 
 
@@ -63,7 +62,6 @@ private:
     friend class FBBBCharacterInputProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterInput;
     friend struct FBBBEquipBehavior;
 
 

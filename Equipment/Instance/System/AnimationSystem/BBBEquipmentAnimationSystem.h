@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/Processors/BBBEquipmentAnimationFactProcessor.h"
 
 class ABBBEquipment;
-class FBBBCharacterInput;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;

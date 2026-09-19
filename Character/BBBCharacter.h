@@ -2,7 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputSubmit.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterReloadEndReason.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/BBBCharacterAimController.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/BBBCharacterAnimationSystem.h"
@@ -80,10 +80,15 @@ public:
         return CharacterConfig;
     }
 
-    /** @return 装备向角色提交表现贡献的入口 */
-    FBBBCharacterInput &GetInput()
+    /**
+     * 提交离散快照包到本帧输入队列
+     * @param Packet	输入包
+     * @return 是否接受输入
+     */
+    template<typename TPacket>
+    bool SubmitInput(TPacket &&Packet)
     {
-        return Input;
+        return BBBCharacterInput::Submit(RuntimeData, Forward<TPacket>(Packet));
     }
 
     /**
@@ -129,9 +134,6 @@ private:
     FBBBCharacterLocomotionController LocomotionController;
     
     FBBBCharacterEquipmentController EquipmentController;
-
-    /** 接收装备提交的角色表现贡献 */
-    FBBBCharacterInput Input;
 
     FBBBCharacterParseSystem ParseSystem;
     

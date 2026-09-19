@@ -11,19 +11,10 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterParseState &State = Data.Operation;
     State.BeginFrame(bRestoreMode, Data.Equipment.Equipment.GetActiveMainHandInstance());
 
-    TArray<FBBBCharacterPacket> Pending = MoveTemp(Data.Input.Pending);
+    TArray<FBBBCharacterPacket> Pending = MoveTemp(Data.Snapshot);
 
     FBBBCharacterMontagePacket::BeginFrame(Data.Animation, State);
     Data.CameraContributions.Reset();
-
-    // 持续状态只在本地模式落黑板 还原模式的角色由还原包直写对应域
-    if (!bRestoreMode)
-    {
-        Data.Input.States.Movement.Apply(State.Control);
-        Data.Input.States.Aim.Apply(State.Control);
-        State.Control.bFire = false;
-        State.Control.bJump = false;
-    }
 
     // 高优先级先判先行 同优先级保持到达顺序
     Pending.StableSort([](const FBBBCharacterPacket &Left, const FBBBCharacterPacket &Right)

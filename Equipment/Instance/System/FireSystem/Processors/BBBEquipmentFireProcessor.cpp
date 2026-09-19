@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Processors/BBBEquipmentFireProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBFireFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
@@ -12,7 +12,7 @@
 void FBBBEquipmentFireProcessor::Update(
     ABBBEquipment &Instance, USkeletalMeshComponent &WeaponMesh,
     FBBBEquipmentFireRuntimeData &Data, const FBBBEquipmentReloadRuntimeData &Reload,
-    const FBBBEquipmentFireFragment &Fragment, FBBBCharacterInput &CharacterAPI,
+    const FBBBEquipmentFireFragment &Fragment, ABBBCharacter &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
     // 开火处理需要有效世界对象
@@ -54,6 +54,6 @@ void FBBBEquipmentFireProcessor::Update(
         Fact.EquipmentId = EquipmentId;
         Fact.Sequence = Input.Sequence;
         Fact.LoadedAmmo = Data.LoadedAmmo;
-        CharacterAPI.Submit(Fact);
+        CharacterAPI.SubmitInput(Fact);
     }
 }

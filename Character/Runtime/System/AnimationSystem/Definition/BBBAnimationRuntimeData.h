@@ -10,7 +10,6 @@ class FBBBCharacterAnimationFactProcessor;
 class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterInitializer;
-class FBBBCharacterInput;
 class FBBBCharacterAnimationActionProcessor;
 class UAnimInstance;
 class UBBBMontagePlayback;

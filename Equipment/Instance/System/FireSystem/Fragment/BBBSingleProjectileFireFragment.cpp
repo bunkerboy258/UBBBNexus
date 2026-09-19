@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Fragment/BBBSingleProjectileFireFragment.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBCameraPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
@@ -81,7 +81,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
         Packet.Montage = FireMontage;
         Packet.PlayRate = 1.0f;
         Packet.Sequence = Context.Sequence;
-        Context.CharacterAPI.Submit(Packet);
+        Context.CharacterAPI.SubmitInput(Packet);
     }
 
     // 本地实例负责消耗弹药并提交后坐力
@@ -94,7 +94,7 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
         FBBBCameraPacket CameraPacket;
         CameraPacket.Impulse = RecoilImpulse;
         CameraPacket.RecoverySpeed = RecoilRecoverySpeed;
-        Context.CharacterAPI.Submit(CameraPacket);
+        Context.CharacterAPI.SubmitInput(CameraPacket);
     }
 
     // 记录本次开火时间供下一次开火判断

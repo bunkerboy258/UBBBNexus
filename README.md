@@ -4,9 +4,8 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
 
 ## 结构
 
-- `Character/Input/`：角色输入入口 `GetInput().Submit(Packet)` 持续状态与封闭 Variant 离散包
-- `Character/Input/States/`：移动与瞄准持续状态 覆盖式快照
-- `Character/Input/Packets/`：一包一文件的离散输入包 自描述校验 条件与效果
+- `Character/Input/`：角色输入提交闸口 `SubmitInput(Packet)` 所有输入统一为离散快照每帧压入队列
+- `Character/Input/Packets/`：一包一对 h cpp 的输入包 自描述校验 条件与效果
 - `Character/Core/`：角色初始化 销毁和根更新调度
 - `Character/Runtime/Controller/`：根据黑板维护角色控制行为
 - `Character/Runtime/System/`：解析 动画和网络领域系统
@@ -27,13 +26,13 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
     → 装备独立 TG_PostUpdateWork → 装备动画快照
 ```
 
-装备与动画回调只投递收件箱 收件箱不参与角色帧末清理 下一帧统一消费 相机在 TG_PostUpdateWork 跟随角色 不成为输入 Tick 的前置依赖
+装备与动画回调只投递快照区队列 下一帧统一消费 黑板分快照区 状态区 领域数据三区 状态区对所有系统与控制器开放读 相机在 TG_PostUpdateWork 跟随角色 不成为输入 Tick 的前置依赖
 
 ## 规则
 
-优先级由包内编译期常量固定为还原带 事实带 请求带 阶段带 表现带 调用者不能自行提高优先级
+优先级由包内编译期常量固定为还原带 事实带 基底带 请求带 阶段带 表现带 调用者不能自行提高优先级
 
-请求带冲突由失败方在 `CanExecute` 中单向声明避让 有效切换立即结束原换弹 空快捷槽不取消换弹 换弹优先于开火且换弹期间阻止开火 瞄准优先于冲刺 一次性失败请求不缓存 持续输入保留 没有通用能力任务或效果框架
+基底带每帧覆盖控制基座 本帧未提交时黑板保留上帧值 请求带冲突由失败方在 `CanExecute` 中单向声明避让 请求带 `CanExecute` 只读解析状态与已批准集合禁止读控制基座 有效切换立即结束原换弹 空快捷槽不取消换弹 换弹优先于开火且换弹期间阻止开火 瞄准优先于冲刺 一次性失败请求不缓存 没有通用能力任务或效果框架
 
 蒙太奇按实际五个 Slot 保存空或一个蒙太奇 多轨蒙太奇共享播放修订号与一个 UBBBMontagePlayback 沿用资产 Group 互斥 旧播放结束不能清掉新修订号
 

@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Processors/BBBEquipmentReloadProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineDetachedFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineLoadedFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadCancelledFactPacket.h"
@@ -12,7 +12,7 @@
 
 void FBBBEquipmentReloadProcessor::Update(
     FBBBEquipmentReloadRuntimeData &Data, FBBBEquipmentFireRuntimeData &Fire,
-    const FBBBEquipmentReloadFragment &Fragment, FBBBCharacterInput &CharacterAPI,
+    const FBBBEquipmentReloadFragment &Fragment, ABBBCharacter &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {
     // 按输入顺序处理换弹阶段
@@ -53,7 +53,7 @@ void FBBBEquipmentReloadProcessor::Update(
             Fact.EquipmentId = EquipmentId;
             Fact.Sequence = Sequence;
             Fact.LoadedAmmo = Fire.LoadedAmmo;
-            CharacterAPI.Submit(Fact);
+            CharacterAPI.SubmitInput(Fact);
             continue;
         }
 
@@ -82,7 +82,7 @@ void FBBBEquipmentReloadProcessor::Update(
                     Fact.EquipmentId = EquipmentId;
                     Fact.Sequence = Sequence;
                     Fact.LoadedAmmo = Fire.LoadedAmmo;
-                    CharacterAPI.Submit(Fact);
+                    CharacterAPI.SubmitInput(Fact);
                 }
             }
             break;
@@ -96,7 +96,7 @@ void FBBBEquipmentReloadProcessor::Update(
                     Fact.EquipmentId = EquipmentId;
                     Fact.Sequence = Sequence;
                     Fact.LoadedAmmo = Fire.LoadedAmmo;
-                    CharacterAPI.Submit(Fact);
+                    CharacterAPI.SubmitInput(Fact);
                 }
             }
             break;
@@ -109,7 +109,7 @@ void FBBBEquipmentReloadProcessor::Update(
                 Fact.EquipmentId = EquipmentId;
                 Fact.Sequence = Sequence;
                 Fact.LoadedAmmo = Fire.LoadedAmmo;
-                CharacterAPI.Submit(Fact);
+                CharacterAPI.SubmitInput(Fact);
             }
             break;
         default:

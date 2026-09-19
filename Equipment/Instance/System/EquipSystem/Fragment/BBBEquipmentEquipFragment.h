@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBEquipmentEquipFragment.generated.h"
 
-class FBBBCharacterInput;
+class ABBBCharacter;
 
 /** 装备挂接和握持配置的可选实现 */
 USTRUCT(BlueprintType)
@@ -24,7 +24,7 @@ struct ABBB_EVAC_API FBBBEquipmentEquipFragment
      * @param Sequence    操作序号
      * @return 装备表现是否已提交
      */
-    virtual bool SubmitMontage(FBBBCharacterInput &CharacterAPI, int32 Sequence) const
+    virtual bool SubmitMontage(ABBBCharacter &CharacterAPI, int32 Sequence) const
     {
         return false;
     }

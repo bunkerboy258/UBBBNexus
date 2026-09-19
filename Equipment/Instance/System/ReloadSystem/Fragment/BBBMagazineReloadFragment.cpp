@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Fragment/BBBMagazineReloadFragment.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
 
@@ -25,7 +25,7 @@ bool FBBBMagazineReloadFragment::Begin(FBBBEquipmentReloadContext &Context) cons
     Packet.PlayRate = 1.0f;
     Packet.Sequence = Context.Sequence;
     Packet.bReload = true;
-    if (!Context.CharacterAPI.Submit(Packet))
+    if (!Context.CharacterAPI.SubmitInput(Packet))
     {
         return false;
     }

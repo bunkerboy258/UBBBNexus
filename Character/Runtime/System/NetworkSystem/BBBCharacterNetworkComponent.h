@@ -8,7 +8,7 @@
 #include "BBBCharacterNetworkComponent.generated.h"
 
 class APawn;
-class FBBBCharacterInput;
+class ABBBCharacter;
 class FBBBCharacterNetworkSystem;
 
 /** 角色网络传输组件 只收发同步数据 */
@@ -20,7 +20,7 @@ class ABBB_EVAC_API UBBBCharacterNetworkComponent final : public UActorComponent
 public:
     UBBBCharacterNetworkComponent();
 
-    void Initialize(FBBBCharacterInput &InInput);
+    void Initialize(ABBBCharacter &InCharacter);
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
@@ -64,5 +64,5 @@ private:
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedLocomotionState)
     FBBBLocomotionNetworkState ReplicatedLocomotionState;
 
-    FBBBCharacterInput *Input = nullptr;
+    ABBBCharacter *Character = nullptr;
 };

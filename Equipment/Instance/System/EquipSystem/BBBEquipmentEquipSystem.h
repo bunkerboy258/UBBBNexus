@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Processors/BBBEquipmentEquipProcessor.h"
 
 class ABBBEquipment;
-class FBBBCharacterInput;
+class ABBBCharacter;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;
@@ -27,7 +27,7 @@ private:
 
     /** 注入本系统所需的数据与行为配置 */
     void Initialize(FBBBEquipmentEquipRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
-        const FBBBEquipmentEquipFragment &InFragment, FBBBCharacterInput &InCharacterAPI,
+        const FBBBEquipmentEquipFragment &InFragment, ABBBCharacter &InCharacterAPI,
         FName InEquipmentId, bool bInIsMirror);
 
     /** 更新本系统 */
@@ -36,7 +36,7 @@ private:
     FBBBEquipmentEquipRuntimeData *Data = nullptr;
     const FBBBEquipmentFireRuntimeData *Fire = nullptr;
     const FBBBEquipmentEquipFragment *Fragment = nullptr;
-    FBBBCharacterInput *CharacterAPI = nullptr;
+    ABBBCharacter *CharacterAPI = nullptr;
     FName EquipmentId;
     bool bIsMirror = false;
 

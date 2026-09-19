@@ -35,7 +35,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
     Equipment->bIsMirror = bIsMirror;
     Equipment->SetActorHiddenInGame(true);
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
-    if (!FBBBEquipmentInitializer::Initialize(*Equipment, *CharacterMesh, Character.GetInput()))
+    if (!FBBBEquipmentInitializer::Initialize(*Equipment, *CharacterMesh, Character))
     {
         // 初始化失败时立即销毁未完成的装备演员
         UE_LOG(LogTemp, Error, TEXT("[UBBBC]Equipment initialization failed Definition=%s"), *Definition.GetPathName());

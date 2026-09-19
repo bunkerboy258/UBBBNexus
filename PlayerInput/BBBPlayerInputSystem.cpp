@@ -25,9 +25,9 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     if (ABBBCharacter *Previous = Character.Get())
     {
         // 解绑时释放持续输入 保留最后朝向避免无输入帧将角色转向世界零度
-        FBBBCharacterInputStates ReleasedControl;
-        ReleasedControl.Movement.FacingWorld = Previous->GetActorRotation();
-        Previous->GetInput().Submit(ReleasedControl);
+        FBBBCharacterMovementPacket ReleasedControl;
+        ReleasedControl.FacingWorld = Previous->GetActorRotation();
+        Previous->SubmitInput(ReleasedControl);
         Previous->RemoveTickPrerequisiteComponent(this);
     }
     APlayerController *Controller = Cast<APlayerController>(GetOwner());
@@ -41,7 +41,8 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         Camera = nullptr;
     }
     Character = Target;
-    State = FBBBCharacterInputStates();
+    MovementState = FBBBCharacterMovementPacket();
+    AimState = FBBBCharacterAimPacket();
     bFire = false;
     bJump = false;
     MoveAxis = FVector2D::ZeroVector;
@@ -69,7 +70,8 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     bInputEnabled = bEnabled;
     if (!bEnabled)
     {
-        State = FBBBCharacterInputStates();
+        MovementState = FBBBCharacterMovementPacket();
+        AimState = FBBBCharacterAimPacket();
         bFire = false;
         bJump = false;
         MoveAxis = FVector2D::ZeroVector;
@@ -85,7 +87,7 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
     }
     FBBBEquipSlotPacket Packet;
     Packet.Slot = Slot;
-    Character->GetInput().Submit(Packet);
+    Character->SubmitInput(Packet);
 }
 
 void UBBBPlayerInputSystem::SubmitReload()
@@ -94,7 +96,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     {
         return;
     }
-    Character->GetInput().Submit(FBBBReloadPacket{});
+    Character->SubmitInput(FBBBReloadPacket{});
 }
 
 void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
@@ -149,14 +151,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.PrecisionAimAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.Aim.bAim = bInputEnabled;
+                AimState.bAim = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.PrecisionAimAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.Aim.bAim = false;
+                    AimState.bAim = false;
                 });
         }
     }
@@ -165,14 +167,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.WalkAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.Movement.bWalk = bInputEnabled;
+                MovementState.bWalk = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.WalkAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.Movement.bWalk = false;
+                    MovementState.bWalk = false;
                 });
         }
     }
@@ -181,14 +183,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.SprintAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.Movement.bSprint = bInputEnabled;
+                MovementState.bSprint = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.SprintAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.Movement.bSprint = false;
+                    MovementState.bSprint = false;
                 });
         }
     }
@@ -197,14 +199,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.CrouchAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                State.Movement.bCrouch = bInputEnabled;
+                MovementState.bCrouch = bInputEnabled;
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.CrouchAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    State.Movement.bCrouch = false;
+                    MovementState.bCrouch = false;
                 });
         }
     }
@@ -263,23 +265,24 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     LookAxis = FVector2D::ZeroVector;
     const FVector2D Axis = MoveAxis.Size() > Config.MoveDeadZone ? MoveAxis : FVector2D::ZeroVector;
     const FRotator Yaw(0.0f, Facing.Yaw, 0.0f);
-    State.Movement.MoveWorld = (Yaw.Vector() * Axis.Y
+    MovementState.MoveWorld = (Yaw.Vector() * Axis.Y
         + FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y) * Axis.X).GetClampedToMaxSize(1.0f);
-    State.Movement.FacingWorld = Facing;
+    MovementState.FacingWorld = Facing;
     FVector ViewLocation;
     FRotator ViewRotation;
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
-    State.Aim.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
-    Character->GetInput().Submit(State);
+    AimState.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
+    Character->SubmitInput(MovementState);
+    Character->SubmitInput(AimState);
 
     // 开火与跳跃以包的存在与否表达按下 未按下时不投递
     if (bFire)
     {
-        Character->GetInput().Submit(FBBBFirePacket{});
+        Character->SubmitInput(FBBBFirePacket{});
     }
     if (bJump)
     {
-        Character->GetInput().Submit(FBBBJumpPacket{});
+        Character->SubmitInput(FBBBJumpPacket{});
     }
     bJump = false;
 }

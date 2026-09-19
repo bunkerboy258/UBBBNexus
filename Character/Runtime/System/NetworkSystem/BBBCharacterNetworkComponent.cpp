@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBEquipFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBFireFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineDetachedFactPacket.h"
@@ -18,9 +18,9 @@ UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void UBBBCharacterNetworkComponent::Initialize(FBBBCharacterInput &InInput)
+void UBBBCharacterNetworkComponent::Initialize(ABBBCharacter &InCharacter)
 {
-    Input = &InInput;
+    Character = &InCharacter;
 }
 
 void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
@@ -42,19 +42,19 @@ void UBBBCharacterNetworkComponent::ServerUploadEquipmentActionPacket_Implementa
 
 void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
 {
-    if (!Input || IsOwnerLocallyControlled())
+    if (!Character || IsOwnerLocallyControlled())
     {
         return;
     }
 
     FBBBRestoreEquipmentPacket Restore;
     Restore.EquipmentHandle = Packet.EquipmentHandle;
-    Input->Submit(Restore);
+    Character->SubmitInput(Restore);
 }
 
 void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementation(FBBBEquipmentActionNetworkPacket Packet)
 {
-    if (!Input || IsOwnerLocallyControlled())
+    if (!Character || IsOwnerLocallyControlled())
     {
         return;
     }
@@ -68,7 +68,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
         Restore.EquipmentId = Packet.EquipmentId;
         Restore.Sequence = Packet.Sequence;
         Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
         break;
     }
     case FBBBReloadStartedFactPacket::PacketId:
@@ -77,7 +77,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
         Restore.EquipmentId = Packet.EquipmentId;
         Restore.Sequence = Packet.Sequence;
         Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
         break;
     }
     case FBBBMagazineDetachedFactPacket::PacketId:
@@ -86,7 +86,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
         Restore.EquipmentId = Packet.EquipmentId;
         Restore.Sequence = Packet.Sequence;
         Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
         break;
     }
     case FBBBMagazineLoadedFactPacket::PacketId:
@@ -95,7 +95,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
         Restore.EquipmentId = Packet.EquipmentId;
         Restore.Sequence = Packet.Sequence;
         Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
         break;
     }
     case FBBBReloadCancelledFactPacket::PacketId:
@@ -104,7 +104,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
         Restore.EquipmentId = Packet.EquipmentId;
         Restore.Sequence = Packet.Sequence;
         Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
         break;
     }
     case FBBBEquipFactPacket::PacketId:
@@ -113,7 +113,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
         Restore.EquipmentId = Packet.EquipmentId;
         Restore.Sequence = Packet.Sequence;
         Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
         break;
     }
     default:
@@ -125,47 +125,47 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
 void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkState AimState)
 {
     SetReplicatedAimState(AimState);
-    if (Input && !IsOwnerLocallyControlled())
+    if (Character && !IsOwnerLocallyControlled())
     {
         FBBBRestoreAimPacket Restore;
         Restore.State = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
     }
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(FBBBLocomotionNetworkState LocomotionState)
 {
     SetReplicatedLocomotionState(LocomotionState);
-    if (Input && !IsOwnerLocallyControlled())
+    if (Character && !IsOwnerLocallyControlled())
     {
         FBBBRestoreLocomotionPacket Restore;
         Restore.Gait = LocomotionState.Gait;
-        Input->Submit(Restore);
+        Character->SubmitInput(Restore);
     }
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
 {
-    if (!Input)
+    if (!Character)
     {
         return;
     }
 
     FBBBRestoreAimPacket Restore;
     Restore.State = FBBBAimRuntimeState{ReplicatedAimState.bIsAiming, ReplicatedAimState.AimTargetWorld};
-    Input->Submit(Restore);
+    Character->SubmitInput(Restore);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
 {
-    if (!Input)
+    if (!Character)
     {
         return;
     }
 
     FBBBRestoreLocomotionPacket Restore;
     Restore.Gait = ReplicatedLocomotionState.Gait;
-    Input->Submit(Restore);
+    Character->SubmitInput(Restore);
 }
 
 void UBBBCharacterNetworkComponent::SetReplicatedAimState(const FBBBAimNetworkState &AimState)

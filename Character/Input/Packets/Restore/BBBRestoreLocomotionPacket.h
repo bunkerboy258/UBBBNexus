@@ -16,28 +16,18 @@ struct FBBBRestoreLocomotionPacket
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
 
     /** @return 包内容是否合法 */
-    bool IsValid() const
-    {
-        return true;
-    }
+    bool IsValid() const;
 
     /**
      * 检查本帧是否允许执行
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const
-    {
-        // 还原包只在还原模式生效
-        return Context.Operation.IsRestoreMode();
-    }
+    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 还原移动步态
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const
-    {
-        Context.Locomotion.CommitGait(Gait);
-    }
+    void Execute(FBBBCharacterPacketContext &Context) const;
 };

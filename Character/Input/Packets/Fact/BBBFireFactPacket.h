@@ -2,7 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBEquipmentActionFact.h"
+
+struct FBBBEquipmentActionFact;
 
 /**
  * 开火已执行事实包 本地由装备回执 还原模式由网络还原
@@ -24,44 +25,21 @@ struct FBBBFireFactPacket
     int32 LoadedAmmo = 0;
 
     /** @return 包内容是否合法 */
-    bool IsValid() const
-    {
-        return Sequence > 0;
-    }
+    bool IsValid() const;
 
     /**
      * 检查本帧是否允许执行
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const
-    {
-        return true;
-    }
+    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 留档事实 还原模式先取消换弹再下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const
-    {
-        if (Context.Operation.IsRestoreMode())
-        {
-            // 远端开火意味着其换弹不再有效 本地追踪同步中止
-            if (Context.Operation.IsReloadInProgress())
-            {
-                Context.Operation.CancelReload();
-            }
-
-            Context.Commands.SubmitRestoredAction(ToFact());
-        }
-
-        Context.Events.AddAction(ToFact());
-    }
+    void Execute(FBBBCharacterPacketContext &Context) const;
 
     /** @return 对应的事实记录 */
-    FBBBEquipmentActionFact ToFact() const
-    {
-        return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
-    }
+    FBBBEquipmentActionFact ToFact() const;
 };

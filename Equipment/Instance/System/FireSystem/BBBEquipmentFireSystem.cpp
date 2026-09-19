@@ -2,7 +2,7 @@
 
 void FBBBEquipmentFireSystem::Initialize(ABBBEquipment &InInstance, USkeletalMeshComponent &InWeaponMesh,
         FBBBEquipmentFireRuntimeData &InData, const FBBBEquipmentReloadRuntimeData &InReload,
-        const FBBBEquipmentFireFragment &InFragment, FBBBCharacterInput &InCharacterAPI,
+        const FBBBEquipmentFireFragment &InFragment, ABBBCharacter &InCharacterAPI,
         FName InEquipmentId, bool bInIsMirror)
 {
     Instance = &InInstance;

@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketRegistry.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Definition/BBBCharacterParseState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
@@ -17,8 +17,17 @@ class FBBBCharacterAnimationFactProcessor;
 class ABBBCharacter;
 class UBBBAnimInstance;
 
+struct FBBBCharacterRuntimeData;
+
+namespace BBBCharacterInput
+{
+    template<typename TPacket>
+    bool Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet);
+}
+
 USTRUCT()
 //角色全部运行数据的唯一根
+//快照区接收本帧输入队列 状态区发布解析结果并对所有系统与控制器开放读 领域数据为驻留系统的私有状态
 struct FBBBCharacterRuntimeData
 {
     GENERATED_BODY()
@@ -38,21 +47,23 @@ private:
     friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
 
+    template<typename TPacket>
+    friend bool BBBCharacterInput::Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet);
+
+    // ===== 快照区 本帧输入队列 仅提交闸口与解析系统可触 =====
+
+    //本帧离散快照队列 帧内排序消费完毕 不跨帧保留 不参与反射
+    TArray<FBBBCharacterPacket> Snapshot;
+
+    // ===== 状态区 解析后包应用效果的区域 对所有系统与控制器开放读 =====
+
     //保存当前帧世界时间快照
     UPROPERTY(Transient)
     FBBBCharacterWorldRuntimeData WorldData;
 
-    //保存原始输入与处理后输入
-    UPROPERTY(Transient)
-    FBBBCharacterInputRuntimeData Input;
-
     //保存角色行为意图
     UPROPERTY(Transient)
     FBBBCharacterControlState Control;
-
-    //保存动作请求与仲裁结果
-    UPROPERTY(Transient)
-    FBBBCharacterParseState Operation;
 
     //保存角色瞄准状态
     UPROPERTY(Transient)
@@ -77,4 +88,10 @@ private:
     //保存角色网络队列与观测状态
     UPROPERTY(Transient)
     FBBBNetworkRuntimeData Network;
+
+    // ===== 领域数据 解析系统私有 驻留黑板仅为生命周期托管 =====
+
+    //保存动作请求与仲裁结果
+    UPROPERTY(Transient)
+    FBBBCharacterParseState Operation;
 };

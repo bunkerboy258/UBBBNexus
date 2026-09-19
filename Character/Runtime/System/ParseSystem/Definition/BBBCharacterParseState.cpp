@@ -10,6 +10,10 @@ void FBBBCharacterParseState::BeginFrame(const bool bInRestoreMode, ABBBEquipmen
     bFire = false;
     bReload = false;
 
+    // 瞬时意图每帧复位 基底包与请求包到来时重新登记
+    Control.bFire = false;
+    Control.bJump = false;
+
     // 追踪中的换弹装备失去主手资格时立即中止换弹
     if (ReloadSequence > 0 && ReloadEquipment.Get() != ActiveEquipment)
     {

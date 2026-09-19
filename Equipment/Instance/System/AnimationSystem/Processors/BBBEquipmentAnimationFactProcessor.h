@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 
 class ABBBEquipment;
-class FBBBCharacterInput;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;

@@ -2,12 +2,12 @@
 
 #include "CoreMinimal.h"
 
-class FBBBCharacterInput;
+class ABBBCharacter;
 
 /** 换弹片段执行时可访问的装备事实 */
 struct FBBBEquipmentReloadContext
 {
-    FBBBCharacterInput &CharacterAPI;
+    ABBBCharacter &CharacterAPI;
     int32 &LoadedAmmo;
     const int32 AmmoCapacity;
     bool &bIsReloading;

@@ -142,7 +142,7 @@ void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
 {
     FBBBReloadDetachPacket Packet;
     Packet.Sequence = Sequence;
-    Input.Submit(Packet);
+    SubmitInput(Packet);
 }
 
 void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReason EndReason)
@@ -157,11 +157,11 @@ void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharac
     {
         FBBBReloadLoadPacket Packet;
         Packet.Sequence = Sequence;
-        Input.Submit(Packet);
+        SubmitInput(Packet);
         return;
     }
 
     FBBBReloadInterruptPacket Packet;
     Packet.Sequence = Sequence;
-    Input.Submit(Packet);
+    SubmitInput(Packet);
 }

@@ -95,6 +95,34 @@ public:
     }
 
     /**
+     * 基底移动快照覆盖控制暂态 移动向量钳制到单位长度
+     * @param MoveWorld	期望移动向量
+     * @param FacingWorld	期望朝向
+     * @param bInWalk	是否步行
+     * @param bInSprint	是否冲刺
+     * @param bInCrouch	是否蹲伏
+     */
+    void ApplyMovementSnapshot(FVector MoveWorld, FRotator FacingWorld, bool bInWalk, bool bInSprint, bool bInCrouch)
+    {
+        Control.MoveWorld = MoveWorld.GetClampedToMaxSize(1.0f);
+        Control.FacingWorld = FacingWorld;
+        Control.bWalk = bInWalk;
+        Control.bSprint = bInSprint;
+        Control.bCrouch = bInCrouch;
+    }
+
+    /**
+     * 基底瞄准快照覆盖控制暂态
+     * @param AimTargetWorld	瞄准点世界坐标
+     * @param bInAim	是否瞄准
+     */
+    void ApplyAimSnapshot(FVector AimTargetWorld, bool bInAim)
+    {
+        Control.AimTargetWorld = AimTargetWorld;
+        Control.bAim = bInAim;
+    }
+
+    /**
      * 登记本帧期望切换的装备
      * @param Equipment	期望切换的装备实例
      */

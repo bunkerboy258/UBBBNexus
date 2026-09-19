@@ -2,7 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBEquipmentActionFact.h"
+
+struct FBBBEquipmentActionFact;
 
 /**
  * 弹匣已装填事实包 驱动解析状态机完结换弹追踪
@@ -23,39 +24,21 @@ struct FBBBMagazineLoadedFactPacket
     int32 LoadedAmmo = 0;
 
     /** @return 包内容是否合法 */
-    bool IsValid() const
-    {
-        return Sequence > 0;
-    }
+    bool IsValid() const;
 
     /**
      * 检查本帧是否允许执行
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const
-    {
-        return true;
-    }
+    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 留档事实并完结换弹追踪 还原模式同时下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const
-    {
-        if (Context.Operation.IsRestoreMode())
-        {
-            Context.Commands.SubmitRestoredAction(ToFact());
-        }
-
-        Context.Events.AddAction(ToFact());
-        Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.GetActiveEquipmentId(), false);
-    }
+    void Execute(FBBBCharacterPacketContext &Context) const;
 
     /** @return 对应的事实记录 */
-    FBBBEquipmentActionFact ToFact() const
-    {
-        return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
-    }
+    FBBBEquipmentActionFact ToFact() const;
 };

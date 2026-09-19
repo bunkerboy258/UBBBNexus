@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
 
 class UAnimMontage;
 
@@ -26,37 +25,18 @@ struct FBBBMontagePacket
     bool bReload = false;
 
     /** @return 包内容是否合法 */
-    bool IsValid() const
-    {
-        return Montage != nullptr && FMath::IsFinite(PlayRate) && PlayRate > 0.0f;
-    }
+    bool IsValid() const;
 
     /**
      * 检查本帧是否允许执行
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const
-    {
-        // 槽位守卫在提交时由蒙太奇请求集中校验 此处恒放行
-        return true;
-    }
+    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 通过槽位守卫后写入槽位期望
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const
-    {
-        FBBBCharacterMontagePacket Request;
-        Request.Montage = Montage;
-        Request.PlayRate = PlayRate;
-        Request.Sequence = Sequence;
-        Request.bReload = bReload;
-
-        if (Request.CanApply(Context.Animation, Context.Operation))
-        {
-            Request.Apply(Context.Animation);
-        }
-    }
+    void Execute(FBBBCharacterPacketContext &Context) const;
 };
