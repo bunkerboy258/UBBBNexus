@@ -51,7 +51,7 @@ Input/
 
 ## 新增一个输入包
 
-1. 在对应带子目录新建一对 h cpp 声明 `Priority` 与 `ApprovedBit` 并实现三要素
+1. 复制 `Packets/_Template/BBBTemplatePacket.h/.cpp` 到所属带子目录 按 TODO 注释改名改带实现三要素
 2. 在 `BBBCharacterPacketRegistry` 的 Variant 与断言数组各登记一行
 3. 提交方每帧或事件触发时调用 `SubmitInput`
 
