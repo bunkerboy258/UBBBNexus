@@ -36,9 +36,9 @@ private:
     UPROPERTY(Transient)
     TSubclassOf<UAnimInstance> LinkedAnimationLayerClass;
 
-    /** 每个实际动画槽位只保存一个期望蒙太奇 */
+    /** 五个实际动画槽位各自只保存一个期望蒙太奇 */
     UPROPERTY(Transient)
-    TArray<FBBBCharacterMontageSlotState> Slots;
+    FBBBCharacterMontageSlots Slots;
 
     /** 一个播放对象可以同时占用多个槽位 */
     UPROPERTY(Transient)

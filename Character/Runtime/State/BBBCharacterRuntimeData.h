@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketRegistry.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputFrame.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Definition/BBBCharacterParseState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
@@ -27,7 +27,7 @@ namespace BBBCharacterInput
 
 USTRUCT()
 //角色全部运行数据的唯一根
-//快照区接收本帧输入队列 状态区发布解析结果并对所有系统与控制器开放读 领域数据为驻留系统的私有状态
+//输入区保存全部固定槽位 状态区发布解析结果并对所有系统与控制器开放读 领域数据为驻留系统的私有状态
 struct FBBBCharacterRuntimeData
 {
     GENERATED_BODY()
@@ -50,10 +50,14 @@ private:
     template<typename TPacket>
     friend bool BBBCharacterInput::Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet);
 
-    // ===== 快照区 本帧输入队列 仅提交闸口与解析系统可触 =====
+    // ===== 输入区 固定槽位仅由提交闸口与解析系统写入 =====
 
-    //本帧离散快照队列 帧内排序消费完毕 不跨帧保留 不参与反射
-    TArray<FBBBCharacterPacket> Snapshot;
+    /**
+     * 全部输入数据的固定驻留区
+     *
+     * 同类型输入覆盖旧值，解析前后不搬运数组，也不为单个输入申请堆内存
+     */
+    FBBBCharacterInputFrame InputFrame;
 
     // ===== 状态区 解析后包应用效果的区域 对所有系统与控制器开放读 =====
 
@@ -75,7 +79,7 @@ private:
 
     //保存相机命令与状态
     UPROPERTY(Transient)
-    TArray<FBBBPlayerCameraInput> CameraContributions;
+    TOptional<FBBBPlayerCameraInput> CameraInput;
 
     //保存角色物品状态与命令
     UPROPERTY(Transient)

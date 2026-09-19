@@ -1,13 +1,16 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
+
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputFrame.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
 
 void FBBBCharacterNetworkSystem::Initialize(
     FBBBNetworkRuntimeData &InNetworkData,
+    FBBBCharacterInputFrame &InInputFrame,
     FBBBAimRuntimeData &InAimData,
     FBBBCharacterLocomotionRuntimeData &InLocomotionData,
     const FBBBCharacterEquipmentState &InEquipmentState,
@@ -17,6 +20,7 @@ void FBBBCharacterNetworkSystem::Initialize(
     const FBBBCharacterNetworkConfig &InNetworkConfig)
 {
     NetworkData = &InNetworkData;
+    InputFrame = &InInputFrame;
     AimData = &InAimData;
     LocomotionData = &InLocomotionData;
     EquipmentState = &InEquipmentState;
@@ -26,78 +30,90 @@ void FBBBCharacterNetworkSystem::Initialize(
     NetworkConfig = &InNetworkConfig;
 }
 
-void FBBBCharacterNetworkSystem::UpdateAuthorityLocal()
+void FBBBCharacterNetworkSystem::Update()
 {
-    AuthorityLocalProcessor.Update(*this);
-}
+    if (!ensureMsgf(NetworkComponent && InputFrame,
+        TEXT("[UBBBC]Network system update failed because core dependencies are null")))
+    {
+        return;
+    }
 
-void FBBBCharacterNetworkSystem::UpdateAuthorityRemote()
-{
-    AuthorityRemoteProcessor.Update(*this);
-}
+    if (NetworkComponent->IsOwnerAuthority())
+    {
+        ObserveFacts();
+        return;
+    }
 
-void FBBBCharacterNetworkSystem::UpdateClientLocal()
-{
-    ClientLocalProcessor.Update(*this);
-}
+    if (NetworkComponent->IsOwnerLocallyControlled())
+    {
+        CommandProcessor.Update(*InputFrame, *NetworkComponent);
+        return;
+    }
 
-void FBBBCharacterNetworkSystem::UpdateClientRemote()
-{
-    ClientRemoteProcessor.Update(*this);
+    RemoteProcessor.Update();
 }
 
 void FBBBCharacterNetworkSystem::ObserveFacts()
 {
     if (!ensureMsgf(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig
-        && EquipmentState && EquipmentEvents && NetworkComponent, TEXT("[UBBBC]Network dependencies are null")))
+        && EquipmentState && EquipmentEvents && NetworkComponent,
+        TEXT("[UBBBC]Authority fact observation failed because dependencies are null")))
     {
         return;
     }
 
-    FactProcessor.Update(*NetworkData, WorldData->GetWorldTimeSeconds(), *AimData, *LocomotionData,
-        *NetworkConfig, *EquipmentState, *EquipmentEvents, *this);
+    FactProcessor.Update(
+        *NetworkData,
+        WorldData->GetWorldTimeSeconds(),
+        *AimData,
+        *LocomotionData,
+        *NetworkConfig,
+        *EquipmentState,
+        *EquipmentEvents,
+        *this);
 }
 
 void FBBBCharacterNetworkSystem::SubmitEquipmentPacket(FBBBEquipmentNetworkPacket Packet)
 {
-    if (NetworkComponent->IsOwnerAuthority())
+    if (!ensureMsgf(NetworkComponent && NetworkComponent->IsOwnerAuthority(),
+        TEXT("[UBBBC]Only authority may publish equipment facts")))
     {
-        NetworkComponent->MulticastEquipmentPacket(MoveTemp(Packet));
         return;
     }
 
-    NetworkComponent->ServerUploadEquipmentPacket(MoveTemp(Packet));
+    NetworkComponent->MulticastEquipmentPacket(MoveTemp(Packet));
 }
 
 void FBBBCharacterNetworkSystem::SubmitEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet)
 {
-    if (NetworkComponent->IsOwnerAuthority())
+    if (!ensureMsgf(NetworkComponent && NetworkComponent->IsOwnerAuthority(),
+        TEXT("[UBBBC]Only authority may publish equipment action facts")))
     {
-        NetworkComponent->MulticastEquipmentActionPacket(MoveTemp(Packet));
         return;
     }
 
-    NetworkComponent->ServerUploadEquipmentActionPacket(MoveTemp(Packet));
+    NetworkComponent->MulticastEquipmentActionPacket(MoveTemp(Packet));
 }
 
 void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimState)
 {
-    if (NetworkComponent->IsOwnerAuthority())
+    if (!ensureMsgf(NetworkComponent && NetworkComponent->IsOwnerAuthority(),
+        TEXT("[UBBBC]Only authority may publish aim state")))
     {
-        NetworkComponent->SetReplicatedAimState(AimState);
         return;
     }
 
-    NetworkComponent->ServerSubmitAimState(AimState);
+    NetworkComponent->SetReplicatedAimState(AimState);
 }
 
-void FBBBCharacterNetworkSystem::SubmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+void FBBBCharacterNetworkSystem::SubmitLocomotionState(
+    const FBBBLocomotionNetworkState &LocomotionState)
 {
-    if (NetworkComponent->IsOwnerAuthority())
+    if (!ensureMsgf(NetworkComponent && NetworkComponent->IsOwnerAuthority(),
+        TEXT("[UBBBC]Only authority may publish locomotion state")))
     {
-        NetworkComponent->SetReplicatedLocomotionState(LocomotionState);
         return;
     }
 
-    NetworkComponent->ServerSubmitLocomotionState(LocomotionState);
+    NetworkComponent->SetReplicatedLocomotionState(LocomotionState);
 }

@@ -6,11 +6,8 @@
 /**
  * 网络还原瞄准状态包 直接覆盖瞄准黑板
  */
-struct FBBBRestoreAimPacket
+struct FBBBRestoreAimPacket final
 {
-    static constexpr int32 Priority = 100;
-
-    static constexpr uint64 ApprovedBit = 1ull << 1;
 
     /** 远端同步的瞄准状态 */
     FBBBAimRuntimeState State;
@@ -23,11 +20,11 @@ struct FBBBRestoreAimPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 还原瞄准黑板状态
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

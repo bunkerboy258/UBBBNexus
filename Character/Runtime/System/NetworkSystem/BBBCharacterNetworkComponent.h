@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentActionNetworkPacket.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBCharacterCommandNetworkPackets.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/States/BBBNetworkStates.h"
 #include "Components/ActorComponent.h"
@@ -10,6 +11,7 @@
 class APawn;
 class ABBBCharacter;
 class FBBBCharacterNetworkSystem;
+class FBBBCharacterNetworkCommandProcessor;
 
 /** 角色网络传输组件 只收发同步数据 */
 UCLASS(ClassGroup = "BBB")
@@ -26,29 +28,26 @@ public:
 
 private:
     friend class FBBBCharacterNetworkSystem;
+    friend class FBBBCharacterNetworkCommandProcessor;
 
     bool IsOwnerLocallyControlled() const;
     bool IsOwnerAuthority() const;
     void SetReplicatedAimState(const FBBBAimNetworkState &AimState);
     void SetReplicatedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
-    UFUNCTION(Server, Reliable)
-    void ServerUploadEquipmentPacket(FBBBEquipmentNetworkPacket Packet);
+    /** 将本机客户端连续控制还原为权威角色输入，允许后续帧覆盖过期数据 */
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitControlPacket(FBBBCharacterControlNetworkPacket Packet);
 
+    /** 将本机客户端离散动作可靠还原为权威角色输入 */
     UFUNCTION(Server, Reliable)
-    void ServerUploadEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet);
+    void ServerSubmitActionPacket(FBBBCharacterActionNetworkPacket Packet);
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastEquipmentPacket(FBBBEquipmentNetworkPacket Packet);
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet);
-
-    UFUNCTION(Server, Unreliable)
-    void ServerSubmitAimState(FBBBAimNetworkState AimState);
-
-    UFUNCTION(Server, Reliable)
-    void ServerSubmitLocomotionState(FBBBLocomotionNetworkState LocomotionState);
 
     UFUNCTION()
     void OnRep_ReplicatedAimState();

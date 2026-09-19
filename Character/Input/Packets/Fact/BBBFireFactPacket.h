@@ -9,11 +9,8 @@ struct FBBBEquipmentActionFact;
  * 开火已执行事实包 本地由装备回执 还原模式由网络还原
  * 还原时先中断本地追踪的换弹
  */
-struct FBBBFireFactPacket
+struct FBBBFireFactPacket final
 {
-    static constexpr int32 Priority = 50;
-
-    static constexpr uint64 ApprovedBit = 1ull << 4;
 
     /** 线上身份 与网络包 PacketId 对应 */
     static constexpr uint8 PacketId = 2;
@@ -32,13 +29,13 @@ struct FBBBFireFactPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 留档事实 还原模式先取消换弹再下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 
     /** @return 对应的事实记录 */
     FBBBEquipmentActionFact ToFact() const;

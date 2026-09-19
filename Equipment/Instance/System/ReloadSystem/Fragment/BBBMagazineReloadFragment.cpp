@@ -20,12 +20,12 @@ bool FBBBMagazineReloadFragment::Begin(FBBBEquipmentReloadContext &Context) cons
         return false;
     }
 
-    FBBBMontagePacket Packet;
-    Packet.Montage = Montage;
-    Packet.PlayRate = 1.0f;
-    Packet.Sequence = Context.Sequence;
-    Packet.bReload = true;
-    if (!Context.CharacterAPI.SubmitInput(Packet))
+    if (!BBBCharacterMontageInput::Submit(
+        Context.CharacterAPI,
+        *Montage,
+        1.0f,
+        Context.Sequence,
+        true))
     {
         return false;
     }

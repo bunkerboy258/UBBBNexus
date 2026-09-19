@@ -5,13 +5,13 @@ bool FBBBRestoreLocomotionPacket::IsValid() const
     return true;
 }
 
-bool FBBBRestoreLocomotionPacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBRestoreLocomotionPacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
     // 还原包只在还原模式生效
     return Context.Operation.IsRestoreMode();
 }
 
-void FBBBRestoreLocomotionPacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBRestoreLocomotionPacket::Apply(FBBBCharacterPacketContext &Context) const
 {
     Context.Locomotion.CommitGait(Gait);
 }

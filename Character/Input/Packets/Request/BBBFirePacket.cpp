@@ -1,20 +1,19 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBFirePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBEquipSlotPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBReloadPacket.h"
 
 bool FBBBFirePacket::IsValid() const
 {
     return true;
 }
 
-bool FBBBFirePacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBFirePacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
-    // 还原模式不接受本地请求 同帧切枪或换弹已批准时让步
-    return !Context.Operation.IsRestoreMode()
-        && !Context.Approved.HasAny<FBBBEquipSlotPacket, FBBBReloadPacket>();
+    // 权威端按显式处理顺序观察前序结果，切枪或换弹已承诺时让步
+    return Context.bAuthority
+        && !Context.Operation.IsEquipmentSwitchPending()
+        && !Context.Operation.HasReloadCommitted();
 }
 
-void FBBBFirePacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBFirePacket::Apply(FBBBCharacterPacketContext &Context) const
 {
     Context.Operation.CommitFire();
     Context.Commands.SubmitFire();

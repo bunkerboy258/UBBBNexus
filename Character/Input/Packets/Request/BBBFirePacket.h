@@ -6,11 +6,8 @@
 /**
  * 开火请求包 请求带内输给切枪与换弹
  */
-struct FBBBFirePacket
+struct FBBBFirePacket final
 {
-    static constexpr int32 Priority = 17;
-
-    static constexpr uint64 ApprovedBit = 1ull << 11;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -20,11 +17,11 @@ struct FBBBFirePacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 登记开火事实并提交装备开火命令
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

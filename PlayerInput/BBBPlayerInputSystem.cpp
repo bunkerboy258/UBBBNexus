@@ -18,6 +18,19 @@ UBBBPlayerInputSystem::UBBBPlayerInputSystem()
 
 void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
 {
+    APlayerController *Controller = Cast<APlayerController>(GetOwner());
+    const bool bValidLocalTarget = !Target
+        || (Controller
+            && Controller->IsLocalController()
+            && Controller->GetPawn() == Target
+            && Target->IsLocallyControlled());
+
+    if (!ensureMsgf(bValidLocalTarget,
+        TEXT("[BBBInput]Player input rejected a character that is not the local controller pawn")))
+    {
+        Target = nullptr;
+    }
+
     if (Character.Get() == Target && (Target || !Camera))
     {
         return;
@@ -30,7 +43,6 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         Previous->SubmitInput(ReleasedControl);
         Previous->RemoveTickPrerequisiteComponent(this);
     }
-    APlayerController *Controller = Cast<APlayerController>(GetOwner());
     if (Camera)
     {
         if (Controller && Controller->GetViewTarget() == Camera)
@@ -47,7 +59,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     bJump = false;
     MoveAxis = FVector2D::ZeroVector;
     LookAxis = FVector2D::ZeroVector;
-    if (!Target || !Controller || !Controller->IsLocalController())
+    if (!Target)
     {
         return;
     }

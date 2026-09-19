@@ -57,6 +57,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.NetworkSystem.Initialize(
         Character.RuntimeData.Network,
+        Character.RuntimeData.InputFrame,
         Character.RuntimeData.Aim,
         Character.RuntimeData.Locomotion,
         Character.RuntimeData.Equipment.Equipment,

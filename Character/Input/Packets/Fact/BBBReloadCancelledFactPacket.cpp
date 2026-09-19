@@ -6,12 +6,12 @@ bool FBBBReloadCancelledFactPacket::IsValid() const
     return Sequence > 0;
 }
 
-bool FBBBReloadCancelledFactPacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBReloadCancelledFactPacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
     return true;
 }
 
-void FBBBReloadCancelledFactPacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBReloadCancelledFactPacket::Apply(FBBBCharacterPacketContext &Context) const
 {
     if (Context.Operation.IsRestoreMode())
     {

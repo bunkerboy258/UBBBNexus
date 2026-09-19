@@ -50,12 +50,11 @@ void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
     {
         return;
     }
-    // 角色只发布贡献数据 相机从外部消费并进入自己的输入收件箱
-    TArray<FBBBPlayerCameraInput> Contributions = MoveTemp(Character->RuntimeData.CameraContributions);
-    Character->RuntimeData.CameraContributions.Reset();
-    for (const FBBBPlayerCameraInput &Packet : Contributions)
+    // 角色只发布提交方已经累计完成的最终相机输入
+    if (Character->RuntimeData.CameraInput.IsSet())
     {
-        Submit(Packet);
+        Submit(Character->RuntimeData.CameraInput.GetValue());
+        Character->RuntimeData.CameraInput.Reset();
     }
     FRotator Rotation = Controller->GetControlRotation();
     for (const FBBBPlayerCameraInput &Packet : Pending)

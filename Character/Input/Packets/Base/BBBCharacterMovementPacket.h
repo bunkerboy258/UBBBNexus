@@ -8,11 +8,8 @@ struct FBBBCharacterPacketContext;
  * 移动基底快照包 每帧覆盖控制基座的移动与步态意图
  * 本帧未提交时黑板保留上帧值
  */
-struct FBBBCharacterMovementPacket
+struct FBBBCharacterMovementPacket final
 {
-    static constexpr int32 Priority = 30;
-
-    static constexpr uint64 ApprovedBit = 1ull << 18;
 
     FVector MoveWorld = FVector::ZeroVector;
 
@@ -32,11 +29,11 @@ struct FBBBCharacterMovementPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 覆盖控制基座的移动与步态意图
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

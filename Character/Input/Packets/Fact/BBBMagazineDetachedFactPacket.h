@@ -8,11 +8,8 @@ struct FBBBEquipmentActionFact;
 /**
  * 弹匣已卸下事实包 驱动解析状态机记录卸下进度
  */
-struct FBBBMagazineDetachedFactPacket
+struct FBBBMagazineDetachedFactPacket final
 {
-    static constexpr int32 Priority = 50;
-
-    static constexpr uint64 ApprovedBit = 1ull << 6;
 
     /** 线上身份 与网络包 PacketId 对应 */
     static constexpr uint8 PacketId = 4;
@@ -31,13 +28,13 @@ struct FBBBMagazineDetachedFactPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 留档事实并记录卸下进度 还原模式同时下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 
     /** @return 对应的事实记录 */
     FBBBEquipmentActionFact ToFact() const;

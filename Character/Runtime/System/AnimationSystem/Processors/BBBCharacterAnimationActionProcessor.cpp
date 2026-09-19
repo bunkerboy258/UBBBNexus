@@ -15,20 +15,16 @@ void FBBBCharacterAnimationActionProcessor::Update(
         }
         if (Playback->IsFinished())
         {
-            for (FBBBCharacterMontageSlotState &Slot : AnimationData.Slots)
+            AnimationData.Slots.ForEach([Playback](FBBBCharacterMontageSlotState &Slot)
             {
                 if (Slot.Revision == Playback->GetRevision())
                 {
                     Slot.Desired = FBBBCharacterMontagePacket();
                     Slot.Revision = 0;
                 }
-            }
-        }
-        const bool bDesired = AnimationData.Slots.ContainsByPredicate(
-            [Playback](const FBBBCharacterMontageSlotState &Slot)
-            {
-                return Slot.Revision == Playback->GetRevision();
             });
+        }
+        const bool bDesired = AnimationData.Slots.ContainsRevision(Playback->GetRevision());
         if (!bDesired)
         {
             Playback->Stop();
@@ -40,11 +36,11 @@ void FBBBCharacterAnimationActionProcessor::Update(
     });
 
     // 同一蒙太奇的多个槽共享修订号 仅创建一次引擎播放实例
-    for (const FBBBCharacterMontageSlotState &Slot : AnimationData.Slots)
+    AnimationData.Slots.ForEach([&AnimInstance, &AnimationData](const FBBBCharacterMontageSlotState &Slot)
     {
         if (!Slot.Desired.Montage || Slot.Revision == 0)
         {
-            continue;
+            return;
         }
         const bool bPlaying = AnimationData.Playbacks.ContainsByPredicate(
             [&Slot](const UBBBMontagePlayback *Playback)
@@ -53,11 +49,11 @@ void FBBBCharacterAnimationActionProcessor::Update(
             });
         if (bPlaying)
         {
-            continue;
+            return;
         }
         UBBBMontagePlayback *Playback = NewObject<UBBBMontagePlayback>(&AnimInstance);
         AnimationData.Playbacks.Add(Playback);
         Playback->Start(AnimInstance, *Slot.Desired.Montage, Slot.Desired.PlayRate,
             Slot.Desired.Sequence, Slot.Revision, Slot.Desired.bReload);
-    }
+    });
 }

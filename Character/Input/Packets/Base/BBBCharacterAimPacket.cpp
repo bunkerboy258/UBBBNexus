@@ -7,13 +7,13 @@ bool FBBBCharacterAimPacket::IsValid() const
     return !AimTargetWorld.ContainsNaN();
 }
 
-bool FBBBCharacterAimPacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBCharacterAimPacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
     // 还原模式的瞄准状态由还原包直写对应域
-    return !Context.Operation.IsRestoreMode();
+    return Context.bAuthority || Context.bLocallyControlled;
 }
 
-void FBBBCharacterAimPacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBCharacterAimPacket::Apply(FBBBCharacterPacketContext &Context) const
 {
     Context.Operation.ApplyAimSnapshot(AimTargetWorld, bAim);
 }

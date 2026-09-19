@@ -8,11 +8,8 @@ struct FBBBEquipmentActionFact;
 /**
  * 弹匣已装填事实包 驱动解析状态机完结换弹追踪
  */
-struct FBBBMagazineLoadedFactPacket
+struct FBBBMagazineLoadedFactPacket final
 {
-    static constexpr int32 Priority = 50;
-
-    static constexpr uint64 ApprovedBit = 1ull << 7;
 
     /** 线上身份 与网络包 PacketId 对应 */
     static constexpr uint8 PacketId = 5;
@@ -31,13 +28,13 @@ struct FBBBMagazineLoadedFactPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 留档事实并完结换弹追踪 还原模式同时下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 
     /** @return 对应的事实记录 */
     FBBBEquipmentActionFact ToFact() const;

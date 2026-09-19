@@ -29,15 +29,20 @@ struct FBBBCharacterMontagePacket
      * 检查蒙太奇是否可进入当前槽位
      * @param Animation	动画运行时数据
      * @param Operation	解析状态机
-     * @return 蒙太奇是否可进入当前槽位
+     * @param Slot      明确目标槽位
+     * @return 蒙太奇是否可进入目标槽位
      */
-    bool CanApply(const FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation) const;
+    bool CanApply(
+        const FBBBAnimationRuntimeData &Animation,
+        const FBBBCharacterParseState &Operation,
+        FName Slot) const;
 
     /**
      * 写入槽位期望并分配修订号
-     * @param Animation	动画运行时数据
+     * @param Animation 动画运行时数据
+     * @param Slot      明确目标槽位
      */
-    void Apply(FBBBAnimationRuntimeData &Animation) const;
+    void Apply(FBBBAnimationRuntimeData &Animation, FName Slot) const;
 
     /**
      * 帧初初始化槽位并撤销失效期望

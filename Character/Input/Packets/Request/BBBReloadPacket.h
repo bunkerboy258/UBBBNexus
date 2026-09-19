@@ -7,11 +7,8 @@
  * 换弹请求包 请求带内输给切枪
  * 批准时压过同帧开火
  */
-struct FBBBReloadPacket
+struct FBBBReloadPacket final
 {
-    static constexpr int32 Priority = 18;
-
-    static constexpr uint64 ApprovedBit = 1ull << 10;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -21,11 +18,11 @@ struct FBBBReloadPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 登记换弹承诺并提交装备换弹命令
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

@@ -1,65 +1,48 @@
-# 角色输入
+# 角色固定输入帧
 
-所有输入统一视为离散快照 每帧压入黑板快照区队列 不再区分持续与离散
-
-外部只通过 `ABBBCharacter::SubmitInput(Packet)` 提交 闸口负责游戏线程检查与包自检
-
-输入定义按语义拆分为独立文件 一种输入包一对 h cpp
+所有角色输入只通过 `ABBBCharacter::SubmitInput(Packet)` 提交。每种包在 `FBBBCharacterInputFrame` 中拥有一个固定槽位，槽位由“激活标记 + 最新数据”组成，同类型输入默认覆盖旧值。
 
 ```text
 Input/
-├── BBBCharacterInputSubmit            唯一提交闸口 线程检查与自检
-├── BBBCharacterPacketRegistry         封闭包类型注册表与仲裁全景
+├── BBBCharacterInputFrame       全部固定槽位与提交映射
+├── BBBCharacterInputSubmit      游戏线程、自检和解析重入守卫
 └── Packets/
-    ├── BBBApprovedPackets             本帧已批准集合
-    ├── BBBCharacterPacketContext      包执行上下文
-    ├── Base/                          移动与瞄准基底快照 每帧覆盖控制基座
-    ├── Request/                       开火 换弹 切枪 跳跃请求
-    ├── ReloadPhase/                   换弹卸下 装填 中断动画通知
-    ├── Fact/                          装备已执行事实
-    ├── Restore/                       网络还原装备 瞄准 步态
-    └── Presentation/                  蒙太奇与相机表现
+    ├── BBBCharacterPacketContext
+    ├── Base/                    移动与瞄准控制
+    ├── Request/                 切枪、换弹、开火和跳跃请求
+    ├── ReloadPhase/             换弹动画通知
+    ├── Fact/                    已形成的装备事实
+    ├── Restore/                 网络还原状态
+    └── Presentation/            五个独立蒙太奇槽位与相机输入
 ```
 
-黑板 `FBBBCharacterRuntimeData` 分三个区域
+## 包语义
 
-| 区域 | 内容 | 权限 |
-| --- | --- | --- |
-| 快照区 | 本帧输入队列 `Snapshot` | 仅提交闸口与解析系统可触 帧内消费完毕 |
-| 状态区 | 解析后包应用效果 Control Aim Locomotion Equipment Animation Camera 等 | 对所有系统与控制器开放读 |
-| 领域数据 | 各系统与控制器私有状态 如 ParseState | 本系统内部 对外有限开放 |
+每个包只公开三项行为：
 
-每个包自描述三要素 `IsValid` 提交校验 `CanExecute` 执行条件 `Execute` 黑板效果 并声明编译期 `Priority` 与 `ApprovedBit` 身份位
+- `IsValid`：提交闸口的数据自检。
+- `CanApply`：读取上下文并判断本次是否允许应用。
+- `Apply`：产生该包负责的黑板效果。
 
-包不持有规则对象 不注册委托 不直接调用任一控制器 由 `ParseSystem` 中的 `FBBBCharacterInputProcessor` 在主管线固定位置统一解析
+处理器不排序、不访问变体、不调用虚函数。`FBBBCharacterInputProcessor::Update` 中的源码顺序就是应用顺序：还原、事实、连续控制、请求、换弹通知、五个蒙太奇槽位、相机。
 
-## 仲裁模型
+切枪先于换弹，换弹先于开火。后续请求直接观察前序请求已经写入的 `FBBBCharacterParseState`，不存在 Priority 或 ApprovedBit。
 
-每帧按 `Priority` 稳定排序后分带处理
+## 生命周期
 
-1. 还原带 100 保到达序执行网络还原
-2. 事实带 50 保到达序执行装备已执行事实并驱动换弹状态机
-3. 基底带 30 每帧覆盖控制基座 本帧未提交时黑板保留上帧值 还原模式由还原包直写对应域
-4. 请求带执行两阶段 先按序对全部请求求值 `CanExecute` 再统一提交 `Execute` 冲突由失败方查询已批准集合单向声明 切枪 19 否决换弹 18 否决开火 17 跳跃 16 独立
-5. 阶段带 15 换弹动画通知经序号守卫后转发装备命令
-6. 表现带 5/4 蒙太奇经槽位守卫写入期望 相机追加贡献
-7. 派生门控由 Finalize 统一处理 瞄准或开火时禁止冲刺
+槽位在被解析后失活。装备系统和动画回调在解析阶段之后提交的新输入会重新激活槽位，自然留到下一次解析，不需要队列。
 
-请求带铁律 `CanExecute` 只读解析状态与已批准集合 禁止读控制基座 否则两阶段失去意义
+本机非权威角色的移动、瞄准、切枪、换弹和开火槽位会暂时保留激活标记，由 `FBBBCharacterNetworkCommandProcessor` 上传权威端后失活。解析期间提交会触发报警，防止正在读取的数据被重入覆盖。
 
-跨帧换弹状态机集中在 `FBBBCharacterParseState` 的语义方法中 包只调用 `Track` `Report` `Commit` `Apply` 接口 不直接触碰字段
+## 新增输入包
 
-## 新增一个输入包
+1. 复制 `Packets/_Template/BBBTemplatePacket.h/.cpp` 并实现三项行为。
+2. 在 `FBBBCharacterInputFrame` 增加一个明确命名的固定槽位和一个 `Submit` 重载。
+3. 在 `FBBBCharacterInputProcessor::Update` 的预期位置增加一行 `Process`。
+4. 如需联网，明确它属于客户端命令、权威事实还是远端还原输入，并在对应网络边界增加传输结构。
 
-1. 复制 `Packets/_Template/BBBTemplatePacket.h/.cpp` 到所属带子目录 按 TODO 注释改名改带实现三要素
-2. 在 `BBBCharacterPacketRegistry` 的 Variant 与断言数组各登记一行
-3. 提交方每帧或事件触发时调用 `SubmitInput`
+## 蒙太奇
 
-## 手动资产迁移
+保留 `FullBody`、`UpperBody`、`FullBodyAdditivePreAim`、`UpperBodyAdditive`、`AdditiveHitReact` 五个 Slot。`BBBCharacterMontageInput::Submit` 读取武器配置蒙太奇的轨道并分别提交对应固定槽位包；多轨蒙太奇共享播放修订号。
 
-1. 在玩家控制器的 `PlayerInputSystem` 配置 InputAction 引用
-2. 保留 `FullBody` `UpperBody` `FullBodyAdditivePreAim` `UpperBodyAdditive` `AdditiveHitReact` 五个动画 Slot
-3. 换弹通知继续使用 `BBB.Reload.Start` 和 `BBB.Reload.End` 并经 `ReportReloadStartNotify` 和 `ReportReloadEndNotify` 提交换弹阶段包
-4. 不要同时添加自动通知和手工通知
-
-包自检失败 槽位无效或蒙太奇播放失败会产生日志 镜像角色的玩法状态只由还原包写入
+换弹通知继续使用 `BBB.Reload.Start` 和 `BBB.Reload.End`，本轮不新增或自动修改动画资产通知。

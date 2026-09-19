@@ -1,21 +1,20 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBReloadPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBEquipSlotPacket.h"
 
 bool FBBBReloadPacket::IsValid() const
 {
     return true;
 }
 
-bool FBBBReloadPacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBReloadPacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
-    // 还原模式不接受本地请求 空手 换弹进行中与同帧切枪都拒绝换弹
-    return !Context.Operation.IsRestoreMode()
+    // 权威端按显式处理顺序观察切枪结果，切枪或既有换弹都会拒绝新换弹
+    return Context.bAuthority
         && Context.Equipment.GetActiveMainHandInstance() != nullptr
         && !Context.Operation.IsReloadInProgress()
-        && !Context.Approved.HasAny<FBBBEquipSlotPacket>();
+        && !Context.Operation.IsEquipmentSwitchPending();
 }
 
-void FBBBReloadPacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBReloadPacket::Apply(FBBBCharacterPacketContext &Context) const
 {
     Context.Operation.CommitReload();
     Context.Commands.SubmitReload();

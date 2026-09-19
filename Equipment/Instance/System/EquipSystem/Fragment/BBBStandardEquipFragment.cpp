@@ -12,9 +12,10 @@ bool FBBBStandardEquipFragment::SubmitMontage(ABBBCharacter &CharacterAPI, const
         return true;
     }
 
-    FBBBMontagePacket Packet;
-    Packet.Montage = EquipMontage;
-    Packet.PlayRate = 1.0f;
-    Packet.Sequence = Sequence;
-    return CharacterAPI.SubmitInput(Packet);
+    return BBBCharacterMontageInput::Submit(
+        CharacterAPI,
+        *EquipMontage,
+        1.0f,
+        Sequence,
+        false);
 }

@@ -6,19 +6,8 @@
 
 void FBBBCharacterMontagePacket::BeginFrame(FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation)
 {
-    if (Animation.Slots.IsEmpty())
-    {
-        for (const FName Slot : {FName(TEXT("FullBody")), FName(TEXT("UpperBody")),
-            FName(TEXT("FullBodyAdditivePreAim")), FName(TEXT("UpperBodyAdditive")),
-            FName(TEXT("AdditiveHitReact"))})
-        {
-            FBBBCharacterMontageSlotState &State = Animation.Slots.AddDefaulted_GetRef();
-            State.Slot = Slot;
-        }
-    }
-
     // 切换装备或中断换弹时撤销相关槽位期望 播放组件随后按修订号处理
-    for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
+    Animation.Slots.ForEach([&Operation](FBBBCharacterMontageSlotState &Slot)
     {
         if (Operation.IsEquipmentSwitchPending()
             || (Operation.IsCancelledReloadSequence(Slot.Desired.Sequence) && Slot.Desired.bReload))
@@ -26,10 +15,13 @@ void FBBBCharacterMontagePacket::BeginFrame(FBBBAnimationRuntimeData &Animation,
             Slot.Desired = FBBBCharacterMontagePacket();
             Slot.Revision = 0;
         }
-    }
+    });
 }
 
-bool FBBBCharacterMontagePacket::CanApply(const FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation) const
+bool FBBBCharacterMontagePacket::CanApply(
+    const FBBBAnimationRuntimeData &Animation,
+    const FBBBCharacterParseState &Operation,
+    const FName Slot) const
 {
     if (Operation.IsEquipmentSwitchPending() || !IsValid(Montage))
     {
@@ -43,39 +35,69 @@ bool FBBBCharacterMontagePacket::CanApply(const FBBBAnimationRuntimeData &Animat
         return false;
     }
 
-    bool bValidSlots = !Montage->SlotAnimTracks.IsEmpty();
-    for (const FSlotAnimationTrack &Track : Montage->SlotAnimTracks)
-    {
-        bValidSlots &= Animation.Slots.ContainsByPredicate([&Track](const FBBBCharacterMontageSlotState &Slot)
+    const bool bKnownSlot = Animation.Slots.Find(Slot) != nullptr;
+    const bool bConfiguredTrack = Montage->SlotAnimTracks.ContainsByPredicate(
+        [Slot](const FSlotAnimationTrack &Track)
         {
-            return Slot.Slot == Track.SlotName;
+            return Track.SlotName == Slot;
         });
+
+    if (!ensureMsgf(bKnownSlot && bConfiguredTrack,
+        TEXT("[UBBBC]Montage slot input does not match asset configuration Asset=%s Slot=%s"),
+        *Montage->GetPathName(),
+        *Slot.ToString()))
+    {
+        return false;
     }
-    return ensureMsgf(bValidSlots, TEXT("[UBBBC]Montage uses unsupported slots Asset=%s"),
-        *Montage->GetPathName());
+
+    return true;
 }
 
-void FBBBCharacterMontagePacket::Apply(FBBBAnimationRuntimeData &Animation) const
+void FBBBCharacterMontagePacket::Apply(
+    FBBBAnimationRuntimeData &Animation,
+    const FName SlotName) const
 {
-    // 同组蒙太奇遵循引擎互斥规则 多轨道共享一次修订号
-    for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
+    uint64 SharedRevision = 0;
+    Animation.Slots.ForEach([this, &SharedRevision](const FBBBCharacterMontageSlotState &Slot)
+    {
+        if (Slot.Desired.Montage == Montage
+            && Slot.Desired.Sequence == Sequence
+            && Slot.Revision != 0)
+        {
+            SharedRevision = Slot.Revision;
+        }
+    });
+
+    // 同一蒙太奇的多个槽位复用修订号，动画系统只创建一个播放实例
+    if (SharedRevision != 0)
+    {
+        FBBBCharacterMontageSlotState *Target = Animation.Slots.Find(SlotName);
+
+        if (ensureMsgf(Target, TEXT("[UBBBC]Configured montage slot state is missing")))
+        {
+            Target->Desired = *this;
+            Target->Revision = SharedRevision;
+        }
+        return;
+    }
+
+    // 新播放遵循引擎蒙太奇组互斥规则，先撤销同组旧期望
+    Animation.Slots.ForEach([this](FBBBCharacterMontageSlotState &Slot)
     {
         if (Slot.Desired.Montage && Slot.Desired.Montage->GetGroupName() == Montage->GetGroupName())
         {
             Slot.Desired = FBBBCharacterMontagePacket();
             Slot.Revision = 0;
         }
-    }
-    const uint64 Revision = Animation.NextRevision++;
-    for (const FSlotAnimationTrack &Track : Montage->SlotAnimTracks)
+    });
+
+    FBBBCharacterMontageSlotState *Target = Animation.Slots.Find(SlotName);
+
+    if (!ensureMsgf(Target, TEXT("[UBBBC]Configured montage slot state is missing")))
     {
-        for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
-        {
-            if (Slot.Slot == Track.SlotName)
-            {
-                Slot.Desired = *this;
-                Slot.Revision = Revision;
-            }
-        }
+        return;
     }
+
+    Target->Desired = *this;
+    Target->Revision = Animation.NextRevision++;
 }

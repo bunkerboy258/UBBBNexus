@@ -3,10 +3,8 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentActionNetworkPacket.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Mode/BBBNetworkAuthorityLocalProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Mode/BBBNetworkAuthorityRemoteProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Mode/BBBNetworkClientLocalProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Mode/BBBNetworkClientRemoteProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkCommandProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkRemoteProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/BBBCharacterNetworkFactProcessor.h"
 
 class FBBBCharacterInitializer;
@@ -15,34 +13,46 @@ struct FBBBAimRuntimeData;
 struct FBBBAimNetworkState;
 struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
+struct FBBBCharacterInputFrame;
 struct FBBBCharacterLocomotionRuntimeData;
 struct FBBBLocomotionNetworkState;
 struct FBBBCharacterNetworkConfig;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBNetworkRuntimeData;
 
-/** 观察角色黑板并同步已形成事实的网络系统 */
+/**
+ * 角色网络边界
+ *
+ * 本机客户端只上传请求，权威角色只观察已经形成的事实，普通远端角色只等待还原输入
+ */
 class ABBB_EVAC_API FBBBCharacterNetworkSystem final
 {
 public:
-    void UpdateAuthorityLocal();
-    void UpdateAuthorityRemote();
-    void UpdateClientLocal();
-    void UpdateClientRemote();
+    /** 根据角色网络身份执行唯一网络阶段 */
+    void Update();
 
 private:
     friend class FBBBCharacterInitializer;
-    friend class FBBBNetworkAuthorityLocalProcessor;
-    friend class FBBBNetworkAuthorityRemoteProcessor;
-    friend class FBBBNetworkClientLocalProcessor;
-    friend class FBBBNetworkClientRemoteProcessor;
     friend class FBBBAimUploadProcessor;
     friend class FBBBEquipmentActionUploadProcessor;
     friend class FBBBEquipmentUploadProcessor;
     friend class FBBBLocomotionUploadProcessor;
 
+    /**
+     * 注入角色网络阶段需要的黑板和传输依赖
+     * @param InNetworkData       网络观测状态
+     * @param InInputFrame        角色固定输入帧
+     * @param InAimData           角色瞄准状态
+     * @param InLocomotionData    角色移动状态
+     * @param InEquipmentState    角色装备状态
+     * @param InNetworkComponent  网络传输组件
+     * @param InWorldData         角色世界时间
+     * @param InEquipmentEvents   角色装备事实
+     * @param InNetworkConfig     网络发送配置
+     */
     void Initialize(
         FBBBNetworkRuntimeData &InNetworkData,
+        FBBBCharacterInputFrame &InInputFrame,
         FBBBAimRuntimeData &InAimData,
         FBBBCharacterLocomotionRuntimeData &InLocomotionData,
         const FBBBCharacterEquipmentState &InEquipmentState,
@@ -51,6 +61,7 @@ private:
         const FBBBCharacterEquipmentEvents &InEquipmentEvents,
         const FBBBCharacterNetworkConfig &InNetworkConfig);
 
+    /** 观察权威角色已经形成的黑板事实并立即提交传输组件 */
     void ObserveFacts();
 
     void SubmitEquipmentPacket(FBBBEquipmentNetworkPacket Packet);
@@ -59,6 +70,7 @@ private:
     void SubmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
     FBBBNetworkRuntimeData *NetworkData = nullptr;
+    FBBBCharacterInputFrame *InputFrame = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     FBBBCharacterLocomotionRuntimeData *LocomotionData = nullptr;
@@ -66,9 +78,8 @@ private:
     const FBBBCharacterEquipmentState *EquipmentState = nullptr;
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
     UBBBCharacterNetworkComponent *NetworkComponent = nullptr;
+
     FBBBCharacterNetworkFactProcessor FactProcessor;
-    FBBBNetworkAuthorityLocalProcessor AuthorityLocalProcessor;
-    FBBBNetworkAuthorityRemoteProcessor AuthorityRemoteProcessor;
-    FBBBNetworkClientLocalProcessor ClientLocalProcessor;
-    FBBBNetworkClientRemoteProcessor ClientRemoteProcessor;
+    FBBBCharacterNetworkCommandProcessor CommandProcessor;
+    FBBBCharacterNetworkRemoteProcessor RemoteProcessor;
 };

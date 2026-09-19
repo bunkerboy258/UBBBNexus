@@ -8,11 +8,8 @@ struct FBBBEquipmentActionFact;
 /**
  * 装备切换已执行事实包 本地由装备回执 还原模式由网络还原
  */
-struct FBBBEquipFactPacket
+struct FBBBEquipFactPacket final
 {
-    static constexpr int32 Priority = 50;
-
-    static constexpr uint64 ApprovedBit = 1ull << 3;
 
     /** 线上身份 与网络包 PacketId 对应 */
     static constexpr uint8 PacketId = 1;
@@ -31,13 +28,13 @@ struct FBBBEquipFactPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 留档事实 还原模式同时下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 
     /** @return 对应的事实记录 */
     FBBBEquipmentActionFact ToFact() const;

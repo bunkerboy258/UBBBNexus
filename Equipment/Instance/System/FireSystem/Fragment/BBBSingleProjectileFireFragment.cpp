@@ -77,11 +77,12 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
 
     if (FireMontage)
     {
-        FBBBMontagePacket Packet;
-        Packet.Montage = FireMontage;
-        Packet.PlayRate = 1.0f;
-        Packet.Sequence = Context.Sequence;
-        Context.CharacterAPI.SubmitInput(Packet);
+        BBBCharacterMontageInput::Submit(
+            Context.CharacterAPI,
+            *FireMontage,
+            1.0f,
+            Context.Sequence,
+            false);
     }
 
     // 本地实例负责消耗弹药并提交后坐力

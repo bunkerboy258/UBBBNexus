@@ -5,12 +5,13 @@ bool FBBBCameraPacket::IsValid() const
     return RecoverySpeed > 0.0f && !Impulse.ContainsNaN() && FMath::IsFinite(RecoverySpeed);
 }
 
-bool FBBBCameraPacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBCameraPacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
     return true;
 }
 
-void FBBBCameraPacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBCameraPacket::Apply(FBBBCharacterPacketContext &Context) const
 {
-    Context.Camera.Add(FBBBPlayerCameraInput{Impulse, RecoverySpeed});
+    // 相机输入由提交方预先累计，角色黑板只保留最后一次完整结果
+    Context.Camera = FBBBPlayerCameraInput{Impulse, RecoverySpeed};
 }

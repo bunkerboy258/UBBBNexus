@@ -6,11 +6,8 @@
 /**
  * 网络还原装备选择包 将装备句柄还原为镜像装备创建请求
  */
-struct FBBBRestoreEquipmentPacket
+struct FBBBRestoreEquipmentPacket final
 {
-    static constexpr int32 Priority = 100;
-
-    static constexpr uint64 ApprovedBit = 1ull << 0;
 
     /** 远端主手装备的句柄 对应装备配置的 EquipmentId */
     FName EquipmentHandle = NAME_None;
@@ -23,11 +20,11 @@ struct FBBBRestoreEquipmentPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 按句柄查找装备配置并登记镜像创建请求
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

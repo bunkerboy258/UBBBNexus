@@ -1,20 +1,20 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/_Template/BBBTemplatePacket.h"
 
-// TODO 只在本文件 include 方法体用到的类型 头文件保持最小依赖
+// TODO: 只在本文件包含方法体真正需要的类型
 
 bool FBBBTemplatePacket::IsValid() const
 {
-    // TODO 提交时自检 拒绝非法字段组合
+    // TODO: 拒绝非有限数值、无效标识和互相矛盾的字段组合
     return true;
 }
 
-bool FBBBTemplatePacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBTemplatePacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
-    // TODO 本帧执行条件 冲突由失败方用 Context.Approved.HasAny 单向声明避让
+    // TODO: 只读取上下文，冲突规则留在本包内
     return true;
 }
 
-void FBBBTemplatePacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBTemplatePacket::Apply(FBBBCharacterPacketContext &Context) const
 {
-    // TODO 应用黑板效果
+    // TODO: 只修改本包负责的黑板区域
 }

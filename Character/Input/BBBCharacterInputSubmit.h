@@ -4,14 +4,15 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
 
 /**
- * 角色输入的唯一提交闸口
- * 所有输入统一视为离散快照 每帧压入黑板快照区队列
- * 闸口负责游戏线程检查与包自检 仲裁由解析系统负责
+ * 角色固定输入帧的唯一提交闸口
+ *
+ * 同类型输入只覆盖对应槽位，不分配节点、不增长容器；解析期间禁止重入写入，
+ * 防止包方法仍在读取自身数据时被同类型提交覆盖
  */
 namespace BBBCharacterInput
 {
     /**
-     * 提交离散快照包到本帧输入队列
+     * 提交输入包到对应固定槽位
      * @param Data	角色运行黑板
      * @param Packet	输入包
      * @return 是否接受输入
@@ -19,7 +20,7 @@ namespace BBBCharacterInput
     template<typename TPacket>
     bool Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet)
     {
-        // 仅游戏线程可提交 包必须通过自检
+        // 所有角色输入必须在游戏线程提交
         if (!ensureMsgf(IsInGameThread(), TEXT("[UBBBC]Packet input unavailable")))
         {
             return false;
@@ -30,7 +31,13 @@ namespace BBBCharacterInput
             return false;
         }
 
-        Data.Snapshot.Add(FBBBCharacterPacket(TInPlaceType<std::decay_t<TPacket>>{}, Forward<TPacket>(Packet)));
+        if (!ensureMsgf(!Data.InputFrame.IsProcessing(),
+            TEXT("[UBBBC]Input submission is forbidden while the fixed frame is being processed")))
+        {
+            return false;
+        }
+
+        Data.InputFrame.Submit(Forward<TPacket>(Packet));
         return true;
     }
 }

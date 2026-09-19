@@ -6,11 +6,8 @@
 /**
  * 网络还原步态包 直接提交步态黑板
  */
-struct FBBBRestoreLocomotionPacket
+struct FBBBRestoreLocomotionPacket final
 {
-    static constexpr int32 Priority = 100;
-
-    static constexpr uint64 ApprovedBit = 1ull << 2;
 
     /** 远端同步的移动步态 */
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
@@ -23,11 +20,11 @@ struct FBBBRestoreLocomotionPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 还原移动步态
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

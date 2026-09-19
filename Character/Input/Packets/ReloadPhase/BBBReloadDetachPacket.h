@@ -7,11 +7,8 @@
  * 换弹卸下弹匣动画通知包
  * 序号必须匹配当前换弹且尚未卸下
  */
-struct FBBBReloadDetachPacket
+struct FBBBReloadDetachPacket final
 {
-    static constexpr int32 Priority = 15;
-
-    static constexpr uint64 ApprovedBit = 1ull << 13;
 
     /** 播放时保存的换弹序号 */
     int32 Sequence = INDEX_NONE;
@@ -24,11 +21,11 @@ struct FBBBReloadDetachPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 推进卸下阶段并转发装备命令
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

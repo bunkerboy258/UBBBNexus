@@ -7,11 +7,8 @@
  * 换弹中断动画通知包
  * 未收到装填通知的播放结束由此收尾
  */
-struct FBBBReloadInterruptPacket
+struct FBBBReloadInterruptPacket final
 {
-    static constexpr int32 Priority = 15;
-
-    static constexpr uint64 ApprovedBit = 1ull << 15;
 
     /** 播放时保存的换弹序号 */
     int32 Sequence = INDEX_NONE;
@@ -24,11 +21,11 @@ struct FBBBReloadInterruptPacket
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanExecute(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterPacketContext &Context) const;
 
     /**
      * 登记换弹中断并转发装备取消命令
      * @param Context	黑板上下文
      */
-    void Execute(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterPacketContext &Context) const;
 };

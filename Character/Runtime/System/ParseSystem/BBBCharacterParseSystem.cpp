@@ -9,12 +9,14 @@ void FBBBCharacterParseSystem::Initialize(
     EquipmentCatalog = &InEquipmentCatalog;
 }
 
-void FBBBCharacterParseSystem::Update(const bool bRestoreMode) const
+void FBBBCharacterParseSystem::Update(
+    const bool bAuthority,
+    const bool bLocallyControlled) const
 {
     if (!ensureMsgf(Data && EquipmentCatalog, TEXT("[UBBBC]Parse system is uninitialized")))
     {
         return;
     }
 
-    InputProcessor.Update(*Data, *EquipmentCatalog, bRestoreMode);
+    InputProcessor.Update(*Data, *EquipmentCatalog, bAuthority, bLocallyControlled);
 }

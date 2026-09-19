@@ -5,13 +5,13 @@ bool FBBBRestoreAimPacket::IsValid() const
     return !State.AimTargetWorld.ContainsNaN();
 }
 
-bool FBBBRestoreAimPacket::CanExecute(const FBBBCharacterPacketContext &Context) const
+bool FBBBRestoreAimPacket::CanApply(const FBBBCharacterPacketContext &Context) const
 {
     // 还原包只在还原模式生效
     return Context.Operation.IsRestoreMode();
 }
 
-void FBBBRestoreAimPacket::Execute(FBBBCharacterPacketContext &Context) const
+void FBBBRestoreAimPacket::Apply(FBBBCharacterPacketContext &Context) const
 {
     Context.Aim.ApplyRestoredState(State);
 }

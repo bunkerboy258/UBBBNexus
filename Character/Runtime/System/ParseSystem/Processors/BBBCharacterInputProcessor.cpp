@@ -1,29 +1,23 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketRegistry.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
 
 void FBBBCharacterInputProcessor::Update(
-    FBBBCharacterRuntimeData &Data, UBBBEquipmentCatalog &Catalog, const bool bRestoreMode) const
+    FBBBCharacterRuntimeData &Data,
+    UBBBEquipmentCatalog &Catalog,
+    const bool bAuthority,
+    const bool bLocallyControlled) const
 {
     FBBBCharacterParseState &State = Data.Operation;
+    FBBBCharacterInputFrame &Input = Data.InputFrame;
+    const bool bRestoreMode = !bAuthority;
+    const bool bPreserveForNetwork = !bAuthority && bLocallyControlled;
+
     State.BeginFrame(bRestoreMode, Data.Equipment.Equipment.GetActiveMainHandInstance());
-
-    TArray<FBBBCharacterPacket> Pending = MoveTemp(Data.Snapshot);
-
     FBBBCharacterMontagePacket::BeginFrame(Data.Animation, State);
-    Data.CameraContributions.Reset();
 
-    // 高优先级先判先行 同优先级保持到达顺序
-    Pending.StableSort([](const FBBBCharacterPacket &Left, const FBBBCharacterPacket &Right)
-    {
-        return Visit([](const auto &Packet) { return Packet.Priority; }, Left)
-            > Visit([](const auto &Packet) { return Packet.Priority; }, Right);
-    });
-
-    FBBBApprovedPackets Approved;
     FBBBCharacterPacketContext Context{
         State,
         Data.Equipment.Inventory,
@@ -33,65 +27,54 @@ void FBBBCharacterInputProcessor::Update(
         Data.Animation,
         Data.Aim,
         Data.Locomotion,
-        Data.CameraContributions,
+        Data.CameraInput,
         Catalog,
-        Approved};
+        bAuthority,
+        bLocallyControlled};
 
-    int32 Index = 0;
-    while (Index < Pending.Num())
-    {
-        const int32 Priority = Visit([](const auto &Packet) { return Packet.Priority; }, Pending[Index]);
+    Input.BeginProcessing();
 
-        // 请求带集中两阶段 先按序全部求值再统一提交 冲突由失败方查询已批准集合让步
-        if (Priority >= BBBCharacterPacketPriority::RequestMin
-            && Priority <= BBBCharacterPacketPriority::RequestMax)
-        {
-            int32 BandEnd = Index;
-            while (BandEnd < Pending.Num())
-            {
-                const int32 BandPriority = Visit([](const auto &Packet) { return Packet.Priority; }, Pending[BandEnd]);
-                if (BandPriority < BBBCharacterPacketPriority::RequestMin
-                    || BandPriority > BBBCharacterPacketPriority::RequestMax)
-                {
-                    break;
-                }
-                ++BandEnd;
-            }
+    // 还原输入最先建立远端角色的权威状态基座
+    Process(Input.RestoreEquipment, Context);
+    Process(Input.RestoreAim, Context);
+    Process(Input.RestoreLocomotion, Context);
 
-            TArray<int32> Accepted;
-            for (int32 Cursor = Index; Cursor < BandEnd; ++Cursor)
-            {
-                Visit([&](const auto &Packet)
-                {
-                    if (Packet.CanExecute(Context))
-                    {
-                        Approved.Add<std::decay_t<decltype(Packet)>>();
-                        Accepted.Add(Cursor);
-                    }
-                }, Pending[Cursor]);
-            }
+    // 已形成事实按玩法因果顺序驱动装备镜像和角色事件
+    Process(Input.EquipFact, Context);
+    Process(Input.FireFact, Context);
+    Process(Input.ReloadStartedFact, Context);
+    Process(Input.MagazineDetachedFact, Context);
+    Process(Input.MagazineLoadedFact, Context);
+    Process(Input.ReloadCancelledFact, Context);
 
-            for (const int32 AcceptedIndex : Accepted)
-            {
-                Visit([&](auto &Packet) { Packet.Execute(Context); }, Pending[AcceptedIndex]);
-            }
+    // 连续控制先覆盖本帧基座，本机客户端保留副本供网络命令处理器上传
+    ProcessNetworkCommand(Input.Movement, Context, bPreserveForNetwork);
+    ProcessNetworkCommand(Input.Aim, Context, bPreserveForNetwork);
 
-            Index = BandEnd;
-            continue;
-        }
+    // 请求顺序就是冲突优先级，后续包直接观察前序包已经产生的解析状态
+    ProcessNetworkCommand(Input.EquipSlot, Context, bPreserveForNetwork);
+    ProcessNetworkCommand(Input.Reload, Context, bPreserveForNetwork);
+    ProcessNetworkCommand(Input.Fire, Context, bPreserveForNetwork);
+    Process(Input.Jump, Context);
 
-        // 其余带惰性求值 轮到即判即行 保持帧内因果链
-        const bool bAccepted = Visit([&Context](const auto &Packet) { return Packet.CanExecute(Context); }, Pending[Index]);
-        if (bAccepted)
-        {
-            Visit([&Context](auto &Packet) { Packet.Execute(Context); }, Pending[Index]);
-        }
+    // 动画通知输入只推进已经存在的换弹操作，不参与请求竞争
+    Process(Input.ReloadDetach, Context);
+    Process(Input.ReloadLoad, Context);
+    Process(Input.ReloadInterrupt, Context);
 
-        ++Index;
-    }
+    // 每个蒙太奇槽位独立覆盖，处理顺序与动画图中的层级保持一致
+    Process(Input.FullBodyMontage, Context);
+    Process(Input.UpperBodyMontage, Context);
+    Process(Input.FullBodyAdditivePreAimMontage, Context);
+    Process(Input.UpperBodyAdditiveMontage, Context);
+    Process(Input.AdditiveHitReactMontage, Context);
 
-    // 派生门控与控制发布只存在于本地模式
-    if (!bRestoreMode)
+    Process(Input.Camera, Context);
+
+    Input.EndProcessing();
+
+    // 权威实例与本机控制实例都需要发布控制，普通远端实例只应用网络还原状态
+    if (bAuthority || bLocallyControlled)
     {
         FinalizeControl(Data);
     }

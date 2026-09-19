@@ -6,6 +6,11 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineLoadedFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadCancelledFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadStartedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Base/BBBCharacterAimPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Base/BBBCharacterMovementPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBEquipSlotPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBFirePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBReloadPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Restore/BBBRestoreAimPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Restore/BBBRestoreEquipmentPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Restore/BBBRestoreLocomotionPacket.h"
@@ -30,19 +35,65 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeP
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLocomotionState, COND_SkipOwner);
 }
 
-void UBBBCharacterNetworkComponent::ServerUploadEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
+void UBBBCharacterNetworkComponent::ServerSubmitControlPacket_Implementation(
+    FBBBCharacterControlNetworkPacket Packet)
 {
-    MulticastEquipmentPacket(MoveTemp(Packet));
+    if (!ensureMsgf(Character && IsOwnerAuthority(),
+        TEXT("[UBBBC]Control command arrived without an authoritative character")))
+    {
+        return;
+    }
+
+    if (Packet.bMovementActive)
+    {
+        FBBBCharacterMovementPacket Movement;
+        Movement.MoveWorld = Packet.MoveWorld;
+        Movement.FacingWorld = Packet.FacingWorld;
+        Movement.bWalk = Packet.bWalk;
+        Movement.bSprint = Packet.bSprint;
+        Movement.bCrouch = Packet.bCrouch;
+        Character->SubmitInput(MoveTemp(Movement));
+    }
+
+    if (Packet.bAimActive)
+    {
+        FBBBCharacterAimPacket Aim;
+        Aim.AimTargetWorld = Packet.AimTargetWorld;
+        Aim.bAim = Packet.bAim;
+        Character->SubmitInput(MoveTemp(Aim));
+    }
+
+    if (Packet.bFire)
+    {
+        Character->SubmitInput(FBBBFirePacket{});
+    }
 }
 
-void UBBBCharacterNetworkComponent::ServerUploadEquipmentActionPacket_Implementation(FBBBEquipmentActionNetworkPacket Packet)
+void UBBBCharacterNetworkComponent::ServerSubmitActionPacket_Implementation(
+    FBBBCharacterActionNetworkPacket Packet)
 {
-    MulticastEquipmentActionPacket(MoveTemp(Packet));
+    if (!ensureMsgf(Character && IsOwnerAuthority(),
+        TEXT("[UBBBC]Action command arrived without an authoritative character")))
+    {
+        return;
+    }
+
+    if (Packet.bEquipSlot)
+    {
+        FBBBEquipSlotPacket Equip;
+        Equip.Slot = Packet.EquipSlot;
+        Character->SubmitInput(MoveTemp(Equip));
+    }
+
+    if (Packet.bReload)
+    {
+        Character->SubmitInput(FBBBReloadPacket{});
+    }
 }
 
 void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
 {
-    if (!Character || IsOwnerLocallyControlled())
+    if (!Character || IsOwnerAuthority())
     {
         return;
     }
@@ -54,7 +105,7 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBB
 
 void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementation(FBBBEquipmentActionNetworkPacket Packet)
 {
-    if (!Character || IsOwnerLocallyControlled())
+    if (!Character || IsOwnerAuthority())
     {
         return;
     }
@@ -119,28 +170,6 @@ void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementatio
     default:
         ensureMsgf(false, TEXT("[UBBBC]Unknown equipment action packet id %d"), Packet.PacketId);
         break;
-    }
-}
-
-void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkState AimState)
-{
-    SetReplicatedAimState(AimState);
-    if (Character && !IsOwnerLocallyControlled())
-    {
-        FBBBRestoreAimPacket Restore;
-        Restore.State = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
-        Character->SubmitInput(Restore);
-    }
-}
-
-void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(FBBBLocomotionNetworkState LocomotionState)
-{
-    SetReplicatedLocomotionState(LocomotionState);
-    if (Character && !IsOwnerLocallyControlled())
-    {
-        FBBBRestoreLocomotionPacket Restore;
-        Restore.Gait = LocomotionState.Gait;
-        Character->SubmitInput(Restore);
     }
 }
 
