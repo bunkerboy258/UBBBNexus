@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Definition/BBBCharacterParseState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterParseState.h"
 
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 

@@ -4,9 +4,7 @@
 
 ```text
 Input/
-├── BBBCharacterInputFrame       全部固定槽位与提交映射
 ├── BBBCharacterInputSubmit      游戏线程、自检和解析重入守卫
-├── BBBCharacterPacketContext    输入包共享的只读解析上下文
 └── Packets/
     ├── State/                   每帧可持续覆写的移动与瞄准状态
     ├── Command/                 切枪、换弹、开火和跳跃意图
@@ -16,6 +14,11 @@ Input/
     ├── Replication/             网络传入的权威状态还原
     ├── Presentation/            五个独立蒙太奇槽位与相机表现
     └── _Template/               新输入包模板
+
+ParseSystem/Context/
+├── BBBCharacterInputFrame       全部固定槽位与提交映射
+├── BBBCharacterPacketContext    输入包共享的只读解析上下文
+└── BBBCharacterParseState       解析期间的换弹、切枪和瞬时操作状态
 ```
 
 ## 包语义

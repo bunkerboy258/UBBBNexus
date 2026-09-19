@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkCommandProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputFrame.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputFrame.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBCharacterCommandNetworkPackets.h"
 

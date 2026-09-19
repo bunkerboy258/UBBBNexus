@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
 
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Definition/BBBCharacterParseState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterParseState.h"
 #include "Animation/AnimMontage.h"
 
 void FBBBCharacterMontagePacket::BeginFrame(FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation)
