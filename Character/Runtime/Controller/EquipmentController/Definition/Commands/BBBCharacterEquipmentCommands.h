@@ -1,8 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Events/BBBCharacterEquipmentEvents.h"
-#include "BBBWork/UBBBNexus/Character/Input/Discrete/BBBCharacterDiscreteInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBEquipmentActionFact.h"
 #include "BBBCharacterEquipmentCommands.generated.h"
 
 class FBBBCharacterEquipmentActionProcessor;
@@ -18,17 +17,6 @@ struct FBBBCharacterEquipmentCommands
 {
     GENERATED_BODY()
 
-    TArray<FBBBCharacterDiscreteInput> ReloadInputs;
-
-private:
-    friend class FBBBCharacterInputProcessor;
-
-    friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterEquipmentSelectionProcessor;
-
-    friend class UBBBAnimInstance;
-    friend struct FBBBCharacterEquipmentRuntimeData;
-
     /** 提交本帧开火命令 */
     void SubmitFire()
     {
@@ -43,21 +31,55 @@ private:
 
     /**
      * 提交远端已确认动作
-     * @param Event 远端动作事件
+     * @param Fact	远端动作事实
      */
-    void SubmitRestoredAction(FBBBEquipmentActionEvent Event)
+    void SubmitRestoredAction(FBBBEquipmentActionFact Fact)
     {
-        PendingRestoredActions.Add(MoveTemp(Event));
+        PendingRestoredActions.Add(MoveTemp(Fact));
     }
 
     /**
      * 提交远端还原后的期望装备配置
-     * @param Definition 期望装备配置
+     * @param Definition	期望装备配置
      */
     void SubmitRestoredEquipment(UBBBEquipmentDefinition &Definition)
     {
         PendingRestoredEquipment = &Definition;
     }
+
+    /**
+     * 提交卸下弹匣阶段
+     * @param Sequence	换弹序号
+     */
+    void SubmitDetachMagazine(const int32 Sequence)
+    {
+        DetachMagazineSequences.Add(Sequence);
+    }
+
+    /**
+     * 提交装填弹匣阶段
+     * @param Sequence	换弹序号
+     */
+    void SubmitLoadMagazine(const int32 Sequence)
+    {
+        LoadMagazineSequences.Add(Sequence);
+    }
+
+    /**
+     * 提交取消换弹阶段
+     * @param Sequence	换弹序号
+     */
+    void SubmitCancelReload(const int32 Sequence)
+    {
+        CancelReloadSequences.Add(Sequence);
+    }
+
+private:
+    friend class FBBBCharacterEquipmentActionProcessor;
+    friend class FBBBCharacterEquipmentSelectionProcessor;
+
+    friend class UBBBAnimInstance;
+    friend struct FBBBCharacterEquipmentRuntimeData;
 
     /** @return 本帧是否存在待执行开火命令 */
     bool ConsumeFire()
@@ -76,7 +98,7 @@ private:
     }
 
     /** @return 本帧待恢复动作 */
-    TArray<FBBBEquipmentActionEvent> ConsumeRestoredActions()
+    TArray<FBBBEquipmentActionFact> ConsumeRestoredActions()
     {
         return MoveTemp(PendingRestoredActions);
     }
@@ -95,7 +117,9 @@ private:
         bActivateFire = false;
         bActivateReload = false;
         PendingRestoredActions.Reset();
-        ReloadInputs.Reset();
+        DetachMagazineSequences.Reset();
+        LoadMagazineSequences.Reset();
+        CancelReloadSequences.Reset();
         PendingRestoredEquipment = nullptr;
     }
 
@@ -109,10 +133,21 @@ private:
 
     /** 本帧待恢复动作 */
     UPROPERTY()
-    TArray<FBBBEquipmentActionEvent> PendingRestoredActions;
+    TArray<FBBBEquipmentActionFact> PendingRestoredActions;
 
     /** 等待装备系统创建实例的远端装备配置 */
     UPROPERTY()
     TObjectPtr<UBBBEquipmentDefinition> PendingRestoredEquipment = nullptr;
 
+    /** 本帧卸下弹匣阶段序号 */
+    UPROPERTY()
+    TArray<int32> DetachMagazineSequences;
+
+    /** 本帧装填弹匣阶段序号 */
+    UPROPERTY()
+    TArray<int32> LoadMagazineSequences;
+
+    /** 本帧取消换弹阶段序号 */
+    UPROPERTY()
+    TArray<int32> CancelReloadSequences;
 };

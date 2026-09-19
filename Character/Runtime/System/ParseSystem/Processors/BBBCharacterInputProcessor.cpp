@@ -1,302 +1,117 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterPacketRegistry.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/BBBCharacterPacketContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
-
-void FBBBCharacterInputProcessor::CancelReload(FBBBCharacterParseState &State)
-{
-    State.CancelReloadSequence = State.ReloadSequence;
-    State.LastCompletedReloadSequence = FMath::Max(
-        State.LastCompletedReloadSequence,
-        State.ReloadSequence);
-    State.ReloadSequence = INDEX_NONE;
-    State.ReloadEquipment.Reset();
-    State.bMagazineDetached = false;
-    State.bEndQueued = false;
-}
-
-void FBBBCharacterInputProcessor::ApplyEquipmentEvent(
-    const FBBBEquipmentActionEvent &Event, FBBBCharacterRuntimeData &Data)
-{
-    if (Event.ActionType == EBBBCharacterActionType::None || Event.Sequence <= 0)
-    {
-        return;
-    }
-
-    Data.Equipment.Events.AddAction(Event);
-    FBBBCharacterParseState &State = Data.Operation;
-    if (!Data.Equipment.Equipment.GetActiveMainHandInstance()
-        || Event.EquipmentId != Data.Equipment.Equipment.GetActiveEquipmentId())
-    {
-        return;
-    }
-
-    if (Event.Phase == EBBBCharacterEquipmentPhase::ReloadStarted
-        && Event.Sequence > State.LastCompletedReloadSequence
-        && Event.Sequence > State.ReloadSequence)
-    {
-        State.ReloadSequence = Event.Sequence;
-        State.ReloadEquipment = Data.Equipment.Equipment.GetActiveMainHandInstance();
-        State.bMagazineDetached = false;
-        State.bEndQueued = false;
-    }
-
-    if (Event.Sequence != State.ReloadSequence)
-    {
-        return;
-    }
-
-    if (Event.Phase == EBBBCharacterEquipmentPhase::MagazineDetached)
-    {
-        State.bMagazineDetached = true;
-    }
-
-    if (Event.Phase == EBBBCharacterEquipmentPhase::MagazineLoaded
-        || Event.Phase == EBBBCharacterEquipmentPhase::ReloadCancelled)
-    {
-        if (Event.Phase == EBBBCharacterEquipmentPhase::ReloadCancelled)
-        {
-            State.CancelReloadSequence = Event.Sequence;
-        }
-        State.LastCompletedReloadSequence = Event.Sequence;
-        State.ReloadSequence = INDEX_NONE;
-        State.ReloadEquipment.Reset();
-        State.bMagazineDetached = false;
-        State.bEndQueued = false;
-    }
-}
-
-void FBBBCharacterInputProcessor::ApplyReloadPhase(
-    const FBBBCharacterDiscreteInput &Input, FBBBCharacterRuntimeData &Data)
-{
-    FBBBCharacterParseState &State = Data.Operation;
-    if (Input.Reload.Phase == EBBBCharacterReloadPhase::None
-        || Input.Reload.Sequence != State.ReloadSequence
-        || State.ReloadSequence <= 0
-        || State.bEndQueued)
-    {
-        return;
-    }
-
-    if (Input.Reload.Phase == EBBBCharacterReloadPhase::DetachMagazine && State.bMagazineDetached)
-    {
-        return;
-    }
-
-    if (Input.Reload.Phase == EBBBCharacterReloadPhase::LoadMagazine && !State.bMagazineDetached)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[UBBBC]Reload load arrived before detach Sequence=%d"), Input.Reload.Sequence);
-        return;
-    }
-
-    if (Input.Reload.Phase == EBBBCharacterReloadPhase::DetachMagazine)
-    {
-        State.bMagazineDetached = true;
-    }
-
-    if (Input.Reload.Phase == EBBBCharacterReloadPhase::LoadMagazine
-        || Input.Reload.Phase == EBBBCharacterReloadPhase::Interrupted)
-    {
-        State.bEndQueued = true;
-        if (Input.Reload.Phase == EBBBCharacterReloadPhase::Interrupted)
-        {
-            State.CancelReloadSequence = Input.Reload.Sequence;
-        }
-    }
-
-    Data.Equipment.Commands.ReloadInputs.Add(Input);
-}
-
-void FBBBCharacterInputProcessor::PublishControl(FBBBCharacterRuntimeData &Data)
-{
-    FBBBCharacterParseState &State = Data.Operation;
-    State.Control.bSprint = State.Control.bSprint && !State.Control.bAim && !State.Control.bFire;
-    Data.Control.Value = State.Control;
-}
 
 void FBBBCharacterInputProcessor::Update(
     FBBBCharacterRuntimeData &Data, UBBBEquipmentCatalog &Catalog, const bool bRestoreMode) const
 {
     FBBBCharacterParseState &State = Data.Operation;
-    State.bRestoreMode = bRestoreMode;
-    State.CancelReloadSequence = INDEX_NONE;
-    State.SelectedEquipment = nullptr;
-    State.bFire = false;
-    State.bReload = false;
+    State.BeginFrame(bRestoreMode, Data.Equipment.Equipment.GetActiveMainHandInstance());
 
-    if (State.ReloadSequence > 0
-        && State.ReloadEquipment.Get() != Data.Equipment.Equipment.GetActiveMainHandInstance())
-    {
-        CancelReload(State);
-    }
+    TArray<FBBBCharacterPacket> Pending = MoveTemp(Data.Input.Pending);
 
-    TArray<FBBBCharacterRestoreDiscreteInput> RestoreInputs = MoveTemp(Data.Input.PendingRestoreDiscrete);
-    TArray<FBBBCharacterDiscreteInput> Inputs = MoveTemp(Data.Input.PendingDiscrete);
-
-    FBBBCharacterMontagePacket::BeginFrame(Data);
+    FBBBCharacterMontagePacket::BeginFrame(Data.Animation, State);
     Data.CameraContributions.Reset();
 
-    if (bRestoreMode)
+    // 持续状态只在本地模式落黑板 还原模式的角色由还原包直写对应域
+    if (!bRestoreMode)
     {
-        for (const FBBBCharacterRestoreDiscreteInput &Input : RestoreInputs)
+        Data.Input.States.Movement.Apply(State.Control);
+        Data.Input.States.Aim.Apply(State.Control);
+        State.Control.bFire = false;
+        State.Control.bJump = false;
+    }
+
+    // 高优先级先判先行 同优先级保持到达顺序
+    Pending.StableSort([](const FBBBCharacterPacket &Left, const FBBBCharacterPacket &Right)
+    {
+        return Visit([](const auto &Packet) { return Packet.Priority; }, Left)
+            > Visit([](const auto &Packet) { return Packet.Priority; }, Right);
+    });
+
+    FBBBApprovedPackets Approved;
+    FBBBCharacterPacketContext Context{
+        State,
+        Data.Equipment.Inventory,
+        Data.Equipment.Equipment,
+        Data.Equipment.Commands,
+        Data.Equipment.Events,
+        Data.Animation,
+        Data.Aim,
+        Data.Locomotion,
+        Data.CameraContributions,
+        Catalog,
+        Approved};
+
+    int32 Index = 0;
+    while (Index < Pending.Num())
+    {
+        const int32 Priority = Visit([](const auto &Packet) { return Packet.Priority; }, Pending[Index]);
+
+        // 请求带集中两阶段 先按序全部求值再统一提交 冲突由失败方查询已批准集合让步
+        if (Priority >= BBBCharacterPacketPriority::RequestMin
+            && Priority <= BBBCharacterPacketPriority::RequestMax)
         {
-            if (Input.Equipment.IsSet())
+            int32 BandEnd = Index;
+            while (BandEnd < Pending.Num())
             {
-                const FBBBCharacterRestoreEquipmentInput &Equipment = Input.Equipment.GetValue();
-                if (Equipment.EquipmentHandle != NAME_None)
+                const int32 BandPriority = Visit([](const auto &Packet) { return Packet.Priority; }, Pending[BandEnd]);
+                if (BandPriority < BBBCharacterPacketPriority::RequestMin
+                    || BandPriority > BBBCharacterPacketPriority::RequestMax)
                 {
-                    UBBBEquipmentDefinition *Definition = Catalog.FindDefinition(Equipment.EquipmentHandle);
-                    if (ensureMsgf(Definition, TEXT("[UBBBC]Unknown equipment restore handle %s"),
-                        *Equipment.EquipmentHandle.ToString()))
+                    break;
+                }
+                ++BandEnd;
+            }
+
+            TArray<int32> Accepted;
+            for (int32 Cursor = Index; Cursor < BandEnd; ++Cursor)
+            {
+                Visit([&](const auto &Packet)
+                {
+                    if (Packet.CanExecute(Context))
                     {
-                        Data.Equipment.Commands.PendingRestoredEquipment = Definition;
+                        Approved.Add<std::decay_t<decltype(Packet)>>();
+                        Accepted.Add(Cursor);
                     }
-                }
-
-                if (Equipment.ActionEvent.ActionType != EBBBCharacterActionType::None)
-                {
-                    Data.Equipment.Commands.SubmitRestoredAction(Equipment.ActionEvent);
-                    ApplyEquipmentEvent(Equipment.ActionEvent, Data);
-                }
+                }, Pending[Cursor]);
             }
 
-            if (Input.Fire.IsSet())
+            for (const int32 AcceptedIndex : Accepted)
             {
-                const FBBBCharacterRestoreFireInput &Fire = Input.Fire.GetValue();
-                if (State.ReloadSequence > 0)
-                {
-                    CancelReload(State);
-                }
-                FBBBEquipmentActionEvent Event;
-                Event.ActionType = EBBBCharacterActionType::Fire;
-                Event.EquipmentId = Fire.EquipmentId;
-                Event.Sequence = Fire.Sequence;
-                Event.LoadedAmmo = Fire.LoadedAmmo;
-                Data.Equipment.Commands.SubmitRestoredAction(Event);
-                ApplyEquipmentEvent(Event, Data);
+                Visit([&](auto &Packet) { Packet.Execute(Context); }, Pending[AcceptedIndex]);
             }
 
-            if (Input.Reload.IsSet())
-            {
-                const FBBBCharacterRestoreReloadInput &Reload = Input.Reload.GetValue();
-                FBBBEquipmentActionEvent Event;
-                Event.ActionType = EBBBCharacterActionType::Reload;
-                Event.EquipmentId = Reload.EquipmentId;
-                Event.Sequence = Reload.Sequence;
-                Event.Phase = Reload.Phase;
-                Event.LoadedAmmo = Reload.LoadedAmmo;
-                Data.Equipment.Commands.SubmitRestoredAction(Event);
-                ApplyEquipmentEvent(Event, Data);
-            }
-
-            if (Input.Aim.IsSet())
-            {
-                Data.Aim.ApplyRestoredState(Input.Aim.GetValue().State);
-            }
-
-            if (Input.Locomotion.IsSet())
-            {
-                Data.Locomotion.CommitGait(Input.Locomotion.GetValue().Gait);
-            }
-        }
-
-        return;
-    }
-
-    const FBBBCharacterContinuousInput &Continuous = Data.Input.Continuous;
-    State.Control.MoveWorld = Continuous.Movement.MoveWorld;
-    State.Control.FacingWorld = Continuous.Movement.FacingWorld;
-    State.Control.AimTargetWorld = Continuous.Aim.AimTargetWorld;
-    State.Control.bAim = Continuous.Aim.bAim;
-    State.Control.bWalk = Continuous.Movement.bWalk;
-    State.Control.bSprint = Continuous.Movement.bSprint;
-    State.Control.bCrouch = Continuous.Movement.bCrouch;
-    State.Control.bFire = false;
-    State.Control.bJump = false;
-
-    for (const FBBBCharacterDiscreteInput &Input : Inputs)
-    {
-        ApplyEquipmentEvent(Input.Equipment.ActionEvent, Data);
-    }
-
-    // 固定顺序表达动作优先级 后处理的效果可以清除前处理的事实
-    for (const FBBBCharacterDiscreteInput &Input : Inputs)
-    {
-        State.bFire |= Input.Fire.bPressed;
-    }
-
-    for (const FBBBCharacterDiscreteInput &Input : Inputs)
-    {
-        if (Input.Reload.bPressed && Data.Equipment.Equipment.GetActiveMainHandInstance()
-            && State.SelectedEquipment == nullptr && State.ReloadSequence <= 0)
-        {
-            State.bReload = true;
-            State.bFire = false;
-        }
-    }
-
-    for (const FBBBCharacterDiscreteInput &Input : Inputs)
-    {
-        if (!Data.Equipment.Inventory.QuickAccessBindings.IsValidIndex(Input.Equipment.EquipSlot))
-        {
+            Index = BandEnd;
             continue;
         }
 
-        ABBBEquipment *Target = Data.Equipment.Inventory.QuickAccessBindings[Input.Equipment.EquipSlot];
-        if (!IsValid(Target) || Target == Data.Equipment.Equipment.GetActiveMainHandInstance())
+        // 其余带惰性求值 轮到即判即行 保持帧内因果链
+        const bool bAccepted = Visit([&Context](const auto &Packet) { return Packet.CanExecute(Context); }, Pending[Index]);
+        if (bAccepted)
         {
-            continue;
+            Visit([&Context](auto &Packet) { Packet.Execute(Context); }, Pending[Index]);
         }
 
-        if (State.ReloadSequence > 0)
-        {
-            CancelReload(State);
-        }
-        State.SelectedEquipment = Target;
-        State.bReload = false;
-        State.bFire = false;
-        Data.Equipment.Equipment.DesiredMainHandInstance = Target;
+        ++Index;
     }
 
-    for (const FBBBCharacterDiscreteInput &Input : Inputs)
+    // 派生门控与控制发布只存在于本地模式
+    if (!bRestoreMode)
     {
-        State.Control.bJump |= Input.Jump.bPressed;
-        ApplyReloadPhase(Input, Data);
+        FinalizeControl(Data);
     }
+}
 
+void FBBBCharacterInputProcessor::FinalizeControl(FBBBCharacterRuntimeData &Data)
+{
+    FBBBCharacterParseState &State = Data.Operation;
     State.Control.bFire = State.bFire;
-    PublishControl(Data);
 
-    if (State.bFire)
-    {
-        Data.Equipment.Commands.SubmitFire();
-    }
-
-    if (State.bReload)
-    {
-        Data.Equipment.Commands.SubmitReload();
-    }
-
-    for (const FBBBCharacterDiscreteInput &Input : Inputs)
-    {
-        if (Input.Montage.Montage)
-        {
-            FBBBCharacterMontagePacket Montage;
-            Montage.Montage = Input.Montage.Montage;
-            Montage.PlayRate = Input.Montage.PlayRate;
-            Montage.Sequence = Input.Montage.Sequence;
-            Montage.bReload = Input.Montage.bReload;
-            if (Montage.CanApply(Data))
-            {
-                Montage.Apply(Data);
-            }
-        }
-
-        if (Input.Camera.RecoverySpeed > 0.0f)
-        {
-            Data.CameraContributions.Add({Input.Camera.Impulse, Input.Camera.RecoverySpeed});
-        }
-    }
+    // 瞄准或开火时禁止冲刺
+    State.Control.bSprint = State.Control.bSprint && !State.Control.bAim && !State.Control.bFire;
+    Data.Control.Value = State.Control;
 }

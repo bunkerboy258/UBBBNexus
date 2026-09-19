@@ -37,7 +37,6 @@ private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
     friend class UBBBAnimInstance;
-    friend struct FBBBCharacterMontagePacket;
 
     //保存当前帧世界时间快照
     UPROPERTY(Transient)

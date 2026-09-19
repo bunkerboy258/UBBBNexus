@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Processors/BBBEquipmentFireProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBFireFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireContext.h"
@@ -41,7 +42,7 @@ void FBBBEquipmentFireProcessor::Update(
             continue;
         }
 
-        // 记录成功开火并同步本地事件
+        // 记录成功开火并发布本地开火事实
         Data.FireSequence++;
         if (bIsMirror)
         {
@@ -49,13 +50,10 @@ void FBBBEquipmentFireProcessor::Update(
             continue;
         }
 
-        FBBBEquipmentActionEvent Event;
-        Event.EquipmentId = EquipmentId;
-        Event.Sequence = Input.Sequence;
-        Event.ActionType = EBBBCharacterActionType::Fire;
-        Event.LoadedAmmo = Data.LoadedAmmo;
-        FBBBCharacterDiscreteInput CharacterInput;
-        CharacterInput.Equipment.ActionEvent = Event;
-        CharacterAPI.Submit(CharacterInput);
+        FBBBFireFactPacket Fact;
+        Fact.EquipmentId = EquipmentId;
+        Fact.Sequence = Input.Sequence;
+        Fact.LoadedAmmo = Data.LoadedAmmo;
+        CharacterAPI.Submit(Fact);
     }
 }

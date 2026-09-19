@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Fragment/BBBMagazineReloadFragment.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
 
 bool FBBBMagazineReloadFragment::CanReload(
@@ -19,12 +20,12 @@ bool FBBBMagazineReloadFragment::Begin(FBBBEquipmentReloadContext &Context) cons
         return false;
     }
 
-    FBBBCharacterDiscreteInput Input;
-    Input.Montage.Montage = Montage;
-    Input.Montage.PlayRate = 1.0f;
-    Input.Montage.Sequence = Context.Sequence;
-    Input.Montage.bReload = true;
-    if (!Context.CharacterAPI.Submit(Input))
+    FBBBMontagePacket Packet;
+    Packet.Montage = Montage;
+    Packet.PlayRate = 1.0f;
+    Packet.Sequence = Context.Sequence;
+    Packet.bReload = true;
+    if (!Context.CharacterAPI.Submit(Packet))
     {
         return false;
     }

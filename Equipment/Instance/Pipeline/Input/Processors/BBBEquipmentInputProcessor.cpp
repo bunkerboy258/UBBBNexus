@@ -1,6 +1,11 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/Processors/BBBEquipmentInputProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBEquipFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBFireFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineDetachedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineLoadedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadCancelledFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadStartedFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/Definition/BBBEquipmentInputRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
@@ -9,7 +14,7 @@
 void FBBBEquipmentInputProcessor::Update(
     FBBBEquipmentInputRuntimeData &Input, FBBBEquipmentEquipRuntimeData &Equip,
     FBBBEquipmentFireRuntimeData &Fire, FBBBEquipmentReloadRuntimeData &Reload,
-    FBBBCharacterInput &CharacterAPI, const FName EquipmentId, const bool bIsMirror) const
+    const FName EquipmentId, const bool bIsMirror) const
 {
     // 取出本帧输入并清空原始队列
     TArray<FBBBEquipmentInput> Pending = MoveTemp(Input.Pending);
@@ -19,7 +24,7 @@ void FBBBEquipmentInputProcessor::Update(
     {
         if (Entry.Type == EBBBEquipmentInputType::Snapshot)
         {
-            const FBBBEquipmentActionEvent &Snapshot = Entry.Snapshot;
+            const FBBBEquipmentActionFact &Snapshot = Entry.Snapshot;
             // 恢复快照必须匹配镜像装备和当前实例
             if (!ensureMsgf(bIsMirror && Snapshot.EquipmentId == EquipmentId && Snapshot.Sequence > 0,
                 TEXT("[UBBBE]Invalid mirror input Equipment=%s Sequence=%d"),
@@ -31,34 +36,31 @@ void FBBBEquipmentInputProcessor::Update(
             // 恢复网络弹药状态
             Fire.LoadedAmmo = Snapshot.LoadedAmmo;
             Entry.Sequence = Snapshot.Sequence;
-            // 恢复装备动作时重新进入对应输入队列
-            if (Snapshot.ActionType == EBBBCharacterActionType::Equip)
+            // 按事实身份恢复装备动作与换弹阶段
+            switch (Snapshot.PacketId)
             {
+            case FBBBEquipFactPacket::PacketId:
                 Entry.Type = EBBBEquipmentInputType::Equip;
                 Equip.Inputs.Add(Entry);
-            }
-            if (Snapshot.ActionType == EBBBCharacterActionType::Fire)
-            {
+                break;
+            case FBBBFireFactPacket::PacketId:
                 Entry.Type = EBBBEquipmentInputType::Fire;
                 Fire.Inputs.Add(Entry);
-            }
-            // 根据恢复事件阶段更新换弹状态
-            switch (Snapshot.Phase)
-            {
-            case EBBBCharacterEquipmentPhase::ReloadStarted:
+                break;
+            case FBBBReloadStartedFactPacket::PacketId:
                 Reload.bIsReloading = true;
                 Reload.bMagazineDetached = false;
                 Reload.Sequence = Snapshot.Sequence;
                 Entry.Type = EBBBEquipmentInputType::Reload;
                 Reload.Inputs.Add(Entry);
                 break;
-            case EBBBCharacterEquipmentPhase::MagazineDetached:
+            case FBBBMagazineDetachedFactPacket::PacketId:
                 Reload.bMagazineDetached = true;
                 break;
-            case EBBBCharacterEquipmentPhase::MagazineLoaded:
+            case FBBBMagazineLoadedFactPacket::PacketId:
                 Reload.bIsReloading = false;
                 break;
-            case EBBBCharacterEquipmentPhase::ReloadCancelled:
+            case FBBBReloadCancelledFactPacket::PacketId:
                 Reload.bIsReloading = false;
                 Reload.Inputs.RemoveAll([&Snapshot](const FBBBEquipmentInput &Queued)
                 {
@@ -66,13 +68,10 @@ void FBBBEquipmentInputProcessor::Update(
                 });
                 break;
             default:
+                ensureMsgf(false, TEXT("[UBBBE]Unknown snapshot packet id=%d"), Snapshot.PacketId);
                 break;
             }
 
-            // 将恢复事件发布到角色外部接口
-            FBBBCharacterDiscreteInput CharacterInput;
-            CharacterInput.Equipment.ActionEvent = Snapshot;
-            CharacterAPI.Submit(CharacterInput);
             continue;
         }
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Events/BBBEquipmentActionEvent.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
@@ -48,6 +47,15 @@ struct FBBBCharacterEquipmentState
     FName GetActiveEquipmentId() const
     {
         return ActiveEquipmentId;
+    }
+
+    /**
+     * 设置期望装备的主手实例
+     * @param Instance	期望装备实例
+     */
+    void SetDesiredMainHandInstance(ABBBEquipment *Instance)
+    {
+        DesiredMainHandInstance = Instance;
     }
 
 private:

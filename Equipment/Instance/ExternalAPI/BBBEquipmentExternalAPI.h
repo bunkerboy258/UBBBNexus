@@ -4,7 +4,7 @@
 
 class FBBBEquipmentInitializer;
 struct FBBBEquipmentInputRuntimeData;
-struct FBBBEquipmentActionEvent;
+struct FBBBEquipmentActionFact;
 
 /** 角色提交装备操作的唯一命令入口 */
 class ABBB_EVAC_API FBBBEquipmentExternalAPI final
@@ -57,7 +57,7 @@ public:
      * @param Snapshot	角色传入的已执行事实
      * @return 无
      */
-    void ApplySnapshot(const FBBBEquipmentActionEvent &Snapshot);
+    void ApplySnapshot(const FBBBEquipmentActionFact &Snapshot);
 
     /**
      * 取消此前尚未处理的操作及未结束的换弹

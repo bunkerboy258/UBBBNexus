@@ -3,6 +3,9 @@
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/ReloadPhase/BBBReloadDetachPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/ReloadPhase/BBBReloadInterruptPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/ReloadPhase/BBBReloadLoadPacket.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -137,9 +140,8 @@ void ABBBCharacter::LateUpdate()
 
 void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
 {
-    FBBBCharacterDiscreteInput Packet;
-    Packet.Reload.Sequence = Sequence;
-    Packet.Reload.Phase = EBBBCharacterReloadPhase::DetachMagazine;
+    FBBBReloadDetachPacket Packet;
+    Packet.Sequence = Sequence;
     Input.Submit(Packet);
 }
 
@@ -149,9 +151,17 @@ void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharac
     {
         UE_LOG(LogTemp, Warning, TEXT("[UBBBC]Reload playback failed Sequence=%d"), Sequence);
     }
-    FBBBCharacterDiscreteInput Packet;
-    Packet.Reload.Sequence = Sequence;
-    Packet.Reload.Phase = EndReason == EBBBCharacterReloadEndReason::Loaded
-        ? EBBBCharacterReloadPhase::LoadMagazine : EBBBCharacterReloadPhase::Interrupted;
+
+    // 装填完成与中断分走不同包 由解析状态机裁决序号
+    if (EndReason == EBBBCharacterReloadEndReason::Loaded)
+    {
+        FBBBReloadLoadPacket Packet;
+        Packet.Sequence = Sequence;
+        Input.Submit(Packet);
+        return;
+    }
+
+    FBBBReloadInterruptPacket Packet;
+    Packet.Sequence = Sequence;
     Input.Submit(Packet);
 }

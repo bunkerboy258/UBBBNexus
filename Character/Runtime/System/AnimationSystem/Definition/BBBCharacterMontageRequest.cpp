@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Definition/BBBCharacterParseState.h"
 #include "Animation/AnimMontage.h"
 
-void FBBBCharacterMontagePacket::BeginFrame(FBBBCharacterRuntimeData &Data)
+void FBBBCharacterMontagePacket::BeginFrame(FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation)
 {
-    FBBBAnimationRuntimeData &Animation = Data.Animation;
-    const FBBBCharacterParseState &Operation = Data.Operation;
     if (Animation.Slots.IsEmpty())
     {
         for (const FName Slot : {FName(TEXT("FullBody")), FName(TEXT("UpperBody")),
@@ -20,9 +20,8 @@ void FBBBCharacterMontagePacket::BeginFrame(FBBBCharacterRuntimeData &Data)
     // 切换装备或中断换弹时撤销相关槽位期望 播放组件随后按修订号处理
     for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
     {
-        if (Operation.SelectedEquipment
-            || (Operation.CancelReloadSequence > 0 && Slot.Desired.bReload
-                && Slot.Desired.Sequence == Operation.CancelReloadSequence))
+        if (Operation.IsEquipmentSwitchPending()
+            || (Operation.IsCancelledReloadSequence(Slot.Desired.Sequence) && Slot.Desired.bReload))
         {
             Slot.Desired = FBBBCharacterMontagePacket();
             Slot.Revision = 0;
@@ -30,15 +29,16 @@ void FBBBCharacterMontagePacket::BeginFrame(FBBBCharacterRuntimeData &Data)
     }
 }
 
-bool FBBBCharacterMontagePacket::CanApply(const FBBBCharacterRuntimeData &Data) const
+bool FBBBCharacterMontagePacket::CanApply(const FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation) const
 {
-    const FBBBCharacterParseState &Operation = Data.Operation;
-    if (Operation.SelectedEquipment || !IsValid(Montage))
+    if (Operation.IsEquipmentSwitchPending() || !IsValid(Montage))
     {
         return false;
     }
-    if (bReload && (Sequence == Operation.CancelReloadSequence
-        || (!Operation.bRestoreMode && Sequence != Operation.ReloadSequence)))
+
+    // 换弹蒙太奇只接受当前换弹序号 刚取消的序号与还原模式外的陌生序号都拒收
+    if (bReload && (Operation.IsCancelledReloadSequence(Sequence)
+        || (!Operation.IsRestoreMode() && !Operation.IsCurrentReloadSequence(Sequence))))
     {
         return false;
     }
@@ -46,7 +46,7 @@ bool FBBBCharacterMontagePacket::CanApply(const FBBBCharacterRuntimeData &Data) 
     bool bValidSlots = !Montage->SlotAnimTracks.IsEmpty();
     for (const FSlotAnimationTrack &Track : Montage->SlotAnimTracks)
     {
-        bValidSlots &= Data.Animation.Slots.ContainsByPredicate([&Track](const FBBBCharacterMontageSlotState &Slot)
+        bValidSlots &= Animation.Slots.ContainsByPredicate([&Track](const FBBBCharacterMontageSlotState &Slot)
         {
             return Slot.Slot == Track.SlotName;
         });
@@ -55,10 +55,8 @@ bool FBBBCharacterMontagePacket::CanApply(const FBBBCharacterRuntimeData &Data) 
         *Montage->GetPathName());
 }
 
-void FBBBCharacterMontagePacket::Apply(FBBBCharacterRuntimeData &Data) const
+void FBBBCharacterMontagePacket::Apply(FBBBAnimationRuntimeData &Animation) const
 {
-    FBBBAnimationRuntimeData &Animation = Data.Animation;
-
     // 同组蒙太奇遵循引擎互斥规则 多轨道共享一次修订号
     for (FBBBCharacterMontageSlotState &Slot : Animation.Slots)
     {

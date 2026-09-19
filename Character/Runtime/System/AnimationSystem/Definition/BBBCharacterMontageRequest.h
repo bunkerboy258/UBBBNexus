@@ -4,7 +4,8 @@
 #include "BBBCharacterMontageRequest.generated.h"
 
 class UAnimMontage;
-struct FBBBCharacterRuntimeData;
+struct FBBBAnimationRuntimeData;
+struct FBBBCharacterParseState;
 
 /** 装备向角色贡献的本地蒙太奇播放数据包 */
 USTRUCT()
@@ -24,12 +25,24 @@ struct FBBBCharacterMontagePacket
     UPROPERTY()
     bool bReload = false;
 
-    /** @return 蒙太奇是否可进入当前槽位 */
-    bool CanApply(const FBBBCharacterRuntimeData &Data) const;
+    /**
+     * 检查蒙太奇是否可进入当前槽位
+     * @param Animation	动画运行时数据
+     * @param Operation	解析状态机
+     * @return 蒙太奇是否可进入当前槽位
+     */
+    bool CanApply(const FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation) const;
 
-    /** @param Data 角色黑板 */
-    void Apply(FBBBCharacterRuntimeData &Data) const;
+    /**
+     * 写入槽位期望并分配修订号
+     * @param Animation	动画运行时数据
+     */
+    void Apply(FBBBAnimationRuntimeData &Animation) const;
 
-    /** @param Data 角色黑板 */
-    static void BeginFrame(FBBBCharacterRuntimeData &Data);
+    /**
+     * 帧初初始化槽位并撤销失效期望
+     * @param Animation	动画运行时数据
+     * @param Operation	解析状态机
+     */
+    static void BeginFrame(FBBBAnimationRuntimeData &Animation, const FBBBCharacterParseState &Operation);
 };

@@ -28,7 +28,7 @@ private:
     /** 注入本系统所需的数据与行为配置 */
     void Initialize(FBBBEquipmentInputRuntimeData &InInput, FBBBEquipmentEquipRuntimeData &InEquip,
         FBBBEquipmentFireRuntimeData &InFire, FBBBEquipmentReloadRuntimeData &InReload,
-        FBBBCharacterInput &InCharacterAPI, FName InEquipmentId, bool bInIsMirror);
+        FName InEquipmentId, bool bInIsMirror);
 
     /** 更新本系统 */
     void Update() const;
@@ -37,7 +37,6 @@ private:
     FBBBEquipmentEquipRuntimeData *Equip = nullptr;
     FBBBEquipmentFireRuntimeData *Fire = nullptr;
     FBBBEquipmentReloadRuntimeData *Reload = nullptr;
-    FBBBCharacterInput *CharacterAPI = nullptr;
     FName EquipmentId;
     bool bIsMirror = false;
 

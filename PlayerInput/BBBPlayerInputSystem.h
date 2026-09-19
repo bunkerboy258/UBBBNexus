@@ -3,8 +3,7 @@
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraConfig.h"
-#include "BBBWork/UBBBNexus/Character/Input/Continuous/BBBCharacterContinuousInput.h"
-#include "BBBWork/UBBBNexus/Character/Input/Discrete/BBBCharacterDiscreteInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/States/BBBCharacterInputStates.h"
 #include "BBBPlayerInputSystem.generated.h"
 class ABBBCharacter;
 class ABBBPlayerCameraSystem;
@@ -52,7 +51,7 @@ private:
     TWeakObjectPtr<ABBBCharacter> Character;
     UPROPERTY()
     TObjectPtr<ABBBPlayerCameraSystem> Camera;
-    FBBBCharacterContinuousInput State;
+    FBBBCharacterInputStates State;
     FVector2D MoveAxis = FVector2D::ZeroVector;
     FVector2D LookAxis = FVector2D::ZeroVector;
     bool bInputEnabled = true;

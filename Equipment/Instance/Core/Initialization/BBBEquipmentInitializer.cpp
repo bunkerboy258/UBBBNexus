@@ -67,7 +67,7 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Instance,
     // 按固定顺序注入装备子系统依赖
     Instance.ExternalAPI.Initialize(Runtime.Input, Instance.bIsMirror);
     Instance.InputPipeline.Initialize(Runtime.Input, Runtime.Equip, Runtime.Fire, Runtime.Reload,
-        CharacterAPI, EquipmentId, Instance.bIsMirror);
+        EquipmentId, Instance.bIsMirror);
     Instance.EquipSystem.Initialize(Runtime.Equip, Runtime.Fire, Definition->EquipFragment.Get(),
         CharacterAPI, EquipmentId, Instance.bIsMirror);
     Instance.ReloadSystem.Initialize(Runtime.Reload, Runtime.Fire, Definition->ReloadFragment.Get(),

@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Fragment/BBBStandardEquipFragment.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 #include "Animation/AnimMontage.h"
 
 bool FBBBStandardEquipFragment::SubmitMontage(FBBBCharacterInput &CharacterAPI, const int32 Sequence) const
@@ -11,9 +12,9 @@ bool FBBBStandardEquipFragment::SubmitMontage(FBBBCharacterInput &CharacterAPI, 
         return true;
     }
 
-    FBBBCharacterDiscreteInput Input;
-    Input.Montage.Montage = EquipMontage;
-    Input.Montage.PlayRate = 1.0f;
-    Input.Montage.Sequence = Sequence;
-    return CharacterAPI.Submit(Input);
+    FBBBMontagePacket Packet;
+    Packet.Montage = EquipMontage;
+    Packet.PlayRate = 1.0f;
+    Packet.Sequence = Sequence;
+    return CharacterAPI.Submit(Packet);
 }

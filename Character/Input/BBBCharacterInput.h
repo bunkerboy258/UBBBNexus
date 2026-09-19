@@ -1,13 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Input/Continuous/BBBCharacterContinuousInput.h"
-#include "BBBWork/UBBBNexus/Character/Input/Discrete/BBBCharacterDiscreteInput.h"
-#include "BBBWork/UBBBNexus/Character/Input/RestoreDiscrete/BBBCharacterRestoreDiscreteInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Input/States/BBBCharacterInputStates.h"
 
-struct FBBBCharacterInputRuntimeData;
 class FBBBCharacterInitializer;
-class UBBBCharacterNetworkComponent;
 
 /** 角色的输入入口 */
 class ABBB_EVAC_API FBBBCharacterInput final
@@ -15,25 +12,38 @@ class ABBB_EVAC_API FBBBCharacterInput final
 public:
     /**
      * 提交外部持续状态
-     * @param Packet	持续状态数据
+     * @param States	持续状态数据
      * @return 是否接受输入
      */
-    bool Submit(const FBBBCharacterContinuousInput &Packet);
+    bool Submit(const FBBBCharacterInputStates &States);
 
     /**
-     * 提交外部离散动作或装备事实
-     * @param Packet	离散动作数据
+     * 提交离散输入包
+     * @param Packet	输入包
      * @return 是否接受输入
      */
-    bool Submit(FBBBCharacterDiscreteInput Packet);
+    template<typename TPacket>
+    bool Submit(TPacket Packet)
+    {
+        // 仅游戏线程可提交 包必须通过自检
+        if (!ensureMsgf(IsInGameThread() && Data, TEXT("[UBBBC]Packet input unavailable")))
+        {
+            return false;
+        }
+
+        if (!ensureMsgf(Packet.IsValid(), TEXT("[UBBBC]Invalid input packet")))
+        {
+            return false;
+        }
+
+        Data->Pending.Add(FBBBCharacterPacket(TInPlaceType<TPacket>{}, MoveTemp(Packet)));
+        return true;
+    }
 
 private:
     friend class FBBBCharacterInitializer;
-    friend class UBBBCharacterNetworkComponent;
 
-    void Initialize(FBBBCharacterInputRuntimeData &Data);
-
-    void SubmitRestore(FBBBCharacterRestoreDiscreteInput Packet);
+    void Initialize(FBBBCharacterInputRuntimeData &InData);
 
     FBBBCharacterInputRuntimeData *Data = nullptr;
 };

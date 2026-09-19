@@ -1,5 +1,9 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBEquipSlotPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBFirePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBJumpPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Request/BBBReloadPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
@@ -21,7 +25,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     if (ABBBCharacter *Previous = Character.Get())
     {
         // 解绑时释放持续输入 保留最后朝向避免无输入帧将角色转向世界零度
-        FBBBCharacterContinuousInput ReleasedControl;
+        FBBBCharacterInputStates ReleasedControl;
         ReleasedControl.Movement.FacingWorld = Previous->GetActorRotation();
         Previous->GetInput().Submit(ReleasedControl);
         Previous->RemoveTickPrerequisiteComponent(this);
@@ -37,7 +41,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         Camera = nullptr;
     }
     Character = Target;
-    State = FBBBCharacterContinuousInput();
+    State = FBBBCharacterInputStates();
     bFire = false;
     bJump = false;
     MoveAxis = FVector2D::ZeroVector;
@@ -65,7 +69,7 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     bInputEnabled = bEnabled;
     if (!bEnabled)
     {
-        State = FBBBCharacterContinuousInput();
+        State = FBBBCharacterInputStates();
         bFire = false;
         bJump = false;
         MoveAxis = FVector2D::ZeroVector;
@@ -79,8 +83,8 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
     {
         return;
     }
-    FBBBCharacterDiscreteInput Packet;
-    Packet.Equipment.EquipSlot = Slot;
+    FBBBEquipSlotPacket Packet;
+    Packet.Slot = Slot;
     Character->GetInput().Submit(Packet);
 }
 
@@ -90,9 +94,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     {
         return;
     }
-    FBBBCharacterDiscreteInput Packet;
-    Packet.Reload.bPressed = true;
-    Character->GetInput().Submit(Packet);
+    Character->GetInput().Submit(FBBBReloadPacket{});
 }
 
 void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
@@ -269,10 +271,16 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     State.Aim.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
     Character->GetInput().Submit(State);
-    FBBBCharacterDiscreteInput Action;
-    Action.Fire.bPressed = bFire;
-    Action.Jump.bPressed = bJump;
-    Character->GetInput().Submit(Action);
+
+    // 开火与跳跃以包的存在与否表达按下 未按下时不投递
+    if (bFire)
+    {
+        Character->GetInput().Submit(FBBBFirePacket{});
+    }
+    if (bJump)
+    {
+        Character->GetInput().Submit(FBBBJumpPacket{});
+    }
     bJump = false;
 }
 

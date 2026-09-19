@@ -21,9 +21,17 @@ struct FBBBAimRuntimeData
         return State;
     }
 
-private:
-    friend class FBBBCharacterInputProcessor;
+    /**
+     * 用远端同步的瞄准状态还原本地运行时数据
+     * @param RemoteState	远端传来的瞄准状态
+     */
+    void ApplyRestoredState(const FBBBAimRuntimeState &RemoteState)
+    {
+        State.bIsAiming = RemoteState.bIsAiming;
+        State.AimTargetWorld = RemoteState.AimTargetWorld;
+    }
 
+private:
     friend class FBBBCharacterAimController;
 
     /**
@@ -33,16 +41,6 @@ private:
     void CommitLocalState(const FBBBAimRuntimeState &InState)
     {
         State = InState;
-    }
-
-    /**
-     * 用远端同步的瞄准状态还原本地运行时数据
-     * @param RemoteState	远端传来的瞄准状态
-     */
-    void ApplyRestoredState(const FBBBAimRuntimeState &RemoteState)
-    {
-        State.bIsAiming = RemoteState.bIsAiming;
-        State.AimTargetWorld = RemoteState.AimTargetWorld;
     }
 
     UPROPERTY(Transient)

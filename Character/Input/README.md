@@ -1,55 +1,53 @@
 # 角色输入
 
-外部只通过 `ABBBCharacter::GetInput()` 提交两个普通输入包
+外部只通过 `ABBBCharacter::GetInput()` 提交持续状态与离散输入包
 
-输入定义按语义拆分为独立编译单元
+输入定义按语义拆分为独立文件 一个包一个文件
 
 ```text
 Input/
-├── Continuous/
-│   ├── Movement/
-│   └── Aim/
-├── Discrete/
-│   ├── Equipment/
-│   ├── Fire/
-│   ├── Reload/
-│   ├── Jump/
-│   ├── Montage/
-│   └── Camera/
-└── RestoreDiscrete/
-    ├── Equipment/
-    ├── Fire/
-    ├── Reload/
-    ├── Aim/
-    └── Locomotion/
+├── States/
+│   ├── BBBCharacterMovementState      移动 朝向和步态持续状态
+│   ├── BBBCharacterAimState           瞄准持续状态
+│   └── BBBCharacterInputStates        持续状态聚合
+├── Packets/
+│   ├── BBBApprovedPackets             本帧已批准集合
+│   ├── BBBCharacterPacketContext      包执行上下文
+│   ├── Request/                       开火 换弹 切枪 跳跃请求
+│   ├── ReloadPhase/                   换弹卸下 装填 中断动画通知
+│   ├── Fact/                          装备已执行事实
+│   ├── Restore/                       网络还原装备 瞄准 步态
+│   └── Presentation/                  蒙太奇与相机表现
+└── BBBCharacterPacketRegistry         封闭包类型注册表与仲裁全景
 ```
 
-每个语义定义都有自己的头文件和 cpp 文件 聚合包只负责组合定义
-
-| 包 | 用途 | 生命周期 |
+| 通道 | 类型 | 生命周期 |
 | --- | --- | --- |
-| `FBBBCharacterContinuousInput` | 移动 朝向 瞄准和步态的持续事实 | 保留最后一份快照 |
-| `FBBBCharacterDiscreteInput` | 开火 换弹 切换装备 动画通知 蒙太奇和相机表现 | 本帧消费一次 |
+| 持续状态 | `FBBBCharacterInputStates` 覆盖式提交 | 保留最后一份快照 |
+| 离散包 | `FBBBCharacterPacket` 封闭 Variant 包类型 | 本帧消费一次 |
 
-网络接收端使用 `FBBBCharacterRestoreDiscreteInput` 表示权威端已经形成的离散事实 它按装备 开火 换弹 瞄准和步态分别保存 它不是外部输入 网络组件将它提交到同一输入入口 解析系统依照镜像规则写入黑板
+每个包自描述三要素 `IsValid` 提交校验 `CanExecute` 执行条件 `Execute` 黑板效果 并声明编译期 `Priority` 与 `ApprovedBit` 身份位
 
-`FBBBCharacterInput` 只负责校验和收件 `ParseSystem` 中的 `FBBBCharacterInputProcessor` 在主管线的固定位置解析所有包 输入包只携带事实和修改效果 不持有规则对象 不注册委托 不直接调用任一控制器
+`FBBBCharacterInput` 只负责校验和收件 `ParseSystem` 中的 `FBBBCharacterInputProcessor` 在主管线的固定位置解析所有包 输入包不持有规则对象 不注册委托 不直接调用任一控制器
 
-普通离散输入的效果按固定顺序执行
+## 仲裁模型
 
-1. 先接收装备已经形成的动作事实
-2. 开火效果写入开火事实
-3. 换弹效果清除开火事实并建立换弹阶段
-4. 切换装备效果取消换弹并清除开火和换弹事实
-5. 将最终控制事实提交给控制器和装备命令黑板
+每帧按 `Priority` 稳定排序后分带处理
 
-因此冲突不由隐式优先级或输入到达顺序决定 例如换弹打断开火 切换装备打断换弹 都能在这一个处理器中直接看见
+1. 还原带 100 保到达序执行网络还原
+2. 事实带 50 保到达序执行装备已执行事实并驱动换弹状态机
+3. 请求带执行两阶段 先按序对全部请求求值 `CanExecute` 再统一提交 `Execute` 冲突由失败方查询已批准集合单向声明 切枪 19 否决换弹 18 否决开火 17 跳跃 16 独立
+4. 阶段带 15 换弹动画通知经序号守卫后转发装备命令
+5. 表现带 5/4 蒙太奇经槽位守卫写入期望 相机追加贡献
+6. 派生门控由 Finalize 统一处理 瞄准或开火时禁止冲刺
+
+跨帧换弹状态机集中在 `FBBBCharacterParseState` 的语义方法中 包只调用 `Track` 与 `Report` 接口 不直接触碰字段
 
 ## 手动资产迁移
 
 1. 在玩家控制器的 `PlayerInputSystem` 配置 InputAction 引用
 2. 保留 `FullBody` `UpperBody` `FullBodyAdditivePreAim` `UpperBodyAdditive` `AdditiveHitReact` 五个动画 Slot
-3. 换弹通知继续使用 `BBB.Reload.Start` 和 `BBB.Reload.End` 并经 `ReportReloadStartNotify` 和 `ReportReloadEndNotify` 提交离散输入
+3. 换弹通知继续使用 `BBB.Reload.Start` 和 `BBB.Reload.End` 并经 `ReportReloadStartNotify` 和 `ReportReloadEndNotify` 提交换弹阶段包
 4. 不要同时添加自动通知和手工通知
 
-输入动作无效 槽位无效或蒙太奇播放失败会产生日志 镜像角色不会通过网络系统直接修改角色黑板
+包自检失败 槽位无效或蒙太奇播放失败会产生日志 镜像角色的玩法状态只由还原包写入

@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Processors/BBBEquipmentEquipProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBEquipFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Fragment/BBBEquipmentEquipFragment.h"
@@ -26,14 +27,11 @@ void FBBBEquipmentEquipProcessor::Update(
             continue;
         }
 
-        // 发布本地装备切换事件
-        FBBBEquipmentActionEvent Event;
-        Event.EquipmentId = EquipmentId;
-        Event.Sequence = Input.Sequence;
-        Event.ActionType = EBBBCharacterActionType::Equip;
-        Event.LoadedAmmo = Fire.LoadedAmmo;
-        FBBBCharacterDiscreteInput CharacterInput;
-        CharacterInput.Equipment.ActionEvent = Event;
-        CharacterAPI.Submit(CharacterInput);
+        // 发布本地装备切换事实
+        FBBBEquipFactPacket Fact;
+        Fact.EquipmentId = EquipmentId;
+        Fact.Sequence = Input.Sequence;
+        Fact.LoadedAmmo = Fire.LoadedAmmo;
+        CharacterAPI.Submit(Fact);
     }
 }

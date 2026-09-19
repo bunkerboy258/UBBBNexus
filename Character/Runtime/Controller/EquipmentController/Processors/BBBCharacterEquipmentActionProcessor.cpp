@@ -8,7 +8,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
 {
     // 先取得当前主手装备并消费本帧恢复和动作命令
     ABBBEquipment *Equipment = State.GetActiveMainHandInstance();
-    TArray<FBBBEquipmentActionEvent> Restored = Commands.ConsumeRestoredActions();
+    TArray<FBBBEquipmentActionFact> Restored = Commands.ConsumeRestoredActions();
     const bool bFire = Commands.ConsumeFire();
     const bool bReload = Commands.ConsumeReload();
     if (!Equipment)
@@ -19,31 +19,28 @@ void FBBBCharacterEquipmentActionProcessor::Update(
 
     // 只把属于当前装备的恢复事实交给装备接口
     FBBBEquipmentExternalAPI &API = Equipment->GetExternalAPI();
-    for (const FBBBEquipmentActionEvent &Event : Restored)
+    for (const FBBBEquipmentActionFact &Fact : Restored)
     {
-        if (Event.EquipmentId == Equipment->GetEquipmentId())
+        if (Fact.EquipmentId == Equipment->GetEquipmentId())
         {
-            API.ApplySnapshot(Event);
+            API.ApplySnapshot(Fact);
         }
     }
 
-    // 将换弹动画通知映射为装备接口的对应阶段
-    for (const FBBBCharacterDiscreteInput &Input : Commands.ReloadInputs)
+    // 将换弹动画阶段序号转发为装备接口的对应操作
+    for (const int32 Sequence : Commands.DetachMagazineSequences)
     {
-        switch (Input.Reload.Phase)
-        {
-        case EBBBCharacterReloadPhase::DetachMagazine:
-            API.SubmitDetachMagazine(Input.Reload.Sequence);
-            break;
-        case EBBBCharacterReloadPhase::LoadMagazine:
-            API.SubmitLoadMagazine(Input.Reload.Sequence);
-            break;
-        case EBBBCharacterReloadPhase::Interrupted:
-            API.SubmitCancelReload(Input.Reload.Sequence);
-            break;
-        case EBBBCharacterReloadPhase::None:
-            break;
-        }
+        API.SubmitDetachMagazine(Sequence);
+    }
+
+    for (const int32 Sequence : Commands.LoadMagazineSequences)
+    {
+        API.SubmitLoadMagazine(Sequence);
+    }
+
+    for (const int32 Sequence : Commands.CancelReloadSequences)
+    {
+        API.SubmitCancelReload(Sequence);
     }
 
     // 使用递增序号提交本帧开火和换弹动作

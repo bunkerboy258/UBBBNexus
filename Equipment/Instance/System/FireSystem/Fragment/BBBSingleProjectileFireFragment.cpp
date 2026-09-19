@@ -1,6 +1,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Fragment/BBBSingleProjectileFireFragment.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBCameraPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireContext.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
@@ -75,11 +77,11 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
 
     if (FireMontage)
     {
-        FBBBCharacterDiscreteInput MontageInput;
-        MontageInput.Montage.Montage = FireMontage;
-        MontageInput.Montage.PlayRate = 1.0f;
-        MontageInput.Montage.Sequence = Context.Sequence;
-        Context.CharacterAPI.Submit(MontageInput);
+        FBBBMontagePacket Packet;
+        Packet.Montage = FireMontage;
+        Packet.PlayRate = 1.0f;
+        Packet.Sequence = Context.Sequence;
+        Context.CharacterAPI.Submit(Packet);
     }
 
     // 本地实例负责消耗弹药并提交后坐力
@@ -89,10 +91,10 @@ bool FBBBSingleProjectileFireFragment::Fire(FBBBEquipmentFireContext &Context) c
             VerticalRecoilAmount + FMath::FRandRange(-VerticalRecoilRandom, VerticalRecoilRandom),
             HorizontalRecoilAmount + FMath::FRandRange(-HorizontalRecoilRandom, HorizontalRecoilRandom));
         Context.LoadedAmmo--;
-        FBBBCharacterDiscreteInput CameraInput;
-        CameraInput.Camera.Impulse = RecoilImpulse;
-        CameraInput.Camera.RecoverySpeed = RecoilRecoverySpeed;
-        Context.CharacterAPI.Submit(CameraInput);
+        FBBBCameraPacket CameraPacket;
+        CameraPacket.Impulse = RecoilImpulse;
+        CameraPacket.RecoverySpeed = RecoilRecoverySpeed;
+        Context.CharacterAPI.Submit(CameraPacket);
     }
 
     // 记录本次开火时间供下一次开火判断

@@ -65,7 +65,7 @@ void FBBBEquipmentExternalAPI::SubmitCancelPendingActions()
     Enqueue(EBBBEquipmentInputType::CancelPendingActions, INDEX_NONE);
 }
 
-void FBBBEquipmentExternalAPI::ApplySnapshot(const FBBBEquipmentActionEvent &Snapshot)
+void FBBBEquipmentExternalAPI::ApplySnapshot(const FBBBEquipmentActionFact &Snapshot)
 {
     // 镜像装备只允许接收恢复快照
     if (!ensureMsgf(IsInGameThread() && Input && bIsMirror, TEXT("[UBBBE]Snapshot input requires a mirror instance")))

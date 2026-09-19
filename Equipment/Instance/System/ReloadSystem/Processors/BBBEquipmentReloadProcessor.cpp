@@ -1,6 +1,10 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Processors/BBBEquipmentReloadProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInput.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineDetachedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBMagazineLoadedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadCancelledFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/Fact/BBBReloadStartedFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
@@ -29,12 +33,6 @@ void FBBBEquipmentReloadProcessor::Update(
             continue;
         }
 
-        // 为本地换弹操作准备同步事件
-        FBBBEquipmentActionEvent Event;
-        Event.EquipmentId = EquipmentId;
-        Event.Sequence = Sequence;
-        Event.ActionType = EBBBCharacterActionType::Reload;
-
         if (Input.Type == EBBBEquipmentInputType::Reload)
         {
             // 换弹开始前确认当前状态和弹药条件
@@ -50,12 +48,12 @@ void FBBBEquipmentReloadProcessor::Update(
                 continue;
             }
 
-            // 发布换弹开始事件
-            Event.Phase = EBBBCharacterEquipmentPhase::ReloadStarted;
-            Event.LoadedAmmo = Fire.LoadedAmmo;
-            FBBBCharacterDiscreteInput CharacterInput;
-            CharacterInput.Equipment.ActionEvent = Event;
-            CharacterAPI.Submit(CharacterInput);
+            // 发布换弹开始事实
+            FBBBReloadStartedFactPacket Fact;
+            Fact.EquipmentId = EquipmentId;
+            Fact.Sequence = Sequence;
+            Fact.LoadedAmmo = Fire.LoadedAmmo;
+            CharacterAPI.Submit(Fact);
             continue;
         }
 
@@ -70,7 +68,7 @@ void FBBBEquipmentReloadProcessor::Update(
             continue;
         }
 
-        // 根据输入执行脱匣装匣或取消阶段
+        // 根据输入执行脱匣装匣或取消阶段 事实包类型与阶段一一对应
         bool bSucceeded = false;
         switch (Input.Type)
         {
@@ -78,20 +76,41 @@ void FBBBEquipmentReloadProcessor::Update(
             if (!Data.bMagazineDetached)
             {
                 bSucceeded = Fragment.DetachMagazine(Context);
-                Event.Phase = EBBBCharacterEquipmentPhase::MagazineDetached;
+                if (bSucceeded)
+                {
+                    FBBBMagazineDetachedFactPacket Fact;
+                    Fact.EquipmentId = EquipmentId;
+                    Fact.Sequence = Sequence;
+                    Fact.LoadedAmmo = Fire.LoadedAmmo;
+                    CharacterAPI.Submit(Fact);
+                }
             }
             break;
         case EBBBEquipmentInputType::LoadMagazine:
             if (Data.bMagazineDetached)
             {
                 bSucceeded = Fragment.LoadMagazine(Context);
-                Event.Phase = EBBBCharacterEquipmentPhase::MagazineLoaded;
+                if (bSucceeded)
+                {
+                    FBBBMagazineLoadedFactPacket Fact;
+                    Fact.EquipmentId = EquipmentId;
+                    Fact.Sequence = Sequence;
+                    Fact.LoadedAmmo = Fire.LoadedAmmo;
+                    CharacterAPI.Submit(Fact);
+                }
             }
             break;
         case EBBBEquipmentInputType::CancelReload:
         case EBBBEquipmentInputType::CancelPendingActions:
             bSucceeded = Fragment.Cancel(Context);
-            Event.Phase = EBBBCharacterEquipmentPhase::ReloadCancelled;
+            if (bSucceeded)
+            {
+                FBBBReloadCancelledFactPacket Fact;
+                Fact.EquipmentId = EquipmentId;
+                Fact.Sequence = Sequence;
+                Fact.LoadedAmmo = Fire.LoadedAmmo;
+                CharacterAPI.Submit(Fact);
+            }
             break;
         default:
             break;
@@ -103,11 +122,5 @@ void FBBBEquipmentReloadProcessor::Update(
                 static_cast<int32>(Input.Type), Sequence);
             continue;
         }
-
-        // 发布换弹阶段完成事件
-        Event.LoadedAmmo = Fire.LoadedAmmo;
-        FBBBCharacterDiscreteInput CharacterInput;
-        CharacterInput.Equipment.ActionEvent = Event;
-        CharacterAPI.Submit(CharacterInput);
     }
 }
