@@ -15,7 +15,14 @@ public:
     void Update() const;
 
 private:
+    friend class ABBBCharacter;
     friend class FBBBCharacterInitializer;
+
+    /**
+     * 推进角色主更新阶段
+     * @param DeltaSeconds 当前帧间隔
+     */
+    void Tick(float DeltaSeconds) const;
 
     /**
      * 注入主更新所属角色

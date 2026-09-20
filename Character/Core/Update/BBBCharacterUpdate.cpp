@@ -1,10 +1,30 @@
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdate.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "Engine/World.h"
 
 void FBBBCharacterUpdate::Initialize(ABBBCharacter &InCharacter)
 {
     Character = &InCharacter;
+}
+
+//------------------------------------------------------------------------------
+
+void FBBBCharacterUpdate::Tick(const float DeltaSeconds) const
+{
+    if (!Character)
+    {
+        return;
+    }
+
+    const UWorld *World = Character->GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    Character->RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
+    Update();
 }
 
 //------------------------------------------------------------------------------

@@ -10,12 +10,9 @@ class ABBBCharacter;
  * 在角色移动组件完成本帧移动后驱动角色LateUpdate
  */
 USTRUCT()
-struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FTickFunction
+struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FActorTickFunction
 {
     GENERATED_BODY()
-
-    /** 执行LateUpdate的所属角色 */
-    ABBBCharacter *Target = nullptr;
 
     /**
      * 执行角色移动后的更新阶段
@@ -30,9 +27,6 @@ struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FTickFunction
         ENamedThreads::Type CurrentThread,
         const FGraphEventRef &MyCompletionGraphEvent) override;
 
-    virtual FString DiagnosticMessage() override;
-
-    virtual FName DiagnosticContext(bool bDetailed) override;
 };
 
 template<>

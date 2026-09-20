@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "BBBCharacterWorldRuntimeData.generated.h"
 class ABBBCharacter;
+class FBBBCharacterUpdate;
 
 /** 角色当前帧读取的世界时间快照 */
 USTRUCT()
@@ -22,6 +23,7 @@ public:
     }
 private:
     friend class ABBBCharacter;
+    friend class FBBBCharacterUpdate;
 
     /**
      * 更新当前帧世界时间

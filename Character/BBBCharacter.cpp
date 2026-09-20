@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadDetachPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadInterruptPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadLoadPacket.h"
-#include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -74,19 +73,7 @@ void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ABBBCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    // 主更新只在角色所属世界有效时推进运行时状态
-    //读取角色所属世界
-    const UWorld *World = GetWorld();
-
-    if (!World)
-    {
-        return;
-    }
-
-    //更新当前帧世界时间快照
-    RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
-
-    CharacterUpdate.Update();
+    CharacterUpdate.Tick(DeltaSeconds);
 }
 
 //------------------------------------------------------------------------------
