@@ -89,10 +89,10 @@ void FBBBCharacterParseState::TrackReloadFinished(
     bEndQueued = false;
 }
 
-bool FBBBCharacterParseState::ReportMagazineDetached(const int32 Sequence)
+bool FBBBCharacterParseState::ReportMagazineDetached()
 {
     // 只接受当前换弹且尚未排队结束的通知
-    if (!IsCurrentReloadSequence(Sequence) || bEndQueued)
+    if (!IsReloadInProgress() || bEndQueued)
     {
         return false;
     }
@@ -107,9 +107,9 @@ bool FBBBCharacterParseState::ReportMagazineDetached(const int32 Sequence)
     return true;
 }
 
-bool FBBBCharacterParseState::ReportMagazineLoaded(const int32 Sequence)
+bool FBBBCharacterParseState::ReportMagazineLoaded()
 {
-    if (!IsCurrentReloadSequence(Sequence) || bEndQueued)
+    if (!IsReloadInProgress() || bEndQueued)
     {
         return false;
     }
@@ -124,14 +124,14 @@ bool FBBBCharacterParseState::ReportMagazineLoaded(const int32 Sequence)
     return true;
 }
 
-bool FBBBCharacterParseState::ReportReloadInterrupted(const int32 Sequence)
+bool FBBBCharacterParseState::ReportReloadInterrupted()
 {
-    if (!IsCurrentReloadSequence(Sequence) || bEndQueued)
+    if (!IsReloadInProgress() || bEndQueued)
     {
         return false;
     }
 
     bEndQueued = true;
-    CancelReloadSequence = Sequence;
+    CancelReloadSequence = ReloadSequence;
     return true;
 }

@@ -28,15 +28,9 @@
 
 在装备配置的 `ReloadFragment` 指定的换弹蒙太奇上添加两个 **Montage Notify**，使用标准 Play Montage Notify 类型：
 
-- 卸下弹夹关键帧：Notify Name 为 `BBB.Reload.Start`
-- 装填弹夹关键帧：Notify Name 为 `BBB.Reload.End`
+换弹蒙太奇按时间轴放置三个 C++ 通知：`UBBBReloadDetachAnimNotify`、`UBBBReloadLoadAnimNotify` 与覆盖完整换弹窗口的 `UBBBReloadLifecycleAnimNotifyState`。前两个通知提交关键帧输入；状态通知结束时由解析状态机决定是否中断换弹。
 
-换弹蒙太奇由角色动画系统的 `UBBBMontagePlayback` 播放，并按蒙太奇实例 ID 关联不可变的操作序号。通知自动转交角色的两个蓝图可调用入口：
-
-- `ReportReloadStartNotify(Sequence)`
-- `ReportReloadEndNotify(Sequence, EndReason)`
-
-普通装备／开火蒙太奇也由 `UBBBMontagePlayback` 播放，不再通过蓝图播放事件。动画图仍需包含换弹蒙太奇使用的 Slot；蒙太奇期间的 IK 遮蔽由动画图或曲线实现。
+普通装备／开火蒙太奇由角色动画系统直接播放。动画图仍需包含换弹蒙太奇使用的 Slot；蒙太奇期间的 IK 遮蔽由动画图或曲线实现。
 
 动画通知进入角色 Input → Arbitration → Execution，之后才进入装备 API 的命令队列。角色验证当前换弹身份，装备验证阶段顺序和弹药条件。
 

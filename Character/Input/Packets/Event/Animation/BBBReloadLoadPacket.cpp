@@ -2,7 +2,7 @@
 
 bool FBBBReloadLoadPacket::IsValid() const
 {
-    return Sequence > 0;
+    return true;
 }
 
 bool FBBBReloadLoadPacket::CanApply(const FBBBCharacterInputContext &Context) const
@@ -14,8 +14,8 @@ bool FBBBReloadLoadPacket::CanApply(const FBBBCharacterInputContext &Context) co
 void FBBBReloadLoadPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     // 序号守卫与先卸后装守卫由解析状态机集中裁决
-    if (Context.Operation.ReportMagazineLoaded(Sequence))
+    if (Context.Operation.ReportMagazineLoaded())
     {
-        Context.Commands.SubmitLoadMagazine(Sequence);
+        Context.Commands.SubmitLoadMagazine(Context.Operation.GetReloadSequence());
     }
 }

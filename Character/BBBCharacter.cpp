@@ -3,9 +3,6 @@
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadDetachPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadInterruptPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadLoadPacket.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -87,26 +84,3 @@ bool ABBBCharacter::ShouldReplicateAcceleration() const
 }
 
 //------------------------------------------------------------------------------
-
-void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
-{
-    FBBBReloadDetachPacket Packet;
-    Packet.Sequence = Sequence;
-    SubmitInput(Packet);
-}
-
-void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReasonDefinition EndReason)
-{
-    // 装填完成与中断分走不同包 由解析状态机裁决序号
-    if (EndReason == EBBBCharacterReloadEndReasonDefinition::Loaded)
-    {
-        FBBBReloadLoadPacket Packet;
-        Packet.Sequence = Sequence;
-        SubmitInput(Packet);
-        return;
-    }
-
-    FBBBReloadInterruptPacket Packet;
-    Packet.Sequence = Sequence;
-    SubmitInput(Packet);
-}

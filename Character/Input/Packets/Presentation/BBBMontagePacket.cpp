@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Request/BBBCharacterMontageRequest.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageRequestState.h"
 #include "Animation/AnimMontage.h"
 
 namespace BBBCharacterMontageSlots
@@ -22,7 +22,7 @@ bool FBBBMontagePacketData::CanApplyToSlot(
     const FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
-    FBBBCharacterMontagePacket Request;
+    FBBBCharacterMontageRequestState Request;
     Request.Montage = Montage;
     Request.PlayRate = PlayRate;
     Request.Sequence = Sequence;
@@ -34,7 +34,7 @@ void FBBBMontagePacketData::ApplyToSlot(
     FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
-    FBBBCharacterMontagePacket Request;
+    FBBBCharacterMontageRequestState Request;
     Request.Montage = Montage;
     Request.PlayRate = PlayRate;
     Request.Sequence = Sequence;

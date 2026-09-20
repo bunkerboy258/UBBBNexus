@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Request/BBBCharacterMontageRequest.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageRequestState.h"
 #include "BBBCharacterMontageSlotState.generated.h"
 
 /** 固定槽位期望状态，多槽蒙太奇通过相同修订号共享一次播放 */
@@ -14,7 +14,7 @@ struct FBBBCharacterMontageSlotState
     FName Slot = NAME_None;
 
     UPROPERTY()
-    FBBBCharacterMontagePacket Desired;
+    FBBBCharacterMontageRequestState Desired;
 
     uint64 Revision = 0;
 };

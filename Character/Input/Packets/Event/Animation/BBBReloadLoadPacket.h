@@ -5,13 +5,9 @@
 
 /**
  * 换弹装填弹匣动画通知包
- * 装填必须先于卸下之后到达
  */
 struct FBBBReloadLoadPacket final
 {
-
-    /** 播放时保存的换弹序号 */
-    int32 Sequence = INDEX_NONE;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;

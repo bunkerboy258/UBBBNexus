@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Request/BBBCharacterMontageRequest.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontagePlaybackState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageSlotState.h"
 #include "BBBAnimationState.generated.h"
 
@@ -12,7 +12,6 @@ class FBBBCharacterAnimationSystem;
 class FBBBCharacterInitializer;
 class FBBBCharacterAnimationActionProcessor;
 class UAnimInstance;
-class UBBBMontagePlayback;
 
 USTRUCT(BlueprintType)
 //角色运行时动画数据
@@ -26,7 +25,7 @@ private:
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterAnimationActionProcessor;
-    friend struct FBBBCharacterMontagePacket;
+    friend struct FBBBCharacterMontageRequestState;
 
     /** 当前帧提交给动画实例的角色事实 */
     UPROPERTY(Transient)
@@ -40,9 +39,9 @@ private:
     UPROPERTY(Transient)
     FBBBCharacterMontageSlots Slots;
 
-    /** 一个播放对象可以同时占用多个槽位 */
+    /** 已提交给引擎的蒙太奇播放记录 */
     UPROPERTY(Transient)
-    TArray<TObjectPtr<UBBBMontagePlayback>> Playbacks;
+    TArray<FBBBCharacterMontagePlaybackState> ActiveMontages;
 
     uint64 NextRevision = 1;
 };

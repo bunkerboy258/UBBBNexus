@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Request/BBBCharacterMontageRequest.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageRequestState.h"
 
 void FBBBCharacterInputProcessor::Update(
     FBBBCharacterRuntimeData &Data,
@@ -12,7 +12,7 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterInputState &Input = Data.InputState;
 
     State.BeginFrame(Data.Equipment.Equipment.GetActiveMainHandInstance());
-    FBBBCharacterMontagePacket::BeginFrame(Data.Animation, State);
+    FBBBCharacterMontageRequestState::BeginFrame(Data.Animation, State);
 
     FBBBCharacterInputContext Context{
         State,

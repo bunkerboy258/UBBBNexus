@@ -52,4 +52,4 @@ ParseSystem/Context/
 
 保留 `FullBody`、`UpperBody`、`FullBodyAdditivePreAim`、`UpperBodyAdditive`、`AdditiveHitReact` 五个 Slot。`BBBCharacterMontageInput::Submit` 读取武器配置蒙太奇的轨道并分别提交对应固定槽位包；多轨蒙太奇共享播放修订号。
 
-换弹通知继续使用 `BBB.Reload.Start` 和 `BBB.Reload.End`，本轮不新增或自动修改动画资产通知。
+换弹蒙太奇使用 `UBBBReloadDetachAnimNotify`、`UBBBReloadLoadAnimNotify` 和覆盖全过程的 `UBBBReloadLifecycleAnimNotifyState` 提交动画事件输入。

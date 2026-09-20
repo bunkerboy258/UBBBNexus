@@ -5,13 +5,9 @@
 
 /**
  * 换弹卸下弹匣动画通知包
- * 序号必须匹配当前换弹且尚未卸下
  */
 struct FBBBReloadDetachPacket final
 {
-
-    /** 播放时保存的换弹序号 */
-    int32 Sequence = INDEX_NONE;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;

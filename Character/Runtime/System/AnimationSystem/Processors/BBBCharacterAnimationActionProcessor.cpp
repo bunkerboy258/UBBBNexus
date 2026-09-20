@@ -1,59 +1,60 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Playback/BBBMontagePlayback.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 
 void FBBBCharacterAnimationActionProcessor::Update(
     UBBBAnimInstance &AnimInstance, FBBBAnimationState &AnimationData) const
 {
-    // 播放结束只清理属于自身修订号的槽 新播放不能被旧回调清空
-    for (UBBBMontagePlayback *Playback : AnimationData.Playbacks)
+    for (const FBBBCharacterMontagePlaybackState &Playback : AnimationData.ActiveMontages)
     {
-        if (!Playback)
+        if (!Playback.Montage || !AnimInstance.Montage_IsPlaying(Playback.Montage))
         {
-            continue;
-        }
-        if (Playback->IsFinished())
-        {
-            AnimationData.Slots.ForEach([Playback](FBBBCharacterMontageSlotState &Slot)
+            AnimationData.Slots.ForEach([&Playback](FBBBCharacterMontageSlotState &Slot)
             {
-                if (Slot.Revision == Playback->GetRevision())
+                if (Slot.Revision == Playback.Revision)
                 {
-                    Slot.Desired = FBBBCharacterMontagePacket();
+                    Slot.Desired = FBBBCharacterMontageRequestState();
                     Slot.Revision = 0;
                 }
             });
+            continue;
         }
-        const bool bDesired = AnimationData.Slots.ContainsRevision(Playback->GetRevision());
-        if (!bDesired)
+
+        if (!AnimationData.Slots.ContainsRevision(Playback.Revision))
         {
-            Playback->Stop();
+            AnimInstance.Montage_Stop(0.1f, Playback.Montage);
         }
     }
-    AnimationData.Playbacks.RemoveAll([](UBBBMontagePlayback *Playback)
+
+    AnimationData.ActiveMontages.RemoveAll([&AnimInstance, &AnimationData](const FBBBCharacterMontagePlaybackState &Playback)
     {
-        return !Playback || Playback->IsFinished();
+        return !Playback.Montage
+            || !AnimInstance.Montage_IsPlaying(Playback.Montage)
+            || !AnimationData.Slots.ContainsRevision(Playback.Revision);
     });
 
-    // 同一蒙太奇的多个槽共享修订号 仅创建一次引擎播放实例
     AnimationData.Slots.ForEach([&AnimInstance, &AnimationData](const FBBBCharacterMontageSlotState &Slot)
     {
         if (!Slot.Desired.Montage || Slot.Revision == 0)
         {
             return;
         }
-        const bool bPlaying = AnimationData.Playbacks.ContainsByPredicate(
-            [&Slot](const UBBBMontagePlayback *Playback)
+        const bool bPlaying = AnimationData.ActiveMontages.ContainsByPredicate(
+            [&Slot](const FBBBCharacterMontagePlaybackState &Playback)
             {
-                return Playback && Playback->GetRevision() == Slot.Revision;
+                return Playback.Revision == Slot.Revision;
             });
         if (bPlaying)
         {
             return;
         }
-        UBBBMontagePlayback *Playback = NewObject<UBBBMontagePlayback>(&AnimInstance);
-        AnimationData.Playbacks.Add(Playback);
-        Playback->Start(AnimInstance, *Slot.Desired.Montage, Slot.Desired.PlayRate,
-            Slot.Desired.Sequence, Slot.Revision, Slot.Desired.bReload);
+        if (AnimInstance.Montage_Play(Slot.Desired.Montage, Slot.Desired.PlayRate) <= 0.0f)
+        {
+            return;
+        }
+
+        FBBBCharacterMontagePlaybackState &Playback = AnimationData.ActiveMontages.AddDefaulted_GetRef();
+        Playback.Montage = Slot.Desired.Montage;
+        Playback.Revision = Slot.Revision;
     });
 }

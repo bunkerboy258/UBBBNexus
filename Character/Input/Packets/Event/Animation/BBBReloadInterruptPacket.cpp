@@ -2,7 +2,7 @@
 
 bool FBBBReloadInterruptPacket::IsValid() const
 {
-    return Sequence > 0;
+    return true;
 }
 
 bool FBBBReloadInterruptPacket::CanApply(const FBBBCharacterInputContext &Context) const
@@ -14,8 +14,8 @@ bool FBBBReloadInterruptPacket::CanApply(const FBBBCharacterInputContext &Contex
 void FBBBReloadInterruptPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     // 序号守卫由解析状态机集中裁决
-    if (Context.Operation.ReportReloadInterrupted(Sequence))
+    if (Context.Operation.ReportReloadInterrupted())
     {
-        Context.Commands.SubmitCancelReload(Sequence);
+        Context.Commands.SubmitCancelReload(Context.Operation.GetReloadSequence());
     }
 }

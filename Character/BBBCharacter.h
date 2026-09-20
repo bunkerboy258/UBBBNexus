@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputSubmit.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterReloadEndReasonDefinition.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/BBBCharacterAimController.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/BBBCharacterEquipmentController.h"
@@ -87,23 +86,6 @@ public:
     {
         return BBBCharacterInput::Submit(RuntimeData, Forward<TPacket>(Packet));
     }
-
-    /**
-     * 接收换弹卸下关键帧
-     * @param Sequence	播放时保存的操作序号
-     * @return 无
-     */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Animation Input")
-    void ReportReloadStartNotify(int32 Sequence);
-
-    /**
-     * 接收换弹装填或中断事件
-     * @param Sequence	播放时保存的操作序号
-     * @param EndReason	结束原因
-     * @return 无
-     */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Animation Input")
-    void ReportReloadEndNotify(int32 Sequence, EBBBCharacterReloadEndReasonDefinition EndReason);
 
 protected:
     

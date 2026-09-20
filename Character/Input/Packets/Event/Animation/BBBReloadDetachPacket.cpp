@@ -2,7 +2,7 @@
 
 bool FBBBReloadDetachPacket::IsValid() const
 {
-    return Sequence > 0;
+    return true;
 }
 
 bool FBBBReloadDetachPacket::CanApply(const FBBBCharacterInputContext &Context) const
@@ -14,8 +14,8 @@ bool FBBBReloadDetachPacket::CanApply(const FBBBCharacterInputContext &Context) 
 void FBBBReloadDetachPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     // 序号守卫与阶段守卫由解析状态机集中裁决
-    if (Context.Operation.ReportMagazineDetached(Sequence))
+    if (Context.Operation.ReportMagazineDetached())
     {
-        Context.Commands.SubmitDetachMagazine(Sequence);
+        Context.Commands.SubmitDetachMagazine(Context.Operation.GetReloadSequence());
     }
 }

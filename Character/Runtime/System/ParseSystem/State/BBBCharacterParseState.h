@@ -57,6 +57,12 @@ public:
         return ReloadSequence > 0 && Sequence == ReloadSequence;
     }
 
+    /** @return 当前换弹序号，不存在进行中换弹时返回INDEX_NONE */
+    int32 GetReloadSequence() const
+    {
+        return ReloadSequence;
+    }
+
     /** @return 序号是否为刚取消的换弹 */
     bool IsCancelledReloadSequence(const int32 Sequence) const
     {
@@ -153,24 +159,21 @@ public:
 
     /**
      * 动画通知报告弹匣卸下
-     * @param Sequence	换弹序号
      * @return 通知是否被接受
      */
-    bool ReportMagazineDetached(int32 Sequence);
+    bool ReportMagazineDetached();
 
     /**
      * 动画通知报告弹匣装填
-     * @param Sequence	换弹序号
      * @return 通知是否被接受
      */
-    bool ReportMagazineLoaded(int32 Sequence);
+    bool ReportMagazineLoaded();
 
     /**
      * 动画通知报告换弹中断
-     * @param Sequence	换弹序号
      * @return 通知是否被接受
      */
-    bool ReportReloadInterrupted(int32 Sequence);
+    bool ReportReloadInterrupted();
 
 private:
     friend class FBBBCharacterParseSystem;

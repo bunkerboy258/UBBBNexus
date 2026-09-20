@@ -5,13 +5,9 @@
 
 /**
  * 换弹中断动画通知包
- * 未收到装填通知的播放结束由此收尾
  */
 struct FBBBReloadInterruptPacket final
 {
-
-    /** 播放时保存的换弹序号 */
-    int32 Sequence = INDEX_NONE;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
