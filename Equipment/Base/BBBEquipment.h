@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Definition/BBBEquipmentCommand.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Input/BBBEquipmentCommand.h"
 #include "GameFramework/Actor.h"
 #include "BBBEquipment.generated.h"
 
@@ -46,10 +46,11 @@ public:
 
     /**
      * 提交角色跨入装备领域的统一命令
-     * @param Command    待映射的通用命令
+     * @param Command        待映射的通用命令
+     * @param bInIsMirror    是否只能执行事实还原
      * @return 无
      */
-    virtual void SubmitCommand(const FBBBEquipmentCommand &Command);
+    virtual void SubmitCommand(const FBBBEquipmentCommand &Command, bool bInIsMirror);
 
 private:
     friend class FBBBCharacterShutdown;

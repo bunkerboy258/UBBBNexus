@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
 class FBBBCharacterEquipmentSelectionProcessor;

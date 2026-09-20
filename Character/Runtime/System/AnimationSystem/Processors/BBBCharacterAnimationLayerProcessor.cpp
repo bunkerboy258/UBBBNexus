@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationLayerProcessor::Update(

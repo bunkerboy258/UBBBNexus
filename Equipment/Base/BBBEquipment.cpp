@@ -1,6 +1,6 @@
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -51,7 +51,7 @@ void ABBBEquipment::Tick(const float DeltaSeconds)
     UpdateEquipment(DeltaSeconds);
 }
 
-void ABBBEquipment::SubmitCommand(const FBBBEquipmentCommand &)
+void ABBBEquipment::SubmitCommand(const FBBBEquipmentCommand &, const bool)
 {
 }
 

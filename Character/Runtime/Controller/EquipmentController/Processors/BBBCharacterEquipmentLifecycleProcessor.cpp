@@ -2,9 +2,9 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
 #include "Components/SkeletalMeshComponent.h"

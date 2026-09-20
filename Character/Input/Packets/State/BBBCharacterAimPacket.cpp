@@ -16,4 +16,5 @@ bool FBBBCharacterAimPacket::CanApply(const FBBBCharacterInputContext &Context) 
 void FBBBCharacterAimPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     Context.Operation.ApplyAimSnapshot(AimTargetWorld, bAim);
+    Context.Commands.SubmitSecondary(bAim);
 }

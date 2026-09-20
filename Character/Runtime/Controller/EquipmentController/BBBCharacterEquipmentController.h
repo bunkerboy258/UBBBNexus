@@ -11,6 +11,7 @@ class ABBBEquipment;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
+struct FBBBCharacterNetworkIdentityDefinition;
 
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentController final
@@ -23,8 +24,12 @@ private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterUpdatePipeline;
 
-    /** 维护装备选择并将本帧命令转发至装备 API */
-    void Update();
+    /**
+     * 维护装备选择并将本帧命令转发至装备 API
+     * @param NetworkIdentity    本帧角色网络身份事实
+     * @return 无
+     */
+    void Update(const FBBBCharacterNetworkIdentityDefinition &NetworkIdentity);
 
     /**
      * 注入装备系统依赖并建立空容器

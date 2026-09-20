@@ -30,6 +30,17 @@ struct FBBBCharacterEquipmentCommands
     }
 
     /**
+     * 提交本帧装备副操作状态
+     * @param bActive  副操作是否处于按下状态
+     * @return 无
+     */
+    void SubmitSecondary(const bool bActive)
+    {
+        bSecondaryActive = bActive;
+        bSecondarySubmitted = true;
+    }
+
+    /**
      * 提交远端已确认动作
      * @param Fact	远端动作事实
      */
@@ -70,6 +81,23 @@ private:
         return bShouldActivateReload;
     }
 
+    /**
+     * 消费本帧装备副操作状态
+     * @param bOutActive   接收副操作是否按下
+     * @return 本帧是否提交过副操作状态
+     */
+    bool ConsumeSecondary(bool &bOutActive)
+    {
+        if (!bSecondarySubmitted)
+        {
+            return false;
+        }
+
+        bOutActive = bSecondaryActive;
+        bSecondarySubmitted = false;
+        return true;
+    }
+
     /** @return 本帧待恢复动作 */
     TArray<FBBBEquipmentActionFact> ConsumeFacts()
     {
@@ -89,6 +117,7 @@ private:
     {
         bActivateFire = false;
         bActivateReload = false;
+        bSecondarySubmitted = false;
         PendingFacts.Reset();
         PendingEquipmentState = nullptr;
     }
@@ -100,6 +129,14 @@ private:
     /** 是否存在待执行换弹命令 */
     UPROPERTY()
     bool bActivateReload = false;
+
+    /** 本帧是否提交了副操作状态 */
+    UPROPERTY()
+    bool bSecondarySubmitted = false;
+
+    /** 本帧最后一次副操作状态 */
+    UPROPERTY()
+    bool bSecondaryActive = false;
 
     /** 本帧待恢复动作 */
     UPROPERTY()

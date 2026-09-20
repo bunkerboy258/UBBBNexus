@@ -2,7 +2,7 @@
 
 `ABBBEquipment` 只负责演员、网格、生命周期和角色进入装备领域的单一命令边界。
 
-`Core/` 提供固定输入槽位与静态运行时模板。每种武器在 `Instance/<Weapon>/` 定义自己的状态、输入包和签名解析函数；`FBBBRifleSignature::Parse` 是当前步枪唯一的行为入口。
+`Base/` 保存装备共享演员与配置基类，`Template/` 提供全装备固定输入和静态运行时。每种装备在 `Instance/<Weapon>/` 只定义配置、状态以及公共输入的 `Resolve/Restore` 实现。
 
 角色只提交 `FBBBEquipmentCommand`。具体武器在自己的 `SubmitCommand` 中映射为静态输入包，之后不再有通用队列、Fragment、System 链或运行时行为分派。
 

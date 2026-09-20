@@ -11,10 +11,12 @@ void UBBBRifleLoadMagazineAnimNotify::Notify(
 {
     ABBBCharacter *Character = MeshComp ? Cast<ABBBCharacter>(MeshComp->GetOwner()) : nullptr;
     ABBBRifleEquipment *Rifle = Character ? Cast<ABBBRifleEquipment>(Character->GetActiveEquipment()) : nullptr;
-    if (!Rifle)
+    if (!Rifle || Rifle->IsMirror())
     {
         return;
     }
 
-    Rifle->SubmitCommand(FBBBEquipmentCommand{EBBBEquipmentCommandType::LoadMagazine, INDEX_NONE});
+    Rifle->SubmitCommand(
+        FBBBEquipmentCommand{EBBBEquipmentCommandType::LoadMagazine, INDEX_NONE},
+        false);
 }

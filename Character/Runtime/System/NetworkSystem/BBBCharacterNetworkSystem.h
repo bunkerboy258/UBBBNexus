@@ -13,6 +13,7 @@ struct FBBBEquipmentActionFact;
 struct FBBBCharacterLocomotionRuntimeData;
 struct FBBBLocomotionNetworkState;
 struct FBBBCharacterNetworkConfig;
+struct FBBBCharacterNetworkIdentityDefinition;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBNetworkState;
 
@@ -37,7 +38,7 @@ private:
     /**
      * 注入角色网络阶段需要的黑板和传输依赖
      * @param InNetworkData       网络观测状态
-     * @param InInputState        角色固定输入帧
+     * @param InNetworkIdentity   角色本帧网络身份事实
      * @param InAimData           角色瞄准状态
      * @param InLocomotionData    角色移动状态
      * @param InEquipmentState    角色装备状态
@@ -48,6 +49,7 @@ private:
      */
     void Initialize(
         FBBBNetworkState &InNetworkData,
+        const FBBBCharacterNetworkIdentityDefinition &InNetworkIdentity,
         FBBBAimRuntimeData &InAimData,
         FBBBCharacterLocomotionRuntimeData &InLocomotionData,
         const FBBBCharacterEquipmentState &InEquipmentState,
@@ -65,6 +67,7 @@ private:
     void TransmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
     FBBBNetworkState *NetworkData = nullptr;
+    const FBBBCharacterNetworkIdentityDefinition *NetworkIdentity = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     FBBBCharacterLocomotionRuntimeData *LocomotionData = nullptr;

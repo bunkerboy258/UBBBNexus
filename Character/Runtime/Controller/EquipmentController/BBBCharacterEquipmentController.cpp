@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterNetworkIdentityDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentController::Initialize(
@@ -28,7 +29,8 @@ void FBBBCharacterEquipmentController::Initialize(
 
 }
 
-void FBBBCharacterEquipmentController::Update()
+void FBBBCharacterEquipmentController::Update(
+    const FBBBCharacterNetworkIdentityDefinition &NetworkIdentity)
 {
     // 装备更新需要角色网格和装备运行时数据有效
     if (!EquipmentData || !CharacterMesh || !Character)
@@ -43,12 +45,13 @@ void FBBBCharacterEquipmentController::Update()
         RightHandWeaponSocketName,
         EquipmentData->Commands,
         EquipmentData->Equipment,
-        EquipmentData->Events);
+        NetworkIdentity.IsMirror());
 
     // 将本帧装备命令提交给当前装备外部接口
     ActionProcessor.Update(
         EquipmentData->Commands,
-        EquipmentData->Equipment);
+        EquipmentData->Equipment,
+        NetworkIdentity.IsMirror());
 }
 
 ABBBEquipment *FBBBCharacterEquipmentController::GetActiveEquipment() const

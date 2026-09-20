@@ -1,9 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Runtime/BBBEquipmentRuntime.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleSignature.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Signature/BBBRifleSignature.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Runtime/BBBEquipmentRuntime.h"
 #include "BBBRifleEquipment.generated.h"
 
 class UBBBRifleDefinition;
@@ -17,10 +17,11 @@ class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
 public:
     /**
      * 将角色通用命令映射为步枪静态输入包
-     * @param Command    角色提交的统一命令
+     * @param Command        角色提交的统一命令
+     * @param bInIsMirror    是否只能执行事实还原
      * @return 无
      */
-    virtual void SubmitCommand(const FBBBEquipmentCommand &Command) override;
+    virtual void SubmitCommand(const FBBBEquipmentCommand &Command, bool bInIsMirror) override;
 
 protected:
     /**

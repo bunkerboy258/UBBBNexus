@@ -6,7 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"

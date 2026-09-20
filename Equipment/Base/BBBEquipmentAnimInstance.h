@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Core/Definition/BBBEquipmentAnimationFacts.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentAnimationFacts.h"
 #include "BBBEquipmentAnimInstance.generated.h"
 
 /** 只读装备动画事实快照的动画实例 */

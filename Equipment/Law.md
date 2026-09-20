@@ -1,5 +1,7 @@
 # Equipment Law
 
+- `Base/` 只保存全部装备共享的演员、动画实例和配置基类，禁止保存具体装备行为。
+- `Template/` 只保存公共固定输入、静态运行时和单帧上下文，禁止依赖具体装备。
 - `ABBBEquipment` 只承载演员、网格、生命周期和唯一的动态命令边界，不保存武器行为状态。
 - 具体武器的状态、输入包、解析和动画通知必须归属 `Instance/<Weapon>/`。
-- 角色只能向 `ABBBEquipment::SubmitCommand` 提交通用命令；武器实现负责将其映射为静态输入包。
+- 角色只能向 `ABBBEquipment::SubmitCommand` 提交通用命令并显式提供 `bIsMirror`；武器实现负责将其映射为公共固定输入包。

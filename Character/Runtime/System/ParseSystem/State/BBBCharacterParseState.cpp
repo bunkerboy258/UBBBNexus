@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterParseState.h"
 
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
 void FBBBCharacterParseState::BeginFrame(ABBBEquipment *ActiveEquipment)
 {

@@ -3,10 +3,9 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Commands/BBBCharacterEquipmentCommands.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Events/BBBCharacterEquipmentEvents.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(
@@ -15,7 +14,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     const FName AttachmentSocketName,
     FBBBCharacterEquipmentCommands &EquipmentCommands,
     FBBBCharacterEquipmentState &EquipmentState,
-    FBBBCharacterEquipmentEvents &EquipmentEvents) const
+    const bool bIsMirror) const
 {
     // 先处理网络恢复的装备实例
     bool bRestoringEquipment = false;
@@ -25,7 +24,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         ABBBEquipment *StateInstance = FBBBCharacterEquipmentLifecycleProcessor::Create(
             Character,
             *StateDefinition,
-            true);
+            bIsMirror);
         if (!StateInstance)
         {
             return;
@@ -77,7 +76,9 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
-    DesiredInstance->SubmitCommand(FBBBEquipmentCommand{
-        EBBBEquipmentCommandType::Equip,
-        EquipmentState.NextActionSequence++});
+    DesiredInstance->SubmitCommand(
+        FBBBEquipmentCommand{
+            EBBBEquipmentCommandType::Equip,
+            EquipmentState.NextActionSequence++},
+        bIsMirror);
 }

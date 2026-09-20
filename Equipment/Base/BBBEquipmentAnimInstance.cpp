@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
 
 void UBBBEquipmentAnimInstance::PublishAnimationFacts(const FBBBEquipmentAnimationFacts &Facts)
 {

@@ -9,9 +9,13 @@ public:
     /**
      * 转发已批准输入
      * @param Commands	角色命令
-     * @param State	角色装备选择
+     * @param State          角色装备选择
+     * @param bIsMirror      是否只能投递网络确认事实
      * @return 无
      */
-    void Update(FBBBCharacterEquipmentCommands &Commands, FBBBCharacterEquipmentState &State) const;
+    void Update(
+        FBBBCharacterEquipmentCommands &Commands,
+        FBBBCharacterEquipmentState &State,
+        bool bIsMirror) const;
 
 };

@@ -70,18 +70,19 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
 
     // 所有领域系统读取同一份本帧世界时间快照
     Character->RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
-
-    const bool bAuthority = Character->HasAuthority();
-    const bool bLocallyControlled = Character->IsLocallyControlled();
+    Character->RuntimeData.NetworkIdentity.Refresh(
+        Character->HasAuthority(),
+        Character->IsLocallyControlled());
 
     // 输入解析先形成黑板状态与本帧事实
     Character->ParseSystem.Update();
     // 装备动作可能产生后续网络需要观察的离散事实
-    Character->EquipmentController.Update();
+    Character->EquipmentController.Update(Character->RuntimeData.NetworkIdentity);
 
-    if (bAuthority || bLocallyControlled)
+    if (Character->RuntimeData.NetworkIdentity.GetExecutionMode()
+        == EBBBCharacterExecutionMode::Causal)
     {
-        // 只有权威或本机控制角色具备生成瞄准与移动结果的能力
+        // 只有本机控制角色可以根据控制输入产生新的瞄准与移动事实。
         Character->AimController.Update();
         Character->LocomotionController.Update();
     }

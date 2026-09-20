@@ -1,7 +1,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentAnimationFacts.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -19,36 +20,40 @@ bool ABBBRifleEquipment::InitializeRifle(
     return true;
 }
 
-void ABBBRifleEquipment::SubmitCommand(const FBBBEquipmentCommand &Command)
+void ABBBRifleEquipment::SubmitCommand(const FBBBEquipmentCommand &Command, const bool bInIsMirror)
 {
     switch (Command.Type)
     {
         case EBBBEquipmentCommandType::Equip:
-            Runtime.SubmitInput(FBBBRifleEquipInput{Command.Sequence});
+            Runtime.SubmitInput(FBBBEquipmentEquipInput{Command.Sequence}, bInIsMirror);
             return;
 
-        case EBBBEquipmentCommandType::Fire:
-            Runtime.SubmitInput(FBBBRifleFireInput{Command.Sequence});
+        case EBBBEquipmentCommandType::Primary:
+            Runtime.SubmitInput(FBBBEquipmentPrimaryInput{Command.Sequence}, bInIsMirror);
+            return;
+
+        case EBBBEquipmentCommandType::Secondary:
+            Runtime.SubmitInput(FBBBEquipmentSecondaryInput{Command.bActive, Command.Sequence}, bInIsMirror);
             return;
 
         case EBBBEquipmentCommandType::Reload:
-            Runtime.SubmitInput(FBBBRifleReloadInput{Command.Sequence});
+            Runtime.SubmitInput(FBBBEquipmentReloadInput{Command.Sequence}, bInIsMirror);
             return;
 
         case EBBBEquipmentCommandType::DetachMagazine:
-            Runtime.SubmitInput(FBBBRifleDetachMagazineInput{Command.Sequence});
+            Runtime.SubmitInput(FBBBEquipmentDetachMagazineInput{Command.Sequence}, bInIsMirror);
             return;
 
         case EBBBEquipmentCommandType::LoadMagazine:
-            Runtime.SubmitInput(FBBBRifleLoadMagazineInput{Command.Sequence});
+            Runtime.SubmitInput(FBBBEquipmentLoadMagazineInput{Command.Sequence}, bInIsMirror);
             return;
 
-        case EBBBEquipmentCommandType::CancelReload:
-            Runtime.SubmitInput(FBBBRifleCancelReloadInput{Command.Sequence});
+        case EBBBEquipmentCommandType::InterruptReload:
+            Runtime.SubmitInput(FBBBEquipmentInterruptReloadInput{Command.Sequence}, bInIsMirror);
             return;
 
         case EBBBEquipmentCommandType::Fact:
-            Runtime.SubmitInput(FBBBRifleFactInput{Command.Fact});
+            Runtime.SubmitInput(FBBBEquipmentFactInput{Command.Fact}, bInIsMirror);
             return;
     }
 }
@@ -66,8 +71,7 @@ void ABBBRifleEquipment::UpdateEquipment(const float DeltaSeconds)
         *this,
         *Character,
         *WeaponMesh,
-        DeltaSeconds,
-        IsMirror()};
+        DeltaSeconds};
     Runtime.Update(Context);
 
     UBBBEquipmentAnimInstance *AnimationInstance = Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance());

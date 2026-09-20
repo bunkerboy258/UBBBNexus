@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterParseState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterNetworkIdentityDefinition.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
@@ -66,6 +67,10 @@ private:
     //保存当前帧世界时间快照
     UPROPERTY(Transient)
     FBBBCharacterWorldRuntimeData WorldData;
+
+    /** 保存角色在当前机器上的网络身份与玩法执行身份 */
+    UPROPERTY(Transient)
+    FBBBCharacterNetworkIdentityDefinition NetworkIdentity;
 
     //保存角色行为意图
     UPROPERTY(Transient)

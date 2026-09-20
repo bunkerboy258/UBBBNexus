@@ -9,11 +9,12 @@ UENUM()
 enum class EBBBEquipmentCommandType : uint8
 {
     Equip,
-    Fire,
+    Primary,
+    Secondary,
     Reload,
     DetachMagazine,
     LoadMagazine,
-    CancelReload,
+    InterruptReload,
     Fact
 };
 
@@ -23,9 +24,12 @@ struct ABBB_EVAC_API FBBBEquipmentCommand
 {
     GENERATED_BODY()
 
-    EBBBEquipmentCommandType Type = EBBBEquipmentCommandType::Fire;
+    EBBBEquipmentCommandType Type = EBBBEquipmentCommandType::Primary;
 
     int32 Sequence = INDEX_NONE;
+
+    /** 连续输入当前是否处于激活状态 */
+    bool bActive = false;
 
     FBBBEquipmentActionFact Fact;
 };
