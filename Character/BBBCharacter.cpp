@@ -14,10 +14,6 @@ ABBBCharacter::ABBBCharacter()
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
 
-    //LateUpdate与主管线处于同一更新组并通过依赖关系固定顺序
-    LateUpdateTick.bCanEverTick = true;
-    LateUpdateTick.bStartWithTickEnabled = false;
-    LateUpdateTick.TickGroup = TG_PrePhysics;
     //允许网络同步
     bReplicates = true;
     //由引擎同步角色根组件的位置与旋转
@@ -56,8 +52,6 @@ void ABBBCharacter::BeginPlay()
     Super::BeginPlay();
     FBBBCharacterInitializer::Initialize(*this);
 
-    //全部运行依赖注入完成后才允许执行LateUpdate
-    LateUpdateTick.SetTickFunctionEnable(true);
 }
 
 //------------------------------------------------------------------------------
@@ -73,7 +67,7 @@ void ABBBCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ABBBCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    CharacterUpdate.Tick(DeltaSeconds);
+    CharacterUpdatePipeline.Update(DeltaSeconds);
 }
 
 //------------------------------------------------------------------------------
@@ -82,32 +76,7 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
 {
     Super::RegisterActorTickFunctions(bRegister);
 
-    UCharacterMovementComponent *Movement = GetCharacterMovement();
-    USkeletalMeshComponent *CharacterMesh = GetMesh();
-
-    if (!Movement || !CharacterMesh)
-    {
-        return;
-    }
-
-    if (bRegister)
-    {
-        // 注册时建立移动延迟更新和动画更新的依赖顺序
-        LateUpdateTick.Target = this;
-        LateUpdateTick.SetTickFunctionEnable(HasActorBegunPlay());
-        LateUpdateTick.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
-        LateUpdateTick.RegisterTickFunction(GetLevel());
-
-        //骨骼网格必须等待LateUpdate提交最终动画事实后才能更新动画图
-        CharacterMesh->PrimaryComponentTick.AddPrerequisite(this, LateUpdateTick);
-        return;
-    }
-
-    // 注销时移除全部更新依赖避免引擎继续回调角色
-    CharacterMesh->PrimaryComponentTick.RemovePrerequisite(this, LateUpdateTick);
-    LateUpdateTick.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
-    LateUpdateTick.UnRegisterTickFunction();
-    LateUpdateTick.Target = nullptr;
+    CharacterUpdatePipeline.RegisterTickFunctions(*this, bRegister);
 }
 
 //------------------------------------------------------------------------------
@@ -118,12 +87,6 @@ bool ABBBCharacter::ShouldReplicateAcceleration() const
 }
 
 //------------------------------------------------------------------------------
-
-void ABBBCharacter::LateUpdate()
-{
-    // 将移动完成后的更新转交角色更新管线
-    CharacterUpdatePipeline.LateUpdate();
-}
 
 void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
 {

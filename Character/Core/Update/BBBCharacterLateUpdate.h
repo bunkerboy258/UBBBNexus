@@ -4,7 +4,7 @@
 #include "Engine/EngineBaseTypes.h"
 #include "BBBCharacterLateUpdate.generated.h"
 
-class ABBBCharacter;
+class FBBBCharacterUpdatePipeline;
 
 /**
  * 在角色移动组件完成本帧移动后驱动角色LateUpdate
@@ -27,6 +27,10 @@ struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FActorTickFunction
         ENamedThreads::Type CurrentThread,
         const FGraphEventRef &MyCompletionGraphEvent) override;
 
+private:
+    friend class FBBBCharacterUpdatePipeline;
+
+    FBBBCharacterUpdatePipeline *Pipeline = nullptr;
 };
 
 template<>

@@ -9,7 +9,7 @@
 void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
 {
     // 先停止移动完成后的更新避免收束期间访问即将销毁的装备
-    Character.LateUpdateTick.SetTickFunctionEnable(false);
+    Character.CharacterUpdatePipeline.LateUpdateTick.SetTickFunctionEnable(false);
 
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
     FBBBCharacterEquipmentRuntimeData &EquipmentData = Character.RuntimeData.Equipment;

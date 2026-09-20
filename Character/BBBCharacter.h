@@ -10,10 +10,8 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/BBBCharacterLocomotionController.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/BBBCharacterParseSystem.h"
-#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdate.h"
-#include "BBBWork/UBBBNexus/Character/Core/BBBCharacterUpdatePipeline.h"
+#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdate.h"
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
@@ -32,9 +30,6 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     friend class FBBBCharacterShutdown;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
-    friend class FBBBCharacterUpdate;
-    /** 允许移动后更新函数调用角色LateUpdate */
-    friend struct FBBBCharacterLateUpdate;
 
     /** 允许动画实例只读角色表现状态 */
     friend class UBBBAnimInstance;
@@ -110,11 +105,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "BBB|Animation Input")
     void ReportReloadEndNotify(int32 Sequence, EBBBCharacterReloadEndReasonDefinition EndReason);
 
-private:
-
-    /** 在移动组件完成本帧移动后驱动主管线LateUpdate */
-    void LateUpdate();
-
 protected:
     
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|Config")
@@ -144,10 +134,5 @@ private:
     FBBBCharacterNetworkSystem NetworkSystem;
     
 
-    /** 驱动角色移动后更新阶段的独立更新函数 */
-    FBBBCharacterLateUpdate LateUpdateTick;
-
-    FBBBCharacterUpdate CharacterUpdate;
-    
     FBBBCharacterUpdatePipeline CharacterUpdatePipeline;
 };

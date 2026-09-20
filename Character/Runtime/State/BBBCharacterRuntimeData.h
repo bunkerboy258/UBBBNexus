@@ -13,7 +13,7 @@
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
-class FBBBCharacterUpdate;
+class FBBBCharacterUpdatePipeline;
 class FBBBCharacterAnimationFactProcessor;
 class ABBBCharacter;
 class UBBBAnimInstance;
@@ -46,7 +46,7 @@ private:
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterShutdown;
-    friend class FBBBCharacterUpdate;
+    friend class FBBBCharacterUpdatePipeline;
     friend class UBBBAnimInstance;
 
     template<typename TPacket>
