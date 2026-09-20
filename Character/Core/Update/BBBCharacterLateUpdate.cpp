@@ -13,5 +13,6 @@ void FBBBCharacterLateUpdate::ExecuteTick(
         return;
     }
 
+    // 引擎回调只转发到管线 不承载领域逻辑
     Pipeline->LateUpdate();
 }

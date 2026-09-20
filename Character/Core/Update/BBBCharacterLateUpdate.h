@@ -30,6 +30,7 @@ struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FActorTickFunction
 private:
     friend class FBBBCharacterUpdatePipeline;
 
+    /** CMC 后更新所属管线 */
     FBBBCharacterUpdatePipeline *Pipeline = nullptr;
 };
 

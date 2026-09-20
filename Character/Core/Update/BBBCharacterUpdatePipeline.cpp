@@ -8,6 +8,8 @@
 void FBBBCharacterUpdatePipeline::Initialize(ABBBCharacter &InCharacter)
 {
     Character = &InCharacter;
+
+    // 角色领域依赖完成装配后才允许 CMC 后阶段运行
     LateUpdateTick.SetTickFunctionEnable(true);
 }
 
@@ -28,6 +30,7 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
 
     if (bRegister)
     {
+        // 后更新与 CMC 同组并等待 CMC 完成本帧移动
         LateUpdateTick.bCanEverTick = true;
         LateUpdateTick.bStartWithTickEnabled = false;
         LateUpdateTick.TickGroup = TG_PrePhysics;
@@ -36,10 +39,13 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
         LateUpdateTick.SetTickFunctionEnable(InCharacter.HasActorBegunPlay());
         LateUpdateTick.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
         LateUpdateTick.RegisterTickFunction(InCharacter.GetLevel());
+
+        // 骨骼网格必须等待动画事实在 LateUpdate 中提交完成
         CharacterMesh->PrimaryComponentTick.AddPrerequisite(&InCharacter, LateUpdateTick);
         return;
     }
 
+    // 注销时按反向顺序移除依赖与 Tick 注册
     CharacterMesh->PrimaryComponentTick.RemovePrerequisite(&InCharacter, LateUpdateTick);
     LateUpdateTick.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
     LateUpdateTick.UnRegisterTickFunction();
@@ -62,20 +68,25 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
         return;
     }
 
+    // 所有领域系统读取同一份本帧世界时间快照
     Character->RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
 
     const bool bAuthority = Character->HasAuthority();
     const bool bLocallyControlled = Character->IsLocallyControlled();
 
+    // 输入解析先形成黑板状态与本帧事实
     Character->ParseSystem.Update();
+    // 装备动作可能产生后续网络需要观察的离散事实
     Character->EquipmentController.Update();
 
     if (bAuthority || bLocallyControlled)
     {
+        // 只有权威或本机控制角色具备生成瞄准与移动结果的能力
         Character->AimController.Update();
         Character->LocomotionController.Update();
     }
 
+    // 网络只观察已经成立的状态与事实
     Character->NetworkSystem.Update();
 }
 
@@ -88,6 +99,9 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
         return;
     }
 
+    // CMC 结束后采集最终移动结果并更新动画事实
     Character->AnimationSystem.Update();
+
+    // 清理不允许跨帧驻留的输入与瞬时数据
     Character->RuntimeData.Clean();
 }
