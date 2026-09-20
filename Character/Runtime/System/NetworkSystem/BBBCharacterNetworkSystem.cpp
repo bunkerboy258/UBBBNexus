@@ -35,13 +35,15 @@ void FBBBCharacterNetworkSystem::Update()
         return;
     }
 
+    // 只有权威或本机控制角色能够产生新事实
+    // 模拟代理只消费复制到达的领域输入
     if (NetworkComponent->IsOwnerAuthority() || NetworkComponent->IsOwnerLocallyControlled())
     {
-        ObserveFacts();
+        Observe();
     }
 }
 
-void FBBBCharacterNetworkSystem::ObserveFacts()
+void FBBBCharacterNetworkSystem::Observe()
 {
     if (!ensureMsgf(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig
         && EquipmentState && EquipmentEvents && NetworkComponent,
@@ -50,7 +52,9 @@ void FBBBCharacterNetworkSystem::ObserveFacts()
         return;
     }
 
-    FactProcessor.Update(
+    // 主管线已完成输入解析后再读取黑板
+    // 观察器绝不写入角色状态
+    ObservationProcessor.Update(
         *NetworkData,
         WorldData->GetWorldTimeSeconds(),
         *AimData,
@@ -61,7 +65,7 @@ void FBBBCharacterNetworkSystem::ObserveFacts()
         *this);
 }
 
-void FBBBCharacterNetworkSystem::SubmitEquipmentFact(FBBBEquipmentActionFact Fact)
+void FBBBCharacterNetworkSystem::TransmitEquipmentFact(FBBBEquipmentActionFact Fact)
 {
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment fact has no network component")))
     {
@@ -70,17 +74,19 @@ void FBBBCharacterNetworkSystem::SubmitEquipmentFact(FBBBEquipmentActionFact Fac
 
     if (NetworkComponent->IsOwnerAuthority())
     {
-        NetworkComponent->PublishEquipmentFact(MoveTemp(Fact));
+        // 权威将最终事实写入只面向模拟代理的增量账本
+        NetworkComponent->ReplicateEquipmentFact(MoveTemp(Fact));
         return;
     }
 
     if (NetworkComponent->IsOwnerLocallyControlled())
     {
+        // 非权威本机控制角色只能把已成立事实交给权威
         NetworkComponent->ServerSubmitEquipmentFact(MoveTemp(Fact));
     }
 }
 
-void FBBBCharacterNetworkSystem::SubmitEquipmentState(const FName EquipmentId)
+void FBBBCharacterNetworkSystem::TransmitEquipmentState(const FName EquipmentId)
 {
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment state has no network component")))
     {
@@ -89,17 +95,19 @@ void FBBBCharacterNetworkSystem::SubmitEquipmentState(const FName EquipmentId)
 
     if (NetworkComponent->IsOwnerAuthority())
     {
-        NetworkComponent->PublishEquipmentState(EquipmentId);
+        // 最终装备状态由权威复制给模拟代理
+        NetworkComponent->ReplicateEquipmentState(EquipmentId);
         return;
     }
 
     if (NetworkComponent->IsOwnerLocallyControlled())
     {
+        // 客户端不直接修改远端状态
         NetworkComponent->ServerSubmitEquipmentState(EquipmentId);
     }
 }
 
-void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimState)
+void FBBBCharacterNetworkSystem::TransmitAimState(const FBBBAimNetworkState &AimState)
 {
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Aim state has no network component")))
     {
@@ -108,17 +116,19 @@ void FBBBCharacterNetworkSystem::SubmitAimState(const FBBBAimNetworkState &AimSt
 
     if (NetworkComponent->IsOwnerAuthority())
     {
-        NetworkComponent->PublishAimState(AimState);
+        // 权威发布已经稳定的瞄准快照
+        NetworkComponent->ReplicateAimState(AimState);
         return;
     }
 
     if (NetworkComponent->IsOwnerLocallyControlled())
     {
+        // 连续快照经服务端接收边界重新进入输入系统
         NetworkComponent->ServerSubmitAimState(AimState);
     }
 }
 
-void FBBBCharacterNetworkSystem::SubmitLocomotionState(
+void FBBBCharacterNetworkSystem::TransmitLocomotionState(
     const FBBBLocomotionNetworkState &LocomotionState)
 {
     if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Locomotion state has no network component")))
@@ -128,12 +138,14 @@ void FBBBCharacterNetworkSystem::SubmitLocomotionState(
 
     if (NetworkComponent->IsOwnerAuthority())
     {
-        NetworkComponent->PublishLocomotionState(LocomotionState);
+        // 权威发布已经稳定的移动快照
+        NetworkComponent->ReplicateLocomotionState(LocomotionState);
         return;
     }
 
     if (NetworkComponent->IsOwnerLocallyControlled())
     {
+        // 模拟代理不会进入此分支 因而不会形成转发回路
         NetworkComponent->ServerSubmitLocomotionState(LocomotionState);
     }
 }

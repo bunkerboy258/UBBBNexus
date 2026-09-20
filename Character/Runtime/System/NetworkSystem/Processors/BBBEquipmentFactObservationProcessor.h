@@ -4,7 +4,7 @@ class FBBBCharacterNetworkSystem;
 struct FBBBCharacterEquipmentEvents;
 
 /** 上传本帧装备动作事件 */
-class FBBBEquipmentActionUploadProcessor final
+class FBBBEquipmentFactObservationProcessor final
 {
 public:
     /**

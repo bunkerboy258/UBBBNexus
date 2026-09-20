@@ -7,7 +7,7 @@ struct FBBBCharacterLocomotionRuntimeData;
 struct FBBBNetworkState;
 
 /** 将本地移动步态变化上传到权威端 */
-class ABBB_EVAC_API FBBBLocomotionUploadProcessor final
+class ABBB_EVAC_API FBBBLocomotionObservationProcessor final
 {
 public:
     /**

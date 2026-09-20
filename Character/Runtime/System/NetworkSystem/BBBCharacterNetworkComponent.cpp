@@ -28,6 +28,8 @@ void UBBBCharacterNetworkComponent::Initialize(ABBBCharacter &InCharacter)
 void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    // 本机控制角色已经生成同一份事实 只让模拟代理执行接收投递
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedFactLedger, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAimState, COND_SimulatedOnly);
@@ -36,35 +38,38 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeP
 
 void UBBBCharacterNetworkComponent::ServerSubmitEquipmentFact_Implementation(FBBBEquipmentActionFact Fact)
 {
+    // 服务端不重新仲裁玩法 只阻止结构损坏的事实进入角色输入系统
     if (!ensureMsgf(Character && IsOwnerAuthority() && Fact.Sequence > 0 && Fact.EquipmentId != NAME_None,
         TEXT("[UBBBC]Equipment fact delivery was rejected")))
     {
         return;
     }
 
-    DeliverEquipmentFact(Fact);
+    SubmitEquipmentFactInput(Fact);
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitEquipmentState_Implementation(const FName EquipmentId)
 {
+    // 装备状态没有空标识时才具备创建镜像装备的语义
     if (!ensureMsgf(Character && IsOwnerAuthority() && EquipmentId != NAME_None,
         TEXT("[UBBBC]Equipment state delivery was rejected")))
     {
         return;
     }
 
-    DeliverEquipmentState(EquipmentId);
+    SubmitEquipmentStateInput(EquipmentId);
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkState AimState)
 {
+    // 连续状态允许覆盖 但非法向量不能污染角色黑板
     if (!ensureMsgf(Character && IsOwnerAuthority() && !FVector(AimState.AimTargetWorld).ContainsNaN(),
         TEXT("[UBBBC]Aim state delivery was rejected")))
     {
         return;
     }
 
-    DeliverAimState(AimState);
+    SubmitAimStateInput(AimState);
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(
@@ -75,36 +80,38 @@ void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(
         return;
     }
 
-    DeliverLocomotionState(LocomotionState);
+    SubmitLocomotionStateInput(LocomotionState);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedEquipmentId()
 {
-    DeliverEquipmentState(ReplicatedEquipmentId);
+    // OnRep 与 RPC 共用投递边界 保证接收来源不影响领域应用规则
+    SubmitEquipmentStateInput(ReplicatedEquipmentId);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
 {
-    DeliverAimState(ReplicatedAimState);
+    SubmitAimStateInput(ReplicatedAimState);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
 {
-    DeliverLocomotionState(ReplicatedLocomotionState);
+    SubmitLocomotionStateInput(ReplicatedLocomotionState);
 }
 
-void UBBBCharacterNetworkComponent::PublishEquipmentFact(FBBBEquipmentActionFact Fact)
+void UBBBCharacterNetworkComponent::ReplicateEquipmentFact(FBBBEquipmentActionFact Fact)
 {
     if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish equipment facts")))
     {
         return;
     }
 
+    // 账本条目必须先标脏 再请求本演员尽快进入复制调度
     ReplicatedFactLedger.Append(MoveTemp(Fact));
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::PublishEquipmentState(const FName EquipmentId)
+void UBBBCharacterNetworkComponent::ReplicateEquipmentState(const FName EquipmentId)
 {
     if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish equipment state")))
     {
@@ -115,7 +122,7 @@ void UBBBCharacterNetworkComponent::PublishEquipmentState(const FName EquipmentI
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::PublishAimState(const FBBBAimNetworkState &AimState)
+void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkState &AimState)
 {
     if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish aim state")))
     {
@@ -126,7 +133,7 @@ void UBBBCharacterNetworkComponent::PublishAimState(const FBBBAimNetworkState &A
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::PublishLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+void UBBBCharacterNetworkComponent::ReplicateLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
     if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish locomotion state")))
     {
@@ -137,61 +144,91 @@ void UBBBCharacterNetworkComponent::PublishLocomotionState(const FBBBLocomotionN
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::DeliverEquipmentFact(const FBBBEquipmentActionFact &Fact)
+void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(const FBBBEquipmentActionFact &Fact)
 {
     if (!ensureMsgf(Character, TEXT("[UBBBC]Equipment fact arrived without a character")))
     {
         return;
     }
 
+    // 此处是离散事实从网络格式进入领域输入格式的唯一翻译点
     switch (Fact.PacketId)
     {
     case FBBBEquipFactPacket::PacketId:
-        Character->SubmitInput(FBBBEquipFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+    {
+        const bool bAccepted = Character->SubmitInput(
+            FBBBEquipFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Equipment fact input was rejected"));
         return;
+    }
     case FBBBFireFactPacket::PacketId:
-        Character->SubmitInput(FBBBFireFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+    {
+        const bool bAccepted = Character->SubmitInput(
+            FBBBFireFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Fire fact input was rejected"));
         return;
+    }
     case FBBBReloadStartedFactPacket::PacketId:
-        Character->SubmitInput(FBBBReloadStartedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+    {
+        const bool bAccepted = Character->SubmitInput(
+            FBBBReloadStartedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Reload start fact input was rejected"));
         return;
+    }
     case FBBBMagazineDetachedFactPacket::PacketId:
-        Character->SubmitInput(FBBBMagazineDetachedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+    {
+        const bool bAccepted = Character->SubmitInput(
+            FBBBMagazineDetachedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Magazine detach fact input was rejected"));
         return;
+    }
     case FBBBMagazineLoadedFactPacket::PacketId:
-        Character->SubmitInput(FBBBMagazineLoadedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+    {
+        const bool bAccepted = Character->SubmitInput(
+            FBBBMagazineLoadedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Magazine load fact input was rejected"));
         return;
+    }
     case FBBBReloadCancelledFactPacket::PacketId:
-        Character->SubmitInput(FBBBReloadCancelledFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+    {
+        const bool bAccepted = Character->SubmitInput(
+            FBBBReloadCancelledFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Reload cancel fact input was rejected"));
         return;
+    }
     default:
         ensureMsgf(false, TEXT("[UBBBC]Unknown equipment fact packet id %d"), Fact.PacketId);
         return;
     }
 }
 
-void UBBBCharacterNetworkComponent::DeliverEquipmentState(const FName EquipmentId)
+void UBBBCharacterNetworkComponent::SubmitEquipmentStateInput(const FName EquipmentId)
 {
     if (Character && EquipmentId != NAME_None)
     {
-        Character->SubmitInput(FBBBEquipmentStatePacket{EquipmentId});
+        const bool bAccepted = Character->SubmitInput(FBBBEquipmentStatePacket{EquipmentId});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Equipment state input was rejected"));
     }
 }
 
-void UBBBCharacterNetworkComponent::DeliverAimState(const FBBBAimNetworkState &AimState)
+void UBBBCharacterNetworkComponent::SubmitAimStateInput(const FBBBAimNetworkState &AimState)
 {
     if (Character)
     {
-        Character->SubmitInput(FBBBAimStatePacket{
-            FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld}});
+        // 连续快照在边界转成领域状态包 之后由 ParseSystem 统一应用
+        FBBBAimStatePacket Packet;
+        Packet.State = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
+        const bool bAccepted = Character->SubmitInput(MoveTemp(Packet));
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Aim state input was rejected"));
     }
 }
 
-void UBBBCharacterNetworkComponent::DeliverLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(const FBBBLocomotionNetworkState &LocomotionState)
 {
     if (Character)
     {
-        Character->SubmitInput(FBBBLocomotionStatePacket{LocomotionState.Gait});
+        const bool bAccepted = Character->SubmitInput(FBBBLocomotionStatePacket{LocomotionState.Gait});
+        ensureMsgf(bAccepted, TEXT("[UBBBC]Locomotion state input was rejected"));
     }
 }
 

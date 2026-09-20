@@ -1,9 +1,9 @@
 #pragma once
 
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBAimUploadProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBEquipmentActionUploadProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBEquipmentUploadProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBLocomotionUploadProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentFactObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentStateObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
 class FBBBCharacterNetworkSystem;
 struct FBBBAimRuntimeData;
@@ -14,7 +14,7 @@ struct FBBBCharacterNetworkConfig;
 struct FBBBNetworkState;
 
 /** 上传角色本地状态与动作事件 */
-class ABBB_EVAC_API FBBBCharacterNetworkFactProcessor final
+class ABBB_EVAC_API FBBBCharacterNetworkObservationProcessor final
 {
 public:
     /**
@@ -39,11 +39,11 @@ public:
         FBBBCharacterNetworkSystem &NetworkSystem) const;
 
 private:
-    FBBBEquipmentUploadProcessor EquipmentUploadProcessor;
+    FBBBEquipmentStateObservationProcessor EquipmentStateObservationProcessor;
 
-    FBBBEquipmentActionUploadProcessor EquipmentActionUploadProcessor;
+    FBBBEquipmentFactObservationProcessor EquipmentFactObservationProcessor;
 
-    FBBBAimUploadProcessor AimUploadProcessor;
+    FBBBAimObservationProcessor AimObservationProcessor;
 
-    FBBBLocomotionUploadProcessor LocomotionUploadProcessor;
+    FBBBLocomotionObservationProcessor LocomotionObservationProcessor;
 };

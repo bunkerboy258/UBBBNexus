@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/BBBCharacterNetworkFactProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkObservationProcessor.h"
 
 class FBBBCharacterInitializer;
 class UBBBCharacterNetworkComponent;
@@ -29,10 +29,10 @@ public:
 
 private:
     friend class FBBBCharacterInitializer;
-    friend class FBBBAimUploadProcessor;
-    friend class FBBBEquipmentActionUploadProcessor;
-    friend class FBBBEquipmentUploadProcessor;
-    friend class FBBBLocomotionUploadProcessor;
+    friend class FBBBAimObservationProcessor;
+    friend class FBBBEquipmentFactObservationProcessor;
+    friend class FBBBEquipmentStateObservationProcessor;
+    friend class FBBBLocomotionObservationProcessor;
 
     /**
      * 注入角色网络阶段需要的黑板和传输依赖
@@ -57,12 +57,12 @@ private:
         const FBBBCharacterNetworkConfig &InNetworkConfig);
 
     /** 观察权威角色已经形成的黑板事实并立即提交传输组件 */
-    void ObserveFacts();
+    void Observe();
 
-    void SubmitEquipmentFact(FBBBEquipmentActionFact Fact);
-    void SubmitEquipmentState(FName EquipmentId);
-    void SubmitAimState(const FBBBAimNetworkState &AimState);
-    void SubmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
+    void TransmitEquipmentFact(FBBBEquipmentActionFact Fact);
+    void TransmitEquipmentState(FName EquipmentId);
+    void TransmitAimState(const FBBBAimNetworkState &AimState);
+    void TransmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
     FBBBNetworkState *NetworkData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
@@ -73,5 +73,5 @@ private:
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
     UBBBCharacterNetworkComponent *NetworkComponent = nullptr;
 
-    FBBBCharacterNetworkFactProcessor FactProcessor;
+    FBBBCharacterNetworkObservationProcessor ObservationProcessor;
 };

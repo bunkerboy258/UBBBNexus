@@ -1,10 +1,10 @@
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBEquipmentUploadProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentStateObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 
-void FBBBEquipmentUploadProcessor::Update(
+void FBBBEquipmentStateObservationProcessor::Update(
     const FBBBCharacterEquipmentState &EquipmentState,
     FBBBNetworkState &NetworkData,
     FBBBCharacterNetworkSystem &NetworkSystem) const
@@ -19,7 +19,7 @@ void FBBBEquipmentUploadProcessor::Update(
     if (NetworkData.GetLastUploadedEquipmentInstanceId() == ActiveEquipment->GetInstanceId())
     { return; }
 
-    NetworkSystem.SubmitEquipmentState(ActiveEquipment->GetEquipmentId());
+    NetworkSystem.TransmitEquipmentState(ActiveEquipment->GetEquipmentId());
 
     NetworkData.CommitLastUploadedEquipmentInstanceId(ActiveEquipment->GetInstanceId());
 }

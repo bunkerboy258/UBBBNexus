@@ -6,7 +6,7 @@ struct FBBBCharacterNetworkConfig;
 struct FBBBAimRuntimeData;
 struct FBBBNetworkState;
 
-class ABBB_EVAC_API FBBBAimUploadProcessor final
+class ABBB_EVAC_API FBBBAimObservationProcessor final
 {
 public:
 

@@ -5,7 +5,7 @@ class FBBBCharacterNetworkSystem;
 struct FBBBCharacterEquipmentState;
 struct FBBBNetworkState;
 
-class ABBB_EVAC_API FBBBEquipmentUploadProcessor final
+class ABBB_EVAC_API FBBBEquipmentStateObservationProcessor final
 {
 public:
 

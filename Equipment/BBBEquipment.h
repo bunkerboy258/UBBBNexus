@@ -24,7 +24,7 @@ class FBBBCharacterEquipmentLifecycleProcessor;
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterEquipmentActionProcessor;
 class FBBBCharacterAnimationLayerProcessor;
-class FBBBEquipmentUploadProcessor;
+class FBBBEquipmentStateObservationProcessor;
 
 /** 单件装备的实体、运行数据与公开操作入口 */
 UCLASS(BlueprintType)
@@ -47,7 +47,7 @@ private:
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;
-    friend class FBBBEquipmentUploadProcessor;
+    friend class FBBBEquipmentStateObservationProcessor;
 
     /** @return 实例唯一标识 */
     const FGuid &GetInstanceId() const;

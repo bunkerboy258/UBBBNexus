@@ -1,5 +1,5 @@
 
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBAimUploadProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
@@ -8,7 +8,11 @@
 namespace
 {
     //判断是否满足提交条件(最重要的作用是避免频繁提交卡爆带宽)
-bool ShouldSubmitAimState(const FBBBAimNetworkObserverState &Observer, const FBBBAimNetworkState &AimState, const FBBBCharacterNetworkConfig &NetworkConfig, float Now)
+bool ShouldTransmitAimState(
+    const FBBBAimNetworkObserverState &Observer,
+    const FBBBAimNetworkState &AimState,
+    const FBBBCharacterNetworkConfig &NetworkConfig,
+    float Now)
 {
 
     //还没记录过直接返回
@@ -40,7 +44,7 @@ bool ShouldSubmitAimState(const FBBBAimNetworkObserverState &Observer, const FBB
 }
 }
 
-void FBBBAimUploadProcessor::Update(
+void FBBBAimObservationProcessor::Update(
     const FBBBAimRuntimeData &AimData,
     const FBBBCharacterNetworkConfig &NetworkConfig,
     float WorldTimeSeconds,
@@ -62,8 +66,10 @@ void FBBBAimUploadProcessor::Update(
     // 状态未达到提交条件时保持上次观察结果
     const float Now = WorldTimeSeconds;
 
-    if (!ShouldSubmitAimState(Observer, AimState, NetworkConfig, Now))
-    { return; }
+    if (!ShouldTransmitAimState(Observer, AimState, NetworkConfig, Now))
+    {
+        return;
+    }
 
     Observer.LastObservedState = AimState;
 
@@ -72,5 +78,5 @@ void FBBBAimUploadProcessor::Update(
     // 先记录本次观察结果再提交网络状态
     NetworkData.CommitAimObserverState(Observer);
 
-    NetworkSystem.SubmitAimState(AimState);
+    NetworkSystem.TransmitAimState(AimState);
 }

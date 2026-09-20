@@ -1,10 +1,10 @@
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBLocomotionUploadProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 
-void FBBBLocomotionUploadProcessor::Update(
+void FBBBLocomotionObservationProcessor::Update(
     const FBBBCharacterLocomotionRuntimeData &LocomotionData,
     FBBBNetworkState &NetworkData,
     FBBBCharacterNetworkSystem &NetworkSystem) const
@@ -24,7 +24,7 @@ void FBBBLocomotionUploadProcessor::Update(
     // 将当前步态封装为网络状态并提交
     FBBBLocomotionNetworkState State;
     State.Gait = CurrentGait;
-    NetworkSystem.SubmitLocomotionState(State);
+    NetworkSystem.TransmitLocomotionState(State);
 
     FBBBLocomotionNetworkObserverState ObserverState;
     ObserverState.LastObservedState = State;

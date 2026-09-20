@@ -6,10 +6,12 @@
 #include "BBBNetworkFactEntryDefinition.generated.h"
 
 USTRUCT()
+/** 网络事实账本的单条增量定义 只承载已经成立的领域事实 */
 struct FBBBNetworkFactEntryDefinition final : public FFastArraySerializerItem
 {
     GENERATED_BODY()
 
     UPROPERTY()
+    /** 由接收边界翻译为领域输入包的原始事实 */
     FBBBEquipmentActionFact Fact;
 };
