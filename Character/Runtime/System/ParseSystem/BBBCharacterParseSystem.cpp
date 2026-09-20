@@ -11,7 +11,7 @@ void FBBBCharacterParseSystem::Initialize(
 
 void FBBBCharacterParseSystem::Update() const
 {
-    if (!ensureMsgf(Data && EquipmentCatalog, TEXT("[UBBBC]Parse system is uninitialized")))
+    if (!Data || !EquipmentCatalog)
     {
         return;
     }

@@ -28,9 +28,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
     UWorld *World = Character.GetWorld();
     UCapsuleComponent *Capsule = Character.GetCapsuleComponent();
-    if (!ensureMsgf(
-        Movement && CharacterMesh && World && Capsule,
-        TEXT("[UBBBC]Animation fact capture failed because engine dependencies are null")))
+    if (!Movement || !CharacterMesh || !World || !Capsule)
     {
         return;
     }

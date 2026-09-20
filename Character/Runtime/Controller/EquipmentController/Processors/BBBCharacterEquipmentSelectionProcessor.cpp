@@ -26,7 +26,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
             Character,
             *StateDefinition,
             true);
-        if (!ensureMsgf(StateInstance, TEXT("[UBBBC]Equipment state instance creation failed")))
+        if (!StateInstance)
         {
             return;
         }

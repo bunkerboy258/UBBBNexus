@@ -29,8 +29,7 @@ void FBBBCharacterNetworkSystem::Initialize(
 
 void FBBBCharacterNetworkSystem::Update()
 {
-    if (!ensureMsgf(NetworkComponent,
-        TEXT("[UBBBC]Network system update failed because core dependencies are null")))
+    if (!NetworkComponent)
     {
         return;
     }
@@ -45,9 +44,8 @@ void FBBBCharacterNetworkSystem::Update()
 
 void FBBBCharacterNetworkSystem::Observe()
 {
-    if (!ensureMsgf(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig
-        && EquipmentState && EquipmentEvents && NetworkComponent,
-        TEXT("[UBBBC]Authority fact observation failed because dependencies are null")))
+    if (!(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig
+        && EquipmentState && EquipmentEvents && NetworkComponent))
     {
         return;
     }
@@ -67,7 +65,7 @@ void FBBBCharacterNetworkSystem::Observe()
 
 void FBBBCharacterNetworkSystem::TransmitEquipmentFact(FBBBEquipmentActionFact Fact)
 {
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment fact has no network component")))
+    if (!NetworkComponent)
     {
         return;
     }
@@ -88,7 +86,7 @@ void FBBBCharacterNetworkSystem::TransmitEquipmentFact(FBBBEquipmentActionFact F
 
 void FBBBCharacterNetworkSystem::TransmitEquipmentState(const FName EquipmentId)
 {
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Equipment state has no network component")))
+    if (!NetworkComponent)
     {
         return;
     }
@@ -109,7 +107,7 @@ void FBBBCharacterNetworkSystem::TransmitEquipmentState(const FName EquipmentId)
 
 void FBBBCharacterNetworkSystem::TransmitAimState(const FBBBAimNetworkState &AimState)
 {
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Aim state has no network component")))
+    if (!NetworkComponent)
     {
         return;
     }
@@ -131,7 +129,7 @@ void FBBBCharacterNetworkSystem::TransmitAimState(const FBBBAimNetworkState &Aim
 void FBBBCharacterNetworkSystem::TransmitLocomotionState(
     const FBBBLocomotionNetworkState &LocomotionState)
 {
-    if (!ensureMsgf(NetworkComponent, TEXT("[UBBBC]Locomotion state has no network component")))
+    if (!NetworkComponent)
     {
         return;
     }

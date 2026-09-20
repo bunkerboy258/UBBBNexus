@@ -13,21 +13,23 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 
     // 初始化开始先确认网络组件和配置资源有效
     //网络组件存在？
-    if (!ensureMsgf(Character.CharacterNetworkComponent, TEXT("[UBBBC]Character initialization failed: CharacterNetworkComponent is null")))
-    { return; }
+    if (!Character.CharacterNetworkComponent)
+    {
+        return;
+    }
 
-    if (!ensureMsgf(
-        Config.Equipment.EquipmentCatalog,
-        TEXT("[UBBBC]Character '%s' of class '%s' has no CharacterConfig.Equipment.EquipmentCatalog"),
-        *Character.GetName(),
-        *Character.GetClass()->GetPathName()))
-    { return; }
+    if (!Config.Equipment.EquipmentCatalog)
+    {
+        return;
+    }
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
 
     //相机骨骼网格与移动组件存在？
-    if (!ensureMsgf(Character.GetMesh() && Movement, TEXT("[UBBBC]Character initialization failed because engine components are null")))
-    { return; }
+    if (!Character.GetMesh() || !Movement)
+    {
+        return;
+    }
 
     //确保角色黑板更新完成后再启动骨骼动画更新
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);

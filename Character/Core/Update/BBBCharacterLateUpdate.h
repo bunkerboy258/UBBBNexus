@@ -30,14 +30,8 @@ struct ABBB_EVAC_API FBBBCharacterLateUpdate final : public FTickFunction
         ENamedThreads::Type CurrentThread,
         const FGraphEventRef &MyCompletionGraphEvent) override;
 
-    /** @return 更新依赖图中的诊断描述 */
     virtual FString DiagnosticMessage() override;
 
-    /**
-     * 获取更新分析器使用的诊断名称
-     * @param bDetailed 是否返回包含角色名称的详细名称
-     * @return 更新分析器使用的诊断名称
-     */
     virtual FName DiagnosticContext(bool bDetailed) override;
 };
 

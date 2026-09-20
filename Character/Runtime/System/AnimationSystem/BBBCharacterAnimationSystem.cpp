@@ -33,24 +33,20 @@ void FBBBCharacterAnimationSystem::Initialize(
 void FBBBCharacterAnimationSystem::Update()
 {
     // 动画更新需要角色运行数据装备状态网格和动画配置全部有效
-    if (!ensureMsgf(
-        AnimationData
+    if (!(AnimationData
             && Character
             && RuntimeData
             && EquipmentState
             && CharacterMesh
             && WorldData
-            && AnimationConfig,
-        TEXT("[UBBBC]Animation system update failed because dependencies are null")))
+            && AnimationConfig))
     {
         return;
     }
 
     // 动画系统必须使用角色动画实例才能接收事实和动作
     UBBBAnimInstance *AnimInstance = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
-    if (!ensureMsgf(
-        AnimInstance,
-        TEXT("[UBBBC]Character mesh must use UBBBAnimInstance or a derived animation blueprint")))
+    if (!AnimInstance)
     {
         return;
     }

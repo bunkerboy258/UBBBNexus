@@ -26,9 +26,7 @@ void FBBBCharacterAnimationLayerProcessor::Update(
         }
     }
 
-    if (!ensureMsgf(
-        DesiredLayerClass,
-        TEXT("[UBBBC]No animation layer is configured for the character or active equipment")))
+    if (!DesiredLayerClass)
     {
         return;
     }

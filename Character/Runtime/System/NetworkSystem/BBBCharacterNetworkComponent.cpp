@@ -101,7 +101,7 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
 
 void UBBBCharacterNetworkComponent::ReplicateEquipmentFact(FBBBEquipmentActionFact Fact)
 {
-    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish equipment facts")))
+    if (!IsOwnerAuthority())
     {
         return;
     }
@@ -113,7 +113,7 @@ void UBBBCharacterNetworkComponent::ReplicateEquipmentFact(FBBBEquipmentActionFa
 
 void UBBBCharacterNetworkComponent::ReplicateEquipmentState(const FName EquipmentId)
 {
-    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish equipment state")))
+    if (!IsOwnerAuthority())
     {
         return;
     }
@@ -124,7 +124,7 @@ void UBBBCharacterNetworkComponent::ReplicateEquipmentState(const FName Equipmen
 
 void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkState &AimState)
 {
-    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish aim state")))
+    if (!IsOwnerAuthority())
     {
         return;
     }
@@ -135,7 +135,7 @@ void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkState 
 
 void UBBBCharacterNetworkComponent::ReplicateLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
-    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish locomotion state")))
+    if (!IsOwnerAuthority())
     {
         return;
     }
@@ -146,7 +146,7 @@ void UBBBCharacterNetworkComponent::ReplicateLocomotionState(const FBBBLocomotio
 
 void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(const FBBBEquipmentActionFact &Fact)
 {
-    if (!ensureMsgf(Character, TEXT("[UBBBC]Equipment fact arrived without a character")))
+    if (!Character)
     {
         return;
     }
@@ -156,48 +156,35 @@ void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(const FBBBEquipment
     {
     case FBBBEquipFactPacket::PacketId:
     {
-        const bool bAccepted = Character->SubmitInput(
-            FBBBEquipFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Equipment fact input was rejected"));
+        Character->SubmitInput(FBBBEquipFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
     case FBBBFireFactPacket::PacketId:
     {
-        const bool bAccepted = Character->SubmitInput(
-            FBBBFireFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Fire fact input was rejected"));
+        Character->SubmitInput(FBBBFireFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
     case FBBBReloadStartedFactPacket::PacketId:
     {
-        const bool bAccepted = Character->SubmitInput(
-            FBBBReloadStartedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Reload start fact input was rejected"));
+        Character->SubmitInput(FBBBReloadStartedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
     case FBBBMagazineDetachedFactPacket::PacketId:
     {
-        const bool bAccepted = Character->SubmitInput(
-            FBBBMagazineDetachedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Magazine detach fact input was rejected"));
+        Character->SubmitInput(FBBBMagazineDetachedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
     case FBBBMagazineLoadedFactPacket::PacketId:
     {
-        const bool bAccepted = Character->SubmitInput(
-            FBBBMagazineLoadedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Magazine load fact input was rejected"));
+        Character->SubmitInput(FBBBMagazineLoadedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
     case FBBBReloadCancelledFactPacket::PacketId:
     {
-        const bool bAccepted = Character->SubmitInput(
-            FBBBReloadCancelledFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Reload cancel fact input was rejected"));
+        Character->SubmitInput(FBBBReloadCancelledFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
     default:
-        ensureMsgf(false, TEXT("[UBBBC]Unknown equipment fact packet id %d"), Fact.PacketId);
         return;
     }
 }
@@ -206,8 +193,7 @@ void UBBBCharacterNetworkComponent::SubmitEquipmentStateInput(const FName Equipm
 {
     if (Character && EquipmentId != NAME_None)
     {
-        const bool bAccepted = Character->SubmitInput(FBBBEquipmentStatePacket{EquipmentId});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Equipment state input was rejected"));
+        Character->SubmitInput(FBBBEquipmentStatePacket{EquipmentId});
     }
 }
 
@@ -218,8 +204,7 @@ void UBBBCharacterNetworkComponent::SubmitAimStateInput(const FBBBAimNetworkStat
         // 连续快照在边界转成领域状态包 之后由 ParseSystem 统一应用
         FBBBAimStatePacket Packet;
         Packet.State = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
-        const bool bAccepted = Character->SubmitInput(MoveTemp(Packet));
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Aim state input was rejected"));
+        Character->SubmitInput(MoveTemp(Packet));
     }
 }
 
@@ -227,8 +212,7 @@ void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(const FBBBLocomot
 {
     if (Character)
     {
-        const bool bAccepted = Character->SubmitInput(FBBBLocomotionStatePacket{LocomotionState.Gait});
-        ensureMsgf(bAccepted, TEXT("[UBBBC]Locomotion state input was rejected"));
+        Character->SubmitInput(FBBBLocomotionStatePacket{LocomotionState.Gait});
     }
 }
 
@@ -246,7 +230,5 @@ bool UBBBCharacterNetworkComponent::IsOwnerAuthority() const
 
 APawn *UBBBCharacterNetworkComponent::GetOwnerPawn() const
 {
-    APawn *OwnerPawn = Cast<APawn>(GetOwner());
-    ensureMsgf(OwnerPawn, TEXT("[UBBBC]Network component owner is not APawn"));
-    return OwnerPawn;
+    return Cast<APawn>(GetOwner());
 }

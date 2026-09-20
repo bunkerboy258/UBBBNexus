@@ -16,7 +16,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
     // 创建装备前确认世界和角色网格有效
     UWorld *World = Character.GetWorld();
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
-    if (!ensureMsgf(World && CharacterMesh, TEXT("[UBBBC]Equipment creation dependencies are invalid")))
+    if (!World || !CharacterMesh)
     {
         return nullptr;
     }
@@ -24,7 +24,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
     ABBBEquipment *Equipment = World->SpawnActorDeferred<ABBBEquipment>(
         ABBBEquipment::StaticClass(), FTransform::Identity, &Character, &Character,
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-    if (!ensureMsgf(Equipment, TEXT("[UBBBC]Equipment actor creation failed")))
+    if (!Equipment)
     {
         return nullptr;
     }
@@ -37,8 +37,6 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
     if (!FBBBEquipmentInitializer::Initialize(*Equipment, *CharacterMesh, Character))
     {
-        // 初始化失败时立即销毁未完成的装备演员
-        UE_LOG(LogTemp, Error, TEXT("[UBBBC]Equipment initialization failed Definition=%s"), *Definition.GetPathName());
         Equipment->Destroy();
         return nullptr;
     }
@@ -59,18 +57,18 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
     UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
         ? Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance())
         : nullptr;
-    if (!ensureMsgf(CharacterAnim && WeaponAnim && Equipment.Definition
+    if (!(CharacterAnim && WeaponAnim && Equipment.Definition
         && Equipment.Definition->EquipFragment.IsValid()
         && Equipment.GetOwner() == CharacterMesh.GetOwner()
-        && !AttachmentSocketName.IsNone() && CharacterMesh.DoesSocketExist(AttachmentSocketName),
-        TEXT("[UBBBC]Equipment attachment or animation dependencies are invalid")))
+        && !AttachmentSocketName.IsNone() && CharacterMesh.DoesSocketExist(AttachmentSocketName)))
     {
         return false;
     }
 
-    if (!ensureMsgf(Equipment.AttachToComponent(&CharacterMesh,
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale, AttachmentSocketName),
-        TEXT("[UBBBC]Equipment attachment failed")))
+    if (!Equipment.AttachToComponent(
+        &CharacterMesh,
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        AttachmentSocketName))
     {
         return false;
     }

@@ -8,7 +8,7 @@ void FBBBCharacterUpdatePipeline::Initialize(ABBBCharacter &InCharacter)
 
 void FBBBCharacterUpdatePipeline::LateUpdate() const
 {
-    if (!ensureMsgf(Character, TEXT("[UBBBC]Character late pipeline is uninitialized")))
+    if (!Character)
     {
         return;
     }

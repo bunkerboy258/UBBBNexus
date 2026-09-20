@@ -15,9 +15,7 @@ void FBBBCharacterAimController::Initialize(
 void FBBBCharacterAimController::Update()
 {
     // 瞄准更新需要角色视角瞄准状态意图和配置全部有效
-    if (!ensureMsgf(
-        AimData && ControlData,
-        TEXT("[UBBBC]Aim system update failed because dependencies are null")))
+    if (!AimData || !ControlData)
     {
         return;
     }

@@ -15,7 +15,7 @@ bool FBBBEquipmentStatePacket::CanApply(const FBBBCharacterInputContext &Context
 void FBBBEquipmentStatePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     UBBBEquipmentDefinition *Definition = Context.Catalog.FindDefinition(EquipmentId);
-    if (ensureMsgf(Definition, TEXT("[UBBBC]Unknown equipment state id %s"), *EquipmentId.ToString()))
+    if (Definition)
     {
         Context.Commands.SubmitEquipmentState(*Definition);
     }

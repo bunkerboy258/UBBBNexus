@@ -13,7 +13,7 @@ void UBBBMontagePlayback::Start(UAnimInstance &AnimInstance, UAnimMontage &Monta
     Sequence = InSequence;
     Revision = InRevision;
     bReload = bInReload;
-    if (!ensureMsgf(Character.IsValid() && Sequence > 0, TEXT("[UBBBC]Reload playback context is invalid")))
+    if (!Character.IsValid() || Sequence <= 0)
     {
         bFinished = true;
         return;
@@ -27,7 +27,7 @@ void UBBBMontagePlayback::Start(UAnimInstance &AnimInstance, UAnimMontage &Monta
     }
 
     FAnimMontageInstance *Instance = AnimInstance.GetActiveInstanceForMontage(&Montage);
-    if (!ensureMsgf(Instance, TEXT("[UBBBC]Reload montage instance is missing")))
+    if (!Instance)
     {
         Finish(false);
         return;
@@ -64,7 +64,7 @@ void UBBBMontagePlayback::OnNotify(const FName Name, const FBranchingPointNotify
     if (Name == TEXT("BBB.Reload.End") && !bEndReported)
     {
         // 结束通知必须建立在开始通知已经到达的前提上
-        if (!ensureMsgf(bStartReported, TEXT("[UBBBC]Reload end notify arrived before start Sequence=%d"), Sequence))
+        if (!bStartReported)
         {
             Finish(true);
             return;

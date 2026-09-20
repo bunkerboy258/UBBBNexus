@@ -104,9 +104,7 @@ bool BBBCharacterMontageInput::Submit(
     const int32 Sequence,
     const bool bReload)
 {
-    if (!ensureMsgf(!Montage.SlotAnimTracks.IsEmpty(),
-        TEXT("[UBBBC]Montage input requires at least one configured slot Asset=%s"),
-        *Montage.GetPathName()))
+    if (Montage.SlotAnimTracks.IsEmpty())
     {
         return false;
     }
@@ -161,8 +159,6 @@ bool BBBCharacterMontageInput::Submit(
             continue;
         }
 
-        ensureMsgf(false, TEXT("[UBBBC]Montage uses unsupported slot Asset=%s Slot=%s"),
-            *Montage.GetPathName(), *Track.SlotName.ToString());
         bSubmittedAll = false;
     }
 

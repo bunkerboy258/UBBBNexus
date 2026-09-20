@@ -19,13 +19,11 @@ void FBBBCharacterLocomotionController::Initialize(
     ControlData = &InIntentData;
     Config = &InConfig;
     StrafeSpeedMapCurve = InConfig.StrafeSpeedMapCurve.LoadSynchronous();
-    ensureMsgf(StrafeSpeedMapCurve, TEXT("[UBBBC]Locomotion initialization failed to load official strafe speed map curve"));
 }
 
 void FBBBCharacterLocomotionController::Update()
 {
-    if (!ensureMsgf(Character && Movement && RuntimeData && ControlData && Config && StrafeSpeedMapCurve,
-        TEXT("[UBBBC]Locomotion controller dependencies are null")))
+    if (!Character || !Movement || !RuntimeData || !ControlData || !Config || !StrafeSpeedMapCurve)
     {
         return;
     }

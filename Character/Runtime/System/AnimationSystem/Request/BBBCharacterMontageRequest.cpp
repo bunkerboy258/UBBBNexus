@@ -42,10 +42,7 @@ bool FBBBCharacterMontagePacket::CanApply(
             return Track.SlotName == Slot;
         });
 
-    if (!ensureMsgf(bKnownSlot && bConfiguredTrack,
-        TEXT("[UBBBC]Montage slot input does not match asset configuration Asset=%s Slot=%s"),
-        *Montage->GetPathName(),
-        *Slot.ToString()))
+    if (!bKnownSlot || !bConfiguredTrack)
     {
         return false;
     }
@@ -73,7 +70,7 @@ void FBBBCharacterMontagePacket::Apply(
     {
         FBBBCharacterMontageSlotState *Target = Animation.Slots.Find(SlotName);
 
-        if (ensureMsgf(Target, TEXT("[UBBBC]Configured montage slot state is missing")))
+        if (Target)
         {
             Target->Desired = *this;
             Target->Revision = SharedRevision;
@@ -93,7 +90,7 @@ void FBBBCharacterMontagePacket::Apply(
 
     FBBBCharacterMontageSlotState *Target = Animation.Slots.Find(SlotName);
 
-    if (!ensureMsgf(Target, TEXT("[UBBBC]Configured montage slot state is missing")))
+    if (!Target)
     {
         return;
     }

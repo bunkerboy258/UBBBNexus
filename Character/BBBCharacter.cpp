@@ -78,8 +78,10 @@ void ABBBCharacter::Tick(float DeltaSeconds)
     //读取角色所属世界
     const UWorld *World = GetWorld();
 
-    if (!ensureMsgf(World, TEXT("[UBBBC]Character update aborted because world is null")))
-    { return; }
+    if (!World)
+    {
+        return;
+    }
 
     //更新当前帧世界时间快照
     RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
@@ -96,9 +98,7 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
     UCharacterMovementComponent *Movement = GetCharacterMovement();
     USkeletalMeshComponent *CharacterMesh = GetMesh();
 
-    if (!ensureMsgf(
-        Movement && CharacterMesh,
-        TEXT("[UBBBC]Character tick registration failed because required components are null")))
+    if (!Movement || !CharacterMesh)
     {
         return;
     }
@@ -147,11 +147,6 @@ void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
 
 void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReasonDefinition EndReason)
 {
-    if (EndReason == EBBBCharacterReloadEndReasonDefinition::PlaybackFailed)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[UBBBC]Reload playback failed Sequence=%d"), Sequence);
-    }
-
     // 装填完成与中断分走不同包 由解析状态机裁决序号
     if (EndReason == EBBBCharacterReloadEndReasonDefinition::Loaded)
     {

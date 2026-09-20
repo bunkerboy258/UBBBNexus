@@ -9,7 +9,7 @@ void FBBBCharacterLateUpdate::ExecuteTick(
     const FGraphEventRef &MyCompletionGraphEvent)
 {
     // 引擎延迟更新必须拥有有效角色目标
-    if (!ensureMsgf(Target, TEXT("[UBBBC]Character LateUpdate failed because target is null")))
+    if (!Target)
     {
         return;
     }
@@ -22,17 +22,13 @@ void FBBBCharacterLateUpdate::ExecuteTick(
 
 FString FBBBCharacterLateUpdate::DiagnosticMessage()
 {
-    return GetFullNameSafe(Target) + TEXT("[ABBBCharacter::LateUpdate]");
+    return FString();
 }
 
 //------------------------------------------------------------------------------
 
 FName FBBBCharacterLateUpdate::DiagnosticContext(bool bDetailed)
 {
-    if (bDetailed)
-    {
-        return FName(*FString::Printf(TEXT("CharacterLateUpdate/%s"), *GetFullNameSafe(Target)));
-    }
-
-    return FName(TEXT("CharacterLateUpdate"));
+    static_cast<void>(bDetailed);
+    return NAME_None;
 }

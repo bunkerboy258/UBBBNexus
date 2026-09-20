@@ -30,7 +30,7 @@ void FBBBCharacterEquipmentController::Initialize(
 void FBBBCharacterEquipmentController::Update()
 {
     // 装备更新需要角色网格和装备运行时数据有效
-    if (!ensureMsgf(EquipmentData && CharacterMesh && Character, TEXT("[UBBBC]Equipment system update dependencies are null")))
+    if (!EquipmentData || !CharacterMesh || !Character)
     {
         return;
     }

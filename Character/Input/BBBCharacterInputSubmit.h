@@ -21,18 +21,17 @@ namespace BBBCharacterInput
     bool Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet)
     {
         // 所有角色输入必须在游戏线程提交
-        if (!ensureMsgf(IsInGameThread(), TEXT("[UBBBC]Packet input unavailable")))
+        if (!IsInGameThread())
         {
             return false;
         }
 
-        if (!ensureMsgf(Packet.IsValid(), TEXT("[UBBBC]Invalid input packet")))
+        if (!Packet.IsValid())
         {
             return false;
         }
 
-        if (!ensureMsgf(!Data.InputState.IsProcessing(),
-            TEXT("[UBBBC]Input submission is forbidden while the fixed frame is being processed")))
+        if (Data.InputState.IsProcessing())
         {
             return false;
         }

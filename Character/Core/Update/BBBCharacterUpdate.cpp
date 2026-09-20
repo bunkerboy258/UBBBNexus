@@ -11,7 +11,7 @@ void FBBBCharacterUpdate::Initialize(ABBBCharacter &InCharacter)
 
 void FBBBCharacterUpdate::Update() const
 {
-    if (!ensureMsgf(Character, TEXT("[UBBBC]Character update is uninitialized")))
+    if (!Character)
     {
         return;
     }

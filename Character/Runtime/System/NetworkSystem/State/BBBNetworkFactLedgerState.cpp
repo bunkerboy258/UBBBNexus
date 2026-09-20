@@ -25,7 +25,7 @@ void FBBBNetworkFactLedgerState::PostReplicatedAdd(
     const TArrayView<int32> AddedIndices,
     const int32 FinalSize)
 {
-    if (!ensureMsgf(Component, TEXT("[UBBBC]Network fact ledger received entries without a component")))
+    if (!Component)
     {
         return;
     }
@@ -33,7 +33,7 @@ void FBBBNetworkFactLedgerState::PostReplicatedAdd(
     // FastArray 索引只是本机容器位置 不能把它当作跨端顺序标识
     for (const int32 Index : AddedIndices)
     {
-        if (ensureMsgf(Entries.IsValidIndex(Index), TEXT("[UBBBC]Network fact ledger index is invalid")))
+        if (Entries.IsValidIndex(Index))
         {
             Component->SubmitEquipmentFactInput(Entries[Index].Fact);
         }
