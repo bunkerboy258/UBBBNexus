@@ -78,6 +78,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Config.Animation);
     
     Character.ParseSystem.Initialize(Character.RuntimeData, *Config.Equipment.EquipmentCatalog);
+    Character.CharacterUpdate.Initialize(Character);
     Character.CharacterUpdatePipeline.Initialize(Character);
 
     Character.GetCapsuleComponent()->SetCapsuleSize(

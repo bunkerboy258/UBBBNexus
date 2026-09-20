@@ -6,8 +6,6 @@ class FBBBCharacterInitializer;
 class FBBBCharacterUpdatePipeline final
 {
 public:
-    /** 调度角色主更新 */
-    void Update() const;
     /** 调度移动完成后的动画事实更新 */
     void LateUpdate() const;
 

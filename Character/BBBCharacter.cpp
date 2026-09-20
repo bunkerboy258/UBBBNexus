@@ -84,7 +84,7 @@ void ABBBCharacter::Tick(float DeltaSeconds)
     //更新当前帧世界时间快照
     RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
 
-    CharacterUpdatePipeline.Update();
+    CharacterUpdate.Update();
 }
 
 //------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
 class FBBBCharacterInitializer;
-class FBBBCharacterUpdatePipeline;
+class FBBBCharacterUpdate;
 class ABBBCharacter;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
@@ -16,7 +16,7 @@ class ABBB_EVAC_API FBBBCharacterEquipmentController final
 {
 private:
     friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterUpdatePipeline;
+    friend class FBBBCharacterUpdate;
 
     /** 维护装备选择并将本帧命令转发至装备 API */
     void Update();

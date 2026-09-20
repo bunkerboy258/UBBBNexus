@@ -11,8 +11,9 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/BBBCharacterParseSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterLateUpdate.h"
-#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
+#include "BBBWork/UBBBNexus/Character/Core/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdate.h"
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
@@ -31,6 +32,7 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     friend class FBBBCharacterShutdown;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
+    friend class FBBBCharacterUpdate;
     /** 允许移动后更新函数调用角色LateUpdate */
     friend struct FBBBCharacterLateUpdate;
 
@@ -144,6 +146,8 @@ private:
 
     /** 驱动角色移动后更新阶段的独立更新函数 */
     FBBBCharacterLateUpdate LateUpdateTick;
+
+    FBBBCharacterUpdate CharacterUpdate;
     
     FBBBCharacterUpdatePipeline CharacterUpdatePipeline;
 };
