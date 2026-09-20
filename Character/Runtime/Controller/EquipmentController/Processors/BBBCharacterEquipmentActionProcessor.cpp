@@ -17,39 +17,24 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         return;
     }
 
-    // 只把属于当前装备的恢复事实交给装备接口
-    FBBBEquipmentExternalAPI &API = Equipment->GetExternalAPI();
     for (const FBBBEquipmentActionFact &Fact : Facts)
     {
         if (Fact.EquipmentId == Equipment->GetEquipmentId())
         {
-            API.SubmitFact(Fact);
+            Equipment->SubmitCommand(FBBBEquipmentCommand{
+                EBBBEquipmentCommandType::Fact,
+                Fact.Sequence,
+                Fact});
         }
-    }
-
-    // 将换弹动画阶段序号转发为装备接口的对应操作
-    for (const int32 Sequence : Commands.DetachMagazineSequences)
-    {
-        API.SubmitDetachMagazine(Sequence);
-    }
-
-    for (const int32 Sequence : Commands.LoadMagazineSequences)
-    {
-        API.SubmitLoadMagazine(Sequence);
-    }
-
-    for (const int32 Sequence : Commands.CancelReloadSequences)
-    {
-        API.SubmitCancelReload(Sequence);
     }
 
     // 使用递增序号提交本帧开火和换弹动作
     if (bFire)
     {
-        API.SubmitFire(State.NextActionSequence++);
+        Equipment->SubmitCommand(FBBBEquipmentCommand{EBBBEquipmentCommandType::Fire, State.NextActionSequence++});
     }
     if (bReload)
     {
-        API.SubmitReload(State.NextActionSequence++);
+        Equipment->SubmitCommand(FBBBEquipmentCommand{EBBBEquipmentCommandType::Reload, State.NextActionSequence++});
     }
 }

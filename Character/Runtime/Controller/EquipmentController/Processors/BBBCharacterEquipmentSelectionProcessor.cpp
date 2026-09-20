@@ -77,6 +77,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
-    // 普通装备切换完成后提交装备动作序号
-    DesiredInstance->GetExternalAPI().SubmitEquip(EquipmentState.NextActionSequence++);
+    DesiredInstance->SubmitCommand(FBBBEquipmentCommand{
+        EBBBEquipmentCommandType::Equip,
+        EquipmentState.NextActionSequence++});
 }

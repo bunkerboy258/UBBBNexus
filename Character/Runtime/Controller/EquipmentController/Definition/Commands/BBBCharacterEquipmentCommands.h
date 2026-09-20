@@ -47,33 +47,6 @@ struct FBBBCharacterEquipmentCommands
         PendingEquipmentState = &Definition;
     }
 
-    /**
-     * 提交卸下弹匣阶段
-     * @param Sequence	换弹序号
-     */
-    void SubmitDetachMagazine(const int32 Sequence)
-    {
-        DetachMagazineSequences.Add(Sequence);
-    }
-
-    /**
-     * 提交装填弹匣阶段
-     * @param Sequence	换弹序号
-     */
-    void SubmitLoadMagazine(const int32 Sequence)
-    {
-        LoadMagazineSequences.Add(Sequence);
-    }
-
-    /**
-     * 提交取消换弹阶段
-     * @param Sequence	换弹序号
-     */
-    void SubmitCancelReload(const int32 Sequence)
-    {
-        CancelReloadSequences.Add(Sequence);
-    }
-
 private:
     friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSelectionProcessor;
@@ -117,9 +90,6 @@ private:
         bActivateFire = false;
         bActivateReload = false;
         PendingFacts.Reset();
-        DetachMagazineSequences.Reset();
-        LoadMagazineSequences.Reset();
-        CancelReloadSequences.Reset();
         PendingEquipmentState = nullptr;
     }
 
@@ -139,15 +109,4 @@ private:
     UPROPERTY()
     TObjectPtr<UBBBEquipmentDefinition> PendingEquipmentState = nullptr;
 
-    /** 本帧卸下弹匣阶段序号 */
-    UPROPERTY()
-    TArray<int32> DetachMagazineSequences;
-
-    /** 本帧装填弹匣阶段序号 */
-    UPROPERTY()
-    TArray<int32> LoadMagazineSequences;
-
-    /** 本帧取消换弹阶段序号 */
-    UPROPERTY()
-    TArray<int32> CancelReloadSequences;
 };

@@ -7,6 +7,7 @@
 class FBBBCharacterInitializer;
 class FBBBCharacterUpdatePipeline;
 class ABBBCharacter;
+class ABBBEquipment;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterEquipmentRuntimeData;
@@ -14,6 +15,10 @@ struct FBBBCharacterEquipmentRuntimeData;
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentController final
 {
+public:
+    /** @return 当前激活主手装备 */
+    ABBBEquipment *GetActiveEquipment() const;
+
 private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterUpdatePipeline;

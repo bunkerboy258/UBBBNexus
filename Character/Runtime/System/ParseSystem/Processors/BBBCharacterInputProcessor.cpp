@@ -52,9 +52,6 @@ void FBBBCharacterInputProcessor::Update(
     Process(Input.Jump, Context);
 
     // 动画通知输入只推进已经存在的换弹操作，不参与请求竞争
-    Process(Input.ReloadDetach, Context);
-    Process(Input.ReloadLoad, Context);
-    Process(Input.ReloadInterrupt, Context);
 
     // 每个蒙太奇槽位独立覆盖，处理顺序与动画图中的层级保持一致
     Process(Input.FullBodyMontage, Context);

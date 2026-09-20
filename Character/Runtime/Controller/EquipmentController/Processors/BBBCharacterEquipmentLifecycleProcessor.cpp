@@ -4,8 +4,9 @@
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Core/Initialization/BBBEquipmentInitializer.h"
+#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -21,21 +22,24 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
         return nullptr;
     }
 
+    if (!Definition.EquipmentClass)
+    {
+        return nullptr;
+    }
+
     ABBBEquipment *Equipment = World->SpawnActorDeferred<ABBBEquipment>(
-        ABBBEquipment::StaticClass(), FTransform::Identity, &Character, &Character,
+        Definition.EquipmentClass, FTransform::Identity, &Character, &Character,
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
     if (!Equipment)
     {
         return nullptr;
     }
 
-    // 先写入实例定义和镜像状态再完成演员生成
-    Equipment->Definition = &Definition;
-    Equipment->InstanceId = FGuid::NewGuid();
-    Equipment->bIsMirror = bIsMirror;
     Equipment->SetActorHiddenInGame(true);
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
-    if (!FBBBEquipmentInitializer::Initialize(*Equipment, *CharacterMesh, Character))
+    ABBBRifleEquipment *Rifle = Cast<ABBBRifleEquipment>(Equipment);
+    UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(&Definition);
+    if (!Rifle || !RifleDefinition || !Rifle->InitializeRifle(*RifleDefinition, FGuid::NewGuid(), bIsMirror))
     {
         Equipment->Destroy();
         return nullptr;
@@ -51,14 +55,12 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
 bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
     USkeletalMeshComponent &CharacterMesh, const FName AttachmentSocketName, ABBBEquipment &Equipment)
 {
-    // 附着前确认动画实例装备定义和插槽全部有效
     USkeletalMeshComponent *WeaponMesh = Equipment.GetEquipmentSkeletalMesh();
     UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh.GetAnimInstance());
     UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
         ? Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance())
         : nullptr;
-    if (!(CharacterAnim && WeaponAnim && Equipment.Definition
-        && Equipment.Definition->EquipFragment.IsValid()
+    if (!(CharacterAnim && WeaponAnim && Equipment.GetDefinition()
         && Equipment.GetOwner() == CharacterMesh.GetOwner()
         && !AttachmentSocketName.IsNone() && CharacterMesh.DoesSocketExist(AttachmentSocketName)))
     {
@@ -73,8 +75,13 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
         return false;
     }
 
-    // 应用装备生成偏移并绑定武器动画实例
-    Equipment.SetActorRelativeTransform(Equipment.Definition->EquipFragment.Get().GetSpawnOffset());
+    const UBBBRifleDefinition *Definition = Cast<UBBBRifleDefinition>(Equipment.GetDefinition());
+    if (!Definition)
+    {
+        return false;
+    }
+
+    Equipment.SetActorRelativeTransform(Definition->SpawnOffset);
     Equipment.SetActorHiddenInGame(false);
     CharacterAnim->BindWeaponAnimInstance(WeaponAnim);
     // 让武器网格等待角色网格完成更新
@@ -99,8 +106,6 @@ void FBBBCharacterEquipmentLifecycleProcessor::Detach(
         }
     }
 
-    // 取消装备待处理动作并隐藏后保持世界位置分离
-    Equipment.GetExternalAPI().SubmitCancelPendingActions();
     Equipment.SetActorHiddenInGame(true);
     Equipment.DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 }

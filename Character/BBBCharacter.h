@@ -18,6 +18,7 @@ class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class ABBBPlayerCameraSystem;
+class ABBBEquipment;
 
 UCLASS()
 class ABBB_EVAC_API ABBBCharacter : public ACharacter
@@ -85,6 +86,12 @@ public:
     bool SubmitInput(TPacket &&Packet)
     {
         return BBBCharacterInput::Submit(RuntimeData, Forward<TPacket>(Packet));
+    }
+
+    /** @return 当前激活主手装备 */
+    ABBBEquipment *GetActiveEquipment() const
+    {
+        return EquipmentController.GetActiveEquipment();
     }
 
 protected:

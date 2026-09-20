@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentController::Initialize(
@@ -48,4 +49,14 @@ void FBBBCharacterEquipmentController::Update()
     ActionProcessor.Update(
         EquipmentData->Commands,
         EquipmentData->Equipment);
+}
+
+ABBBEquipment *FBBBCharacterEquipmentController::GetActiveEquipment() const
+{
+    if (!EquipmentData)
+    {
+        return nullptr;
+    }
+
+    return EquipmentData->Equipment.GetActiveMainHandInstance();
 }

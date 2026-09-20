@@ -14,9 +14,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadStartedFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBCameraPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadDetachPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadInterruptPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Animation/BBBReloadLoadPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBEquipSlotPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBFirePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBJumpPacket.h"
@@ -79,10 +76,6 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBReloadPacket> Reload;
     TBBBCharacterInputSlot<FBBBFirePacket> Fire;
     TBBBCharacterInputSlot<FBBBJumpPacket> Jump;
-
-    TBBBCharacterInputSlot<FBBBReloadDetachPacket> ReloadDetach;
-    TBBBCharacterInputSlot<FBBBReloadLoadPacket> ReloadLoad;
-    TBBBCharacterInputSlot<FBBBReloadInterruptPacket> ReloadInterrupt;
 
     TBBBCharacterInputSlot<FBBBFullBodyMontagePacket> FullBodyMontage;
     TBBBCharacterInputSlot<FBBBUpperBodyMontagePacket> UpperBodyMontage;
@@ -183,21 +176,6 @@ struct FBBBCharacterInputState final
     void Submit(FBBBJumpPacket Packet)
     {
         Jump.Submit(MoveTemp(Packet));
-    }
-
-    void Submit(FBBBReloadDetachPacket Packet)
-    {
-        ReloadDetach.Submit(MoveTemp(Packet));
-    }
-
-    void Submit(FBBBReloadLoadPacket Packet)
-    {
-        ReloadLoad.Submit(MoveTemp(Packet));
-    }
-
-    void Submit(FBBBReloadInterruptPacket Packet)
-    {
-        ReloadInterrupt.Submit(MoveTemp(Packet));
     }
 
     void Submit(FBBBFullBodyMontagePacket Packet)

@@ -1,21 +1,18 @@
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Instance/Core/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Core/Update/BBBEquipmentUpdatePipeline.h"
+#include "BBBWork/UBBBNexus/Equipment/Definition/BBBEquipmentDefinition.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 
 ABBBEquipment::ABBBEquipment()
 {
-    // 装备演员使用独立更新阶段驱动装备系统
     PrimaryActorTick.bCanEverTick = true;
-    PrimaryActorTick.bStartWithTickEnabled = false;
+    PrimaryActorTick.bStartWithTickEnabled = true;
     PrimaryActorTick.TickGroup = TG_PostUpdateWork;
     PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
     SetActorEnableCollision(false);
 
-    // 创建装备根组件和装备网格
     EquipmentRoot = CreateDefaultSubobject<UArrowComponent>(TEXT("EquipmentRoot"));
     SetRootComponent(EquipmentRoot);
 
@@ -23,9 +20,9 @@ ABBBEquipment::ABBBEquipment()
     EquipmentSkeletalMesh->SetupAttachment(EquipmentRoot);
     EquipmentSkeletalMesh->PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
     EquipmentSkeletalMesh->PrimaryComponentTick.EndTickGroup = TG_PostUpdateWork;
-    EquipmentSkeletalMesh->PrimaryComponentTick.AddPrerequisite(this, PrimaryActorTick);
     EquipmentSkeletalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     EquipmentSkeletalMesh->SetGenerateOverlapEvents(false);
+    PrimaryActorTick.AddPrerequisite(EquipmentSkeletalMesh, EquipmentSkeletalMesh->PrimaryComponentTick);
 }
 
 const FGuid &ABBBEquipment::GetInstanceId() const
@@ -51,7 +48,32 @@ USkeletalMeshComponent *ABBBEquipment::GetEquipmentSkeletalMesh() const
 void ABBBEquipment::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    UpdateEquipment(DeltaSeconds);
+}
 
-    // 装备每帧更新交给装备更新管线
-    UpdatePipeline.Update();
+void ABBBEquipment::SubmitCommand(const FBBBEquipmentCommand &)
+{
+}
+
+void ABBBEquipment::UpdateEquipment(const float)
+{
+}
+
+bool ABBBEquipment::InitializeEquipment(
+    UBBBEquipmentDefinition &InDefinition,
+    const FGuid &InInstanceId,
+    const bool bInIsMirror)
+{
+    Definition = &InDefinition;
+    InstanceId = InInstanceId;
+    bIsMirror = bInIsMirror;
+
+    if (!EquipmentSkeletalMesh)
+    {
+        return false;
+    }
+
+    EquipmentSkeletalMesh->SetSkeletalMesh(InDefinition.EquipmentMesh);
+    EquipmentSkeletalMesh->SetAnimInstanceClass(InDefinition.EquipmentAnimationClass);
+    return true;
 }
