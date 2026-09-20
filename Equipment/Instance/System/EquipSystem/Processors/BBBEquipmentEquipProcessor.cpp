@@ -2,12 +2,12 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/State/BBBEquipmentEquipState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/State/BBBEquipmentFireState.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Fragment/BBBEquipmentEquipFragment.h"
 
 void FBBBEquipmentEquipProcessor::Update(
-    FBBBEquipmentEquipRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
+    FBBBEquipmentEquipState &Data, const FBBBEquipmentFireState &Fire,
     const FBBBEquipmentEquipFragment &Fragment, ABBBCharacter &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {

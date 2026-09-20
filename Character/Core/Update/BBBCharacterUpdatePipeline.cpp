@@ -15,7 +15,7 @@ void FBBBCharacterUpdatePipeline::Update() const
     const bool bAuthority = Character->HasAuthority();
     const bool bLocallyControlled = Character->IsLocallyControlled();
 
-    Character->ParseSystem.Update(bAuthority, bLocallyControlled);
+    Character->ParseSystem.Update();
     Character->EquipmentController.Update();
 
     if (bAuthority || bLocallyControlled)

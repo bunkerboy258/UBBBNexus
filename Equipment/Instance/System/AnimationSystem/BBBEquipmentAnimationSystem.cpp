@@ -3,8 +3,8 @@
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBEquipmentAnimationSystem::Initialize(USkeletalMeshComponent &InCharacterMesh, USkeletalMeshComponent &InWeaponMesh,
-        FBBBEquipmentAnimationRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
-        const FBBBEquipmentReloadRuntimeData &InReload,
+        FBBBEquipmentAnimationState &InData, const FBBBEquipmentFireState &InFire,
+        const FBBBEquipmentReloadState &InReload,
         const FBBBEquipmentEquipFragment &InEquipFragment, const FBBBEquipmentFireFragment &InFireFragment)
 {
     CharacterMesh = &InCharacterMesh;

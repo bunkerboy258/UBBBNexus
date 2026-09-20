@@ -5,11 +5,10 @@ bool FBBBEquipSlotPacket::IsValid() const
     return Slot != INDEX_NONE;
 }
 
-bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     // 只有权威端可以把切换请求转化为装备事实
-    if (!Context.bAuthority
-        || !Context.Inventory.QuickAccessBindings.IsValidIndex(Slot))
+    if (!Context.Inventory.QuickAccessBindings.IsValidIndex(Slot))
     {
         return false;
     }
@@ -18,7 +17,7 @@ bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterPacketContext &Context) co
     return ::IsValid(Target) && Target != Context.Equipment.GetActiveMainHandInstance();
 }
 
-void FBBBEquipSlotPacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBEquipSlotPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     // 切换装备打断进行中的换弹
     if (Context.Operation.IsReloadInProgress())

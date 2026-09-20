@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputSubmit.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterReloadEndReason.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterReloadEndReasonDefinition.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/BBBCharacterAimController.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/BBBCharacterAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/BBBCharacterEquipmentController.h"
@@ -106,7 +106,7 @@ public:
      * @return 无
      */
     UFUNCTION(BlueprintCallable, Category = "BBB|Animation Input")
-    void ReportReloadEndNotify(int32 Sequence, EBBBCharacterReloadEndReason EndReason);
+    void ReportReloadEndNotify(int32 Sequence, EBBBCharacterReloadEndReasonDefinition EndReason);
 
 private:
 

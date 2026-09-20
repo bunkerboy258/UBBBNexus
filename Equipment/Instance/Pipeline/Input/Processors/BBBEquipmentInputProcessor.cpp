@@ -7,13 +7,13 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadCancelledFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadStartedFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/Definition/BBBEquipmentInputRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/State/BBBEquipmentEquipState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/State/BBBEquipmentFireState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/State/BBBEquipmentReloadState.h"
 
 void FBBBEquipmentInputProcessor::Update(
-    FBBBEquipmentInputRuntimeData &Input, FBBBEquipmentEquipRuntimeData &Equip,
-    FBBBEquipmentFireRuntimeData &Fire, FBBBEquipmentReloadRuntimeData &Reload,
+    FBBBEquipmentInputRuntimeData &Input, FBBBEquipmentEquipState &Equip,
+    FBBBEquipmentFireState &Fire, FBBBEquipmentReloadState &Reload,
     const FName EquipmentId, const bool bIsMirror) const
 {
     // 取出本帧输入并清空原始队列

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-struct FBBBAnimationRuntimeData;
+struct FBBBAnimationState;
 struct FBBBCharacterAnimationConfig;
 struct FBBBCharacterEquipmentState;
 class USkeletalMeshComponent;
@@ -22,6 +22,6 @@ public:
     void Update(
         const FBBBCharacterEquipmentState &EquipmentState,
         const FBBBCharacterAnimationConfig &AnimationConfig,
-        FBBBAnimationRuntimeData &AnimationData,
+        FBBBAnimationState &AnimationData,
         USkeletalMeshComponent &CharacterMesh) const;
 };

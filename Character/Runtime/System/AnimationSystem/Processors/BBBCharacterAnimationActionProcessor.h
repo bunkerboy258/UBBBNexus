@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 
 class UBBBAnimInstance;
-struct FBBBAnimationRuntimeData;
+struct FBBBAnimationState;
 
 /** 消费角色已经仲裁完成的瞬时动画动作 */
 class ABBB_EVAC_API FBBBCharacterAnimationActionProcessor final
@@ -17,5 +17,5 @@ public:
      */
     void Update(
         UBBBAnimInstance &AnimInstance,
-        FBBBAnimationRuntimeData &AnimationData) const;
+        FBBBAnimationState &AnimationData) const;
 };

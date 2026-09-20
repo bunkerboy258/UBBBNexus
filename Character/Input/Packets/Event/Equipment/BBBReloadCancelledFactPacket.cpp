@@ -6,18 +6,14 @@ bool FBBBReloadCancelledFactPacket::IsValid() const
     return Sequence > 0;
 }
 
-bool FBBBReloadCancelledFactPacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBReloadCancelledFactPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return true;
 }
 
-void FBBBReloadCancelledFactPacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBReloadCancelledFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    if (Context.Operation.IsRestoreMode())
-    {
-        Context.Commands.SubmitRestoredAction(ToFact());
-    }
-
+    Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
     Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.GetActiveEquipmentId(), true);
 }

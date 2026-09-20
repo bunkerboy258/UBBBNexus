@@ -1,10 +1,10 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Playback/BBBMontagePlayback.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 
 void FBBBCharacterAnimationActionProcessor::Update(
-    UBBBAnimInstance &AnimInstance, FBBBAnimationRuntimeData &AnimationData) const
+    UBBBAnimInstance &AnimInstance, FBBBAnimationState &AnimationData) const
 {
     // 播放结束只清理属于自身修订号的槽 新播放不能被旧回调清空
     for (UBBBMontagePlayback *Playback : AnimationData.Playbacks)

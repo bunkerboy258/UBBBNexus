@@ -1,6 +1,6 @@
-# 角色固定输入帧
+# 角色固定输入
 
-所有角色输入只通过 `ABBBCharacter::SubmitInput(Packet)` 提交。每种包在 `FBBBCharacterInputFrame` 中拥有一个固定槽位，槽位由“激活标记 + 最新数据”组成，同类型输入默认覆盖旧值。
+所有角色输入只通过 `ABBBCharacter::SubmitInput(Packet)` 提交。每种包在 `FBBBCharacterInputState` 中拥有一个固定槽位，槽位由“激活标记 + 最新数据”组成，同类型输入默认覆盖旧值。
 
 ```text
 Input/
@@ -15,10 +15,12 @@ Input/
     ├── Presentation/            五个独立蒙太奇槽位与相机表现
     └── _Template/               新输入包模板
 
-ParseSystem/Context/
-├── BBBCharacterInputFrame       全部固定槽位与提交映射
-├── BBBCharacterPacketContext    输入包共享的只读解析上下文
+ParseSystem/State/
+├── BBBCharacterInputState       全部固定槽位与提交映射
 └── BBBCharacterParseState       解析期间的换弹、切枪和瞬时操作状态
+
+ParseSystem/Context/
+└── BBBCharacterInputContext     输入包共享的临时解析上下文
 ```
 
 ## 包语义
@@ -42,7 +44,7 @@ ParseSystem/Context/
 ## 新增输入包
 
 1. 复制 `Packets/_Template/BBBTemplatePacket.h/.cpp` 并实现三项行为。
-2. 在 `FBBBCharacterInputFrame` 增加一个明确命名的固定槽位和一个 `Submit` 重载。
+2. 在 `FBBBCharacterInputState` 增加一个明确命名的固定槽位和一个 `Submit` 重载。
 3. 在 `FBBBCharacterInputProcessor::Update` 的预期位置增加一行 `Process`。
 4. 如需联网，明确它属于客户端命令、权威事实还是远端还原输入，并在对应网络边界增加传输结构。
 

@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBFireFactPacket.h"
@@ -6,14 +7,9 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBMagazineLoadedFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadCancelledFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadStartedFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterAimPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterMovementPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBEquipSlotPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBFirePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBReloadPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Replication/BBBRestoreAimPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Replication/BBBRestoreEquipmentPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/Replication/BBBRestoreLocomotionPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBAimStatePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBEquipmentStatePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBLocomotionStatePacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -26,185 +22,177 @@ UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
 void UBBBCharacterNetworkComponent::Initialize(ABBBCharacter &InCharacter)
 {
     Character = &InCharacter;
+    ReplicatedFactLedger.Initialize(*this);
 }
 
 void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAimState, COND_SkipOwner);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLocomotionState, COND_SkipOwner);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedFactLedger, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentId, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAimState, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLocomotionState, COND_SimulatedOnly);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitControlPacket_Implementation(
-    FBBBCharacterControlNetworkPacket Packet)
+void UBBBCharacterNetworkComponent::ServerSubmitEquipmentFact_Implementation(FBBBEquipmentActionFact Fact)
 {
-    if (!ensureMsgf(Character && IsOwnerAuthority(),
-        TEXT("[UBBBC]Control command arrived without an authoritative character")))
+    if (!ensureMsgf(Character && IsOwnerAuthority() && Fact.Sequence > 0 && Fact.EquipmentId != NAME_None,
+        TEXT("[UBBBC]Equipment fact delivery was rejected")))
     {
         return;
     }
 
-    if (Packet.bMovementActive)
-    {
-        FBBBCharacterMovementPacket Movement;
-        Movement.MoveWorld = Packet.MoveWorld;
-        Movement.FacingWorld = Packet.FacingWorld;
-        Movement.bWalk = Packet.bWalk;
-        Movement.bSprint = Packet.bSprint;
-        Movement.bCrouch = Packet.bCrouch;
-        Character->SubmitInput(MoveTemp(Movement));
-    }
-
-    if (Packet.bAimActive)
-    {
-        FBBBCharacterAimPacket Aim;
-        Aim.AimTargetWorld = Packet.AimTargetWorld;
-        Aim.bAim = Packet.bAim;
-        Character->SubmitInput(MoveTemp(Aim));
-    }
-
-    if (Packet.bFire)
-    {
-        Character->SubmitInput(FBBBFirePacket{});
-    }
+    DeliverEquipmentFact(Fact);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitActionPacket_Implementation(
-    FBBBCharacterActionNetworkPacket Packet)
+void UBBBCharacterNetworkComponent::ServerSubmitEquipmentState_Implementation(const FName EquipmentId)
 {
-    if (!ensureMsgf(Character && IsOwnerAuthority(),
-        TEXT("[UBBBC]Action command arrived without an authoritative character")))
+    if (!ensureMsgf(Character && IsOwnerAuthority() && EquipmentId != NAME_None,
+        TEXT("[UBBBC]Equipment state delivery was rejected")))
     {
         return;
     }
 
-    if (Packet.bEquipSlot)
-    {
-        FBBBEquipSlotPacket Equip;
-        Equip.Slot = Packet.EquipSlot;
-        Character->SubmitInput(MoveTemp(Equip));
-    }
-
-    if (Packet.bReload)
-    {
-        Character->SubmitInput(FBBBReloadPacket{});
-    }
+    DeliverEquipmentState(EquipmentId);
 }
 
-void UBBBCharacterNetworkComponent::MulticastEquipmentPacket_Implementation(FBBBEquipmentNetworkPacket Packet)
+void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkState AimState)
 {
-    if (!Character || IsOwnerAuthority())
+    if (!ensureMsgf(Character && IsOwnerAuthority() && !FVector(AimState.AimTargetWorld).ContainsNaN(),
+        TEXT("[UBBBC]Aim state delivery was rejected")))
     {
         return;
     }
 
-    FBBBRestoreEquipmentPacket Restore;
-    Restore.EquipmentHandle = Packet.EquipmentHandle;
-    Character->SubmitInput(Restore);
+    DeliverAimState(AimState);
 }
 
-void UBBBCharacterNetworkComponent::MulticastEquipmentActionPacket_Implementation(FBBBEquipmentActionNetworkPacket Packet)
+void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(
+    FBBBLocomotionNetworkState LocomotionState)
 {
-    if (!Character || IsOwnerAuthority())
+    if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("[UBBBC]Locomotion state delivery was rejected")))
     {
         return;
     }
 
-    // PacketId 到还原事实包的唯一翻译点 线上协议与包类型在此对应
-    switch (Packet.PacketId)
-    {
-    case FBBBFireFactPacket::PacketId:
-    {
-        FBBBFireFactPacket Restore;
-        Restore.EquipmentId = Packet.EquipmentId;
-        Restore.Sequence = Packet.Sequence;
-        Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Character->SubmitInput(Restore);
-        break;
-    }
-    case FBBBReloadStartedFactPacket::PacketId:
-    {
-        FBBBReloadStartedFactPacket Restore;
-        Restore.EquipmentId = Packet.EquipmentId;
-        Restore.Sequence = Packet.Sequence;
-        Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Character->SubmitInput(Restore);
-        break;
-    }
-    case FBBBMagazineDetachedFactPacket::PacketId:
-    {
-        FBBBMagazineDetachedFactPacket Restore;
-        Restore.EquipmentId = Packet.EquipmentId;
-        Restore.Sequence = Packet.Sequence;
-        Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Character->SubmitInput(Restore);
-        break;
-    }
-    case FBBBMagazineLoadedFactPacket::PacketId:
-    {
-        FBBBMagazineLoadedFactPacket Restore;
-        Restore.EquipmentId = Packet.EquipmentId;
-        Restore.Sequence = Packet.Sequence;
-        Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Character->SubmitInput(Restore);
-        break;
-    }
-    case FBBBReloadCancelledFactPacket::PacketId:
-    {
-        FBBBReloadCancelledFactPacket Restore;
-        Restore.EquipmentId = Packet.EquipmentId;
-        Restore.Sequence = Packet.Sequence;
-        Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Character->SubmitInput(Restore);
-        break;
-    }
-    case FBBBEquipFactPacket::PacketId:
-    {
-        FBBBEquipFactPacket Restore;
-        Restore.EquipmentId = Packet.EquipmentId;
-        Restore.Sequence = Packet.Sequence;
-        Restore.LoadedAmmo = Packet.LoadedAmmo;
-        Character->SubmitInput(Restore);
-        break;
-    }
-    default:
-        ensureMsgf(false, TEXT("[UBBBC]Unknown equipment action packet id %d"), Packet.PacketId);
-        break;
-    }
+    DeliverLocomotionState(LocomotionState);
+}
+
+void UBBBCharacterNetworkComponent::OnRep_ReplicatedEquipmentId()
+{
+    DeliverEquipmentState(ReplicatedEquipmentId);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
 {
-    if (!Character)
-    {
-        return;
-    }
-
-    FBBBRestoreAimPacket Restore;
-    Restore.State = FBBBAimRuntimeState{ReplicatedAimState.bIsAiming, ReplicatedAimState.AimTargetWorld};
-    Character->SubmitInput(Restore);
+    DeliverAimState(ReplicatedAimState);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
 {
-    if (!Character)
+    DeliverLocomotionState(ReplicatedLocomotionState);
+}
+
+void UBBBCharacterNetworkComponent::PublishEquipmentFact(FBBBEquipmentActionFact Fact)
+{
+    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish equipment facts")))
     {
         return;
     }
 
-    FBBBRestoreLocomotionPacket Restore;
-    Restore.Gait = ReplicatedLocomotionState.Gait;
-    Character->SubmitInput(Restore);
+    ReplicatedFactLedger.Append(MoveTemp(Fact));
+    GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::SetReplicatedAimState(const FBBBAimNetworkState &AimState)
+void UBBBCharacterNetworkComponent::PublishEquipmentState(const FName EquipmentId)
 {
+    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish equipment state")))
+    {
+        return;
+    }
+
+    ReplicatedEquipmentId = EquipmentId;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::PublishAimState(const FBBBAimNetworkState &AimState)
+{
+    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish aim state")))
+    {
+        return;
+    }
+
     ReplicatedAimState = AimState;
+    GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::SetReplicatedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+void UBBBCharacterNetworkComponent::PublishLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
 {
+    if (!ensureMsgf(IsOwnerAuthority(), TEXT("[UBBBC]Only authority may publish locomotion state")))
+    {
+        return;
+    }
+
     ReplicatedLocomotionState = LocomotionState;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::DeliverEquipmentFact(const FBBBEquipmentActionFact &Fact)
+{
+    if (!ensureMsgf(Character, TEXT("[UBBBC]Equipment fact arrived without a character")))
+    {
+        return;
+    }
+
+    switch (Fact.PacketId)
+    {
+    case FBBBEquipFactPacket::PacketId:
+        Character->SubmitInput(FBBBEquipFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        return;
+    case FBBBFireFactPacket::PacketId:
+        Character->SubmitInput(FBBBFireFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        return;
+    case FBBBReloadStartedFactPacket::PacketId:
+        Character->SubmitInput(FBBBReloadStartedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        return;
+    case FBBBMagazineDetachedFactPacket::PacketId:
+        Character->SubmitInput(FBBBMagazineDetachedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        return;
+    case FBBBMagazineLoadedFactPacket::PacketId:
+        Character->SubmitInput(FBBBMagazineLoadedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        return;
+    case FBBBReloadCancelledFactPacket::PacketId:
+        Character->SubmitInput(FBBBReloadCancelledFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
+        return;
+    default:
+        ensureMsgf(false, TEXT("[UBBBC]Unknown equipment fact packet id %d"), Fact.PacketId);
+        return;
+    }
+}
+
+void UBBBCharacterNetworkComponent::DeliverEquipmentState(const FName EquipmentId)
+{
+    if (Character && EquipmentId != NAME_None)
+    {
+        Character->SubmitInput(FBBBEquipmentStatePacket{EquipmentId});
+    }
+}
+
+void UBBBCharacterNetworkComponent::DeliverAimState(const FBBBAimNetworkState &AimState)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBAimStatePacket{
+            FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::DeliverLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBLocomotionStatePacket{LocomotionState.Gait});
+    }
 }
 
 bool UBBBCharacterNetworkComponent::IsOwnerLocallyControlled() const

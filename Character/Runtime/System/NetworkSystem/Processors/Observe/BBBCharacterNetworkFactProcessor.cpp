@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 
 void FBBBCharacterNetworkFactProcessor::Update(
-    FBBBNetworkRuntimeData &NetworkData,
+    FBBBNetworkState &NetworkData,
     const float WorldTimeSeconds,
     const FBBBAimRuntimeData &AimData,
     const FBBBCharacterLocomotionRuntimeData &LocomotionData,

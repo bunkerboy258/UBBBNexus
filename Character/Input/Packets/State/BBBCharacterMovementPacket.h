@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-struct FBBBCharacterPacketContext;
+struct FBBBCharacterInputContext;
 
 /**
  * 移动基底快照包 每帧覆盖控制基座的移动与步态意图
@@ -29,11 +29,11 @@ struct FBBBCharacterMovementPacket final
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
      * 覆盖控制基座的移动与步态意图
      * @param Context	黑板上下文
      */
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };

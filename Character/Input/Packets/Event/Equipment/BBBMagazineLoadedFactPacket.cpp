@@ -6,18 +6,14 @@ bool FBBBMagazineLoadedFactPacket::IsValid() const
     return Sequence > 0;
 }
 
-bool FBBBMagazineLoadedFactPacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBMagazineLoadedFactPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return true;
 }
 
-void FBBBMagazineLoadedFactPacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBMagazineLoadedFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    if (Context.Operation.IsRestoreMode())
-    {
-        Context.Commands.SubmitRestoredAction(ToFact());
-    }
-
+    Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
     Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.GetActiveEquipmentId(), false);
 }

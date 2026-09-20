@@ -6,24 +6,19 @@ bool FBBBFireFactPacket::IsValid() const
     return Sequence > 0;
 }
 
-bool FBBBFireFactPacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBFireFactPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return true;
 }
 
-void FBBBFireFactPacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBFireFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    if (Context.Operation.IsRestoreMode())
+    if (Context.Operation.IsReloadInProgress())
     {
-        // 远端开火意味着其换弹不再有效 本地追踪同步中止
-        if (Context.Operation.IsReloadInProgress())
-        {
-            Context.Operation.CancelReload();
-        }
-
-        Context.Commands.SubmitRestoredAction(ToFact());
+        Context.Operation.CancelReload();
     }
 
+    Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
 }
 

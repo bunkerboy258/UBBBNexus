@@ -65,10 +65,14 @@ void FBBBEquipmentExternalAPI::SubmitCancelPendingActions()
     Enqueue(EBBBEquipmentInputType::CancelPendingActions, INDEX_NONE);
 }
 
-void FBBBEquipmentExternalAPI::ApplySnapshot(const FBBBEquipmentActionFact &Snapshot)
+void FBBBEquipmentExternalAPI::SubmitFact(const FBBBEquipmentActionFact &Fact)
 {
-    // 镜像装备只允许接收恢复快照
-    if (!ensureMsgf(IsInGameThread() && Input && bIsMirror, TEXT("[UBBBE]Snapshot input requires a mirror instance")))
+    if (!ensureMsgf(IsInGameThread() && Input, TEXT("[UBBBE]Fact input requires initialized equipment")))
+    {
+        return;
+    }
+
+    if (!bIsMirror)
     {
         return;
     }
@@ -76,7 +80,7 @@ void FBBBEquipmentExternalAPI::ApplySnapshot(const FBBBEquipmentActionFact &Snap
     // 将恢复快照放入待处理队列
     FBBBEquipmentInput Entry;
     Entry.Type = EBBBEquipmentInputType::Snapshot;
-    Entry.Sequence = Snapshot.Sequence;
-    Entry.Snapshot = Snapshot;
+    Entry.Sequence = Fact.Sequence;
+    Entry.Snapshot = Fact;
     Input->Pending.Add(MoveTemp(Entry));
 }

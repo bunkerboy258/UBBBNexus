@@ -4,7 +4,7 @@
 
 class FBBBCharacterNetworkSystem;
 struct FBBBCharacterLocomotionRuntimeData;
-struct FBBBNetworkRuntimeData;
+struct FBBBNetworkState;
 
 /** 将本地移动步态变化上传到权威端 */
 class ABBB_EVAC_API FBBBLocomotionUploadProcessor final
@@ -18,6 +18,6 @@ public:
      */
     void Update(
         const FBBBCharacterLocomotionRuntimeData &LocomotionData,
-        FBBBNetworkRuntimeData &NetworkData,
+        FBBBNetworkState &NetworkData,
         FBBBCharacterNetworkSystem &NetworkSystem) const;
 };

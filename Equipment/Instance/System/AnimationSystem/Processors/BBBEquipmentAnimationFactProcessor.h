@@ -6,10 +6,10 @@ class ABBBEquipment;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;
-struct FBBBEquipmentEquipRuntimeData;
-struct FBBBEquipmentFireRuntimeData;
-struct FBBBEquipmentReloadRuntimeData;
-struct FBBBEquipmentAnimationRuntimeData;
+struct FBBBEquipmentEquipState;
+struct FBBBEquipmentFireState;
+struct FBBBEquipmentReloadState;
+struct FBBBEquipmentAnimationState;
 struct FBBBEquipmentEquipFragment;
 struct FBBBEquipmentFireFragment;
 struct FBBBEquipmentReloadFragment;
@@ -23,7 +23,7 @@ private:
 
     /** 处理本帧系统数据 */
     void Update(USkeletalMeshComponent &CharacterMesh, USkeletalMeshComponent &WeaponMesh,
-        FBBBEquipmentAnimationRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
-        const FBBBEquipmentReloadRuntimeData &Reload,
+        FBBBEquipmentAnimationState &Data, const FBBBEquipmentFireState &Fire,
+        const FBBBEquipmentReloadState &Reload,
         const FBBBEquipmentEquipFragment &EquipFragment, const FBBBEquipmentFireFragment &FireFragment) const;
 };

@@ -7,10 +7,10 @@ class ABBBCharacter;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;
-struct FBBBEquipmentEquipRuntimeData;
-struct FBBBEquipmentFireRuntimeData;
-struct FBBBEquipmentReloadRuntimeData;
-struct FBBBEquipmentAnimationRuntimeData;
+struct FBBBEquipmentEquipState;
+struct FBBBEquipmentFireState;
+struct FBBBEquipmentReloadState;
+struct FBBBEquipmentAnimationState;
 struct FBBBEquipmentEquipFragment;
 struct FBBBEquipmentFireFragment;
 struct FBBBEquipmentReloadFragment;
@@ -24,7 +24,7 @@ private:
 
     /** 处理本帧系统数据 */
     void Update(ABBBEquipment &Instance, USkeletalMeshComponent &WeaponMesh,
-        FBBBEquipmentFireRuntimeData &Data, const FBBBEquipmentReloadRuntimeData &Reload,
+        FBBBEquipmentFireState &Data, const FBBBEquipmentReloadState &Reload,
         const FBBBEquipmentFireFragment &Fragment, ABBBCharacter &CharacterAPI,
         FName EquipmentId, bool bIsMirror) const;
 };

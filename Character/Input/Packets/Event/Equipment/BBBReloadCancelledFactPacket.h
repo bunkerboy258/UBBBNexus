@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 
 struct FBBBEquipmentActionFact;
 
@@ -28,13 +28,13 @@ struct FBBBReloadCancelledFactPacket final
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
      * 留档事实并以取消方式完结换弹追踪 还原模式同时下发镜像装备快照
      * @param Context	黑板上下文
      */
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 
     /** @return 对应的事实记录 */
     FBBBEquipmentActionFact ToFact() const;

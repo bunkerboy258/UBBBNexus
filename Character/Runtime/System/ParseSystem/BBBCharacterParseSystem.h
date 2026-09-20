@@ -16,7 +16,7 @@ public:
      * @param bAuthority          当前实例是否拥有玩法权威
      * @param bLocallyControlled 当前实例是否由本机控制
      */
-    void Update(bool bAuthority, bool bLocallyControlled) const;
+    void Update() const;
 
 private:
     friend class FBBBCharacterInitializer;

@@ -5,13 +5,13 @@ bool FBBBJumpPacket::IsValid() const
     return true;
 }
 
-bool FBBBJumpPacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBJumpPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     // 跳跃允许本机预测，普通模拟代理不生成跳跃控制
-    return Context.bAuthority || Context.bLocallyControlled;
+    return true;
 }
 
-void FBBBJumpPacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBJumpPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     Context.Operation.CommitJump();
 }

@@ -8,10 +8,10 @@ class ABBBCharacter;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;
-struct FBBBEquipmentEquipRuntimeData;
-struct FBBBEquipmentFireRuntimeData;
-struct FBBBEquipmentReloadRuntimeData;
-struct FBBBEquipmentAnimationRuntimeData;
+struct FBBBEquipmentEquipState;
+struct FBBBEquipmentFireState;
+struct FBBBEquipmentReloadState;
+struct FBBBEquipmentAnimationState;
 struct FBBBEquipmentEquipFragment;
 struct FBBBEquipmentFireFragment;
 struct FBBBEquipmentReloadFragment;
@@ -26,15 +26,15 @@ private:
     friend class FBBBEquipmentUpdatePipeline;
 
     /** 注入本系统所需的数据与行为配置 */
-    void Initialize(FBBBEquipmentEquipRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
+    void Initialize(FBBBEquipmentEquipState &InData, const FBBBEquipmentFireState &InFire,
         const FBBBEquipmentEquipFragment &InFragment, ABBBCharacter &InCharacterAPI,
         FName InEquipmentId, bool bInIsMirror);
 
     /** 更新本系统 */
     void Update() const;
 
-    FBBBEquipmentEquipRuntimeData *Data = nullptr;
-    const FBBBEquipmentFireRuntimeData *Fire = nullptr;
+    FBBBEquipmentEquipState *Data = nullptr;
+    const FBBBEquipmentFireState *Fire = nullptr;
     const FBBBEquipmentEquipFragment *Fragment = nullptr;
     ABBBCharacter *CharacterAPI = nullptr;
     FName EquipmentId;

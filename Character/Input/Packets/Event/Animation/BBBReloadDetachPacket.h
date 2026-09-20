@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 
 /**
  * 换弹卸下弹匣动画通知包
@@ -21,11 +21,11 @@ struct FBBBReloadDetachPacket final
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
      * 推进卸下阶段并转发装备命令
      * @param Context	黑板上下文
      */
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };

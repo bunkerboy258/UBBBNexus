@@ -31,13 +31,13 @@ namespace BBBCharacterInput
             return false;
         }
 
-        if (!ensureMsgf(!Data.InputFrame.IsProcessing(),
+        if (!ensureMsgf(!Data.InputState.IsProcessing(),
             TEXT("[UBBBC]Input submission is forbidden while the fixed frame is being processed")))
         {
             return false;
         }
 
-        Data.InputFrame.Submit(Forward<TPacket>(Packet));
+        Data.InputState.Submit(Forward<TPacket>(Packet));
         return true;
     }
 }

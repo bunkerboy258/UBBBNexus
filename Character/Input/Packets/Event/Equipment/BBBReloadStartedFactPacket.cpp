@@ -6,18 +6,14 @@ bool FBBBReloadStartedFactPacket::IsValid() const
     return Sequence > 0;
 }
 
-bool FBBBReloadStartedFactPacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBReloadStartedFactPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return true;
 }
 
-void FBBBReloadStartedFactPacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBReloadStartedFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    if (Context.Operation.IsRestoreMode())
-    {
-        Context.Commands.SubmitRestoredAction(ToFact());
-    }
-
+    Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
     Context.Operation.TrackReloadStarted(
         Sequence,

@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -9,7 +9,7 @@
 void FBBBCharacterAnimationLayerProcessor::Update(
     const FBBBCharacterEquipmentState &EquipmentState,
     const FBBBCharacterAnimationConfig &AnimationConfig,
-    FBBBAnimationRuntimeData &AnimationData,
+    FBBBAnimationState &AnimationData,
     USkeletalMeshComponent &CharacterMesh) const
 {
     // 默认使用角色动画层并允许当前装备覆盖

@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 class FBBBCharacterNetworkSystem;
 struct FBBBCharacterEquipmentState;
-struct FBBBNetworkRuntimeData;
+struct FBBBNetworkState;
 
 class ABBB_EVAC_API FBBBEquipmentUploadProcessor final
 {
@@ -17,6 +17,6 @@ public:
      */
     void Update(
         const FBBBCharacterEquipmentState &EquipmentState,
-        FBBBNetworkRuntimeData &NetworkData,
+        FBBBNetworkState &NetworkData,
         FBBBCharacterNetworkSystem &NetworkSystem) const;
 };

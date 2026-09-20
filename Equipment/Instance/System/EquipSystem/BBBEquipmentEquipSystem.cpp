@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/BBBEquipmentEquipSystem.h"
 
-void FBBBEquipmentEquipSystem::Initialize(FBBBEquipmentEquipRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
+void FBBBEquipmentEquipSystem::Initialize(FBBBEquipmentEquipState &InData, const FBBBEquipmentFireState &InFire,
         const FBBBEquipmentEquipFragment &InFragment, ABBBCharacter &InCharacterAPI,
         FName InEquipmentId, bool bInIsMirror)
 {

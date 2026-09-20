@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 
 /**
  * 快捷槽切枪请求包 请求带内最高优先级
@@ -21,11 +21,11 @@ struct FBBBEquipSlotPacket final
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
      * 取消换弹并登记期望主手装备
      * @param Context	黑板上下文
      */
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };

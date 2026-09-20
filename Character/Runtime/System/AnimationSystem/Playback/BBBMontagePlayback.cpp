@@ -70,7 +70,7 @@ void UBBBMontagePlayback::OnNotify(const FName Name, const FBranchingPointNotify
             return;
         }
         bEndReported = true;
-        Character->ReportReloadEndNotify(Sequence, EBBBCharacterReloadEndReason::Loaded);
+        Character->ReportReloadEndNotify(Sequence, EBBBCharacterReloadEndReasonDefinition::Loaded);
     }
 }
 
@@ -101,7 +101,7 @@ void UBBBMontagePlayback::Finish(const bool bInterrupted)
     if (bReload && !bEndReported && Character.IsValid())
     {
         Character->ReportReloadEndNotify(Sequence, bInterrupted
-            ? EBBBCharacterReloadEndReason::Interrupted : EBBBCharacterReloadEndReason::PlaybackFailed);
+            ? EBBBCharacterReloadEndReasonDefinition::Interrupted : EBBBCharacterReloadEndReasonDefinition::PlaybackFailed);
     }
     Unbind();
 }

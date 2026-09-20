@@ -8,13 +8,13 @@ bool FBBBTemplatePacket::IsValid() const
     return true;
 }
 
-bool FBBBTemplatePacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBTemplatePacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     // TODO: 只读取上下文，冲突规则留在本包内
     return true;
 }
 
-void FBBBTemplatePacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBTemplatePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     // TODO: 只修改本包负责的黑板区域
 }

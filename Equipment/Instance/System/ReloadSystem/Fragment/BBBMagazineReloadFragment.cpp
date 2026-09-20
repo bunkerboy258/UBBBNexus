@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Context/BBBEquipmentReloadContext.h"
 
 bool FBBBMagazineReloadFragment::CanReload(
     const int32 LoadedAmmo,

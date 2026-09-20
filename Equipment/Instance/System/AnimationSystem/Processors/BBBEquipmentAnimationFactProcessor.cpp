@@ -1,9 +1,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/Processors/BBBEquipmentAnimationFactProcessor.h"
 
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/Definition/BBBEquipmentAnimationRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/State/BBBEquipmentAnimationState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/State/BBBEquipmentFireState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/State/BBBEquipmentReloadState.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Fragment/BBBEquipmentEquipFragment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Fragment/BBBEquipmentFireFragment.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -11,8 +11,8 @@
 
 void FBBBEquipmentAnimationFactProcessor::Update(
     USkeletalMeshComponent &CharacterMesh, USkeletalMeshComponent &WeaponMesh,
-    FBBBEquipmentAnimationRuntimeData &Data, const FBBBEquipmentFireRuntimeData &Fire,
-    const FBBBEquipmentReloadRuntimeData &Reload,
+    FBBBEquipmentAnimationState &Data, const FBBBEquipmentFireState &Fire,
+    const FBBBEquipmentReloadState &Reload,
     const FBBBEquipmentEquipFragment &EquipFragment, const FBBBEquipmentFireFragment &FireFragment) const
 {
     // 取得装备动画实例和世界时间来源

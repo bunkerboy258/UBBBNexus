@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/BBBEquipmentReloadSystem.h"
 
-void FBBBEquipmentReloadSystem::Initialize(FBBBEquipmentReloadRuntimeData &InData, FBBBEquipmentFireRuntimeData &InFire,
+void FBBBEquipmentReloadSystem::Initialize(FBBBEquipmentReloadState &InData, FBBBEquipmentFireState &InFire,
         const FBBBEquipmentReloadFragment &InFragment, ABBBCharacter &InCharacterAPI,
         FName InEquipmentId, bool bInIsMirror)
 {

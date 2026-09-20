@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 
 /**
  * 相机表现贡献包 提交一次冲量与恢复速度
@@ -21,11 +21,11 @@ struct FBBBCameraPacket final
      * @param Context	黑板上下文
      * @return 是否允许执行
      */
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
      * 追加相机表现贡献
      * @param Context	黑板上下文
      */
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };

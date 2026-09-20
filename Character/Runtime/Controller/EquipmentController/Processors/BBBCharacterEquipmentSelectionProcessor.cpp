@@ -19,20 +19,20 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
 {
     // 先处理网络恢复的装备实例
     bool bRestoringEquipment = false;
-    UBBBEquipmentDefinition *RestoredDefinition = EquipmentCommands.ConsumeRestoredEquipment();
-    if (RestoredDefinition)
+    UBBBEquipmentDefinition *StateDefinition = EquipmentCommands.ConsumeEquipmentState();
+    if (StateDefinition)
     {
-        ABBBEquipment *RestoredInstance = FBBBCharacterEquipmentLifecycleProcessor::Create(
+        ABBBEquipment *StateInstance = FBBBCharacterEquipmentLifecycleProcessor::Create(
             Character,
-            *RestoredDefinition,
+            *StateDefinition,
             true);
-        if (!ensureMsgf(RestoredInstance, TEXT("[UBBBC]Restored equipment instance creation failed")))
+        if (!ensureMsgf(StateInstance, TEXT("[UBBBC]Equipment state instance creation failed")))
         {
             return;
         }
 
         // 恢复实例作为新的目标装备等待后续附着
-        EquipmentState.DesiredMainHandInstance = RestoredInstance;
+        EquipmentState.DesiredMainHandInstance = StateInstance;
         bRestoringEquipment = true;
     }
 

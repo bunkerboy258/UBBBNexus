@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 namespace
 {
     //判断是否满足提交条件(最重要的作用是避免频繁提交卡爆带宽)
@@ -44,7 +44,7 @@ void FBBBAimUploadProcessor::Update(
     const FBBBAimRuntimeData &AimData,
     const FBBBCharacterNetworkConfig &NetworkConfig,
     float WorldTimeSeconds,
-    FBBBNetworkRuntimeData &NetworkData,
+    FBBBNetworkState &NetworkData,
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
 

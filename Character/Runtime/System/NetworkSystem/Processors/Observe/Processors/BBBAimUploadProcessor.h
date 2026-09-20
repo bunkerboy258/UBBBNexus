@@ -4,7 +4,7 @@
 class FBBBCharacterNetworkSystem;
 struct FBBBCharacterNetworkConfig;
 struct FBBBAimRuntimeData;
-struct FBBBNetworkRuntimeData;
+struct FBBBNetworkState;
 
 class ABBB_EVAC_API FBBBAimUploadProcessor final
 {
@@ -22,6 +22,6 @@ public:
         const FBBBAimRuntimeData &AimData,
         const FBBBCharacterNetworkConfig &NetworkConfig,
         float WorldTimeSeconds,
-        FBBBNetworkRuntimeData &NetworkData,
+        FBBBNetworkState &NetworkData,
         FBBBCharacterNetworkSystem &NetworkSystem) const;
 };

@@ -1,10 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentActionNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkCommandProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkRemoteProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/BBBCharacterNetworkFactProcessor.h"
 
 class FBBBCharacterInitializer;
@@ -13,12 +9,12 @@ struct FBBBAimRuntimeData;
 struct FBBBAimNetworkState;
 struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
-struct FBBBCharacterInputFrame;
+struct FBBBEquipmentActionFact;
 struct FBBBCharacterLocomotionRuntimeData;
 struct FBBBLocomotionNetworkState;
 struct FBBBCharacterNetworkConfig;
 struct FBBBCharacterWorldRuntimeData;
-struct FBBBNetworkRuntimeData;
+struct FBBBNetworkState;
 
 /**
  * 角色网络边界
@@ -41,7 +37,7 @@ private:
     /**
      * 注入角色网络阶段需要的黑板和传输依赖
      * @param InNetworkData       网络观测状态
-     * @param InInputFrame        角色固定输入帧
+     * @param InInputState        角色固定输入帧
      * @param InAimData           角色瞄准状态
      * @param InLocomotionData    角色移动状态
      * @param InEquipmentState    角色装备状态
@@ -51,8 +47,7 @@ private:
      * @param InNetworkConfig     网络发送配置
      */
     void Initialize(
-        FBBBNetworkRuntimeData &InNetworkData,
-        FBBBCharacterInputFrame &InInputFrame,
+        FBBBNetworkState &InNetworkData,
         FBBBAimRuntimeData &InAimData,
         FBBBCharacterLocomotionRuntimeData &InLocomotionData,
         const FBBBCharacterEquipmentState &InEquipmentState,
@@ -64,13 +59,12 @@ private:
     /** 观察权威角色已经形成的黑板事实并立即提交传输组件 */
     void ObserveFacts();
 
-    void SubmitEquipmentPacket(FBBBEquipmentNetworkPacket Packet);
-    void SubmitEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet);
+    void SubmitEquipmentFact(FBBBEquipmentActionFact Fact);
+    void SubmitEquipmentState(FName EquipmentId);
     void SubmitAimState(const FBBBAimNetworkState &AimState);
     void SubmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
-    FBBBNetworkRuntimeData *NetworkData = nullptr;
-    FBBBCharacterInputFrame *InputFrame = nullptr;
+    FBBBNetworkState *NetworkData = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     FBBBCharacterLocomotionRuntimeData *LocomotionData = nullptr;
@@ -80,6 +74,4 @@ private:
     UBBBCharacterNetworkComponent *NetworkComponent = nullptr;
 
     FBBBCharacterNetworkFactProcessor FactProcessor;
-    FBBBCharacterNetworkCommandProcessor CommandProcessor;
-    FBBBCharacterNetworkRemoteProcessor RemoteProcessor;
 };

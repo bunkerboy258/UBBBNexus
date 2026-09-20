@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputFrame.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterInputState.h"
 
 class UBBBEquipmentCatalog;
-struct FBBBCharacterPacketContext;
+struct FBBBCharacterInputContext;
 struct FBBBCharacterRuntimeData;
 
 /**
@@ -24,9 +24,7 @@ public:
      */
     void Update(
         FBBBCharacterRuntimeData &Data,
-        UBBBEquipmentCatalog &Catalog,
-        bool bAuthority,
-        bool bLocallyControlled) const;
+        UBBBEquipmentCatalog &Catalog) const;
 
 private:
     /**
@@ -37,7 +35,7 @@ private:
     template<typename TPacket>
     static void Process(
         TBBBCharacterInputSlot<TPacket> &Slot,
-        FBBBCharacterPacketContext &Context)
+        FBBBCharacterInputContext &Context)
     {
         if (!Slot.bActive)
         {
@@ -50,37 +48,6 @@ private:
         }
 
         Slot.Consume();
-    }
-
-    /**
-     * 处理需要由本机客户端继续上传给权威端的槽位
-     *
-     * 本机非权威实例保留激活标记，网络命令处理器发送后负责失活；其他实例正常消费
-     *
-     * @param Slot                  待处理槽位
-     * @param Context               角色输入上下文
-     * @param bPreserveForNetwork   是否保留给网络命令处理器
-     */
-    template<typename TPacket>
-    static void ProcessNetworkCommand(
-        TBBBCharacterInputSlot<TPacket> &Slot,
-        FBBBCharacterPacketContext &Context,
-        const bool bPreserveForNetwork)
-    {
-        if (!Slot.bActive)
-        {
-            return;
-        }
-
-        if (Slot.Data.CanApply(Context))
-        {
-            Slot.Data.Apply(Context);
-        }
-
-        if (!bPreserveForNetwork)
-        {
-            Slot.Consume();
-        }
     }
 
     /**

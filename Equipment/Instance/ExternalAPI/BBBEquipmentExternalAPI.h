@@ -57,7 +57,7 @@ public:
      * @param Snapshot	角色传入的已执行事实
      * @return 无
      */
-    void ApplySnapshot(const FBBBEquipmentActionFact &Snapshot);
+    void SubmitFact(const FBBBEquipmentActionFact &Fact);
 
     /**
      * 取消此前尚未处理的操作及未结束的换弹

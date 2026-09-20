@@ -7,10 +7,10 @@ class ABBBEquipment;
 class UWorld;
 class USkeletalMeshComponent;
 struct FBBBEquipmentInputRuntimeData;
-struct FBBBEquipmentEquipRuntimeData;
-struct FBBBEquipmentFireRuntimeData;
-struct FBBBEquipmentReloadRuntimeData;
-struct FBBBEquipmentAnimationRuntimeData;
+struct FBBBEquipmentEquipState;
+struct FBBBEquipmentFireState;
+struct FBBBEquipmentReloadState;
+struct FBBBEquipmentAnimationState;
 struct FBBBEquipmentEquipFragment;
 struct FBBBEquipmentFireFragment;
 struct FBBBEquipmentReloadFragment;
@@ -26,8 +26,8 @@ private:
 
     /** 注入本系统所需的数据与行为配置 */
     void Initialize(USkeletalMeshComponent &InCharacterMesh, USkeletalMeshComponent &InWeaponMesh,
-        FBBBEquipmentAnimationRuntimeData &InData, const FBBBEquipmentFireRuntimeData &InFire,
-        const FBBBEquipmentReloadRuntimeData &InReload,
+        FBBBEquipmentAnimationState &InData, const FBBBEquipmentFireState &InFire,
+        const FBBBEquipmentReloadState &InReload,
         const FBBBEquipmentEquipFragment &InEquipFragment, const FBBBEquipmentFireFragment &InFireFragment);
 
     /** 更新本系统 */
@@ -35,9 +35,9 @@ private:
 
     TWeakObjectPtr<USkeletalMeshComponent> CharacterMesh;
     USkeletalMeshComponent *WeaponMesh = nullptr;
-    FBBBEquipmentAnimationRuntimeData *Data = nullptr;
-    const FBBBEquipmentFireRuntimeData *Fire = nullptr;
-    const FBBBEquipmentReloadRuntimeData *Reload = nullptr;
+    FBBBEquipmentAnimationState *Data = nullptr;
+    const FBBBEquipmentFireState *Fire = nullptr;
+    const FBBBEquipmentReloadState *Reload = nullptr;
     const FBBBEquipmentEquipFragment *EquipFragment = nullptr;
     const FBBBEquipmentFireFragment *FireFragment = nullptr;
 

@@ -8,7 +8,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
 {
     // 先取得当前主手装备并消费本帧恢复和动作命令
     ABBBEquipment *Equipment = State.GetActiveMainHandInstance();
-    TArray<FBBBEquipmentActionFact> Restored = Commands.ConsumeRestoredActions();
+    TArray<FBBBEquipmentActionFact> Facts = Commands.ConsumeFacts();
     const bool bFire = Commands.ConsumeFire();
     const bool bReload = Commands.ConsumeReload();
     if (!Equipment)
@@ -19,11 +19,11 @@ void FBBBCharacterEquipmentActionProcessor::Update(
 
     // 只把属于当前装备的恢复事实交给装备接口
     FBBBEquipmentExternalAPI &API = Equipment->GetExternalAPI();
-    for (const FBBBEquipmentActionFact &Fact : Restored)
+    for (const FBBBEquipmentActionFact &Fact : Facts)
     {
         if (Fact.EquipmentId == Equipment->GetEquipmentId())
         {
-            API.ApplySnapshot(Fact);
+            API.SubmitFact(Fact);
         }
     }
 

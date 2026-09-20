@@ -3,15 +3,15 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBFireFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireContext.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/State/BBBEquipmentFireState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Context/BBBEquipmentFireContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/State/BBBEquipmentReloadState.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Fragment/BBBEquipmentFireFragment.h"
 #include "Engine/World.h"
 
 void FBBBEquipmentFireProcessor::Update(
     ABBBEquipment &Instance, USkeletalMeshComponent &WeaponMesh,
-    FBBBEquipmentFireRuntimeData &Data, const FBBBEquipmentReloadRuntimeData &Reload,
+    FBBBEquipmentFireState &Data, const FBBBEquipmentReloadState &Reload,
     const FBBBEquipmentFireFragment &Fragment, ABBBCharacter &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {

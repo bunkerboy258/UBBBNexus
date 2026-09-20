@@ -1,19 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentActionNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBCharacterCommandNetworkPackets.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/States/BBBNetworkStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkFactLedgerState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkStates.h"
 #include "Components/ActorComponent.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
 class APawn;
 class ABBBCharacter;
 class FBBBCharacterNetworkSystem;
-class FBBBCharacterNetworkCommandProcessor;
 
-/** 角色网络传输组件 只收发同步数据 */
 UCLASS(ClassGroup = "BBB")
 class ABBB_EVAC_API UBBBCharacterNetworkComponent final : public UActorComponent
 {
@@ -28,26 +24,35 @@ public:
 
 private:
     friend class FBBBCharacterNetworkSystem;
-    friend class FBBBCharacterNetworkCommandProcessor;
+    friend struct FBBBNetworkFactLedgerState;
 
     bool IsOwnerLocallyControlled() const;
     bool IsOwnerAuthority() const;
-    void SetReplicatedAimState(const FBBBAimNetworkState &AimState);
-    void SetReplicatedLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
-    /** 将本机客户端连续控制还原为权威角色输入，允许后续帧覆盖过期数据 */
-    UFUNCTION(Server, Unreliable)
-    void ServerSubmitControlPacket(FBBBCharacterControlNetworkPacket Packet);
+    void PublishEquipmentFact(FBBBEquipmentActionFact Fact);
+    void PublishEquipmentState(FName EquipmentId);
+    void PublishAimState(const FBBBAimNetworkState &AimState);
+    void PublishLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
-    /** 将本机客户端离散动作可靠还原为权威角色输入 */
+    void DeliverEquipmentFact(const FBBBEquipmentActionFact &Fact);
+    void DeliverEquipmentState(FName EquipmentId);
+    void DeliverAimState(const FBBBAimNetworkState &AimState);
+    void DeliverLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
+
     UFUNCTION(Server, Reliable)
-    void ServerSubmitActionPacket(FBBBCharacterActionNetworkPacket Packet);
+    void ServerSubmitEquipmentFact(FBBBEquipmentActionFact Fact);
 
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastEquipmentPacket(FBBBEquipmentNetworkPacket Packet);
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitEquipmentState(FName EquipmentId);
 
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastEquipmentActionPacket(FBBBEquipmentActionNetworkPacket Packet);
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitAimState(FBBBAimNetworkState AimState);
+
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitLocomotionState(FBBBLocomotionNetworkState LocomotionState);
+
+    UFUNCTION()
+    void OnRep_ReplicatedEquipmentId();
 
     UFUNCTION()
     void OnRep_ReplicatedAimState();
@@ -56,6 +61,12 @@ private:
     void OnRep_ReplicatedLocomotionState();
 
     APawn *GetOwnerPawn() const;
+
+    UPROPERTY(Replicated)
+    FBBBNetworkFactLedgerState ReplicatedFactLedger;
+
+    UPROPERTY(ReplicatedUsing = OnRep_ReplicatedEquipmentId)
+    FName ReplicatedEquipmentId = NAME_None;
 
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedAimState)
     FBBBAimNetworkState ReplicatedAimState;

@@ -1,13 +1,12 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/Observe/Processors/BBBEquipmentUploadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/Packets/BBBEquipmentNetworkPacket.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
 
 void FBBBEquipmentUploadProcessor::Update(
     const FBBBCharacterEquipmentState &EquipmentState,
-    FBBBNetworkRuntimeData &NetworkData,
+    FBBBNetworkState &NetworkData,
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
     // 只有当前存在主手装备时才上传装备状态
@@ -20,11 +19,7 @@ void FBBBEquipmentUploadProcessor::Update(
     if (NetworkData.GetLastUploadedEquipmentInstanceId() == ActiveEquipment->GetInstanceId())
     { return; }
 
-    FBBBEquipmentNetworkPacket Packet;
-    Packet.EquipmentHandle = ActiveEquipment->GetEquipmentId();
-
-    // 上传装备定义句柄并记录实例避免重复发送
-    NetworkSystem.SubmitEquipmentPacket(MoveTemp(Packet));
+    NetworkSystem.SubmitEquipmentState(ActiveEquipment->GetEquipmentId());
 
     NetworkData.CommitLastUploadedEquipmentInstanceId(ActiveEquipment->GetInstanceId());
 }

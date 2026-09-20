@@ -33,18 +33,18 @@ struct FBBBCharacterEquipmentCommands
      * 提交远端已确认动作
      * @param Fact	远端动作事实
      */
-    void SubmitRestoredAction(FBBBEquipmentActionFact Fact)
+    void SubmitFact(FBBBEquipmentActionFact Fact)
     {
-        PendingRestoredActions.Add(MoveTemp(Fact));
+        PendingFacts.Add(MoveTemp(Fact));
     }
 
     /**
      * 提交远端还原后的期望装备配置
      * @param Definition	期望装备配置
      */
-    void SubmitRestoredEquipment(UBBBEquipmentDefinition &Definition)
+    void SubmitEquipmentState(UBBBEquipmentDefinition &Definition)
     {
-        PendingRestoredEquipment = &Definition;
+        PendingEquipmentState = &Definition;
     }
 
     /**
@@ -98,16 +98,16 @@ private:
     }
 
     /** @return 本帧待恢复动作 */
-    TArray<FBBBEquipmentActionFact> ConsumeRestoredActions()
+    TArray<FBBBEquipmentActionFact> ConsumeFacts()
     {
-        return MoveTemp(PendingRestoredActions);
+        return MoveTemp(PendingFacts);
     }
 
     /** @return 等待装备系统创建实例的远端装备配置 */
-    UBBBEquipmentDefinition *ConsumeRestoredEquipment()
+    UBBBEquipmentDefinition *ConsumeEquipmentState()
     {
-        UBBBEquipmentDefinition *Definition = PendingRestoredEquipment;
-        PendingRestoredEquipment = nullptr;
+        UBBBEquipmentDefinition *Definition = PendingEquipmentState;
+        PendingEquipmentState = nullptr;
         return Definition;
     }
 
@@ -116,11 +116,11 @@ private:
     {
         bActivateFire = false;
         bActivateReload = false;
-        PendingRestoredActions.Reset();
+        PendingFacts.Reset();
         DetachMagazineSequences.Reset();
         LoadMagazineSequences.Reset();
         CancelReloadSequences.Reset();
-        PendingRestoredEquipment = nullptr;
+        PendingEquipmentState = nullptr;
     }
 
     /** 是否存在待执行开火命令 */
@@ -133,11 +133,11 @@ private:
 
     /** 本帧待恢复动作 */
     UPROPERTY()
-    TArray<FBBBEquipmentActionFact> PendingRestoredActions;
+    TArray<FBBBEquipmentActionFact> PendingFacts;
 
     /** 等待装备系统创建实例的远端装备配置 */
     UPROPERTY()
-    TObjectPtr<UBBBEquipmentDefinition> PendingRestoredEquipment = nullptr;
+    TObjectPtr<UBBBEquipmentDefinition> PendingEquipmentState = nullptr;
 
     /** 本帧卸下弹匣阶段序号 */
     UPROPERTY()

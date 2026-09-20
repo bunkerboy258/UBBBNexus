@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 
 // TODO: 复制本对文件到对应语义目录并替换类型名
-// TODO: 在FBBBCharacterInputFrame中增加槽位和Submit重载
+// TODO: 在FBBBCharacterInputState中增加槽位和Submit重载
 // TODO: 在FBBBCharacterInputProcessor::Update中明确插入应用顺序
 
 /** TODO: 说明输入语义、数据来源和负责修改的黑板状态 */
@@ -20,11 +20,11 @@ struct FBBBTemplatePacket final
      * @param Context   角色输入上下文
      * @return 是否允许应用
      */
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
      * 应用该输入负责的黑板效果
      * @param Context   角色输入上下文
      */
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };

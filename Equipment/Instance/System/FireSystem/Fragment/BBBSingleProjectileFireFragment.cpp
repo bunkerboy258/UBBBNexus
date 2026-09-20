@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBCameraPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Context/BBBEquipmentFireContext.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"

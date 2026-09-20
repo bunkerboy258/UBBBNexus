@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/States/BBBCharacterAnimationStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterAnimationStates.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/BBBEquipmentAnimInstance.h"

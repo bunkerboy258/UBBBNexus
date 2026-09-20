@@ -25,7 +25,7 @@ struct FBBBAimRuntimeData
      * 用远端同步的瞄准状态还原本地运行时数据
      * @param RemoteState	远端传来的瞄准状态
      */
-    void ApplyRestoredState(const FBBBAimRuntimeState &RemoteState)
+    void ApplyState(const FBBBAimRuntimeState &RemoteState)
     {
         State.bIsAiming = RemoteState.bIsAiming;
         State.AimTargetWorld = RemoteState.AimTargetWorld;

@@ -5,13 +5,13 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBMagazineLoadedFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadCancelledFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadStartedFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/State/BBBEquipmentFireState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/State/BBBEquipmentReloadState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Context/BBBEquipmentReloadContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Fragment/BBBEquipmentReloadFragment.h"
 
 void FBBBEquipmentReloadProcessor::Update(
-    FBBBEquipmentReloadRuntimeData &Data, FBBBEquipmentFireRuntimeData &Fire,
+    FBBBEquipmentReloadState &Data, FBBBEquipmentFireState &Fire,
     const FBBBEquipmentReloadFragment &Fragment, ABBBCharacter &CharacterAPI,
     const FName EquipmentId, const bool bIsMirror) const
 {

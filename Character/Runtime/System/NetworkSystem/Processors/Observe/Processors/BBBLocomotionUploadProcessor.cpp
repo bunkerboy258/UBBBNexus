@@ -2,11 +2,11 @@
 
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 
 void FBBBLocomotionUploadProcessor::Update(
     const FBBBCharacterLocomotionRuntimeData &LocomotionData,
-    FBBBNetworkRuntimeData &NetworkData,
+    FBBBNetworkState &NetworkData,
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
     // 读取上次步态观察结果判断是否发生变化

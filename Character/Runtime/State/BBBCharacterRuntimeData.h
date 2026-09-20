@@ -1,14 +1,14 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputFrame.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterInputState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterParseState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterParseState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Definition/BBBNetworkRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 #include "BBBCharacterRuntimeData.generated.h"
 class FBBBCharacterInitializer;
@@ -57,7 +57,7 @@ private:
      *
      * 同类型输入覆盖旧值，解析前后不搬运数组，也不为单个输入申请堆内存
      */
-    FBBBCharacterInputFrame InputFrame;
+    FBBBCharacterInputState InputState;
 
     // ===== 状态区 解析后包应用效果的区域 对所有系统与控制器开放读 =====
 
@@ -75,7 +75,7 @@ private:
 
     //保存动画命令与处理状态
     UPROPERTY(Transient)
-    FBBBAnimationRuntimeData Animation;
+    FBBBAnimationState Animation;
 
     //保存相机命令与状态
     UPROPERTY(Transient)
@@ -91,7 +91,7 @@ private:
 
     //保存角色网络队列与观测状态
     UPROPERTY(Transient)
-    FBBBNetworkRuntimeData Network;
+    FBBBNetworkState Network;
 
     // ===== 领域数据 解析系统私有 驻留黑板仅为生命周期托管 =====
 

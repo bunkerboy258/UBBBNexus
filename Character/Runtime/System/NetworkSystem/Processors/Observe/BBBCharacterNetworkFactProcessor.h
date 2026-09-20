@@ -11,7 +11,7 @@ struct FBBBCharacterEquipmentEvents;
 struct FBBBCharacterEquipmentState;
 struct FBBBCharacterLocomotionRuntimeData;
 struct FBBBCharacterNetworkConfig;
-struct FBBBNetworkRuntimeData;
+struct FBBBNetworkState;
 
 /** 上传角色本地状态与动作事件 */
 class ABBB_EVAC_API FBBBCharacterNetworkFactProcessor final
@@ -29,7 +29,7 @@ public:
      * @param NetworkSystem 网络系统
      */
     void Update(
-        FBBBNetworkRuntimeData &NetworkData,
+        FBBBNetworkState &NetworkData,
         float WorldTimeSeconds,
         const FBBBAimRuntimeData &AimData,
         const FBBBCharacterLocomotionRuntimeData &LocomotionData,

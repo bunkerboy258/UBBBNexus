@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/BBBEquipmentFireSystem.h"
 
 void FBBBEquipmentFireSystem::Initialize(ABBBEquipment &InInstance, USkeletalMeshComponent &InWeaponMesh,
-        FBBBEquipmentFireRuntimeData &InData, const FBBBEquipmentReloadRuntimeData &InReload,
+        FBBBEquipmentFireState &InData, const FBBBEquipmentReloadState &InReload,
         const FBBBEquipmentFireFragment &InFragment, ABBBCharacter &InCharacterAPI,
         FName InEquipmentId, bool bInIsMirror)
 {

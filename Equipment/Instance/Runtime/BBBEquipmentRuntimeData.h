@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/Definition/BBBEquipmentInputRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/Definition/BBBEquipmentEquipRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/Definition/BBBEquipmentFireRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/Definition/BBBEquipmentReloadRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/Definition/BBBEquipmentAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/EquipSystem/State/BBBEquipmentEquipState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/FireSystem/State/BBBEquipmentFireState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/ReloadSystem/State/BBBEquipmentReloadState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/System/AnimationSystem/State/BBBEquipmentAnimationState.h"
 #include "BBBEquipmentRuntimeData.generated.h"
 
 class FBBBEquipmentInitializer;
@@ -28,14 +28,14 @@ private:
     FBBBEquipmentInputRuntimeData Input;
 
     UPROPERTY(Transient)
-    FBBBEquipmentEquipRuntimeData Equip;
+    FBBBEquipmentEquipState Equip;
 
     UPROPERTY(Transient)
-    FBBBEquipmentFireRuntimeData Fire;
+    FBBBEquipmentFireState Fire;
 
     UPROPERTY(Transient)
-    FBBBEquipmentReloadRuntimeData Reload;
+    FBBBEquipmentReloadState Reload;
 
     UPROPERTY(Transient)
-    FBBBEquipmentAnimationRuntimeData Animation;
+    FBBBEquipmentAnimationState Animation;
 };

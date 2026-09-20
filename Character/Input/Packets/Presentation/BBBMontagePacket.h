@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterPacketContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
 
 class ABBBCharacter;
 class UAnimMontage;
@@ -29,49 +29,49 @@ protected:
      * @param Slot      目标动画槽位
      * @return 是否允许应用
      */
-    bool CanApplyToSlot(const FBBBCharacterPacketContext &Context, FName Slot) const;
+    bool CanApplyToSlot(const FBBBCharacterInputContext &Context, FName Slot) const;
 
     /**
      * 将蒙太奇写入指定槽位
      * @param Context   角色输入上下文
      * @param Slot      目标动画槽位
      */
-    void ApplyToSlot(FBBBCharacterPacketContext &Context, FName Slot) const;
+    void ApplyToSlot(FBBBCharacterInputContext &Context, FName Slot) const;
 };
 
 /** 全身槽位蒙太奇输入 */
 struct FBBBFullBodyMontagePacket final : FBBBMontagePacketData
 {
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };
 
 /** 上半身槽位蒙太奇输入 */
 struct FBBBUpperBodyMontagePacket final : FBBBMontagePacketData
 {
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };
 
 /** 瞄准前全身叠加槽位蒙太奇输入 */
 struct FBBBFullBodyAdditivePreAimMontagePacket final : FBBBMontagePacketData
 {
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };
 
 /** 上半身叠加槽位蒙太奇输入 */
 struct FBBBUpperBodyAdditiveMontagePacket final : FBBBMontagePacketData
 {
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };
 
 /** 受击叠加槽位蒙太奇输入 */
 struct FBBBAdditiveHitReactMontagePacket final : FBBBMontagePacketData
 {
-    bool CanApply(const FBBBCharacterPacketContext &Context) const;
-    void Apply(FBBBCharacterPacketContext &Context) const;
+    bool CanApply(const FBBBCharacterInputContext &Context) const;
+    void Apply(FBBBCharacterInputContext &Context) const;
 };
 
 /** 武器领域向角色提交蒙太奇的固定槽位翻译入口 */

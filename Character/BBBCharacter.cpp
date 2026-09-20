@@ -145,15 +145,15 @@ void ABBBCharacter::ReportReloadStartNotify(const int32 Sequence)
     SubmitInput(Packet);
 }
 
-void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReason EndReason)
+void ABBBCharacter::ReportReloadEndNotify(const int32 Sequence, const EBBBCharacterReloadEndReasonDefinition EndReason)
 {
-    if (EndReason == EBBBCharacterReloadEndReason::PlaybackFailed)
+    if (EndReason == EBBBCharacterReloadEndReasonDefinition::PlaybackFailed)
     {
         UE_LOG(LogTemp, Warning, TEXT("[UBBBC]Reload playback failed Sequence=%d"), Sequence);
     }
 
     // 装填完成与中断分走不同包 由解析状态机裁决序号
-    if (EndReason == EBBBCharacterReloadEndReason::Loaded)
+    if (EndReason == EBBBCharacterReloadEndReasonDefinition::Loaded)
     {
         FBBBReloadLoadPacket Packet;
         Packet.Sequence = Sequence;

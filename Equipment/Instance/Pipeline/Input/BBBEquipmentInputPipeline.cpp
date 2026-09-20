@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Pipeline/Input/BBBEquipmentInputPipeline.h"
 
-void FBBBEquipmentInputPipeline::Initialize(FBBBEquipmentInputRuntimeData &InInput, FBBBEquipmentEquipRuntimeData &InEquip,
-        FBBBEquipmentFireRuntimeData &InFire, FBBBEquipmentReloadRuntimeData &InReload,
+void FBBBEquipmentInputPipeline::Initialize(FBBBEquipmentInputRuntimeData &InInput, FBBBEquipmentEquipState &InEquip,
+        FBBBEquipmentFireState &InFire, FBBBEquipmentReloadState &InReload,
         FName InEquipmentId, bool bInIsMirror)
 {
     Input = &InInput;

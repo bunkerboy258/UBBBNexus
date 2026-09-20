@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBCharacterMontageRequest.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Request/BBBCharacterMontageRequest.h"
 #include "Animation/AnimMontage.h"
 
 namespace BBBCharacterMontageSlots
@@ -19,7 +19,7 @@ bool FBBBMontagePacketData::IsValid() const
 }
 
 bool FBBBMontagePacketData::CanApplyToSlot(
-    const FBBBCharacterPacketContext &Context,
+    const FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
     FBBBCharacterMontagePacket Request;
@@ -31,7 +31,7 @@ bool FBBBMontagePacketData::CanApplyToSlot(
 }
 
 void FBBBMontagePacketData::ApplyToSlot(
-    FBBBCharacterPacketContext &Context,
+    FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
     FBBBCharacterMontagePacket Request;
@@ -44,53 +44,53 @@ void FBBBMontagePacketData::ApplyToSlot(
 
 //------------------------------------------------------------------------------
 
-bool FBBBFullBodyMontagePacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBFullBodyMontagePacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return CanApplyToSlot(Context, BBBCharacterMontageSlots::FullBody);
 }
 
-void FBBBFullBodyMontagePacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBFullBodyMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     ApplyToSlot(Context, BBBCharacterMontageSlots::FullBody);
 }
 
-bool FBBBUpperBodyMontagePacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBUpperBodyMontagePacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return CanApplyToSlot(Context, BBBCharacterMontageSlots::UpperBody);
 }
 
-void FBBBUpperBodyMontagePacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBUpperBodyMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     ApplyToSlot(Context, BBBCharacterMontageSlots::UpperBody);
 }
 
 bool FBBBFullBodyAdditivePreAimMontagePacket::CanApply(
-    const FBBBCharacterPacketContext &Context) const
+    const FBBBCharacterInputContext &Context) const
 {
     return CanApplyToSlot(Context, BBBCharacterMontageSlots::FullBodyAdditivePreAim);
 }
 
-void FBBBFullBodyAdditivePreAimMontagePacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBFullBodyAdditivePreAimMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     ApplyToSlot(Context, BBBCharacterMontageSlots::FullBodyAdditivePreAim);
 }
 
-bool FBBBUpperBodyAdditiveMontagePacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBUpperBodyAdditiveMontagePacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return CanApplyToSlot(Context, BBBCharacterMontageSlots::UpperBodyAdditive);
 }
 
-void FBBBUpperBodyAdditiveMontagePacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBUpperBodyAdditiveMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     ApplyToSlot(Context, BBBCharacterMontageSlots::UpperBodyAdditive);
 }
 
-bool FBBBAdditiveHitReactMontagePacket::CanApply(const FBBBCharacterPacketContext &Context) const
+bool FBBBAdditiveHitReactMontagePacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     return CanApplyToSlot(Context, BBBCharacterMontageSlots::AdditiveHitReact);
 }
 
-void FBBBAdditiveHitReactMontagePacket::Apply(FBBBCharacterPacketContext &Context) const
+void FBBBAdditiveHitReactMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
     ApplyToSlot(Context, BBBCharacterMontageSlots::AdditiveHitReact);
 }

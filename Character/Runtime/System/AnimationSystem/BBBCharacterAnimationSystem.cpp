@@ -5,7 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Definition/BBBAnimationRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -14,7 +14,7 @@ void FBBBCharacterAnimationSystem::Initialize(
     ABBBCharacter &InCharacter,
     FBBBCharacterRuntimeData &InRuntimeData,
     USkeletalMeshComponent &InCharacterMesh,
-    FBBBAnimationRuntimeData &InAnimationData,
+    FBBBAnimationState &InAnimationData,
     const FBBBCharacterEquipmentState &InEquipmentState,
     const FBBBCharacterWorldRuntimeData &InWorldData,
     const FBBBCharacterAnimationConfig &InAnimationConfig)
