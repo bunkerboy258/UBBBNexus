@@ -1,20 +1,28 @@
 #pragma once
 
 class UBBBCharacterNetworkComponent;
+struct FBBBAimNetworkObservationState;
 struct FBBBAimState;
 struct FBBBCharacterEquipmentEventState;
 struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterLocomotionState;
 struct FBBBCharacterNetworkConfig;
 struct FBBBCharacterNetworkIdentityState;
-struct FBBBCharacterNetworkState;
 struct FBBBCharacterWorldState;
+struct FBBBEquipmentNetworkObservationState;
+struct FBBBLocomotionNetworkObservationState;
 
 /** 本次角色网络观察与发送使用的栈上上下文 */
 struct FBBBCharacterNetworkUpdateContext final
 {
-    /** 网络观察器跨帧状态 */
-    FBBBCharacterNetworkState &NetworkState;
+    /** 装备网络观察器跨帧状态 */
+    FBBBEquipmentNetworkObservationState &EquipmentObservationState;
+
+    /** 瞄准网络观察器跨帧状态 */
+    FBBBAimNetworkObservationState &AimObservationState;
+
+    /** 移动网络观察器跨帧状态 */
+    FBBBLocomotionNetworkObservationState &LocomotionObservationState;
 
     /** 当前机器上的角色网络身份 */
     const FBBBCharacterNetworkIdentityState &NetworkIdentityState;

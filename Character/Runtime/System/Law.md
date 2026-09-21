@@ -11,6 +11,7 @@
 
 物理目录固定为
 
+- `X/` 直属第一级只允许系统器根对应的 `.h` `.cpp` 与 `Law.md`
 - `X/DomainData/` 放且只放 B
 - `X/DomainData/States/` 放且只放 A
 - `X/DomainData/Context/` 放且只放 D

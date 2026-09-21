@@ -1,32 +1,31 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/States/BBBCharacterNetworkState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/States/BBBLocomotionNetworkObservationState.h"
 
 void FBBBLocomotionObservationProcessor::Update(
     FBBBCharacterNetworkUpdateContext &Context) const
 {
-    if (Context.NetworkState.LastObservedLocomotion.IsSet()
-        && Context.NetworkState.LastObservedLocomotion->Gait == Context.LocomotionState.Gait)
+    if (Context.LocomotionObservationState.LastObservedGait.IsSet()
+        && Context.LocomotionObservationState.LastObservedGait.GetValue()
+        == Context.LocomotionState.Gait)
     {
         return;
     }
 
-    FBBBLocomotionNetworkPayload Payload;
-    Payload.Gait = Context.LocomotionState.Gait;
-    Context.NetworkState.LastObservedLocomotion = Payload;
+    Context.LocomotionObservationState.LastObservedGait = Context.LocomotionState.Gait;
 
     if (Context.NetworkIdentityState.bHasAuthority)
     {
-        Context.NetworkComponent.ReplicateLocomotionState(Payload);
+        Context.NetworkComponent.ReplicateLocomotionState(Context.LocomotionState.Gait);
     }
 
     if (!Context.NetworkIdentityState.bHasAuthority
         && Context.NetworkIdentityState.bLocallyControlled)
     {
-        Context.NetworkComponent.ServerSubmitLocomotionState(Payload);
+        Context.NetworkComponent.ServerSubmitLocomotionState(Context.LocomotionState.Gait);
     }
 }

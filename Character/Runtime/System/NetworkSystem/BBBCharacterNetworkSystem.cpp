@@ -1,8 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
+#include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
 
 void FBBBCharacterNetworkSystem::Initialize(
@@ -30,7 +30,9 @@ void FBBBCharacterNetworkSystem::Update()
     }
 
     FBBBCharacterNetworkUpdateContext Context{
-        RuntimeData->Network.NetworkState,
+        RuntimeData->Network.EquipmentObservationState,
+        RuntimeData->Network.AimObservationState,
+        RuntimeData->Network.LocomotionObservationState,
         NetworkIdentityState,
         RuntimeData->External.ReadWorldState(),
         RuntimeData->Aim.ReadAimState(),

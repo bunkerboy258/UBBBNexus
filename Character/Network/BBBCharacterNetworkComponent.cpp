@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipFactPacket.h"
@@ -22,25 +22,40 @@ UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
 void UBBBCharacterNetworkComponent::Initialize(ABBBCharacter &InCharacter)
 {
     Character = &InCharacter;
-    ReplicatedFactLedger.Initialize(*this);
+    ReplicatedEquipmentFacts.Initialize(*this);
 }
 
-void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
+void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
+    TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     // 本机控制角色已经生成同一份事实 只让模拟代理执行接收投递
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedFactLedger, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentId, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAimState, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLocomotionState, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(
+        UBBBCharacterNetworkComponent,
+        ReplicatedEquipmentFacts,
+        COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(
+        UBBBCharacterNetworkComponent,
+        ReplicatedEquipmentId,
+        COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(
+        UBBBCharacterNetworkComponent,
+        ReplicatedAimState,
+        COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(
+        UBBBCharacterNetworkComponent,
+        ReplicatedGait,
+        COND_SimulatedOnly);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitEquipmentFact_Implementation(FBBBEquipmentActionFact Fact)
+void UBBBCharacterNetworkComponent::ServerSubmitEquipmentFact_Implementation(
+    FBBBEquipmentActionFact Fact)
 {
     // 服务端不重新仲裁玩法 只阻止结构损坏的事实进入角色输入系统
-    if (!ensureMsgf(Character && IsOwnerAuthority() && Fact.Sequence > 0 && Fact.EquipmentId != NAME_None,
-        TEXT("[UBBBC]Equipment fact delivery was rejected")))
+    if (!ensureMsgf(
+        Character && IsOwnerAuthority() && Fact.Sequence > 0 && Fact.EquipmentId != NAME_None,
+        TEXT("装备事实网络投递被拒绝")))
     {
         return;
     }
@@ -48,11 +63,13 @@ void UBBBCharacterNetworkComponent::ServerSubmitEquipmentFact_Implementation(FBB
     SubmitEquipmentFactInput(Fact);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitEquipmentState_Implementation(const FName EquipmentId)
+void UBBBCharacterNetworkComponent::ServerSubmitEquipmentState_Implementation(
+    const FName EquipmentId)
 {
     // 装备状态没有空标识时才具备创建镜像装备的语义
-    if (!ensureMsgf(Character && IsOwnerAuthority() && EquipmentId != NAME_None,
-        TEXT("[UBBBC]Equipment state delivery was rejected")))
+    if (!ensureMsgf(
+        Character && IsOwnerAuthority() && EquipmentId != NAME_None,
+        TEXT("装备状态网络投递被拒绝")))
     {
         return;
     }
@@ -60,11 +77,13 @@ void UBBBCharacterNetworkComponent::ServerSubmitEquipmentState_Implementation(co
     SubmitEquipmentStateInput(EquipmentId);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkPayload AimState)
+void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(
+    FBBBReplicatedAimState AimState)
 {
-    // 连续状态允许覆盖 但非法向量不能污染角色黑板
-    if (!ensureMsgf(Character && IsOwnerAuthority() && !FVector(AimState.AimTargetWorld).ContainsNaN(),
-        TEXT("[UBBBC]Aim state delivery was rejected")))
+    // 连续状态允许覆盖 但非法向量不能污染角色输入
+    if (!ensureMsgf(
+        Character && IsOwnerAuthority() && !FVector(AimState.AimTargetWorld).ContainsNaN(),
+        TEXT("瞄准状态网络投递被拒绝")))
     {
         return;
     }
@@ -73,19 +92,18 @@ void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimN
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(
-    FBBBLocomotionNetworkPayload LocomotionState)
+    const EBBBCharacterGait Gait)
 {
-    if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("[UBBBC]Locomotion state delivery was rejected")))
+    if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("步态网络投递被拒绝")))
     {
         return;
     }
 
-    SubmitLocomotionStateInput(LocomotionState);
+    SubmitLocomotionStateInput(Gait);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedEquipmentId()
 {
-    // OnRep 与 RPC 共用投递边界 保证接收来源不影响领域应用规则
     SubmitEquipmentStateInput(ReplicatedEquipmentId);
 }
 
@@ -94,9 +112,9 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
     SubmitAimStateInput(ReplicatedAimState);
 }
 
-void UBBBCharacterNetworkComponent::OnRep_ReplicatedLocomotionState()
+void UBBBCharacterNetworkComponent::OnRep_ReplicatedGait()
 {
-    SubmitLocomotionStateInput(ReplicatedLocomotionState);
+    SubmitLocomotionStateInput(ReplicatedGait);
 }
 
 void UBBBCharacterNetworkComponent::ReplicateEquipmentFact(FBBBEquipmentActionFact Fact)
@@ -106,8 +124,8 @@ void UBBBCharacterNetworkComponent::ReplicateEquipmentFact(FBBBEquipmentActionFa
         return;
     }
 
-    // 账本条目必须先标脏 再请求本演员尽快进入复制调度
-    ReplicatedFactLedger.Append(MoveTemp(Fact));
+    // 装备事实先登记为增量再要求所属演员尽快进入复制调度
+    ReplicatedEquipmentFacts.Append(MoveTemp(Fact));
     GetOwner()->ForceNetUpdate();
 }
 
@@ -122,7 +140,8 @@ void UBBBCharacterNetworkComponent::ReplicateEquipmentState(const FName Equipmen
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkPayload &AimState)
+void UBBBCharacterNetworkComponent::ReplicateAimState(
+    const FBBBReplicatedAimState &AimState)
 {
     if (!IsOwnerAuthority())
     {
@@ -133,25 +152,27 @@ void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkPayloa
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateLocomotionState(const FBBBLocomotionNetworkPayload &LocomotionState)
+void UBBBCharacterNetworkComponent::ReplicateLocomotionState(
+    const EBBBCharacterGait Gait)
 {
     if (!IsOwnerAuthority())
     {
         return;
     }
 
-    ReplicatedLocomotionState = LocomotionState;
+    ReplicatedGait = Gait;
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(const FBBBEquipmentActionFact &Fact)
+void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(
+    const FBBBEquipmentActionFact &Fact)
 {
     if (!Character)
     {
         return;
     }
 
-    // 此处是离散事实从网络格式进入领域输入格式的唯一翻译点
+    // 此处是装备事实从网络格式进入角色输入格式的唯一翻译点
     switch (Fact.Type)
     {
     case EBBBEquipmentActionType::Equip:
@@ -185,6 +206,7 @@ void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(const FBBBEquipment
         return;
     }
     default:
+        ensureMsgf(false, TEXT("收到无法识别的装备事实类型"));
         return;
     }
 }
@@ -197,30 +219,27 @@ void UBBBCharacterNetworkComponent::SubmitEquipmentStateInput(const FName Equipm
     }
 }
 
-void UBBBCharacterNetworkComponent::SubmitAimStateInput(const FBBBAimNetworkPayload &AimState)
+void UBBBCharacterNetworkComponent::SubmitAimStateInput(
+    const FBBBReplicatedAimState &AimState)
+{
+    if (!Character)
+    {
+        return;
+    }
+
+    FBBBAimStatePacket Packet;
+    Packet.bIsAiming = AimState.bIsAiming;
+    Packet.AimTargetWorld = AimState.AimTargetWorld;
+    Character->SubmitInput(MoveTemp(Packet));
+}
+
+void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(
+    const EBBBCharacterGait Gait)
 {
     if (Character)
     {
-        // 连续快照在边界转成领域状态包 之后由 ParseSystem 统一应用
-        FBBBAimStatePacket Packet;
-        Packet.bIsAiming = AimState.bIsAiming;
-        Packet.AimTargetWorld = AimState.AimTargetWorld;
-        Character->SubmitInput(MoveTemp(Packet));
+        Character->SubmitInput(FBBBLocomotionStatePacket{Gait});
     }
-}
-
-void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(const FBBBLocomotionNetworkPayload &LocomotionState)
-{
-    if (Character)
-    {
-        Character->SubmitInput(FBBBLocomotionStatePacket{LocomotionState.Gait});
-    }
-}
-
-bool UBBBCharacterNetworkComponent::IsOwnerLocallyControlled() const
-{
-    const APawn *OwnerPawn = GetOwnerPawn();
-    return OwnerPawn && OwnerPawn->IsLocallyControlled();
 }
 
 bool UBBBCharacterNetworkComponent::IsOwnerAuthority() const
