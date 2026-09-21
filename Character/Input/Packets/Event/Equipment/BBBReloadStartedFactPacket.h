@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 struct FBBBEquipmentActionFact;
 
@@ -10,9 +10,6 @@ struct FBBBEquipmentActionFact;
  */
 struct FBBBReloadStartedFactPacket final
 {
-
-    /** 线上身份 与网络包 PacketId 对应 */
-    static constexpr uint8 PacketId = 3;
 
     FName EquipmentId = NAME_None;
 
@@ -31,7 +28,7 @@ struct FBBBReloadStartedFactPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
-     * 留档事实并开启换弹追踪 还原模式同时下发镜像装备快照
+     * 留档事实并开启换弹追踪
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterInputContext &Context) const;

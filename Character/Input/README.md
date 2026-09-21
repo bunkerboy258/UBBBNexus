@@ -13,11 +13,13 @@ Input/
     ├── State/                   连续控制与网络传入的最终状态
     └── _Template/               新输入包模板
 
-ParseSystem/State/
+ParseSystem/DomainData/States/
 ├── BBBCharacterInputState       全部固定槽位与提交映射
-└── BBBCharacterParseState       解析期间的换弹、切枪和瞬时操作状态
+├── BBBCharacterOperationState   解析期间的换弹、切枪和瞬时操作状态
+├── BBBCharacterControlState     输入系统裁决后的连续控制状态
+└── BBBCharacterCameraState      等待相机系统消费的表现输入
 
-ParseSystem/Context/
+ParseSystem/DomainData/Context/
 └── BBBCharacterInputContext     输入包共享的临时解析上下文
 ```
 
@@ -31,7 +33,7 @@ ParseSystem/Context/
 
 处理器不访问变体、不调用虚函数。`FBBBCharacterInputProcessor::Update` 中的源码顺序就是应用顺序：还原、事实、连续控制、请求、五个蒙太奇槽位、相机。
 
-切枪先于换弹，换弹先于开火。后续请求直接观察前序请求已经写入的 `FBBBCharacterParseState`，不存在 Priority 或 ApprovedBit。
+切枪先于换弹，换弹先于开火。后续请求直接观察前序请求已经写入的 `FBBBCharacterOperationState`，不存在 Priority 或 ApprovedBit。
 
 ## 生命周期
 
@@ -42,7 +44,7 @@ ParseSystem/Context/
 ## 新增输入包
 
 1. 复制 `Packets/_Template/BBBTemplatePacket.h/.cpp` 并实现三项行为。
-2. 在 `FBBBCharacterInputState` 增加一个明确命名的固定槽位和一个 `Submit` 重载。
+2. 在 `FBBBCharacterInputState` 增加一个明确命名的固定槽位，并在 `BBBCharacterInputSubmit.h` 注册编译期槽位映射。
 3. 在 `FBBBCharacterInputProcessor::Update` 的预期位置增加一行 `Process`。
 4. 如需联网，只允许网络系统观察应用后形成的最终状态或事实，并在接收端重新构造对应输入包。
 

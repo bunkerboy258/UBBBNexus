@@ -1,79 +1,86 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageRequestState.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
-void FBBBCharacterInputProcessor::Update(
-    FBBBCharacterRuntimeData &Data,
-    UBBBEquipmentCatalog &Catalog) const
+namespace
 {
-    FBBBCharacterParseState &State = Data.Operation;
-    FBBBCharacterInputState &Input = Data.InputState;
+    void InvalidateMontageSlot(
+        FBBBCharacterMontageSlot &Slot,
+        const FBBBCharacterOperationState &Operation)
+    {
+        if (!BBBCharacterOperation::IsEquipmentSwitchPending(Operation)
+            && (!Slot.Desired.bReload
+                || !BBBCharacterOperation::IsCancelledReloadSequence(Operation, Slot.Desired.Sequence)))
+        {
+            return;
+        }
 
-    State.BeginFrame(Data.Equipment.Equipment.ActiveMainHandInstance);
-    FBBBCharacterMontageRequestState::BeginFrame(Data.Animation, State);
-
-    FBBBCharacterInputContext Context{
-        State,
-        Data.Equipment.Inventory,
-        Data.Equipment.Equipment,
-        Data.Equipment.Commands,
-        Data.Equipment.Events,
-        Data.Animation,
-        Data.Aim,
-        Data.Locomotion,
-        Data.CameraInput,
-        Catalog};
-
-    Input.BeginProcessing();
-
-    // 还原输入最先建立远端角色的权威状态基座
-    Process(Input.EquipmentState, Context);
-    Process(Input.AimState, Context);
-    Process(Input.LocomotionState, Context);
-
-    // 已形成事实按玩法因果顺序驱动装备镜像和角色事件
-    Process(Input.EquipFact, Context);
-    Process(Input.FireFact, Context);
-    Process(Input.ReloadStartedFact, Context);
-    Process(Input.MagazineDetachedFact, Context);
-    Process(Input.MagazineLoadedFact, Context);
-    Process(Input.ReloadCancelledFact, Context);
-
-    // 连续控制先覆盖本帧基座，本机客户端保留副本供网络命令处理器上传
-    Process(Input.Movement, Context);
-    Process(Input.Aim, Context);
-
-    // 请求顺序就是冲突优先级，后续包直接观察前序包已经产生的解析状态
-    Process(Input.EquipSlot, Context);
-    Process(Input.Reload, Context);
-    Process(Input.Fire, Context);
-    Process(Input.Jump, Context);
-
-    // 动画通知输入只推进已经存在的换弹操作，不参与请求竞争
-
-    // 每个蒙太奇槽位独立覆盖，处理顺序与动画图中的层级保持一致
-    Process(Input.FullBodyMontage, Context);
-    Process(Input.UpperBodyMontage, Context);
-    Process(Input.FullBodyAdditivePreAimMontage, Context);
-    Process(Input.UpperBodyAdditiveMontage, Context);
-    Process(Input.AdditiveHitReactMontage, Context);
-
-    Process(Input.Camera, Context);
-
-    Input.EndProcessing();
-
-    // 权威实例与本机控制实例都需要发布控制，普通远端实例只应用网络还原状态
-    FinalizeControl(Data);
+        Slot.Desired = FBBBCharacterMontageRequest();
+        Slot.Revision = 0;
+    }
 }
 
-void FBBBCharacterInputProcessor::FinalizeControl(FBBBCharacterRuntimeData &Data)
+void FBBBCharacterInputProcessor::Update(
+    FBBBCharacterInputState &InputState,
+    FBBBCharacterInputContext &Context) const
 {
-    FBBBCharacterParseState &State = Data.Operation;
-    State.Control.bFire = State.bFire;
+    Context.Events.ActionEvents.Reset();
+    Context.Operation.CancelReloadSequence = INDEX_NONE;
+    Context.Operation.SelectedEquipment = nullptr;
+    Context.Operation.bFire = false;
+    Context.Operation.bReload = false;
+    Context.Control.bFire = false;
+    Context.Control.bJump = false;
 
-    // 瞄准或开火时禁止冲刺
-    State.Control.bSprint = State.Control.bSprint && !State.Control.bAim && !State.Control.bFire;
-    Data.Control.Value = State.Control;
+    if (BBBCharacterOperation::IsReloadInProgress(Context.Operation)
+        && Context.Operation.ReloadEquipment.Get() != Context.Equipment.ActiveMainHandInstance)
+    {
+        BBBCharacterOperation::CancelReload(Context.Operation);
+    }
+
+    InvalidateMontageSlot(Context.Animation.Slots.FullBody, Context.Operation);
+    InvalidateMontageSlot(Context.Animation.Slots.UpperBody, Context.Operation);
+    InvalidateMontageSlot(Context.Animation.Slots.FullBodyAdditivePreAim, Context.Operation);
+    InvalidateMontageSlot(Context.Animation.Slots.UpperBodyAdditive, Context.Operation);
+    InvalidateMontageSlot(Context.Animation.Slots.AdditiveHitReact, Context.Operation);
+    InputState.bProcessing = true;
+
+    Process(InputState.EquipmentState, Context);
+    Process(InputState.AimState, Context);
+    Process(InputState.LocomotionState, Context);
+
+    Process(InputState.EquipFact, Context);
+    Process(InputState.FireFact, Context);
+    Process(InputState.ReloadStartedFact, Context);
+    Process(InputState.MagazineDetachedFact, Context);
+    Process(InputState.MagazineLoadedFact, Context);
+    Process(InputState.ReloadCancelledFact, Context);
+
+    Process(InputState.Movement, Context);
+    Process(InputState.Aim, Context);
+
+    Process(InputState.EquipSlot, Context);
+    Process(InputState.Reload, Context);
+    Process(InputState.Fire, Context);
+    Process(InputState.Jump, Context);
+
+    Process(InputState.FullBodyMontage, Context);
+    Process(InputState.UpperBodyMontage, Context);
+    Process(InputState.FullBodyAdditivePreAimMontage, Context);
+    Process(InputState.UpperBodyAdditiveMontage, Context);
+    Process(InputState.AdditiveHitReactMontage, Context);
+    Process(InputState.Camera, Context);
+
+    InputState.bProcessing = false;
+    FinalizeControl(Context);
+}
+
+void FBBBCharacterInputProcessor::FinalizeControl(FBBBCharacterInputContext &Context)
+{
+    Context.Control.bFire = Context.Operation.bFire;
+    Context.Control.bSprint = Context.Control.bSprint
+        && !Context.Control.bAim
+        && !Context.Control.bFire;
 }

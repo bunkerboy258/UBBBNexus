@@ -1,6 +1,6 @@
 #pragma once
 
-struct FBBBAimRuntimeState;
+struct FBBBAimState;
 struct FBBBCharacterControlState;
 
 /**
@@ -16,5 +16,5 @@ public:
      */
     void Update(
         const FBBBCharacterControlState &ControlData,
-        FBBBAimRuntimeState &State) const;
+        FBBBAimState &State) const;
 };

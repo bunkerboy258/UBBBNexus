@@ -17,6 +17,6 @@ void FBBBEquipmentStatePacket::Apply(FBBBCharacterInputContext &Context) const
     UBBBEquipmentDefinition *Definition = Context.Catalog.FindDefinition(EquipmentId);
     if (Definition)
     {
-        Context.Commands.SubmitEquipmentState(*Definition);
+        Context.Commands.PendingEquipmentState = Definition;
     }
 }

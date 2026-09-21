@@ -101,13 +101,13 @@ void FBBBRifleSignature::Restore(
     // 事实包是镜像装备的唯一完整还原入口
     State.LoadedAmmo = FMath::Clamp(Input.Fact.LoadedAmmo, 0, State.AmmoCapacity);
 
-    switch (Input.Fact.PacketId)
+    switch (Input.Fact.Type)
     {
-        case FBBBEquipFactPacket::PacketId:
+        case EBBBEquipmentActionType::Equip:
             SubmitMontage(Context, Definition->EquipMontage, Input.Fact.Sequence, false);
             return;
 
-        case FBBBFireFactPacket::PacketId:
+        case EBBBEquipmentActionType::Fire:
             State.FireSequence = Input.Fact.Sequence;
             State.LastFireTimeSeconds = Context.WeaponMesh.GetWorld()
                 ? Context.WeaponMesh.GetWorld()->GetTimeSeconds()
@@ -115,29 +115,32 @@ void FBBBRifleSignature::Restore(
             PlayFirePresentation(Context, *Definition, Input.Fact.Sequence);
             return;
 
-        case FBBBReloadStartedFactPacket::PacketId:
+        case EBBBEquipmentActionType::ReloadStarted:
             State.bIsReloading = true;
             State.bMagazineDetached = false;
             State.ReloadSequence = Input.Fact.Sequence;
             SubmitMontage(Context, Definition->ReloadMontage, Input.Fact.Sequence, true);
             return;
 
-        case FBBBMagazineDetachedFactPacket::PacketId:
+        case EBBBEquipmentActionType::MagazineDetached:
             State.bMagazineDetached = true;
             return;
 
-        case FBBBMagazineLoadedFactPacket::PacketId:
+        case EBBBEquipmentActionType::MagazineLoaded:
             State.bIsReloading = false;
             State.bMagazineDetached = false;
             return;
 
-        case FBBBReloadCancelledFactPacket::PacketId:
+        case EBBBEquipmentActionType::ReloadCancelled:
             State.bIsReloading = false;
             State.bMagazineDetached = false;
             return;
 
         default:
-            ensureMsgf(false, TEXT("步枪收到未知装备事实 PacketId=%u"), Input.Fact.PacketId);
+            ensureMsgf(
+                false,
+                TEXT("步枪收到未知装备事实 Type=%u"),
+                static_cast<uint8>(Input.Fact.Type));
             return;
     }
 }

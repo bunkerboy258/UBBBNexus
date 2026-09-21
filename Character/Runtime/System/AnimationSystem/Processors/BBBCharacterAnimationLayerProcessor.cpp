@@ -1,17 +1,19 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationLayerProcessor::Update(
-    const FBBBCharacterEquipmentState &EquipmentState,
-    const FBBBCharacterAnimationConfig &AnimationConfig,
-    FBBBAnimationState &AnimationData,
-    USkeletalMeshComponent &CharacterMesh) const
+    FBBBCharacterAnimationUpdateContext &Context) const
 {
+    const FBBBCharacterEquipmentSelectionState &EquipmentState = Context.EquipmentSelectionState;
+    const FBBBCharacterAnimationConfig &AnimationConfig = Context.AnimationConfig;
+    FBBBCharacterAnimationState &AnimationData = Context.AnimationState;
+    USkeletalMeshComponent &CharacterMesh = Context.CharacterMesh;
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
     ABBBEquipment *ActiveInstance = EquipmentState.ActiveMainHandInstance;

@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBMagazineDetachedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 
 bool FBBBMagazineDetachedFactPacket::IsValid() const
@@ -13,12 +14,20 @@ bool FBBBMagazineDetachedFactPacket::CanApply(const FBBBCharacterInputContext &C
 
 void FBBBMagazineDetachedFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Commands.SubmitFact(ToFact());
-    Context.Events.AddAction(ToFact());
-    Context.Operation.TrackMagazineDetached(Sequence, EquipmentId, Context.Equipment.ActiveEquipmentId);
+    Context.Commands.PendingFacts.Add(ToFact());
+    Context.Events.ActionEvents.Add(ToFact());
+    BBBCharacterOperation::TrackMagazineDetached(
+        Context.Operation,
+        Sequence,
+        EquipmentId,
+        Context.Equipment.ActiveEquipmentId);
 }
 
 FBBBEquipmentActionFact FBBBMagazineDetachedFactPacket::ToFact() const
 {
-    return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
+    return FBBBEquipmentActionFact{
+        EBBBEquipmentActionType::MagazineDetached,
+        EquipmentId,
+        Sequence,
+        LoadedAmmo};
 }

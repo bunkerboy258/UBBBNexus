@@ -7,11 +7,7 @@
 
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
-struct FBBBAnimationState;
 struct FBBBCharacterAnimationConfig;
-struct FBBBCharacterEquipmentState;
-struct FBBBCharacterWorldRuntimeData;
-struct FBBBCharacterControlState;
 class FBBBCharacterInitializer;
 class USkeletalMeshComponent;
 
@@ -39,17 +35,11 @@ private:
         ABBBCharacter &InCharacter,
         FBBBCharacterRuntimeData &InRuntimeData,
         USkeletalMeshComponent &InCharacterMesh,
-        FBBBAnimationState &InAnimationData,
-        const FBBBCharacterEquipmentState &InEquipmentState,
-        const FBBBCharacterWorldRuntimeData &InWorldData,
         const FBBBCharacterAnimationConfig &InAnimationConfig);
 
     ABBBCharacter *Character = nullptr;
     FBBBCharacterRuntimeData *RuntimeData = nullptr;
-    FBBBAnimationState *AnimationData = nullptr;
-    const FBBBCharacterEquipmentState *EquipmentState = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
-    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     const FBBBCharacterAnimationConfig *AnimationConfig = nullptr;
     FBBBCharacterAnimationActionProcessor ActionProcessor;
     FBBBCharacterAnimationFactProcessor FactProcessor;

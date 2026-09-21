@@ -2,9 +2,7 @@
 
 #include "CoreMinimal.h"
 
-class ABBBCharacter;
-struct FBBBCharacterAnimationFacts;
-struct FBBBCharacterRuntimeData;
+struct FBBBCharacterAnimationUpdateContext;
 
 /** 将角色运行状态转换为动画蓝图可安全读取的事实快照 */
 class ABBB_EVAC_API FBBBCharacterAnimationFactProcessor final
@@ -18,11 +16,12 @@ public:
      * @param DeltaSeconds	本帧间隔
      * @return 无
      */
-    void Update(
-        ABBBCharacter &Character,
-        FBBBCharacterRuntimeData &RuntimeData,
-        FBBBCharacterAnimationFacts &OutFacts,
-        float DeltaSeconds);
+    /**
+     * 采集移动完成后的角色事实
+     * @param Context 本次动画更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterAnimationUpdateContext &Context) const;
 
 private:
     /**
@@ -41,12 +40,4 @@ private:
         float SmoothTime,
         float DeltaSeconds) const;
 
-    FVector AimTargetSmoothVelocity = FVector::ZeroVector;
-
-    FVector SmoothedAimTargetComponentSpace = FVector::ZeroVector;
-
-    float SmoothedAimIntentAlpha = 0.0f;
-
-
-    bool bHasSmoothedAimTarget = false;
 };

@@ -69,17 +69,20 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     }
 
     // 所有领域系统读取同一份本帧世界时间快照
-    Character->RuntimeData.WorldData.FrameDeltaSeconds = DeltaSeconds;
-    Character->RuntimeData.WorldData.WorldTimeSeconds = World->GetTimeSeconds();
-    Character->RuntimeData.NetworkIdentity.Refresh(
-        Character->HasAuthority(),
-        Character->IsLocallyControlled());
+    FBBBCharacterWorldState &WorldState = Character->RuntimeData.External.WorldState;
+    WorldState.FrameDeltaSeconds = DeltaSeconds;
+    WorldState.WorldTimeSeconds = World->GetTimeSeconds();
+
+    FBBBCharacterNetworkIdentityState &NetworkIdentityState =
+        Character->RuntimeData.External.NetworkIdentityState;
+    NetworkIdentityState.bHasAuthority = Character->HasAuthority();
+    NetworkIdentityState.bLocallyControlled = Character->IsLocallyControlled();
+    NetworkIdentityState.bIsMirror = !NetworkIdentityState.bLocallyControlled;
 
     Character->ParseSystem.Update();
-    Character->EquipmentController.Update(Character->RuntimeData.NetworkIdentity);
+    Character->EquipmentController.Update();
 
-    if (Character->RuntimeData.NetworkIdentity.ExecutionMode
-        == EBBBCharacterExecutionMode::Causal)
+    if (!NetworkIdentityState.bIsMirror)
     {
         // 只有本机控制角色可以根据控制输入产生新的瞄准与移动事实。
         Character->AimController.Update();
@@ -102,6 +105,4 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
     // CMC 结束后采集最终移动结果并更新动画事实
     Character->AnimationSystem.Update();
 
-    // 清理不允许跨帧驻留的输入与瞬时数据
-    Character->RuntimeData.Clean();
 }

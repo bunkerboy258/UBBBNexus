@@ -1,42 +1,68 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterInputState.h"
 
-/**
- * 角色固定输入帧的唯一提交闸口
- *
- * 同类型输入只覆盖对应槽位，不分配节点、不增长容器；解析期间禁止重入写入，
- * 防止包方法仍在读取自身数据时被同类型提交覆盖
- */
+/** 角色输入包到固定槽位的编译期映射 */
+template<typename TPacket>
+struct TBBBCharacterInputSlotSelector;
+
+#define BBB_CHARACTER_INPUT_SLOT(PacketType, MemberName) \
+    template<> \
+    struct TBBBCharacterInputSlotSelector<PacketType> final \
+    { \
+        static TBBBCharacterInputSlot<PacketType> &Get(FBBBCharacterInputState &State) \
+        { \
+            return State.MemberName; \
+        } \
+    };
+
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentStatePacket, EquipmentState)
+BBB_CHARACTER_INPUT_SLOT(FBBBAimStatePacket, AimState)
+BBB_CHARACTER_INPUT_SLOT(FBBBLocomotionStatePacket, LocomotionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipFactPacket, EquipFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBFireFactPacket, FireFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBReloadStartedFactPacket, ReloadStartedFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBMagazineDetachedFactPacket, MagazineDetachedFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBMagazineLoadedFactPacket, MagazineLoadedFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBReloadCancelledFactPacket, ReloadCancelledFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementPacket, Movement)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimPacket, Aim)
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipSlotPacket, EquipSlot)
+BBB_CHARACTER_INPUT_SLOT(FBBBReloadPacket, Reload)
+BBB_CHARACTER_INPUT_SLOT(FBBBFirePacket, Fire)
+BBB_CHARACTER_INPUT_SLOT(FBBBJumpPacket, Jump)
+BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontagePacket, FullBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontagePacket, UpperBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyAdditivePreAimMontagePacket, FullBodyAdditivePreAimMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyAdditiveMontagePacket, UpperBodyAdditiveMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBAdditiveHitReactMontagePacket, AdditiveHitReactMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCameraPacket, Camera)
+
+#undef BBB_CHARACTER_INPUT_SLOT
+
+/** 角色固定输入槽位的唯一提交闸口 */
 namespace BBBCharacterInput
 {
     /**
      * 提交输入包到对应固定槽位
-     * @param Data	角色运行黑板
-     * @param Packet	输入包
+     * @param State 角色固定输入状态
+     * @param Packet 输入包
      * @return 是否接受输入
      */
     template<typename TPacket>
-    bool Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet)
+    bool Submit(FBBBCharacterInputState &State, TPacket &&Packet)
     {
-        // 所有角色输入必须在游戏线程提交
-        if (!IsInGameThread())
+        using FPacket = typename TDecay<TPacket>::Type;
+
+        if (!IsInGameThread() || !Packet.IsValid() || State.bProcessing)
         {
             return false;
         }
 
-        if (!Packet.IsValid())
-        {
-            return false;
-        }
-
-        if (Data.InputState.IsProcessing())
-        {
-            return false;
-        }
-
-        Data.InputState.Submit(Forward<TPacket>(Packet));
+        TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        Slot.Data = Forward<TPacket>(Packet);
+        Slot.bActive = true;
         return true;
     }
 }

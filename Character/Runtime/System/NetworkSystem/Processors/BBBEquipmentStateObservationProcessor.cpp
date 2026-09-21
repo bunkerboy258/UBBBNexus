@@ -1,25 +1,37 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentStateObservationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
+
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/States/BBBCharacterNetworkState.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
 void FBBBEquipmentStateObservationProcessor::Update(
-    const FBBBCharacterEquipmentState &EquipmentState,
-    FBBBNetworkState &NetworkData,
-    FBBBCharacterNetworkSystem &NetworkSystem) const
+    FBBBCharacterNetworkUpdateContext &Context) const
 {
-    // 只有当前存在主手装备时才上传装备状态
-    ABBBEquipment *ActiveEquipment = EquipmentState.ActiveMainHandInstance;
-
+    ABBBEquipment *ActiveEquipment = Context.EquipmentSelectionState.ActiveMainHandInstance;
     if (!ActiveEquipment)
-    { return; }
+    {
+        return;
+    }
 
-    // 实例没有变化时不重复广播装备状态
-    if (NetworkData.LastUploadedEquipmentInstanceId == ActiveEquipment->GetInstanceId())
-    { return; }
+    if (Context.NetworkState.LastUploadedEquipmentInstanceId == ActiveEquipment->GetInstanceId())
+    {
+        return;
+    }
 
-    NetworkSystem.TransmitEquipmentState(ActiveEquipment->GetEquipmentId());
+    const FName EquipmentId = ActiveEquipment->GetEquipmentId();
+    if (Context.NetworkIdentityState.bHasAuthority)
+    {
+        Context.NetworkComponent.ReplicateEquipmentState(EquipmentId);
+    }
 
-    NetworkData.LastUploadedEquipmentInstanceId = ActiveEquipment->GetInstanceId();
+    if (!Context.NetworkIdentityState.bHasAuthority
+        && Context.NetworkIdentityState.bLocallyControlled)
+    {
+        Context.NetworkComponent.ServerSubmitEquipmentState(EquipmentId);
+    }
+
+    Context.NetworkState.LastUploadedEquipmentInstanceId = ActiveEquipment->GetInstanceId();
 }

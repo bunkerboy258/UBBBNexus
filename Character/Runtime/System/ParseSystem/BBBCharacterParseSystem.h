@@ -11,11 +11,7 @@ struct FBBBCharacterRuntimeData;
 class ABBB_EVAC_API FBBBCharacterParseSystem final
 {
 public:
-    /**
-     * 解析当前固定输入帧
-     * @param bAuthority          当前实例是否拥有玩法权威
-     * @param bLocallyControlled 当前实例是否由本机控制
-     */
+    /** 解析当前固定输入帧 */
     void Update() const;
 
 private:

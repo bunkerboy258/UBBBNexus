@@ -1,10 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-class FBBBCharacterNetworkSystem;
-struct FBBBCharacterNetworkConfig;
-struct FBBBAimRuntimeData;
-struct FBBBNetworkState;
+struct FBBBCharacterNetworkUpdateContext;
 
 class ABBB_EVAC_API FBBBAimObservationProcessor final
 {
@@ -18,10 +15,10 @@ public:
      * @param NetworkData	网络运行时数据
      * @param NetworkSystem	角色网络系统
      */
-    void Update(
-        const FBBBAimRuntimeData &AimData,
-        const FBBBCharacterNetworkConfig &NetworkConfig,
-        float WorldTimeSeconds,
-        FBBBNetworkState &NetworkData,
-        FBBBCharacterNetworkSystem &NetworkSystem) const;
+    /**
+     * 按节流条件上传瞄准状态
+     * @param Context 本次网络更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterNetworkUpdateContext &Context) const;
 };

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterInputState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterInputState.h"
 
 class UBBBEquipmentCatalog;
 struct FBBBCharacterInputContext;
-struct FBBBCharacterRuntimeData;
+struct FBBBCharacterInputState;
 
 /**
  * 按源码中明确声明的顺序原地解析固定输入槽位
@@ -17,14 +17,11 @@ class FBBBCharacterInputProcessor final
 public:
     /**
      * 解析本次更新可见的固定输入槽位并发布角色控制
-     * @param Data                  角色黑板
-     * @param Catalog               装备目录
-     * @param bAuthority            当前实例是否拥有玩法权威
-     * @param bLocallyControlled    当前实例是否由本机控制
+     * @param InputState 角色固定输入状态
+     * @param Context 本次解析上下文
+     * @return 无
      */
-    void Update(
-        FBBBCharacterRuntimeData &Data,
-        UBBBEquipmentCatalog &Catalog) const;
+    void Update(FBBBCharacterInputState &InputState, FBBBCharacterInputContext &Context) const;
 
 private:
     /**
@@ -47,12 +44,13 @@ private:
             Slot.Data.Apply(Context);
         }
 
-        Slot.Consume();
+        Slot.bActive = false;
     }
 
     /**
      * 发布数据包应用后的最终控制状态
-     * @param Data 角色黑板
+     * @param Context 本次解析上下文
+     * @return 无
      */
-    static void FinalizeControl(FBBBCharacterRuntimeData &Data);
+    static void FinalizeControl(FBBBCharacterInputContext &Context);
 };

@@ -10,16 +10,11 @@ class ABBBCharacter;
 class ABBBEquipment;
 class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
-struct FBBBCharacterEquipmentRuntimeData;
-struct FBBBCharacterNetworkIdentityRuntimeData;
+struct FBBBCharacterRuntimeData;
 
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentController final
 {
-public:
-    /** @return 当前激活主手装备 */
-    ABBBEquipment *GetActiveEquipment() const;
-
 private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterUpdatePipeline;
@@ -29,7 +24,7 @@ private:
      * @param NetworkIdentity    本帧角色网络身份事实
      * @return 无
      */
-    void Update(const FBBBCharacterNetworkIdentityRuntimeData &NetworkIdentity);
+    void Update();
 
     /**
      * 注入装备系统依赖并建立空容器
@@ -41,12 +36,12 @@ private:
      */
     void Initialize(
         USkeletalMeshComponent &InCharacterMesh,
-        FBBBCharacterEquipmentRuntimeData &InEquipmentData,
+        FBBBCharacterRuntimeData &InRuntimeData,
         ABBBCharacter &InCharacter,
         const FBBBCharacterEquipmentConfig &InEquipmentConfig);
 
     /** 角色装备黑板 */
-    FBBBCharacterEquipmentRuntimeData *EquipmentData = nullptr;
+    FBBBCharacterRuntimeData *RuntimeData = nullptr;
 
     /** 角色骨骼网格 */
     USkeletalMeshComponent *CharacterMesh = nullptr;

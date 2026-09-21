@@ -7,11 +7,10 @@ bool FBBBJumpPacket::IsValid() const
 
 bool FBBBJumpPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
-    // 跳跃允许本机预测，普通模拟代理不生成跳跃控制
     return true;
 }
 
 void FBBBJumpPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Operation.Control.bJump = true;
+    Context.Control.bJump = true;
 }

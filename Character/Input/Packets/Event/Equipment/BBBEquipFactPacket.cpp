@@ -13,11 +13,15 @@ bool FBBBEquipFactPacket::CanApply(const FBBBCharacterInputContext &Context) con
 
 void FBBBEquipFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Commands.SubmitFact(ToFact());
-    Context.Events.AddAction(ToFact());
+    Context.Commands.PendingFacts.Add(ToFact());
+    Context.Events.ActionEvents.Add(ToFact());
 }
 
 FBBBEquipmentActionFact FBBBEquipFactPacket::ToFact() const
 {
-    return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
+    return FBBBEquipmentActionFact{
+        EBBBEquipmentActionType::Equip,
+        EquipmentId,
+        Sequence,
+        LoadedAmmo};
 }

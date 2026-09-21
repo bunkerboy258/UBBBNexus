@@ -1,12 +1,12 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/BBBCharacterAimController.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Context/BBBAimUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/DomainData/Context/BBBAimUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/DomainData/BBBAimDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/DomainData/States/BBBAimState.h"
 #include "GameFramework/Pawn.h"
 
 void FBBBCharacterAimController::Initialize(
-    FBBBAimRuntimeData &InAimData,
+    FBBBAimDomainState &InAimData,
     const FBBBCharacterControlState &InIntentData)
 {
     AimData = &InAimData;
@@ -22,17 +22,15 @@ void FBBBCharacterAimController::Update()
     }
 
     // 在局部状态中完成本帧计算后再统一提交
-    FBBBAimUpdateContext Context{AimData->State};
+    FBBBAimUpdateContext Context{AimData->AimState, *ControlData};
 
     // 先根据角色意图更新瞄准状态
-    AimStateProcessor.Update(*ControlData, Context.State);
+    AimStateProcessor.Update(Context.ControlState, Context.AimState);
 
     // 只有进入瞄准状态时才更新远处目标点
-    if (Context.State.bIsAiming)
+    if (Context.AimState.bIsAiming)
     {
-        AimTargetProcessor.Update(*ControlData, Context.State);
+        AimTargetProcessor.Update(Context.ControlState, Context.AimState);
     }
 
-    // 发布完整的本地瞄准状态供其他系统读取
-    AimData->State = Context.State;
 }

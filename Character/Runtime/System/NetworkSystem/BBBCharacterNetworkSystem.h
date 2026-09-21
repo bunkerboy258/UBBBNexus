@@ -1,80 +1,49 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBCharacterNetworkObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentFactObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentStateObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
 class FBBBCharacterInitializer;
 class UBBBCharacterNetworkComponent;
-struct FBBBAimRuntimeData;
-struct FBBBAimNetworkState;
-struct FBBBCharacterEquipmentEvents;
-struct FBBBCharacterEquipmentState;
-struct FBBBEquipmentActionFact;
-struct FBBBCharacterLocomotionRuntimeData;
-struct FBBBLocomotionNetworkState;
 struct FBBBCharacterNetworkConfig;
-struct FBBBCharacterNetworkIdentityRuntimeData;
-struct FBBBCharacterWorldRuntimeData;
-struct FBBBNetworkState;
+struct FBBBCharacterRuntimeData;
 
-/**
- * 角色网络边界
- *
- * 本机客户端只上传请求，权威角色只观察已经形成的事实，普通远端角色只等待还原输入
- */
+/** 角色网络观察与传输的唯一系统根 */
 class ABBB_EVAC_API FBBBCharacterNetworkSystem final
 {
 public:
-    /** 根据角色网络身份执行唯一网络阶段 */
+    /** 观察已经成立的角色事实并按本机身份发送 */
     void Update();
 
 private:
     friend class FBBBCharacterInitializer;
-    friend class FBBBAimObservationProcessor;
-    friend class FBBBEquipmentFactObservationProcessor;
-    friend class FBBBEquipmentStateObservationProcessor;
-    friend class FBBBLocomotionObservationProcessor;
 
     /**
-     * 注入角色网络阶段需要的黑板和传输依赖
-     * @param InNetworkData       网络观测状态
-     * @param InNetworkIdentity   角色本帧网络身份事实
-     * @param InAimData           角色瞄准状态
-     * @param InLocomotionData    角色移动状态
-     * @param InEquipmentState    角色装备状态
-     * @param InNetworkComponent  网络传输组件
-     * @param InWorldData         角色世界时间
-     * @param InEquipmentEvents   角色装备事实
-     * @param InNetworkConfig     网络发送配置
+     * 注入角色网络系统依赖
+     * @param InRuntimeData 角色完整运行时黑板
+     * @param InNetworkComponent 角色网络传输组件
+     * @param InNetworkConfig 网络发送配置
+     * @return 无
      */
     void Initialize(
-        FBBBNetworkState &InNetworkData,
-        const FBBBCharacterNetworkIdentityRuntimeData &InNetworkIdentity,
-        FBBBAimRuntimeData &InAimData,
-        FBBBCharacterLocomotionRuntimeData &InLocomotionData,
-        const FBBBCharacterEquipmentState &InEquipmentState,
+        FBBBCharacterRuntimeData &InRuntimeData,
         UBBBCharacterNetworkComponent &InNetworkComponent,
-        const FBBBCharacterWorldRuntimeData &InWorldData,
-        const FBBBCharacterEquipmentEvents &InEquipmentEvents,
         const FBBBCharacterNetworkConfig &InNetworkConfig);
 
-    /** 观察权威角色已经形成的黑板事实并立即提交传输组件 */
-    void Observe();
+    /** 角色完整运行时黑板 */
+    FBBBCharacterRuntimeData *RuntimeData = nullptr;
 
-    void TransmitEquipmentFact(FBBBEquipmentActionFact Fact);
-    void TransmitEquipmentState(FName EquipmentId);
-    void TransmitAimState(const FBBBAimNetworkState &AimState);
-    void TransmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
-
-    FBBBNetworkState *NetworkData = nullptr;
-    const FBBBCharacterNetworkIdentityRuntimeData *NetworkIdentity = nullptr;
-    const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
-    FBBBAimRuntimeData *AimData = nullptr;
-    FBBBCharacterLocomotionRuntimeData *LocomotionData = nullptr;
-    const FBBBCharacterEquipmentEvents *EquipmentEvents = nullptr;
-    const FBBBCharacterEquipmentState *EquipmentState = nullptr;
-    const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
+    /** 角色网络传输组件 */
     UBBBCharacterNetworkComponent *NetworkComponent = nullptr;
 
-    FBBBCharacterNetworkObservationProcessor ObservationProcessor;
+    /** 角色网络发送配置 */
+    const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
+
+    FBBBEquipmentStateObservationProcessor EquipmentStateObservationProcessor;
+    FBBBEquipmentFactObservationProcessor EquipmentFactObservationProcessor;
+    FBBBAimObservationProcessor AimObservationProcessor;
+    FBBBLocomotionObservationProcessor LocomotionObservationProcessor;
 };

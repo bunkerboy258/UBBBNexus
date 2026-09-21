@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBReloadPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 
 bool FBBBReloadPacket::IsValid() const
 {
@@ -7,14 +8,14 @@ bool FBBBReloadPacket::IsValid() const
 
 bool FBBBReloadPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
-    // 权威端按显式处理顺序观察切枪结果，切枪或既有换弹都会拒绝新换弹
+    // 按显式处理顺序观察切枪结果，切枪或既有换弹都会拒绝新换弹
     return Context.Equipment.ActiveMainHandInstance != nullptr
-        && !Context.Operation.IsReloadInProgress()
-        && !Context.Operation.IsEquipmentSwitchPending();
+        && !BBBCharacterOperation::IsReloadInProgress(Context.Operation)
+        && !BBBCharacterOperation::IsEquipmentSwitchPending(Context.Operation);
 }
 
 void FBBBReloadPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     Context.Operation.bReload = true;
-    Context.Commands.SubmitReload();
+    Context.Commands.bActivateReload = true;
 }

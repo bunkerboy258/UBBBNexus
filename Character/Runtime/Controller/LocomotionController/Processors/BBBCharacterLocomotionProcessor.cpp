@@ -1,8 +1,9 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Processors/BBBCharacterLocomotionProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -14,7 +15,7 @@ FVector ResolveWorldMoveDirection(
     const ACharacter &Character,
     const FBBBCharacterControlState &ControlData)
 {
-    return ControlData.Value.MoveWorld.GetSafeNormal2D();
+    return ControlData.MoveWorld.GetSafeNormal2D();
 }
 
 // 检查冲刺意图和移动方向是否满足冲刺条件
@@ -23,7 +24,7 @@ bool CanSprint(
     const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config)
 {
-    if (!ControlData.Value.bSprint)
+    if (!ControlData.bSprint)
     {
         return false;
     }
@@ -49,16 +50,16 @@ EBBBCharacterGait ResolveGait(
     EBBBCharacterGait PreviousGait,
     const FVector &CurrentVelocity)
 {
-    const bool bFullMovementInput = ControlData.Value.MoveWorld.Size() >= Config.AnalogRunThreshold;
+    const bool bFullMovementInput = ControlData.MoveWorld.Size() >= Config.AnalogRunThreshold;
 
     // ADS 使用步行档位，并优先于冲刺
-    if (ControlData.Value.bAim)
+    if (ControlData.bAim)
     {
         return EBBBCharacterGait::Walk;
     }
 
     // 松开输入后保持实际奔跑档位，直到地面制动结束
-    if (ControlData.Value.MoveWorld.IsNearlyZero()
+    if (ControlData.MoveWorld.IsNearlyZero()
         && CurrentVelocity.SizeSquared2D() > FMath::Square(1.0f)
         && (PreviousGait == EBBBCharacterGait::Run || PreviousGait == EBBBCharacterGait::Sprint))
     {
@@ -70,7 +71,7 @@ EBBBCharacterGait ResolveGait(
         return EBBBCharacterGait::Sprint;
     }
 
-    if (ControlData.Value.bWalk)
+    if (ControlData.bWalk)
     {
         return EBBBCharacterGait::Walk;
     }
@@ -134,16 +135,17 @@ float ResolveMaxSpeed(
 }
 
 void FBBBCharacterLocomotionProcessor::Update(
-    ACharacter &Character,
-    UCharacterMovementComponent &Movement,
-    FBBBCharacterLocomotionRuntimeData &RuntimeData,
-    const FBBBCharacterControlState &ControlData,
-    const FBBBCharacterLocomotionConfig &Config,
-    const UCurveFloat &StrafeSpeedMapCurve) const
+    FBBBCharacterLocomotionUpdateContext &Context) const
 {
+    ACharacter &Character = Context.Character;
+    UCharacterMovementComponent &Movement = Context.Movement;
+    FBBBCharacterLocomotionState &RuntimeData = Context.LocomotionState;
+    const FBBBCharacterControlState &ControlData = Context.ControlState;
+    const FBBBCharacterLocomotionConfig &Config = Context.Config;
+    const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
-    Character.SetActorRotation(FRotator(0.0f, ControlData.Value.FacingWorld.Yaw, 0.0f));
-    const bool bWantsCrouch = ControlData.Value.bCrouch;
+    Character.SetActorRotation(FRotator(0.0f, ControlData.FacingWorld.Yaw, 0.0f));
+    const bool bWantsCrouch = ControlData.bCrouch;
     if (bWantsCrouch)
     {
         Character.Crouch();
@@ -188,17 +190,17 @@ void FBBBCharacterLocomotionProcessor::Update(
     Movement.bUseSeparateBrakingFriction = false;
 
     // 蹲伏期间不允许同帧跳跃
-    if (!bWantsCrouch && ControlData.Value.bJump)
+    if (!bWantsCrouch && ControlData.bJump)
     {
         Character.Jump();
     }
 
 
-    if (ControlData.Value.MoveWorld.IsNearlyZero())
+    if (ControlData.MoveWorld.IsNearlyZero())
     {
         return;
     }
     // 保留模拟输入强度 归一化只用于方向而不用于移动量
-    const FVector MoveWorld = ControlData.Value.MoveWorld;
+    const FVector MoveWorld = ControlData.MoveWorld;
     Character.AddMovementInput(MoveWorld.GetSafeNormal(), MoveWorld.Size());
 }

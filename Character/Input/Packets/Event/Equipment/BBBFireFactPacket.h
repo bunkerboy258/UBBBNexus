@@ -1,20 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 struct FBBBEquipmentActionFact;
 
-/**
- * 开火已执行事实包 本地由装备回执 还原模式由网络还原
- * 还原时先中断本地追踪的换弹
- */
+/** 开火已经执行的事实包，应用时先中断仍在追踪的换弹 */
 struct FBBBFireFactPacket final
 {
-
-    /** 线上身份 与网络包 PacketId 对应 */
-    static constexpr uint8 PacketId = 2;
-
     FName EquipmentId = NAME_None;
 
     int32 Sequence = INDEX_NONE;
@@ -32,7 +25,7 @@ struct FBBBFireFactPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
-     * 留档事实 还原模式先取消换弹再下发镜像装备快照
+     * 留档开火事实并取消仍在追踪的换弹
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterInputContext &Context) const;

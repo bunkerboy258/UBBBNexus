@@ -75,12 +75,6 @@ public:
         return CharacterConfig;
     }
 
-    /** @return 角色完整运行时黑板的只读引用 */
-    const FBBBCharacterRuntimeData &GetRuntimeData() const
-    {
-        return RuntimeData;
-    }
-
     /**
      * 提交离散快照包到本帧输入队列
      * @param Packet	输入包
@@ -89,14 +83,18 @@ public:
     template<typename TPacket>
     bool SubmitInput(TPacket &&Packet)
     {
-        return BBBCharacterInput::Submit(RuntimeData, Forward<TPacket>(Packet));
+        return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Forward<TPacket>(Packet));
     }
 
     /** @return 当前激活主手装备 */
     ABBBEquipment *GetActiveEquipment() const
     {
-        return EquipmentController.GetActiveEquipment();
+        return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
     }
+
+    /** 角色公开持有的唯一运行时聚合黑板 */
+    UPROPERTY(Transient)
+    FBBBCharacterRuntimeData RuntimeData;
 
 protected:
     
@@ -108,12 +106,6 @@ protected:
     /*分类命名为ABBB是为了快点找到（bushi*/
 
 private:
-    
-    //表示黑板数据不参与持久化工作
-    UPROPERTY(Transient)
-    FBBBCharacterRuntimeData RuntimeData;
-    
-    
     FBBBCharacterAimController AimController;
 
     FBBBCharacterLocomotionController LocomotionController;

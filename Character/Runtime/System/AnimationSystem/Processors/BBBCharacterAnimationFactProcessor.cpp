@@ -2,9 +2,10 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterAnimationStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFacts.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"
@@ -18,11 +19,14 @@ constexpr float GroundTraceDistance = 100000.0f;
 }
 
 void FBBBCharacterAnimationFactProcessor::Update(
-    ABBBCharacter &Character,
-    FBBBCharacterRuntimeData &RuntimeData,
-    FBBBCharacterAnimationFacts &OutFacts,
-    float DeltaSeconds)
+    FBBBCharacterAnimationUpdateContext &Context) const
 {
+    ABBBCharacter &Character = Context.Character;
+    FBBBCharacterRuntimeData &RuntimeData = Context.RuntimeData;
+    FBBBCharacterAnimationState &AnimationState = Context.AnimationState;
+    FBBBCharacterAnimationFacts &OutFacts = AnimationState.Facts;
+    const float DeltaSeconds = Context.WorldState.FrameDeltaSeconds;
+
     // 采集动画事实前确认角色组件和世界对象有效
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
@@ -33,8 +37,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
         return;
     }
 
-    const FBBBAimRuntimeState &AimState = RuntimeData.Aim.State;
-    const FBBBCharacterEquipmentState &EquipmentState = RuntimeData.Equipment.Equipment;
+    const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
+    const FBBBCharacterEquipmentSelectionState &EquipmentState =
+        RuntimeData.Equipment.ReadEquipmentSelectionState();
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
     const bool bHasActiveMainHandEquipment = EquipmentState.ActiveMainHandInstance != nullptr;
 
@@ -55,20 +60,20 @@ void FBBBCharacterAnimationFactProcessor::Update(
         : FVector::ZeroVector;
 
     // 首次采集时直接建立平滑目标的初始值
-    if (!bHasSmoothedAimTarget)
+    if (!AnimationState.bHasSmoothedAimTarget)
     {
-        SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
-        bHasSmoothedAimTarget = true;
+        AnimationState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
+        AnimationState.bHasSmoothedAimTarget = true;
     }
 
     if (AimConfig.bEnableAimIKTargetSmoothing
         && AimConfig.AimIKTargetSmoothTime > 0.0f)
     {
         // 按配置时间平滑瞄准目标避免目标点瞬移
-        SmoothedAimTargetComponentSpace = SmoothAimTarget(
-            SmoothedAimTargetComponentSpace,
+        AnimationState.SmoothedAimTargetComponentSpace = SmoothAimTarget(
+            AnimationState.SmoothedAimTargetComponentSpace,
             RawAimTargetComponentSpace,
-            AimTargetSmoothVelocity,
+            AnimationState.AimTargetSmoothVelocity,
             AimConfig.AimIKTargetSmoothTime,
             DeltaSeconds);
     }
@@ -76,9 +81,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     if (!bCanUseAimTarget)
     {
         // 目标无效时清除平滑速度并等待下一次有效目标
-        SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
-        AimTargetSmoothVelocity = FVector::ZeroVector;
-        bHasSmoothedAimTarget = false;
+        AnimationState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
+        AnimationState.AimTargetSmoothVelocity = FVector::ZeroVector;
+        AnimationState.bHasSmoothedAimTarget = false;
     }
 
     float GroundDistance = 0.0f;
@@ -113,8 +118,8 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const float TargetAimIntentAlpha = AimState.bIsAiming ? 1.0f : 0.0f;
 
     // 平滑瞄准意图权重供动画层渐进过渡
-    SmoothedAimIntentAlpha = FMath::FInterpTo(
-        SmoothedAimIntentAlpha,
+    AnimationState.SmoothedAimIntentAlpha = FMath::FInterpTo(
+        AnimationState.SmoothedAimIntentAlpha,
         TargetAimIntentAlpha,
         DeltaSeconds,
         AimConfig.AimIntentAlphaInterpSpeed);
@@ -122,9 +127,12 @@ void FBBBCharacterAnimationFactProcessor::Update(
     UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
     UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->TryGetWeaponAnimInstance() : nullptr;
     OutFacts.bIsAiming = AimState.bIsAiming;
-    OutFacts.AimIntentAlpha = FMath::Clamp(SmoothedAimIntentAlpha, 0.0f, 1.0f);
+    OutFacts.AimIntentAlpha = FMath::Clamp(
+        AnimationState.SmoothedAimIntentAlpha,
+        0.0f,
+        1.0f);
     OutFacts.AimIKAlpha = 0.0f;
-    OutFacts.AimTargetComponentSpace = SmoothedAimTargetComponentSpace;
+    OutFacts.AimTargetComponentSpace = AnimationState.SmoothedAimTargetComponentSpace;
     // 只有装备和瞄准来源都有效时才启用瞄准逆向运动学
     if (bHasActiveMainHandEquipment
         && WeaponAnim
@@ -140,7 +148,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.Velocity = Movement->Velocity;
     OutFacts.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
     OutFacts.Acceleration = Movement->GetCurrentAcceleration();
-    OutFacts.Gait = RuntimeData.Locomotion.Gait;
+    OutFacts.Gait = RuntimeData.Locomotion.ReadLocomotionState().Gait;
     OutFacts.MovementMode = Movement->MovementMode;
     OutFacts.GroundFriction = Movement->GroundFriction;
     OutFacts.BrakingFriction = Movement->BrakingFriction;

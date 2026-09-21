@@ -5,8 +5,7 @@
 class USkeletalMeshComponent;
 class ABBBCharacter;
 class ABBBEquipment;
-struct FBBBCharacterEquipmentCommands;
-struct FBBBCharacterEquipmentState;
+struct FBBBCharacterEquipmentUpdateContext;
 
 /** 维护角色期望装备与当前装备的一致性 */
 class FBBBCharacterEquipmentSelectionProcessor final
@@ -22,12 +21,11 @@ public:
      * @param bIsMirror           是否只能执行事实还原
      * @return 无
      */
-    void Update(
-        ABBBCharacter &Character,
-        USkeletalMeshComponent &CharacterMesh,
-        FName AttachmentSocketName,
-        FBBBCharacterEquipmentCommands &EquipmentCommands,
-        FBBBCharacterEquipmentState &EquipmentState,
-        bool bIsMirror) const;
+    /**
+     * 更新当前装备实例
+     * @param Context 本次装备更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterEquipmentUpdateContext &Context) const;
 
 };

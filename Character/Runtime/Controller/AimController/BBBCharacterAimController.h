@@ -6,7 +6,7 @@
 
 class APawn;
 class FBBBCharacterInitializer;
-struct FBBBAimRuntimeData;
+struct FBBBAimDomainState;
 struct FBBBCharacterControlState;
 
 /**
@@ -32,10 +32,10 @@ private:
      * @param InAimConfig  瞄准配置
      */
     void Initialize(
-        FBBBAimRuntimeData &InAimData,
+        FBBBAimDomainState &InAimData,
         const FBBBCharacterControlState &InIntentData);
 
-    FBBBAimRuntimeData *AimData = nullptr;
+    FBBBAimDomainState *AimData = nullptr;
     const FBBBCharacterControlState *ControlData = nullptr;
 
     FBBBCharacterAimStateProcessor AimStateProcessor;

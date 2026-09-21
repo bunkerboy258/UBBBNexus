@@ -1,9 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-class FBBBCharacterNetworkSystem;
-struct FBBBCharacterEquipmentState;
-struct FBBBNetworkState;
+struct FBBBCharacterNetworkUpdateContext;
 
 class ABBB_EVAC_API FBBBEquipmentStateObservationProcessor final
 {
@@ -15,8 +13,10 @@ public:
      * @param NetworkData	网络运行时数据
      * @param NetworkSystem	角色网络系统
      */
-    void Update(
-        const FBBBCharacterEquipmentState &EquipmentState,
-        FBBBNetworkState &NetworkData,
-        FBBBCharacterNetworkSystem &NetworkSystem) const;
+    /**
+     * 当前主手装备变化时上传装备状态
+     * @param Context 本次网络更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterNetworkUpdateContext &Context) const;
 };

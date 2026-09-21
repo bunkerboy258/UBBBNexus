@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Context/BBBRiflePresentationContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/DomainData/Context/BBBRiflePresentationContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -104,7 +104,7 @@ void ABBBRifleEquipment::UpdateEquipment(const float DeltaSeconds)
         return;
     }
 
-    const FBBBRifleState &State = RuntimeData.State;
+    const FBBBRifleState &State = RuntimeData.Domain.ReadRifleState();
     FBBBRiflePresentationContext PresentationContext;
     PresentationContext.Facts.bIsReloading = State.bIsReloading;
     PresentationContext.Facts.FireSequence = State.FireSequence;

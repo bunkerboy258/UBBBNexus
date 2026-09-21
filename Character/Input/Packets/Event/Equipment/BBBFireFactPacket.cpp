@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBFireFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 
 bool FBBBFireFactPacket::IsValid() const
@@ -13,16 +14,20 @@ bool FBBBFireFactPacket::CanApply(const FBBBCharacterInputContext &Context) cons
 
 void FBBBFireFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    if (Context.Operation.IsReloadInProgress())
+    if (BBBCharacterOperation::IsReloadInProgress(Context.Operation))
     {
-        Context.Operation.CancelReload();
+        BBBCharacterOperation::CancelReload(Context.Operation);
     }
 
-    Context.Commands.SubmitFact(ToFact());
-    Context.Events.AddAction(ToFact());
+    Context.Commands.PendingFacts.Add(ToFact());
+    Context.Events.ActionEvents.Add(ToFact());
 }
 
 FBBBEquipmentActionFact FBBBFireFactPacket::ToFact() const
 {
-    return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
+    return FBBBEquipmentActionFact{
+        EBBBEquipmentActionType::Fire,
+        EquipmentId,
+        Sequence,
+        LoadedAmmo};
 }

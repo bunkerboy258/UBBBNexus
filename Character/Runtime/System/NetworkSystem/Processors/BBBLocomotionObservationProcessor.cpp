@@ -1,31 +1,32 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Context/BBBCharacterNetworkObservationContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/States/BBBCharacterNetworkState.h"
 
 void FBBBLocomotionObservationProcessor::Update(
-    const FBBBCharacterLocomotionRuntimeData &LocomotionData,
-    FBBBNetworkState &NetworkData,
-    FBBBCharacterNetworkSystem &NetworkSystem) const
+    FBBBCharacterNetworkUpdateContext &Context) const
 {
-    // 读取上次步态观察结果判断是否发生变化
-    FBBBLocomotionObservationContext Context;
-    Context.Gait = LocomotionData.Gait;
-
-    if (NetworkData.LocomotionObserverState.LastObservedState.IsSet()
-        && NetworkData.LocomotionObserverState.LastObservedState->Gait == Context.Gait)
+    if (Context.NetworkState.LastObservedLocomotion.IsSet()
+        && Context.NetworkState.LastObservedLocomotion->Gait == Context.LocomotionState.Gait)
     {
-        // 步态未变化时不重复提交网络状态
         return;
     }
 
-    // 将当前步态封装为网络状态并提交
-    Context.State.Gait = Context.Gait;
-    NetworkSystem.TransmitLocomotionState(Context.State);
+    FBBBLocomotionNetworkPayload Payload;
+    Payload.Gait = Context.LocomotionState.Gait;
+    Context.NetworkState.LastObservedLocomotion = Payload;
 
-    Context.Observer.LastObservedState = Context.State;
-    // 保存最新观察结果供下一帧比较
-    NetworkData.LocomotionObserverState = Context.Observer;
+    if (Context.NetworkIdentityState.bHasAuthority)
+    {
+        Context.NetworkComponent.ReplicateLocomotionState(Payload);
+    }
+
+    if (!Context.NetworkIdentityState.bHasAuthority
+        && Context.NetworkIdentityState.bLocallyControlled)
+    {
+        Context.NetworkComponent.ServerSubmitLocomotionState(Payload);
+    }
 }

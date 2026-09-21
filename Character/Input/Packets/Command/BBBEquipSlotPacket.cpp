@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBEquipSlotPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 
 bool FBBBEquipSlotPacket::IsValid() const
 {
@@ -7,7 +8,7 @@ bool FBBBEquipSlotPacket::IsValid() const
 
 bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
-    // 只有权威端可以把切换请求转化为装备事实
+    // 快捷槽位必须存在有效装备且不能与当前主手相同
     if (!Context.Inventory.QuickAccessBindings.IsValidIndex(Slot))
     {
         return false;
@@ -20,12 +21,12 @@ bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterInputContext &Context) con
 void FBBBEquipSlotPacket::Apply(FBBBCharacterInputContext &Context) const
 {
     // 切换装备打断进行中的换弹
-    if (Context.Operation.IsReloadInProgress())
+    if (BBBCharacterOperation::IsReloadInProgress(Context.Operation))
     {
-        Context.Operation.CancelReload();
+        BBBCharacterOperation::CancelReload(Context.Operation);
     }
 
     ABBBEquipment *Target = Context.Inventory.QuickAccessBindings[Slot];
-    Context.Operation.SelectEquipment(*Target);
+    Context.Operation.SelectedEquipment = Target;
     Context.Equipment.DesiredMainHandInstance = Target;
 }

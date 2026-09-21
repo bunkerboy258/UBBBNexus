@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/State/BBBRifleState.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/DomainData/BBBRifleDomainState.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/Input/BBBEquipmentInputPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/Runtime/Context/BBBEquipmentRuntimeContext.h"
 
@@ -16,6 +16,9 @@ struct FBBBRifleSignature final
 {
     /** 步枪签名拥有的跨帧状态类型 */
     using FState = FBBBRifleState;
+
+    /** 步枪签名使用的状态持有者类型 */
+    using FDomainState = FBBBRifleDomainState;
 
     /**
      * 从步枪配置建立初始状态

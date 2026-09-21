@@ -2,7 +2,7 @@
 
 bool FBBBAimStatePacket::IsValid() const
 {
-    return !State.AimTargetWorld.ContainsNaN();
+    return !AimTargetWorld.ContainsNaN();
 }
 
 bool FBBBAimStatePacket::CanApply(const FBBBCharacterInputContext &Context) const
@@ -12,5 +12,6 @@ bool FBBBAimStatePacket::CanApply(const FBBBCharacterInputContext &Context) cons
 
 void FBBBAimStatePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Aim.State = State;
+    Context.Aim.bIsAiming = bIsAiming;
+    Context.Aim.AimTargetWorld = AimTargetWorld;
 }

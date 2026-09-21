@@ -1,6 +1,6 @@
 # Equipment Law
 
-- 所有装备领域数据同时受 [`../DataBlackboard/Law.md`](../DataBlackboard/Law.md) 约束。
+- 所有装备领域数据同时受 [`../Constitution/Data/Law.md`](../Constitution/Data/Law.md) 约束。
 
 - `Base/` 只保存全部装备共享的演员、动画实例和配置基类，禁止保存具体装备行为。
 - `Catalog/` 只负责装备标识到配置资产的查找，禁止创建实例或执行装备行为。

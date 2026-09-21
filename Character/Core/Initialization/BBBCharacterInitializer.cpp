@@ -42,30 +42,24 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     // 按固定顺序注入各角色系统和运行数据
     Character.AimController.Initialize(
         Character.RuntimeData.Aim,
-        Character.RuntimeData.Control);
+        Character.RuntimeData.Parse.ReadControlState());
 
     Character.LocomotionController.Initialize(
         Character,
         *Movement,
         Character.RuntimeData.Locomotion,
-        Character.RuntimeData.Control,
+        Character.RuntimeData.Parse.ReadControlState(),
         Config.Locomotion);
     
     Character.EquipmentController.Initialize(
         *Character.GetMesh(),
-        Character.RuntimeData.Equipment,
+        Character.RuntimeData,
         Character,
         Config.Equipment);
     
     Character.NetworkSystem.Initialize(
-        Character.RuntimeData.Network,
-        Character.RuntimeData.NetworkIdentity,
-        Character.RuntimeData.Aim,
-        Character.RuntimeData.Locomotion,
-        Character.RuntimeData.Equipment.Equipment,
+        Character.RuntimeData,
         *Character.CharacterNetworkComponent,
-        Character.RuntimeData.WorldData,
-        Character.RuntimeData.Equipment.Events,
         Config.Network);
 
     Character.CharacterNetworkComponent->Initialize(
@@ -75,9 +69,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character,
         Character.RuntimeData,
         *Character.GetMesh(),
-        Character.RuntimeData.Animation,
-        Character.RuntimeData.Equipment.Equipment,
-        Character.RuntimeData.WorldData,
         Config.Animation);
     
     Character.ParseSystem.Initialize(Character.RuntimeData, *Config.Equipment.EquipmentCatalog);

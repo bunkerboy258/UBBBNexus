@@ -1,6 +1,6 @@
 #pragma once
 struct FBBBCharacterControlState;
-struct FBBBAimRuntimeState;
+struct FBBBAimState;
 
 /** 从控制黑板采集世界空间瞄准目标 */
 class FBBBCharacterAimTargetProcessor final
@@ -12,5 +12,5 @@ public:
      * @param State	瞄准运行事实
      * @return 无
      */
-    void Update(const FBBBCharacterControlState &Control, FBBBAimRuntimeState &State) const;
+    void Update(const FBBBCharacterControlState &Control, FBBBAimState &State) const;
 };

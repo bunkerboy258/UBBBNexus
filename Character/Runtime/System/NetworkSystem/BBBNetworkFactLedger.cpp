@@ -1,0 +1,41 @@
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBNetworkFactLedger.h"
+
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+
+void FBBBNetworkFactLedger::Initialize(UBBBCharacterNetworkComponent &InComponent)
+{
+    Component = &InComponent;
+}
+
+void FBBBNetworkFactLedger::Append(FBBBEquipmentActionFact Fact)
+{
+    // 离散事实只用于短期增量投递 最终状态由独立复制属性收敛
+    if (Entries.Num() >= 128)
+    {
+        Entries.RemoveAt(0);
+        MarkArrayDirty();
+    }
+
+    FBBBNetworkFactEntry &Entry = Entries.AddDefaulted_GetRef();
+    Entry.Fact = MoveTemp(Fact);
+    MarkItemDirty(Entry);
+}
+
+void FBBBNetworkFactLedger::PostReplicatedAdd(
+    const TArrayView<int32> AddedIndices,
+    const int32 FinalSize)
+{
+    if (!Component)
+    {
+        return;
+    }
+
+    // FastArray 索引只是本机容器位置 不能把它当作跨端顺序标识
+    for (const int32 Index : AddedIndices)
+    {
+        if (Entries.IsValidIndex(Index))
+        {
+            Component->SubmitEquipmentFactInput(Entries[Index].Fact);
+        }
+    }
+}

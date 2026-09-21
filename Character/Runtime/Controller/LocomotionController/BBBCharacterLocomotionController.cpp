@@ -1,7 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/BBBCharacterLocomotionController.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/BBBCharacterLocomotionDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -9,7 +10,7 @@
 void FBBBCharacterLocomotionController::Initialize(
     ACharacter &InCharacter,
     UCharacterMovementComponent &InMovement,
-    FBBBCharacterLocomotionRuntimeData &InRuntimeData,
+    FBBBCharacterLocomotionDomainState &InRuntimeData,
     const FBBBCharacterControlState &InIntentData,
     const FBBBCharacterLocomotionConfig &InConfig)
 {
@@ -28,6 +29,12 @@ void FBBBCharacterLocomotionController::Update()
         return;
     }
 
-    LocomotionProcessor.Update(*Character, *Movement, *RuntimeData, *ControlData, *Config,
-        *StrafeSpeedMapCurve);
+    FBBBCharacterLocomotionUpdateContext Context{
+        *Character,
+        *Movement,
+        RuntimeData->LocomotionState,
+        *ControlData,
+        *Config,
+        *StrafeSpeedMapCurve};
+    LocomotionProcessor.Update(Context);
 }

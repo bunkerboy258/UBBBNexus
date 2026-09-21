@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkFactLedgerState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBNetworkFactLedger.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkPayload.h"
 #include "Components/ActorComponent.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
@@ -35,7 +35,11 @@ public:
 
 private:
     friend class FBBBCharacterNetworkSystem;
-    friend struct FBBBNetworkFactLedgerState;
+    friend class FBBBAimObservationProcessor;
+    friend class FBBBEquipmentFactObservationProcessor;
+    friend class FBBBEquipmentStateObservationProcessor;
+    friend class FBBBLocomotionObservationProcessor;
+    friend struct FBBBNetworkFactLedger;
 
     bool IsOwnerLocallyControlled() const;
     bool IsOwnerAuthority() const;
@@ -59,14 +63,14 @@ private:
      *
      * @param AimState	已经成立的瞄准状态
      */
-    void ReplicateAimState(const FBBBAimNetworkState &AimState);
+    void ReplicateAimState(const FBBBAimNetworkPayload &AimState);
 
     /**
      * 将权威移动最终状态复制给模拟代理
      *
      * @param LocomotionState	已经成立的移动状态
      */
-    void ReplicateLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
+    void ReplicateLocomotionState(const FBBBLocomotionNetworkPayload &LocomotionState);
 
     /**
      * 将接收的装备事实投递为领域输入
@@ -87,14 +91,14 @@ private:
      *
      * @param AimState	已经成立的瞄准状态
      */
-    void SubmitAimStateInput(const FBBBAimNetworkState &AimState);
+    void SubmitAimStateInput(const FBBBAimNetworkPayload &AimState);
 
     /**
      * 将接收的移动状态投递为领域输入
      *
      * @param LocomotionState	已经成立的移动状态
      */
-    void SubmitLocomotionStateInput(const FBBBLocomotionNetworkState &LocomotionState);
+    void SubmitLocomotionStateInput(const FBBBLocomotionNetworkPayload &LocomotionState);
 
     UFUNCTION(Server, Reliable)
     /**
@@ -118,7 +122,7 @@ private:
      *
      * @param AimState	客户端最新瞄准状态
      */
-    void ServerSubmitAimState(FBBBAimNetworkState AimState);
+    void ServerSubmitAimState(FBBBAimNetworkPayload AimState);
 
     UFUNCTION(Server, Unreliable)
     /**
@@ -126,7 +130,7 @@ private:
      *
      * @param LocomotionState	客户端最新移动状态
      */
-    void ServerSubmitLocomotionState(FBBBLocomotionNetworkState LocomotionState);
+    void ServerSubmitLocomotionState(FBBBLocomotionNetworkPayload LocomotionState);
 
     UFUNCTION()
     /** 模拟代理收到装备状态时投递领域输入 */
@@ -144,7 +148,7 @@ private:
 
     UPROPERTY(Replicated)
     /** 只复制给模拟代理的离散装备事实账本 */
-    FBBBNetworkFactLedgerState ReplicatedFactLedger;
+    FBBBNetworkFactLedger ReplicatedFactLedger;
 
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedEquipmentId)
     /** 只复制给模拟代理的当前装备最终状态 */
@@ -152,11 +156,11 @@ private:
 
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedAimState)
     /** 只复制给模拟代理的瞄准最终状态 */
-    FBBBAimNetworkState ReplicatedAimState;
+    FBBBAimNetworkPayload ReplicatedAimState;
 
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedLocomotionState)
     /** 只复制给模拟代理的移动最终状态 */
-    FBBBLocomotionNetworkState ReplicatedLocomotionState;
+    FBBBLocomotionNetworkPayload ReplicatedLocomotionState;
 
     /** 生命周期由角色持有 初始化后始终指向组件所属角色 */
     ABBBCharacter *Character = nullptr;

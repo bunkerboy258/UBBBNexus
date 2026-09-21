@@ -1,152 +1,47 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterNetworkIdentityRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterWorldRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
 
 void FBBBCharacterNetworkSystem::Initialize(
-    FBBBNetworkState &InNetworkData,
-    const FBBBCharacterNetworkIdentityRuntimeData &InNetworkIdentity,
-    FBBBAimRuntimeData &InAimData,
-    FBBBCharacterLocomotionRuntimeData &InLocomotionData,
-    const FBBBCharacterEquipmentState &InEquipmentState,
+    FBBBCharacterRuntimeData &InRuntimeData,
     UBBBCharacterNetworkComponent &InNetworkComponent,
-    const FBBBCharacterWorldRuntimeData &InWorldData,
-    const FBBBCharacterEquipmentEvents &InEquipmentEvents,
     const FBBBCharacterNetworkConfig &InNetworkConfig)
 {
-    NetworkData = &InNetworkData;
-    NetworkIdentity = &InNetworkIdentity;
-    AimData = &InAimData;
-    LocomotionData = &InLocomotionData;
-    EquipmentState = &InEquipmentState;
+    RuntimeData = &InRuntimeData;
     NetworkComponent = &InNetworkComponent;
-    WorldData = &InWorldData;
-    EquipmentEvents = &InEquipmentEvents;
     NetworkConfig = &InNetworkConfig;
 }
 
 void FBBBCharacterNetworkSystem::Update()
 {
-    if (!NetworkComponent || !NetworkIdentity)
+    if (!RuntimeData || !NetworkComponent || !NetworkConfig)
     {
         return;
     }
 
-    // 只有权威或本机控制角色能够产生新事实
-    // 模拟代理只消费复制到达的领域输入
-    if (NetworkIdentity->bHasAuthority || NetworkIdentity->bLocallyControlled)
-    {
-        Observe();
-    }
-}
-
-void FBBBCharacterNetworkSystem::Observe()
-{
-    if (!(NetworkData && WorldData && AimData && LocomotionData && NetworkConfig
-        && EquipmentState && EquipmentEvents && NetworkComponent))
+    const FBBBCharacterNetworkIdentityState &NetworkIdentityState =
+        RuntimeData->External.ReadNetworkIdentityState();
+    if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
     {
         return;
     }
 
-    // 主管线已完成输入解析后再读取黑板
-    // 观察器绝不写入角色状态
-    ObservationProcessor.Update(
-        *NetworkData,
-        WorldData->WorldTimeSeconds,
-        *AimData,
-        *LocomotionData,
+    FBBBCharacterNetworkUpdateContext Context{
+        RuntimeData->Network.NetworkState,
+        NetworkIdentityState,
+        RuntimeData->External.ReadWorldState(),
+        RuntimeData->Aim.ReadAimState(),
+        RuntimeData->Locomotion.ReadLocomotionState(),
+        RuntimeData->Equipment.ReadEquipmentSelectionState(),
+        RuntimeData->Equipment.ReadEquipmentEventState(),
         *NetworkConfig,
-        *EquipmentState,
-        *EquipmentEvents,
-        *this);
-}
+        *NetworkComponent};
 
-void FBBBCharacterNetworkSystem::TransmitEquipmentFact(FBBBEquipmentActionFact Fact)
-{
-    if (!NetworkComponent || !NetworkIdentity)
-    {
-        return;
-    }
-
-    if (NetworkIdentity->bHasAuthority)
-    {
-        // 权威将最终事实写入只面向模拟代理的增量账本
-        NetworkComponent->ReplicateEquipmentFact(MoveTemp(Fact));
-        return;
-    }
-
-    if (NetworkIdentity->bLocallyControlled)
-    {
-        // 非权威本机控制角色只能把已成立事实交给权威
-        NetworkComponent->ServerSubmitEquipmentFact(MoveTemp(Fact));
-    }
-}
-
-void FBBBCharacterNetworkSystem::TransmitEquipmentState(const FName EquipmentId)
-{
-    if (!NetworkComponent || !NetworkIdentity)
-    {
-        return;
-    }
-
-    if (NetworkIdentity->bHasAuthority)
-    {
-        // 最终装备状态由权威复制给模拟代理
-        NetworkComponent->ReplicateEquipmentState(EquipmentId);
-        return;
-    }
-
-    if (NetworkIdentity->bLocallyControlled)
-    {
-        // 客户端不直接修改远端状态
-        NetworkComponent->ServerSubmitEquipmentState(EquipmentId);
-    }
-}
-
-void FBBBCharacterNetworkSystem::TransmitAimState(const FBBBAimNetworkState &AimState)
-{
-    if (!NetworkComponent || !NetworkIdentity)
-    {
-        return;
-    }
-
-    if (NetworkIdentity->bHasAuthority)
-    {
-        // 权威发布已经稳定的瞄准快照
-        NetworkComponent->ReplicateAimState(AimState);
-        return;
-    }
-
-    if (NetworkIdentity->bLocallyControlled)
-    {
-        // 连续快照经服务端接收边界重新进入输入系统
-        NetworkComponent->ServerSubmitAimState(AimState);
-    }
-}
-
-void FBBBCharacterNetworkSystem::TransmitLocomotionState(
-    const FBBBLocomotionNetworkState &LocomotionState)
-{
-    if (!NetworkComponent || !NetworkIdentity)
-    {
-        return;
-    }
-
-    if (NetworkIdentity->bHasAuthority)
-    {
-        // 权威发布已经稳定的移动快照
-        NetworkComponent->ReplicateLocomotionState(LocomotionState);
-        return;
-    }
-
-    if (NetworkIdentity->bLocallyControlled)
-    {
-        // 模拟代理不会进入此分支 因而不会形成转发回路
-        NetworkComponent->ServerSubmitLocomotionState(LocomotionState);
-    }
+    EquipmentStateObservationProcessor.Update(Context);
+    EquipmentFactObservationProcessor.Update(Context);
+    AimObservationProcessor.Update(Context);
+    LocomotionObservationProcessor.Update(Context);
 }

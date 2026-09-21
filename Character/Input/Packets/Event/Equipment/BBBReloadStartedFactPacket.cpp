@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadStartedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 
 bool FBBBReloadStartedFactPacket::IsValid() const
@@ -13,9 +14,10 @@ bool FBBBReloadStartedFactPacket::CanApply(const FBBBCharacterInputContext &Cont
 
 void FBBBReloadStartedFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Commands.SubmitFact(ToFact());
-    Context.Events.AddAction(ToFact());
-    Context.Operation.TrackReloadStarted(
+    Context.Commands.PendingFacts.Add(ToFact());
+    Context.Events.ActionEvents.Add(ToFact());
+    BBBCharacterOperation::TrackReloadStarted(
+        Context.Operation,
         Sequence,
         EquipmentId,
         Context.Equipment.ActiveMainHandInstance,
@@ -24,5 +26,9 @@ void FBBBReloadStartedFactPacket::Apply(FBBBCharacterInputContext &Context) cons
 
 FBBBEquipmentActionFact FBBBReloadStartedFactPacket::ToFact() const
 {
-    return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
+    return FBBBEquipmentActionFact{
+        EBBBEquipmentActionType::ReloadStarted,
+        EquipmentId,
+        Sequence,
+        LoadedAmmo};
 }

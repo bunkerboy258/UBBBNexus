@@ -60,7 +60,7 @@ void UBBBCharacterNetworkComponent::ServerSubmitEquipmentState_Implementation(co
     SubmitEquipmentStateInput(EquipmentId);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkState AimState)
+void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimNetworkPayload AimState)
 {
     // 连续状态允许覆盖 但非法向量不能污染角色黑板
     if (!ensureMsgf(Character && IsOwnerAuthority() && !FVector(AimState.AimTargetWorld).ContainsNaN(),
@@ -73,7 +73,7 @@ void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(FBBBAimN
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(
-    FBBBLocomotionNetworkState LocomotionState)
+    FBBBLocomotionNetworkPayload LocomotionState)
 {
     if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("[UBBBC]Locomotion state delivery was rejected")))
     {
@@ -122,7 +122,7 @@ void UBBBCharacterNetworkComponent::ReplicateEquipmentState(const FName Equipmen
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkState &AimState)
+void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkPayload &AimState)
 {
     if (!IsOwnerAuthority())
     {
@@ -133,7 +133,7 @@ void UBBBCharacterNetworkComponent::ReplicateAimState(const FBBBAimNetworkState 
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateLocomotionState(const FBBBLocomotionNetworkState &LocomotionState)
+void UBBBCharacterNetworkComponent::ReplicateLocomotionState(const FBBBLocomotionNetworkPayload &LocomotionState)
 {
     if (!IsOwnerAuthority())
     {
@@ -152,34 +152,34 @@ void UBBBCharacterNetworkComponent::SubmitEquipmentFactInput(const FBBBEquipment
     }
 
     // 此处是离散事实从网络格式进入领域输入格式的唯一翻译点
-    switch (Fact.PacketId)
+    switch (Fact.Type)
     {
-    case FBBBEquipFactPacket::PacketId:
+    case EBBBEquipmentActionType::Equip:
     {
         Character->SubmitInput(FBBBEquipFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
-    case FBBBFireFactPacket::PacketId:
+    case EBBBEquipmentActionType::Fire:
     {
         Character->SubmitInput(FBBBFireFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
-    case FBBBReloadStartedFactPacket::PacketId:
+    case EBBBEquipmentActionType::ReloadStarted:
     {
         Character->SubmitInput(FBBBReloadStartedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
-    case FBBBMagazineDetachedFactPacket::PacketId:
+    case EBBBEquipmentActionType::MagazineDetached:
     {
         Character->SubmitInput(FBBBMagazineDetachedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
-    case FBBBMagazineLoadedFactPacket::PacketId:
+    case EBBBEquipmentActionType::MagazineLoaded:
     {
         Character->SubmitInput(FBBBMagazineLoadedFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
     }
-    case FBBBReloadCancelledFactPacket::PacketId:
+    case EBBBEquipmentActionType::ReloadCancelled:
     {
         Character->SubmitInput(FBBBReloadCancelledFactPacket{Fact.EquipmentId, Fact.Sequence, Fact.LoadedAmmo});
         return;
@@ -197,18 +197,19 @@ void UBBBCharacterNetworkComponent::SubmitEquipmentStateInput(const FName Equipm
     }
 }
 
-void UBBBCharacterNetworkComponent::SubmitAimStateInput(const FBBBAimNetworkState &AimState)
+void UBBBCharacterNetworkComponent::SubmitAimStateInput(const FBBBAimNetworkPayload &AimState)
 {
     if (Character)
     {
         // 连续快照在边界转成领域状态包 之后由 ParseSystem 统一应用
         FBBBAimStatePacket Packet;
-        Packet.State = FBBBAimRuntimeState{AimState.bIsAiming, AimState.AimTargetWorld};
+        Packet.bIsAiming = AimState.bIsAiming;
+        Packet.AimTargetWorld = AimState.AimTargetWorld;
         Character->SubmitInput(MoveTemp(Packet));
     }
 }
 
-void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(const FBBBLocomotionNetworkState &LocomotionState)
+void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(const FBBBLocomotionNetworkPayload &LocomotionState)
 {
     if (Character)
     {

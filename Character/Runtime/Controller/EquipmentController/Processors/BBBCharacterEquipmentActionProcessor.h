@@ -1,6 +1,5 @@
 #pragma once
-struct FBBBCharacterEquipmentCommands;
-struct FBBBCharacterEquipmentState;
+struct FBBBCharacterEquipmentUpdateContext;
 
 /** 转发角色装备命令并整理装备已确认结果 */
 class FBBBCharacterEquipmentActionProcessor final
@@ -13,9 +12,11 @@ public:
      * @param bIsMirror      是否只能投递网络确认事实
      * @return 无
      */
-    void Update(
-        FBBBCharacterEquipmentCommands &Commands,
-        FBBBCharacterEquipmentState &State,
-        bool bIsMirror) const;
+    /**
+     * 转发本帧已经批准的装备命令
+     * @param Context 本次装备更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterEquipmentUpdateContext &Context) const;
 
 };

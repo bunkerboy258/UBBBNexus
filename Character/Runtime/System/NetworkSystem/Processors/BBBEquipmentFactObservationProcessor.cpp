@@ -1,15 +1,24 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBEquipmentFactObservationProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Events/BBBCharacterEquipmentEvents.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentEventState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
 
 void FBBBEquipmentFactObservationProcessor::Update(
-    const FBBBCharacterEquipmentEvents &EquipmentEvents,
-    FBBBCharacterNetworkSystem &NetworkSystem) const
+    FBBBCharacterNetworkUpdateContext &Context) const
 {
-    // 将本帧装备事件逐条转换为网络动作包
-    for (const FBBBEquipmentActionFact &Event : EquipmentEvents.ActionEvents)
+    for (const FBBBEquipmentActionFact &Fact : Context.EquipmentEventState.ActionEvents)
     {
-        NetworkSystem.TransmitEquipmentFact(Event);
+        if (Context.NetworkIdentityState.bHasAuthority)
+        {
+            Context.NetworkComponent.ReplicateEquipmentFact(Fact);
+            continue;
+        }
+
+        if (Context.NetworkIdentityState.bLocallyControlled)
+        {
+            Context.NetworkComponent.ServerSubmitEquipmentFact(Fact);
+        }
     }
 }

@@ -1,19 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 struct FBBBEquipmentActionFact;
 
-/**
- * 装备切换已执行事实包 本地由装备回执 还原模式由网络还原
- */
+/** 装备切换已经执行的事实包 */
 struct FBBBEquipFactPacket final
 {
-
-    /** 线上身份 与网络包 PacketId 对应 */
-    static constexpr uint8 PacketId = 1;
-
     FName EquipmentId = NAME_None;
 
     int32 Sequence = INDEX_NONE;
@@ -31,7 +25,7 @@ struct FBBBEquipFactPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
-     * 留档事实 还原模式同时下发镜像装备快照
+     * 留档已经成立的装备切换事实
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterInputContext &Context) const;

@@ -2,64 +2,50 @@
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterNetworkIdentityRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/BBBCharacterEquipmentDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentController::Initialize(
     USkeletalMeshComponent &InCharacterMesh,
-    FBBBCharacterEquipmentRuntimeData &InEquipmentData,
+    FBBBCharacterRuntimeData &InRuntimeData,
     ABBBCharacter &InCharacter,
     const FBBBCharacterEquipmentConfig &InEquipmentConfig)
 {
     // 保存角色装备系统依赖并按配置建立库存和快捷栏容量
     CharacterMesh = &InCharacterMesh;
-    EquipmentData = &InEquipmentData;
+    RuntimeData = &InRuntimeData;
     Character = &InCharacter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
 
-    EquipmentData->Inventory.Slots.Init(
+    RuntimeData->Equipment.EquipmentInventoryState.Slots.Init(
         nullptr,
         FMath::Max(1, InEquipmentConfig.InventorySlotCount));
 
-    EquipmentData->Inventory.QuickAccessBindings.Init(
+    RuntimeData->Equipment.EquipmentInventoryState.QuickAccessBindings.Init(
         nullptr,
         FMath::Max(1, InEquipmentConfig.QuickAccessSlotCount));
 
 }
 
-void FBBBCharacterEquipmentController::Update(
-    const FBBBCharacterNetworkIdentityRuntimeData &NetworkIdentity)
+void FBBBCharacterEquipmentController::Update()
 {
     // 装备更新需要角色网格和装备运行时数据有效
-    if (!EquipmentData || !CharacterMesh || !Character)
+    if (!RuntimeData || !CharacterMesh || !Character)
     {
         return;
     }
 
-    // 先处理目标装备切换再处理当前装备动作
-    SelectionProcessor.Update(
+    FBBBCharacterEquipmentUpdateContext Context{
         *Character,
         *CharacterMesh,
         RightHandWeaponSocketName,
-        EquipmentData->Commands,
-        EquipmentData->Equipment,
-        NetworkIdentity.ExecutionMode == EBBBCharacterExecutionMode::Mirror);
+        RuntimeData->Equipment.EquipmentInventoryState,
+        RuntimeData->Equipment.EquipmentSelectionState,
+        RuntimeData->Equipment.EquipmentCommandState,
+        RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
 
-    // 将本帧装备命令提交给当前装备外部接口
-    ActionProcessor.Update(
-        EquipmentData->Commands,
-        EquipmentData->Equipment,
-        NetworkIdentity.ExecutionMode == EBBBCharacterExecutionMode::Mirror);
-}
-
-ABBBEquipment *FBBBCharacterEquipmentController::GetActiveEquipment() const
-{
-    if (!EquipmentData)
-    {
-        return nullptr;
-    }
-
-    return EquipmentData->Equipment.ActiveMainHandInstance;
+    SelectionProcessor.Update(Context);
+    ActionProcessor.Update(Context);
 }

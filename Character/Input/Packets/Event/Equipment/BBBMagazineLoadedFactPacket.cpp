@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBMagazineLoadedFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 
 bool FBBBMagazineLoadedFactPacket::IsValid() const
@@ -13,12 +14,21 @@ bool FBBBMagazineLoadedFactPacket::CanApply(const FBBBCharacterInputContext &Con
 
 void FBBBMagazineLoadedFactPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Commands.SubmitFact(ToFact());
-    Context.Events.AddAction(ToFact());
-    Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.ActiveEquipmentId, false);
+    Context.Commands.PendingFacts.Add(ToFact());
+    Context.Events.ActionEvents.Add(ToFact());
+    BBBCharacterOperation::TrackReloadFinished(
+        Context.Operation,
+        Sequence,
+        EquipmentId,
+        Context.Equipment.ActiveEquipmentId,
+        false);
 }
 
 FBBBEquipmentActionFact FBBBMagazineLoadedFactPacket::ToFact() const
 {
-    return FBBBEquipmentActionFact{PacketId, EquipmentId, Sequence, LoadedAmmo};
+    return FBBBEquipmentActionFact{
+        EBBBEquipmentActionType::MagazineLoaded,
+        EquipmentId,
+        Sequence,
+        LoadedAmmo};
 }

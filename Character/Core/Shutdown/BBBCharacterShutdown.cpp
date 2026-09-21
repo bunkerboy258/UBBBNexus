@@ -12,11 +12,14 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
     Character.CharacterUpdatePipeline.LateUpdateTick.SetTickFunctionEnable(false);
 
     USkeletalMeshComponent *CharacterMesh = Character.GetMesh();
-    FBBBCharacterEquipmentRuntimeData &EquipmentData = Character.RuntimeData.Equipment;
+    const FBBBCharacterEquipmentInventoryState &InventoryState =
+        Character.RuntimeData.Equipment.ReadEquipmentInventoryState();
+    const FBBBCharacterEquipmentSelectionState &SelectionState =
+        Character.RuntimeData.Equipment.ReadEquipmentSelectionState();
     // 使用集合合并所有装备引用避免同一实例被重复收束
     TSet<ABBBEquipment *> Instances;
     // 收集库存中的装备补齐正常持有实例
-    for (const TObjectPtr<ABBBEquipment> &Instance : EquipmentData.Inventory.Slots)
+    for (const TObjectPtr<ABBBEquipment> &Instance : InventoryState.Slots)
     {
         if (Instance)
         {
@@ -25,14 +28,14 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
     }
 
     // 当前装备和目标装备可能尚未写回库存因此需要单独收集
-    ABBBEquipment *ActiveInstance = EquipmentData.Equipment.ActiveMainHandInstance;
+    ABBBEquipment *ActiveInstance = SelectionState.ActiveMainHandInstance;
     if (ActiveInstance)
     {
         Instances.Add(ActiveInstance);
 
     }
 
-    if (ABBBEquipment *DesiredInstance = EquipmentData.Equipment.DesiredMainHandInstance)
+    if (ABBBEquipment *DesiredInstance = SelectionState.DesiredMainHandInstance)
     {
         Instances.Add(DesiredInstance);
     }

@@ -1,0 +1,38 @@
+#pragma once
+
+class ABBBCharacter;
+class UBBBAnimInstance;
+class USkeletalMeshComponent;
+struct FBBBCharacterAnimationConfig;
+struct FBBBCharacterAnimationState;
+struct FBBBCharacterEquipmentSelectionState;
+struct FBBBCharacterRuntimeData;
+struct FBBBCharacterWorldState;
+
+/** 本次角色动画更新使用的栈上上下文 */
+struct FBBBCharacterAnimationUpdateContext final
+{
+    /** 动画所属角色 */
+    ABBBCharacter &Character;
+
+    /** 角色完整运行时黑板 */
+    FBBBCharacterRuntimeData &RuntimeData;
+
+    /** 角色骨骼网格 */
+    USkeletalMeshComponent &CharacterMesh;
+
+    /** 角色动画实例 */
+    UBBBAnimInstance &AnimationInstance;
+
+    /** 角色动画状态 */
+    FBBBCharacterAnimationState &AnimationState;
+
+    /** 角色装备选择状态 */
+    const FBBBCharacterEquipmentSelectionState &EquipmentSelectionState;
+
+    /** 当前帧世界快照 */
+    const FBBBCharacterWorldState &WorldState;
+
+    /** 角色动画配置 */
+    const FBBBCharacterAnimationConfig &AnimationConfig;
+};

@@ -1,79 +1,50 @@
-
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
+
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Context/BBBCharacterNetworkObservationContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
-namespace
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/DomainData/States/BBBAimState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/ExternalDomain/States/BBBCharacterWorldState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/DomainData/States/BBBCharacterNetworkState.h"
+
+void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Context) const
 {
-    //判断是否满足提交条件(最重要的作用是避免频繁提交卡爆带宽)
-bool ShouldTransmitAimState(
-    const FBBBAimNetworkObserverState &Observer,
-    const FBBBAimNetworkState &AimState,
-    const FBBBCharacterNetworkConfig &NetworkConfig,
-    float Now)
-{
+    FBBBAimNetworkPayload Payload;
+    Payload.bIsAiming = Context.AimState.bIsAiming;
+    Payload.AimTargetWorld = Context.AimState.AimTargetWorld;
 
-    //还没记录过直接返回
-    if (!Observer.LastObservedState.IsSet())
+    bool bShouldTransmit = !Context.NetworkState.LastObservedAim.IsSet();
+    if (Context.NetworkState.LastObservedAim.IsSet())
     {
-        return true;
+        const FBBBAimNetworkPayload &Previous = Context.NetworkState.LastObservedAim.GetValue();
+        bShouldTransmit = Previous.bIsAiming != Payload.bIsAiming;
+
+        const bool bIntervalElapsed = Context.WorldState.WorldTimeSeconds
+            - Context.NetworkState.LastAimUploadTime
+            >= Context.NetworkConfig.AimUploadInterval;
+        const bool bTargetChanged = !FVector(Previous.AimTargetWorld).Equals(
+            FVector(Payload.AimTargetWorld),
+            0.5f);
+        bShouldTransmit |= bIntervalElapsed && bTargetChanged;
     }
 
-    const FBBBAimNetworkState &Previous = Observer.LastObservedState.GetValue();
-
-    //如果是瞄准的行为变化 立即提交
-    if (Previous.bIsAiming != AimState.bIsAiming)
-    {
-        return true;
-    }
-
-    //上传间隔不足时跳过本次提交
-    if (Now - Observer.LastUploadTime < NetworkConfig.AimUploadInterval)
-    {
-        return false;
-    }
-
-    //目标点变化超过阈值时提交
-    if (!FVector(Previous.AimTargetWorld).Equals(FVector(AimState.AimTargetWorld), 0.5f))
-    {
-        return true;
-    }
-    return false;
-}
-}
-
-void FBBBAimObservationProcessor::Update(
-    const FBBBAimRuntimeData &AimData,
-    const FBBBCharacterNetworkConfig &NetworkConfig,
-    float WorldTimeSeconds,
-    FBBBNetworkState &NetworkData,
-    FBBBCharacterNetworkSystem &NetworkSystem) const
-{
-
-    // 读取上次观察结果用于判断本次是否需要上传
-    //上次上传的瞄准状态数据
-    FBBBAimObservationContext Context;
-    Context.Observer = NetworkData.AimObserverState;
-    Context.State.bIsAiming = AimData.State.bIsAiming;
-    Context.State.AimTargetWorld = AimData.State.AimTargetWorld;
-
-    // 状态未达到提交条件时保持上次观察结果
-    const float Now = WorldTimeSeconds;
-
-    if (!ShouldTransmitAimState(Context.Observer, Context.State, NetworkConfig, Now))
+    if (!bShouldTransmit)
     {
         return;
     }
 
-    Context.Observer.LastObservedState = Context.State;
+    Context.NetworkState.LastObservedAim = Payload;
+    Context.NetworkState.LastAimUploadTime = Context.WorldState.WorldTimeSeconds;
 
-    Context.Observer.LastUploadTime = Now;
+    if (Context.NetworkIdentityState.bHasAuthority)
+    {
+        Context.NetworkComponent.ReplicateAimState(Payload);
+    }
 
-    // 先记录本次观察结果再提交网络状态
-    NetworkData.AimObserverState = Context.Observer;
-
-    NetworkSystem.TransmitAimState(Context.State);
+    if (!Context.NetworkIdentityState.bHasAuthority
+        && Context.NetworkIdentityState.bLocallyControlled)
+    {
+        Context.NetworkComponent.ServerSubmitAimState(Payload);
+    }
 }

@@ -8,7 +8,7 @@ class UCharacterMovementComponent;
 class UCurveFloat;
 class FBBBCharacterInitializer;
 struct FBBBCharacterLocomotionConfig;
-struct FBBBCharacterLocomotionRuntimeData;
+struct FBBBCharacterLocomotionDomainState;
 struct FBBBCharacterControlState;
 
 /** 按官方运动样例规则驱动角色移动组件 */
@@ -32,7 +32,7 @@ private:
     void Initialize(
         ACharacter &InCharacter,
         UCharacterMovementComponent &InMovement,
-        FBBBCharacterLocomotionRuntimeData &InRuntimeData,
+        FBBBCharacterLocomotionDomainState &InRuntimeData,
         const FBBBCharacterControlState &InIntentData,
         const FBBBCharacterLocomotionConfig &InConfig);
 
@@ -40,7 +40,7 @@ private:
 
     UCharacterMovementComponent *Movement = nullptr;
 
-    FBBBCharacterLocomotionRuntimeData *RuntimeData = nullptr;
+    FBBBCharacterLocomotionDomainState *RuntimeData = nullptr;
 
     const FBBBCharacterControlState *ControlData = nullptr;
 

@@ -1,30 +1,32 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Commands/BBBCharacterEquipmentCommands.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentCommandState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(
-    ABBBCharacter &Character,
-    USkeletalMeshComponent &CharacterMesh,
-    const FName AttachmentSocketName,
-    FBBBCharacterEquipmentCommands &EquipmentCommands,
-    FBBBCharacterEquipmentState &EquipmentState,
-    const bool bIsMirror) const
+    FBBBCharacterEquipmentUpdateContext &Context) const
 {
+    ABBBCharacter &Character = Context.Character;
+    USkeletalMeshComponent &CharacterMesh = Context.CharacterMesh;
+    FBBBCharacterEquipmentCommandState &EquipmentCommands = Context.CommandState;
+    FBBBCharacterEquipmentSelectionState &EquipmentState = Context.SelectionState;
+
     // 先处理网络恢复的装备实例
     bool bRestoringEquipment = false;
-    UBBBEquipmentDefinition *StateDefinition = EquipmentCommands.ConsumeEquipmentState();
+    UBBBEquipmentDefinition *StateDefinition = EquipmentCommands.PendingEquipmentState;
+    EquipmentCommands.PendingEquipmentState = nullptr;
     if (StateDefinition)
     {
         ABBBEquipment *StateInstance = FBBBCharacterEquipmentLifecycleProcessor::Create(
             Character,
             *StateDefinition,
-            bIsMirror);
+            Context.bIsMirror);
         if (!StateInstance)
         {
             return;
@@ -63,7 +65,10 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     }
 
     // 附着失败时清理目标装备并回到未装备状态
-    if (!FBBBCharacterEquipmentLifecycleProcessor::Attach(CharacterMesh, AttachmentSocketName, *DesiredInstance))
+    if (!FBBBCharacterEquipmentLifecycleProcessor::Attach(
+        CharacterMesh,
+        Context.RightHandWeaponSocketName,
+        *DesiredInstance))
     {
         FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *DesiredInstance);
         EquipmentState.ActiveMainHandInstance = nullptr;
@@ -80,5 +85,5 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         FBBBEquipmentCommand{
             EBBBEquipmentCommandType::Equip,
             EquipmentState.NextActionSequence++},
-        bIsMirror);
+        Context.bIsMirror);
 }

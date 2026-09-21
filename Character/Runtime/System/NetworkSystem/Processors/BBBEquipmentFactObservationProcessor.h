@@ -1,7 +1,6 @@
 #pragma once
 
-class FBBBCharacterNetworkSystem;
-struct FBBBCharacterEquipmentEvents;
+struct FBBBCharacterNetworkUpdateContext;
 
 /** 上传本帧装备动作事件 */
 class FBBBEquipmentFactObservationProcessor final
@@ -12,7 +11,10 @@ public:
      * @param EquipmentEvents 装备事件
      * @param NetworkSystem 网络系统
      */
-    void Update(
-        const FBBBCharacterEquipmentEvents &EquipmentEvents,
-        FBBBCharacterNetworkSystem &NetworkSystem) const;
+    /**
+     * 上传本帧已经成立的装备事实
+     * @param Context 本次网络更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterNetworkUpdateContext &Context) const;
 };

@@ -2,10 +2,7 @@
 
 #include "CoreMinimal.h"
 
-struct FBBBAnimationState;
-struct FBBBCharacterAnimationConfig;
-struct FBBBCharacterEquipmentState;
-class USkeletalMeshComponent;
+struct FBBBCharacterAnimationUpdateContext;
 
 /** 根据装备黑板状态选择并链接角色动画层 */
 class ABBB_EVAC_API FBBBCharacterAnimationLayerProcessor final
@@ -19,9 +16,10 @@ public:
      * @param CharacterMesh	角色骨骼网格
      * @return 无
      */
-    void Update(
-        const FBBBCharacterEquipmentState &EquipmentState,
-        const FBBBCharacterAnimationConfig &AnimationConfig,
-        FBBBAnimationState &AnimationData,
-        USkeletalMeshComponent &CharacterMesh) const;
+    /**
+     * 根据当前主手装备选择角色动画层
+     * @param Context 本次动画更新上下文
+     * @return 无
+     */
+    void Update(FBBBCharacterAnimationUpdateContext &Context) const;
 };

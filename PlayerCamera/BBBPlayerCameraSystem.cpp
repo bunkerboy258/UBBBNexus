@@ -51,10 +51,12 @@ void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
         return;
     }
     // 角色只发布提交方已经累计完成的最终相机输入
-    if (Character->RuntimeData.CameraInput.IsSet())
+    TOptional<FBBBPlayerCameraInput> &CameraInput =
+        Character->RuntimeData.Parse.CameraState.PendingInput;
+    if (CameraInput.IsSet())
     {
-        Submit(Character->RuntimeData.CameraInput.GetValue());
-        Character->RuntimeData.CameraInput.Reset();
+        Submit(CameraInput.GetValue());
+        CameraInput.Reset();
     }
     FRotator Rotation = Controller->GetControlRotation();
     for (const FBBBPlayerCameraInput &Packet : Pending)
@@ -73,7 +75,7 @@ void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
     Rotation.Yaw += Delta.Y;
     RecoilOffset = NextOffset;
     Controller->SetControlRotation(Rotation);
-    const bool bAiming = Character->RuntimeData.Control.Value.bAim;
+    const bool bAiming = Character->RuntimeData.Parse.ReadControlState().bAim;
     Boom->TargetArmLength = FMath::FInterpTo(Boom->TargetArmLength,
         bAiming ? Config.AimBoomLength : Config.CameraBoomLength, DeltaSeconds, Config.AimBoomInterpSpeed);
     SetActorLocationAndRotation(Character->GetActorLocation(), Rotation);
