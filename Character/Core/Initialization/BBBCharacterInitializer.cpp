@@ -2,7 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterMovementPacket.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"

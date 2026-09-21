@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 
 void FBBBCharacterRuntimeData::Clean()
 {

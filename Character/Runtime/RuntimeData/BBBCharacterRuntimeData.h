@@ -3,8 +3,8 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterInputState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/State/BBBCharacterParseState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterNetworkIdentityDefinition.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterNetworkIdentityRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
@@ -70,7 +70,7 @@ private:
 
     /** 保存角色在当前机器上的网络身份与玩法执行身份 */
     UPROPERTY(Transient)
-    FBBBCharacterNetworkIdentityDefinition NetworkIdentity;
+    FBBBCharacterNetworkIdentityRuntimeData NetworkIdentity;
 
     //保存角色行为意图
     UPROPERTY(Transient)

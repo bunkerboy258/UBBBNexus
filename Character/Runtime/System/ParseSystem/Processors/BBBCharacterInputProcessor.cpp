@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Context/BBBCharacterInputContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageRequestState.h"
 
 void FBBBCharacterInputProcessor::Update(

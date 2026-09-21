@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/BBBCharacterParseSystem.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 
 void FBBBCharacterParseSystem::Initialize(

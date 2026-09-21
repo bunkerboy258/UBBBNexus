@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterNetworkIdentityDefinition.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterNetworkIdentityRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentController::Initialize(
@@ -30,7 +30,7 @@ void FBBBCharacterEquipmentController::Initialize(
 }
 
 void FBBBCharacterEquipmentController::Update(
-    const FBBBCharacterNetworkIdentityDefinition &NetworkIdentity)
+    const FBBBCharacterNetworkIdentityRuntimeData &NetworkIdentity)
 {
     // 装备更新需要角色网格和装备运行时数据有效
     if (!EquipmentData || !CharacterMesh || !Character)

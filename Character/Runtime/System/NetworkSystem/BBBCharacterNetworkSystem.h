@@ -13,7 +13,7 @@ struct FBBBEquipmentActionFact;
 struct FBBBCharacterLocomotionRuntimeData;
 struct FBBBLocomotionNetworkState;
 struct FBBBCharacterNetworkConfig;
-struct FBBBCharacterNetworkIdentityDefinition;
+struct FBBBCharacterNetworkIdentityRuntimeData;
 struct FBBBCharacterWorldRuntimeData;
 struct FBBBNetworkState;
 
@@ -49,7 +49,7 @@ private:
      */
     void Initialize(
         FBBBNetworkState &InNetworkData,
-        const FBBBCharacterNetworkIdentityDefinition &InNetworkIdentity,
+        const FBBBCharacterNetworkIdentityRuntimeData &InNetworkIdentity,
         FBBBAimRuntimeData &InAimData,
         FBBBCharacterLocomotionRuntimeData &InLocomotionData,
         const FBBBCharacterEquipmentState &InEquipmentState,
@@ -67,7 +67,7 @@ private:
     void TransmitLocomotionState(const FBBBLocomotionNetworkState &LocomotionState);
 
     FBBBNetworkState *NetworkData = nullptr;
-    const FBBBCharacterNetworkIdentityDefinition *NetworkIdentity = nullptr;
+    const FBBBCharacterNetworkIdentityRuntimeData *NetworkIdentity = nullptr;
     const FBBBCharacterWorldRuntimeData *WorldData = nullptr;
     FBBBAimRuntimeData *AimData = nullptr;
     FBBBCharacterLocomotionRuntimeData *LocomotionData = nullptr;

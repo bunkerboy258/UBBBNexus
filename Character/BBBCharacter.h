@@ -10,7 +10,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/BBBCharacterParseSystem.h"
 #include "BBBWork/UBBBNexus/Character/Core/Update/BBBCharacterUpdatePipeline.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBCharacterNetworkIdentityDefinition.generated.h"
+#include "BBBCharacterNetworkIdentityRuntimeData.generated.h"
 
 class FBBBCharacterUpdatePipeline;
 
@@ -23,7 +23,7 @@ enum class EBBBCharacterExecutionMode : uint8
  * 该事实每帧由角色主管线刷新，领域系统只能读取，禁止自行查询网络角色。
  */
 USTRUCT()
-struct FBBBCharacterNetworkIdentityDefinition
+struct FBBBCharacterNetworkIdentityRuntimeData
 {
     GENERATED_BODY()
 

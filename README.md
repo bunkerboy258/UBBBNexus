@@ -9,7 +9,7 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
 - `Character/Core/`：角色初始化 销毁和根更新调度
 - `Character/Runtime/Controller/`：根据黑板维护角色控制行为
 - `Character/Runtime/System/`：解析 动画和网络领域系统
-- `Character/Runtime/State/`：角色运行时黑板与事实状态
+- `Character/Runtime/RuntimeData/`：角色跨领域运行时数据根
 - `PlayerInput/`：控制器持有的输入组件 负责增强输入、屏蔽、解绑及世界空间数据组装
 - `PlayerCamera/`：独立相机 Actor 负责跟随角色与消费相机输入
 - `Equipment/`：独立 Tick 与固定系统和 Fragment 配置 本轮仅迁移角色入口引用

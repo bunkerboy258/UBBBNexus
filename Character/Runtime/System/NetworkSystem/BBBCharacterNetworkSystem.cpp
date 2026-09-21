@@ -3,14 +3,14 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/BBBCharacterEquipmentRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterWorldRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/State/Definition/BBBCharacterNetworkIdentityDefinition.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterNetworkIdentityRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterWorldRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 
 void FBBBCharacterNetworkSystem::Initialize(
     FBBBNetworkState &InNetworkData,
-    const FBBBCharacterNetworkIdentityDefinition &InNetworkIdentity,
+    const FBBBCharacterNetworkIdentityRuntimeData &InNetworkIdentity,
     FBBBAimRuntimeData &InAimData,
     FBBBCharacterLocomotionRuntimeData &InLocomotionData,
     const FBBBCharacterEquipmentState &InEquipmentState,
