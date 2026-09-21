@@ -1,5 +1,7 @@
 # Character Law
 
+- 所有角色领域数据同时受 [`../DomainData/Law.md`](../DomainData/Law.md) 约束。
+
 - `ABBBCharacter` 只负责组件宿主、依赖所有权、输入入口和主管线入口，禁止承载领域行为。
 - 外部系统、网络接收和动画通知只能通过 `ABBBCharacter::SubmitInput` 影响角色，禁止直接修改运行时黑板。
 - 角色全部玩法结果必须由输入解析、控制器或系统在主管线规定的阶段产生。
