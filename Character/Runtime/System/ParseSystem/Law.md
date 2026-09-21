@@ -4,4 +4,6 @@
 - 处理顺序固定为最终状态、既成事实、连续控制、离散命令、蒙太奇槽位和相机表现。
 - Processor 只按源码顺序调用输入包的 `CanApply/Apply`，禁止知道具体包的内部规则。
 - 解析期间禁止重入提交输入；解析后提交的新输入必须保留到下一次解析。
-- `DomainData/States/` 保存固定输入和跨帧解析状态，`DomainData/Context/` 只保存本次解析引用，不得跨帧持有。
+- `DomainData/States/` 只保存固定输入和跨帧解析状态 A 禁止放入 V 或再次汇总全部解析状态的总 State
+- `DomainData/Values/` 只在确有必要时保存解析领域 V 没有 V 时禁止创建该目录
+- `DomainData/Context/` 只保存本次解析引用 不得跨帧持有

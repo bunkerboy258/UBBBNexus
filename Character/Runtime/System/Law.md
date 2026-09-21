@@ -1,17 +1,36 @@
 # Character System Law
-严格遵守Constitution/Data/Law.md的约定
 
-系统器根位于系统根目录下 以下根目录用X/替代
-系统器根只能拥有初始化函数和一个无参Update();`Update`负责调度各个处理器,
-组装context,禁止持有任何具体领域逻辑,且只能由 `Character/Core/Update` 下的主管线调用
+严格遵守 `Constitution/Data/Law.md` 的约定
 
-`X/DomainData/` 放B
-`X/DomainData/States/` 放A
-`X/DomainData/Context/` 放D
-`X/Processors/` 放具体处理器
-处理器处理单一任务 处理器之间禁止直接互相调用 只能通过context传递数据
-一个处理器文件只能持有一个Update方法 当处理器cpp文件代码行数超过200行 需要考虑拆分成多个处理器
+系统器根位于系统目录下 以下系统根目录统一使用 `X/` 表示
 
-只有网络系统存在网络语义与具体逻辑
+- 系统器根只能拥有初始化函数和一个无参 `Update`
+- `Update` 只负责组装 Context 并按固定顺序调度处理器
+- 系统器根禁止持有具体领域逻辑
+- 系统器只能由 `Character/Core/Update` 下的主管线调用
 
-以上文件夹禁止再创建子文件夹和同级目录
+物理目录固定为
+
+- `X/DomainData/` 放且只放 B
+- `X/DomainData/States/` 放且只放 A
+- `X/DomainData/Values/` 是可选目录 放且只放确有必要的 V
+- `X/DomainData/Context/` 放且只放 D
+- `X/Processors/` 放具体处理器
+
+数据结构要求
+
+- B 必须直接持有本系统领域内全部 A
+- 禁止创建 B 到总 State 再到具体状态的中间聚合层
+- `States/` 中所有类型必须以 `State` 结尾
+- `Values/` 中所有类型禁止使用 `State` `DomainState` `RuntimeData` `Context` 后缀
+- 没有 V 时禁止创建空的 `Values/` 目录
+- 以上目录禁止继续创建子目录或其它同级目录
+
+处理器要求
+
+- 每个处理器只处理一个任务
+- 处理器之间禁止直接互相调用 只能通过 Context 传递本次调用数据
+- 一个处理器文件只能拥有一个 `Update`
+- 处理器 `.cpp` 超过二百行时必须重新检查职责是否需要拆分
+
+只有网络系统允许存在网络语义与具体网络逻辑

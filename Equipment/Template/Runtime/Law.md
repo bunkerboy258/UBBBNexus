@@ -5,6 +5,7 @@
 - `TBBBEquipmentRuntime` 是全部装备固定输入顺序的无状态调度器。
 - 调度器只依据槽位 `bIsMirror` 静态调用签名的 `Resolve` 或 `Restore`，禁止运行时类型查找和虚函数分派。
 - `TBBBEquipmentRuntimeData` 是装备实例公开持有的唯一 C，只能公开保存具体装备声明的 B。
-- 具体装备的 `DomainState` 私有持有行为状态与公共固定输入状态，并只向外公开 `ReadA` 只读方法。
+- 具体装备的 `DomainState` 必须直接私有持有全部行为状态 A 与公共固定输入状态 并只向外公开对应的 `ReadA` 只读方法
+- 禁止在具体装备的 `DomainState` 与行为状态 A 之间增加总 State 聚合层
 - `FBBBEquipmentRuntimeContext` 必须位于 `Context/`，只保存本次解析需要的公开字段，禁止跨帧持有或保存执行身份。
 - 每次 `Update` 结束必须清空全部固定输入激活标记。
