@@ -15,7 +15,7 @@ void FBBBReloadCancelledFactPacket::Apply(FBBBCharacterInputContext &Context) co
 {
     Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
-    Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.GetActiveEquipmentId(), true);
+    Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.ActiveEquipmentId, true);
 }
 
 FBBBEquipmentActionFact FBBBReloadCancelledFactPacket::ToFact() const

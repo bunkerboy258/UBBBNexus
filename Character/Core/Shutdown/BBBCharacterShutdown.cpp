@@ -25,14 +25,14 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
     }
 
     // 当前装备和目标装备可能尚未写回库存因此需要单独收集
-    ABBBEquipment *ActiveInstance = EquipmentData.Equipment.GetActiveMainHandInstance();
+    ABBBEquipment *ActiveInstance = EquipmentData.Equipment.ActiveMainHandInstance;
     if (ActiveInstance)
     {
         Instances.Add(ActiveInstance);
 
     }
 
-    if (ABBBEquipment *DesiredInstance = EquipmentData.Equipment.GetDesiredMainHandInstance())
+    if (ABBBEquipment *DesiredInstance = EquipmentData.Equipment.DesiredMainHandInstance)
     {
         Instances.Add(DesiredInstance);
     }

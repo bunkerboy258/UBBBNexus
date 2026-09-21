@@ -12,21 +12,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 #include "BBBCharacterRuntimeData.generated.h"
-class FBBBCharacterInitializer;
-class FBBBCharacterShutdown;
-class FBBBCharacterUpdatePipeline;
-class FBBBCharacterAnimationFactProcessor;
-class ABBBCharacter;
-class UBBBAnimInstance;
-
-struct FBBBCharacterRuntimeData;
-
-namespace BBBCharacterInput
-{
-    template<typename TPacket>
-    bool Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet);
-}
-
 USTRUCT()
 //角色全部运行数据的唯一根
 //输入区保存全部固定槽位 状态区发布解析结果并对所有系统与控制器开放读 领域数据为驻留系统的私有状态
@@ -38,20 +23,6 @@ struct FBBBCharacterRuntimeData
      * 在帧末清除禁止跨帧保留的数据
      */
     void Clean();
-
-private:
-    friend class ABBBCharacter;
-    friend class ABBBPlayerCameraSystem;
-    friend class FBBBCharacterParseSystem;
-    friend class FBBBCharacterInputProcessor;
-    friend class FBBBCharacterAnimationFactProcessor;
-    friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterShutdown;
-    friend class FBBBCharacterUpdatePipeline;
-    friend class UBBBAnimInstance;
-
-    template<typename TPacket>
-    friend bool BBBCharacterInput::Submit(FBBBCharacterRuntimeData &Data, TPacket &&Packet);
 
     // ===== 输入区 固定槽位仅由提交闸口与解析系统写入 =====
 

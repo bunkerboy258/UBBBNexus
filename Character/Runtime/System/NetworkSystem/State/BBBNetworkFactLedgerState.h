@@ -52,7 +52,6 @@ struct FBBBNetworkFactLedgerState final : public FFastArraySerializer
     /** 最近的一百二十八条离散事实 超出上限时移除最旧条目 */
     TArray<FBBBNetworkFactEntryDefinition> Entries;
 
-private:
     /** 不参与复制 生命周期由拥有该账本的组件保证 */
     UBBBCharacterNetworkComponent *Component = nullptr;
 };

@@ -1,6 +1,6 @@
 # Rifle State Law
 
-- 本状态的构造与写权限同时受 [`../../../../DomainData/Law.md`](../../../../DomainData/Law.md) 约束。
+- 本状态的构造与写权限同时受 [`../../../../DataBlackboard/Law.md`](../../../../DataBlackboard/Law.md) 约束。
 
 - 本目录只保存步枪跨帧事实，`FBBBRifleState` 是当前步枪唯一行为状态。
 - 状态只能由 `FBBBRifleSignature::Initialize/Resolve/Restore` 写入，其它对象只能读取。

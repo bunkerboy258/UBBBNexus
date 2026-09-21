@@ -15,7 +15,7 @@ void FBBBMagazineDetachedFactPacket::Apply(FBBBCharacterInputContext &Context) c
 {
     Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
-    Context.Operation.TrackMagazineDetached(Sequence, EquipmentId, Context.Equipment.GetActiveEquipmentId());
+    Context.Operation.TrackMagazineDetached(Sequence, EquipmentId, Context.Equipment.ActiveEquipmentId);
 }
 
 FBBBEquipmentActionFact FBBBMagazineDetachedFactPacket::ToFact() const

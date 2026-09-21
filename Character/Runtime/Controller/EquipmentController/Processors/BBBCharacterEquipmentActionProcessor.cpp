@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Processors/BBBCharacterEquipmentActionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Context/BBBCharacterEquipmentActionContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/Commands/BBBCharacterEquipmentCommands.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
@@ -9,13 +10,13 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     const bool bIsMirror) const
 {
     // 先取得当前主手装备并消费本帧恢复和动作命令
-    ABBBEquipment *Equipment = State.GetActiveMainHandInstance();
-    TArray<FBBBEquipmentActionFact> Facts = Commands.ConsumeFacts();
-    const bool bFire = Commands.ConsumeFire();
-    const bool bReload = Commands.ConsumeReload();
-    bool bSecondaryActive = false;
-    const bool bSecondarySubmitted = Commands.ConsumeSecondary(bSecondaryActive);
-    if (!Equipment)
+    FBBBCharacterEquipmentActionContext Context;
+    Context.Equipment = State.ActiveMainHandInstance;
+    Context.Facts = Commands.ConsumeFacts();
+    Context.bFire = Commands.ConsumeFire();
+    Context.bReload = Commands.ConsumeReload();
+    Context.bSecondarySubmitted = Commands.ConsumeSecondary(Context.bSecondaryActive);
+    if (!Context.Equipment)
     {
         // 未装备时仍然消费命令但不向空装备提交动作
         return;
@@ -23,11 +24,11 @@ void FBBBCharacterEquipmentActionProcessor::Update(
 
     if (bIsMirror)
     {
-        for (const FBBBEquipmentActionFact &Fact : Facts)
+        for (const FBBBEquipmentActionFact &Fact : Context.Facts)
         {
-            if (Fact.EquipmentId == Equipment->GetEquipmentId())
+            if (Fact.EquipmentId == Context.Equipment->GetEquipmentId())
             {
-                Equipment->SubmitCommand(FBBBEquipmentCommand{
+                Context.Equipment->SubmitCommand(FBBBEquipmentCommand{
                     EBBBEquipmentCommandType::Fact,
                     Fact.Sequence,
                     false,
@@ -43,26 +44,26 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     }
 
     // 使用递增序号提交本帧开火和换弹动作
-    if (bFire)
+    if (Context.bFire)
     {
-        Equipment->SubmitCommand(
+        Context.Equipment->SubmitCommand(
             FBBBEquipmentCommand{EBBBEquipmentCommandType::Primary, State.NextActionSequence++},
             false);
     }
-    if (bReload)
+    if (Context.bReload)
     {
-        Equipment->SubmitCommand(
+        Context.Equipment->SubmitCommand(
             FBBBEquipmentCommand{EBBBEquipmentCommandType::Reload, State.NextActionSequence++},
             false);
     }
 
-    if (bSecondarySubmitted)
+    if (Context.bSecondarySubmitted)
     {
-        Equipment->SubmitCommand(
+        Context.Equipment->SubmitCommand(
             FBBBEquipmentCommand{
                 EBBBEquipmentCommandType::Secondary,
                 State.NextActionSequence++,
-                bSecondaryActive},
+                Context.bSecondaryActive},
             false);
     }
 }

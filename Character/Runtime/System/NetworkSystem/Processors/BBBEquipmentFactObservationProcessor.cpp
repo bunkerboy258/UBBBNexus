@@ -8,7 +8,7 @@ void FBBBEquipmentFactObservationProcessor::Update(
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
     // 将本帧装备事件逐条转换为网络动作包
-    for (const FBBBEquipmentActionFact &Event : EquipmentEvents.GetActionEvents())
+    for (const FBBBEquipmentActionFact &Event : EquipmentEvents.ActionEvents)
     {
         NetworkSystem.TransmitEquipmentFact(Event);
     }

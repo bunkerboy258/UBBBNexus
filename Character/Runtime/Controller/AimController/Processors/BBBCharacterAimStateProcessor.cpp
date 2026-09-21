@@ -7,5 +7,5 @@ void FBBBCharacterAimStateProcessor::Update(
     FBBBAimRuntimeState &State) const
 {
     // 瞄准或开火意图存在时都保持瞄准状态
-    State.bIsAiming = ControlData.WantsAim() || ControlData.WantsFire();
+    State.bIsAiming = ControlData.Value.bAim || ControlData.Value.bFire;
 }

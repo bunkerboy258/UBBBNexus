@@ -12,5 +12,5 @@ bool FBBBLocomotionStatePacket::CanApply(const FBBBCharacterInputContext &Contex
 
 void FBBBLocomotionStatePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Locomotion.CommitGait(Gait);
+    Context.Locomotion.Gait = Gait;
 }

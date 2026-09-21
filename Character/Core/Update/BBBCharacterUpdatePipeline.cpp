@@ -69,7 +69,8 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     }
 
     // 所有领域系统读取同一份本帧世界时间快照
-    Character->RuntimeData.WorldData.Update(DeltaSeconds, World->GetTimeSeconds());
+    Character->RuntimeData.WorldData.FrameDeltaSeconds = DeltaSeconds;
+    Character->RuntimeData.WorldData.WorldTimeSeconds = World->GetTimeSeconds();
     Character->RuntimeData.NetworkIdentity.Refresh(
         Character->HasAuthority(),
         Character->IsLocallyControlled());
@@ -79,7 +80,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     // 装备动作可能产生后续网络需要观察的离散事实
     Character->EquipmentController.Update(Character->RuntimeData.NetworkIdentity);
 
-    if (Character->RuntimeData.NetworkIdentity.GetExecutionMode()
+    if (Character->RuntimeData.NetworkIdentity.ExecutionMode
         == EBBBCharacterExecutionMode::Causal)
     {
         // 只有本机控制角色可以根据控制输入产生新的瞄准与移动事实。

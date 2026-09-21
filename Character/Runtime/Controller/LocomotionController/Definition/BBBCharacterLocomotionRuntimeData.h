@@ -26,22 +26,6 @@ struct FBBBCharacterLocomotionRuntimeData
 {
     GENERATED_BODY()
 
-    /** @return 当前步态 */
-    EBBBCharacterGait GetGait() const
-    {
-        return Gait;
-    }
-
-    /**
-     * 提交当前步态
-     * @param InGait 当前步态
-     */
-    void CommitGait(const EBBBCharacterGait InGait)
-    {
-        Gait = InGait;
-    }
-
-private:
     /** 当前本地计算或网络恢复后的步态 */
     EBBBCharacterGait Gait = EBBBCharacterGait::Run;
 };

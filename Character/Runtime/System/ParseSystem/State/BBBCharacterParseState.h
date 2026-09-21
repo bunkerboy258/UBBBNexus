@@ -5,8 +5,6 @@
 #include "BBBCharacterParseState.generated.h"
 
 class ABBBEquipment;
-class FBBBCharacterParseSystem;
-class FBBBCharacterInputProcessor;
 
 /** 包解析过程需要保留的跨帧操作事实 */
 USTRUCT()
@@ -57,12 +55,6 @@ public:
         return ReloadSequence > 0 && Sequence == ReloadSequence;
     }
 
-    /** @return 当前换弹序号，不存在进行中换弹时返回INDEX_NONE */
-    int32 GetReloadSequence() const
-    {
-        return ReloadSequence;
-    }
-
     /** @return 序号是否为刚取消的换弹 */
     bool IsCancelledReloadSequence(const int32 Sequence) const
     {
@@ -75,52 +67,6 @@ public:
      * @param ActiveEquipment	当前激活主手装备 可为空
      */
     void BeginFrame(ABBBEquipment *ActiveEquipment);
-
-    /** 登记本帧开火承诺 */
-    void CommitFire()
-    {
-        bFire = true;
-    }
-
-    /** 登记本帧换弹承诺 */
-    void CommitReload()
-    {
-        bReload = true;
-    }
-
-    /** 登记本帧跳跃意图 */
-    void CommitJump()
-    {
-        Control.bJump = true;
-    }
-
-    /**
-     * 基底移动快照覆盖控制暂态 移动向量钳制到单位长度
-     * @param MoveWorld	期望移动向量
-     * @param FacingWorld	期望朝向
-     * @param bInWalk	是否步行
-     * @param bInSprint	是否冲刺
-     * @param bInCrouch	是否蹲伏
-     */
-    void ApplyMovementSnapshot(FVector MoveWorld, FRotator FacingWorld, bool bInWalk, bool bInSprint, bool bInCrouch)
-    {
-        Control.MoveWorld = MoveWorld.GetClampedToMaxSize(1.0f);
-        Control.FacingWorld = FacingWorld;
-        Control.bWalk = bInWalk;
-        Control.bSprint = bInSprint;
-        Control.bCrouch = bInCrouch;
-    }
-
-    /**
-     * 基底瞄准快照覆盖控制暂态
-     * @param AimTargetWorld	瞄准点世界坐标
-     * @param bInAim	是否瞄准
-     */
-    void ApplyAimSnapshot(FVector AimTargetWorld, bool bInAim)
-    {
-        Control.AimTargetWorld = AimTargetWorld;
-        Control.bAim = bInAim;
-    }
 
     /**
      * 登记本帧期望切换的装备
@@ -174,10 +120,6 @@ public:
      * @return 通知是否被接受
      */
     bool ReportReloadInterrupted();
-
-private:
-    friend class FBBBCharacterParseSystem;
-    friend class FBBBCharacterInputProcessor;
 
     UPROPERTY()
     TWeakObjectPtr<ABBBEquipment> ReloadEquipment;

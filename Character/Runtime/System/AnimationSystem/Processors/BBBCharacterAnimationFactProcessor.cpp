@@ -33,10 +33,10 @@ void FBBBCharacterAnimationFactProcessor::Update(
         return;
     }
 
-    const FBBBAimRuntimeState &AimState = RuntimeData.Aim.GetState();
+    const FBBBAimRuntimeState &AimState = RuntimeData.Aim.State;
     const FBBBCharacterEquipmentState &EquipmentState = RuntimeData.Equipment.Equipment;
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
-    const bool bHasActiveMainHandEquipment = EquipmentState.GetActiveMainHandInstance() != nullptr;
+    const bool bHasActiveMainHandEquipment = EquipmentState.ActiveMainHandInstance != nullptr;
 
     // 优先使用配置骨骼作为瞄准起点否则使用角色网格位置
     FVector AimOrigin = CharacterMesh->GetComponentLocation() + FVector(0.0f, 0.0f, 50.0f);
@@ -140,7 +140,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     OutFacts.Velocity = Movement->Velocity;
     OutFacts.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
     OutFacts.Acceleration = Movement->GetCurrentAcceleration();
-    OutFacts.Gait = RuntimeData.Locomotion.GetGait();
+    OutFacts.Gait = RuntimeData.Locomotion.Gait;
     OutFacts.MovementMode = Movement->MovementMode;
     OutFacts.GroundFriction = Movement->GroundFriction;
     OutFacts.BrakingFriction = Movement->BrakingFriction;

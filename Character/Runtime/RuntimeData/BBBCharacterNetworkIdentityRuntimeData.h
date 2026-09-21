@@ -3,8 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBCharacterNetworkIdentityRuntimeData.generated.h"
 
-class FBBBCharacterUpdatePipeline;
-
 /** 角色在当前机器上的玩法执行身份 */
 UENUM()
 enum class EBBBCharacterExecutionMode : uint8
@@ -26,22 +24,6 @@ USTRUCT()
 struct FBBBCharacterNetworkIdentityRuntimeData
 {
     GENERATED_BODY()
-
-public:
-    /** @return 当前角色是否由本机持有网络权威 */
-    bool HasAuthority() const;
-
-    /** @return 当前角色是否由本机玩家直接控制 */
-    bool IsLocallyControlled() const;
-
-    /** @return 当前角色的玩法执行身份 */
-    EBBBCharacterExecutionMode GetExecutionMode() const;
-
-    /** @return 当前角色是否只允许恢复网络事实 */
-    bool IsMirror() const;
-
-private:
-    friend class FBBBCharacterUpdatePipeline;
 
     /**
      * 刷新本帧身份事实

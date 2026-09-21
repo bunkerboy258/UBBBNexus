@@ -67,7 +67,7 @@ void FBBBCharacterAnimationSystem::Update()
         *Character,
         *RuntimeData,
         AnimationData->Facts,
-        WorldData->GetFrameDeltaSeconds());
+        WorldData->FrameDeltaSeconds);
     // 将最终事实发布到主动画实例
     AnimInstance->PublishAnimationFacts(AnimationData->Facts);
 }

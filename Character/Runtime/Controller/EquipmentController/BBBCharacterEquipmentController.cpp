@@ -45,13 +45,13 @@ void FBBBCharacterEquipmentController::Update(
         RightHandWeaponSocketName,
         EquipmentData->Commands,
         EquipmentData->Equipment,
-        NetworkIdentity.IsMirror());
+        NetworkIdentity.ExecutionMode == EBBBCharacterExecutionMode::Mirror);
 
     // 将本帧装备命令提交给当前装备外部接口
     ActionProcessor.Update(
         EquipmentData->Commands,
         EquipmentData->Equipment,
-        NetworkIdentity.IsMirror());
+        NetworkIdentity.ExecutionMode == EBBBCharacterExecutionMode::Mirror);
 }
 
 ABBBEquipment *FBBBCharacterEquipmentController::GetActiveEquipment() const
@@ -61,5 +61,5 @@ ABBBEquipment *FBBBCharacterEquipmentController::GetActiveEquipment() const
         return nullptr;
     }
 
-    return EquipmentData->Equipment.GetActiveMainHandInstance();
+    return EquipmentData->Equipment.ActiveMainHandInstance;
 }

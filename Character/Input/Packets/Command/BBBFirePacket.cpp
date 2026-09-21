@@ -14,6 +14,6 @@ bool FBBBFirePacket::CanApply(const FBBBCharacterInputContext &Context) const
 
 void FBBBFirePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Operation.CommitFire();
+    Context.Operation.bFire = true;
     Context.Commands.SubmitFire();
 }

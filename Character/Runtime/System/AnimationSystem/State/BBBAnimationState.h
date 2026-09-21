@@ -6,11 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageSlotState.h"
 #include "BBBAnimationState.generated.h"
 
-class FBBBCharacterAnimationFactProcessor;
-class FBBBCharacterAnimationLayerProcessor;
-class FBBBCharacterAnimationSystem;
-class FBBBCharacterInitializer;
-class FBBBCharacterAnimationActionProcessor;
 class UAnimInstance;
 
 USTRUCT(BlueprintType)
@@ -18,14 +13,6 @@ USTRUCT(BlueprintType)
 struct FBBBAnimationState
 {
     GENERATED_BODY()
-
-private:
-    friend class FBBBCharacterAnimationSystem;
-    friend class FBBBCharacterAnimationFactProcessor;
-    friend class FBBBCharacterAnimationLayerProcessor;
-    friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterAnimationActionProcessor;
-    friend struct FBBBCharacterMontageRequestState;
 
     /** 当前帧提交给动画实例的角色事实 */
     UPROPERTY(Transient)

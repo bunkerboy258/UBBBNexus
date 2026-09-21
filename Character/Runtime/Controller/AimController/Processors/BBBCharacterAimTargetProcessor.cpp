@@ -5,5 +5,5 @@
 void FBBBCharacterAimTargetProcessor::Update(
     const FBBBCharacterControlState &Control, FBBBAimRuntimeState &State) const
 {
-    State.AimTargetWorld = Control.GetAimTargetWorld();
+    State.AimTargetWorld = Control.Value.AimTargetWorld;
 }

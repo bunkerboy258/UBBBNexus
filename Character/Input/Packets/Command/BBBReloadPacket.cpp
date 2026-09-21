@@ -8,13 +8,13 @@ bool FBBBReloadPacket::IsValid() const
 bool FBBBReloadPacket::CanApply(const FBBBCharacterInputContext &Context) const
 {
     // 权威端按显式处理顺序观察切枪结果，切枪或既有换弹都会拒绝新换弹
-    return Context.Equipment.GetActiveMainHandInstance() != nullptr
+    return Context.Equipment.ActiveMainHandInstance != nullptr
         && !Context.Operation.IsReloadInProgress()
         && !Context.Operation.IsEquipmentSwitchPending();
 }
 
 void FBBBReloadPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Operation.CommitReload();
+    Context.Operation.bReload = true;
     Context.Commands.SubmitReload();
 }

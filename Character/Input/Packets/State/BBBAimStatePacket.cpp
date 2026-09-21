@@ -12,5 +12,5 @@ bool FBBBAimStatePacket::CanApply(const FBBBCharacterInputContext &Context) cons
 
 void FBBBAimStatePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Aim.ApplyState(State);
+    Context.Aim.State = State;
 }

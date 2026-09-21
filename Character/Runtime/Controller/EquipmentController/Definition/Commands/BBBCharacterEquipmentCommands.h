@@ -4,12 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 #include "BBBCharacterEquipmentCommands.generated.h"
 
-class FBBBCharacterEquipmentActionProcessor;
-class FBBBCharacterEquipmentSelectionProcessor;
-
 class UBBBEquipmentDefinition;
-class UBBBAnimInstance;
-struct FBBBCharacterEquipmentRuntimeData;
 
 /** 角色物品领域本帧执行命令 */
 USTRUCT(BlueprintType)
@@ -57,13 +52,6 @@ struct FBBBCharacterEquipmentCommands
     {
         PendingEquipmentState = &Definition;
     }
-
-private:
-    friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterEquipmentSelectionProcessor;
-
-    friend class UBBBAnimInstance;
-    friend struct FBBBCharacterEquipmentRuntimeData;
 
     /** @return 本帧是否存在待执行开火命令 */
     bool ConsumeFire()

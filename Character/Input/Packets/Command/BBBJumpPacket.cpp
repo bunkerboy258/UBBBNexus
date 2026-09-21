@@ -13,5 +13,5 @@ bool FBBBJumpPacket::CanApply(const FBBBCharacterInputContext &Context) const
 
 void FBBBJumpPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Operation.CommitJump();
+    Context.Operation.Control.bJump = true;
 }

@@ -49,7 +49,6 @@ struct TBBBEquipmentInputSlot final
         bIsMirror = false;
     }
 
-private:
     /** 本帧是否收到该输入 */
     bool bActive = false;
 

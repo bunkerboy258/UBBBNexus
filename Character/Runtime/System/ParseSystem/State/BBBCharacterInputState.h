@@ -208,7 +208,6 @@ struct FBBBCharacterInputState final
         Camera.Submit(MoveTemp(Packet));
     }
 
-private:
     /** 防止数据包应用期间重入覆盖正在读取的槽位数据 */
     bool bProcessing = false;
 };

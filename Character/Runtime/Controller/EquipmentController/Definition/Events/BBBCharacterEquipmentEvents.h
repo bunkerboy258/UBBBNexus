@@ -10,12 +10,6 @@ struct FBBBCharacterEquipmentEvents
 {
     GENERATED_BODY()
 
-    /** @return 本帧成功动作事件 */
-    const TArray<FBBBEquipmentActionFact> &GetActionEvents() const
-    {
-        return ActionEvents;
-    }
-
     /**
      * 记录成功动作
      * @param Fact	已确认动作事实
@@ -24,11 +18,6 @@ struct FBBBCharacterEquipmentEvents
     {
         ActionEvents.Add(MoveTemp(Fact));
     }
-
-private:
-    friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterEquipmentSelectionProcessor;
-    friend struct FBBBCharacterEquipmentRuntimeData;
 
     /** 清理本帧事件 */
     void CleanFrame()

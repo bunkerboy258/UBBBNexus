@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/BBBCharacterAimController.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Context/BBBAimUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
@@ -21,17 +22,17 @@ void FBBBCharacterAimController::Update()
     }
 
     // 在局部状态中完成本帧计算后再统一提交
-    FBBBAimRuntimeState State = AimData->GetState();
+    FBBBAimUpdateContext Context{AimData->State};
 
     // 先根据角色意图更新瞄准状态
-    AimStateProcessor.Update(*ControlData, State);
+    AimStateProcessor.Update(*ControlData, Context.State);
 
     // 只有进入瞄准状态时才更新远处目标点
-    if (State.bIsAiming)
+    if (Context.State.bIsAiming)
     {
-        AimTargetProcessor.Update(*ControlData, State);
+        AimTargetProcessor.Update(*ControlData, Context.State);
     }
 
     // 发布完整的本地瞄准状态供其他系统读取
-    AimData->CommitLocalState(State);
+    AimData->State = Context.State;
 }

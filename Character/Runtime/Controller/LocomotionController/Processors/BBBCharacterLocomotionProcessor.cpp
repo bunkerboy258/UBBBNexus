@@ -14,7 +14,7 @@ FVector ResolveWorldMoveDirection(
     const ACharacter &Character,
     const FBBBCharacterControlState &ControlData)
 {
-    return ControlData.GetMoveInput().GetSafeNormal2D();
+    return ControlData.Value.MoveWorld.GetSafeNormal2D();
 }
 
 // 检查冲刺意图和移动方向是否满足冲刺条件
@@ -23,7 +23,7 @@ bool CanSprint(
     const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config)
 {
-    if (!ControlData.WantsSprint())
+    if (!ControlData.Value.bSprint)
     {
         return false;
     }
@@ -49,16 +49,16 @@ EBBBCharacterGait ResolveGait(
     EBBBCharacterGait PreviousGait,
     const FVector &CurrentVelocity)
 {
-    const bool bFullMovementInput = ControlData.GetMoveInput().Size() >= Config.AnalogRunThreshold;
+    const bool bFullMovementInput = ControlData.Value.MoveWorld.Size() >= Config.AnalogRunThreshold;
 
     // ADS 使用步行档位，并优先于冲刺
-    if (ControlData.WantsAim())
+    if (ControlData.Value.bAim)
     {
         return EBBBCharacterGait::Walk;
     }
 
     // 松开输入后保持实际奔跑档位，直到地面制动结束
-    if (!ControlData.HasMoveInput()
+    if (ControlData.Value.MoveWorld.IsNearlyZero()
         && CurrentVelocity.SizeSquared2D() > FMath::Square(1.0f)
         && (PreviousGait == EBBBCharacterGait::Run || PreviousGait == EBBBCharacterGait::Sprint))
     {
@@ -70,7 +70,7 @@ EBBBCharacterGait ResolveGait(
         return EBBBCharacterGait::Sprint;
     }
 
-    if (ControlData.WantsWalk())
+    if (ControlData.Value.bWalk)
     {
         return EBBBCharacterGait::Walk;
     }
@@ -142,8 +142,8 @@ void FBBBCharacterLocomotionProcessor::Update(
     const UCurveFloat &StrafeSpeedMapCurve) const
 {
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
-    Character.SetActorRotation(FRotator(0.0f, ControlData.GetFacingWorld().Yaw, 0.0f));
-    const bool bWantsCrouch = ControlData.WantsCrouch();
+    Character.SetActorRotation(FRotator(0.0f, ControlData.Value.FacingWorld.Yaw, 0.0f));
+    const bool bWantsCrouch = ControlData.Value.bCrouch;
     if (bWantsCrouch)
     {
         Character.Crouch();
@@ -154,7 +154,7 @@ void FBBBCharacterLocomotionProcessor::Update(
         Character.UnCrouch();
     }
 
-    const EBBBCharacterGait PreviousGait = RuntimeData.GetGait();
+    const EBBBCharacterGait PreviousGait = RuntimeData.Gait;
     EBBBCharacterGait Gait = ResolveGait(
         Character,
         ControlData,
@@ -167,7 +167,7 @@ void FBBBCharacterLocomotionProcessor::Update(
     }
 
     // 计算并提交当前步态和方向速度映射
-    RuntimeData.CommitGait(Gait);
+    RuntimeData.Gait = Gait;
     const float DirectionMap = ResolveDirectionMap(
         Character,
         Movement,
@@ -188,17 +188,17 @@ void FBBBCharacterLocomotionProcessor::Update(
     Movement.bUseSeparateBrakingFriction = false;
 
     // 蹲伏期间不允许同帧跳跃
-    if (!bWantsCrouch && ControlData.WantsJump())
+    if (!bWantsCrouch && ControlData.Value.bJump)
     {
         Character.Jump();
     }
 
 
-    if (!ControlData.HasMoveInput())
+    if (ControlData.Value.MoveWorld.IsNearlyZero())
     {
         return;
     }
     // 保留模拟输入强度 归一化只用于方向而不用于移动量
-    const FVector MoveWorld = ControlData.GetMoveInput();
+    const FVector MoveWorld = ControlData.Value.MoveWorld;
     Character.AddMovementInput(MoveWorld.GetSafeNormal(), MoveWorld.Size());
 }

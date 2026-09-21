@@ -4,11 +4,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBCharacterEquipmentStates.generated.h"
 
-class FBBBCharacterEquipmentSelectionProcessor;
-class FBBBCharacterEquipmentActionProcessor;
-
-
-
 /** 角色拥有的装备及快捷访问绑定 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterEquipmentInventoryState
@@ -30,48 +25,13 @@ struct FBBBCharacterEquipmentState
 {
     GENERATED_BODY()
 
-    /** @return 角色期望装备的主手实例 */
-    ABBBEquipment *GetDesiredMainHandInstance() const
-    {
-        return DesiredMainHandInstance;
-    }
-
-    /** @return 角色当前装备的主手实例 */
-    ABBBEquipment *GetActiveMainHandInstance() const
-    {
-        return ActiveMainHandInstance;
-    }
-
-    /** @return 当前装备定义标识 */
-    FName GetActiveEquipmentId() const
-    {
-        return ActiveEquipmentId;
-    }
-
-    /**
-     * 设置期望装备的主手实例
-     * @param Instance	期望装备实例
-     */
-    void SetDesiredMainHandInstance(ABBBEquipment *Instance)
-    {
-        DesiredMainHandInstance = Instance;
-    }
-
-private:
     FName ActiveEquipmentId = NAME_None;
-    friend class FBBBCharacterInputProcessor;
-    friend class FBBBCharacterEquipmentSelectionProcessor;
-    friend class FBBBCharacterEquipmentActionProcessor;
-    friend struct FBBBEquipBehavior;
-
-
-
     /** 角色期望装备的唯一实例 */
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly)
     TObjectPtr<ABBBEquipment> DesiredMainHandInstance = nullptr;
 
     /** 角色当前装备的唯一实例 */
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly)
     TObjectPtr<ABBBEquipment> ActiveMainHandInstance = nullptr;
 
     /** 下一个本地动作顺序号 */

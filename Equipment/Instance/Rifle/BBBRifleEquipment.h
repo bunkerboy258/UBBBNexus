@@ -15,6 +15,15 @@ class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
     GENERATED_BODY()
 
 public:
+    /** 步枪实例私有运行时数据根 */
+    using FRuntimeData = TBBBEquipmentRuntimeData<FBBBRifleSignature>;
+
+    /** @return 步枪完整运行时黑板的只读引用 */
+    const FRuntimeData &GetRuntimeData() const
+    {
+        return RuntimeData;
+    }
+
     /**
      * 将角色通用命令映射为步枪静态输入包
      * @param Command        角色提交的统一命令
@@ -43,5 +52,5 @@ private:
      */
     bool InitializeRifle(UBBBRifleDefinition &InDefinition, const FGuid &InInstanceId, bool bInIsMirror);
 
-    TBBBEquipmentRuntime<FBBBRifleSignature> Runtime;
+    FRuntimeData RuntimeData;
 };

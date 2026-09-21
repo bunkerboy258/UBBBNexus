@@ -15,5 +15,9 @@ bool FBBBCharacterMovementPacket::CanApply(const FBBBCharacterInputContext &Cont
 
 void FBBBCharacterMovementPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.Operation.ApplyMovementSnapshot(MoveWorld, FacingWorld, bWalk, bSprint, bCrouch);
+    Context.Operation.Control.MoveWorld = MoveWorld.GetClampedToMaxSize(1.0f);
+    Context.Operation.Control.FacingWorld = FacingWorld;
+    Context.Operation.Control.bWalk = bWalk;
+    Context.Operation.Control.bSprint = bSprint;
+    Context.Operation.Control.bCrouch = bCrouch;
 }

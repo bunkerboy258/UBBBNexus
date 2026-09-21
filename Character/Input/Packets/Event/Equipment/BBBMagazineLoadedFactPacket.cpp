@@ -15,7 +15,7 @@ void FBBBMagazineLoadedFactPacket::Apply(FBBBCharacterInputContext &Context) con
 {
     Context.Commands.SubmitFact(ToFact());
     Context.Events.AddAction(ToFact());
-    Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.GetActiveEquipmentId(), false);
+    Context.Operation.TrackReloadFinished(Sequence, EquipmentId, Context.Equipment.ActiveEquipmentId, false);
 }
 
 FBBBEquipmentActionFact FBBBMagazineLoadedFactPacket::ToFact() const

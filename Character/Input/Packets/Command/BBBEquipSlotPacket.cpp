@@ -14,7 +14,7 @@ bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterInputContext &Context) con
     }
 
     ABBBEquipment *Target = Context.Inventory.QuickAccessBindings[Slot];
-    return ::IsValid(Target) && Target != Context.Equipment.GetActiveMainHandInstance();
+    return ::IsValid(Target) && Target != Context.Equipment.ActiveMainHandInstance;
 }
 
 void FBBBEquipSlotPacket::Apply(FBBBCharacterInputContext &Context) const
@@ -27,5 +27,5 @@ void FBBBEquipSlotPacket::Apply(FBBBCharacterInputContext &Context) const
 
     ABBBEquipment *Target = Context.Inventory.QuickAccessBindings[Slot];
     Context.Operation.SelectEquipment(*Target);
-    Context.Equipment.SetDesiredMainHandInstance(Target);
+    Context.Equipment.DesiredMainHandInstance = Target;
 }

@@ -14,7 +14,7 @@ void FBBBCharacterAnimationLayerProcessor::Update(
 {
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
-    ABBBEquipment *ActiveInstance = EquipmentState.GetActiveMainHandInstance();
+    ABBBEquipment *ActiveInstance = EquipmentState.ActiveMainHandInstance;
 
     if (ActiveInstance)
     {

@@ -73,7 +73,7 @@ void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
     Rotation.Yaw += Delta.Y;
     RecoilOffset = NextOffset;
     Controller->SetControlRotation(Rotation);
-    const bool bAiming = Character->RuntimeData.Control.WantsAim();
+    const bool bAiming = Character->RuntimeData.Control.Value.bAim;
     Boom->TargetArmLength = FMath::FInterpTo(Boom->TargetArmLength,
         bAiming ? Config.AimBoomLength : Config.CameraBoomLength, DeltaSeconds, Config.AimBoomInterpSpeed);
     SetActorLocationAndRotation(Character->GetActorLocation(), Rotation);

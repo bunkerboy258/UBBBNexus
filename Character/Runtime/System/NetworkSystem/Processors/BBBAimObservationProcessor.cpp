@@ -1,6 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Core/Config/Network/BBBNetworkConfig.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Context/BBBCharacterNetworkObservationContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/BBBAimRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/AimController/Definition/States/BBBAimStates.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
@@ -54,29 +55,25 @@ void FBBBAimObservationProcessor::Update(
 
     // 读取上次观察结果用于判断本次是否需要上传
     //上次上传的瞄准状态数据
-    FBBBAimNetworkObserverState Observer = NetworkData.GetAimObserverState();
-
-    FBBBAimNetworkState AimState;
-
-    const FBBBAimRuntimeState &State = AimData.GetState();
-
-    AimState.bIsAiming = State.bIsAiming;
-    AimState.AimTargetWorld = State.AimTargetWorld;
+    FBBBAimObservationContext Context;
+    Context.Observer = NetworkData.AimObserverState;
+    Context.State.bIsAiming = AimData.State.bIsAiming;
+    Context.State.AimTargetWorld = AimData.State.AimTargetWorld;
 
     // 状态未达到提交条件时保持上次观察结果
     const float Now = WorldTimeSeconds;
 
-    if (!ShouldTransmitAimState(Observer, AimState, NetworkConfig, Now))
+    if (!ShouldTransmitAimState(Context.Observer, Context.State, NetworkConfig, Now))
     {
         return;
     }
 
-    Observer.LastObservedState = AimState;
+    Context.Observer.LastObservedState = Context.State;
 
-    Observer.LastUploadTime = Now;
+    Context.Observer.LastUploadTime = Now;
 
     // 先记录本次观察结果再提交网络状态
-    NetworkData.CommitAimObserverState(Observer);
+    NetworkData.AimObserverState = Context.Observer;
 
-    NetworkSystem.TransmitAimState(AimState);
+    NetworkSystem.TransmitAimState(Context.State);
 }

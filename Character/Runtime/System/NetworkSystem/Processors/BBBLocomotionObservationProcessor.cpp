@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/Definition/BBBCharacterLocomotionRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/Context/BBBCharacterNetworkObservationContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/NetworkSystem/State/BBBNetworkState.h"
 
@@ -10,24 +11,21 @@ void FBBBLocomotionObservationProcessor::Update(
     FBBBCharacterNetworkSystem &NetworkSystem) const
 {
     // 读取上次步态观察结果判断是否发生变化
-    const FBBBLocomotionNetworkObserverState &PreviousObserverState =
-        NetworkData.GetLocomotionObserverState();
-    const EBBBCharacterGait CurrentGait = LocomotionData.GetGait();
+    FBBBLocomotionObservationContext Context;
+    Context.Gait = LocomotionData.Gait;
 
-    if (PreviousObserverState.LastObservedState.IsSet()
-        && PreviousObserverState.LastObservedState->Gait == CurrentGait)
+    if (NetworkData.LocomotionObserverState.LastObservedState.IsSet()
+        && NetworkData.LocomotionObserverState.LastObservedState->Gait == Context.Gait)
     {
         // 步态未变化时不重复提交网络状态
         return;
     }
 
     // 将当前步态封装为网络状态并提交
-    FBBBLocomotionNetworkState State;
-    State.Gait = CurrentGait;
-    NetworkSystem.TransmitLocomotionState(State);
+    Context.State.Gait = Context.Gait;
+    NetworkSystem.TransmitLocomotionState(Context.State);
 
-    FBBBLocomotionNetworkObserverState ObserverState;
-    ObserverState.LastObservedState = State;
+    Context.Observer.LastObservedState = Context.State;
     // 保存最新观察结果供下一帧比较
-    NetworkData.CommitLocomotionObserverState(ObserverState);
+    NetworkData.LocomotionObserverState = Context.Observer;
 }

@@ -1,6 +1,6 @@
 # Character Core Law
 
-- 领域依赖组装与生命周期同时受 [`../../DomainData/Law.md`](../../DomainData/Law.md) 约束。
+- 领域依赖组装与生命周期同时受 [`../../DataBlackboard/Law.md`](../../DataBlackboard/Law.md) 约束。
 
 - 本目录只负责配置聚合、初始化、关闭和更新编排，禁止实现具体玩法规则。
 - 初始化器只装配依赖和初始值；关闭器只按反向顺序解除依赖和销毁运行时对象。

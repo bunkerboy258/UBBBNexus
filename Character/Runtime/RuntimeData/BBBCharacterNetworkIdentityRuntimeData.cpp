@@ -1,25 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterNetworkIdentityRuntimeData.h"
 
-bool FBBBCharacterNetworkIdentityRuntimeData::HasAuthority() const
-{
-    return bHasAuthority;
-}
-
-bool FBBBCharacterNetworkIdentityRuntimeData::IsLocallyControlled() const
-{
-    return bLocallyControlled;
-}
-
-EBBBCharacterExecutionMode FBBBCharacterNetworkIdentityRuntimeData::GetExecutionMode() const
-{
-    return ExecutionMode;
-}
-
-bool FBBBCharacterNetworkIdentityRuntimeData::IsMirror() const
-{
-    return ExecutionMode == EBBBCharacterExecutionMode::Mirror;
-}
-
 void FBBBCharacterNetworkIdentityRuntimeData::Refresh(
     const bool bInHasAuthority,
     const bool bInLocallyControlled)

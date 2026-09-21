@@ -1,6 +1,6 @@
 # Character Runtime Data Law
 
-- 本目录的数据构造与写权限同时受 [`../../../DomainData/Law.md`](../../../DomainData/Law.md) 约束。
+- 本目录的数据构造与写权限同时受 [`../../../DataBlackboard/Law.md`](../../../DataBlackboard/Law.md) 约束。
 
 - 本目录只保存跨多个角色领域共享的运行时数据根，类型名必须以 `RuntimeData` 结尾。
 - 本目录禁止再创建职责子目录；具体系统内部的跨帧状态继续归属各系统自己的 `State/`。

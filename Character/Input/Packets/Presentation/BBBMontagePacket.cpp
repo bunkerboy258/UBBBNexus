@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/State/BBBCharacterMontageRequestState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/Context/BBBCharacterMontageContext.h"
 #include "Animation/AnimMontage.h"
 
 namespace BBBCharacterMontageSlots
@@ -22,24 +22,24 @@ bool FBBBMontagePacketData::CanApplyToSlot(
     const FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
-    FBBBCharacterMontageRequestState Request;
-    Request.Montage = Montage;
-    Request.PlayRate = PlayRate;
-    Request.Sequence = Sequence;
-    Request.bReload = bReload;
-    return Request.CanApply(Context.Animation, Context.Operation, Slot);
+    FBBBCharacterMontageRequestContext RequestContext;
+    RequestContext.Request.Montage = Montage;
+    RequestContext.Request.PlayRate = PlayRate;
+    RequestContext.Request.Sequence = Sequence;
+    RequestContext.Request.bReload = bReload;
+    return RequestContext.Request.CanApply(Context.Animation, Context.Operation, Slot);
 }
 
 void FBBBMontagePacketData::ApplyToSlot(
     FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
-    FBBBCharacterMontageRequestState Request;
-    Request.Montage = Montage;
-    Request.PlayRate = PlayRate;
-    Request.Sequence = Sequence;
-    Request.bReload = bReload;
-    Request.Apply(Context.Animation, Slot);
+    FBBBCharacterMontageRequestContext RequestContext;
+    RequestContext.Request.Montage = Montage;
+    RequestContext.Request.PlayRate = PlayRate;
+    RequestContext.Request.Sequence = Sequence;
+    RequestContext.Request.bReload = bReload;
+    RequestContext.Request.Apply(Context.Animation, Slot);
 }
 
 //------------------------------------------------------------------------------
@@ -113,16 +113,16 @@ bool BBBCharacterMontageInput::Submit(
 
     for (const FSlotAnimationTrack &Track : Montage.SlotAnimTracks)
     {
-        FBBBMontagePacketData Data;
-        Data.Montage = &Montage;
-        Data.PlayRate = PlayRate;
-        Data.Sequence = Sequence;
-        Data.bReload = bReload;
+        FBBBCharacterMontageSubmitContext SubmitContext;
+        SubmitContext.Data.Montage = &Montage;
+        SubmitContext.Data.PlayRate = PlayRate;
+        SubmitContext.Data.Sequence = Sequence;
+        SubmitContext.Data.bReload = bReload;
 
         if (Track.SlotName == BBBCharacterMontageSlots::FullBody)
         {
             FBBBFullBodyMontagePacket Packet;
-            static_cast<FBBBMontagePacketData &>(Packet) = Data;
+            static_cast<FBBBMontagePacketData &>(Packet) = SubmitContext.Data;
             bSubmittedAll &= Character.SubmitInput(MoveTemp(Packet));
             continue;
         }
@@ -130,7 +130,7 @@ bool BBBCharacterMontageInput::Submit(
         if (Track.SlotName == BBBCharacterMontageSlots::UpperBody)
         {
             FBBBUpperBodyMontagePacket Packet;
-            static_cast<FBBBMontagePacketData &>(Packet) = Data;
+            static_cast<FBBBMontagePacketData &>(Packet) = SubmitContext.Data;
             bSubmittedAll &= Character.SubmitInput(MoveTemp(Packet));
             continue;
         }
@@ -138,7 +138,7 @@ bool BBBCharacterMontageInput::Submit(
         if (Track.SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
         {
             FBBBFullBodyAdditivePreAimMontagePacket Packet;
-            static_cast<FBBBMontagePacketData &>(Packet) = Data;
+            static_cast<FBBBMontagePacketData &>(Packet) = SubmitContext.Data;
             bSubmittedAll &= Character.SubmitInput(MoveTemp(Packet));
             continue;
         }
@@ -146,7 +146,7 @@ bool BBBCharacterMontageInput::Submit(
         if (Track.SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
         {
             FBBBUpperBodyAdditiveMontagePacket Packet;
-            static_cast<FBBBMontagePacketData &>(Packet) = Data;
+            static_cast<FBBBMontagePacketData &>(Packet) = SubmitContext.Data;
             bSubmittedAll &= Character.SubmitInput(MoveTemp(Packet));
             continue;
         }
@@ -154,7 +154,7 @@ bool BBBCharacterMontageInput::Submit(
         if (Track.SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
         {
             FBBBAdditiveHitReactMontagePacket Packet;
-            static_cast<FBBBMontagePacketData &>(Packet) = Data;
+            static_cast<FBBBMontagePacketData &>(Packet) = SubmitContext.Data;
             bSubmittedAll &= Character.SubmitInput(MoveTemp(Packet));
             continue;
         }

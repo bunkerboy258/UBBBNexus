@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/State/BBBRifleState.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/Input/BBBEquipmentInputPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/Runtime/BBBEquipmentRuntimeContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Runtime/Context/BBBEquipmentRuntimeContext.h"
 
 class UBBBRifleDefinition;
 

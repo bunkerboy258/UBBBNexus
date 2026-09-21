@@ -39,7 +39,7 @@ void FBBBCharacterNetworkSystem::Update()
 
     // 只有权威或本机控制角色能够产生新事实
     // 模拟代理只消费复制到达的领域输入
-    if (NetworkIdentity->HasAuthority() || NetworkIdentity->IsLocallyControlled())
+    if (NetworkIdentity->bHasAuthority || NetworkIdentity->bLocallyControlled)
     {
         Observe();
     }
@@ -57,7 +57,7 @@ void FBBBCharacterNetworkSystem::Observe()
     // 观察器绝不写入角色状态
     ObservationProcessor.Update(
         *NetworkData,
-        WorldData->GetWorldTimeSeconds(),
+        WorldData->WorldTimeSeconds,
         *AimData,
         *LocomotionData,
         *NetworkConfig,
@@ -73,14 +73,14 @@ void FBBBCharacterNetworkSystem::TransmitEquipmentFact(FBBBEquipmentActionFact F
         return;
     }
 
-    if (NetworkIdentity->HasAuthority())
+    if (NetworkIdentity->bHasAuthority)
     {
         // 权威将最终事实写入只面向模拟代理的增量账本
         NetworkComponent->ReplicateEquipmentFact(MoveTemp(Fact));
         return;
     }
 
-    if (NetworkIdentity->IsLocallyControlled())
+    if (NetworkIdentity->bLocallyControlled)
     {
         // 非权威本机控制角色只能把已成立事实交给权威
         NetworkComponent->ServerSubmitEquipmentFact(MoveTemp(Fact));
@@ -94,14 +94,14 @@ void FBBBCharacterNetworkSystem::TransmitEquipmentState(const FName EquipmentId)
         return;
     }
 
-    if (NetworkIdentity->HasAuthority())
+    if (NetworkIdentity->bHasAuthority)
     {
         // 最终装备状态由权威复制给模拟代理
         NetworkComponent->ReplicateEquipmentState(EquipmentId);
         return;
     }
 
-    if (NetworkIdentity->IsLocallyControlled())
+    if (NetworkIdentity->bLocallyControlled)
     {
         // 客户端不直接修改远端状态
         NetworkComponent->ServerSubmitEquipmentState(EquipmentId);
@@ -115,14 +115,14 @@ void FBBBCharacterNetworkSystem::TransmitAimState(const FBBBAimNetworkState &Aim
         return;
     }
 
-    if (NetworkIdentity->HasAuthority())
+    if (NetworkIdentity->bHasAuthority)
     {
         // 权威发布已经稳定的瞄准快照
         NetworkComponent->ReplicateAimState(AimState);
         return;
     }
 
-    if (NetworkIdentity->IsLocallyControlled())
+    if (NetworkIdentity->bLocallyControlled)
     {
         // 连续快照经服务端接收边界重新进入输入系统
         NetworkComponent->ServerSubmitAimState(AimState);
@@ -137,14 +137,14 @@ void FBBBCharacterNetworkSystem::TransmitLocomotionState(
         return;
     }
 
-    if (NetworkIdentity->HasAuthority())
+    if (NetworkIdentity->bHasAuthority)
     {
         // 权威发布已经稳定的移动快照
         NetworkComponent->ReplicateLocomotionState(LocomotionState);
         return;
     }
 
-    if (NetworkIdentity->IsLocallyControlled())
+    if (NetworkIdentity->bLocallyControlled)
     {
         // 模拟代理不会进入此分支 因而不会形成转发回路
         NetworkComponent->ServerSubmitLocomotionState(LocomotionState);

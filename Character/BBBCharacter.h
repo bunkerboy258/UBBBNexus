@@ -31,8 +31,6 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
 
-    /** 允许动画实例只读角色表现状态 */
-    friend class UBBBAnimInstance;
     friend class ABBBPlayerCameraSystem;
 
     
@@ -75,6 +73,12 @@ public:
     const FBBBCharacterConfig &GetCharacterConfig() const
     {
         return CharacterConfig;
+    }
+
+    /** @return 角色完整运行时黑板的只读引用 */
+    const FBBBCharacterRuntimeData &GetRuntimeData() const
+    {
+        return RuntimeData;
     }
 
     /**

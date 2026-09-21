@@ -11,7 +11,7 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterParseState &State = Data.Operation;
     FBBBCharacterInputState &Input = Data.InputState;
 
-    State.BeginFrame(Data.Equipment.Equipment.GetActiveMainHandInstance());
+    State.BeginFrame(Data.Equipment.Equipment.ActiveMainHandInstance);
     FBBBCharacterMontageRequestState::BeginFrame(Data.Animation, State);
 
     FBBBCharacterInputContext Context{

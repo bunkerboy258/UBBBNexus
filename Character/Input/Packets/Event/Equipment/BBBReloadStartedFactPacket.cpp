@@ -18,8 +18,8 @@ void FBBBReloadStartedFactPacket::Apply(FBBBCharacterInputContext &Context) cons
     Context.Operation.TrackReloadStarted(
         Sequence,
         EquipmentId,
-        Context.Equipment.GetActiveMainHandInstance(),
-        Context.Equipment.GetActiveEquipmentId());
+        Context.Equipment.ActiveMainHandInstance,
+        Context.Equipment.ActiveEquipmentId);
 }
 
 FBBBEquipmentActionFact FBBBReloadStartedFactPacket::ToFact() const

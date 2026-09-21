@@ -6,12 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/Definition/States/BBBCharacterEquipmentStates.h"
 #include "BBBCharacterEquipmentRuntimeData.generated.h"
 
-class FBBBCharacterAnimationFactProcessor;
-class FBBBCharacterEquipmentController;
-class FBBBCharacterInitializer;
-class FBBBCharacterShutdown;
-class UBBBAnimInstance;
-
 /** 角色装备领域唯一数据根 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterEquipmentRuntimeData
@@ -24,14 +18,6 @@ struct FBBBCharacterEquipmentRuntimeData
         Commands.CleanFrame();
         Events.CleanFrame();
     }
-
-private:
-    friend class FBBBCharacterInputProcessor;
-    friend class FBBBCharacterAnimationFactProcessor;
-    friend class FBBBCharacterEquipmentController;
-    friend class FBBBCharacterInitializer;
-    friend class FBBBCharacterShutdown;
-    friend class UBBBAnimInstance;
 
     /** 角色装备容器 */
     UPROPERTY()
