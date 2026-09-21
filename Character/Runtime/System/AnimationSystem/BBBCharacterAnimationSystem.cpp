@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterAnimationSystem::Initialize(
@@ -44,7 +44,8 @@ void FBBBCharacterAnimationSystem::Update()
         *RuntimeData,
         *CharacterMesh,
         *AnimInstance,
-        RuntimeData->Animation.AnimationState,
+        RuntimeData->Animation.AnimationFactState,
+        RuntimeData->Animation.AnimationLayerState,
         RuntimeData->Equipment.ReadEquipmentSelectionState(),
         RuntimeData->External.ReadWorldState(),
         *AnimationConfig};
@@ -52,5 +53,5 @@ void FBBBCharacterAnimationSystem::Update()
     LayerProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
-    AnimInstance->PublishAnimationFacts(Context.AnimationState.Facts);
+    AnimInstance->PublishAnimationFacts(Context.AnimationFactState);
 }

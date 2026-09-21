@@ -4,7 +4,8 @@ class ABBBCharacter;
 class UBBBAnimInstance;
 class USkeletalMeshComponent;
 struct FBBBCharacterAnimationConfig;
-struct FBBBCharacterAnimationState;
+struct FBBBCharacterAnimationFactState;
+struct FBBBCharacterAnimationLayerState;
 struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterRuntimeData;
 struct FBBBCharacterWorldState;
@@ -24,8 +25,11 @@ struct FBBBCharacterAnimationUpdateContext final
     /** 角色动画实例 */
     UBBBAnimInstance &AnimationInstance;
 
-    /** 角色动画状态 */
-    FBBBCharacterAnimationState &AnimationState;
+    /** 角色动画事实状态 */
+    FBBBCharacterAnimationFactState &AnimationFactState;
+
+    /** 角色动画层状态 */
+    FBBBCharacterAnimationLayerState &AnimationLayerState;
 
     /** 角色装备选择状态 */
     const FBBBCharacterEquipmentSelectionState &EquipmentSelectionState;

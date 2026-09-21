@@ -13,7 +13,6 @@
 
 - `X/DomainData/` 放且只放 B
 - `X/DomainData/States/` 放且只放 A
-- `X/DomainData/Values/` 是可选目录 放且只放确有必要的 V
 - `X/DomainData/Context/` 放且只放 D
 - `X/Processors/` 放具体处理器
 
@@ -22,8 +21,6 @@
 - B 必须直接持有本控制器领域内全部 A
 - 禁止创建 B 到总 State 再到具体状态的中间聚合层
 - `States/` 中所有类型必须以 `State` 结尾
-- `Values/` 中所有类型禁止使用 `State` `DomainState` `RuntimeData` `Context` 后缀
-- 没有 V 时禁止创建空的 `Values/` 目录
 - 以上目录禁止继续创建子目录或其它同级目录
 
 处理器要求

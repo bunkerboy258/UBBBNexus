@@ -1,26 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
-
-namespace
-{
-    void InvalidateMontageSlot(
-        FBBBCharacterMontageSlot &Slot,
-        const FBBBCharacterOperationState &Operation)
-    {
-        if (!BBBCharacterOperation::IsEquipmentSwitchPending(Operation)
-            && (!Slot.Desired.bReload
-                || !BBBCharacterOperation::IsCancelledReloadSequence(Operation, Slot.Desired.Sequence)))
-        {
-            return;
-        }
-
-        Slot.Desired = FBBBCharacterMontageRequest();
-        Slot.Revision = 0;
-    }
-}
 
 void FBBBCharacterInputProcessor::Update(
     FBBBCharacterInputState &InputState,
@@ -40,11 +22,12 @@ void FBBBCharacterInputProcessor::Update(
         BBBCharacterOperation::CancelReload(Context.Operation);
     }
 
-    InvalidateMontageSlot(Context.Animation.Slots.FullBody, Context.Operation);
-    InvalidateMontageSlot(Context.Animation.Slots.UpperBody, Context.Operation);
-    InvalidateMontageSlot(Context.Animation.Slots.FullBodyAdditivePreAim, Context.Operation);
-    InvalidateMontageSlot(Context.Animation.Slots.UpperBodyAdditive, Context.Operation);
-    InvalidateMontageSlot(Context.Animation.Slots.AdditiveHitReact, Context.Operation);
+    if (Context.AnimationInstance)
+    {
+        Context.AnimationInstance->InvalidateMontageSlots(
+            BBBCharacterOperation::IsEquipmentSwitchPending(Context.Operation),
+            Context.Operation.CancelReloadSequence);
+    }
     InputState.bProcessing = true;
 
     Process(InputState.EquipmentState, Context);

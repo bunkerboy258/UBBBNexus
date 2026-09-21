@@ -7,12 +7,12 @@
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 
 class UBBBEquipmentCatalog;
+class UBBBAnimInstance;
 
 /**
  * 输入包应用上下文
@@ -36,8 +36,8 @@ struct FBBBCharacterInputContext final
     /** 本帧已经成立的装备事件 */
     FBBBCharacterEquipmentEventState &Events;
 
-    /** 角色动画状态 */
-    FBBBCharacterAnimationState &Animation;
+    /** 当前角色动画实例 */
+    UBBBAnimInstance *AnimationInstance;
 
     /** 角色瞄准状态 */
     FBBBAimState &Aim;

@@ -5,6 +5,7 @@
 
 class FBBBCharacterInitializer;
 class UBBBEquipmentCatalog;
+class USkeletalMeshComponent;
 struct FBBBCharacterRuntimeData;
 
 /** 角色包解析系统 负责将输入转换为领域黑板事实 */
@@ -17,9 +18,13 @@ public:
 private:
     friend class FBBBCharacterInitializer;
 
-    void Initialize(FBBBCharacterRuntimeData &InData, UBBBEquipmentCatalog &InEquipmentCatalog);
+    void Initialize(
+        FBBBCharacterRuntimeData &InData,
+        UBBBEquipmentCatalog &InEquipmentCatalog,
+        USkeletalMeshComponent &InCharacterMesh);
 
     FBBBCharacterRuntimeData *Data = nullptr;
     UBBBEquipmentCatalog *EquipmentCatalog = nullptr;
+    USkeletalMeshComponent *CharacterMesh = nullptr;
     FBBBCharacterInputProcessor InputProcessor;
 };

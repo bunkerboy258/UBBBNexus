@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Core/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -12,7 +12,7 @@ void FBBBCharacterAnimationLayerProcessor::Update(
 {
     const FBBBCharacterEquipmentSelectionState &EquipmentState = Context.EquipmentSelectionState;
     const FBBBCharacterAnimationConfig &AnimationConfig = Context.AnimationConfig;
-    FBBBCharacterAnimationState &AnimationData = Context.AnimationState;
+    FBBBCharacterAnimationLayerState &LayerState = Context.AnimationLayerState;
     USkeletalMeshComponent &CharacterMesh = Context.CharacterMesh;
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
@@ -34,12 +34,12 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     }
 
     // 动画层未变化时避免重复重连
-    if (AnimationData.LinkedAnimationLayerClass == DesiredLayerClass)
+    if (LayerState.LinkedAnimationLayerClass == DesiredLayerClass)
     {
         return;
     }
 
     // 重连动画层后保存当前类用于下一帧比较
     CharacterMesh.LinkAnimClassLayers(DesiredLayerClass);
-    AnimationData.LinkedAnimationLayerClass = DesiredLayerClass;
+    LayerState.LinkedAnimationLayerClass = DesiredLayerClass;
 }

@@ -1,97 +1,10 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBMontagePacket.h"
 
+#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterMontageRequest.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 #include "Animation/AnimMontage.h"
-
-namespace BBBCharacterMontageSlots
-{
-    const FName FullBody(TEXT("FullBody"));
-    const FName UpperBody(TEXT("UpperBody"));
-    const FName FullBodyAdditivePreAim(TEXT("FullBodyAdditivePreAim"));
-    const FName UpperBodyAdditive(TEXT("UpperBodyAdditive"));
-    const FName AdditiveHitReact(TEXT("AdditiveHitReact"));
-}
-
-namespace
-{
-    FBBBCharacterMontageSlot *FindSlot(
-        FBBBCharacterAnimationState &Animation,
-        const FName SlotName)
-    {
-        if (SlotName == BBBCharacterMontageSlots::FullBody)
-        {
-            return &Animation.Slots.FullBody;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::UpperBody)
-        {
-            return &Animation.Slots.UpperBody;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
-        {
-            return &Animation.Slots.FullBodyAdditivePreAim;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
-        {
-            return &Animation.Slots.UpperBodyAdditive;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
-        {
-            return &Animation.Slots.AdditiveHitReact;
-        }
-
-        return nullptr;
-    }
-
-    const FBBBCharacterMontageSlot *FindSlot(
-        const FBBBCharacterAnimationState &Animation,
-        const FName SlotName)
-    {
-        if (SlotName == BBBCharacterMontageSlots::FullBody)
-        {
-            return &Animation.Slots.FullBody;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::UpperBody)
-        {
-            return &Animation.Slots.UpperBody;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
-        {
-            return &Animation.Slots.FullBodyAdditivePreAim;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
-        {
-            return &Animation.Slots.UpperBodyAdditive;
-        }
-
-        if (SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
-        {
-            return &Animation.Slots.AdditiveHitReact;
-        }
-
-        return nullptr;
-    }
-
-    template<typename TFunction>
-    void ForEachSlot(FBBBCharacterMontageSlots &Slots, TFunction &&Function)
-    {
-        Function(Slots.FullBody);
-        Function(Slots.UpperBody);
-        Function(Slots.FullBodyAdditivePreAim);
-        Function(Slots.UpperBodyAdditive);
-        Function(Slots.AdditiveHitReact);
-    }
-}
 
 bool FBBBMontagePacketData::IsValid() const
 {
@@ -114,7 +27,7 @@ bool FBBBMontagePacketData::CanApplyToSlot(
         return false;
     }
 
-    if (!FindSlot(Context.Animation, Slot))
+    if (!Context.AnimationInstance || !Context.AnimationInstance->FindMontageSlot(Slot))
     {
         return false;
     }
@@ -134,48 +47,17 @@ void FBBBMontagePacketData::ApplyToSlot(
     FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
-    FBBBCharacterMontageSlot *TargetSlot = FindSlot(Context.Animation, Slot);
-    if (!TargetSlot)
+    if (!Context.AnimationInstance)
     {
         return;
     }
 
-    FBBBCharacterMontageRequest Request;
-    Request.Montage = Montage;
-    Request.PlayRate = PlayRate;
-    Request.Sequence = Sequence;
-    Request.bReload = bReload;
-    uint64 SharedRevision = 0;
-
-    ForEachSlot(Context.Animation.Slots, [&Request, &SharedRevision](const FBBBCharacterMontageSlot &ExistingSlot)
-    {
-        if (ExistingSlot.Desired.Montage == Request.Montage
-            && ExistingSlot.Desired.Sequence == Request.Sequence
-            && ExistingSlot.Revision != 0)
-        {
-            SharedRevision = ExistingSlot.Revision;
-        }
-    });
-
-    if (SharedRevision != 0)
-    {
-        TargetSlot->Desired = Request;
-        TargetSlot->Revision = SharedRevision;
-        return;
-    }
-
-    ForEachSlot(Context.Animation.Slots, [&Request](FBBBCharacterMontageSlot &ExistingSlot)
-    {
-        if (ExistingSlot.Desired.Montage
-            && ExistingSlot.Desired.Montage->GetGroupName() == Request.Montage->GetGroupName())
-        {
-            ExistingSlot.Desired = FBBBCharacterMontageRequest();
-            ExistingSlot.Revision = 0;
-        }
-    });
-
-    TargetSlot->Desired = Request;
-    TargetSlot->Revision = Context.Animation.NextRevision++;
+    Context.AnimationInstance->SubmitMontageSlot(
+        Slot,
+        *Montage,
+        PlayRate,
+        Sequence,
+        bReload);
 }
 
 //------------------------------------------------------------------------------

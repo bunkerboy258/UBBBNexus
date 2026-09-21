@@ -4,9 +4,9 @@
 #include "BBBWork/UBBBNexus/Character/Core/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/RuntimeData/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFacts.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBWork/UBBBNexus/Character/Runtime/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentInventoryState.h"
-#include "BBBWork/UBBBNexus/Character/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -23,8 +23,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
 {
     ABBBCharacter &Character = Context.Character;
     FBBBCharacterRuntimeData &RuntimeData = Context.RuntimeData;
-    FBBBCharacterAnimationState &AnimationState = Context.AnimationState;
-    FBBBCharacterAnimationFacts &OutFacts = AnimationState.Facts;
+    FBBBCharacterAnimationFactState &FactState = Context.AnimationFactState;
     const float DeltaSeconds = Context.WorldState.FrameDeltaSeconds;
 
     // 采集动画事实前确认角色组件和世界对象有效
@@ -60,20 +59,20 @@ void FBBBCharacterAnimationFactProcessor::Update(
         : FVector::ZeroVector;
 
     // 首次采集时直接建立平滑目标的初始值
-    if (!AnimationState.bHasSmoothedAimTarget)
+    if (!FactState.bHasSmoothedAimTarget)
     {
-        AnimationState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
-        AnimationState.bHasSmoothedAimTarget = true;
+        FactState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
+        FactState.bHasSmoothedAimTarget = true;
     }
 
     if (AimConfig.bEnableAimIKTargetSmoothing
         && AimConfig.AimIKTargetSmoothTime > 0.0f)
     {
         // 按配置时间平滑瞄准目标避免目标点瞬移
-        AnimationState.SmoothedAimTargetComponentSpace = SmoothAimTarget(
-            AnimationState.SmoothedAimTargetComponentSpace,
+        FactState.SmoothedAimTargetComponentSpace = SmoothAimTarget(
+            FactState.SmoothedAimTargetComponentSpace,
             RawAimTargetComponentSpace,
-            AnimationState.AimTargetSmoothVelocity,
+            FactState.AimTargetSmoothVelocity,
             AimConfig.AimIKTargetSmoothTime,
             DeltaSeconds);
     }
@@ -81,9 +80,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     if (!bCanUseAimTarget)
     {
         // 目标无效时清除平滑速度并等待下一次有效目标
-        AnimationState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
-        AnimationState.AimTargetSmoothVelocity = FVector::ZeroVector;
-        AnimationState.bHasSmoothedAimTarget = false;
+        FactState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
+        FactState.AimTargetSmoothVelocity = FVector::ZeroVector;
+        FactState.bHasSmoothedAimTarget = false;
     }
 
     float GroundDistance = 0.0f;
@@ -118,21 +117,21 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const float TargetAimIntentAlpha = AimState.bIsAiming ? 1.0f : 0.0f;
 
     // 平滑瞄准意图权重供动画层渐进过渡
-    AnimationState.SmoothedAimIntentAlpha = FMath::FInterpTo(
-        AnimationState.SmoothedAimIntentAlpha,
+    FactState.SmoothedAimIntentAlpha = FMath::FInterpTo(
+        FactState.SmoothedAimIntentAlpha,
         TargetAimIntentAlpha,
         DeltaSeconds,
         AimConfig.AimIntentAlphaInterpSpeed);
 
     UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
     UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->TryGetWeaponAnimInstance() : nullptr;
-    OutFacts.bIsAiming = AimState.bIsAiming;
-    OutFacts.AimIntentAlpha = FMath::Clamp(
-        AnimationState.SmoothedAimIntentAlpha,
+    FactState.bIsAiming = AimState.bIsAiming;
+    FactState.AimIntentAlpha = FMath::Clamp(
+        FactState.SmoothedAimIntentAlpha,
         0.0f,
         1.0f);
-    OutFacts.AimIKAlpha = 0.0f;
-    OutFacts.AimTargetComponentSpace = AnimationState.SmoothedAimTargetComponentSpace;
+    FactState.AimIKAlpha = 0.0f;
+    FactState.AimTargetComponentSpace = FactState.SmoothedAimTargetComponentSpace;
     // 只有装备和瞄准来源都有效时才启用瞄准逆向运动学
     if (bHasActiveMainHandEquipment
         && WeaponAnim
@@ -140,25 +139,25 @@ void FBBBCharacterAnimationFactProcessor::Update(
         && WeaponAnim->HasValidAimSource()
         && WeaponAnim->GetAimSourceLocalTransform().IsValid())
     {
-        OutFacts.AimIKAlpha = OutFacts.AimIntentAlpha;
+        FactState.AimIKAlpha = FactState.AimIntentAlpha;
     }
 
-    OutFacts.ActorLocation = Character.GetActorLocation();
-    OutFacts.ActorRotation = Character.GetActorRotation();
-    OutFacts.Velocity = Movement->Velocity;
-    OutFacts.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
-    OutFacts.Acceleration = Movement->GetCurrentAcceleration();
-    OutFacts.Gait = RuntimeData.Locomotion.ReadLocomotionState().Gait;
-    OutFacts.MovementMode = Movement->MovementMode;
-    OutFacts.GroundFriction = Movement->GroundFriction;
-    OutFacts.BrakingFriction = Movement->BrakingFriction;
-    OutFacts.BrakingFrictionFactor = Movement->BrakingFrictionFactor;
-    OutFacts.BrakingDecelerationWalking = Movement->BrakingDecelerationWalking;
-    OutFacts.GravityZ = Movement->GetGravityZ();
-    OutFacts.GroundDistance = GroundDistance;
-    OutFacts.bUseSeparateBrakingFriction = Movement->bUseSeparateBrakingFriction;
-    OutFacts.bIsMovingOnGround = Movement->IsMovingOnGround();
-    OutFacts.bIsCrouching = Movement->IsCrouching();
+    FactState.ActorLocation = Character.GetActorLocation();
+    FactState.ActorRotation = Character.GetActorRotation();
+    FactState.Velocity = Movement->Velocity;
+    FactState.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
+    FactState.Acceleration = Movement->GetCurrentAcceleration();
+    FactState.Gait = RuntimeData.Locomotion.ReadLocomotionState().Gait;
+    FactState.MovementMode = Movement->MovementMode;
+    FactState.GroundFriction = Movement->GroundFriction;
+    FactState.BrakingFriction = Movement->BrakingFriction;
+    FactState.BrakingFrictionFactor = Movement->BrakingFrictionFactor;
+    FactState.BrakingDecelerationWalking = Movement->BrakingDecelerationWalking;
+    FactState.GravityZ = Movement->GetGravityZ();
+    FactState.GroundDistance = GroundDistance;
+    FactState.bUseSeparateBrakingFriction = Movement->bUseSeparateBrakingFriction;
+    FactState.bIsMovingOnGround = Movement->IsMovingOnGround();
+    FactState.bIsCrouching = Movement->IsCrouching();
 }
 
 //------------------------------------------------------------------------------

@@ -1,36 +1,43 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
+#include "BBBWork/UBBBNexus/Character/Runtime/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
 
-class FBBBCharacterAnimationActionProcessor;
 class FBBBCharacterAnimationFactProcessor;
 class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
-class FBBBCharacterParseSystem;
 
-/** 角色动画状态的唯一持有者 */
+/** 角色动画领域全部状态的唯一直接持有者 */
 USTRUCT()
 struct FBBBCharacterAnimationDomainState final
 {
     GENERATED_BODY()
 
 public:
-    /** @return 角色当前动画状态 */
-    const FBBBCharacterAnimationState &ReadAnimationState() const
+    /** @return 角色动画事实状态 */
+    const FBBBCharacterAnimationFactState &ReadAnimationFactState() const
     {
-        return AnimationState;
+        return AnimationFactState;
+    }
+
+    /** @return 角色动画层状态 */
+    const FBBBCharacterAnimationLayerState &ReadAnimationLayerState() const
+    {
+        return AnimationLayerState;
     }
 
 private:
-    friend class FBBBCharacterAnimationActionProcessor;
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterAnimationSystem;
-    friend class FBBBCharacterParseSystem;
 
-    /** 角色当前动画状态 */
+    /** 角色动画事实状态 */
     UPROPERTY(Transient)
-    FBBBCharacterAnimationState AnimationState;
+    FBBBCharacterAnimationFactState AnimationFactState;
+
+    /** 角色动画层状态 */
+    UPROPERTY(Transient)
+    FBBBCharacterAnimationLayerState AnimationLayerState;
 };
