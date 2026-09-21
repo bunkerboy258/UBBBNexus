@@ -1,9 +1,18 @@
-# Character Controller Law
+# Character System Law
+严格遵守Constitution/Data/Law.md的约定
 
-- Controller 的依赖注入和 State 写权限同时受 [`../../../DataBlackboard/Law.md`](../../../DataBlackboard/Law.md) 约束。
+控制器根位于系统根目录下 以下根目录用X/替代
+控制器根只能拥有初始化函数和一个无参Update();`Update`负责调度各个处理器,
+组装context,禁止持有任何具体领域逻辑,且只能由 `Character/Core/Update` 下的主管线调用
 
-- Controller 只负责一个明确玩法领域，并通过自己的 Processor 修改该领域状态。
-- Controller 的更新入口只能由角色主管线调用，禁止 Controller 之间互相调度。
-- Controller 禁止查询 `HasAuthority`、本地控制权、网络角色或 RPC；主管线只向确有需要的边界传入 `Causal/Mirror` 事实。
-- Controller 不负责网络发送、动画播放或输入排序，只产生可供后续系统观察的状态与事实。
-- `Definition/` 保存本领域数据定义，`Context/` 保存栈上临时数据，`Processors/` 保存具体规则，禁止新增含义重复的层级。
+`X/DominData/` 放B
+`X/DominData/States/` 放A
+`X/DominData/Context/` 放D
+`X/Processors/` 放具体处理器
+处理器处理单一任务 处理器之间禁止直接互相调用 只能通过context传递数据
+一个处理器文件只能持有一个Update方法 当处理器cpp文件代码行数超过200行 需要考虑拆分成多个处理器
+
+除了装备控制器的镜像判断外,控制器没有任何网络语义和具体逻辑
+
+以上文件夹禁止再创建子文件夹和同级目录
+

@@ -1,19 +1,18 @@
 # Character System Law
+严格遵守Constitution/Data/Law.md的约定
 
-每个 System 有且仅有一个公共无参方法 `Update`，只能由 `Character/Core/Update` 下的主管线调用
+系统器根位于系统根目录下 以下根目录用X/替代
+系统器根只能拥有初始化函数和一个无参Update();`Update`负责调度各个处理器,
+组装context,禁止持有任何具体领域逻辑,且只能由 `Character/Core/Update` 下的主管线调用
 
-`State/` 放跨帧驻留的黑板状态 类型名以 `State` 结尾
+`X/DominData/` 放B
+`X/DominData/States/` 放A
+`X/DominData/Context/` 放D
+`X/Processors/` 放具体处理器
+处理器处理单一任务 处理器之间禁止直接互相调用 只能通过context传递数据
+一个处理器文件只能持有一个Update方法 当处理器cpp文件代码行数超过200行 需要考虑拆分成多个处理器
 
-`Context/` 放执行期间的临时上下文 类型名以 `Context` 结尾
+只有网络系统存在网络语义与具体逻辑
 
-`Definition/` 放本领域的自定义类型定义 类型名以 `Definition` 结尾
+以上文件夹禁止再创建子文件夹和同级目录
 
-`Processors/` 放处理具体逻辑的方法 类型名以 `Processor` 结尾
-
-以上四种职责目录禁止再创建子文件夹和同级职责目录
-
-角色主管线每帧生成唯一 `NetworkIdentity` 事实，玩法系统只按 `Causal/Mirror` 执行模式工作，禁止自行查询网络角色
-
-只有网络系统可以读取权威身份并决定传输方向，网络系统只观察黑板 State 与本帧事实后传输
-
-接收端只能构造领域输入包并调用 `SubmitInput`，禁止直接写黑板，禁止客户端预测，网络只传输已经成立的事实与最终状态

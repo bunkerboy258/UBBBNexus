@@ -75,9 +75,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
         Character->HasAuthority(),
         Character->IsLocallyControlled());
 
-    // 输入解析先形成黑板状态与本帧事实
     Character->ParseSystem.Update();
-    // 装备动作可能产生后续网络需要观察的离散事实
     Character->EquipmentController.Update(Character->RuntimeData.NetworkIdentity);
 
     if (Character->RuntimeData.NetworkIdentity.ExecutionMode
