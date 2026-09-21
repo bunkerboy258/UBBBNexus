@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 #include "Animation/AnimMontage.h"
 
 bool FBBBMontagePacketData::IsValid() const

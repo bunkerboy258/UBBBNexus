@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Core/Initialization/BBBCharacterInitializer.h"
-#include "BBBWork/UBBBNexus/Character/Core/Shutdown/BBBCharacterShutdown.h"
+#include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
+#include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"

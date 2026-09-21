@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterAimPacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Runtime/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 bool FBBBCharacterAimPacket::IsValid() const
 {
