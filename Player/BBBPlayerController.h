@@ -38,6 +38,13 @@ public:
     //让下方函数按照所列规则参与反射调用或远程调用
     UFUNCTION(BlueprintCallable, Category = "BBB|Input")
     void ToggleMouseCursor();
+
+    /**
+     * 转交本地换装界面的打开请求
+     * @return 无
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|Client")
+    void ToggleCustomization();
 protected:
 
     //让下方成员按照所列规则参与编辑序列化或网络复制

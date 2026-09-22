@@ -38,6 +38,12 @@ public:
      */
     void SetInputEnabled(bool bEnabled);
 
+    /** @return 玩家玩法输入是否启用 */
+    bool IsInputEnabled() const
+    {
+        return bInputEnabled;
+    }
+
     UPROPERTY(EditDefaultsOnly, Category = "BBB|Input")
     FBBBPlayerInputConfig Config;
     /** 本地玩家使用的相机蓝图类 */

@@ -1,5 +1,6 @@
 
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
+#include "BBBWork/UBBBNexus/Client/BBBClientSubsystem.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -31,6 +32,8 @@ void ABBBPlayerController::SetupInputComponent()
 {
     //先执行父类的绑定玩家输入动作
     Super::SetupInputComponent();
+
+    InputComponent->BindKey(EKeys::F6, IE_Pressed, this, &ABBBPlayerController::ToggleCustomization);
 
     // 每个运行时控制器独立创建菜单动作 避免构造阶段对象被蓝图默认值覆盖
     //创建不依赖资产文件的鼠标模式切换动作
@@ -126,6 +129,14 @@ void ABBBPlayerController::ToggleMouseCursor()
     }
     //切换鼠标菜单输入模式
     SetMouseMenuMode(!bShowMouseCursor);
+}
+
+void ABBBPlayerController::ToggleCustomization()
+{
+    if (ULocalPlayer *LocalPlayer = GetLocalPlayer())
+    {
+        LocalPlayer->GetSubsystem<UBBBClientSubsystem>()->ToggleCustomization();
+    }
 }
 
 //切换鼠标菜单输入模式
