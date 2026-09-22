@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/Definition/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/DomainData/Context/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/Processors/BBBRifleAnimationProcessor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 
@@ -243,6 +244,7 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
     Facts.LoadedAmmo = Action.LoadedAmmo;
     Facts.AmmoCapacity = Action.AmmoCapacity;
     Facts.CurrentWorldTimeSeconds = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+    FBBBRifleAnimationProcessor::CalculateLeftHandTarget(Context, Facts);
     AnimationInstance->PublishAnimationFacts(Facts);
 }
 
