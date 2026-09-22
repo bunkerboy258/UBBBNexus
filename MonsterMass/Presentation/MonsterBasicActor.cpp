@@ -2,9 +2,8 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
-#include "MassActorSubsystem.h"
-#include "MassEntityManager.h"
-#include "MassEntitySubsystem.h"
+#include "Engine/DamageEvents.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Input/MonsterDamageInput.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Presentation/MonsterPresentationComponent.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
@@ -42,56 +41,27 @@ float AMonsterBasicActor::TakeDamage(
     AController* EventInstigator,
     AActor* DamageCauser)
 {
-    const float AcceptedDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
-    // 无效伤害不进入实体事件
-    if (DamageAmount <= 0.0f)
+    if (!FMath::IsFinite(DamageAmount) || DamageAmount <= 0.0f || !CanBeDamaged())
     {
-        return AcceptedDamage;
+        return 0.0f;
     }
 
-    UWorld* World = GetWorld();
+    FMonsterDamageRequest Request;
+    Request.Damage = DamageAmount;
+    Request.DamageCauser = DamageCauser;
+    Request.Instigator = EventInstigator;
 
-    if (!ensureMsgf(World != nullptr, TEXT("[UBBBM]Monster damage requires a valid world")))
+    FHitResult Hit;
+    DamageEvent.GetBestHitInfo(this, DamageCauser, Hit, Request.HitDirection);
+    Request.HitLocation = Hit.ImpactPoint;
+
+    if (!UMonsterDamageInput::SubmitDamage(this, Request))
     {
-        return AcceptedDamage;
+        return 0.0f;
     }
 
-    // 通过表现演员反查对应实体
-    UMassEntitySubsystem* EntitySubsystem = UWorld::GetSubsystem<UMassEntitySubsystem>(World);
-    UMassActorSubsystem* ActorSubsystem = UWorld::GetSubsystem<UMassActorSubsystem>(World);
-
-    if (!ensureMsgf(EntitySubsystem != nullptr && ActorSubsystem != nullptr, TEXT("[UBBBM]Monster damage requires Mass entity and actor subsystems")))
-    {
-        return AcceptedDamage;
-    }
-
-    const FMassEntityHandle Entity = ActorSubsystem->GetEntityHandleFromActor(this);
-
-    if (!ensureMsgf(Entity.IsValid(), TEXT("[UBBBM]Monster actor requires an associated Mass entity")))
-    {
-        return AcceptedDamage;
-    }
-
-    // 取得实体受伤事件片段
-    FMassEntityManager& EntityManager = EntitySubsystem->GetMutableEntityManager();
-    FMonsterDamageEventFragment* DamageEventFragment = EntityManager.GetFragmentDataPtr<FMonsterDamageEventFragment>(Entity);
-
-    if (!ensureMsgf(DamageEventFragment != nullptr, TEXT("[UBBBM]Monster entity requires MonsterDamageEventFragment")))
-    {
-        return AcceptedDamage;
-    }
-
-    // 只写入事件 Fragment，实际扣血交给 Mass 受伤处理器
-    DamageEventFragment->PendingDamage += DamageAmount;
-
-    UE_LOG(
-        LogTemp,
-        Log,
-        TEXT("[UBBBM]Monster hurt Actor=%s Damage=%.1f Causer=%s"),
-        *GetNameSafe(this),
-        DamageAmount,
-        *GetNameSafe(DamageCauser));
+    // 接收成功后才广播标准伤害通知 监听方不得把通知重复转回伤害入口
+    Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
     // 返回已接受的伤害数值
     return DamageAmount;

@@ -12,17 +12,16 @@ UMonsterPresentationComponent::UMonsterPresentationComponent()
 void UMonsterPresentationComponent::ApplyPresentationState(
     const EMonsterState InState,
     const float InSpeed,
-    const float InStateTime)
+    const float InStateTime,
+    const uint32 InActionId,
+    const float InActionProgress)
 {
+    const bool bNewAction = !bHasAppliedAnimation || LastPlayedState != InState || LastActionId != InActionId || StateEnteredTime != InStateTime;
+
     // 保存 Mass 提供的只读快照，供蓝图或调试读取
     MonsterState = InState;
     MovementSpeed = FMath::Max(InSpeed, 0.0f);
     StateEnteredTime = InStateTime;
-
-    if (bHasAppliedAnimation && LastPlayedState == InState)
-    {
-        return;
-    }
 
     // 仅在状态切换时重新播放动画，避免每帧重置时间轴
     UAnimSequenceBase* const Animation = GetAnimationForState(InState);
@@ -41,7 +40,19 @@ void UMonsterPresentationComponent::ApplyPresentationState(
 
     // 移动相关状态循环播放，其余状态只播放一次
     const bool bLooping = InState == EMonsterState::Idle || InState == EMonsterState::Scout || InState == EMonsterState::Chase;
-    MonsterMesh->PlayAnimation(Animation, bLooping);
+    if (bNewAction)
+    {
+        MonsterMesh->PlayAnimation(Animation, bLooping);
+        MonsterMesh->SetPlayRate(bLooping ? 1.0f : 0.0f);
+    }
+
+    // 非循环动作由逻辑时间定位 禁用通知触发 避免不可见时漏伤或重复伤害
+    if (!bLooping)
+    {
+        MonsterMesh->SetPosition(Animation->GetPlayLength() * FMath::Clamp(InActionProgress, 0.0f, 1.0f), false);
+    }
+
+    LastActionId = InActionId;
     LastPlayedState = InState;
     bHasAppliedAnimation = true;
 }

@@ -48,6 +48,14 @@ struct ABBB_EVAC_API FMonsterHealthFragment final : public FMassFragment
     /** 最大生命值 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster")
     float MaxHealth = 100.0f;
+
+    /** 每次受伤重新计算的硬直时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster", meta = (ClampMin = "0.01"))
+    float HurtDuration = 0.2f;
+
+    /** 死亡表现保留到实体回收的时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster", meta = (ClampMin = "0.01"))
+    float DeathLifetime = 3.0f;
 };
 
 /** 小怪行为状态 */
@@ -62,6 +70,9 @@ struct ABBB_EVAC_API FMonsterStateFragment final : public FMassFragment
 
     /** 当前状态进入的世界时间 */
     float StateEnteredTime = 0.0f;
+
+    /** 状态切换或同状态动作重启时递增 */
+    uint32 ActionId = 0;
 };
 
 /** 小怪移动配置与运行状态 */
@@ -143,8 +154,32 @@ struct ABBB_EVAC_API FMonsterCombatFragment final : public FMassFragment
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster")
     float AttackCooldown = 1.2f;
 
+    /** 开始攻击到唯一命中判定之间的时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster", meta = (ClampMin = "0.01"))
+    float AttackWindup = 0.35f;
+
+    /** 命中判定到本轮攻击结束之间的时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster", meta = (ClampMin = "0.01"))
+    float AttackRecovery = 0.45f;
+
+    /** 攻击动画中对应命中判定的归一化位置 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster", meta = (ClampMin = "0.01", ClampMax = "0.99"))
+    float AnimationHitFraction = 0.4f;
+
     /** 下次允许攻击的时间 */
     float NextAttackTime = 0.0f;
+
+    /** 每轮攻击独立编号 受伤取消后不复用 */
+    uint32 AttackId = 0;
+
+    /** 当前攻击锁定的目标 不随感知切换 */
+    TWeakObjectPtr<AActor> AttackTarget;
+
+    /** 本轮是否已经执行或取消唯一命中判定 */
+    bool bHitAttempted = false;
+
+    /** 战斗处理器确认本轮时序已经结束 */
+    bool bAttackFinished = false;
 };
 
 /** 小怪表现层只读状态 */
@@ -161,4 +196,10 @@ struct ABBB_EVAC_API FMonsterPresentationStateFragment final : public FMassFragm
 
     /** 提供给表现层的状态进入时间 */
     float StateEnteredTime = 0.0f;
+
+    /** 对应逻辑动作的独立编号 */
+    uint32 ActionId = 0;
+
+    /** 非循环动作的归一化动画位置 */
+    float ActionProgress = 0.0f;
 };

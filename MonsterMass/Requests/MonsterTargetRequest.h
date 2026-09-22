@@ -19,4 +19,7 @@ struct ABBB_EVAC_API FMonsterTargetRequestFragment final : public FMassFragment
 
     /** 当前是否持有有效目标 */
     bool bHasTarget = false;
+
+    /** 感知确认的实际目标对象 */
+    TWeakObjectPtr<AActor> TargetActor;
 };

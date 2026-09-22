@@ -5,7 +5,7 @@
 #include "MassMovementFragments.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
-#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPerceptionProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterStateProcessor.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterNavigationProcessor::UMonsterNavigationProcessor()
@@ -14,7 +14,7 @@ UMonsterNavigationProcessor::UMonsterNavigationProcessor()
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
-    ExecutionOrder.ExecuteAfter.Add(UMonsterPerceptionProcessor::StaticClass()->GetFName());
+    ExecutionOrder.ExecuteAfter.Add(UMonsterStateProcessor::StaticClass()->GetFName());
 }
 
 void UMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
@@ -23,7 +23,7 @@ void UMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEntityM
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FMonsterTargetRequestFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMonsterMovementFragment>(EMassFragmentAccess::ReadWrite);
-    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -61,7 +61,7 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
         TArrayView<FMassVelocityFragment> Velocities = ChunkContext.GetMutableFragmentView<FMassVelocityFragment>();
         const TConstArrayView<FMonsterTargetRequestFragment> Targets = ChunkContext.GetFragmentView<FMonsterTargetRequestFragment>();
         TArrayView<FMonsterMovementFragment> Movements = ChunkContext.GetMutableFragmentView<FMonsterMovementFragment>();
-        TArrayView<FMonsterStateFragment> States = ChunkContext.GetMutableFragmentView<FMonsterStateFragment>();
+        const TConstArrayView<FMonsterStateFragment> States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
@@ -69,10 +69,10 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
             FMassVelocityFragment& Velocity = Velocities[Index];
             const FMonsterTargetRequestFragment& Target = Targets[Index];
             FMonsterMovementFragment& Movement = Movements[Index];
-            FMonsterStateFragment& State = States[Index];
+            const FMonsterStateFragment& State = States[Index];
 
             // 无目标或受控状态下停止移动
-            if (!Target.bHasTarget || State.State == EMonsterState::Dead || State.State == EMonsterState::Hurt)
+            if (!Target.bHasTarget || State.State != EMonsterState::Chase)
             {
                 Velocity.Value = FVector::ZeroVector;
                 continue;
@@ -87,8 +87,6 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
             // 进入停止半径后交给战斗处理器
             if (ToTarget.SizeSquared() <= FMath::Square(StopRadius))
             {
-                State.State = EMonsterState::Attack;
-                State.StateEnteredTime = WorldTime;
                 Velocity.Value = FVector::ZeroVector;
                 continue;
             }
@@ -124,14 +122,13 @@ void UMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMa
 
             const FVector PathDirection = ToPathPoint.GetSafeNormal();
             const float MoveSpeed = FMath::Max(Movement.MoveSpeed, 0.0f);
-            const float MoveDistance = FMath::Min(MoveSpeed * DeltaTime, ToPathPoint.Size());
+            const float MoveDistance = FMath::Min3<double>(MoveSpeed * DeltaTime, ToPathPoint.Size(), FMath::Max(ToTarget.Size() - StopRadius, 0.0f));
             const FVector NewLocation = CurrentLocation + PathDirection * MoveDistance;
 
             // 逻辑层直接写入 Mass 变换，表现层随后读取该结果
             Transform.SetLocation(NewLocation);
             Transform.SetRotation(PathDirection.ToOrientationQuat());
-            Velocity.Value = PathDirection * MoveSpeed;
-            State.State = EMonsterState::Chase;
+            Velocity.Value = DeltaTime > SMALL_NUMBER ? PathDirection * (MoveDistance / DeltaTime) : FVector::ZeroVector;
         }
     });
 }

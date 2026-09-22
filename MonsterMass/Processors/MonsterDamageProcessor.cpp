@@ -1,6 +1,9 @@
 #include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterDamageProcessor.h"
 
 #include "MassExecutionContext.h"
+#include "Engine/World.h"
+#include "GameFramework/Actor.h"
+#include "GameFramework/Controller.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterDamageProcessor::UMonsterDamageProcessor()
@@ -15,8 +18,7 @@ void UMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityManag
 {
     MonsterQuery.AddRequirement<FMonsterHealthFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FMonsterDamageEventFragment>(EMassFragmentAccess::ReadWrite);
-    MonsterQuery.AddRequirement<FMonsterDeathEventFragment>(EMassFragmentAccess::ReadWrite);
-    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -30,43 +32,42 @@ void UMonsterDamageProcessor::Execute(FMassEntityManager& EntityManager, FMassEx
         return;
     }
 
-    const float WorldTime = World->GetTimeSeconds();
-
     // 逐帧消费实体积累的待处理伤害
-    MonsterQuery.ForEachEntityChunk(Context, [WorldTime](FMassExecutionContext& ChunkContext)
+    MonsterQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& ChunkContext)
     {
         TArrayView<FMonsterHealthFragment> Healths = ChunkContext.GetMutableFragmentView<FMonsterHealthFragment>();
         TArrayView<FMonsterDamageEventFragment> DamageEvents = ChunkContext.GetMutableFragmentView<FMonsterDamageEventFragment>();
-        TArrayView<FMonsterDeathEventFragment> DeathEvents = ChunkContext.GetMutableFragmentView<FMonsterDeathEventFragment>();
-        TArrayView<FMonsterStateFragment> States = ChunkContext.GetMutableFragmentView<FMonsterStateFragment>();
+        const TConstArrayView<FMonsterStateFragment> States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
             FMonsterDamageEventFragment& DamageEvent = DamageEvents[Index];
-
-            if (DamageEvent.PendingDamage <= 0.0f)
-            {
-                continue;
-            }
-
-            // 先扣除累计伤害，再根据剩余生命切换状态
             FMonsterHealthFragment& Health = Healths[Index];
-            FMonsterDeathEventFragment& DeathEvent = DeathEvents[Index];
-            FMonsterStateFragment& State = States[Index];
 
-            Health.CurrentHealth = FMath::Clamp(Health.CurrentHealth - DamageEvent.PendingDamage, 0.0f, Health.MaxHealth);
-            DamageEvent.PendingDamage = 0.0f;
-            State.StateEnteredTime = WorldTime;
-
-            if (Health.CurrentHealth > 0.0f)
+            // 已死亡实体丢弃尚未消费的请求 不触发复活或延长回收时间
+            if (States[Index].State == EMonsterState::Dead || Health.CurrentHealth <= 0.0f)
             {
-                State.State = EMonsterState::Hurt;
+                DamageEvent.PendingRequests.Reset();
                 continue;
             }
 
-            // 生命归零后进入死亡状态并延迟回收
-            State.State = EMonsterState::Dead;
-            DeathEvent.DestroyAtTime = WorldTime + 3.0f;
+            for (const FMonsterDamageRequest& Request : DamageEvent.PendingRequests)
+            {
+                if (Health.CurrentHealth <= 0.0f)
+                {
+                    break;
+                }
+
+                Health.CurrentHealth = FMath::Max(Health.CurrentHealth - Request.Damage, 0.0f);
+                DamageEvent.LastDamageRequest = Request;
+                DamageEvent.bReceivedDamage = true;
+                UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Damage consumed Entity=%d Damage=%.2f Health=%.2f Causer=%s Instigator=%s Hit=%s Direction=%s"),
+                    ChunkContext.GetEntity(Index).Index, Request.Damage, Health.CurrentHealth,
+                    *GetNameSafe(Request.DamageCauser.Get()), *GetNameSafe(Request.Instigator.Get()),
+                    *Request.HitLocation.ToCompactString(), *Request.HitDirection.ToCompactString());
+            }
+
+            DamageEvent.PendingRequests.Reset();
         }
     });
 }

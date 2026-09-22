@@ -23,10 +23,21 @@ public:
      * @param InSpeed        当前移动速度
      * @param InStateTime    状态进入世界时间
      */
+    /**
+     * 同状态动作通过独立编号重启 非循环动画读取逻辑进度
+     * @param InState		小怪权威状态
+     * @param InSpeed		当前移动速度
+     * @param InStateTime	状态进入时间
+     * @param InActionId		逻辑动作编号
+     * @param InActionProgress	归一化动作位置
+     * @return 无返回值
+     */
     void ApplyPresentationState(
         EMonsterState InState,
         float InSpeed,
-        float InStateTime);
+        float InStateTime,
+        uint32 InActionId,
+        float InActionProgress);
 
     /** @return 当前小怪状态 */
     UFUNCTION(BlueprintPure, Category = "Monster|Presentation")
@@ -85,4 +96,7 @@ private:
 
     /** 是否已经向网格应用过动画 */
     bool bHasAppliedAnimation = false;
+
+    /** 上一次已应用的逻辑动作编号 */
+    uint32 LastActionId = 0;
 };

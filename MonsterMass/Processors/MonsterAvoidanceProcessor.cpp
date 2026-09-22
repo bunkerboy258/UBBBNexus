@@ -17,6 +17,7 @@ void UMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FMonsterAvoidanceFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -43,9 +44,16 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
     {
         TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
 
-        for (const FTransformFragment& Transform : Transforms)
+        const auto States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
+
+        for (int32 Index = 0; Index < Transforms.Num(); ++Index)
         {
-            const FVector Location = Transform.GetTransform().GetLocation();
+            if (States[Index].State == EMonsterState::Dead)
+            {
+                continue;
+            }
+
+            const FVector Location = Transforms[Index].GetTransform().GetLocation();
             const FIntPoint Cell(
                 FMath::FloorToInt(Location.X / CellSize),
                 FMath::FloorToInt(Location.Y / CellSize));
@@ -58,9 +66,18 @@ void UMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMas
     {
         TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
         TArrayView<FMonsterAvoidanceFragment> Avoidances = ChunkContext.GetMutableFragmentView<FMonsterAvoidanceFragment>();
+        const auto States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
+            // 停止状态不再被分离修正推动 活体仍作为其它实体的障碍
+            if (States[Index].State != EMonsterState::Chase)
+            {
+                Avoidances[Index].SeparationDirection = FVector::ZeroVector;
+                Avoidances[Index].SeparationStrength = 0.0f;
+                continue;
+            }
+
             const FVector Location = Transforms[Index].GetTransform().GetLocation();
             const FMonsterAvoidanceFragment& Settings = Avoidances[Index];
             const float SearchRadius = FMath::Max(Settings.NeighborSearchRadius, 1.0f);

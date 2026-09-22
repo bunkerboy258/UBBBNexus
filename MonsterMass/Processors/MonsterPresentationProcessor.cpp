@@ -5,7 +5,7 @@
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Presentation/MonsterBasicActor.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Presentation/MonsterPresentationComponent.h"
-#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterAvoidanceProcessor.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPresentationStateProcessor.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterPresentationProcessor::UMonsterPresentationProcessor()
@@ -14,7 +14,7 @@ UMonsterPresentationProcessor::UMonsterPresentationProcessor()
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
-    ExecutionOrder.ExecuteAfter.Add(UMonsterAvoidanceProcessor::StaticClass()->GetFName());
+    ExecutionOrder.ExecuteAfter.Add(UMonsterPresentationStateProcessor::StaticClass()->GetFName());
 }
 
 void UMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
@@ -57,6 +57,7 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
                 nullptr,
                 ETeleportType::TeleportPhysics);
             MonsterActor->SetCollisionRadius(Avoidances[Index].CollisionRadius);
+            MonsterActor->SetActorEnableCollision(PresentationStates[Index].State != EMonsterState::Dead);
 
             // 取得表现组件同步状态和移动速度
             UMonsterPresentationComponent* Presentation = MonsterActor->GetMonsterPresentation();
@@ -71,7 +72,9 @@ void UMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, F
             Presentation->ApplyPresentationState(
                 PresentationState.State,
                 Velocities[Index].Value.Size2D(),
-                PresentationState.StateEnteredTime);
+                PresentationState.StateEnteredTime,
+                PresentationState.ActionId,
+                PresentationState.ActionProgress);
         }
     });
 }

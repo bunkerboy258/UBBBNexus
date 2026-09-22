@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterLifecycleProcessor.h"
 
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterLifecycleProcessor::UMonsterLifecycleProcessor()
@@ -8,13 +9,14 @@ UMonsterLifecycleProcessor::UMonsterLifecycleProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
+    ExecutionOrder.ExecuteAfter.Add(UMonsterPresentationProcessor::StaticClass()->GetFName());
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
 }
 
 void UMonsterLifecycleProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
-    MonsterQuery.AddRequirement<FMonsterDeathEventFragment>(EMassFragmentAccess::ReadWrite);
-    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FMonsterDeathEventFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -33,20 +35,13 @@ void UMonsterLifecycleProcessor::Execute(FMassEntityManager& EntityManager, FMas
     // 维护受伤硬直恢复和死亡实体延迟回收
     MonsterQuery.ForEachEntityChunk(Context, [WorldTime](FMassExecutionContext& ChunkContext)
     {
-        TArrayView<FMonsterDeathEventFragment> DeathEvents = ChunkContext.GetMutableFragmentView<FMonsterDeathEventFragment>();
-        TArrayView<FMonsterStateFragment> States = ChunkContext.GetMutableFragmentView<FMonsterStateFragment>();
+        TConstArrayView<FMonsterDeathEventFragment> DeathEvents = ChunkContext.GetFragmentView<FMonsterDeathEventFragment>();
+        TConstArrayView<FMonsterStateFragment> States = ChunkContext.GetFragmentView<FMonsterStateFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
-            FMonsterDeathEventFragment& DeathEvent = DeathEvents[Index];
-            FMonsterStateFragment& State = States[Index];
-
-            if (State.State == EMonsterState::Hurt && WorldTime >= State.StateEnteredTime + 0.2f)
-            {
-                // 受伤硬直结束后恢复追击状态
-                State.State = EMonsterState::Chase;
-                State.StateEnteredTime = WorldTime;
-            }
+            const FMonsterDeathEventFragment& DeathEvent = DeathEvents[Index];
+            const FMonsterStateFragment& State = States[Index];
 
             if (State.State == EMonsterState::Dead && DeathEvent.DestroyAtTime >= 0.0f && WorldTime >= DeathEvent.DestroyAtTime)
             {

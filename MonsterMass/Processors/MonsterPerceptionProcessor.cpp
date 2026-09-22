@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/MonsterMass/Processors/MonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/MonsterMass/Entity/MonsterRuntimeData.h"
 
 UMonsterPerceptionProcessor::UMonsterPerceptionProcessor()
@@ -11,6 +12,7 @@ UMonsterPerceptionProcessor::UMonsterPerceptionProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
+    ExecutionOrder.ExecuteAfter.Add(UMonsterDamageProcessor::StaticClass()->GetFName());
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
 }
 
@@ -19,7 +21,6 @@ void UMonsterPerceptionProcessor::ConfigureQueries(const TSharedRef<FMassEntityM
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMonsterPerceptionFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMonsterTargetRequestFragment>(EMassFragmentAccess::ReadWrite);
-    MonsterQuery.AddRequirement<FMonsterStateFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddTagRequirement<FMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -41,12 +42,10 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
         const TConstArrayView<FTransformFragment> Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const TConstArrayView<FMonsterPerceptionFragment> Perceptions = ChunkContext.GetFragmentView<FMonsterPerceptionFragment>();
         TArrayView<FMonsterTargetRequestFragment> Targets = ChunkContext.GetMutableFragmentView<FMonsterTargetRequestFragment>();
-        TArrayView<FMonsterStateFragment> States = ChunkContext.GetMutableFragmentView<FMonsterStateFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
             FMonsterTargetRequestFragment& Target = Targets[Index];
-            FMonsterStateFragment& State = States[Index];
 
             const float SightRange = FMath::Max(Perceptions[Index].SightRange, 0.0f);
             const FVector MonsterLocation = Transforms[Index].GetTransform().GetLocation();
@@ -56,12 +55,7 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
             {
                 Target.bHasTarget = false;
 
-                if (State.State != EMonsterState::Dead)
-                {
-                    State.State = EMonsterState::Scout;
-                    State.StateEnteredTime = World->GetTimeSeconds();
-                }
-
+                Target.TargetActor.Reset();
                 continue;
             }
 
@@ -69,6 +63,7 @@ void UMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, FMa
             Target.TargetLocation = PlayerPawn->GetActorLocation();
             Target.LastSeenTime = World->GetTimeSeconds();
             Target.bHasTarget = true;
+            Target.TargetActor = PlayerPawn;
         }
     });
 }
