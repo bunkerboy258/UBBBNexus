@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentStateObservationProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBEquipmentNetworkObservationState.h"

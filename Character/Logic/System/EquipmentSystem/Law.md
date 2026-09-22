@@ -1,5 +1,5 @@
-# Character Equipment Controller Law
+# Character Equipment System Law
 
 - 角色侧禁止实现具体武器规则。
 - 每次调用装备边界必须显式传入 `bIsMirror`。
-- 准备的生命周期全权由本控制器管理。
+- 装备的生命周期全权由本系统管理。

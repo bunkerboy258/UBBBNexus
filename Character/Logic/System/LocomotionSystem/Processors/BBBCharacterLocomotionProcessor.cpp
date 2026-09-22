@@ -1,9 +1,9 @@
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/Processors/BBBCharacterLocomotionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLocomotionProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"

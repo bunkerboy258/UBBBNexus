@@ -40,18 +40,18 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.bUseControllerRotationYaw = false;
     
     // 按固定顺序注入各角色系统和运行数据
-    Character.AimController.Initialize(
+    Character.AimSystem.Initialize(
         Character.RuntimeData.Aim,
         Character.RuntimeData.Parse.ReadControlState());
 
-    Character.LocomotionController.Initialize(
+    Character.LocomotionSystem.Initialize(
         Character,
         *Movement,
         Character.RuntimeData.Locomotion,
         Character.RuntimeData.Parse.ReadControlState(),
         Config.Locomotion);
     
-    Character.EquipmentController.Initialize(
+    Character.EquipmentSystem.Initialize(
         *Character.GetMesh(),
         Character.RuntimeData,
         Character,

@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"

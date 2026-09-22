@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/States/BBBAimState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentCommandState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentEventState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentInventoryState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentCommandState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentEventState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"

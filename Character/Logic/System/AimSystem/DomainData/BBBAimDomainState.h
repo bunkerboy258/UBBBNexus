@@ -1,10 +1,10 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/States/BBBAimState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
 #include "BBBAimDomainState.generated.h"
 
-class FBBBCharacterAimController;
+class FBBBCharacterAimSystem;
 class FBBBCharacterAimStateProcessor;
 class FBBBCharacterAimTargetProcessor;
 class FBBBCharacterParseSystem;
@@ -23,7 +23,7 @@ public:
     }
 
 private:
-    friend class FBBBCharacterAimController;
+    friend class FBBBCharacterAimSystem;
     friend class FBBBCharacterAimStateProcessor;
     friend class FBBBCharacterAimTargetProcessor;
     friend class FBBBCharacterParseSystem;

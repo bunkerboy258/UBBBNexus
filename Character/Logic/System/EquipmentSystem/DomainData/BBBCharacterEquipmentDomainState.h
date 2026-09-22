@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentCommandState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentEventState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentInventoryState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/States/BBBCharacterEquipmentSelectionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentCommandState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentEventState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBCharacterEquipmentDomainState.generated.h"
 
 class FBBBCharacterEquipmentActionProcessor;
-class FBBBCharacterEquipmentController;
+class FBBBCharacterEquipmentSystem;
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterParseSystem;
 
@@ -45,7 +45,7 @@ public:
 
 private:
     friend class FBBBCharacterEquipmentActionProcessor;
-    friend class FBBBCharacterEquipmentController;
+    friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterEquipmentSelectionProcessor;
     friend class FBBBCharacterParseSystem;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/States/BBBAimState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
 
 struct FBBBCharacterControlState;
 

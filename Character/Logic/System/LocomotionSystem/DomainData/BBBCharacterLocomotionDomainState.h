@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "BBBCharacterLocomotionDomainState.generated.h"
 
-class FBBBCharacterLocomotionController;
+class FBBBCharacterLocomotionSystem;
 class FBBBCharacterLocomotionProcessor;
 class FBBBCharacterParseSystem;
 
@@ -22,7 +22,7 @@ public:
     }
 
 private:
-    friend class FBBBCharacterLocomotionController;
+    friend class FBBBCharacterLocomotionSystem;
     friend class FBBBCharacterLocomotionProcessor;
     friend class FBBBCharacterParseSystem;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/Processors/BBBCharacterLocomotionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLocomotionProcessor.h"
 
 class ACharacter;
 class UCharacterMovementComponent;
@@ -12,7 +12,7 @@ struct FBBBCharacterLocomotionDomainState;
 struct FBBBCharacterControlState;
 
 /** 按官方运动样例规则驱动角色移动组件 */
-class ABBB_EVAC_API FBBBCharacterLocomotionController final
+class ABBB_EVAC_API FBBBCharacterLocomotionSystem final
 {
 public:
     /** 逐帧更新步态、移动参数、蹲跳请求和移动输入 */

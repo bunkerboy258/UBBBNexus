@@ -3,10 +3,10 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputSubmit.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/BBBCharacterAimController.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/BBBCharacterAnimationSystem.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/BBBCharacterEquipmentController.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/BBBCharacterLocomotionController.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/BBBCharacterParseSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
@@ -106,11 +106,11 @@ protected:
     /*分类命名为ABBB是为了快点找到（bushi*/
 
 private:
-    FBBBCharacterAimController AimController;
+    FBBBCharacterAimSystem AimSystem;
 
-    FBBBCharacterLocomotionController LocomotionController;
+    FBBBCharacterLocomotionSystem LocomotionSystem;
     
-    FBBBCharacterEquipmentController EquipmentController;
+    FBBBCharacterEquipmentSystem EquipmentSystem;
 
     FBBBCharacterParseSystem ParseSystem;
     

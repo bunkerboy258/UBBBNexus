@@ -80,13 +80,13 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     NetworkIdentityState.bIsMirror = !NetworkIdentityState.bLocallyControlled;
 
     Character->ParseSystem.Update();
-    Character->EquipmentController.Update();
+    Character->EquipmentSystem.Update();
 
     if (!NetworkIdentityState.bIsMirror)
     {
         // 只有本机控制角色可以根据控制输入产生新的瞄准与移动事实。
-        Character->AimController.Update();
-        Character->LocomotionController.Update();
+        Character->AimSystem.Update();
+        Character->LocomotionSystem.Update();
     }
 
     // 网络只观察已经成立的状态与事实

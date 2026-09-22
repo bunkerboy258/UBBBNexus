@@ -1,6 +1,6 @@
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/Processors/BBBCharacterAimStateProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/Processors/BBBCharacterAimStateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/States/BBBAimState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
 
 void FBBBCharacterAimStateProcessor::Update(
     const FBBBCharacterControlState &ControlData,

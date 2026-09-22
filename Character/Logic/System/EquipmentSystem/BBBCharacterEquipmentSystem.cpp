@@ -1,13 +1,13 @@
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/BBBCharacterEquipmentController.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
 
 #include "BBBWork/UBBBNexus/Character/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/BBBCharacterEquipmentDomainState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/BBBCharacterEquipmentDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBCharacterEquipmentController::Initialize(
+void FBBBCharacterEquipmentSystem::Initialize(
     USkeletalMeshComponent &InCharacterMesh,
     FBBBCharacterRuntimeData &InRuntimeData,
     ABBBCharacter &InCharacter,
@@ -29,7 +29,7 @@ void FBBBCharacterEquipmentController::Initialize(
 
 }
 
-void FBBBCharacterEquipmentController::Update()
+void FBBBCharacterEquipmentSystem::Update()
 {
     // 装备更新需要角色网格和装备运行时数据有效
     if (!RuntimeData || !CharacterMesh || !Character)

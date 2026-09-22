@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/Processors/BBBCharacterAimStateProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/Processors/BBBCharacterAimTargetProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/Processors/BBBCharacterAimStateProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/Processors/BBBCharacterAimTargetProcessor.h"
 
 class APawn;
 class FBBBCharacterInitializer;
@@ -12,7 +12,7 @@ struct FBBBCharacterControlState;
 /**
  * 按角色瞄准状态分流各个瞄准处理器
  */
-class ABBB_EVAC_API FBBBCharacterAimController final
+class ABBB_EVAC_API FBBBCharacterAimSystem final
 {
 public:
     /**

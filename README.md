@@ -8,8 +8,7 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
 - `Character/Input/Packets/`：一包一对 h cpp 的输入包 自描述校验 条件与效果
 - `Character/Config/`：角色静态配置与配置聚合入口
 - `Character/Logic/Core/`：角色初始化 销毁和根更新调度
-- `Character/Logic/Controller/`：根据黑板维护角色控制行为
-- `Character/Logic/System/`：解析 动画和网络领域系统
+- `Character/Logic/System/`：根据黑板维护角色行为并执行解析 动画和网络领域更新
 - `Character/Logic/RuntimeData/`：角色跨领域运行时数据根
 - `PlayerInput/`：控制器持有的输入组件 负责增强输入、屏蔽、解绑及世界空间数据组装
 - `PlayerCamera/`：独立相机 Actor 负责跟随角色与消费相机输入
@@ -27,7 +26,7 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 `E:\BBB_Evac`
     → 装备独立 TG_PostUpdateWork → 装备动画快照
 ```
 
-装备与动画回调只覆盖对应固定槽位 解析后的新提交自然留到下一次解析 黑板分输入区 状态区 领域数据三区 状态区对所有系统与控制器开放读 相机在 TG_PostUpdateWork 跟随角色 不成为输入 Tick 的前置依赖
+装备与动画回调只覆盖对应固定槽位 解析后的新提交自然留到下一次解析 黑板分输入区 状态区 领域数据三区 状态区对所有系统开放读 相机在 TG_PostUpdateWork 跟随角色 不成为输入 Tick 的前置依赖
 
 ## 规则
 

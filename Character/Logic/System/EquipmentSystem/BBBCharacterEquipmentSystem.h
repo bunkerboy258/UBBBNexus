@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/Processors/BBBCharacterEquipmentActionProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/EquipmentController/Processors/BBBCharacterEquipmentSelectionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
 class FBBBCharacterInitializer;
 class FBBBCharacterUpdatePipeline;
@@ -13,7 +13,7 @@ struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterRuntimeData;
 
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
-class ABBB_EVAC_API FBBBCharacterEquipmentController final
+class ABBB_EVAC_API FBBBCharacterEquipmentSystem final
 {
 private:
     friend class FBBBCharacterInitializer;

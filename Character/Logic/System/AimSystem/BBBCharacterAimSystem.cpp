@@ -1,11 +1,11 @@
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/BBBCharacterAimController.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/Context/BBBAimUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/BBBCharacterAimSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/Context/BBBAimUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/BBBAimDomainState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/AimController/DomainData/States/BBBAimState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/BBBAimDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
 #include "GameFramework/Pawn.h"
 
-void FBBBCharacterAimController::Initialize(
+void FBBBCharacterAimSystem::Initialize(
     FBBBAimDomainState &InAimData,
     const FBBBCharacterControlState &InIntentData)
 {
@@ -13,7 +13,7 @@ void FBBBCharacterAimController::Initialize(
     ControlData = &InIntentData;
 }
 
-void FBBBCharacterAimController::Update()
+void FBBBCharacterAimSystem::Update()
 {
     // 瞄准更新需要角色视角瞄准状态意图和配置全部有效
     if (!AimData || !ControlData)

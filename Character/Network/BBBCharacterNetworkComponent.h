@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedEquipmentFactArray.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Controller/LocomotionController/DomainData/States/BBBCharacterLocomotionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "Components/ActorComponent.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
