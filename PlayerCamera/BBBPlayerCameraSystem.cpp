@@ -17,19 +17,17 @@ ABBBPlayerCameraSystem::ABBBPlayerCameraSystem()
     Boom->AddTickPrerequisiteActor(this);
 }
 
-void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerController &InController,
-    const FBBBPlayerCameraConfig &InConfig)
+void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerController &InController)
 {
     Character = &InCharacter;
     Controller = &InController;
-    Config = InConfig;
     AddTickPrerequisiteComponent(InCharacter.GetCharacterMovement());
-    Boom->TargetArmLength = Config.CameraBoomLength;
-    Boom->SocketOffset = Config.CameraBoomSocketOffset;
-    Boom->TargetOffset = Config.CameraBoomTargetOffset;
-    Boom->bEnableCameraLag = Config.bCameraLag;
-    Boom->CameraLagSpeed = Config.CameraLagSpeed;
-    Camera->SetRelativeLocation(Config.CameraRelativeLocation);
+    // 组件默认值由相机蓝图提供 运行期间只改变当前臂长
+    DefaultBoomLength = Boom->TargetArmLength;
+    ensureMsgf(FMath::IsFinite(DefaultBoomLength) && DefaultBoomLength > 0.0f
+        && FMath::IsFinite(AimBoomLength) && AimBoomLength >= 0.0f
+        && FMath::IsFinite(AimBoomInterpSpeed) && AimBoomInterpSpeed > 0.0f,
+        TEXT("[BBBCamera]相机蓝图距离或插值速度无效"));
     SetActorLocationAndRotation(InCharacter.GetActorLocation(), InController.GetControlRotation());
 }
 
@@ -77,6 +75,6 @@ void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
     Controller->SetControlRotation(Rotation);
     const bool bAiming = Character->RuntimeData.Parse.ReadControlState().bAim;
     Boom->TargetArmLength = FMath::FInterpTo(Boom->TargetArmLength,
-        bAiming ? Config.AimBoomLength : Config.CameraBoomLength, DeltaSeconds, Config.AimBoomInterpSpeed);
+        bAiming ? AimBoomLength : DefaultBoomLength, DeltaSeconds, AimBoomInterpSpeed);
     SetActorLocationAndRotation(Character->GetActorLocation(), Rotation);
 }

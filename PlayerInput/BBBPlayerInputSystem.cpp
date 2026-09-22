@@ -66,13 +66,17 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     // 控制器先采样输入 适配层再提交数据 角色随后更新 不依赖相机本帧跟随计算
     AddTickPrerequisiteActor(Controller);
     Target->AddTickPrerequisiteComponent(this);
+    if (!ensureMsgf(CameraClass, TEXT("[BBBInput]玩家输入组件未配置相机蓝图类")))
+    {
+        return;
+    }
     FActorSpawnParameters Parameters;
     Parameters.Owner = Controller;
     Camera = GetWorld()->SpawnActor<ABBBPlayerCameraSystem>(
-        ABBBPlayerCameraSystem::StaticClass(), Target->GetActorTransform(), Parameters);
+        CameraClass, Target->GetActorTransform(), Parameters);
     if (ensureMsgf(Camera, TEXT("[BBBInput]Camera creation failed")))
     {
-        Camera->Initialize(*Target, *Controller, CameraConfig);
+        Camera->Initialize(*Target, *Controller);
         Controller->SetViewTarget(Camera);
     }
 }
@@ -271,8 +275,8 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
         return;
     }
     FRotator Facing = Controller->GetControlRotation();
-    Facing.Yaw += LookAxis.X * CameraConfig.BaseTurnRate;
-    Facing.Pitch = FMath::ClampAngle(Facing.Pitch + LookAxis.Y * CameraConfig.BaseTurnRate, -89.0f, 89.0f);
+    Facing.Yaw += LookAxis.X * BaseTurnRate;
+    Facing.Pitch = FMath::ClampAngle(Facing.Pitch + LookAxis.Y * BaseTurnRate, -89.0f, 89.0f);
     Controller->SetControlRotation(Facing);
     LookAxis = FVector2D::ZeroVector;
     const FVector2D Axis = MoveAxis.Size() > Config.MoveDeadZone ? MoveAxis : FVector2D::ZeroVector;

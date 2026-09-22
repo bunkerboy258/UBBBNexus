@@ -55,12 +55,12 @@ private:
 
 
     //让下方成员按照所列规则参与编辑序列化或网络复制
-    UPROPERTY()
+    UPROPERTY(Transient)
     //保存ToggleMouseAction供所属对象后续流程使用
     TObjectPtr<UInputAction> ToggleMouseAction;
 
     //让下方成员按照所列规则参与编辑序列化或网络复制
-    UPROPERTY()
+    UPROPERTY(Transient)
     //保存ToggleMouseIMC供所属对象后续流程使用
     TObjectPtr<UInputMappingContext> ToggleMouseIMC;
 

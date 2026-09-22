@@ -24,6 +24,15 @@ ABBBPlayerController::ABBBPlayerController()
         //保存默认映射供本地玩家进入游戏时注册
         DefaultMappingContext = DefaultMappingContextAsset.Object;
     }
+}
+
+//绑定玩家输入动作
+void ABBBPlayerController::SetupInputComponent()
+{
+    //先执行父类的绑定玩家输入动作
+    Super::SetupInputComponent();
+
+    // 每个运行时控制器独立创建菜单动作 避免构造阶段对象被蓝图默认值覆盖
     //创建不依赖资产文件的鼠标模式切换动作
     ToggleMouseAction = NewObject<UInputAction>(this, TEXT("IA_ToggleMouse"));
     //动作创建成功后声明其输入值为布尔触发
@@ -40,6 +49,29 @@ ABBBPlayerController::ABBBPlayerController()
         //把鼠标切换动作映射到指定按键
         ToggleMouseIMC->MapKey(ToggleMouseAction, EKeys::Escape);
     }
+
+    //将控制器输入组件转换为增强输入组件
+    UEnhancedInputComponent *EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
+    //EnhancedInput与ToggleMouseAction不满足时停止当前绑定玩家输入动作流程
+    if (!ensureMsgf(EnhancedInput && PlayerInputSystem,
+        TEXT("[BBBInput]增强输入组件或玩家输入组件缺失")))
+    {
+        //结束当前绑定玩家输入动作流程
+        return;
+    }
+    PlayerInputSystem->Bind(*EnhancedInput);
+    UE_LOG(LogBBBPlayerController, Log,
+        TEXT("[BBBInput]输入绑定完成 Controller=%s Bindings=%d ToggleMouseAction=%s"),
+        *GetName(), EnhancedInput->GetActionEventBindings().Num(), *GetNameSafe(ToggleMouseAction));
+
+    // 鼠标菜单动作缺失不能阻断角色移动与视角输入
+    if (!ensureMsgf(ToggleMouseAction && ToggleMouseIMC, TEXT("[BBBInput]鼠标切换动作或映射缺失")))
+    {
+        return;
+    }
+
+    //把输入动作绑定到对应的控制器回调
+    EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Started, this, &ABBBPlayerController::ToggleMouseCursor);
 }
 
 //进入游戏时建立运行依赖
@@ -81,24 +113,6 @@ void ABBBPlayerController::BeginPlay()
         //确保 Escape 切换不会被默认映射覆盖
         Subsystem->AddMappingContext(ToggleMouseIMC, MappingContextPriority + 1);
     }
-}
-
-//绑定玩家输入动作
-void ABBBPlayerController::SetupInputComponent()
-{
-    //先执行父类的绑定玩家输入动作
-    Super::SetupInputComponent();
-    //将控制器输入组件转换为增强输入组件
-    UEnhancedInputComponent *EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
-    //EnhancedInput与ToggleMouseAction不满足时停止当前绑定玩家输入动作流程
-    if (!EnhancedInput || !ToggleMouseAction)
-    {
-        //结束当前绑定玩家输入动作流程
-        return;
-    }
-    PlayerInputSystem->Bind(*EnhancedInput);
-    //把输入动作绑定到对应的控制器回调
-    EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Started, this, &ABBBPlayerController::ToggleMouseCursor);
 }
 
 //切换鼠标指针与游戏输入模式

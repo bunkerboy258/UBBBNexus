@@ -2,7 +2,6 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterAimPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterMovementPacket.h"
 #include "BBBPlayerInputSystem.generated.h"
@@ -41,8 +40,12 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "BBB|Input")
     FBBBPlayerInputConfig Config;
+    /** 本地玩家使用的相机蓝图类 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera")
-    FBBBPlayerCameraConfig CameraConfig;
+    TSubclassOf<ABBBPlayerCameraSystem> CameraClass;
+    /** 视角输入每单位对应的旋转角度 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|Input", meta = (ClampMin = "0.0"))
+    float BaseTurnRate = 1.0f;
     UPROPERTY(EditDefaultsOnly, Category = "BBB|Aim")
     float AimTargetDistance = 10000.0f;
 
