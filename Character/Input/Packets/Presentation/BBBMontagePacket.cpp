@@ -8,7 +8,7 @@
 
 bool FBBBMontagePacketData::IsValid() const
 {
-    return Montage != nullptr && FMath::IsFinite(PlayRate) && PlayRate > 0.0f;
+    return Montage != nullptr;
 }
 
 bool FBBBMontagePacketData::CanApplyToSlot(
@@ -27,7 +27,7 @@ bool FBBBMontagePacketData::CanApplyToSlot(
         return false;
     }
 
-    if (!Context.AnimationInstance || !Context.AnimationInstance->FindMontageSlot(Slot))
+    if (!Context.AnimationInstance || !Context.AnimationInstance->FindMontageContribution(Slot))
     {
         return false;
     }
@@ -52,12 +52,7 @@ void FBBBMontagePacketData::ApplyToSlot(
         return;
     }
 
-    Context.AnimationInstance->SubmitMontageSlot(
-        Slot,
-        *Montage,
-        PlayRate,
-        Sequence,
-        bReload);
+    Context.AnimationInstance->RegisterMontageContribution(Slot, *Montage);
 }
 
 //------------------------------------------------------------------------------
@@ -118,7 +113,6 @@ void FBBBAdditiveHitReactMontagePacket::Apply(FBBBCharacterInputContext &Context
 bool BBBCharacterMontageInput::Submit(
     ABBBCharacter &Character,
     UAnimMontage &Montage,
-    const float PlayRate,
     const int32 Sequence,
     const bool bReload)
 {
@@ -133,7 +127,6 @@ bool BBBCharacterMontageInput::Submit(
     {
         FBBBMontagePacketData Data;
         Data.Montage = &Montage;
-        Data.PlayRate = PlayRate;
         Data.Sequence = Sequence;
         Data.bReload = bReload;
 

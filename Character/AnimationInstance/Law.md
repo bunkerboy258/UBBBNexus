@@ -1,7 +1,5 @@
 # Character Animation Instance Law
 
-动画实例基类提供的是“角色的基本事实和状态”
-由且只能由角色animationsystem一次性写入数据
-动话蓝图只读本实例的暴露成员
-只保存动画图读取事实快照 固定槽位蒙太奇执行状态
-禁止提供二次加工的事实
+角色基本事实只能由 AnimationSystem 一次性写入 动画蓝图只读
+输入系统只可向固定槽位直接注册已经批准的 UAnimMontage 贡献
+每个固定槽位只保存一个 UAnimMontage 引用 禁止附加播放倍率 操作序号 玩法标签 修订号 提交标记或 UE 播放状态

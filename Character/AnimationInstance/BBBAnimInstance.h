@@ -12,7 +12,6 @@ class UBBBEquipmentAnimInstance;
 class UAnimMontage;
 struct FBBBMontagePacketData;
 
-
 namespace BBBCharacterMontageSlots
 {
     inline const FName FullBody(TEXT("FullBody"));
@@ -21,35 +20,6 @@ namespace BBBCharacterMontageSlots
     inline const FName UpperBodyAdditive(TEXT("UpperBodyAdditive"));
     inline const FName AdditiveHitReact(TEXT("AdditiveHitReact"));
 }
-
-/** 动画实例内部单个固定蒙太奇槽位的完整执行状态 */
-USTRUCT()
-struct FBBBCharacterMontageSlot final
-{
-    GENERATED_BODY()
-
-    /** 已经批准播放的蒙太奇 */
-    UPROPERTY(Transient)
-    TObjectPtr<UAnimMontage> Montage = nullptr;
-
-    /** 已经批准的播放倍率 */
-    UPROPERTY(Transient)
-    float PlayRate = 1.0f;
-
-    /** 请求所属操作序号 */
-    UPROPERTY(Transient)
-    int32 Sequence = INDEX_NONE;
-
-    /** 多槽位共享的播放修订号 */
-    uint64 Revision = 0;
-
-    /** 请求是否属于换弹流程 */
-    UPROPERTY(Transient)
-    bool bReload = false;
-
-    /** 请求是否已经提交给引擎 */
-    bool bSubmitted = false;
-};
 
 /** 角色动画事实快照 蓝图读取与已批准蒙太奇执行入口 */
 UCLASS()
@@ -222,67 +192,39 @@ private:
      */
     void PublishAnimationFacts(const FBBBCharacterAnimationFactState &FactState);
 
-    /** @return 全部固定蒙太奇槽位 */
-    TStaticArray<FBBBCharacterMontageSlot *, 5> GetMontageSlots();
+    /** @return 全部固定槽位蒙太奇贡献 */
+    TStaticArray<TObjectPtr<UAnimMontage> *, 5> GetMontageContributions();
 
-    /** @return 全部固定蒙太奇槽位 */
-    TStaticArray<const FBBBCharacterMontageSlot *, 5> GetMontageSlots() const;
+    /** @return 全部固定槽位蒙太奇贡献 */
+    TStaticArray<const TObjectPtr<UAnimMontage> *, 5> GetMontageContributions() const;
 
     /**
-     * 查找固定蒙太奇槽位
+     * 查找固定槽位蒙太奇贡献
      * @param SlotName 槽位名称
-     * @return 对应槽位 未识别时返回空
+     * @return 对应贡献 未识别时返回空
      */
-    FBBBCharacterMontageSlot *FindMontageSlot(FName SlotName);
+    TObjectPtr<UAnimMontage> *FindMontageContribution(FName SlotName);
 
     /**
-     * 查找固定蒙太奇槽位
+     * 查找固定槽位蒙太奇贡献
      * @param SlotName 槽位名称
-     * @return 对应槽位 未识别时返回空
+     * @return 对应贡献 未识别时返回空
      */
-    const FBBBCharacterMontageSlot *FindMontageSlot(FName SlotName) const;
+    const TObjectPtr<UAnimMontage> *FindMontageContribution(FName SlotName) const;
 
     /**
-     * 写入已经批准的固定槽位蒙太奇请求
+     * 注册已经批准的固定槽位蒙太奇贡献
      * @param SlotName 槽位名称
      * @param Montage 蒙太奇
-     * @param PlayRate 播放倍率
-     * @param Sequence 操作序号
-     * @param bReload 是否属于换弹
-     * @return 是否成功写入
+     * @return 是否成功注册
      */
-    bool SubmitMontageSlot(
-        FName SlotName,
-        UAnimMontage &Montage,
-        float PlayRate,
-        int32 Sequence,
-        bool bReload);
+    bool RegisterMontageContribution(FName SlotName, UAnimMontage &Montage);
 
-    /**
-     * 清除已经失效的槽位请求
-     * @param bEquipmentSwitchPending 是否等待装备切换
-     * @param CancelledReloadSequence 已取消换弹序号
-     * @return 无
-     */
-    void InvalidateMontageSlots(bool bEquipmentSwitchPending, int32 CancelledReloadSequence);
+    /** 清除全部固定槽位蒙太奇贡献 */
+    void ClearMontageContributions();
 
-    /** 执行并维护已经批准的蒙太奇请求 */
-    void UpdateApprovedMontages();
-
-    /**
-     * 清除共享修订号的全部槽位
-     * @param Revision 修订号
-     * @param bStopMontage 是否停止引擎中的蒙太奇
-     * @return 无
-     */
-    void ClearMontageRevision(uint64 Revision, bool bStopMontage);
-
-    /**
-     * 释放单个槽位并在最后引用消失时停止播放
-     * @param Slot 需要释放的槽位
-     * @return 无
-     */
-    void ReleaseMontageSlot(FBBBCharacterMontageSlot &Slot);
+    /** 清除已经结束播放的固定槽位蒙太奇贡献 */
+    void UpdateMontageContributions();
 
     UPROPERTY(Transient)
     EBBBCharacterGait SourceGait = EBBBCharacterGait::Run;
@@ -304,19 +246,17 @@ private:
     TWeakObjectPtr<UBBBEquipmentAnimInstance> WeaponAnimInstance;
 
     UPROPERTY(Transient)
-    FBBBCharacterMontageSlot FullBodyMontageSlot;
+    TObjectPtr<UAnimMontage> FullBodyMontageContribution = nullptr;
 
     UPROPERTY(Transient)
-    FBBBCharacterMontageSlot UpperBodyMontageSlot;
+    TObjectPtr<UAnimMontage> UpperBodyMontageContribution = nullptr;
 
     UPROPERTY(Transient)
-    FBBBCharacterMontageSlot FullBodyAdditivePreAimMontageSlot;
+    TObjectPtr<UAnimMontage> FullBodyAdditivePreAimMontageContribution = nullptr;
 
     UPROPERTY(Transient)
-    FBBBCharacterMontageSlot UpperBodyAdditiveMontageSlot;
+    TObjectPtr<UAnimMontage> UpperBodyAdditiveMontageContribution = nullptr;
 
     UPROPERTY(Transient)
-    FBBBCharacterMontageSlot AdditiveHitReactMontageSlot;
-
-    uint64 NextMontageRevision = 1;
+    TObjectPtr<UAnimMontage> AdditiveHitReactMontageContribution = nullptr;
 };

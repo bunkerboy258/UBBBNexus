@@ -22,12 +22,13 @@ void FBBBCharacterInputProcessor::Update(
         BBBCharacterOperation::CancelReload(Context.Operation);
     }
 
-    if (Context.AnimationInstance)
+    if (Context.AnimationInstance
+        && (BBBCharacterOperation::IsEquipmentSwitchPending(Context.Operation)
+            || Context.Operation.CancelReloadSequence != INDEX_NONE))
     {
-        Context.AnimationInstance->InvalidateMontageSlots(
-            BBBCharacterOperation::IsEquipmentSwitchPending(Context.Operation),
-            Context.Operation.CancelReloadSequence);
+        Context.AnimationInstance->ClearMontageContributions();
     }
+
     InputState.bProcessing = true;
 
     Process(InputState.EquipmentState, Context);

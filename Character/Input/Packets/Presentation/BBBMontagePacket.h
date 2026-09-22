@@ -14,7 +14,6 @@ class UAnimMontage;
 struct FBBBMontagePacketData
 {
     TObjectPtr<UAnimMontage> Montage = nullptr;
-    float PlayRate = 1.0f;
     int32 Sequence = INDEX_NONE;
     /** 是否换弹蒙太奇，换弹蒙太奇必须通过当前操作序号守卫 */
     bool bReload = false;
@@ -81,7 +80,6 @@ namespace BBBCharacterMontageInput
      * 按蒙太奇资产中明确配置的轨道分别提交固定槽位输入
      * @param Character  接收表现输入的角色
      * @param Montage    武器领域配置的蒙太奇
-     * @param PlayRate   播放倍率
      * @param Sequence   动作操作序号
      * @param bReload    是否属于换弹流程
      * @return 是否识别并提交了全部槽位
@@ -89,7 +87,6 @@ namespace BBBCharacterMontageInput
     bool Submit(
         ABBBCharacter &Character,
         UAnimMontage &Montage,
-        float PlayRate,
         int32 Sequence,
         bool bReload);
 }

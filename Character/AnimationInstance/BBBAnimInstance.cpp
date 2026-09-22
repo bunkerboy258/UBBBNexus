@@ -48,269 +48,123 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-TStaticArray<FBBBCharacterMontageSlot *, 5> UBBBAnimInstance::GetMontageSlots()
+TStaticArray<TObjectPtr<UAnimMontage> *, 5> UBBBAnimInstance::GetMontageContributions()
 {
     return {
-        &FullBodyMontageSlot,
-        &UpperBodyMontageSlot,
-        &FullBodyAdditivePreAimMontageSlot,
-        &UpperBodyAdditiveMontageSlot,
-        &AdditiveHitReactMontageSlot};
+        &FullBodyMontageContribution,
+        &UpperBodyMontageContribution,
+        &FullBodyAdditivePreAimMontageContribution,
+        &UpperBodyAdditiveMontageContribution,
+        &AdditiveHitReactMontageContribution};
 }
 
-TStaticArray<const FBBBCharacterMontageSlot *, 5> UBBBAnimInstance::GetMontageSlots() const
+TStaticArray<const TObjectPtr<UAnimMontage> *, 5> UBBBAnimInstance::GetMontageContributions() const
 {
     return {
-        &FullBodyMontageSlot,
-        &UpperBodyMontageSlot,
-        &FullBodyAdditivePreAimMontageSlot,
-        &UpperBodyAdditiveMontageSlot,
-        &AdditiveHitReactMontageSlot};
+        &FullBodyMontageContribution,
+        &UpperBodyMontageContribution,
+        &FullBodyAdditivePreAimMontageContribution,
+        &UpperBodyAdditiveMontageContribution,
+        &AdditiveHitReactMontageContribution};
 }
 
-FBBBCharacterMontageSlot *UBBBAnimInstance::FindMontageSlot(const FName SlotName)
+TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const FName SlotName)
 {
     if (SlotName == BBBCharacterMontageSlots::FullBody)
     {
-        return &FullBodyMontageSlot;
+        return &FullBodyMontageContribution;
     }
 
     if (SlotName == BBBCharacterMontageSlots::UpperBody)
     {
-        return &UpperBodyMontageSlot;
+        return &UpperBodyMontageContribution;
     }
 
     if (SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
     {
-        return &FullBodyAdditivePreAimMontageSlot;
+        return &FullBodyAdditivePreAimMontageContribution;
     }
 
     if (SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
     {
-        return &UpperBodyAdditiveMontageSlot;
+        return &UpperBodyAdditiveMontageContribution;
     }
 
     if (SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
     {
-        return &AdditiveHitReactMontageSlot;
+        return &AdditiveHitReactMontageContribution;
     }
 
     return nullptr;
 }
 
-const FBBBCharacterMontageSlot *UBBBAnimInstance::FindMontageSlot(const FName SlotName) const
+const TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const FName SlotName) const
 {
-    return const_cast<UBBBAnimInstance *>(this)->FindMontageSlot(SlotName);
+    return const_cast<UBBBAnimInstance *>(this)->FindMontageContribution(SlotName);
 }
 
-bool UBBBAnimInstance::SubmitMontageSlot(
+bool UBBBAnimInstance::RegisterMontageContribution(
     const FName SlotName,
-    UAnimMontage &Montage,
-    const float PlayRate,
-    const int32 Sequence,
-    const bool bReload)
+    UAnimMontage &Montage)
 {
-    FBBBCharacterMontageSlot *TargetSlot = FindMontageSlot(SlotName);
-    if (!ensureMsgf(TargetSlot, TEXT("无法识别角色固定蒙太奇槽位 %s"), *SlotName.ToString()))
+    TObjectPtr<UAnimMontage> *Contribution = FindMontageContribution(SlotName);
+    if (!ensureMsgf(Contribution, TEXT("无法识别角色固定蒙太奇槽位 %s"), *SlotName.ToString()))
     {
         return false;
     }
 
-    uint64 SharedRevision = 0;
-    bool bSharedRevisionSubmitted = false;
-    for (const FBBBCharacterMontageSlot *ExistingSlot : GetMontageSlots())
+    *Contribution = &Montage;
+    if (Montage_IsPlaying(&Montage))
     {
-        if (ExistingSlot->Montage == &Montage
-            && ExistingSlot->Sequence == Sequence
-            && ExistingSlot->Revision != 0)
-        {
-            SharedRevision = ExistingSlot->Revision;
-            bSharedRevisionSubmitted = ExistingSlot->bSubmitted;
-            break;
-        }
-    }
-
-    if (SharedRevision != 0)
-    {
-        if (TargetSlot->Revision != SharedRevision)
-        {
-            ReleaseMontageSlot(*TargetSlot);
-        }
-
-        TargetSlot->Montage = &Montage;
-        TargetSlot->PlayRate = PlayRate;
-        TargetSlot->Sequence = Sequence;
-        TargetSlot->Revision = SharedRevision;
-        TargetSlot->bReload = bReload;
-        TargetSlot->bSubmitted = bSharedRevisionSubmitted;
         return true;
     }
 
-    for (const FBBBCharacterMontageSlot *ExistingSlot : GetMontageSlots())
+    if (Montage_Play(&Montage) > 0.0f)
     {
-        if (!ExistingSlot->Montage
-            || ExistingSlot->Revision == 0
-            || ExistingSlot->Montage->GetGroupName() != Montage.GetGroupName())
-        {
-            continue;
-        }
-
-        const uint64 ConflictingRevision = ExistingSlot->Revision;
-        ClearMontageRevision(ConflictingRevision, true);
+        return true;
     }
 
-    ReleaseMontageSlot(*TargetSlot);
-    TargetSlot->Montage = &Montage;
-    TargetSlot->PlayRate = PlayRate;
-    TargetSlot->Sequence = Sequence;
-    TargetSlot->Revision = NextMontageRevision++;
-    TargetSlot->bReload = bReload;
-    TargetSlot->bSubmitted = false;
-    return true;
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("角色蒙太奇注册失败 Slot=%s Montage=%s"),
+        *SlotName.ToString(),
+        *GetNameSafe(&Montage));
+    *Contribution = nullptr;
+    return false;
 }
 
-void UBBBAnimInstance::InvalidateMontageSlots(
-    const bool bEquipmentSwitchPending,
-    const int32 CancelledReloadSequence)
+void UBBBAnimInstance::ClearMontageContributions()
 {
-    for (FBBBCharacterMontageSlot *Slot : GetMontageSlots())
+    for (TObjectPtr<UAnimMontage> *Contribution : GetMontageContributions())
     {
-        if (!Slot->Montage)
+        UAnimMontage *Montage = Contribution->Get();
+        *Contribution = nullptr;
+
+        if (!Montage || !Montage_IsPlaying(Montage))
         {
             continue;
         }
 
-        const bool bCancelledReload = Slot->bReload
-            && CancelledReloadSequence != INDEX_NONE
-            && Slot->Sequence == CancelledReloadSequence;
-        if (!bEquipmentSwitchPending && !bCancelledReload)
-        {
-            continue;
-        }
-
-        ReleaseMontageSlot(*Slot);
+        Montage_Stop(0.1f, Montage);
     }
 }
 
-void UBBBAnimInstance::UpdateApprovedMontages()
+void UBBBAnimInstance::UpdateMontageContributions()
 {
-    for (const FBBBCharacterMontageSlot *Slot : GetMontageSlots())
+    for (TObjectPtr<UAnimMontage> *Contribution : GetMontageContributions())
     {
-        if (!Slot->Montage || Slot->Revision == 0 || !Slot->bSubmitted)
+        if (!Contribution->Get())
         {
             continue;
         }
 
-        if (Montage_IsPlaying(Slot->Montage))
+        if (Montage_IsPlaying(Contribution->Get()))
         {
             continue;
         }
 
-        const uint64 CompletedRevision = Slot->Revision;
-        ClearMontageRevision(CompletedRevision, false);
-    }
-
-    for (FBBBCharacterMontageSlot *Slot : GetMontageSlots())
-    {
-        if (!Slot->Montage || Slot->Revision == 0 || Slot->bSubmitted)
-        {
-            continue;
-        }
-
-        bool bRevisionSubmitted = false;
-        for (const FBBBCharacterMontageSlot *RelatedSlot : GetMontageSlots())
-        {
-            if (RelatedSlot->Revision == Slot->Revision && RelatedSlot->bSubmitted)
-            {
-                bRevisionSubmitted = true;
-                break;
-            }
-        }
-
-        if (!bRevisionSubmitted && Montage_Play(Slot->Montage, Slot->PlayRate) <= 0.0f)
-        {
-            UE_LOG(
-                LogTemp,
-                Warning,
-                TEXT("角色蒙太奇提交失败 Montage=%s Revision=%llu"),
-                *GetNameSafe(Slot->Montage),
-                Slot->Revision);
-            const uint64 FailedRevision = Slot->Revision;
-            ClearMontageRevision(FailedRevision, false);
-            continue;
-        }
-
-        const uint64 SubmittedRevision = Slot->Revision;
-        for (FBBBCharacterMontageSlot *RelatedSlot : GetMontageSlots())
-        {
-            if (RelatedSlot->Revision == SubmittedRevision)
-            {
-                RelatedSlot->bSubmitted = true;
-            }
-        }
-    }
-}
-
-void UBBBAnimInstance::ClearMontageRevision(
-    const uint64 Revision,
-    const bool bStopMontage)
-{
-    UAnimMontage *MontageToStop = nullptr;
-    bool bWasSubmitted = false;
-    for (const FBBBCharacterMontageSlot *Slot : GetMontageSlots())
-    {
-        if (Slot->Revision != Revision)
-        {
-            continue;
-        }
-
-        MontageToStop = Slot->Montage;
-        bWasSubmitted |= Slot->bSubmitted;
-    }
-
-    if (bStopMontage
-        && bWasSubmitted
-        && MontageToStop
-        && Montage_IsPlaying(MontageToStop))
-    {
-        Montage_Stop(0.1f, MontageToStop);
-    }
-
-    for (FBBBCharacterMontageSlot *Slot : GetMontageSlots())
-    {
-        if (Slot->Revision == Revision)
-        {
-            *Slot = FBBBCharacterMontageSlot();
-        }
-    }
-}
-
-void UBBBAnimInstance::ReleaseMontageSlot(FBBBCharacterMontageSlot &Slot)
-{
-    if (Slot.Revision == 0)
-    {
-        Slot = FBBBCharacterMontageSlot();
-        return;
-    }
-
-    const uint64 ReleasedRevision = Slot.Revision;
-    UAnimMontage *ReleasedMontage = Slot.Montage;
-    const bool bReleasedSubmitted = Slot.bSubmitted;
-    Slot = FBBBCharacterMontageSlot();
-
-    for (const FBBBCharacterMontageSlot *RemainingSlot : GetMontageSlots())
-    {
-        if (RemainingSlot->Revision == ReleasedRevision)
-        {
-            return;
-        }
-    }
-
-    if (bReleasedSubmitted
-        && ReleasedMontage
-        && Montage_IsPlaying(ReleasedMontage))
-    {
-        Montage_Stop(0.1f, ReleasedMontage);
+        *Contribution = nullptr;
     }
 }
 

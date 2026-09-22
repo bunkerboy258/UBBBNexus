@@ -22,7 +22,7 @@ void FBBBRifleInputContext::SubmitMontage(
         return;
     }
 
-    BBBCharacterMontageInput::Submit(Character, *Montage, 1.0f, Sequence, bReload);
+    BBBCharacterMontageInput::Submit(Character, *Montage, Sequence, bReload);
 }
 
 void FBBBRifleInputContext::PlayFirePresentation(const int32 Sequence) const

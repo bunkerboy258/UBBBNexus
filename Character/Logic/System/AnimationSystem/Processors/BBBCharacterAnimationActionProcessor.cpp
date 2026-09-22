@@ -5,5 +5,5 @@
 void FBBBCharacterAnimationActionProcessor::Update(
     FBBBCharacterAnimationUpdateContext &Context) const
 {
-    Context.AnimationInstance.UpdateApprovedMontages();
+    Context.AnimationInstance.UpdateMontageContributions();
 }

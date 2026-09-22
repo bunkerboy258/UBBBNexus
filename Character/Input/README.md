@@ -50,6 +50,6 @@ ParseSystem/DomainData/Context/
 
 ## 蒙太奇
 
-保留 `FullBody`、`UpperBody`、`FullBodyAdditivePreAim`、`UpperBodyAdditive`、`AdditiveHitReact` 五个 Slot。`BBBCharacterMontageInput::Submit` 读取武器配置蒙太奇的轨道并分别提交对应固定槽位包；多轨蒙太奇共享播放修订号。
+保留 `FullBody`、`UpperBody`、`FullBodyAdditivePreAim`、`UpperBodyAdditive`、`AdditiveHitReact` 五个 Slot。`BBBCharacterMontageInput::Submit` 读取武器配置蒙太奇的轨道并分别提交对应固定槽位包，动画实例每个槽位只保存一个 `UAnimMontage` 贡献。
 
 换弹蒙太奇的通知属于具体武器领域；当前步枪使用 `UBBBRifleDetachMagazineAnimNotify`、`UBBBRifleLoadMagazineAnimNotify` 和 `UBBBRifleReloadLifecycleAnimNotifyState` 直接提交步枪输入。
