@@ -70,7 +70,8 @@ void FBBBRifleFireInput::Apply(FBBBRifleInputContext &Context) const
         }
     }
 
-    Context.PlayFirePresentation(Sequence);
+    Context.PlayFireSound();
+    Context.PlayEquipmentMontage(Context.Definition.EquipmentFireMontage);
 
     FBBBCameraPacket CameraPacket;
     CameraPacket.Impulse = FVector2D(

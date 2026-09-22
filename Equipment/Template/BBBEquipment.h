@@ -101,13 +101,6 @@ private:
     /** @return 角色应链接的动画层类型 */
     TSubclassOf<UAnimInstance> GetCharacterAnimationLayerClass() const;
 
-    /**
-     * 在角色骨骼更新完成后消费命令并发布快照
-     * @param DeltaSeconds	帧间隔
-     * @return 无
-     */
-    virtual void Tick(float DeltaSeconds) override;
-
 protected:
     /**
      * 初始化装备公共演员数据
@@ -131,13 +124,6 @@ protected:
      * @return 初始化是否成功
      */
     virtual bool InitializeRuntimeData(UBBBEquipmentDefinition &InDefinition);
-
-    /**
-     * 在武器骨骼动画完成后解析当前帧输入
-     * @param DeltaSeconds    帧间隔
-     * @return 无
-     */
-    virtual void UpdateEquipment(float DeltaSeconds);
 
 private:
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

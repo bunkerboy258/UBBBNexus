@@ -29,7 +29,10 @@ void FBBBRifleRestoreFactInput::Apply(FBBBRifleInputContext &Context) const
     switch (Fact.Type)
     {
         case EBBBEquipmentActionType::Equip:
-            Context.SubmitMontage(Context.Definition.EquipMontage, Fact.Sequence, false);
+            Context.SubmitCharacterMontage(
+                Context.Definition.CharacterEquipMontage,
+                Fact.Sequence,
+                false);
             return;
 
         case EBBBEquipmentActionType::Fire:
@@ -37,14 +40,19 @@ void FBBBRifleRestoreFactInput::Apply(FBBBRifleInputContext &Context) const
             Context.RuntimeData.LastFireTimeSeconds = Context.GetWorld()
                 ? Context.GetWorld()->GetTimeSeconds()
                 : Context.RuntimeData.LastFireTimeSeconds;
-            Context.PlayFirePresentation(Fact.Sequence);
+            Context.PlayFireSound();
+            Context.PlayEquipmentMontage(Context.Definition.EquipmentFireMontage);
             return;
 
         case EBBBEquipmentActionType::ReloadStarted:
             Context.RuntimeData.bIsReloading = true;
             Context.RuntimeData.bMagazineDetached = false;
             Context.RuntimeData.ReloadSequence = Fact.Sequence;
-            Context.SubmitMontage(Context.Definition.ReloadMontage, Fact.Sequence, true);
+            Context.SubmitCharacterMontage(
+                Context.Definition.CharacterReloadMontage,
+                Fact.Sequence,
+                true);
+            Context.PlayEquipmentMontage(Context.Definition.EquipmentReloadMontage);
             return;
 
         case EBBBEquipmentActionType::MagazineDetached:

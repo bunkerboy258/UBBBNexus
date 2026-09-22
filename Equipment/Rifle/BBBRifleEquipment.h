@@ -15,6 +15,8 @@ class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
     GENERATED_BODY()
 
 public:
+    ABBBRifleEquipment();
+
     /**
      * 提交装备动作输入
      * @param Sequence       动作序号
@@ -80,15 +82,14 @@ public:
      */
     void SubmitInterruptReloadInput(int32 Sequence, bool bInIsMirror);
 
-protected:
+private:
     /**
-     * 在装备动画工作完成后解析步枪输入帧
+     * 在装备动画工作完成后直接解析步枪输入并发布事实
      * @param DeltaSeconds    帧间隔
      * @return 无
      */
-    virtual void UpdateEquipment(float DeltaSeconds) override;
+    virtual void Tick(float DeltaSeconds) override;
 
-private:
     /**
      * 根据步枪配置初始化运行时事实
      * @param InDefinition    装备静态配置

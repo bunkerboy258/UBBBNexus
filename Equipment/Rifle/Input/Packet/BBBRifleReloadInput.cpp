@@ -14,14 +14,19 @@ bool FBBBRifleReloadInput::IsValid() const
 
 bool FBBBRifleReloadInput::CanApply(const FBBBRifleInputContext &Context) const
 {
-    return Context.Definition.ReloadMontage
+    return Context.Definition.CharacterReloadMontage
+        && Context.Definition.EquipmentReloadMontage
         && !Context.RuntimeData.bIsReloading
         && Context.RuntimeData.LoadedAmmo < Context.RuntimeData.AmmoCapacity;
 }
 
 void FBBBRifleReloadInput::Apply(FBBBRifleInputContext &Context) const
 {
-    Context.SubmitMontage(Context.Definition.ReloadMontage, Sequence, true);
+    Context.SubmitCharacterMontage(
+        Context.Definition.CharacterReloadMontage,
+        Sequence,
+        true);
+    Context.PlayEquipmentMontage(Context.Definition.EquipmentReloadMontage);
 
     Context.RuntimeData.bIsReloading = true;
     Context.RuntimeData.bMagazineDetached = false;

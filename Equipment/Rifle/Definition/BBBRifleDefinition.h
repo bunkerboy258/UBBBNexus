@@ -25,13 +25,16 @@ public:
     FVector LeftHandIKOffset = FVector::ZeroVector;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
-    TObjectPtr<UAnimMontage> EquipMontage = nullptr;
+    TObjectPtr<UAnimMontage> CharacterEquipMontage = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
-    TObjectPtr<UAnimMontage> FireMontage = nullptr;
+    TObjectPtr<UAnimMontage> CharacterReloadMontage = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
-    TObjectPtr<UAnimMontage> ReloadMontage = nullptr;
+    TObjectPtr<UAnimMontage> EquipmentReloadMontage = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
+    TObjectPtr<UAnimMontage> EquipmentFireMontage = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire", meta = (ClampMin = "1"))
     int32 AmmoCapacity = 30;

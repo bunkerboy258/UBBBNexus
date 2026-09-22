@@ -5,6 +5,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentAnimationFacts.h"
 #include "BBBEquipmentAnimInstance.generated.h"
 
+class UAnimMontage;
+
 /** 只读装备动画事实快照的动画实例 */
 UCLASS(BlueprintType)
 class ABBB_EVAC_API UBBBEquipmentAnimInstance : public UAnimInstance
@@ -12,6 +14,13 @@ class ABBB_EVAC_API UBBBEquipmentAnimInstance : public UAnimInstance
     GENERATED_BODY()
 
 public:
+    /**
+     * 在装备动画实例上播放已经批准的蒙太奇
+     * @param Montage 待播放的装备蒙太奇
+     * @return 是否成功开始播放
+     */
+    bool PlayEquipmentMontage(UAnimMontage &Montage);
+
     /** @return 本帧装备动画事实 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
     FBBBEquipmentAnimationFacts GetAnimationFacts() const

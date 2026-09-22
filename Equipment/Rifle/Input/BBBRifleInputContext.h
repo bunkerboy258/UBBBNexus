@@ -41,12 +41,15 @@ struct FBBBRifleInputContext final
      * @param bReload       是否属于换弹流程
      * @return 无
      */
-    void SubmitMontage(UAnimMontage *Montage, int32 Sequence, bool bReload) const;
+    void SubmitCharacterMontage(UAnimMontage *Montage, int32 Sequence, bool bReload) const;
 
     /**
-     * 播放不产生玩法结果的开火表现
-     * @param Sequence      开火序号
+     * 在步枪动画实例上播放蒙太奇
+     * @param Montage       待播放的步枪蒙太奇
      * @return 无
      */
-    void PlayFirePresentation(int32 Sequence) const;
+    void PlayEquipmentMontage(UAnimMontage *Montage) const;
+
+    /** 播放不产生玩法结果的开火声音 */
+    void PlayFireSound() const;
 };

@@ -42,6 +42,20 @@ namespace
     }
 }
 
+ABBBRifleEquipment::ABBBRifleEquipment()
+{
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bStartWithTickEnabled = false;
+    PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+    PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
+
+    USkeletalMeshComponent *WeaponMesh = GetEquipmentSkeletalMesh();
+    if (WeaponMesh)
+    {
+        PrimaryActorTick.AddPrerequisite(WeaponMesh, WeaponMesh->PrimaryComponentTick);
+    }
+}
+
 void ABBBRifleEquipment::SubmitEquipInput(
     const int32 Sequence,
     const bool bInIsMirror)
@@ -154,8 +168,10 @@ bool ABBBRifleEquipment::InitializeRuntimeData(UBBBEquipmentDefinition &InDefini
     return true;
 }
 
-void ABBBRifleEquipment::UpdateEquipment(const float DeltaSeconds)
+void ABBBRifleEquipment::Tick(const float DeltaSeconds)
 {
+    Super::Tick(DeltaSeconds);
+
     ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
     USkeletalMeshComponent *WeaponMesh = GetEquipmentSkeletalMesh();
     UBBBEquipmentAnimInstance *AnimationInstance = GetEquipmentAnimationInstance();

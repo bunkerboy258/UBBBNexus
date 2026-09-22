@@ -10,10 +10,13 @@ bool FBBBRifleEquipInput::IsValid() const
 
 bool FBBBRifleEquipInput::CanApply(const FBBBRifleInputContext &Context) const
 {
-    return Context.Definition.EquipMontage != nullptr;
+    return Context.Definition.CharacterEquipMontage != nullptr;
 }
 
 void FBBBRifleEquipInput::Apply(FBBBRifleInputContext &Context) const
 {
-    Context.SubmitMontage(Context.Definition.EquipMontage, Sequence, false);
+    Context.SubmitCharacterMontage(
+        Context.Definition.CharacterEquipMontage,
+        Sequence,
+        false);
 }

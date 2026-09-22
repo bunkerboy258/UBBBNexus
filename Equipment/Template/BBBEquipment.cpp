@@ -4,14 +4,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Engine/World.h"
 
 ABBBEquipment::ABBBEquipment()
 {
-    PrimaryActorTick.bCanEverTick = true;
-    PrimaryActorTick.bStartWithTickEnabled = true;
-    PrimaryActorTick.TickGroup = TG_PostUpdateWork;
-    PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
     SetActorEnableCollision(false);
 
     EquipmentRoot = CreateDefaultSubobject<UArrowComponent>(TEXT("EquipmentRoot"));
@@ -23,7 +18,6 @@ ABBBEquipment::ABBBEquipment()
     EquipmentSkeletalMesh->PrimaryComponentTick.EndTickGroup = TG_PostUpdateWork;
     EquipmentSkeletalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     EquipmentSkeletalMesh->SetGenerateOverlapEvents(false);
-    PrimaryActorTick.AddPrerequisite(EquipmentSkeletalMesh, EquipmentSkeletalMesh->PrimaryComponentTick);
 }
 
 const FGuid &ABBBEquipment::GetInstanceId() const
@@ -74,16 +68,6 @@ void ABBBEquipment::SubmitReloadInput(const int32, const bool)
 void ABBBEquipment::SubmitRestoreFact(const FBBBEquipmentActionFact &, const bool)
 {
     ensureMsgf(false, TEXT("抽象装备未实现事实还原输入"));
-}
-
-void ABBBEquipment::Tick(const float DeltaSeconds)
-{
-    Super::Tick(DeltaSeconds);
-    UpdateEquipment(DeltaSeconds);
-}
-
-void ABBBEquipment::UpdateEquipment(const float)
-{
 }
 
 bool ABBBEquipment::InitializeEquipment(
