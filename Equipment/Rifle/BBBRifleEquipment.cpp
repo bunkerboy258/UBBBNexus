@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/Definition/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Rifle/Input/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/DomainData/Context/BBBRifleInputContext.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 
@@ -27,7 +27,7 @@ namespace
         }
 
         const TPacket Packet = Slot.Packet;
-        Slot.Reset();
+        Slot.bActive = false;
         if (!ensureMsgf(Packet.IsValid(), TEXT("步枪收到无效输入包")))
         {
             return;
@@ -65,7 +65,9 @@ void ABBBRifleEquipment::SubmitEquipInput(
         return;
     }
 
-    PendingInputs.Equip.Submit(FBBBRifleEquipInput{Sequence});
+    auto &Slot = RuntimeData.Rifle.Input.Equip;
+    Slot.Packet = FBBBRifleEquipInput{Sequence};
+    Slot.bActive = true;
 }
 
 void ABBBRifleEquipment::SubmitPrimaryInput(
@@ -77,7 +79,9 @@ void ABBBRifleEquipment::SubmitPrimaryInput(
         return;
     }
 
-    PendingInputs.Fire.Submit(FBBBRifleFireInput{Sequence});
+    auto &Slot = RuntimeData.Rifle.Input.Fire;
+    Slot.Packet = FBBBRifleFireInput{Sequence};
+    Slot.bActive = true;
 }
 
 void ABBBRifleEquipment::SubmitSecondaryInput(
@@ -97,7 +101,9 @@ void ABBBRifleEquipment::SubmitReloadInput(
         return;
     }
 
-    PendingInputs.Reload.Submit(FBBBRifleReloadInput{Sequence});
+    auto &Slot = RuntimeData.Rifle.Input.Reload;
+    Slot.Packet = FBBBRifleReloadInput{Sequence};
+    Slot.bActive = true;
 }
 
 void ABBBRifleEquipment::SubmitRestoreFact(
@@ -109,10 +115,17 @@ void ABBBRifleEquipment::SubmitRestoreFact(
         return;
     }
 
-    ensureMsgf(
-        PendingInputs.SubmitRestoreFact(FBBBRifleRestoreFactInput{Fact}),
+    auto &Input = RuntimeData.Rifle.Input;
+    if (!ensureMsgf(
+        Input.RestoreFactCount < FBBBRifleInputState::MaxRestoreFactCount,
         TEXT("步枪单帧镜像事实超过固定容量 %d"),
-        FBBBRifleInputFrame::MaxRestoreFactCount);
+        FBBBRifleInputState::MaxRestoreFactCount))
+    {
+        return;
+    }
+
+    Input.RestoreFacts[Input.RestoreFactCount] = FBBBRifleRestoreFactInput{Fact};
+    ++Input.RestoreFactCount;
 }
 
 void ABBBRifleEquipment::SubmitDetachMagazineInput(
@@ -124,7 +137,9 @@ void ABBBRifleEquipment::SubmitDetachMagazineInput(
         return;
     }
 
-    PendingInputs.DetachMagazine.Submit(FBBBRifleDetachMagazineInput{Sequence});
+    auto &Slot = RuntimeData.Rifle.Input.DetachMagazine;
+    Slot.Packet = FBBBRifleDetachMagazineInput{Sequence};
+    Slot.bActive = true;
 }
 
 void ABBBRifleEquipment::SubmitLoadMagazineInput(
@@ -136,7 +151,9 @@ void ABBBRifleEquipment::SubmitLoadMagazineInput(
         return;
     }
 
-    PendingInputs.LoadMagazine.Submit(FBBBRifleLoadMagazineInput{Sequence});
+    auto &Slot = RuntimeData.Rifle.Input.LoadMagazine;
+    Slot.Packet = FBBBRifleLoadMagazineInput{Sequence};
+    Slot.bActive = true;
 }
 
 void ABBBRifleEquipment::SubmitInterruptReloadInput(
@@ -148,7 +165,9 @@ void ABBBRifleEquipment::SubmitInterruptReloadInput(
         return;
     }
 
-    PendingInputs.InterruptReload.Submit(FBBBRifleInterruptReloadInput{Sequence});
+    auto &Slot = RuntimeData.Rifle.Input.InterruptReload;
+    Slot.Packet = FBBBRifleInterruptReloadInput{Sequence};
+    Slot.bActive = true;
 }
 
 bool ABBBRifleEquipment::InitializeRuntimeData(UBBBEquipmentDefinition &InDefinition)
@@ -162,9 +181,9 @@ bool ABBBRifleEquipment::InitializeRuntimeData(UBBBEquipmentDefinition &InDefini
     }
 
     RuntimeData = FBBBRifleRuntimeData{};
-    RuntimeData.AmmoCapacity = FMath::Max(RifleDefinition->AmmoCapacity, 1);
-    RuntimeData.LoadedAmmo = RuntimeData.AmmoCapacity;
-    PendingInputs.Reset();
+    RuntimeData.Rifle.Action.AmmoCapacity = FMath::Max(RifleDefinition->AmmoCapacity, 1);
+    RuntimeData.Rifle.Action.LoadedAmmo = RuntimeData.Rifle.Action.AmmoCapacity;
+    ResetPendingInputs();
     return true;
 }
 
@@ -180,7 +199,7 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
         Character && WeaponMesh && AnimationInstance && RifleDefinition,
         TEXT("步枪更新缺少角色、网格、动画实例或配置")))
     {
-        PendingInputs.Reset();
+        ResetPendingInputs();
         return;
     }
 
@@ -190,7 +209,9 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
         *WeaponMesh,
         *RifleDefinition,
         RuntimeData,
-        DeltaSeconds};
+        DeltaSeconds,
+        GetWorld()};
+    auto &PendingInputs = RuntimeData.Rifle.Input;
 
     for (int32 Index = 0; Index < PendingInputs.RestoreFactCount; ++Index)
     {
@@ -212,14 +233,27 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
     ParseInputSlot(PendingInputs.InterruptReload, Context);
     ParseInputSlot(PendingInputs.Reload, Context);
     ParseInputSlot(PendingInputs.Fire, Context);
-    PendingInputs.Reset();
+    ResetPendingInputs();
 
+    const auto &Action = RuntimeData.Rifle.ReadRifleActionState();
     FBBBEquipmentAnimationFacts Facts;
-    Facts.bIsReloading = RuntimeData.bIsReloading;
-    Facts.FireSequence = RuntimeData.FireSequence;
-    Facts.LastFireTimeSeconds = RuntimeData.LastFireTimeSeconds;
-    Facts.LoadedAmmo = RuntimeData.LoadedAmmo;
-    Facts.AmmoCapacity = RuntimeData.AmmoCapacity;
+    Facts.bIsReloading = Action.bIsReloading;
+    Facts.FireSequence = Action.FireSequence;
+    Facts.LastFireTimeSeconds = Action.LastFireTimeSeconds;
+    Facts.LoadedAmmo = Action.LoadedAmmo;
+    Facts.AmmoCapacity = Action.AmmoCapacity;
     Facts.CurrentWorldTimeSeconds = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
     AnimationInstance->PublishAnimationFacts(Facts);
+}
+
+void ABBBRifleEquipment::ResetPendingInputs()
+{
+    auto &Input = RuntimeData.Rifle.Input;
+    Input.RestoreFactCount = 0;
+    Input.Equip.bActive = false;
+    Input.DetachMagazine.bActive = false;
+    Input.LoadMagazine.bActive = false;
+    Input.InterruptReload.bActive = false;
+    Input.Reload.bActive = false;
+    Input.Fire.bActive = false;
 }

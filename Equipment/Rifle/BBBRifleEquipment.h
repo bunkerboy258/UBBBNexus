@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Rifle/Input/BBBRifleInputFrame.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBRifleEquipment.generated.h"
 
@@ -16,6 +15,9 @@ class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
 
 public:
     ABBBRifleEquipment();
+
+    /** 步枪实例跨帧运行时事实 */
+    FBBBRifleRuntimeData RuntimeData;
 
     /**
      * 提交装备动作输入
@@ -97,9 +99,6 @@ private:
      */
     virtual bool InitializeRuntimeData(UBBBEquipmentDefinition &InDefinition) override;
 
-    /** 步枪实例跨帧运行时事实 */
-    FBBBRifleRuntimeData RuntimeData;
-
-    /** 当前帧等待解析的固定输入 */
-    FBBBRifleInputFrame PendingInputs;
+    /** 清除已解析或因运行环境无效而丢弃的输入 */
+    void ResetPendingInputs();
 };

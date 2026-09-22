@@ -4,7 +4,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBReloadStartedFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/Definition/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Rifle/Input/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/DomainData/Context/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/Processors/BBBRiflePresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/RuntimeData/BBBRifleRuntimeData.h"
 
 bool FBBBRifleReloadInput::IsValid() const
@@ -14,25 +15,28 @@ bool FBBBRifleReloadInput::IsValid() const
 
 bool FBBBRifleReloadInput::CanApply(const FBBBRifleInputContext &Context) const
 {
+    const auto &State = Context.RuntimeData.Rifle.ReadRifleActionState();
     return Context.Definition.CharacterReloadMontage
         && Context.Definition.EquipmentReloadMontage
-        && !Context.RuntimeData.bIsReloading
-        && Context.RuntimeData.LoadedAmmo < Context.RuntimeData.AmmoCapacity;
+        && !State.bIsReloading
+        && State.LoadedAmmo < State.AmmoCapacity;
 }
 
 void FBBBRifleReloadInput::Apply(FBBBRifleInputContext &Context) const
 {
-    Context.SubmitCharacterMontage(
+    auto &State = Context.RuntimeData.Rifle.Action;
+    FBBBRiflePresentationProcessor::SubmitCharacterMontage(
+        Context,
         Context.Definition.CharacterReloadMontage,
         Sequence,
         true);
-    Context.PlayEquipmentMontage(Context.Definition.EquipmentReloadMontage);
+    FBBBRiflePresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentReloadMontage);
 
-    Context.RuntimeData.bIsReloading = true;
-    Context.RuntimeData.bMagazineDetached = false;
-    Context.RuntimeData.ReloadSequence = Sequence;
+    State.bIsReloading = true;
+    State.bMagazineDetached = false;
+    State.ReloadSequence = Sequence;
     Context.Character.SubmitInput(FBBBReloadStartedFactPacket{
         Context.Equipment.GetEquipmentId(),
         Sequence,
-        Context.RuntimeData.LoadedAmmo});
+        State.LoadedAmmo});
 }

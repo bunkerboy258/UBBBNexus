@@ -10,52 +10,40 @@
 #include "BBBWork/UBBBNexus/Equipment/Rifle/Input/Packet/BBBRifleRestoreFactInput.h"
 #include "Containers/StaticArray.h"
 
-/** 步枪当前解析帧的固定输入集合 */
-struct FBBBRifleInputFrame final
+/** 步枪等待固定时机解析的输入状态 */
+struct FBBBRifleInputState final
 {
+    /** 单次更新允许积累的镜像事实数量 */
     static constexpr int32 MaxRestoreFactCount = 8;
 
+    /** 按提交顺序保存的镜像事实 */
     TStaticArray<FBBBRifleRestoreFactInput, MaxRestoreFactCount> RestoreFacts;
 
+    /** 当前有效镜像事实数量 */
     int32 RestoreFactCount = 0;
 
+    /** 等待解析的装备输入 */
     TBBBEquipmentInputSlot<FBBBRifleEquipInput> Equip;
 
+    /** 等待解析的卸下弹匣输入 */
     TBBBEquipmentInputSlot<FBBBRifleDetachMagazineInput> DetachMagazine;
 
+    /** 等待解析的装入弹匣输入 */
     TBBBEquipmentInputSlot<FBBBRifleLoadMagazineInput> LoadMagazine;
 
+    /** 等待解析的结束换弹输入 */
     TBBBEquipmentInputSlot<FBBBRifleInterruptReloadInput> InterruptReload;
 
+    /** 等待解析的开始换弹输入 */
     TBBBEquipmentInputSlot<FBBBRifleReloadInput> Reload;
 
+    /** 等待解析的开火输入 */
     TBBBEquipmentInputSlot<FBBBRifleFireInput> Fire;
 
-    /**
-     * 追加本帧待还原事实
-     * @param Input 待还原事实输入
-     * @return 是否成功写入固定队列
-     */
-    bool SubmitRestoreFact(const FBBBRifleRestoreFactInput &Input)
-    {
-        if (RestoreFactCount >= MaxRestoreFactCount)
-        {
-            return false;
-        }
+private:
+    friend struct FBBBRifleDomainState;
 
-        RestoreFacts[RestoreFactCount++] = Input;
-        return true;
-    }
-
-    /** 清除已经解析的全部输入 */
-    void Reset()
-    {
-        RestoreFactCount = 0;
-        Equip.Reset();
-        DetachMagazine.Reset();
-        LoadMagazine.Reset();
-        InterruptReload.Reset();
-        Reload.Reset();
-        Fire.Reset();
-    }
+    FBBBRifleInputState() = default;
+    FBBBRifleInputState(const FBBBRifleInputState &) = default;
+    FBBBRifleInputState &operator=(const FBBBRifleInputState &) = default;
 };

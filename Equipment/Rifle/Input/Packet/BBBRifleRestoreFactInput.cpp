@@ -2,7 +2,8 @@
 
 #include "BBBWork/UBBBNexus/Equipment/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/Definition/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Rifle/Input/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/DomainData/Context/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/Processors/BBBRiflePresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/RuntimeData/BBBRifleRuntimeData.h"
 #include "Engine/World.h"
 
@@ -21,52 +22,55 @@ bool FBBBRifleRestoreFactInput::CanApply(const FBBBRifleInputContext &Context) c
 
 void FBBBRifleRestoreFactInput::Apply(FBBBRifleInputContext &Context) const
 {
-    Context.RuntimeData.LoadedAmmo = FMath::Clamp(
+    auto &State = Context.RuntimeData.Rifle.Action;
+    State.LoadedAmmo = FMath::Clamp(
         Fact.LoadedAmmo,
         0,
-        Context.RuntimeData.AmmoCapacity);
+        State.AmmoCapacity);
 
     switch (Fact.Type)
     {
         case EBBBEquipmentActionType::Equip:
-            Context.SubmitCharacterMontage(
+            FBBBRiflePresentationProcessor::SubmitCharacterMontage(
+                Context,
                 Context.Definition.CharacterEquipMontage,
                 Fact.Sequence,
                 false);
             return;
 
         case EBBBEquipmentActionType::Fire:
-            Context.RuntimeData.FireSequence = Fact.Sequence;
-            Context.RuntimeData.LastFireTimeSeconds = Context.GetWorld()
-                ? Context.GetWorld()->GetTimeSeconds()
-                : Context.RuntimeData.LastFireTimeSeconds;
-            Context.PlayFireSound();
-            Context.PlayEquipmentMontage(Context.Definition.EquipmentFireMontage);
+            State.FireSequence = Fact.Sequence;
+            State.LastFireTimeSeconds = Context.World
+                ? Context.World->GetTimeSeconds()
+                : State.LastFireTimeSeconds;
+            FBBBRiflePresentationProcessor::PlayFireSound(Context);
+            FBBBRiflePresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
             return;
 
         case EBBBEquipmentActionType::ReloadStarted:
-            Context.RuntimeData.bIsReloading = true;
-            Context.RuntimeData.bMagazineDetached = false;
-            Context.RuntimeData.ReloadSequence = Fact.Sequence;
-            Context.SubmitCharacterMontage(
+            State.bIsReloading = true;
+            State.bMagazineDetached = false;
+            State.ReloadSequence = Fact.Sequence;
+            FBBBRiflePresentationProcessor::SubmitCharacterMontage(
+                Context,
                 Context.Definition.CharacterReloadMontage,
                 Fact.Sequence,
                 true);
-            Context.PlayEquipmentMontage(Context.Definition.EquipmentReloadMontage);
+            FBBBRiflePresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentReloadMontage);
             return;
 
         case EBBBEquipmentActionType::MagazineDetached:
-            Context.RuntimeData.bMagazineDetached = true;
+            State.bMagazineDetached = true;
             return;
 
         case EBBBEquipmentActionType::MagazineLoaded:
-            Context.RuntimeData.bIsReloading = false;
-            Context.RuntimeData.bMagazineDetached = false;
+            State.bIsReloading = false;
+            State.bMagazineDetached = false;
             return;
 
         case EBBBEquipmentActionType::ReloadCancelled:
-            Context.RuntimeData.bIsReloading = false;
-            Context.RuntimeData.bMagazineDetached = false;
+            State.bIsReloading = false;
+            State.bMagazineDetached = false;
             return;
 
         case EBBBEquipmentActionType::None:

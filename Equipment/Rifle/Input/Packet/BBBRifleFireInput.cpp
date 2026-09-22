@@ -5,7 +5,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Presentation/BBBCameraPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/Definition/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Rifle/Input/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/DomainData/Context/BBBRifleInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Rifle/Processors/BBBRiflePresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Rifle/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Projectile/BBBBulletActor.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -19,8 +20,9 @@ bool FBBBRifleFireInput::IsValid() const
 
 bool FBBBRifleFireInput::CanApply(const FBBBRifleInputContext &Context) const
 {
-    UWorld *World = Context.GetWorld();
-    if (!World || Context.RuntimeData.bIsReloading || Context.RuntimeData.LoadedAmmo <= 0)
+    const auto &State = Context.RuntimeData.Rifle.ReadRifleActionState();
+    UWorld *World = Context.World;
+    if (!World || State.bIsReloading || State.LoadedAmmo <= 0)
     {
         return false;
     }
@@ -34,13 +36,14 @@ bool FBBBRifleFireInput::CanApply(const FBBBRifleInputContext &Context) const
         return false;
     }
 
-    return World->GetTimeSeconds() - Context.RuntimeData.LastFireTimeSeconds
+    return World->GetTimeSeconds() - State.LastFireTimeSeconds
         >= Context.Definition.FireInterval;
 }
 
 void FBBBRifleFireInput::Apply(FBBBRifleInputContext &Context) const
 {
-    UWorld *World = Context.GetWorld();
+    auto &State = Context.RuntimeData.Rifle.Action;
+    UWorld *World = Context.World;
     if (!World)
     {
         return;
@@ -70,8 +73,8 @@ void FBBBRifleFireInput::Apply(FBBBRifleInputContext &Context) const
         }
     }
 
-    Context.PlayFireSound();
-    Context.PlayEquipmentMontage(Context.Definition.EquipmentFireMontage);
+    FBBBRiflePresentationProcessor::PlayFireSound(Context);
+    FBBBRiflePresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
 
     FBBBCameraPacket CameraPacket;
     CameraPacket.Impulse = FVector2D(
@@ -86,11 +89,11 @@ void FBBBRifleFireInput::Apply(FBBBRifleInputContext &Context) const
     CameraPacket.RecoverySpeed = Context.Definition.RecoilRecoverySpeed;
     Context.Character.SubmitInput(CameraPacket);
 
-    Context.RuntimeData.LoadedAmmo--;
-    Context.RuntimeData.FireSequence = Sequence;
-    Context.RuntimeData.LastFireTimeSeconds = World->GetTimeSeconds();
+    State.LoadedAmmo--;
+    State.FireSequence = Sequence;
+    State.LastFireTimeSeconds = World->GetTimeSeconds();
     Context.Character.SubmitInput(FBBBFireFactPacket{
         Context.Equipment.GetEquipmentId(),
         Sequence,
-        Context.RuntimeData.LoadedAmmo});
+        State.LoadedAmmo});
 }
