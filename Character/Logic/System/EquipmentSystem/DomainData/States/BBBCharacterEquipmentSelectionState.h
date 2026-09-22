@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
 #include "BBBCharacterEquipmentSelectionState.generated.h"
 
 /** 角色期望与当前主手装备状态 */

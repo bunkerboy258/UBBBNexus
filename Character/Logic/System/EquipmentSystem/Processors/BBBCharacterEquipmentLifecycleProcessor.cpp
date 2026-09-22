@@ -2,11 +2,9 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -37,9 +35,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
 
     Equipment->SetActorHiddenInGame(true);
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
-    ABBBRifleEquipment *Rifle = Cast<ABBBRifleEquipment>(Equipment);
-    UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(&Definition);
-    if (!Rifle || !RifleDefinition || !Rifle->InitializeRifle(*RifleDefinition, FGuid::NewGuid(), bIsMirror))
+    if (!Equipment->InitializeEquipment(Definition, FGuid::NewGuid(), bIsMirror))
     {
         Equipment->Destroy();
         return nullptr;
@@ -75,7 +71,7 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
         return false;
     }
 
-    const UBBBRifleDefinition *Definition = Cast<UBBBRifleDefinition>(Equipment.GetDefinition());
+    const UBBBEquipmentDefinition *Definition = Equipment.GetDefinition();
     if (!Definition)
     {
         return false;

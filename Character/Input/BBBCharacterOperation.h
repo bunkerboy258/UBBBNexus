@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterOperationState.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
 
 /** 输入包共享的角色操作状态规则 */
 namespace BBBCharacterOperation

@@ -5,8 +5,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentCommandState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(
@@ -81,9 +81,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         return;
     }
 
-    DesiredInstance->SubmitCommand(
-        FBBBEquipmentCommand{
-            EBBBEquipmentCommandType::Equip,
-            EquipmentState.NextActionSequence++},
+    DesiredInstance->SubmitEquipInput(
+        EquipmentState.NextActionSequence++,
         Context.bIsMirror);
 }

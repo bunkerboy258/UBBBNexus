@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentCommandState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
 
 void FBBBCharacterEquipmentActionProcessor::Update(
     FBBBCharacterEquipmentUpdateContext &Context) const
@@ -33,12 +33,7 @@ void FBBBCharacterEquipmentActionProcessor::Update(
         {
             if (Fact.EquipmentId == Equipment->GetEquipmentId())
             {
-                Equipment->SubmitCommand(FBBBEquipmentCommand{
-                    EBBBEquipmentCommandType::Fact,
-                    Fact.Sequence,
-                    false,
-                    Fact},
-                    true);
+                Equipment->SubmitRestoreFact(Fact, true);
             }
         }
     }
@@ -51,24 +46,18 @@ void FBBBCharacterEquipmentActionProcessor::Update(
     // 使用递增序号提交本帧开火和换弹动作
     if (bFire)
     {
-        Equipment->SubmitCommand(
-            FBBBEquipmentCommand{EBBBEquipmentCommandType::Primary, State.NextActionSequence++},
-            false);
+        Equipment->SubmitPrimaryInput(State.NextActionSequence++, false);
     }
     if (bReload)
     {
-        Equipment->SubmitCommand(
-            FBBBEquipmentCommand{EBBBEquipmentCommandType::Reload, State.NextActionSequence++},
-            false);
+        Equipment->SubmitReloadInput(State.NextActionSequence++, false);
     }
 
     if (bSecondarySubmitted)
     {
-        Equipment->SubmitCommand(
-            FBBBEquipmentCommand{
-                EBBBEquipmentCommandType::Secondary,
-                State.NextActionSequence++,
-                bSecondaryActive},
+        Equipment->SubmitSecondaryInput(
+            bSecondaryActive,
+            State.NextActionSequence++,
             false);
     }
 }

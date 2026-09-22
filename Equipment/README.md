@@ -1,9 +1,11 @@
 # Equipment
 
-`ABBBEquipment` 只负责演员、网格、生命周期和角色进入装备领域的单一命令边界。
+`ABBBEquipment` 是所有装备共享的抽象演员基座，只保存配置、网格、动画实例、镜像身份和固定行为入口。
 
-`Base/` 保存装备共享演员与配置基类，`Template/` 提供全装备固定输入和静态运行时。每种装备在 `Instance/<Weapon>/` 只定义配置、状态以及公共输入的 `Resolve/Restore` 实现。
+具体装备直接位于 `Equipment/<Weapon>/`。`ABBBRifleEquipment` 本身就是步枪唯一运行时根，同时持有 `FBBBRifleRuntimeData` 与当前帧固定输入；不存在额外的 `Instance`、`Runtime`、`Signature` 或 `DomainState` 包装层。
 
-角色只提交 `FBBBEquipmentCommand`。具体武器在自己的 `SubmitCommand` 中映射为静态输入包，之后不再有通用队列、Fragment、System 链或运行时行为分派。
+角色装备系统只负责装备生命周期并调用 `SubmitEquipInput`、`SubmitPrimaryInput`、`SubmitSecondaryInput`、`SubmitReloadInput` 和 `SubmitRestoreFact`。步枪动画通知调用步枪自己的弹匣与换弹结束输入。
 
-换弹通知位于 `Instance/Rifle/Notify/`，仅提交步枪输入。旧装备配置与蓝图不迁移，后续按 `UBBBRifleDefinition` 和 `ABBBRifleEquipment` 重建。
+步枪在 `TG_PostUpdateWork` 中按固定顺序解析输入包。每种输入包自行定义合法性、应用条件与对 `RuntimeData` 的修改；镜像实例只消费已经确认的事实，不重新产生玩法因果。
+
+`Template/Definition` 只保存纯数据头文件；只有具有实际行为的演员、动画实例、目录和输入包提供 `.cpp`。

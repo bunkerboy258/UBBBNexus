@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 
