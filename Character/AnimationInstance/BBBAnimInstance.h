@@ -12,6 +12,7 @@ class UBBBEquipmentAnimInstance;
 class UAnimMontage;
 struct FBBBMontagePacketData;
 
+
 namespace BBBCharacterMontageSlots
 {
     inline const FName FullBody(TEXT("FullBody"));
