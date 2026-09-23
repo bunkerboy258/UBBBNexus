@@ -109,7 +109,7 @@ protected:
      * @param bInIsMirror     是否为远端镜像
      * @return 初始化是否成功
      */
-    bool InitializeEquipment(UBBBEquipmentDefinition &InDefinition, const FGuid &InInstanceId, bool bInIsMirror);
+    bool InitializeEquipment(const FGuid &InInstanceId, bool bInIsMirror);
 
     /**
      * 检查输入声明的镜像身份是否与装备实例一致
@@ -123,13 +123,13 @@ protected:
      * @param InDefinition    装备静态配置
      * @return 初始化是否成功
      */
-    virtual bool InitializeRuntimeData(UBBBEquipmentDefinition &InDefinition);
+    virtual bool InitializeRuntimeData();
 
 private:
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     FGuid InstanceId;
 
-    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UBBBEquipmentDefinition> Definition = nullptr;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))

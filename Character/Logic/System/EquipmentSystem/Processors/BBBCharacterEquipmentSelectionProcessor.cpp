@@ -16,16 +16,37 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     USkeletalMeshComponent &CharacterMesh = Context.CharacterMesh;
     FBBBCharacterEquipmentCommandState &EquipmentCommands = Context.CommandState;
     FBBBCharacterEquipmentSelectionState &EquipmentState = Context.SelectionState;
+    FBBBCharacterEquipmentInventoryState &InventoryState = Context.InventoryState;
 
     // 先处理网络恢复的装备实例
     bool bRestoringEquipment = false;
-    UBBBEquipmentDefinition *StateDefinition = EquipmentCommands.PendingEquipmentState;
-    EquipmentCommands.PendingEquipmentState = nullptr;
-    if (StateDefinition)
+    TSubclassOf<ABBBEquipment> StateClass = EquipmentCommands.PendingEquipmentClass;
+    EquipmentCommands.PendingEquipmentClass = nullptr;
+    if (StateClass)
     {
+        bool bHasBackpackSlot = false;
+        for (const FBBBCharacterItem &Item : InventoryState.BackpackSlots)
+        {
+            if (!IsValid(Item.ItemActor.Get())
+                || Item.ItemActor.Get() == EquipmentState.ActiveMainHandInstance)
+            {
+                bHasBackpackSlot = true;
+                break;
+            }
+        }
+
+        if (!ensureMsgf(
+            bHasBackpackSlot,
+            TEXT("角色 %s 的背包已满 无法恢复装备 %s"),
+            *Character.GetName(),
+            *StateClass->GetName()))
+        {
+            return;
+        }
+
         ABBBEquipment *StateInstance = FBBBCharacterEquipmentLifecycleProcessor::Create(
             Character,
-            *StateDefinition,
+            StateClass,
             Context.bIsMirror);
         if (!StateInstance)
         {
@@ -47,7 +68,24 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
     {
         if (bRestoringEquipment)
         {
+            ABBBEquipment *PreviousInstance = EquipmentState.ActiveMainHandInstance;
             FBBBCharacterEquipmentLifecycleProcessor::Destroy(&CharacterMesh, *EquipmentState.ActiveMainHandInstance);
+
+            for (FBBBCharacterItem &Item : InventoryState.BackpackSlots)
+            {
+                if (Item.ItemActor.Get() == PreviousInstance || !IsValid(Item.ItemActor.Get()))
+                {
+                    Item.ItemActor = nullptr;
+                }
+            }
+
+            for (FBBBCharacterItem &Item : InventoryState.ItemBarSlots)
+            {
+                if (Item.ItemActor.Get() == PreviousInstance || !IsValid(Item.ItemActor.Get()))
+                {
+                    Item.ItemActor = nullptr;
+                }
+            }
         }
         if (!bRestoringEquipment)
         {
@@ -70,7 +108,16 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         Context.RightHandWeaponSocketName,
         *DesiredInstance))
     {
-        FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *DesiredInstance);
+        if (bRestoringEquipment)
+        {
+            FBBBCharacterEquipmentLifecycleProcessor::Destroy(&CharacterMesh, *DesiredInstance);
+            EquipmentState.DesiredMainHandInstance = nullptr;
+        }
+        if (!bRestoringEquipment)
+        {
+            FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *DesiredInstance);
+        }
+
         EquipmentState.ActiveMainHandInstance = nullptr;
         EquipmentState.ActiveEquipmentId = NAME_None;
         return;
@@ -78,6 +125,32 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
 
     if (bRestoringEquipment)
     {
+        bool bStoredInBackpack = false;
+        for (FBBBCharacterItem &Item : InventoryState.BackpackSlots)
+        {
+            if (!IsValid(Item.ItemActor.Get()))
+            {
+                Item.ItemActor = DesiredInstance;
+                bStoredInBackpack = true;
+                break;
+            }
+        }
+
+        ensureMsgf(
+            bStoredInBackpack,
+            TEXT("角色 %s 创建装备 %s 后未找到可用背包槽"),
+            *Character.GetName(),
+            *DesiredInstance->GetEquipmentId().ToString());
+
+        for (FBBBCharacterItem &Item : InventoryState.ItemBarSlots)
+        {
+            if (!IsValid(Item.ItemActor.Get()))
+            {
+                Item.ItemActor = DesiredInstance;
+                break;
+            }
+        }
+
         return;
     }
 

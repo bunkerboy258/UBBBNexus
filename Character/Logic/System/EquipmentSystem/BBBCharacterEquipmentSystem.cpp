@@ -19,12 +19,12 @@ void FBBBCharacterEquipmentSystem::Initialize(
     Character = &InCharacter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
 
-    RuntimeData->Equipment.EquipmentInventoryState.Slots.Init(
-        nullptr,
+    RuntimeData->Equipment.EquipmentInventoryState.BackpackSlots.Init(
+        FBBBCharacterItem{},
         FMath::Max(1, InEquipmentConfig.InventorySlotCount));
 
-    RuntimeData->Equipment.EquipmentInventoryState.QuickAccessBindings.Init(
-        nullptr,
+    RuntimeData->Equipment.EquipmentInventoryState.ItemBarSlots.Init(
+        FBBBCharacterItem{},
         FMath::Max(1, InEquipmentConfig.QuickAccessSlotCount));
 
 }

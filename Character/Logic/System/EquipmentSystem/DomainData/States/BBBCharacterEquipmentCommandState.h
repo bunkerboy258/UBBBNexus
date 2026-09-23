@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 #include "BBBCharacterEquipmentCommandState.generated.h"
 
-class UBBBEquipmentDefinition;
+class ABBBEquipment;
 
 /** 角色装备领域等待消费的命令状态 */
 USTRUCT(BlueprintType)
@@ -34,5 +34,5 @@ struct FBBBCharacterEquipmentCommandState final
 
     /** 等待创建镜像装备的配置 */
     UPROPERTY()
-    TObjectPtr<UBBBEquipmentDefinition> PendingEquipmentState = nullptr;
+    TSubclassOf<ABBBEquipment> PendingEquipmentClass;
 };

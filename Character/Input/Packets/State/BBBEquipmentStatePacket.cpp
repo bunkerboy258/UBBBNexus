@@ -14,9 +14,12 @@ bool FBBBEquipmentStatePacket::CanApply(const FBBBCharacterInputContext &Context
 
 void FBBBEquipmentStatePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    UBBBEquipmentDefinition *Definition = Context.Catalog.FindDefinition(EquipmentId);
-    if (Definition)
+    TSubclassOf<ABBBEquipment> EquipmentClass = Context.Catalog.FindEquipmentClass(EquipmentId);
+    if (ensureMsgf(
+        EquipmentClass,
+        TEXT("装备状态输入无法找到标识 %s 对应的 Actor 类"),
+        *EquipmentId.ToString()))
     {
-        Context.Commands.PendingEquipmentState = Definition;
+        Context.Commands.PendingEquipmentClass = EquipmentClass;
     }
 }

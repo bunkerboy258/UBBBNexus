@@ -8,8 +8,8 @@
 class UBBBRifleDefinition;
 
 /** 直接持有步枪配置、输入和运行时事实的唯一装备演员 */
-UCLASS()
-class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
+UCLASS(Blueprintable)
+class ABBB_EVAC_API ABBBRifleEquipment : public ABBBEquipment
 {
     GENERATED_BODY()
 
@@ -97,7 +97,7 @@ private:
      * @param InDefinition    装备静态配置
      * @return 初始化是否成功
      */
-    virtual bool InitializeRuntimeData(UBBBEquipmentDefinition &InDefinition) override;
+    virtual bool InitializeRuntimeData() override;
 
     /** 清除已解析或因运行环境无效而丢弃的输入 */
     void ResetPendingInputs();

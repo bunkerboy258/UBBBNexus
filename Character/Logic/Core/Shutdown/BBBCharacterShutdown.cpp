@@ -19,9 +19,17 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
     // 使用集合合并所有装备引用避免同一实例被重复收束
     TSet<ABBBEquipment *> Instances;
     // 收集库存中的装备补齐正常持有实例
-    for (const TObjectPtr<ABBBEquipment> &Instance : InventoryState.Slots)
+    for (const FBBBCharacterItem &Item : InventoryState.BackpackSlots)
     {
-        if (Instance)
+        if (ABBBEquipment *Instance = Cast<ABBBEquipment>(Item.ItemActor.Get()))
+        {
+            Instances.Add(Instance);
+        }
+    }
+
+    for (const FBBBCharacterItem &Item : InventoryState.ItemBarSlots)
+    {
+        if (ABBBEquipment *Instance = Cast<ABBBEquipment>(Item.ItemActor.Get()))
         {
             Instances.Add(Instance);
         }

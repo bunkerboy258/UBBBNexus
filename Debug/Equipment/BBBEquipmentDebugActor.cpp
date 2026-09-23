@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBEquipmentStatePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -31,7 +32,8 @@ void ABBBEquipmentDebugActor::BeginPlay()
         return;
     }
 
-    if (!IsValid(EquipmentDefinition) || EquipmentDefinition->EquipmentId.IsNone()
+    const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
+    if (!ClassDefault || !IsValid(ClassDefault->GetDefinition()) || ClassDefault->GetEquipmentId().IsNone()
         || PlayerIndex < 0 || !FMath::IsFinite(WaitTimeout) || WaitTimeout <= 0.0f)
     {
         UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 装备注入配置无效 请检查装备 ID 玩家索引和等待时限"), *GetPathName());
@@ -76,15 +78,17 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
     }
 
     const UBBBEquipmentCatalog *Catalog = Character->GetCharacterConfig().Equipment.EquipmentCatalog;
-    if (!IsValid(EquipmentDefinition) || !IsValid(Catalog)
-        || Catalog->FindDefinition(EquipmentDefinition->EquipmentId) != EquipmentDefinition)
+    const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
+    const FName EquipmentId = ClassDefault ? ClassDefault->GetEquipmentId() : NAME_None;
+    if (!ClassDefault || !IsValid(ClassDefault->GetDefinition()) || EquipmentId.IsNone()
+        || !IsValid(Catalog) || Catalog->FindEquipmentClass(EquipmentId) != EquipmentClass)
     {
         UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 所选装备未登记在目标角色目录或 ID 对应配置不一致 不修改角色配置"), *GetPathName());
         SetActorTickEnabled(false);
         return;
     }
 
-    if (Character->RuntimeData.Equipment.ReadEquipmentInventoryState().Slots.IsEmpty()
+    if (Character->RuntimeData.Equipment.ReadEquipmentInventoryState().BackpackSlots.IsEmpty()
         || !Character->GetMesh()
         || !Cast<UBBBAnimInstance>(Character->GetMesh()->GetAnimInstance()))
     {
@@ -92,15 +96,15 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
     }
 
     FBBBEquipmentStatePacket Packet;
-    Packet.EquipmentId = EquipmentDefinition->EquipmentId;
+    Packet.EquipmentId = EquipmentId;
     const bool bSubmitted = Character->SubmitInput(MoveTemp(Packet));
     SetActorTickEnabled(false);
 
     if (!bSubmitted)
     {
-        UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 向角色 %s 提交装备 %s 失败"), *GetPathName(), *Character->GetPathName(), *EquipmentDefinition->EquipmentId.ToString());
+        UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 向角色 %s 提交装备 %s 失败"), *GetPathName(), *Character->GetPathName(), *EquipmentId.ToString());
         return;
     }
 
-    UE_LOG(LogBBBEquipmentDebug, Display, TEXT("%s 已向角色 %s 提交装备 %s 的一次性状态输入 由角色管线执行后续创建与附着"), *GetPathName(), *Character->GetPathName(), *EquipmentDefinition->EquipmentId.ToString());
+    UE_LOG(LogBBBEquipmentDebug, Display, TEXT("%s 已向角色 %s 提交装备 %s 的一次性状态输入 由角色管线执行后续创建与附着"), *GetPathName(), *Character->GetPathName(), *EquipmentId.ToString());
 }

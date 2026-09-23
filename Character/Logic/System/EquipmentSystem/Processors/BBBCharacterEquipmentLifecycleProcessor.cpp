@@ -10,7 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 
 ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
-    ABBBCharacter &Character, UBBBEquipmentDefinition &Definition, const bool bIsMirror)
+    ABBBCharacter &Character, TSubclassOf<ABBBEquipment> EquipmentClass, const bool bIsMirror)
 {
     // 创建装备前确认世界和角色网格有效
     UWorld *World = Character.GetWorld();
@@ -20,13 +20,16 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
         return nullptr;
     }
 
-    if (!Definition.EquipmentClass)
+    if (!ensureMsgf(
+        EquipmentClass,
+        TEXT("角色 %s 无法创建空装备类"),
+        *Character.GetName()))
     {
         return nullptr;
     }
 
     ABBBEquipment *Equipment = World->SpawnActorDeferred<ABBBEquipment>(
-        Definition.EquipmentClass, FTransform::Identity, &Character, &Character,
+        EquipmentClass, FTransform::Identity, &Character, &Character,
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
     if (!Equipment)
     {
@@ -35,7 +38,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
 
     Equipment->SetActorHiddenInGame(true);
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
-    if (!Equipment->InitializeEquipment(Definition, FGuid::NewGuid(), bIsMirror))
+    if (!Equipment->InitializeEquipment(FGuid::NewGuid(), bIsMirror))
     {
         Equipment->Destroy();
         return nullptr;

@@ -171,9 +171,9 @@ void ABBBRifleEquipment::SubmitInterruptReloadInput(
     Slot.bActive = true;
 }
 
-bool ABBBRifleEquipment::InitializeRuntimeData(UBBBEquipmentDefinition &InDefinition)
+bool ABBBRifleEquipment::InitializeRuntimeData()
 {
-    const UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(&InDefinition);
+    const UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(GetDefinition());
     if (!ensureMsgf(
         RifleDefinition,
         TEXT("ABBBRifleEquipment 必须使用 UBBBRifleDefinition 初始化")))

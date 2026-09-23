@@ -4,7 +4,6 @@
 
 class ABBBCharacter;
 class ABBBEquipment;
-class UBBBEquipmentDefinition;
 class USkeletalMeshComponent;
 class FBBBCharacterEquipmentSelectionProcessor;
 class FBBBCharacterShutdown;
@@ -18,7 +17,7 @@ private:
 
     /** 创建并初始化角色持有的装备 */
     static ABBBEquipment *Create(ABBBCharacter &Character,
-        UBBBEquipmentDefinition &Definition, bool bIsMirror);
+        TSubclassOf<ABBBEquipment> EquipmentClass, bool bIsMirror);
 
     /** 挂接装备并绑定角色动画 */
     static bool Attach(USkeletalMeshComponent &CharacterMesh,

@@ -71,31 +71,32 @@ void ABBBEquipment::SubmitRestoreFact(const FBBBEquipmentActionFact &, const boo
 }
 
 bool ABBBEquipment::InitializeEquipment(
-    UBBBEquipmentDefinition &InDefinition,
     const FGuid &InInstanceId,
     const bool bInIsMirror)
 {
-    Definition = &InDefinition;
     InstanceId = InInstanceId;
     bIsMirror = bInIsMirror;
 
-    if (!EquipmentSkeletalMesh)
+    if (!ensureMsgf(
+        IsValid(Definition) && !Definition->EquipmentId.IsNone() && EquipmentSkeletalMesh,
+        TEXT("装备 %s 缺少有效静态配置、装备标识或骨骼网格"),
+        *GetClass()->GetName()))
     {
         return false;
     }
 
-    EquipmentSkeletalMesh->SetSkeletalMesh(InDefinition.EquipmentMesh);
-    EquipmentSkeletalMesh->SetAnimInstanceClass(InDefinition.EquipmentAnimationClass);
+    EquipmentSkeletalMesh->SetSkeletalMesh(Definition->EquipmentMesh);
+    EquipmentSkeletalMesh->SetAnimInstanceClass(Definition->EquipmentAnimationClass);
     EquipmentAnimationInstance = Cast<UBBBEquipmentAnimInstance>(EquipmentSkeletalMesh->GetAnimInstance());
     if (!ensureMsgf(
         EquipmentAnimationInstance,
         TEXT("装备 %s 没有创建有效的 UBBBEquipmentAnimInstance"),
-        *InDefinition.EquipmentId.ToString()))
+        *Definition->EquipmentId.ToString()))
     {
         return false;
     }
 
-    return InitializeRuntimeData(InDefinition);
+    return InitializeRuntimeData();
 }
 
 bool ABBBEquipment::ValidateInputSource(const bool bInIsMirror) const
@@ -108,7 +109,7 @@ bool ABBBEquipment::ValidateInputSource(const bool bInIsMirror) const
         bInIsMirror);
 }
 
-bool ABBBEquipment::InitializeRuntimeData(UBBBEquipmentDefinition &)
+bool ABBBEquipment::InitializeRuntimeData()
 {
     ensureMsgf(false, TEXT("抽象装备未实现运行时数据初始化"));
     return false;

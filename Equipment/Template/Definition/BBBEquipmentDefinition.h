@@ -4,7 +4,6 @@
 #include "Engine/DataAsset.h"
 #include "BBBEquipmentDefinition.generated.h"
 
-class ABBBEquipment;
 class UBBBEquipmentAnimInstance;
 class UAnimInstance;
 class USkeletalMesh;
@@ -41,6 +40,4 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Visual")
     FTransform SpawnOffset = FTransform::Identity;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
-    TSubclassOf<ABBBEquipment> EquipmentClass;
 };
