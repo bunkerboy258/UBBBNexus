@@ -33,9 +33,7 @@ void FBBBRifleRestoreFactInput::Apply(FBBBRifleInputContext &Context) const
         case EBBBEquipmentActionType::Equip:
             FBBBRiflePresentationProcessor::SubmitCharacterMontage(
                 Context,
-                Context.Definition.CharacterEquipMontage,
-                Fact.Sequence,
-                false);
+                Context.Definition.CharacterEquipMontage);
             return;
 
         case EBBBEquipmentActionType::Fire:
@@ -53,9 +51,7 @@ void FBBBRifleRestoreFactInput::Apply(FBBBRifleInputContext &Context) const
             State.ReloadSequence = Fact.Sequence;
             FBBBRiflePresentationProcessor::SubmitCharacterMontage(
                 Context,
-                Context.Definition.CharacterReloadMontage,
-                Fact.Sequence,
-                true);
+                Context.Definition.CharacterReloadMontage);
             FBBBRiflePresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentReloadMontage);
             return;
 

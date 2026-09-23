@@ -107,6 +107,11 @@ void ABBBRifleEquipment::SubmitReloadInput(
     Slot.bActive = true;
 }
 
+void ABBBRifleEquipment::SubmitInterruptActiveActionInput(const bool bInIsMirror)
+{
+    SubmitInterruptReloadInput(INDEX_NONE, bInIsMirror);
+}
+
 void ABBBRifleEquipment::SubmitRestoreFact(
     const FBBBEquipmentActionFact &Fact,
     const bool bInIsMirror)

@@ -27,9 +27,7 @@ void FBBBRifleReloadInput::Apply(FBBBRifleInputContext &Context) const
     auto &State = Context.RuntimeData.Rifle.Action;
     FBBBRiflePresentationProcessor::SubmitCharacterMontage(
         Context,
-        Context.Definition.CharacterReloadMontage,
-        Sequence,
-        true);
+        Context.Definition.CharacterReloadMontage);
     FBBBRiflePresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentReloadMontage);
 
     State.bIsReloading = true;

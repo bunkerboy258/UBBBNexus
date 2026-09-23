@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 void FBBBCharacterInputProcessor::Update(
@@ -9,25 +8,8 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterInputContext &Context) const
 {
     Context.Events.ActionEvents.Reset();
-    Context.Operation.CancelReloadSequence = INDEX_NONE;
-    Context.Operation.SelectedEquipment = nullptr;
-    Context.Operation.bFire = false;
-    Context.Operation.bReload = false;
     Context.Control.bFire = false;
     Context.Control.bJump = false;
-
-    if (BBBCharacterOperation::IsReloadInProgress(Context.Operation)
-        && Context.Operation.ReloadEquipment.Get() != Context.Equipment.ActiveMainHandInstance)
-    {
-        BBBCharacterOperation::CancelReload(Context.Operation);
-    }
-
-    if (Context.AnimationInstance
-        && (BBBCharacterOperation::IsEquipmentSwitchPending(Context.Operation)
-            || Context.Operation.CancelReloadSequence != INDEX_NONE))
-    {
-        Context.AnimationInstance->ClearMontageContributions();
-    }
 
     InputState.bProcessing = true;
 
@@ -46,6 +28,11 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.Aim, Context);
 
     Process(InputState.EquipSlot, Context);
+    if (Context.SelectedEquipment && Context.AnimationInstance)
+    {
+        Context.AnimationInstance->ClearMontageContributions();
+    }
+
     Process(InputState.Reload, Context);
     Process(InputState.Fire, Context);
     Process(InputState.Jump, Context);
@@ -63,7 +50,7 @@ void FBBBCharacterInputProcessor::Update(
 
 void FBBBCharacterInputProcessor::FinalizeControl(FBBBCharacterInputContext &Context)
 {
-    Context.Control.bFire = Context.Operation.bFire;
+    Context.Control.bFire = Context.bFire;
     Context.Control.bSprint = Context.Control.bSprint
         && !Context.Control.bAim
         && !Context.Control.bFire;

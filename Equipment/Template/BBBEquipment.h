@@ -80,6 +80,13 @@ public:
     virtual void SubmitReloadInput(int32 Sequence, bool bInIsMirror);
 
     /**
+     * 提交当前动作中断输入
+     * @param bInIsMirror	是否只能执行事实还原
+     * @return 无
+     */
+    virtual void SubmitInterruptActiveActionInput(bool bInIsMirror);
+
+    /**
      * 提交已经成立的镜像事实
      * @param Fact           已确认装备事实
      * @param bInIsMirror    是否只能执行事实还原

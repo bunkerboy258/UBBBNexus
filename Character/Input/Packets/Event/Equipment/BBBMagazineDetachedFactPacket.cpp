@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBMagazineDetachedFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Event/Equipment/BBBEquipmentActionFact.h"
 
 bool FBBBMagazineDetachedFactPacket::IsValid() const
@@ -16,11 +15,6 @@ void FBBBMagazineDetachedFactPacket::Apply(FBBBCharacterInputContext &Context) c
 {
     Context.Commands.PendingFacts.Add(ToFact());
     Context.Events.ActionEvents.Add(ToFact());
-    BBBCharacterOperation::TrackMagazineDetached(
-        Context.Operation,
-        Sequence,
-        EquipmentId,
-        Context.Equipment.ActiveEquipmentId);
 }
 
 FBBBEquipmentActionFact FBBBMagazineDetachedFactPacket::ToFact() const

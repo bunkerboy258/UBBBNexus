@@ -2,27 +2,21 @@
 
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
 #include "Animation/AnimMontage.h"
 
 bool FBBBMontagePacketData::IsValid() const
 {
-    return Montage != nullptr;
+    return Montage != nullptr && SourceEquipment.IsValid();
 }
 
 bool FBBBMontagePacketData::CanApplyToSlot(
     const FBBBCharacterInputContext &Context,
     const FName Slot) const
 {
-    if (BBBCharacterOperation::IsEquipmentSwitchPending(Context.Operation) || !Montage)
-    {
-        return false;
-    }
-
-    if (bReload
-        && (!BBBCharacterOperation::IsCurrentReloadSequence(Context.Operation, Sequence)
-            || BBBCharacterOperation::IsCancelledReloadSequence(Context.Operation, Sequence)))
+    if (Context.SelectedEquipment || !Montage
+        || SourceEquipment.Get() != Context.Equipment.ActiveMainHandInstance)
     {
         return false;
     }
@@ -113,8 +107,7 @@ void FBBBAdditiveHitReactMontagePacket::Apply(FBBBCharacterInputContext &Context
 bool BBBCharacterMontageInput::Submit(
     ABBBCharacter &Character,
     UAnimMontage &Montage,
-    const int32 Sequence,
-    const bool bReload)
+    ABBBEquipment &SourceEquipment)
 {
     if (Montage.SlotAnimTracks.IsEmpty())
     {
@@ -127,8 +120,7 @@ bool BBBCharacterMontageInput::Submit(
     {
         FBBBMontagePacketData Data;
         Data.Montage = &Montage;
-        Data.Sequence = Sequence;
-        Data.bReload = bReload;
+        Data.SourceEquipment = &SourceEquipment;
 
         if (Track.SlotName == BBBCharacterMontageSlots::FullBody)
         {

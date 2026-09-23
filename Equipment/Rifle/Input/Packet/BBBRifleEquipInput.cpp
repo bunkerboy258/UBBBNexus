@@ -18,7 +18,5 @@ void FBBBRifleEquipInput::Apply(FBBBRifleInputContext &Context) const
 {
     FBBBRiflePresentationProcessor::SubmitCharacterMontage(
         Context,
-        Context.Definition.CharacterEquipMontage,
-        Sequence,
-        false);
+        Context.Definition.CharacterEquipMontage);
 }

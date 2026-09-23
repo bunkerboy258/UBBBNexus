@@ -65,6 +65,11 @@ void ABBBEquipment::SubmitReloadInput(const int32, const bool)
     ensureMsgf(false, TEXT("抽象装备未实现换弹输入"));
 }
 
+void ABBBEquipment::SubmitInterruptActiveActionInput(const bool)
+{
+    ensureMsgf(false, TEXT("抽象装备未实现当前动作中断输入"));
+}
+
 void ABBBEquipment::SubmitRestoreFact(const FBBBEquipmentActionFact &, const bool)
 {
     ensureMsgf(false, TEXT("抽象装备未实现事实还原输入"));

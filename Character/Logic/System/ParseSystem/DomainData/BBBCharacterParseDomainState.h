@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterCameraState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterInputState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterOperationState.h"
 #include "BBBCharacterParseDomainState.generated.h"
 
 class ABBBCharacter;
@@ -23,12 +22,6 @@ public:
     const FBBBCharacterInputState &ReadInputState() const
     {
         return InputState;
-    }
-
-    /** @return 角色跨帧操作状态 */
-    const FBBBCharacterOperationState &ReadOperationState() const
-    {
-        return OperationState;
     }
 
     /** @return 角色最终控制状态 */
@@ -51,10 +44,6 @@ private:
 
     /** 角色固定输入状态 */
     FBBBCharacterInputState InputState;
-
-    /** 输入解析跨帧操作状态 */
-    UPROPERTY(Transient)
-    FBBBCharacterOperationState OperationState;
 
     /** 输入系统已经裁决的角色控制状态 */
     UPROPERTY(Transient)

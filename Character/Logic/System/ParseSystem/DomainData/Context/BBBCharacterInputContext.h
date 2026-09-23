@@ -7,12 +7,12 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 
 class UBBBEquipmentCatalog;
 class UBBBAnimInstance;
+class ABBBEquipment;
 
 /**
  * 输入包应用上下文
@@ -21,9 +21,6 @@ class UBBBAnimInstance;
  */
 struct FBBBCharacterInputContext final
 {
-    /** 输入解析跨帧操作状态 */
-    FBBBCharacterOperationState &Operation;
-
     /** 角色装备容器状态 */
     FBBBCharacterEquipmentInventoryState &Inventory;
 
@@ -53,4 +50,13 @@ struct FBBBCharacterInputContext final
 
     /** 装备标识到配置的只读目录 */
     const UBBBEquipmentCatalog &Catalog;
+
+    /** 本次解析选择的装备 */
+    ABBBEquipment *SelectedEquipment = nullptr;
+
+    /** 本次解析已接受开火输入 */
+    bool bFire = false;
+
+    /** 本次解析已接受换弹输入 */
+    bool bReload = false;
 };

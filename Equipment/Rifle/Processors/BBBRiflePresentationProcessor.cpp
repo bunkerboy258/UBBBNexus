@@ -12,16 +12,14 @@
 
 void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
     const FBBBRifleInputContext &Context,
-    UAnimMontage *Montage,
-    const int32 Sequence,
-    const bool bReload)
+    UAnimMontage *Montage)
 {
     if (!Montage)
     {
         return;
     }
 
-    BBBCharacterMontageInput::Submit(Context.Character, *Montage, Sequence, bReload);
+    BBBCharacterMontageInput::Submit(Context.Character, *Montage, Context.Equipment);
 }
 
 void FBBBRiflePresentationProcessor::PlayEquipmentMontage(

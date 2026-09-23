@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Character/Input/Packets/Command/BBBEquipSlotPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/BBBCharacterOperation.h"
 #include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
 
 bool FBBBEquipSlotPacket::IsValid() const
@@ -21,13 +20,7 @@ bool FBBBEquipSlotPacket::CanApply(const FBBBCharacterInputContext &Context) con
 
 void FBBBEquipSlotPacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    // 切换装备打断进行中的换弹
-    if (BBBCharacterOperation::IsReloadInProgress(Context.Operation))
-    {
-        BBBCharacterOperation::CancelReload(Context.Operation);
-    }
-
     ABBBEquipment *Target = Cast<ABBBEquipment>(Context.Inventory.ItemBarSlots[Slot].ItemActor.Get());
-    Context.Operation.SelectedEquipment = Target;
+    Context.SelectedEquipment = Target;
     Context.Equipment.DesiredMainHandInstance = Target;
 }

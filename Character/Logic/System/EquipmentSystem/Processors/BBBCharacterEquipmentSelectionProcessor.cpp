@@ -89,6 +89,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(
         }
         if (!bRestoringEquipment)
         {
+            EquipmentState.ActiveMainHandInstance->SubmitInterruptActiveActionInput(Context.bIsMirror);
             FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *EquipmentState.ActiveMainHandInstance);
         }
     }

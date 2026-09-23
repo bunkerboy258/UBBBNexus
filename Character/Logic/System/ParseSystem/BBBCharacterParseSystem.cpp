@@ -26,7 +26,6 @@ void FBBBCharacterParseSystem::Update() const
     ensureMsgf(AnimationInstance, TEXT("角色输入解析缺少 BBB 动画实例 蒙太奇输入将在本帧被拒绝"));
 
     FBBBCharacterInputContext Context{
-        Data->Parse.OperationState,
         Data->Equipment.EquipmentInventoryState,
         Data->Equipment.EquipmentSelectionState,
         Data->Equipment.EquipmentCommandState,
