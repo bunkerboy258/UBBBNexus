@@ -70,9 +70,14 @@ public:
      * 获取角色静态配置
      * @return 角色配置常量引用
      */
-    const FBBBCharacterConfig &GetCharacterConfig() const
+    const UBBBCharacterConfig &GetCharacterConfig() const
     {
-        return CharacterConfig;
+        checkf(
+            IsValid(CharacterConfigAsset),
+            TEXT("角色 %s 缺少 UBBBCharacterConfig 资产"),
+            *GetPathName());
+
+        return *CharacterConfigAsset;
     }
 
     /**
@@ -99,7 +104,7 @@ public:
 protected:
     
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|Config")
-    FBBBCharacterConfig CharacterConfig;
+    TObjectPtr<UBBBCharacterConfig> CharacterConfigAsset = nullptr;
     
     UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
     TObjectPtr<UBBBCharacterNetworkComponent> CharacterNetworkComponent;

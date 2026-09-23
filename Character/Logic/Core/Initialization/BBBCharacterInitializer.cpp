@@ -9,8 +9,6 @@
 
 void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 {
-    const FBBBCharacterConfig &Config = Character.CharacterConfig;
-
     // 初始化开始先确认网络组件和配置资源有效
     //网络组件存在？
     if (!Character.CharacterNetworkComponent)
@@ -18,7 +16,19 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         return;
     }
 
-    if (!Config.Equipment.EquipmentCatalog)
+    if (!ensureMsgf(
+        IsValid(Character.CharacterConfigAsset),
+        TEXT("角色 %s 缺少 UBBBCharacterConfig 资产"),
+        *Character.GetPathName()))
+    {
+        return;
+    }
+
+    const UBBBCharacterConfig &Config = *Character.CharacterConfigAsset;
+    if (!ensureMsgf(
+        Config.Equipment.EquipmentCatalog.Get() != nullptr,
+        TEXT("角色 %s 的配置资产缺少装备目录"),
+        *Character.GetPathName()))
     {
         return;
     }

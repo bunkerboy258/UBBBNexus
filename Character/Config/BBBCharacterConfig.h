@@ -5,14 +5,17 @@
 #include "BBBWork/UBBBNexus/Character/Config/Equipment/BBBEquipmentConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Network/BBBNetworkConfig.h"
+#include "Engine/DataAsset.h"
 #include "BBBCharacterConfig.generated.h"
 
-USTRUCT(BlueprintType)
+/** 角色全部可编辑的静态配置资产 */
+UCLASS(BlueprintType)
 //聚合角色全部可编辑运行配置
-struct FBBBCharacterConfig
+class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 {
     GENERATED_BODY()
 
+public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterLocomotionConfig Locomotion;
 
