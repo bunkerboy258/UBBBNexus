@@ -5,9 +5,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
-#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -37,10 +34,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
-    const FBBBCharacterEquipmentSelectionState &EquipmentState =
-        RuntimeData.Equipment.ReadEquipmentSelectionState();
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
-    const bool bHasActiveMainHandEquipment = EquipmentState.ActiveMainHandInstance != nullptr;
 
     // 优先使用配置骨骼作为瞄准起点否则使用角色网格位置
     FVector AimOrigin = CharacterMesh->GetComponentLocation() + FVector(0.0f, 0.0f, 50.0f);
@@ -114,33 +108,10 @@ void FBBBCharacterAnimationFactProcessor::Update(
         }
     }
 
-    const float TargetAimIntentAlpha = AimState.bIsAiming ? 1.0f : 0.0f;
-
-    // 平滑瞄准意图权重供动画层渐进过渡
-    FactState.SmoothedAimIntentAlpha = FMath::FInterpTo(
-        FactState.SmoothedAimIntentAlpha,
-        TargetAimIntentAlpha,
-        DeltaSeconds,
-        AimConfig.AimIntentAlphaInterpSpeed);
-
-    UBBBAnimInstance *CharacterAnim = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
-    UBBBEquipmentAnimInstance *WeaponAnim = CharacterAnim ? CharacterAnim->TryGetWeaponAnimInstance() : nullptr;
     FactState.bIsAiming = AimState.bIsAiming;
-    FactState.AimIntentAlpha = FMath::Clamp(
-        FactState.SmoothedAimIntentAlpha,
-        0.0f,
-        1.0f);
-    FactState.AimIKAlpha = 0.0f;
+    FactState.AimIntentAlpha = AimState.AimAlpha;
+    FactState.AimIKAlpha = AimState.AimAlpha;
     FactState.AimTargetComponentSpace = FactState.SmoothedAimTargetComponentSpace;
-    // 只有装备和瞄准来源都有效时才启用瞄准逆向运动学
-    if (bHasActiveMainHandEquipment
-        && WeaponAnim
-        && bCanUseAimTarget
-        && WeaponAnim->HasValidAimSource()
-        && WeaponAnim->GetAimSourceLocalTransform().IsValid())
-    {
-        FactState.AimIKAlpha = FactState.AimIntentAlpha;
-    }
 
     FactState.ActorLocation = Character.GetActorLocation();
     FactState.ActorRotation = Character.GetActorRotation();

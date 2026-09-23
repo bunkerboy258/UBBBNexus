@@ -17,4 +17,18 @@ public:
     void Update(
         const FBBBCharacterControlState &ControlData,
         FBBBAimState &State) const;
+
+    /**
+     * 平滑角色瞄准动画权重
+     * @param State		角色瞄准状态
+     * @param bCanAim	是否具备瞄准条件
+     * @param DeltaSeconds	本帧间隔
+     * @param InterpSpeed	瞄准权重插值速度
+     * @return 无
+     */
+    void InterpolateAimAlpha(
+        FBBBAimState &State,
+        bool bCanAim,
+        float DeltaSeconds,
+        float InterpSpeed) const;
 };

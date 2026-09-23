@@ -8,6 +8,9 @@ struct FBBBAimStatePacket final
     /** 是否保持瞄准 */
     bool bIsAiming = false;
 
+    /** 角色瞄准动画权重 */
+    float AimAlpha = 0.0f;
+
     /** 世界空间瞄准目标 */
     FVector AimTargetWorld = FVector::ZeroVector;
 

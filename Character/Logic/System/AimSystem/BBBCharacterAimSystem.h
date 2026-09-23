@@ -6,8 +6,11 @@
 
 class APawn;
 class FBBBCharacterInitializer;
+struct FBBBAimAnimationConfig;
 struct FBBBAimDomainState;
+struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterControlState;
+struct FBBBCharacterWorldState;
 
 /**
  * 按角色瞄准状态分流各个瞄准处理器
@@ -33,10 +36,16 @@ private:
      */
     void Initialize(
         FBBBAimDomainState &InAimData,
-        const FBBBCharacterControlState &InIntentData);
+        const FBBBCharacterControlState &InIntentData,
+        const FBBBCharacterEquipmentSelectionState &InEquipmentState,
+        const FBBBCharacterWorldState &InWorldState,
+        const FBBBAimAnimationConfig &InAimConfig);
 
     FBBBAimDomainState *AimData = nullptr;
     const FBBBCharacterControlState *ControlData = nullptr;
+    const FBBBCharacterEquipmentSelectionState *EquipmentState = nullptr;
+    const FBBBCharacterWorldState *WorldState = nullptr;
+    const FBBBAimAnimationConfig *AimConfig = nullptr;
 
     FBBBCharacterAimStateProcessor AimStateProcessor;
     FBBBCharacterAimTargetProcessor AimTargetProcessor;

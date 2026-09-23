@@ -97,9 +97,6 @@ struct FBBBCharacterAnimationFactState final
     /** 平滑后的组件空间瞄准目标 */
     FVector SmoothedAimTargetComponentSpace = FVector::ZeroVector;
 
-    /** 平滑后的瞄准意图权重 */
-    float SmoothedAimIntentAlpha = 0.0f;
-
     /** 是否已经建立有效平滑目标 */
     bool bHasSmoothedAimTarget = false;
 };

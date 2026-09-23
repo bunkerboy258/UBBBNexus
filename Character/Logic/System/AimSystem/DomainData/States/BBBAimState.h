@@ -13,6 +13,10 @@ struct FBBBAimState final
     UPROPERTY(BlueprintReadOnly)
     bool bIsAiming = false;
 
+    /** 角色瞄准动画权重 */
+    UPROPERTY(BlueprintReadOnly)
+    float AimAlpha = 0.0f;
+
     //理想瞄准目标点的世界坐标
     UPROPERTY(BlueprintReadOnly)
     FVector AimTargetWorld = FVector::ZeroVector;

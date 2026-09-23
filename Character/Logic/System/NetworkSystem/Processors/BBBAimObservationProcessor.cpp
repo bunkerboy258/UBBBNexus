@@ -12,6 +12,7 @@ void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Cont
 {
     FBBBReplicatedAimState ReplicatedAimState;
     ReplicatedAimState.bIsAiming = Context.AimState.bIsAiming;
+    ReplicatedAimState.AimAlpha = Context.AimState.AimAlpha;
     ReplicatedAimState.AimTargetWorld = Context.AimState.AimTargetWorld;
 
     bool bShouldTransmit = !Context.AimObservationState.LastObservedAim.IsSet();
@@ -26,7 +27,11 @@ void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Cont
         const bool bTargetChanged = !FVector(Previous.AimTargetWorld).Equals(
             FVector(ReplicatedAimState.AimTargetWorld),
             0.5f);
-        bShouldTransmit |= bIntervalElapsed && bTargetChanged;
+        const bool bAimAlphaChanged = !FMath::IsNearlyEqual(
+            Previous.AimAlpha,
+            ReplicatedAimState.AimAlpha,
+            0.01f);
+        bShouldTransmit |= bIntervalElapsed && (bTargetChanged || bAimAlphaChanged);
     }
 
     if (!bShouldTransmit)

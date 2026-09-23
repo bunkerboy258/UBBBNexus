@@ -82,7 +82,12 @@ void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(
 {
     // 连续状态允许覆盖 但非法向量不能污染角色输入
     if (!ensureMsgf(
-        Character && IsOwnerAuthority() && !FVector(AimState.AimTargetWorld).ContainsNaN(),
+        Character
+            && IsOwnerAuthority()
+            && !FVector(AimState.AimTargetWorld).ContainsNaN()
+            && FMath::IsFinite(AimState.AimAlpha)
+            && AimState.AimAlpha >= 0.0f
+            && AimState.AimAlpha <= 1.0f,
         TEXT("瞄准状态网络投递被拒绝")))
     {
         return;
@@ -229,6 +234,7 @@ void UBBBCharacterNetworkComponent::SubmitAimStateInput(
 
     FBBBAimStatePacket Packet;
     Packet.bIsAiming = AimState.bIsAiming;
+    Packet.AimAlpha = AimState.AimAlpha;
     Packet.AimTargetWorld = AimState.AimTargetWorld;
     Character->SubmitInput(MoveTemp(Packet));
 }

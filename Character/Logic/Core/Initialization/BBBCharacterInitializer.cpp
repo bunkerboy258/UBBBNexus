@@ -42,7 +42,10 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     // 按固定顺序注入各角色系统和运行数据
     Character.AimSystem.Initialize(
         Character.RuntimeData.Aim,
-        Character.RuntimeData.Parse.ReadControlState());
+        Character.RuntimeData.Parse.ReadControlState(),
+        Character.RuntimeData.Equipment.ReadEquipmentSelectionState(),
+        Character.RuntimeData.External.ReadWorldState(),
+        Config.AimAnimation);
 
     Character.LocomotionSystem.Initialize(
         Character,

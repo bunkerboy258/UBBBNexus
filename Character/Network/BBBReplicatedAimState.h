@@ -13,6 +13,10 @@ struct FBBBReplicatedAimState final
     UPROPERTY()
     bool bIsAiming = false;
 
+    /** 角色瞄准动画权重 */
+    UPROPERTY()
+    float AimAlpha = 0.0f;
+
     /** 使用网络定点压缩的世界空间瞄准目标 */
     UPROPERTY()
     FVector_NetQuantize10 AimTargetWorld = FVector::ZeroVector;
