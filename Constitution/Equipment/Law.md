@@ -2,6 +2,8 @@
 
 严格遵守 Constitution/Data/Law.md 与 Constitution/Network/Law.md
 
+具体装备 Actor 同时遵守 [Actor 宪法](../Actor/Law.md)。
+
 ## 实例架构定位
 
 - 装备实例以角色实例架构为参照，遵循一致的职责边界与组织原则；仅因底层职责和生命周期不同，省略不适用的角色专属系统与机制

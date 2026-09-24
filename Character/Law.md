@@ -1,5 +1,6 @@
 # Character Law
 
+- 角色 Actor 同时受 [Actor 宪法](../Constitution/Actor/Law.md) 约束。
 - 所有角色领域数据同时受 [`../Constitution/Data/Law.md`](../Constitution/Data/Law.md) 约束。
 
 - `ABBBCharacter`是角色实例的唯一根载体,具体的逻辑必须下沉
