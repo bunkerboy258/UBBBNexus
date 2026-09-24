@@ -6,6 +6,7 @@ class USkeletalMeshComponent;
 struct FBBBCharacterAnimationConfig;
 struct FBBBCharacterAnimationFactState;
 struct FBBBCharacterAnimationLayerState;
+struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterRuntimeData;
 struct FBBBCharacterWorldState;
@@ -30,6 +31,9 @@ struct FBBBCharacterAnimationUpdateContext final
 
     /** 角色动画层状态 */
     FBBBCharacterAnimationLayerState &AnimationLayerState;
+
+    /** 角色动画蒙太奇请求状态 */
+    FBBBCharacterAnimationMontageState &AnimationMontageState;
 
     /** 角色装备选择状态 */
     const FBBBCharacterEquipmentSelectionState &EquipmentSelectionState;

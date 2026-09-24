@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRifleAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
@@ -7,7 +7,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRiflePresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/AnimationInstance/BBBRifleAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Animation/BBBRifleAnimInstance.h"
 
 void FBBBRifleAnimationProcessor::Stop(FBBBRifleUpdateContext &Context)
 {

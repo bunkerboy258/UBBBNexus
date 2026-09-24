@@ -6,8 +6,8 @@
 #include "BBBAnimInstance.generated.h"
 
 class FBBBCharacterAnimationActionProcessor;
+class FBBBCharacterAnimationMontageProcessor;
 class FBBBCharacterAnimationSystem;
-class FBBBCharacterInputProcessor;
 class UBBBEquipmentAnimInstance;
 class UAnimMontage;
 
@@ -27,13 +27,8 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     GENERATED_BODY()
 
     friend class FBBBCharacterAnimationActionProcessor;
+    friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterAnimationSystem;
-    friend class FBBBCharacterInputProcessor;
-    friend struct FBBBFullBodyMontagePacket;
-    friend struct FBBBUpperBodyMontagePacket;
-    friend struct FBBBFullBodyAdditivePreAimMontagePacket;
-    friend struct FBBBUpperBodyAdditiveMontagePacket;
-    friend struct FBBBAdditiveHitReactMontagePacket;
 
 public:
     /** @return 当前骨骼网格体上的 BBB 主动画实例 主实例自身调用时返回自身 */

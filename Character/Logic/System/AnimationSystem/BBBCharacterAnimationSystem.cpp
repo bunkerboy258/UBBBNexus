@@ -36,6 +36,7 @@ void FBBBCharacterAnimationSystem::Update()
     UBBBAnimInstance *AnimInstance = Cast<UBBBAnimInstance>(CharacterMesh->GetAnimInstance());
     if (!AnimInstance)
     {
+        ensureMsgf(false, TEXT("角色动画系统缺少 BBB 动画实例 蒙太奇请求将在动画实例有效后处理"));
         return;
     }
 
@@ -46,11 +47,13 @@ void FBBBCharacterAnimationSystem::Update()
         *AnimInstance,
         RuntimeData->Animation.AnimationFactState,
         RuntimeData->Animation.AnimationLayerState,
+        RuntimeData->Animation.AnimationMontageState,
         RuntimeData->Equipment.ReadEquipmentSelectionState(),
         RuntimeData->External.ReadWorldState(),
         *AnimationConfig};
 
     LayerProcessor.Update(Context);
+    MontageProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState);

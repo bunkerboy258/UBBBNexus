@@ -2,15 +2,11 @@
 
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
 #include "Animation/AnimMontage.h"
 
-bool FBBBUpperBodyMontagePacket::CanApply(const FBBBCharacterInputContext &Context) const
+bool FBBBUpperBodyMontagePacket::CanApply(const FBBBCharacterInputContext &) const
 {
-    if (!Context.AnimationInstance)
-    {
-        return false;
-    }
-
     if (!Montage)
     {
         return true;
@@ -30,5 +26,6 @@ bool FBBBUpperBodyMontagePacket::CanApply(const FBBBCharacterInputContext &Conte
 
 void FBBBUpperBodyMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.AnimationInstance->RegisterMontageContribution(BBBCharacterMontageSlots::UpperBody, Montage.Get());
+    Context.AnimationMontageState.UpperBodyMontageRequest = Montage.Get();
+    Context.AnimationMontageState.bUpperBodyMontageRequestPending = true;
 }

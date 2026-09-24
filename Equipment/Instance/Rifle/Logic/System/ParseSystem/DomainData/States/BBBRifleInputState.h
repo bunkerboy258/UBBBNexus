@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/BBBEquipmentInputSlot.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/BBBEquipmentInputSlot.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Shared/Action/BBBRifleEquipPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Local/Action/BBBRifleFirePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Local/Action/BBBRifleReloadPacket.h"

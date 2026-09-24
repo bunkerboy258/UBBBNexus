@@ -47,12 +47,6 @@ namespace BBBCharacterInput
     {
         using FPacket = typename TDecay<TPacket>::Type;
 
-        if (!ensureMsgf(IsInGameThread() && Packet.IsValid() && !State.bProcessing,
-            TEXT("角色输入被拒绝 请检查线程 数据与解析重入")))
-        {
-            return false;
-        }
-
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
         Slot.Data = Forward<TPacket>(Packet);
         Slot.bActive = true;

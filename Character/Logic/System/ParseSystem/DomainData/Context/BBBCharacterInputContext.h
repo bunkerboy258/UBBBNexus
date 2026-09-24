@@ -6,7 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 
-class UBBBAnimInstance;
+struct FBBBCharacterAnimationMontageState;
 
 /**
  * 输入包应用上下文
@@ -15,8 +15,8 @@ class UBBBAnimInstance;
  */
 struct FBBBCharacterInputContext final
 {
-    /** 当前角色动画实例 */
-    UBBBAnimInstance *AnimationInstance;
+    /** 动画系统待消费的蒙太奇请求状态 */
+    FBBBCharacterAnimationMontageState &AnimationMontageState;
 
     /** 角色瞄准状态 */
     FBBBAimState &Aim;

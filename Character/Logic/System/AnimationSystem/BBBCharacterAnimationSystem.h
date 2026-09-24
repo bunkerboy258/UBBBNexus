@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationMontageProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
@@ -41,7 +42,8 @@ private:
     FBBBCharacterRuntimeData *RuntimeData = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterAnimationConfig *AnimationConfig = nullptr;
+    FBBBCharacterAnimationLayerProcessor LayerProcessor;
+    FBBBCharacterAnimationMontageProcessor MontageProcessor;
     FBBBCharacterAnimationActionProcessor ActionProcessor;
     FBBBCharacterAnimationFactProcessor FactProcessor;
-    FBBBCharacterAnimationLayerProcessor LayerProcessor;
 };

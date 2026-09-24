@@ -2,15 +2,11 @@
 
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
 #include "Animation/AnimMontage.h"
 
-bool FBBBAdditiveHitReactMontagePacket::CanApply(const FBBBCharacterInputContext &Context) const
+bool FBBBAdditiveHitReactMontagePacket::CanApply(const FBBBCharacterInputContext &) const
 {
-    if (!Context.AnimationInstance)
-    {
-        return false;
-    }
-
     if (!Montage)
     {
         return true;
@@ -30,5 +26,6 @@ bool FBBBAdditiveHitReactMontagePacket::CanApply(const FBBBCharacterInputContext
 
 void FBBBAdditiveHitReactMontagePacket::Apply(FBBBCharacterInputContext &Context) const
 {
-    Context.AnimationInstance->RegisterMontageContribution(BBBCharacterMontageSlots::AdditiveHitReact, Montage.Get());
+    Context.AnimationMontageState.AdditiveHitReactMontageRequest = Montage.Get();
+    Context.AnimationMontageState.bAdditiveHitReactMontageRequestPending = true;
 }

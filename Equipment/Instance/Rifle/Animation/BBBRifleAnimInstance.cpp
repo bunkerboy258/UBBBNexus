@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/AnimationInstance/BBBRifleAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Animation/BBBRifleAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionState.h"
 
 void UBBBRifleAnimInstance::PublishRifleState(const FBBBRifleActionState &State, const float WorldTime)
