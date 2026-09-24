@@ -2,11 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBLocomotionNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBRunNetworkObservationState.h"
 #include "BBBCharacterNetworkDomainState.generated.h"
 
 class FBBBAimObservationProcessor;
-class FBBBLocomotionObservationProcessor;
+class FBBBRunObservationProcessor;
 class FBBBCharacterNetworkSystem;
 
 /** 角色网络领域全部观察状态的唯一直接持有者 */
@@ -22,22 +22,22 @@ public:
         return AimObservationState;
     }
 
-    /** @return 移动网络观察状态 */
-    const FBBBLocomotionNetworkObservationState &ReadLocomotionNetworkObservationState() const
+    /** @return 跑步网络观察状态 */
+    const FBBBRunNetworkObservationState &ReadRunNetworkObservationState() const
     {
-        return LocomotionObservationState;
+        return RunObservationState;
     }
 
 private:
     friend class FBBBAimObservationProcessor;
-    friend class FBBBLocomotionObservationProcessor;
+    friend class FBBBRunObservationProcessor;
     friend class FBBBCharacterNetworkSystem;
 
     /** 瞄准网络观察状态 */
     UPROPERTY(Transient)
     FBBBAimNetworkObservationState AimObservationState;
 
-    /** 移动网络观察状态 */
+    /** 跑步网络观察状态 */
     UPROPERTY(Transient)
-    FBBBLocomotionNetworkObservationState LocomotionObservationState;
+    FBBBRunNetworkObservationState RunObservationState;
 };

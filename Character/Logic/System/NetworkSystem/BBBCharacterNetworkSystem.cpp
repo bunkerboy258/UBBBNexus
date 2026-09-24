@@ -35,7 +35,7 @@ void FBBBCharacterNetworkSystem::Update()
     // 上下文只聚合已经生成的黑板状态 网络系统只观察状态不生成玩法事实
     FBBBCharacterNetworkUpdateContext Context{
         RuntimeData->Network.AimObservationState,
-        RuntimeData->Network.LocomotionObservationState,
+        RuntimeData->Network.RunObservationState,
         NetworkIdentityState,
         RuntimeData->External.ReadWorldState(),
         RuntimeData->Aim.ReadAimState(),
@@ -43,7 +43,7 @@ void FBBBCharacterNetworkSystem::Update()
         *NetworkConfig,
         *NetworkComponent};
 
-    // 固定处理顺序先观察瞄准状态再观察移动步态
+    // 固定处理顺序先观察瞄准状态再观察跑步状态
     AimObservationProcessor.Update(Context);
-    LocomotionObservationProcessor.Update(Context);
+    RunObservationProcessor.Update(Context);
 }

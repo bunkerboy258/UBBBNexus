@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "Components/ActorComponent.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
@@ -35,7 +34,7 @@ public:
 
 private:
     friend class FBBBAimObservationProcessor;
-    friend class FBBBLocomotionObservationProcessor;
+    friend class FBBBRunObservationProcessor;
 
     /** @return 所属角色是否具有权威 */
     bool IsOwnerAuthority() const;
@@ -51,11 +50,11 @@ private:
     void ReplicateAimState(const FBBBReplicatedAimState &AimState);
 
     /**
-     * 将权威步态复制给模拟代理
-     * @param Gait 已经成立的角色步态
+     * 将权威跑步状态复制给模拟代理
+     * @param bRun 已经成立的跑步状态
      * @return 无
      */
-    void ReplicateLocomotionState(EBBBCharacterGait Gait);
+    void ReplicateRunState(bool bRun);
 
     /**
      * 将接收的瞄准状态投递为领域输入
@@ -65,11 +64,11 @@ private:
     void SubmitAimStateInput(const FBBBReplicatedAimState &AimState);
 
     /**
-     * 将接收的步态投递为领域输入
-     * @param Gait 已经成立的角色步态
+     * 将接收的跑步状态投递为领域输入
+     * @param bRun 已经成立的跑步状态
      * @return 无
      */
-    void SubmitLocomotionStateInput(EBBBCharacterGait Gait);
+    void SubmitRunStateInput(bool bRun);
 
     /**
      * 接收本机控制客户端最新瞄准状态
@@ -80,28 +79,28 @@ private:
     void ServerSubmitAimState(FBBBReplicatedAimState AimState);
 
     /**
-     * 接收本机控制客户端最新步态
-     * @param Gait 客户端最新步态
+     * 接收本机控制客户端最新跑步状态
+     * @param bRun 客户端最新跑步状态
      * @return 无
      */
     UFUNCTION(Server, Unreliable)
-    void ServerSubmitLocomotionState(EBBBCharacterGait Gait);
+    void ServerSubmitRunState(bool bRun);
 
     /** 模拟代理收到瞄准状态时投递领域输入 */
     UFUNCTION()
     void OnRep_ReplicatedAimState();
 
-    /** 模拟代理收到步态时投递领域输入 */
+    /** 模拟代理收到跑步状态时投递领域输入 */
     UFUNCTION()
-    void OnRep_ReplicatedGait();
+    void OnRep_ReplicatedRunState();
 
     /** 只复制给模拟代理的瞄准最终状态 */
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedAimState)
     FBBBReplicatedAimState ReplicatedAimState;
 
-    /** 只复制给模拟代理的当前步态 */
-    UPROPERTY(ReplicatedUsing = OnRep_ReplicatedGait)
-    EBBBCharacterGait ReplicatedGait = EBBBCharacterGait::Run;
+    /** 只复制给模拟代理的当前跑步状态 */
+    UPROPERTY(ReplicatedUsing = OnRep_ReplicatedRunState)
+    bool bReplicatedRun = false;
 
     /** 生命周期由角色持有 初始化后始终指向组件所属角色 */
     ABBBCharacter *Character = nullptr;

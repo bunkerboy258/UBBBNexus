@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBAimStatePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBLocomotionStatePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBRunStatePacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -29,7 +29,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
         COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(
         UBBBCharacterNetworkComponent,
-        ReplicatedGait,
+        bReplicatedRun,
         COND_SimulatedOnly);
 }
 
@@ -52,15 +52,14 @@ void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(
     SubmitAimStateInput(AimState);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitLocomotionState_Implementation(
-    const EBBBCharacterGait Gait)
+void UBBBCharacterNetworkComponent::ServerSubmitRunState_Implementation(const bool bRun)
 {
-    if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("步态网络投递被拒绝")))
+    if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("跑步状态网络投递被拒绝")))
     {
         return;
     }
 
-    SubmitLocomotionStateInput(Gait);
+    SubmitRunStateInput(bRun);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
@@ -68,9 +67,9 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
     SubmitAimStateInput(ReplicatedAimState);
 }
 
-void UBBBCharacterNetworkComponent::OnRep_ReplicatedGait()
+void UBBBCharacterNetworkComponent::OnRep_ReplicatedRunState()
 {
-    SubmitLocomotionStateInput(ReplicatedGait);
+    SubmitRunStateInput(bReplicatedRun);
 }
 
 void UBBBCharacterNetworkComponent::ReplicateAimState(
@@ -85,15 +84,14 @@ void UBBBCharacterNetworkComponent::ReplicateAimState(
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateLocomotionState(
-    const EBBBCharacterGait Gait)
+void UBBBCharacterNetworkComponent::ReplicateRunState(const bool bRun)
 {
     if (!IsOwnerAuthority())
     {
         return;
     }
 
-    ReplicatedGait = Gait;
+    bReplicatedRun = bRun;
     GetOwner()->ForceNetUpdate();
 }
 
@@ -112,12 +110,11 @@ void UBBBCharacterNetworkComponent::SubmitAimStateInput(
     Character->SubmitInput(MoveTemp(Packet));
 }
 
-void UBBBCharacterNetworkComponent::SubmitLocomotionStateInput(
-    const EBBBCharacterGait Gait)
+void UBBBCharacterNetworkComponent::SubmitRunStateInput(const bool bRun)
 {
     if (Character)
     {
-        Character->SubmitInput(FBBBLocomotionStatePacket{Gait});
+        Character->SubmitInput(FBBBRunStatePacket{bRun});
     }
 }
 

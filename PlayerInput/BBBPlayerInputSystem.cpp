@@ -1,6 +1,8 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBJumpPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBRunPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBCrouchPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
@@ -38,6 +40,8 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         FBBBCharacterMovementPacket ReleasedControl;
         ReleasedControl.FacingWorld = Previous->GetActorRotation();
         Previous->SubmitInput(ReleasedControl);
+        SubmitRun(false);
+        SubmitCrouch(false);
         Previous->RemoveTickPrerequisiteComponent(this);
     }
     if (Camera)
@@ -83,6 +87,8 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     bInputEnabled = bEnabled;
     if (!bEnabled)
     {
+        SubmitRun(false);
+        SubmitCrouch(false);
         MovementState = FBBBCharacterMovementPacket();
         AimState = FBBBCharacterAimPacket();
         bFire = false;
@@ -110,6 +116,22 @@ void UBBBPlayerInputSystem::SubmitReload()
     if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
     {
         Equipment->SubmitReloadInput();
+    }
+}
+
+void UBBBPlayerInputSystem::SubmitRun(const bool bRun)
+{
+    if (ABBBCharacter *Target = Character.Get())
+    {
+        Target->SubmitInput(FBBBRunPacket{bRun && bInputEnabled});
+    }
+}
+
+void UBBBPlayerInputSystem::SubmitCrouch(const bool bCrouch)
+{
+    if (ABBBCharacter *Target = Character.Get())
+    {
+        Target->SubmitInput(FBBBCrouchPacket{bCrouch && bInputEnabled});
     }
 }
 
@@ -176,35 +198,19 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
                 });
         }
     }
-    if (Config.WalkAction)
+    if (Config.RunAction)
     {
-        Input.BindActionValueLambda(Config.WalkAction, ETriggerEvent::Started,
+        Input.BindActionValueLambda(Config.RunAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                MovementState.bWalk = bInputEnabled;
+                SubmitRun(true);
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
-            Input.BindActionValueLambda(Config.WalkAction, Event,
+            Input.BindActionValueLambda(Config.RunAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    MovementState.bWalk = false;
-                });
-        }
-    }
-    if (Config.SprintAction)
-    {
-        Input.BindActionValueLambda(Config.SprintAction, ETriggerEvent::Started,
-            [this](const FInputActionValue &Value)
-            {
-                MovementState.bSprint = bInputEnabled;
-            });
-        for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
-        {
-            Input.BindActionValueLambda(Config.SprintAction, Event,
-                [this](const FInputActionValue &Value)
-                {
-                    MovementState.bSprint = false;
+                    SubmitRun(false);
                 });
         }
     }
@@ -213,14 +219,14 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
         Input.BindActionValueLambda(Config.CrouchAction, ETriggerEvent::Started,
             [this](const FInputActionValue &Value)
             {
-                MovementState.bCrouch = bInputEnabled;
+                SubmitCrouch(true);
             });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.CrouchAction, Event,
                 [this](const FInputActionValue &Value)
                 {
-                    MovementState.bCrouch = false;
+                    SubmitCrouch(false);
                 });
         }
     }
@@ -286,9 +292,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     FRotator ViewRotation;
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     AimState.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
-    FBBBCharacterMovementPacket Control = MovementState;
-    Control.bSprint = Control.bSprint && !bFire;
-    Character->SubmitInput(Control);
+    Character->SubmitInput(MovementState);
     FBBBCharacterAimPacket Aim = AimState;
     Aim.bAim = Aim.bAim || bFire;
     Character->SubmitInput(Aim);

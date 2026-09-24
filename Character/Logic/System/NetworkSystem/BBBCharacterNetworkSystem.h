@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBRunObservationProcessor.h"
 
 class FBBBCharacterInitializer;
 class UBBBCharacterNetworkComponent;
@@ -41,5 +41,5 @@ private:
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 
     FBBBAimObservationProcessor AimObservationProcessor;
-    FBBBLocomotionObservationProcessor LocomotionObservationProcessor;
+    FBBBRunObservationProcessor RunObservationProcessor;
 };

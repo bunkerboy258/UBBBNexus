@@ -24,12 +24,9 @@ struct FBBBPlayerInputConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> PrecisionAimAction;
 
-    /** 行走输入动作 */
+    /** 跑步输入动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    TObjectPtr<UInputAction> WalkAction;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    TObjectPtr<UInputAction> SprintAction;
+    TObjectPtr<UInputAction> RunAction;
 
     /** 蹲伏输入动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

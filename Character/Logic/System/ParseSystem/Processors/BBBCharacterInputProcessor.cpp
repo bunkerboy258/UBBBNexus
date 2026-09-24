@@ -1,6 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
-#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 void FBBBCharacterInputProcessor::Update(
@@ -9,15 +8,13 @@ void FBBBCharacterInputProcessor::Update(
 {
     Context.Control.bJump = false;
 
-    InputState.bProcessing = true;
-
     Process(InputState.AimState, Context);
-    Process(InputState.LocomotionState, Context);
-
+    Process(InputState.RunState, Context);
 
     Process(InputState.Movement, Context);
+    Process(InputState.Run, Context);
+    Process(InputState.Crouch, Context);
     Process(InputState.Aim, Context);
-
 
     Process(InputState.Jump, Context);
 
@@ -27,13 +24,4 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.UpperBodyAdditiveMontage, Context);
     Process(InputState.AdditiveHitReactMontage, Context);
     Process(InputState.Camera, Context);
-
-    InputState.bProcessing = false;
-    FinalizeControl(Context);
-}
-
-void FBBBCharacterInputProcessor::FinalizeControl(FBBBCharacterInputContext &Context)
-{
-    Context.Control.bSprint = Context.Control.bSprint
-        && !Context.Control.bAim;
 }

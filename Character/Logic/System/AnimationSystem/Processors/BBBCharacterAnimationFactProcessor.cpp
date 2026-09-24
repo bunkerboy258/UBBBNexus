@@ -118,7 +118,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.Velocity = Movement->Velocity;
     FactState.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
     FactState.Acceleration = Movement->GetCurrentAcceleration();
-    FactState.Gait = RuntimeData.Locomotion.ReadLocomotionState().Gait;
+    FactState.bIsRunning = RuntimeData.Locomotion.ReadLocomotionState().bRun;
     FactState.MovementMode = Movement->MovementMode;
     FactState.GroundFriction = Movement->GroundFriction;
     FactState.BrakingFriction = Movement->BrakingFriction;

@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
@@ -28,7 +28,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceLastUpdateVelocity = FactState.LastUpdateVelocity;
     SourceAcceleration = FactState.Acceleration;
     SourceMovementMode = FactState.MovementMode;
-    SourceGait = FactState.Gait;
+    bSourceRunning = FactState.bIsRunning;
 
     SourceGroundFriction = FactState.GroundFriction;
     SourceBrakingFriction = FactState.BrakingFriction;

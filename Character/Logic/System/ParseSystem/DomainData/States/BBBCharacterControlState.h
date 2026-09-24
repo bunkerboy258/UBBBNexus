@@ -20,11 +20,8 @@ struct FBBBCharacterControlState final
     /** 是否保持瞄准 */
     bool bAim = false;
 
-    /** 是否请求步行 */
-    bool bWalk = false;
-
-    /** 是否请求冲刺 */
-    bool bSprint = false;
+    /** 是否请求跑步 */
+    bool bRun = false;
 
     /** 是否请求蹲伏 */
     bool bCrouch = false;

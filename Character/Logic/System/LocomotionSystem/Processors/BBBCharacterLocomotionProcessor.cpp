@@ -18,13 +18,13 @@ FVector ResolveWorldMoveDirection(
     return ControlData.MoveWorld.GetSafeNormal2D();
 }
 
-// 检查冲刺意图和移动方向是否满足冲刺条件
-bool CanSprint(
+// 检查跑步意图和移动方向是否满足跑步条件
+bool CanRun(
     const ACharacter &Character,
     const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config)
 {
-    if (!ControlData.bSprint)
+    if (!ControlData.bRun)
     {
         return false;
     }
@@ -39,49 +39,32 @@ bool CanSprint(
     const float DirectionDelta = FMath::Abs(FMath::FindDeltaAngleDegrees(
         Character.GetActorRotation().Yaw,
         DirectionYaw));
-    return DirectionDelta < Config.SprintDirectionLimit;
+    return DirectionDelta < Config.RunDirectionLimit;
 }
 
-// 根据瞄准和移动输入选择当前步态
-EBBBCharacterGait ResolveGait(
+// 松开移动后保留制动阶段的跑步状态 避免动画提前退回步行
+bool ResolveRun(
     const ACharacter &Character,
     const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config,
-    EBBBCharacterGait PreviousGait,
+    const bool bWasRunning,
     const FVector &CurrentVelocity)
 {
     const bool bFullMovementInput = ControlData.MoveWorld.Size() >= Config.AnalogRunThreshold;
 
-    // ADS 使用步行档位，并优先于冲刺
-    if (ControlData.bAim)
+    if (ControlData.bAim || ControlData.bCrouch)
     {
-        return EBBBCharacterGait::Walk;
+        return false;
     }
 
-    // 松开输入后保持实际奔跑档位，直到地面制动结束
     if (ControlData.MoveWorld.IsNearlyZero()
         && CurrentVelocity.SizeSquared2D() > FMath::Square(1.0f)
-        && (PreviousGait == EBBBCharacterGait::Run || PreviousGait == EBBBCharacterGait::Sprint))
+        && bWasRunning)
     {
-        return PreviousGait;
+        return true;
     }
 
-    if (CanSprint(Character, ControlData, Config) && bFullMovementInput)
-    {
-        return EBBBCharacterGait::Sprint;
-    }
-
-    if (ControlData.bWalk)
-    {
-        return EBBBCharacterGait::Walk;
-    }
-
-    if (bFullMovementInput)
-    {
-        return EBBBCharacterGait::Run;
-    }
-
-    return EBBBCharacterGait::Walk;
+    return bFullMovementInput && CanRun(Character, ControlData, Config);
 }
 
 // 根据局部速度和方向曲线得到方向映射值
@@ -108,28 +91,18 @@ float ResolveDirectionalSpeed(const FVector &Speeds, const float DirectionMap)
     return FMath::Lerp(Speeds.Y, Speeds.Z, DirectionMap - 1.0f);
 }
 
-// 根据步态选择速度配置并提供默认步行速度
+// 根据当前跑步状态选择方向速度
 float ResolveMaxSpeed(
     const FBBBCharacterLocomotionConfig &Config,
-    const EBBBCharacterGait Gait,
+    const bool bRun,
     const float DirectionMap)
 {
-    switch (Gait)
+    if (bRun)
     {
-        case EBBBCharacterGait::Walk:
-            return ResolveDirectionalSpeed(Config.WalkSpeeds, DirectionMap);
-
-        case EBBBCharacterGait::Run:
-            return ResolveDirectionalSpeed(Config.RunSpeeds, DirectionMap);
-
-        case EBBBCharacterGait::Sprint:
-            return ResolveDirectionalSpeed(Config.SprintSpeeds, DirectionMap);
-
-        case EBBBCharacterGait::Crouch:
-            return ResolveDirectionalSpeed(Config.CrouchSpeeds, DirectionMap);
+        return ResolveDirectionalSpeed(Config.RunSpeeds, DirectionMap);
     }
 
-    return Config.WalkSpeeds.X;
+    return ResolveDirectionalSpeed(Config.WalkSpeeds, DirectionMap);
 }
 
 }
@@ -156,27 +129,22 @@ void FBBBCharacterLocomotionProcessor::Update(
         Character.UnCrouch();
     }
 
-    const EBBBCharacterGait PreviousGait = RuntimeData.Gait;
-    EBBBCharacterGait Gait = ResolveGait(
+    // 跑步只表示站立移动档位 蹲伏由 CMC 独立维护和复制
+    RuntimeData.bRun = ResolveRun(
         Character,
         ControlData,
         Config,
-        PreviousGait,
+        RuntimeData.bRun,
         Movement.Velocity);
-    if (bWantsCrouch)
-    {
-        Gait = EBBBCharacterGait::Crouch;
-    }
 
-    // 计算并提交当前步态和方向速度映射
-    RuntimeData.Gait = Gait;
+    // 计算并提交当前方向速度映射
     const float DirectionMap = ResolveDirectionMap(
         Character,
         Movement,
         StrafeSpeedMapCurve);
 
     Movement.MaxWalkSpeed = FMath::Max(
-        ResolveMaxSpeed(Config, Gait, DirectionMap),
+        ResolveMaxSpeed(Config, RuntimeData.bRun, DirectionMap),
         1.0f);
     Movement.MaxWalkSpeedCrouched = FMath::Max(
         ResolveDirectionalSpeed(Config.CrouchSpeeds, DirectionMap),

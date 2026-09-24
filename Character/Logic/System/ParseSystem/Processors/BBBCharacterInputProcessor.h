@@ -46,10 +46,4 @@ private:
         Slot.bActive = false;
     }
 
-    /**
-     * 发布数据包应用后的最终控制状态
-     * @param Context 本次解析上下文
-     * @return 无
-     */
-    static void FinalizeControl(FBBBCharacterInputContext &Context);
 };

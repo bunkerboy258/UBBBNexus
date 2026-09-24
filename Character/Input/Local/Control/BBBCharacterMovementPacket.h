@@ -5,7 +5,7 @@
 struct FBBBCharacterInputContext;
 
 /**
- * 移动基底快照包 每帧覆盖控制基座的移动与步态意图
+ * 移动基底快照包 每帧覆盖控制基座的移动与朝向意图
  * 本帧未提交时黑板保留上帧值
  */
 struct FBBBCharacterMovementPacket final
@@ -14,12 +14,6 @@ struct FBBBCharacterMovementPacket final
     FVector MoveWorld = FVector::ZeroVector;
 
     FRotator FacingWorld = FRotator::ZeroRotator;
-
-    bool bWalk = false;
-
-    bool bSprint = false;
-
-    bool bCrouch = false;
 
     /** @return 包内容是否合法 */
     bool IsValid() const;
@@ -32,7 +26,7 @@ struct FBBBCharacterMovementPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const;
 
     /**
-     * 覆盖控制基座的移动与步态意图
+     * 覆盖控制基座的移动与朝向意图
      * @param Context	黑板上下文
      */
     void Apply(FBBBCharacterInputContext &Context) const;

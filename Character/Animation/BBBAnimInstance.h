@@ -96,32 +96,20 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
     bool bSourceCrouching = false;
 
-    /** @return BBBNexus 本地计算或网络恢复后的精确步态 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    EBBBCharacterGait GetGait() const
-    {
-        return SourceGait;
-    }
-
-    /** @return 精确步态是否为行走 */
+    /** @return 角色是否处于站立步行档位 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsWalking() const
     {
-        return SourceGait == EBBBCharacterGait::Walk;
+        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+        return !Main->bSourceRunning && !Main->bSourceCrouching;
     }
 
-    /** @return 精确步态是否为奔跑 */
+    /** @return 角色是否处于站立跑步档位 */
     UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
     bool IsRunning() const
     {
-        return SourceGait == EBBBCharacterGait::Run;
-    }
-
-    /** @return 精确步态是否为冲刺 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
-    bool IsSprinting() const
-    {
-        return SourceGait == EBBBCharacterGait::Sprint;
+        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+        return Main->bSourceRunning && !Main->bSourceCrouching;
     }
 
     /** @return 玩家是否具有瞄准意图 */
@@ -224,7 +212,7 @@ private:
     void UpdateMontageContributions();
 
     UPROPERTY(Transient)
-    EBBBCharacterGait SourceGait = EBBBCharacterGait::Run;
+    bool bSourceRunning = false;
 
     UPROPERTY(Transient)
     bool bSourceAiming = false;

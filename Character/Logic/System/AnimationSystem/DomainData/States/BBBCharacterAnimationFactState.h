@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBCharacterAnimationFactState.generated.h"
 
@@ -31,9 +30,9 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FVector Acceleration = FVector::ZeroVector;
 
-    /** 角色当前步态 */
+    /** 角色当前是否跑步 */
     UPROPERTY(Transient)
-    EBBBCharacterGait Gait = EBBBCharacterGait::Run;
+    bool bIsRunning = false;
 
     /** 移动组件当前移动模式 */
     UPROPERTY(Transient)

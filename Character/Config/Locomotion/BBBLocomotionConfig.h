@@ -14,15 +14,11 @@ struct FBBBCharacterLocomotionConfig
 
     /** 前进、侧移、后退方向的行走速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
-    FVector WalkSpeeds = FVector(200.0f, 180.0f, 150.0f);
+    FVector WalkSpeeds = FVector(500.0f, 350.0f, 300.0f);
 
     /** 前进、侧移、后退方向的奔跑速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
-    FVector RunSpeeds = FVector(500.0f, 350.0f, 300.0f);
-
-    /** 前进、侧移、后退方向的冲刺速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
-    FVector SprintSpeeds = FVector(700.0f, 700.0f, 700.0f);
+    FVector RunSpeeds = FVector(700.0f, 700.0f, 700.0f);
 
     /** 前进、侧移、后退方向的蹲伏速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
@@ -33,13 +29,13 @@ struct FBBBCharacterLocomotionConfig
     TSoftObjectPtr<UCurveFloat> StrafeSpeedMapCurve = TSoftObjectPtr<UCurveFloat>(
         FSoftObjectPath(TEXT("/Game/Blueprints/Data/Curve_StrafeSpeedMap.Curve_StrafeSpeedMap")));
 
-    /** 摇杆输入进入奔跑档位的强度阈值 */
+    /** 摇杆输入进入跑步档位的强度阈值 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait", meta = (ClampMin = "0.0", ClampMax = "1.0"))
     float AnalogRunThreshold = 0.7f;
 
-    /** 侧移模式允许冲刺的最大输入方向偏角 */
+    /** 允许跑步的最大输入方向偏角 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait", meta = (ClampMin = "0.0", ClampMax = "180.0"))
-    float SprintDirectionLimit = 50.0f;
+    float RunDirectionLimit = 50.0f;
 
     /** 地面移动最大加速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Acceleration", meta = (ClampMin = "0.0"))

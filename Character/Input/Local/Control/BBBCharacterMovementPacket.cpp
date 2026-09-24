@@ -16,7 +16,4 @@ void FBBBCharacterMovementPacket::Apply(FBBBCharacterInputContext &Context) cons
 {
     Context.Control.MoveWorld = MoveWorld.GetClampedToMaxSize(1.0f);
     Context.Control.FacingWorld = FacingWorld;
-    Context.Control.bWalk = bWalk;
-    Context.Control.bSprint = bSprint;
-    Context.Control.bCrouch = bCrouch;
 }

@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/Shared/Animation/BBBAdditiveHitReactMontagePacket.h"
 
-#include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 #include "Animation/AnimMontage.h"
 

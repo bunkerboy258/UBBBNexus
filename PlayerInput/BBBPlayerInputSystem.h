@@ -58,6 +58,10 @@ public:
 private:
     void SubmitEquipSlot(int32 Slot);
     void SubmitReload();
+    /** @param bRun 是否请求跑步 @return 无 */
+    void SubmitRun(bool bRun);
+    /** @param bCrouch 是否请求蹲伏 @return 无 */
+    void SubmitCrouch(bool bCrouch);
     TWeakObjectPtr<ABBBCharacter> Character;
     UPROPERTY()
     TObjectPtr<ABBBPlayerCameraSystem> Camera;

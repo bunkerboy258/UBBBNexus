@@ -18,8 +18,10 @@ struct TBBBCharacterInputSlotSelector;
     };
 
 BBB_CHARACTER_INPUT_SLOT(FBBBAimStatePacket, AimState)
-BBB_CHARACTER_INPUT_SLOT(FBBBLocomotionStatePacket, LocomotionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBRunStatePacket, RunState)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementPacket, Movement)
+BBB_CHARACTER_INPUT_SLOT(FBBBRunPacket, Run)
+BBB_CHARACTER_INPUT_SLOT(FBBBCrouchPacket, Crouch)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimPacket, Aim)
 BBB_CHARACTER_INPUT_SLOT(FBBBJumpPacket, Jump)
 BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontagePacket, FullBodyMontage)

@@ -93,7 +93,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         FMath::Max(Config.Locomotion.CapsuleRadius, 1.0f),
         FMath::Max(Config.Locomotion.CapsuleHalfHeight, 1.0f));
 
-    Movement->MaxWalkSpeed = FMath::Max(Config.Locomotion.RunSpeeds.X, 1.0f);
+    Movement->MaxWalkSpeed = FMath::Max(Config.Locomotion.WalkSpeeds.X, 1.0f);
     Movement->MaxWalkSpeedCrouched = FMath::Max(Config.Locomotion.CrouchSpeeds.X, 1.0f);
     Movement->MinAnalogWalkSpeed = FMath::Max(Config.Locomotion.MinAnalogWalkSpeed, 0.0f);
     Movement->MaxAcceleration = FMath::Max(Config.Locomotion.MaxAcceleration, 0.0f);

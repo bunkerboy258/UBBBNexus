@@ -4,10 +4,10 @@
 
 目录只有两级分类
 
-- Local/Control 保存移动与瞄准意图
-- Local/Action 保存跳跃请求
+- Local/Control 保存连续移动与瞄准意图
+- Local/Action 保存跑步 蹲伏和跳跃的独立请求
 - Local/Camera 保存通用相机冲量
-- Mirror/State 保存瞄准与步态还原
+- Mirror/State 保存瞄准与跑步状态还原
 - Shared/Animation 保存五个固定 Slot 的独立蒙太奇包
 
 包通过 IsValid CanApply Apply 声明自身校验 条件与效果 源码顺序决定消费顺序 不使用动态消息表或队列
