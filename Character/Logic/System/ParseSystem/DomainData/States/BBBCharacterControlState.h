@@ -20,9 +20,6 @@ struct FBBBCharacterControlState final
     /** 是否保持瞄准 */
     bool bAim = false;
 
-    /** 是否请求开火 */
-    bool bFire = false;
-
     /** 是否请求步行 */
     bool bWalk = false;
 

@@ -10,7 +10,7 @@ class FBBBCharacterAimStateProcessor final
 {
 public:
     /**
-     * 合并瞄准与开火意图
+     * 读取通用瞄准意图
      * @param ControlData 角色意图数据
      * @param State      瞄准状态
      */

@@ -7,34 +7,18 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterInputState &InputState,
     FBBBCharacterInputContext &Context) const
 {
-    Context.Events.ActionEvents.Reset();
-    Context.Control.bFire = false;
     Context.Control.bJump = false;
 
     InputState.bProcessing = true;
 
-    Process(InputState.EquipmentState, Context);
     Process(InputState.AimState, Context);
     Process(InputState.LocomotionState, Context);
 
-    Process(InputState.EquipFact, Context);
-    Process(InputState.FireFact, Context);
-    Process(InputState.ReloadStartedFact, Context);
-    Process(InputState.MagazineDetachedFact, Context);
-    Process(InputState.MagazineLoadedFact, Context);
-    Process(InputState.ReloadCancelledFact, Context);
 
     Process(InputState.Movement, Context);
     Process(InputState.Aim, Context);
 
-    Process(InputState.EquipSlot, Context);
-    if (Context.SelectedEquipment && Context.AnimationInstance)
-    {
-        Context.AnimationInstance->ClearMontageContributions();
-    }
 
-    Process(InputState.Reload, Context);
-    Process(InputState.Fire, Context);
     Process(InputState.Jump, Context);
 
     Process(InputState.FullBodyMontage, Context);
@@ -50,8 +34,6 @@ void FBBBCharacterInputProcessor::Update(
 
 void FBBBCharacterInputProcessor::FinalizeControl(FBBBCharacterInputContext &Context)
 {
-    Context.Control.bFire = Context.bFire;
     Context.Control.bSprint = Context.Control.bSprint
-        && !Context.Control.bAim
-        && !Context.Control.bFire;
+        && !Context.Control.bAim;
 }

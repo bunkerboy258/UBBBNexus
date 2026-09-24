@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterInputState.h"
 
-class UBBBEquipmentCatalog;
 struct FBBBCharacterInputContext;
 struct FBBBCharacterInputState;
 

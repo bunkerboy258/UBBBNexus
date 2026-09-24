@@ -3,159 +3,145 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentCommandState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBCharacterEquipmentSelectionProcessor::Update(
-    FBBBCharacterEquipmentUpdateContext &Context) const
+void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
 {
-    ABBBCharacter &Character = Context.Character;
-    USkeletalMeshComponent &CharacterMesh = Context.CharacterMesh;
-    FBBBCharacterEquipmentCommandState &EquipmentCommands = Context.CommandState;
-    FBBBCharacterEquipmentSelectionState &EquipmentState = Context.SelectionState;
-    FBBBCharacterEquipmentInventoryState &InventoryState = Context.InventoryState;
-
-    // 先处理网络恢复的装备实例
-    bool bRestoringEquipment = false;
-    TSubclassOf<ABBBEquipment> StateClass = EquipmentCommands.PendingEquipmentClass;
-    EquipmentCommands.PendingEquipmentClass = nullptr;
-    if (StateClass)
+    auto &Selection = Context.SelectionState;
+    auto &Inventory = Context.InventoryState;
+    const bool bCreateRequested = Selection.bHasEquipmentRequest;
+    if (bCreateRequested)
     {
-        bool bHasBackpackSlot = false;
-        for (const FBBBCharacterItem &Item : InventoryState.BackpackSlots)
+        Selection.bHasEquipmentRequest = false;
+        Selection.PendingSlot.Reset();
+        ABBBEquipment *Created = nullptr;
+        if (!Selection.PendingEquipmentId.IsNone())
         {
-            if (!IsValid(Item.ItemActor.Get())
-                || Item.ItemActor.Get() == EquipmentState.ActiveMainHandInstance)
+            const UBBBEquipmentCatalog *Catalog = Context.Character.GetCharacterConfig().Equipment.EquipmentCatalog;
+            const TSubclassOf<ABBBEquipment> Class = Catalog
+                ? Catalog->FindEquipmentClass(Selection.PendingEquipmentId)
+                : nullptr;
+            if (!ensureMsgf(Class, TEXT("无法找到装备定义 %s"), *Selection.PendingEquipmentId.ToString()))
             {
-                bHasBackpackSlot = true;
-                break;
+                return;
             }
-        }
 
-        if (!ensureMsgf(
-            bHasBackpackSlot,
-            TEXT("角色 %s 的背包已满 无法恢复装备 %s"),
-            *Character.GetName(),
-            *StateClass->GetName()))
-        {
-            return;
-        }
-
-        ABBBEquipment *StateInstance = FBBBCharacterEquipmentLifecycleProcessor::Create(
-            Character,
-            StateClass,
-            Context.bIsMirror);
-        if (!StateInstance)
-        {
-            return;
-        }
-
-        // 恢复实例作为新的目标装备等待后续附着
-        EquipmentState.DesiredMainHandInstance = StateInstance;
-        bRestoringEquipment = true;
-    }
-
-    if (EquipmentState.ActiveMainHandInstance == EquipmentState.DesiredMainHandInstance)
-    {
-        return;
-    }
-
-    // 目标变化时先收束当前主手装备
-    if (EquipmentState.ActiveMainHandInstance)
-    {
-        if (bRestoringEquipment)
-        {
-            ABBBEquipment *PreviousInstance = EquipmentState.ActiveMainHandInstance;
-            FBBBCharacterEquipmentLifecycleProcessor::Destroy(&CharacterMesh, *EquipmentState.ActiveMainHandInstance);
-
-            for (FBBBCharacterItem &Item : InventoryState.BackpackSlots)
+            bool bHasCapacity = false;
+            for (const FBBBCharacterItem &Item : Inventory.BackpackSlots)
             {
-                if (Item.ItemActor.Get() == PreviousInstance || !IsValid(Item.ItemActor.Get()))
+                if (!IsValid(Item.ItemActor.Get()) || Item.ItemActor == Selection.ActiveMainHandInstance)
                 {
-                    Item.ItemActor = nullptr;
+                    bHasCapacity = true;
+                    break;
                 }
             }
 
-            for (FBBBCharacterItem &Item : InventoryState.ItemBarSlots)
+            if (!ensureMsgf(bHasCapacity, TEXT("装备容器已满 无法创建 %s"), *Selection.PendingEquipmentId.ToString()))
             {
-                if (Item.ItemActor.Get() == PreviousInstance || !IsValid(Item.ItemActor.Get()))
-                {
-                    Item.ItemActor = nullptr;
-                }
+                return;
+            }
+
+            Created = FBBBCharacterEquipmentLifecycleProcessor::Create(Context.Character, Class);
+            if (!Created)
+            {
+                return;
             }
         }
-        if (!bRestoringEquipment)
-        {
-            EquipmentState.ActiveMainHandInstance->SubmitInterruptActiveActionInput(Context.bIsMirror);
-            FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *EquipmentState.ActiveMainHandInstance);
-        }
+
+        Selection.DesiredMainHandInstance = Created;
     }
 
-    // 清除旧装备的换弹序号并切换当前实例引用
-    EquipmentState.ActiveMainHandInstance = EquipmentState.DesiredMainHandInstance;
-    ABBBEquipment *DesiredInstance = EquipmentState.ActiveMainHandInstance;
-    EquipmentState.ActiveEquipmentId = DesiredInstance ? DesiredInstance->GetEquipmentId() : NAME_None;
-    if (!DesiredInstance)
+    if (Selection.PendingSlot.IsSet())
+    {
+        const int32 Slot = Selection.PendingSlot.GetValue();
+        Selection.PendingSlot.Reset();
+        Selection.DesiredMainHandInstance = Inventory.ItemBarSlots.IsValidIndex(Slot)
+            ? Cast<ABBBEquipment>(Inventory.ItemBarSlots[Slot].ItemActor.Get())
+            : nullptr;
+    }
+
+    // 已销毁对象不能继续被视为有效持有关系
+    if (!IsValid(Selection.DesiredMainHandInstance))
+    {
+        Selection.DesiredMainHandInstance = nullptr;
+    }
+
+    if (Selection.ActiveMainHandInstance == Selection.DesiredMainHandInstance
+        && IsValid(Selection.ActiveMainHandInstance))
     {
         return;
     }
 
-    // 附着失败时清理目标装备并回到未装备状态
-    if (!FBBBCharacterEquipmentLifecycleProcessor::Attach(
-        CharacterMesh,
-        Context.RightHandWeaponSocketName,
-        *DesiredInstance))
+    ABBBEquipment *Previous = Selection.ActiveMainHandInstance;
+    if (IsValid(Previous))
     {
-        if (bRestoringEquipment)
+        Previous->OnUnequipped();
+        if (Context.bIsMirror || bCreateRequested)
         {
-            FBBBCharacterEquipmentLifecycleProcessor::Destroy(&CharacterMesh, *DesiredInstance);
-            EquipmentState.DesiredMainHandInstance = nullptr;
+            FBBBCharacterEquipmentLifecycleProcessor::Destroy(&Context.CharacterMesh, *Previous);
         }
-        if (!bRestoringEquipment)
+        if (!Context.bIsMirror && !bCreateRequested)
         {
-            FBBBCharacterEquipmentLifecycleProcessor::Detach(&CharacterMesh, *DesiredInstance);
+            FBBBCharacterEquipmentLifecycleProcessor::Detach(&Context.CharacterMesh, *Previous);
         }
+    }
 
-        EquipmentState.ActiveMainHandInstance = nullptr;
-        EquipmentState.ActiveEquipmentId = NAME_None;
+    for (FBBBCharacterItem &Item : Inventory.BackpackSlots)
+    {
+        if (!IsValid(Item.ItemActor.Get()))
+        {
+            Item.ItemActor = nullptr;
+        }
+    }
+
+    for (FBBBCharacterItem &Item : Inventory.ItemBarSlots)
+    {
+        if (!IsValid(Item.ItemActor.Get()))
+        {
+            Item.ItemActor = nullptr;
+        }
+    }
+
+    ABBBEquipment *Desired = Selection.DesiredMainHandInstance;
+    Selection.ActiveMainHandInstance = nullptr;
+    Selection.ActiveEquipmentId = NAME_None;
+    if (!Desired)
+    {
         return;
     }
 
-    if (bRestoringEquipment)
+    if (!ensureMsgf(FBBBCharacterEquipmentLifecycleProcessor::Attach(
+        Context.CharacterMesh, Context.RightHandWeaponSocketName, *Desired),
+        TEXT("装备挂接失败 %s"), *GetNameSafe(Desired)))
     {
-        bool bStoredInBackpack = false;
-        for (FBBBCharacterItem &Item : InventoryState.BackpackSlots)
+        FBBBCharacterEquipmentLifecycleProcessor::Destroy(&Context.CharacterMesh, *Desired);
+        Selection.DesiredMainHandInstance = nullptr;
+        return;
+    }
+
+    Selection.ActiveMainHandInstance = Desired;
+    Selection.ActiveEquipmentId = Desired->GetEquipmentId();
+    if (bCreateRequested)
+    {
+        for (FBBBCharacterItem &Item : Inventory.BackpackSlots)
         {
-            if (!IsValid(Item.ItemActor.Get()))
+            if (!Item.ItemActor)
             {
-                Item.ItemActor = DesiredInstance;
-                bStoredInBackpack = true;
+                Item.ItemActor = Desired;
                 break;
             }
         }
 
-        ensureMsgf(
-            bStoredInBackpack,
-            TEXT("角色 %s 创建装备 %s 后未找到可用背包槽"),
-            *Character.GetName(),
-            *DesiredInstance->GetEquipmentId().ToString());
-
-        for (FBBBCharacterItem &Item : InventoryState.ItemBarSlots)
+        for (FBBBCharacterItem &Item : Inventory.ItemBarSlots)
         {
-            if (!IsValid(Item.ItemActor.Get()))
+            if (!Item.ItemActor)
             {
-                Item.ItemActor = DesiredInstance;
+                Item.ItemActor = Desired;
                 break;
             }
         }
-
-        return;
     }
 
-    DesiredInstance->SubmitEquipInput(
-        EquipmentState.NextActionSequence++,
-        Context.bIsMirror);
+    Desired->SubmitEquipInput();
 }

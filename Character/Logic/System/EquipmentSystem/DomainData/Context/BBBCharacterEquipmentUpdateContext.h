@@ -4,7 +4,6 @@
 
 class ABBBCharacter;
 class USkeletalMeshComponent;
-struct FBBBCharacterEquipmentCommandState;
 struct FBBBCharacterEquipmentInventoryState;
 struct FBBBCharacterEquipmentSelectionState;
 
@@ -25,9 +24,6 @@ struct FBBBCharacterEquipmentUpdateContext final
 
     /** 角色装备选择状态 */
     FBBBCharacterEquipmentSelectionState &SelectionState;
-
-    /** 本帧装备命令状态 */
-    FBBBCharacterEquipmentCommandState &CommandState;
 
     /** 是否只能执行镜像还原 */
     bool bIsMirror = true;

@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
 TSubclassOf<ABBBEquipment> UBBBEquipmentCatalog::FindEquipmentClass(FName EquipmentHandle) const
 {

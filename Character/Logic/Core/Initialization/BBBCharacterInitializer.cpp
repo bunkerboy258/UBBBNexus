@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBCharacterMovementPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterMovementPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -86,7 +86,6 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     Character.ParseSystem.Initialize(
         Character.RuntimeData,
-        *Config.Equipment.EquipmentCatalog,
         *Character.GetMesh());
     Character.CharacterUpdatePipeline.Initialize(Character);
 

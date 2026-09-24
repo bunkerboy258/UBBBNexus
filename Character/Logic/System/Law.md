@@ -4,7 +4,7 @@
 
 系统根位于系统目录下 以下系统根目录统一使用 `X/` 表示
 
-- 系统根只能拥有初始化函数和一个无参 `Update`
+- 系统根负责初始化与无参 Update 装备持有系统可以提供固定选择请求入口
 - `Update` 只负责组装 Context 并按固定顺序调度处理器
 - 系统根禁止持有具体领域逻辑
 - 系统只能由 `Character/Logic/Core/Update` 下的主管线调用
@@ -15,6 +15,7 @@
 - `X/DomainData/` 放且只放 B
 - `X/DomainData/States/` 放且只放 A
 - `X/DomainData/Context/` 放且只放 D
+- `X/DomainData/Definitions/` 放且只放 O
 - `X/Processors/` 放具体处理器
 
 数据结构要求

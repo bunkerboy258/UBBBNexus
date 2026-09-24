@@ -2,15 +2,15 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 
 ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
-    ABBBCharacter &Character, TSubclassOf<ABBBEquipment> EquipmentClass, const bool bIsMirror)
+    ABBBCharacter &Character, TSubclassOf<ABBBEquipment> EquipmentClass)
 {
     // 创建装备前确认世界和角色网格有效
     UWorld *World = Character.GetWorld();
@@ -38,7 +38,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
 
     Equipment->SetActorHiddenInGame(true);
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
-    if (!Equipment->InitializeEquipment(FGuid::NewGuid(), bIsMirror))
+    if (!Equipment->InitializeEquipment())
     {
         Equipment->Destroy();
         return nullptr;

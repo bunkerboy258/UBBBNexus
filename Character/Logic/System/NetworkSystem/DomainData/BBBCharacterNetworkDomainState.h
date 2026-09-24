@@ -2,12 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBEquipmentNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBLocomotionNetworkObservationState.h"
 #include "BBBCharacterNetworkDomainState.generated.h"
 
 class FBBBAimObservationProcessor;
-class FBBBEquipmentStateObservationProcessor;
 class FBBBLocomotionObservationProcessor;
 class FBBBCharacterNetworkSystem;
 
@@ -18,12 +16,6 @@ struct FBBBCharacterNetworkDomainState final
     GENERATED_BODY()
 
 public:
-    /** @return 装备网络观察状态 */
-    const FBBBEquipmentNetworkObservationState &ReadEquipmentNetworkObservationState() const
-    {
-        return EquipmentObservationState;
-    }
-
     /** @return 瞄准网络观察状态 */
     const FBBBAimNetworkObservationState &ReadAimNetworkObservationState() const
     {
@@ -38,13 +30,8 @@ public:
 
 private:
     friend class FBBBAimObservationProcessor;
-    friend class FBBBEquipmentStateObservationProcessor;
     friend class FBBBLocomotionObservationProcessor;
     friend class FBBBCharacterNetworkSystem;
-
-    /** 装备网络观察状态 */
-    UPROPERTY(Transient)
-    FBBBEquipmentNetworkObservationState EquipmentObservationState;
 
     /** 瞄准网络观察状态 */
     UPROPERTY(Transient)

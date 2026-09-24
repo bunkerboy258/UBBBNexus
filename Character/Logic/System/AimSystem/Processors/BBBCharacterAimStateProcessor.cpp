@@ -6,8 +6,7 @@ void FBBBCharacterAimStateProcessor::Update(
     const FBBBCharacterControlState &ControlData,
     FBBBAimState &State) const
 {
-    // 瞄准或开火意图存在时都保持瞄准状态
-    State.bIsAiming = ControlData.bAim || ControlData.bFire;
+    State.bIsAiming = ControlData.bAim;
 }
 
 void FBBBCharacterAimStateProcessor::InterpolateAimAlpha(

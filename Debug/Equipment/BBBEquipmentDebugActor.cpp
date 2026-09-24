@@ -2,10 +2,9 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Input/Packets/State/BBBEquipmentStatePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -95,9 +94,7 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
         return;
     }
 
-    FBBBEquipmentStatePacket Packet;
-    Packet.EquipmentId = EquipmentId;
-    const bool bSubmitted = Character->SubmitInput(MoveTemp(Packet));
+    const bool bSubmitted = Character->GetEquipmentSystem().RequestEquipment(EquipmentId);
     SetActorTickEnabled(false);
 
     if (!bSubmitted)

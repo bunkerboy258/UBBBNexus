@@ -10,7 +10,6 @@ class FBBBCharacterAnimationSystem;
 class FBBBCharacterInputProcessor;
 class UBBBEquipmentAnimInstance;
 class UAnimMontage;
-struct FBBBMontagePacketData;
 
 namespace BBBCharacterMontageSlots
 {
@@ -30,7 +29,11 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationActionProcessor;
     friend class FBBBCharacterAnimationSystem;
     friend class FBBBCharacterInputProcessor;
-    friend struct FBBBMontagePacketData;
+    friend struct FBBBFullBodyMontagePacket;
+    friend struct FBBBUpperBodyMontagePacket;
+    friend struct FBBBFullBodyAdditivePreAimMontagePacket;
+    friend struct FBBBUpperBodyAdditiveMontagePacket;
+    friend struct FBBBAdditiveHitReactMontagePacket;
 
 public:
     /** @return 当前骨骼网格体上的 BBB 主动画实例 主实例自身调用时返回自身 */
@@ -165,13 +168,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     bool TryHasWeaponLeftHandTarget() const;
 
-    /** @return 当前武器是否正在换弹 未装备时返回 false */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    bool TryGetWeaponReloading() const;
 
-    /** @return 距离当前武器上次开火的秒数 未装备时返回极大值 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    float TryGetWeaponTimeSinceLastFireSeconds() const;
 
     /**
      * 绑定装备实际使用的武器动画实例
@@ -218,7 +215,7 @@ private:
      * @param Montage 蒙太奇
      * @return 是否成功注册
      */
-    bool RegisterMontageContribution(FName SlotName, UAnimMontage &Montage);
+    bool RegisterMontageContribution(FName SlotName, UAnimMontage *Montage);
 
     /** 清除全部固定槽位蒙太奇贡献 */
     void ClearMontageContributions();

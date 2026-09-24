@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Item/BBBCharacterItem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Definitions/BBBCharacterItem.h"
 #include "BBBCharacterEquipmentInventoryState.generated.h"
 
 /** 角色拥有的装备与快捷访问绑定状态 */

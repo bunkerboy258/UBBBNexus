@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBCharacterEquipmentSelectionState.generated.h"
 
 /** 角色期望与当前主手装备状态 */
@@ -21,6 +21,12 @@ struct FBBBCharacterEquipmentSelectionState final
     UPROPERTY(BlueprintReadOnly)
     TObjectPtr<ABBBEquipment> ActiveMainHandInstance = nullptr;
 
-    /** 下一个本地动作顺序号 */
-    int32 NextActionSequence = 1;
+    /** 等待处理的装备定义 空标识表示空手 */
+    FName PendingEquipmentId = NAME_None;
+
+    /** 当前是否存在装备创建或清空请求 */
+    bool bHasEquipmentRequest = false;
+
+    /** 等待处理的快捷栏索引 */
+    TOptional<int32> PendingSlot;
 };

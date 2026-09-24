@@ -1,27 +1,29 @@
 # Equipment
 
-`ABBBEquipment` 是所有装备共享的抽象演员基座，只保存配置、网格、动画实例、镜像身份和固定行为入口。
+Catalog 物理位置不变 Base 保存实际复用的公共装备边界 Instance/Rifle 保存步枪实现
 
-具体装备直接位于 `Equipment/<Weapon>/`。`ABBBRifleEquipment` 本身就是步枪唯一运行时根，公开持有唯一的 `FBBBRifleRuntimeData`。不存在额外的 `Instance`、`Runtime` 或 `Signature` 对象；黑板严格按数据宪法持有领域状态：
+ABBBRifleEquipment 是唯一运行时根 四个系统按 Parse Action Animation Network 顺序执行
 
-```text
-ABBBRifleEquipment
-└─ RuntimeData / FBBBRifleRuntimeData
-   └─ Rifle / FBBBRifleDomainState
-      ├─ Action / FBBBRifleActionState
-      └─ Input / FBBBRifleInputState
-```
+- Parse 检查来源并维护固定输入槽
+- Action 消费输入 维护弹药和换弹结果 本机开火才调用 EmitShot
+- Animation 计算握持目标 发布 UBBBRifleAnimInstance 快照并贡献表现
+- Network 编解码当前结果 借持有角色的装备网络组件传输
 
-`RuntimeData/` 保存 C，`DomainData/` 保存 B，`DomainData/States/` 保存 A。两个 State 分别保存动作事实和待解析输入，由 B 私有构造并直接持有；对外只提供 `ReadRifleActionState()` 与 `ReadRifleInputState()`。没有黑板外的 `PendingInputs` 成员。
+RuntimeData 只持有实际有跨帧状态的 Parse Action Animation 领域 B 每个 B 直接私有持有 A 并逐个提供 const 读取方法
+Network 系统没有额外黑板 复制快照和接收进度由网络组件独占
 
-角色装备系统只负责装备生命周期并调用 `SubmitEquipInput`、`SubmitPrimaryInput`、`SubmitSecondaryInput`、`SubmitReloadInput` 和 `SubmitRestoreFact`。步枪动画通知调用步枪自己的弹匣与换弹结束输入。
+本机立即执行 房主分发结果 远端只还原当前状态 不回放装备事实
+传输边界包含装备标识 切换代次 状态版本和具体装备序列化内容
+代次区分切走后再切回 版本排除同代旧状态 空标识同步空手
+尚未创建镜像实例时只保留当前最新状态 不建立历史队列
 
-步枪直接重写 `Tick`，在 `TG_PostUpdateWork` 中按固定顺序解析输入包，不经过装备基类 Tick 跳转。每种输入包自行定义合法性、应用条件与对 `RuntimeData` 的修改；镜像实例只消费已经确认的事实，不重新产生玩法因果。角色换弹蒙太奇通过角色输入入口贡献，步枪开火和换弹蒙太奇由装备动画实例直接播放。
+输入按 Local 或 Mirror 或 Shared 再按 Action 或 State 两级分类 类型目录直接保存具体包
+装备只读角色黑板的网络身份 不接受外部附加的镜像参数
 
-`Template/Definition` 只保存纯数据头文件；只有具有实际行为的演员、动画实例、目录和输入包提供 `.cpp`。
+旧子弹类已删除 Rifle 只保留 EmitShot 枪口世界变换入口 默认不生成弹丸
 
-`DomainData/Context/BBBRifleInputContext.h` 只保存一次解析的依赖，在步枪 Tick 栈上构造；共用的蒙太奇和声音操作位于 `Processors/BBBRiflePresentationProcessor`。数据容器不承担 Submit、Reset 或表现操作。
+## 本轮验证边界
 
-跨领域的约束见 `Constitution/Equipment/Law.md`。角色网络系统观察角色侧已经接收的装备事实，镜像角色再通过固定入口交给装备还原。装备不直接发送网络消息。相机贡献也先进入角色输入，再由玩家相机系统消费。
-
-当前功能边界：Rifle Tick 发布换弹、弹药、开火序号和时间事实；左手握持与 AimSource 字段目前没有计算链路，保持默认无效。配置和 getter 的存在不代表这两条链路已接通，本次数据持有修正没有扩展这部分行为。
+只完成代码与 Law 重构以及 UE5.8 Editor Development 编译 不修改或验证编辑器资产
+后续资产适配需要将步枪动画蓝图继承到 UBBBRifleAnimInstance 并替换角色侧已删除的换弹与开火查询节点
+旧子弹蓝图父类和已删除的子弹配置引用也需要清理 编译成功不代表这些资产已经可运行

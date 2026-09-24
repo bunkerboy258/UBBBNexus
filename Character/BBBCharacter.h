@@ -97,6 +97,12 @@ public:
         return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
     }
 
+    /** @return 通用装备持有系统 */
+    FBBBCharacterEquipmentSystem &GetEquipmentSystem()
+    {
+        return EquipmentSystem;
+    }
+
     /** 角色公开持有的唯一运行时聚合黑板 */
     UPROPERTY(Transient)
     FBBBCharacterRuntimeData RuntimeData;

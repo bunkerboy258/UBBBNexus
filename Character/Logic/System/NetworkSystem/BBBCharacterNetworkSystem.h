@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentFactObservationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentStateObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBLocomotionObservationProcessor.h"
 
 class FBBBCharacterInitializer;
@@ -42,8 +40,6 @@ private:
     /** 角色网络发送配置 */
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 
-    FBBBEquipmentStateObservationProcessor EquipmentStateObservationProcessor;
-    FBBBEquipmentFactObservationProcessor EquipmentFactObservationProcessor;
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBLocomotionObservationProcessor LocomotionObservationProcessor;
 };

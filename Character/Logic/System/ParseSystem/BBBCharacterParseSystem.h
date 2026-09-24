@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/Processors/BBBCharacterInputProcessor.h"
 
 class FBBBCharacterInitializer;
-class UBBBEquipmentCatalog;
 class USkeletalMeshComponent;
 struct FBBBCharacterRuntimeData;
 
@@ -20,11 +19,9 @@ private:
 
     void Initialize(
         FBBBCharacterRuntimeData &InData,
-        UBBBEquipmentCatalog &InEquipmentCatalog,
         USkeletalMeshComponent &InCharacterMesh);
 
     FBBBCharacterRuntimeData *Data = nullptr;
-    UBBBEquipmentCatalog *EquipmentCatalog = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     FBBBCharacterInputProcessor InputProcessor;
 };

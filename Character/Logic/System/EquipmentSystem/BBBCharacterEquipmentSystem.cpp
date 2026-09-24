@@ -43,9 +43,37 @@ void FBBBCharacterEquipmentSystem::Update()
         RightHandWeaponSocketName,
         RuntimeData->Equipment.EquipmentInventoryState,
         RuntimeData->Equipment.EquipmentSelectionState,
-        RuntimeData->Equipment.EquipmentCommandState,
         RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
 
     SelectionProcessor.Update(Context);
-    ActionProcessor.Update(Context);
+}
+
+bool FBBBCharacterEquipmentSystem::RequestSlot(const int32 Slot)
+{
+    if (!RuntimeData || !IsInGameThread())
+    {
+        return false;
+    }
+
+    const auto &Inventory = RuntimeData->Equipment.ReadEquipmentInventoryState();
+    if (Slot != INDEX_NONE && !ensureMsgf(Inventory.ItemBarSlots.IsValidIndex(Slot), TEXT("装备快捷栏索引无效")))
+    {
+        return false;
+    }
+
+    RuntimeData->Equipment.EquipmentSelectionState.PendingSlot = Slot;
+    return true;
+}
+
+bool FBBBCharacterEquipmentSystem::RequestEquipment(const FName EquipmentId)
+{
+    if (!RuntimeData || !IsInGameThread())
+    {
+        return false;
+    }
+
+    auto &Selection = RuntimeData->Equipment.EquipmentSelectionState;
+    Selection.PendingEquipmentId = EquipmentId;
+    Selection.bHasEquipmentRequest = true;
+    return true;
 }

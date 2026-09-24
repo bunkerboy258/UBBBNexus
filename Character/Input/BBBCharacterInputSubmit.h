@@ -17,20 +17,10 @@ struct TBBBCharacterInputSlotSelector;
         } \
     };
 
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentStatePacket, EquipmentState)
 BBB_CHARACTER_INPUT_SLOT(FBBBAimStatePacket, AimState)
 BBB_CHARACTER_INPUT_SLOT(FBBBLocomotionStatePacket, LocomotionState)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipFactPacket, EquipFact)
-BBB_CHARACTER_INPUT_SLOT(FBBBFireFactPacket, FireFact)
-BBB_CHARACTER_INPUT_SLOT(FBBBReloadStartedFactPacket, ReloadStartedFact)
-BBB_CHARACTER_INPUT_SLOT(FBBBMagazineDetachedFactPacket, MagazineDetachedFact)
-BBB_CHARACTER_INPUT_SLOT(FBBBMagazineLoadedFactPacket, MagazineLoadedFact)
-BBB_CHARACTER_INPUT_SLOT(FBBBReloadCancelledFactPacket, ReloadCancelledFact)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementPacket, Movement)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimPacket, Aim)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipSlotPacket, EquipSlot)
-BBB_CHARACTER_INPUT_SLOT(FBBBReloadPacket, Reload)
-BBB_CHARACTER_INPUT_SLOT(FBBBFirePacket, Fire)
 BBB_CHARACTER_INPUT_SLOT(FBBBJumpPacket, Jump)
 BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontagePacket, FullBodyMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontagePacket, UpperBodyMontage)
@@ -45,7 +35,7 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCameraPacket, Camera)
 namespace BBBCharacterInput
 {
     /**
-     * 提交输入包到对应固定槽位
+     * 根据包类型把它放进对应固定槽位
      * @param State 角色固定输入状态
      * @param Packet 输入包
      * @return 是否接受输入
@@ -55,7 +45,8 @@ namespace BBBCharacterInput
     {
         using FPacket = typename TDecay<TPacket>::Type;
 
-        if (!IsInGameThread() || !Packet.IsValid() || State.bProcessing)
+        if (!ensureMsgf(IsInGameThread() && Packet.IsValid() && !State.bProcessing,
+            TEXT("角色输入被拒绝 请检查线程 数据与解析重入")))
         {
             return false;
         }

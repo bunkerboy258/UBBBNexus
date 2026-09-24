@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Template/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 

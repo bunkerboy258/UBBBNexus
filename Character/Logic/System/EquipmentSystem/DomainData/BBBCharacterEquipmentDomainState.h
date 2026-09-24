@@ -1,16 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentCommandState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentEventState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBCharacterEquipmentDomainState.generated.h"
 
-class FBBBCharacterEquipmentActionProcessor;
 class FBBBCharacterEquipmentSystem;
 class FBBBCharacterEquipmentSelectionProcessor;
-class FBBBCharacterParseSystem;
 
 /** 角色装备领域状态的唯一持有者 */
 USTRUCT(BlueprintType)
@@ -31,23 +27,9 @@ public:
         return EquipmentSelectionState;
     }
 
-    /** @return 角色装备命令状态 */
-    const FBBBCharacterEquipmentCommandState &ReadEquipmentCommandState() const
-    {
-        return EquipmentCommandState;
-    }
-
-    /** @return 角色装备事件状态 */
-    const FBBBCharacterEquipmentEventState &ReadEquipmentEventState() const
-    {
-        return EquipmentEventState;
-    }
-
 private:
-    friend class FBBBCharacterEquipmentActionProcessor;
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterEquipmentSelectionProcessor;
-    friend class FBBBCharacterParseSystem;
 
     /** 角色装备容器状态 */
     UPROPERTY()
@@ -57,11 +39,5 @@ private:
     UPROPERTY()
     FBBBCharacterEquipmentSelectionState EquipmentSelectionState;
 
-    /** 角色装备命令状态 */
-    UPROPERTY()
-    FBBBCharacterEquipmentCommandState EquipmentCommandState;
 
-    /** 角色装备事件状态 */
-    UPROPERTY()
-    FBBBCharacterEquipmentEventState EquipmentEventState;
 };

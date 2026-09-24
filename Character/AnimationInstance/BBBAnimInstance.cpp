@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/AnimationInstance/BBBAnimInstance.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Template/Animation/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -105,7 +105,7 @@ const TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const 
 
 bool UBBBAnimInstance::RegisterMontageContribution(
     const FName SlotName,
-    UAnimMontage &Montage)
+    UAnimMontage *Montage)
 {
     TObjectPtr<UAnimMontage> *Contribution = FindMontageContribution(SlotName);
     if (!ensureMsgf(Contribution, TEXT("无法识别角色固定蒙太奇槽位 %s"), *SlotName.ToString()))
@@ -113,13 +113,23 @@ bool UBBBAnimInstance::RegisterMontageContribution(
         return false;
     }
 
-    *Contribution = &Montage;
-    if (Montage_IsPlaying(&Montage))
+    if (!Montage)
+    {
+        if (Contribution->Get())
+        {
+            Montage_Stop(0.1f, Contribution->Get());
+        }
+        *Contribution = nullptr;
+        return true;
+    }
+
+    *Contribution = Montage;
+    if (Montage_IsPlaying(Montage))
     {
         return true;
     }
 
-    if (Montage_Play(&Montage) > 0.0f)
+    if (Montage_Play(Montage, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, false) > 0.0f)
     {
         return true;
     }
@@ -129,7 +139,7 @@ bool UBBBAnimInstance::RegisterMontageContribution(
         Warning,
         TEXT("角色蒙太奇注册失败 Slot=%s Montage=%s"),
         *SlotName.ToString(),
-        *GetNameSafe(&Montage));
+        *GetNameSafe(Montage));
     *Contribution = nullptr;
     return false;
 }
@@ -207,28 +217,6 @@ bool UBBBAnimInstance::TryHasWeaponLeftHandTarget() const
     }
 
     return false;
-}
-
-bool UBBBAnimInstance::TryGetWeaponReloading() const
-{
-    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
-    if (Weapon)
-    {
-        return Weapon->IsReloading();
-    }
-
-    return false;
-}
-
-float UBBBAnimInstance::TryGetWeaponTimeSinceLastFireSeconds() const
-{
-    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
-    if (Weapon)
-    {
-        return Weapon->GetCurrentWorldTimeSeconds() - Weapon->GetLastFireTimeSeconds();
-    }
-
-    return 1.0e+38f;
 }
 
 void UBBBAnimInstance::BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance)

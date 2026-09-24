@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 
 class FBBBCharacterInitializer;
@@ -15,6 +14,13 @@ struct FBBBCharacterRuntimeData;
 /** 角色装备容器、选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentSystem final
 {
+public:
+    /** @param Slot	目标快捷栏索引 空手使用 INDEX_NONE @return 是否接受选择 */
+    bool RequestSlot(int32 Slot);
+
+    /** @param EquipmentId	目标装备定义 空标识表示空手 @return 是否接受创建或清空 */
+    bool RequestEquipment(FName EquipmentId);
+
 private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterUpdatePipeline;
@@ -54,8 +60,5 @@ private:
 
     /** 装备选择处理器 */
     FBBBCharacterEquipmentSelectionProcessor SelectionProcessor;
-
-    /** 装备动作处理器 */
-    FBBBCharacterEquipmentActionProcessor ActionProcessor;
 
 };

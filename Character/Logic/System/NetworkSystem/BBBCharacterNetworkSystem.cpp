@@ -30,20 +30,15 @@ void FBBBCharacterNetworkSystem::Update()
     }
 
     FBBBCharacterNetworkUpdateContext Context{
-        RuntimeData->Network.EquipmentObservationState,
         RuntimeData->Network.AimObservationState,
         RuntimeData->Network.LocomotionObservationState,
         NetworkIdentityState,
         RuntimeData->External.ReadWorldState(),
         RuntimeData->Aim.ReadAimState(),
         RuntimeData->Locomotion.ReadLocomotionState(),
-        RuntimeData->Equipment.ReadEquipmentSelectionState(),
-        RuntimeData->Equipment.ReadEquipmentEventState(),
         *NetworkConfig,
         *NetworkComponent};
 
-    EquipmentStateObservationProcessor.Update(Context);
-    EquipmentFactObservationProcessor.Update(Context);
     AimObservationProcessor.Update(Context);
     LocomotionObservationProcessor.Update(Context);
 }

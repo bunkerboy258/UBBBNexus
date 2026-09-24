@@ -1,5 +1,5 @@
-
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
@@ -8,6 +8,8 @@
 
 ABBBCharacter::ABBBCharacter()
 {
+    CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
+
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
 
