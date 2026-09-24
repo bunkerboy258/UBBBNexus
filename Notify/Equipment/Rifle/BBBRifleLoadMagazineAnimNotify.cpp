@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Notify/BBBRifleLoadMagazineAnimNotify.h"
+#include "BBBWork/UBBBNexus/Notify/Equipment/Rifle/BBBRifleLoadMagazineAnimNotify.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"

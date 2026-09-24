@@ -1,10 +1,10 @@
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Notify/BBBRifleReloadLifecycleAnimNotifyState.h"
+#include "BBBWork/UBBBNexus/Notify/Equipment/Rifle/BBBRifleDetachMagazineAnimNotify.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void UBBBRifleReloadLifecycleAnimNotifyState::NotifyEnd(
+void UBBBRifleDetachMagazineAnimNotify::Notify(
     USkeletalMeshComponent *MeshComp,
     UAnimSequenceBase *,
     const FAnimNotifyEventReference &)
@@ -19,6 +19,6 @@ void UBBBRifleReloadLifecycleAnimNotifyState::NotifyEnd(
         return;
     }
 
-    // 通知状态区间结束时只提交中断输入 不在动画回调中判定换弹结果
-    Rifle->SubmitInterruptReloadInput();
+    // 这里只提交脱匣输入 弹匣状态由步枪解析流程处理
+    Rifle->SubmitDetachMagazineInput();
 }
