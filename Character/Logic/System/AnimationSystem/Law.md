@@ -5,3 +5,10 @@
 - 动画系统禁止生成玩法事实、修改 CMC、决定网络方向或调用具体装备行为。
 - 输入系统批准的蒙太奇请求直接写入动画实例固定 Slot 动画实例独占请求提交和 UE 实际播放状态
 - 动画通知不得直接修改角色或装备状态，只能向所属领域重新提交输入。
+
+## 目录职责
+- `Context/` 当前为空 更新临时数据存放在 `DomainData/Context/`
+- `DomainData/` 存放动画领域状态持有者 持久状态与更新上下文
+- `Processors/` 存放动画层 动作事实与动画状态处理器
+- `State/` 当前为空 持久状态存放在 `DomainData/States/`
+- 禁止在 `Character/Logic/System/AnimationSystem/` 新增直属文件夹或文件

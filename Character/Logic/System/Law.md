@@ -35,3 +35,13 @@
 装备系统可以读取执行模式并选择 Causal 或 Mirror 路径 但禁止拥有网络语义与具体网络逻辑
 
 只有网络系统允许存在网络语义与具体网络逻辑
+
+## 目录职责
+- `AimSystem/` 存放角色瞄准领域系统
+- `AnimationSystem/` 存放角色动画层 动作事实与动画实例发布系统
+- `AppearanceSystem/` 当前只有 `DomainData/` 与 `Processors/` 空壳目录 尚无实际系统实现
+- `EquipmentSystem/` 存放角色通用装备选择 挂接与生命周期系统
+- `LocomotionSystem/` 存放角色移动控制应用与移动状态系统
+- `NetworkSystem/` 存放角色网络观察与发送调度系统
+- `ParseSystem/` 存放角色固定输入槽解析系统
+- 禁止在 `Character/Logic/System/` 新增直属文件夹或文件
