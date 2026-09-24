@@ -7,9 +7,49 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 
+namespace
+{
+    template<typename TPacket>
+    void Process(TBBBEquipmentInputSlot<TPacket> &Slot, FBBBRifleActionInputState &State)
+    {
+        if (!Slot.bActive)
+        {
+            return;
+        }
+
+        Slot.bActive = false;
+        if (!ensureMsgf(Slot.Packet.IsValid() && Slot.Packet.CanApply(), TEXT("步枪输入包无效或不能应用")))
+        {
+            return;
+        }
+
+        Slot.Packet.Apply(State);
+    }
+
+    void ClearActionInput(FBBBRifleActionInputState &State)
+    {
+        State.bEquipRequested = false;
+        State.bFireRequested = false;
+        State.bReloadRequested = false;
+        State.bDetachMagazineRequested = false;
+        State.bLoadMagazineRequested = false;
+        State.bInterruptReloadRequested = false;
+        State.bHasNetworkState = false;
+        State.LoadedAmmo = 0;
+        State.FireSequence = 0;
+        State.ReloadSequence = 0;
+        State.bIsReloading = false;
+        State.bMagazineDetached = false;
+    }
+}
+
 void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Parse.InputState;
+    auto &ActionInput = Context.RuntimeData.Action.ActionInputState;
+    ClearActionInput(ActionInput);
+    Process(Input.Equip, ActionInput);
+
     if (Context.Equipment.IsMirror())
     {
         Input.Fire.bActive = false;
@@ -17,10 +57,16 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
         Input.DetachMagazine.bActive = false;
         Input.LoadMagazine.bActive = false;
         Input.InterruptReload.bActive = false;
+        Process(Input.NetworkState, ActionInput);
         return;
     }
 
     Input.NetworkState.bActive = false;
+    Process(Input.Fire, ActionInput);
+    Process(Input.Reload, ActionInput);
+    Process(Input.DetachMagazine, ActionInput);
+    Process(Input.LoadMagazine, ActionInput);
+    Process(Input.InterruptReload, ActionInput);
 }
 
 void FBBBRifleParseProcessor::Clear(FBBBRifleRuntimeData &Data)
@@ -33,40 +79,4 @@ void FBBBRifleParseProcessor::Clear(FBBBRifleRuntimeData &Data)
     Input.LoadMagazine.bActive = false;
     Input.InterruptReload.bActive = false;
     Input.NetworkState.bActive = false;
-}
-
-void FBBBRifleParseProcessor::Submit(FBBBRifleRuntimeData &Data, const FBBBRifleEquipPacket &Packet)
-{
-    Data.Parse.InputState.Equip.Packet = Packet;
-    Data.Parse.InputState.Equip.bActive = true;
-}
-
-void FBBBRifleParseProcessor::Submit(FBBBRifleRuntimeData &Data, const FBBBRifleFirePacket &Packet)
-{
-    Data.Parse.InputState.Fire.Packet = Packet;
-    Data.Parse.InputState.Fire.bActive = true;
-}
-
-void FBBBRifleParseProcessor::Submit(FBBBRifleRuntimeData &Data, const FBBBRifleReloadPacket &Packet)
-{
-    Data.Parse.InputState.Reload.Packet = Packet;
-    Data.Parse.InputState.Reload.bActive = true;
-}
-
-void FBBBRifleParseProcessor::Submit(FBBBRifleRuntimeData &Data, const FBBBRifleDetachMagazinePacket &Packet)
-{
-    Data.Parse.InputState.DetachMagazine.Packet = Packet;
-    Data.Parse.InputState.DetachMagazine.bActive = true;
-}
-
-void FBBBRifleParseProcessor::Submit(FBBBRifleRuntimeData &Data, const FBBBRifleLoadMagazinePacket &Packet)
-{
-    Data.Parse.InputState.LoadMagazine.Packet = Packet;
-    Data.Parse.InputState.LoadMagazine.bActive = true;
-}
-
-void FBBBRifleParseProcessor::Submit(FBBBRifleRuntimeData &Data, const FBBBRifleInterruptReloadPacket &Packet)
-{
-    Data.Parse.InputState.InterruptReload.Packet = Packet;
-    Data.Parse.InputState.InterruptReload.bActive = true;
 }

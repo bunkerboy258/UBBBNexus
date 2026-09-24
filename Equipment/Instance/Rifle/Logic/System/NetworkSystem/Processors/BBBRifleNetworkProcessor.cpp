@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
@@ -44,19 +45,21 @@ bool FBBBRifleNetworkProcessor::Submit(FBBBRifleRuntimeData &Data, const TArray<
     Reader << Packet.ReloadSequence;
     Reader << Reloading;
     Reader << Detached;
-    if (!ensureMsgf(!Reader.IsError() && Packet.LoadedAmmo >= 0
-        && Packet.LoadedAmmo <= Data.Action.ReadRifleActionState().AmmoCapacity
-        && Packet.FireSequence >= 0 && Packet.ReloadSequence >= 0
-        && Reloading <= 1 && Detached <= 1 && (!Detached || Reloading),
-        TEXT("步枪网络状态字段无效")))
+    if (!ensureMsgf(!Reader.IsError() && Reloading <= 1 && Detached <= 1, TEXT("步枪网络状态编码错误")))
     {
         return false;
     }
 
     Packet.bIsReloading = Reloading != 0;
     Packet.bMagazineDetached = Detached != 0;
-    Data.Parse.InputState.NetworkState.Packet = Packet;
-    Data.Parse.InputState.NetworkState.bActive = true;
+    if (!ensureMsgf(Packet.IsValid()
+        && Packet.LoadedAmmo <= Data.Action.ReadRifleActionState().AmmoCapacity,
+        TEXT("步枪网络状态字段无效")))
+    {
+        return false;
+    }
+
+    FBBBRifleParseProcessor::Submit(Data, Packet);
     return true;
 }
 

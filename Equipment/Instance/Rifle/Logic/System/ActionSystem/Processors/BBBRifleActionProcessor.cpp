@@ -6,7 +6,25 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
+
+namespace
+{
+    void Clear(FBBBRifleActionInputState &Input)
+    {
+        Input.bEquipRequested = false;
+        Input.bFireRequested = false;
+        Input.bReloadRequested = false;
+        Input.bDetachMagazineRequested = false;
+        Input.bLoadMagazineRequested = false;
+        Input.bInterruptReloadRequested = false;
+        Input.bHasNetworkState = false;
+        Input.LoadedAmmo = 0;
+        Input.FireSequence = 0;
+        Input.ReloadSequence = 0;
+        Input.bIsReloading = false;
+        Input.bMagazineDetached = false;
+    }
+}
 
 void FBBBRifleActionProcessor::Initialize(FBBBRifleRuntimeData &Data, const UBBBRifleDefinition &Definition)
 {
@@ -23,51 +41,50 @@ void FBBBRifleActionProcessor::Stop(FBBBRifleRuntimeData &Data)
 
 void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
 {
-    auto &Input = Context.RuntimeData.Parse.InputState;
+    auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
-    State.bEquippedThisFrame = Input.Equip.bActive;
+    State.bEquippedThisFrame = Input.bEquipRequested;
 
     if (Context.Equipment.IsMirror())
     {
-        if (Input.NetworkState.bActive)
+        if (Input.bHasNetworkState)
         {
-            const auto &Packet = Input.NetworkState.Packet;
-            if (State.FireSequence != Packet.FireSequence
+            if (State.FireSequence != Input.FireSequence
                 && Context.RuntimeData.Animation.ReadRifleAnimationState().bInitialized)
             {
                 State.LastFireTimeSeconds = Context.World.GetTimeSeconds();
             }
 
-            State.LoadedAmmo = Packet.LoadedAmmo;
-            State.FireSequence = Packet.FireSequence;
-            State.ReloadSequence = Packet.ReloadSequence;
-            State.bIsReloading = Packet.bIsReloading;
-            State.bMagazineDetached = Packet.bMagazineDetached;
+            State.LoadedAmmo = Input.LoadedAmmo;
+            State.FireSequence = Input.FireSequence;
+            State.ReloadSequence = Input.ReloadSequence;
+            State.bIsReloading = Input.bIsReloading;
+            State.bMagazineDetached = Input.bMagazineDetached;
         }
 
-        FBBBRifleParseProcessor::Clear(Context.RuntimeData);
+        Clear(Input);
         return;
     }
 
     // 弹匣通知先于本帧新动作 防止同一帧旧通知完成刚开始的换弹
-    if (Input.DetachMagazine.bActive && State.bIsReloading)
+    if (Input.bDetachMagazineRequested && State.bIsReloading)
     {
         State.bMagazineDetached = true;
     }
 
-    if (Input.LoadMagazine.bActive && State.bIsReloading && State.bMagazineDetached)
+    if (Input.bLoadMagazineRequested && State.bIsReloading && State.bMagazineDetached)
     {
         State.LoadedAmmo = State.AmmoCapacity;
         State.bIsReloading = false;
         State.bMagazineDetached = false;
     }
 
-    if (Input.InterruptReload.bActive)
+    if (Input.bInterruptReloadRequested)
     {
         Stop(Context.RuntimeData);
     }
 
-    if (Input.Reload.bActive && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)
+    if (Input.bReloadRequested && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)
     {
         if (ensureMsgf(Context.Definition.CharacterReloadMontage && Context.Definition.EquipmentReloadMontage,
             TEXT("步枪换弹缺少角色或装备蒙太奇")))
@@ -78,7 +95,7 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
         }
     }
 
-    if (Input.Fire.bActive && !State.bIsReloading && State.LoadedAmmo > 0
+    if (Input.bFireRequested && !State.bIsReloading && State.LoadedAmmo > 0
         && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
@@ -93,5 +110,5 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
         }
     }
 
-    FBBBRifleParseProcessor::Clear(Context.RuntimeData);
+    Clear(Input);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/BBBRifleInputSubmit.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 
 struct FBBBRifleUpdateContext;
@@ -14,21 +15,15 @@ public:
     /** @param Data	步枪运行时数据 @return 无 */
     static void Clear(FBBBRifleRuntimeData &Data);
 
-    /** @param Data	步枪运行时数据 @param Packet	待消费请求 @return 无 */
-    static void Submit(FBBBRifleRuntimeData &Data, const FBBBRifleEquipPacket &Packet);
-
-    /** @param Data	步枪运行时数据 @param Packet	待消费请求 @return 无 */
-    static void Submit(FBBBRifleRuntimeData &Data, const FBBBRifleFirePacket &Packet);
-
-    /** @param Data	步枪运行时数据 @param Packet	待消费请求 @return 无 */
-    static void Submit(FBBBRifleRuntimeData &Data, const FBBBRifleReloadPacket &Packet);
-
-    /** @param Data	步枪运行时数据 @param Packet	待消费请求 @return 无 */
-    static void Submit(FBBBRifleRuntimeData &Data, const FBBBRifleDetachMagazinePacket &Packet);
-
-    /** @param Data	步枪运行时数据 @param Packet	待消费请求 @return 无 */
-    static void Submit(FBBBRifleRuntimeData &Data, const FBBBRifleLoadMagazinePacket &Packet);
-
-    /** @param Data	步枪运行时数据 @param Packet	待消费请求 @return 无 */
-    static void Submit(FBBBRifleRuntimeData &Data, const FBBBRifleInterruptReloadPacket &Packet);
+    /**
+     * 按包的静态类型写入对应固定槽位
+     * @param Data	步枪运行时数据
+     * @param Packet	待提交请求
+     * @return 无
+     */
+    template<typename TPacket>
+    static void Submit(FBBBRifleRuntimeData &Data, const TPacket &Packet)
+    {
+        BBBRifleInput::Submit(Data.Parse.InputState, Packet);
+    }
 };

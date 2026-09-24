@@ -13,8 +13,6 @@ struct FBBBRifleParseDomainState final
 
 private:
     friend class FBBBRifleParseProcessor;
-    friend class FBBBRifleActionProcessor;
-    friend class FBBBRifleNetworkProcessor;
     /** 本领域处理器维护的状态 */
     FBBBRifleInputState InputState;
 };
