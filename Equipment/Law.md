@@ -1,6 +1,6 @@
 # Equipment Law
 
-严格遵守 `Constitution/Data/Law.md` 与 `Constitution/Equipment/Law.md`
+严格遵守 `Constitution/Data/Law.md`
 
 物理目录固定为
 
