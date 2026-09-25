@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Appearance/Data/BBBAppearancePart.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearancePart.h"
 #include "BBBAppearanceSelection.generated.h"
 
 /** 可独立保存和传输的一套外观选择 不包含运行时组件与资源对象 */

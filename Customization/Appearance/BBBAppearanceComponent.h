@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "BBBWork/UBBBNexus/Appearance/Data/BBBAppearanceSelection.h"
-#include "BBBWork/UBBBNexus/Appearance/Data/BBBAppearanceItem.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceSelection.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceItem.h"
 #include "BBBAppearanceComponent.generated.h"
 
 /** 独立外观入口 蓝图负责组装 此组件只维护选择与同步 */

@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Appearance/BBBAppearanceComponent.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/BBBAppearanceComponent.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

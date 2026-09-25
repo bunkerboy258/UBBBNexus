@@ -2,12 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/LocalPlayerSubsystem.h"
-#include "BBBWork/UBBBNexus/Appearance/Data/BBBAppearanceSelection.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceSelection.h"
 #include "BBBClientSubsystem.generated.h"
 
 class APawn;
 class UBBBClientSaveGame;
-class UBBBCharacterCustomizationController;
+class UBBBCharacterCustomizationSession;
 
 /** 本地玩家配置与换装入口 不依赖具体人物控制器类型 */
 UCLASS(Config = Game)
@@ -57,17 +57,13 @@ private:
     UFUNCTION()
     void OnPawnChanged(APawn *OldPawn, APawn *NewPawn);
 
-    /** 换装主控蓝图类 */
-    UPROPERTY(Config)
-    TSoftClassPtr<UBBBCharacterCustomizationController> CustomizationClass;
-
     /** 本地配置对象 */
     UPROPERTY(Transient)
     TObjectPtr<UBBBClientSaveGame> Settings;
 
     /** 本地玩家持有的换装主控 */
     UPROPERTY(Transient)
-    TObjectPtr<UBBBCharacterCustomizationController> Customization;
+    TObjectPtr<UBBBCharacterCustomizationSession> Customization;
 
     /** 不延长旧控制器的生命周期 */
     TWeakObjectPtr<APlayerController> Controller;

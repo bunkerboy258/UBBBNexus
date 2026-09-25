@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
-#include "BBBWork/UBBBNexus/Appearance/Data/BBBAppearanceSelection.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceSelection.h"
 #include "BBBClientSaveGame.generated.h"
 
 /** 本地玩家配置的存档边界 */

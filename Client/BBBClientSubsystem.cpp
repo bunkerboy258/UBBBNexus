@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Client/BBBClientSubsystem.h"
 #include "BBBWork/UBBBNexus/Client/Save/BBBClientSaveGame.h"
-#include "BBBWork/UBBBNexus/Appearance/BBBAppearanceComponent.h"
-#include "BBBWork/UBBBNexus/Customization/BBBCharacterCustomizationController.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/BBBAppearanceComponent.h"
+#include "BBBWork/UBBBNexus/Customization/BBBCharacterCustomizationSession.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -33,7 +33,8 @@ void UBBBClientSubsystem::Deinitialize()
 {
     if (Customization)
     {
-        Customization->Close();
+        Customization->Shutdown();
+        Customization = nullptr;
     }
     if (Controller.IsValid())
     {
@@ -117,13 +118,7 @@ void UBBBClientSubsystem::ToggleCustomization()
     }
     if (!Customization)
     {
-        UClass *Class = CustomizationClass.LoadSynchronous();
-        if (!Class)
-        {
-            UE_LOG(LogBBBClient, Error, TEXT("换装主控类未配置 Path=%s"), *CustomizationClass.ToString());
-            return;
-        }
-        Customization = NewObject<UBBBCharacterCustomizationController>(this, Class);
+        Customization = NewObject<UBBBCharacterCustomizationSession>(this);
     }
     if (Customization->IsOpen())
     {

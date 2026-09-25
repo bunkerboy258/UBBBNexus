@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Appearance/Data/BBBAppearanceSelection.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceSelection.h"
 
 bool FBBBAppearanceSelection::IsValid() const
 {

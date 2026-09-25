@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/Appearance/BBBAppearanceComponent.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/BBBAppearanceComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Engine/SkeletalMesh.h"
 #include "Net/UnrealNetwork.h"
