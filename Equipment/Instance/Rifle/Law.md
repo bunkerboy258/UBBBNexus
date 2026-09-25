@@ -1,6 +1,6 @@
 # Rifle Equipment Law
 
-- 遵守数据 装备与网络宪法
+- 遵守数据 Actor 与网络宪法
 - 根只管理装配与固定更新顺序 Parse Action Animation Network
 - Logic/Core 保存根本次调用的 Context 禁止跨帧持有
 - Logic/RuntimeData 只保存直接持有领域 B 的 C
