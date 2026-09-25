@@ -30,8 +30,10 @@ BBBActor实例目录/
                     Context/           D 
                 Processors/            具体逻辑处理器
 ```
-- BBBActor必须实现一个SubmitInput(<输入数据包的类型模板形参> &&<输入包>(因为是临时对象所以使用右值引用))方法 
-- 且此方法是外部影响该 Actor 的唯一入口
+- BBBActor 对外必须提供 `template<typename TPacket> bool SubmitInput(TPacket&& Packet)` 具体实例可以继承基类实现
+- 模板中的 `TPacket&&` 是转发引用 可以接收临时对象和左值 如需只接收临时对象必须另加约束
+- 装备等多态 Actor 可以在模板入口后按输入包类型使用虚函数分发给具体实例 但不得增加其它对外输入入口
+- `SubmitInput` 是外部影响该 Actor 的唯一入口
 - BBBActor 必须拥有 ParseSystem、AnimationSystem、NetworkSystem 和至少一种其它类型的 System
 - 可以根据实现的玩法不同 创建不同的System 但是都必须拥有一致的物理文件 内部架构一致的代码设计
 
@@ -57,6 +59,7 @@ BBBActor实例目录/
 - 外部要影响 Actor 的行为 就通过输入包修改对应的状态数据
 - SubmitInput(...)是外部提交输入包的入口
 - 输入包在 Input/ 下静态定义如何影响 Actor 状态 以及在什么条件下允许应用
+- 多态 Actor 的基类可以用无字段请求包声明固定输入 具体实例的 ParseSystem 决定请求如何写入自身黑板 基类请求包不得依赖具体实例的状态字段
 - 这样 外部系统通过组装‘输入包’ 并通过SubmitInput(...)方法推送它 
 - ParseSystem 处理后 合法输入包的效果写入对应的状态数据
 

@@ -85,7 +85,12 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
     auto &Input = Context.RuntimeData.Parse.InputState;
     auto &ActionInput = Context.RuntimeData.Action.ActionInputState;
     ClearActionInput(ActionInput);
-    Process(Input.Equip, ActionInput);
+
+    if (Input.Equip.bActive)
+    {
+        Input.Equip.bActive = false;
+        ActionInput.bEquipRequested = true;
+    }
 
     if (Context.Equipment.IsMirror())
     {
@@ -99,8 +104,19 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
     }
 
     Input.NetworkState.bActive = false;
-    Process(Input.Primary, ActionInput);
-    Process(Input.Reload, ActionInput);
+
+    if (Input.Primary.bActive)
+    {
+        Input.Primary.bActive = false;
+        ActionInput.bPrimaryRequested = true;
+    }
+
+    if (Input.Reload.bActive)
+    {
+        Input.Reload.bActive = false;
+        ActionInput.bReloadRequested = true;
+    }
+
     Process(Input.DetachMagazine, ActionInput);
     Process(Input.LoadMagazine, ActionInput);
     Process(Input.InterruptReload, ActionInput);
