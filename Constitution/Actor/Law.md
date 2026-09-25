@@ -30,10 +30,11 @@ BBBActor实例目录/
                     Context/           D 
                 Processors/            具体逻辑处理器
 ```
-- BBBActor 对外必须提供 `template<typename TPacket> bool SubmitInput(TPacket&& Packet)` 具体实例可以继承基类实现
-- 模板中的 `TPacket&&` 是转发引用 可以接收临时对象和左值 如需只接收临时对象必须另加约束
-- 装备等多态 Actor 可以在模板入口后按输入包类型使用虚函数分发给具体实例 但不得增加其它对外输入入口
-- `SubmitInput` 是外部影响该 Actor 的唯一入口
+- BBBActor 对外必须提供 
+- `template<typename TPacket>`
+- `bool SubmitInput(TPacket &&Packet)`
+- 装备等有多态需求的BBBActor 可以在模板入口后按输入包类型 使用虚函数分发给具体实例 但禁止增加其它对外输入入口
+- 换而言之 `SubmitInput` 是外部影响该 Actor 的唯一入口
 - BBBActor 必须拥有 ParseSystem、AnimationSystem、NetworkSystem 和至少一种其它类型的 System
 - 可以根据实现的玩法不同 创建不同的System 但是都必须拥有一致的物理文件 内部架构一致的代码设计
 
@@ -92,7 +93,6 @@ BBBActor实例目录/
 
 那么 对应的网络职责就显而易见了:
 
-- 
 - **甲：生成并维护权威事实            向客机侧的丁类 Actor分发权威事实结果          校验丁类上报的事件消息
 - **乙：生成事件消息                 投送事件消息给主机侧的丙类Actor              接收并还原丙类发送的权威事实结果
 - **丙：维护权威事实                 向客机侧的乙类和丁类 Actor分发权威事实结果     校验乙类和丁类上报的事件消息

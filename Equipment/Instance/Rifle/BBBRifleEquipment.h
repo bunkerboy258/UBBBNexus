@@ -20,16 +20,21 @@ public:
     /** 步枪唯一聚合黑板 */
     FBBBRifleRuntimeData RuntimeData;
 
-    using ABBBEquipment::SubmitInput;
+    /**
+     * 提交步枪输入
+     * @param Packet	待提交的输入包
+     * @return 是否接受
+     */
+    template<typename TPacket>
+    bool SubmitInput(TPacket &&Packet)
+    {
+        if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪输入线程或数据无效")))
+        {
+            return false;
+        }
 
-    /** @param Packet	弹匣卸下通知 @return 是否接受 */
-    bool SubmitInput(FBBBRifleDetachMagazinePacket &&Packet);
-
-    /** @param Packet	弹匣装入通知 @return 是否接受 */
-    bool SubmitInput(FBBBRifleLoadMagazinePacket &&Packet);
-
-    /** @param Packet	换弹结束通知 @return 是否接受 */
-    bool SubmitInput(FBBBRifleInterruptReloadPacket &&Packet);
+        return QueueInput(Forward<TPacket>(Packet));
+    }
 
     /** 卸下时收束自身状态 @return 无 */
     virtual void OnUnequipped() override;
@@ -48,6 +53,15 @@ private:
     virtual bool QueueInput(FBBBEquipmentPrimaryPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentReloadPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentNetworkPayload Payload) override;
+
+    /** @param Packet	弹匣卸下通知 @return 是否接受 */
+    bool QueueInput(FBBBRifleDetachMagazinePacket Packet);
+
+    /** @param Packet	弹匣装入通知 @return 是否接受 */
+    bool QueueInput(FBBBRifleLoadMagazinePacket Packet);
+
+    /** @param Packet	换弹结束通知 @return 是否接受 */
+    bool QueueInput(FBBBRifleInterruptReloadPacket Packet);
 
     virtual void Tick(float DeltaSeconds) override;
     virtual bool InitializeRuntimeData() override;

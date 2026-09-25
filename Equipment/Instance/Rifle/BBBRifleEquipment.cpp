@@ -39,33 +39,18 @@ bool ABBBRifleEquipment::QueueInput(FBBBEquipmentReloadPacket Packet)
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::SubmitInput(FBBBRifleDetachMagazinePacket &&Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRifleDetachMagazinePacket Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪脱匣输入线程或数据无效")))
-    {
-        return false;
-    }
-
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::SubmitInput(FBBBRifleLoadMagazinePacket &&Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRifleLoadMagazinePacket Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪装匣输入线程或数据无效")))
-    {
-        return false;
-    }
-
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::SubmitInput(FBBBRifleInterruptReloadPacket &&Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRifleInterruptReloadPacket Packet)
 {
-    if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪换弹结束输入线程或数据无效")))
-    {
-        return false;
-    }
-
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
