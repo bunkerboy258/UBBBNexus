@@ -17,7 +17,7 @@ namespace
         Input.bDetachMagazineRequested = false;
         Input.bLoadMagazineRequested = false;
         Input.bInterruptReloadRequested = false;
-        Input.bHasNetworkState = false;
+        Input.bHasAuthorityFact = false;
         Input.LoadedAmmo = 0;
         Input.FireSequence = 0;
         Input.ReloadSequence = 0;
@@ -47,7 +47,7 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
 
     if (Context.Equipment.IsMirror())
     {
-        if (Input.bHasNetworkState)
+        if (Input.bHasAuthorityFact)
         {
             if (State.FireSequence != Input.FireSequence
                 && Context.RuntimeData.Animation.ReadRifleAnimationState().bInitialized)

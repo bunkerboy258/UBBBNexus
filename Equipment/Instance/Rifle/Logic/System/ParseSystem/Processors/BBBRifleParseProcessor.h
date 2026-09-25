@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 
 struct FBBBRifleUpdateContext;
-struct FBBBEquipmentNetworkPayload;
+struct FBBBEquipmentStateAuthorityFactPacket;
 
 /** 固定输入存储与来源检查 */
 class FBBBRifleParseProcessor final
@@ -23,10 +23,25 @@ public:
      * @param Packet		待提交请求
      * @return 是否接受
      */
-    static bool SubmitShared(
+    static bool SubmitEquip(
         FBBBRifleRuntimeData &Data,
         bool bEquipped,
-        const FBBBEquipmentEquipPacket &Packet);
+        bool bMirror,
+        const FBBBEquipmentEquipLocalControlPacket &Packet);
+
+    /**
+     * 接收镜像装备表现请求
+     * @param Data		步枪运行时数据
+     * @param bEquipped	是否为当前装备
+     * @param bMirror	是否只执行镜像还原
+     * @param Packet		待提交请求
+     * @return 是否接受
+     */
+    static bool SubmitEquip(
+        FBBBRifleRuntimeData &Data,
+        bool bEquipped,
+        bool bMirror,
+        const FBBBEquipmentEquipAuthorityFactPacket &Packet);
 
     /**
      * 接收本机控制端输入
@@ -64,5 +79,5 @@ public:
         FBBBRifleRuntimeData &Data,
         bool bEquipped,
         bool bMirror,
-        const FBBBEquipmentNetworkPayload &Payload);
+        const FBBBEquipmentStateAuthorityFactPacket &Payload);
 };

@@ -1,8 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBAimStatePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBRunStatePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -103,7 +103,7 @@ void UBBBCharacterNetworkComponent::SubmitAimStateInput(
         return;
     }
 
-    FBBBAimStatePacket Packet;
+    FBBBAimStateAuthorityFactPacket Packet;
     Packet.bIsAiming = AimState.bIsAiming;
     Packet.AimAlpha = AimState.AimAlpha;
     Packet.AimTargetWorld = AimState.AimTargetWorld;
@@ -114,7 +114,7 @@ void UBBBCharacterNetworkComponent::SubmitRunStateInput(const bool bRun)
 {
     if (Character)
     {
-        Character->SubmitInput(FBBBRunStatePacket{bRun});
+        Character->SubmitInput(FBBBRunStateAuthorityFactPacket{bRun});
     }
 }
 

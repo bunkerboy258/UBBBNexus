@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Local/Action/BBBRifleInterruptReloadPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleInterruptReloadLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBRifleReloadLifecycleAnimNotifyState::NotifyEnd(
@@ -21,5 +21,5 @@ void UBBBRifleReloadLifecycleAnimNotifyState::NotifyEnd(
     }
 
     // 通知状态区间结束时只提交中断输入 不在动画回调中判定换弹结果
-    Rifle->SubmitInput(FBBBRifleInterruptReloadPacket{});
+    Rifle->SubmitInput(FBBBRifleInterruptReloadLocalControlPacket{});
 }

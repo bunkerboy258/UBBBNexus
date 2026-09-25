@@ -4,9 +4,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBRifleEquipment.generated.h"
 
-struct FBBBRifleDetachMagazinePacket;
-struct FBBBRifleLoadMagazinePacket;
-struct FBBBRifleInterruptReloadPacket;
+struct FBBBRifleDetachMagazineLocalControlPacket;
+struct FBBBRifleLoadMagazineLocalControlPacket;
+struct FBBBRifleInterruptReloadLocalControlPacket;
 
 /** 步枪实例的唯一运行时根 */
 UCLASS(Blueprintable)
@@ -49,19 +49,20 @@ protected:
 private:
     friend class FBBBRifleActionProcessor;
 
-    virtual bool QueueInput(FBBBEquipmentEquipPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentPrimaryPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentReloadPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentNetworkPayload Payload) override;
+    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentReloadLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload) override;
 
     /** @param Packet	弹匣卸下通知 @return 是否接受 */
-    bool QueueInput(FBBBRifleDetachMagazinePacket Packet);
+    bool QueueInput(FBBBRifleDetachMagazineLocalControlPacket Packet);
 
     /** @param Packet	弹匣装入通知 @return 是否接受 */
-    bool QueueInput(FBBBRifleLoadMagazinePacket Packet);
+    bool QueueInput(FBBBRifleLoadMagazineLocalControlPacket Packet);
 
     /** @param Packet	换弹结束通知 @return 是否接受 */
-    bool QueueInput(FBBBRifleInterruptReloadPacket Packet);
+    bool QueueInput(FBBBRifleInterruptReloadLocalControlPacket Packet);
 
     virtual void Tick(float DeltaSeconds) override;
     virtual bool InitializeRuntimeData() override;

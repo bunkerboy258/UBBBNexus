@@ -7,7 +7,12 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Camera/BBBCameraPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Kismet/GameplayStatics.h"
@@ -20,35 +25,67 @@ void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
         return;
     }
 
+    const bool bMirror = Context.Equipment.IsMirror();
+
     for (const FSlotAnimationTrack &Track : Montage->SlotAnimTracks)
     {
         if (Track.SlotName == BBBCharacterMontageSlots::FullBody)
         {
-            Context.Character.SubmitInput(FBBBFullBodyMontagePacket{bClear ? nullptr : Montage});
+            if (bMirror)
+            {
+                Context.Character.SubmitInput(FBBBFullBodyMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                continue;
+            }
+
+            Context.Character.SubmitInput(FBBBFullBodyMontageLocalControlPacket{bClear ? nullptr : Montage});
             continue;
         }
 
         if (Track.SlotName == BBBCharacterMontageSlots::UpperBody)
         {
-            Context.Character.SubmitInput(FBBBUpperBodyMontagePacket{bClear ? nullptr : Montage});
+            if (bMirror)
+            {
+                Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                continue;
+            }
+
+            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{bClear ? nullptr : Montage});
             continue;
         }
 
         if (Track.SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
         {
-            Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontagePacket{bClear ? nullptr : Montage});
+            if (bMirror)
+            {
+                Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                continue;
+            }
+
+            Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontageLocalControlPacket{bClear ? nullptr : Montage});
             continue;
         }
 
         if (Track.SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
         {
-            Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontagePacket{bClear ? nullptr : Montage});
+            if (bMirror)
+            {
+                Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                continue;
+            }
+
+            Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageLocalControlPacket{bClear ? nullptr : Montage});
             continue;
         }
 
         if (Track.SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
         {
-            Context.Character.SubmitInput(FBBBAdditiveHitReactMontagePacket{bClear ? nullptr : Montage});
+            if (bMirror)
+            {
+                Context.Character.SubmitInput(FBBBAdditiveHitReactMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                continue;
+            }
+
+            Context.Character.SubmitInput(FBBBAdditiveHitReactMontageLocalControlPacket{bClear ? nullptr : Montage});
             continue;
         }
 
@@ -80,7 +117,7 @@ void FBBBRiflePresentationProcessor::PlayFire(const FBBBRifleUpdateContext &Cont
         return;
     }
 
-    FBBBCameraPacket Packet;
+    FBBBCameraLocalControlPacket Packet;
     Packet.Impulse = FVector2D(
         Context.Definition.VerticalRecoilAmount + FMath::FRandRange(
             -Context.Definition.VerticalRecoilRandom, Context.Definition.VerticalRecoilRandom),

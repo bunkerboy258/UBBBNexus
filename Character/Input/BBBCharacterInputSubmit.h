@@ -17,21 +17,27 @@ struct TBBBCharacterInputSlotSelector;
         } \
     };
 
-BBB_CHARACTER_INPUT_SLOT(FBBBAimStatePacket, AimState)
-BBB_CHARACTER_INPUT_SLOT(FBBBRunStatePacket, RunState)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionPacket, EquipmentSelectionState)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSlotPacket, EquipmentSlot)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementPacket, Movement)
-BBB_CHARACTER_INPUT_SLOT(FBBBRunPacket, Run)
-BBB_CHARACTER_INPUT_SLOT(FBBBCrouchPacket, Crouch)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimPacket, Aim)
-BBB_CHARACTER_INPUT_SLOT(FBBBJumpPacket, Jump)
-BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontagePacket, FullBodyMontage)
-BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontagePacket, UpperBodyMontage)
-BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyAdditivePreAimMontagePacket, FullBodyAdditivePreAimMontage)
-BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyAdditiveMontagePacket, UpperBodyAdditiveMontage)
-BBB_CHARACTER_INPUT_SLOT(FBBBAdditiveHitReactMontagePacket, AdditiveHitReactMontage)
-BBB_CHARACTER_INPUT_SLOT(FBBBCameraPacket, Camera)
+BBB_CHARACTER_INPUT_SLOT(FBBBAimStateAuthorityFactPacket, AimState)
+BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionLocalControlPacket, EquipmentSelectionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionAuthorityFactPacket, AuthorityEquipmentSelectionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSlotLocalControlPacket, EquipmentSlot)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementLocalControlPacket, Movement)
+BBB_CHARACTER_INPUT_SLOT(FBBBRunLocalControlPacket, Run)
+BBB_CHARACTER_INPUT_SLOT(FBBBCrouchLocalControlPacket, Crouch)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimLocalControlPacket, Aim)
+BBB_CHARACTER_INPUT_SLOT(FBBBJumpLocalControlPacket, Jump)
+BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontageLocalControlPacket, FullBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontageAuthorityFactPacket, AuthorityFullBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontageLocalControlPacket, UpperBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontageAuthorityFactPacket, AuthorityUpperBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyAdditivePreAimMontageLocalControlPacket, FullBodyAdditivePreAimMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket, AuthorityFullBodyAdditivePreAimMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyAdditiveMontageLocalControlPacket, UpperBodyAdditiveMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyAdditiveMontageAuthorityFactPacket, AuthorityUpperBodyAdditiveMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBAdditiveHitReactMontageLocalControlPacket, AdditiveHitReactMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBAdditiveHitReactMontageAuthorityFactPacket, AuthorityAdditiveHitReactMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCameraLocalControlPacket, Camera)
 
 #undef BBB_CHARACTER_INPUT_SLOT
 
@@ -47,6 +53,11 @@ namespace BBBCharacterInput
     template<typename TPacket>
     bool Submit(FBBBCharacterInputState &State, TPacket &&Packet)
     {
+        if (!ensureMsgf(Packet.IsValid(), TEXT("角色输入包数据无效")))
+        {
+            return false;
+        }
+
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);

@@ -35,7 +35,7 @@ void FBBBRifleUpdatePipeline::Update(ABBBRifleEquipment &Equipment)
 
     // 镜像实例等待第一份完整状态 避免把历史开火误认为刚发生
     if (Equipment.IsMirror() && !Equipment.RuntimeData.Animation.ReadRifleAnimationState().bInitialized
-        && !Equipment.RuntimeData.Parse.ReadRifleInputState().NetworkState.bActive)
+        && !Equipment.RuntimeData.Parse.ReadRifleInputState().AuthorityActionState.bActive)
     {
         return;
     }

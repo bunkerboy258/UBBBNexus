@@ -9,10 +9,11 @@ class UBBBEquipmentDefinition;
 class UArrowComponent;
 class USkeletalMeshComponent;
 class FBBBEquipmentInitializer;
-struct FBBBEquipmentEquipPacket;
-struct FBBBEquipmentPrimaryPacket;
-struct FBBBEquipmentReloadPacket;
-struct FBBBEquipmentNetworkPayload;
+struct FBBBEquipmentEquipLocalControlPacket;
+struct FBBBEquipmentEquipAuthorityFactPacket;
+struct FBBBEquipmentPrimaryLocalControlPacket;
+struct FBBBEquipmentReloadLocalControlPacket;
+struct FBBBEquipmentStateAuthorityFactPacket;
 
 /** 单件装备的共享演员 配置和固定行为入口 */
 UCLASS(Abstract, BlueprintType)
@@ -79,16 +80,19 @@ protected:
     virtual bool InitializeRuntimeData();
 
     /** @param Packet	装备表现请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentEquipPacket Packet);
+    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet);
+
+    /** @param Packet	权威装备表现请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet);
 
     /** @param Packet	主行为请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentPrimaryPacket Packet);
+    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet);
 
     /** @param Packet	换弹请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentReloadPacket Packet);
+    virtual bool QueueInput(FBBBEquipmentReloadLocalControlPacket Packet);
 
     /** @param Payload	当前网络结果 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentNetworkPayload Payload);
+    virtual bool QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload);
 
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))

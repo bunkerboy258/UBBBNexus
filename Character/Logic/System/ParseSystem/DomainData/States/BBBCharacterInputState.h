@@ -2,53 +2,71 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Definitions/BBBCharacterInputSlot.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBJumpPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBRunPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBCrouchPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Camera/BBBCameraPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Shared/Animation/BBBFullBodyMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Shared/Animation/BBBUpperBodyMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Shared/Animation/BBBFullBodyAdditivePreAimMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Shared/Animation/BBBUpperBodyAdditiveMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Shared/Animation/BBBAdditiveHitReactMontagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBAimStatePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterAimPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterMovementPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBRunStatePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Shared/Action/BBBEquipmentSelectionPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBEquipmentSlotPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyAdditivePreAimMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyAdditiveMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAdditiveHitReactMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Aim/FBBBCharacterAimLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSelectionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSlotLocalControlPacket.h"
 
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
     /** 瞄准状态输入槽位 */
-    TBBBCharacterInputSlot<FBBBAimStatePacket> AimState;
+    TBBBCharacterInputSlot<FBBBAimStateAuthorityFactPacket> AimState;
     /** 跑步状态输入槽位 */
-    TBBBCharacterInputSlot<FBBBRunStatePacket> RunState;
+    TBBBCharacterInputSlot<FBBBRunStateAuthorityFactPacket> RunState;
     /** 装备选择输入槽位 */
-    TBBBCharacterInputSlot<FBBBEquipmentSelectionPacket> EquipmentSelectionState;
+    TBBBCharacterInputSlot<FBBBEquipmentSelectionLocalControlPacket> EquipmentSelectionState;
+    /** 权威装备选择事实输入槽位 */
+    TBBBCharacterInputSlot<FBBBEquipmentSelectionAuthorityFactPacket> AuthorityEquipmentSelectionState;
     /** 快捷栏装备选择输入槽位 */
-    TBBBCharacterInputSlot<FBBBEquipmentSlotPacket> EquipmentSlot;
+    TBBBCharacterInputSlot<FBBBEquipmentSlotLocalControlPacket> EquipmentSlot;
     /** 移动命令输入槽位 */
-    TBBBCharacterInputSlot<FBBBCharacterMovementPacket> Movement;
+    TBBBCharacterInputSlot<FBBBCharacterMovementLocalControlPacket> Movement;
     /** 跑步动作输入槽位 */
-    TBBBCharacterInputSlot<FBBBRunPacket> Run;
+    TBBBCharacterInputSlot<FBBBRunLocalControlPacket> Run;
     /** 蹲伏动作输入槽位 */
-    TBBBCharacterInputSlot<FBBBCrouchPacket> Crouch;
+    TBBBCharacterInputSlot<FBBBCrouchLocalControlPacket> Crouch;
     /** 瞄准命令输入槽位 */
-    TBBBCharacterInputSlot<FBBBCharacterAimPacket> Aim;
+    TBBBCharacterInputSlot<FBBBCharacterAimLocalControlPacket> Aim;
     /** 跳跃命令输入槽位 */
-    TBBBCharacterInputSlot<FBBBJumpPacket> Jump;
+    TBBBCharacterInputSlot<FBBBJumpLocalControlPacket> Jump;
     /** 全身蒙太奇输入槽位 */
-    TBBBCharacterInputSlot<FBBBFullBodyMontagePacket> FullBodyMontage;
+    TBBBCharacterInputSlot<FBBBFullBodyMontageLocalControlPacket> FullBodyMontage;
+    /** 权威全身蒙太奇输入槽位 */
+    TBBBCharacterInputSlot<FBBBFullBodyMontageAuthorityFactPacket> AuthorityFullBodyMontage;
     /** 上半身蒙太奇输入槽位 */
-    TBBBCharacterInputSlot<FBBBUpperBodyMontagePacket> UpperBodyMontage;
+    TBBBCharacterInputSlot<FBBBUpperBodyMontageLocalControlPacket> UpperBodyMontage;
+    /** 权威上半身蒙太奇输入槽位 */
+    TBBBCharacterInputSlot<FBBBUpperBodyMontageAuthorityFactPacket> AuthorityUpperBodyMontage;
     /** 瞄准前全身叠加蒙太奇输入槽位 */
-    TBBBCharacterInputSlot<FBBBFullBodyAdditivePreAimMontagePacket> FullBodyAdditivePreAimMontage;
+    TBBBCharacterInputSlot<FBBBFullBodyAdditivePreAimMontageLocalControlPacket> FullBodyAdditivePreAimMontage;
+    /** 权威瞄准前全身叠加蒙太奇输入槽位 */
+    TBBBCharacterInputSlot<FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket> AuthorityFullBodyAdditivePreAimMontage;
     /** 上半身叠加蒙太奇输入槽位 */
-    TBBBCharacterInputSlot<FBBBUpperBodyAdditiveMontagePacket> UpperBodyAdditiveMontage;
+    TBBBCharacterInputSlot<FBBBUpperBodyAdditiveMontageLocalControlPacket> UpperBodyAdditiveMontage;
+    /** 权威上半身叠加蒙太奇输入槽位 */
+    TBBBCharacterInputSlot<FBBBUpperBodyAdditiveMontageAuthorityFactPacket> AuthorityUpperBodyAdditiveMontage;
     /** 受击叠加蒙太奇输入槽位 */
-    TBBBCharacterInputSlot<FBBBAdditiveHitReactMontagePacket> AdditiveHitReactMontage;
+    TBBBCharacterInputSlot<FBBBAdditiveHitReactMontageLocalControlPacket> AdditiveHitReactMontage;
+    /** 权威受击叠加蒙太奇输入槽位 */
+    TBBBCharacterInputSlot<FBBBAdditiveHitReactMontageAuthorityFactPacket> AuthorityAdditiveHitReactMontage;
     /** 摄像机输入槽位 */
-    TBBBCharacterInputSlot<FBBBCameraPacket> Camera;
+    TBBBCharacterInputSlot<FBBBCameraLocalControlPacket> Camera;
 };

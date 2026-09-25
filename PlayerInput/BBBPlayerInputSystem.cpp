@@ -1,12 +1,12 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBJumpPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBRunPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBCrouchPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBEquipmentSlotPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSlotLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentPrimaryPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentReloadPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
@@ -40,7 +40,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     if (ABBBCharacter *Previous = Character.Get())
     {
         // 解绑时释放持续输入 保留最后朝向避免无输入帧将角色转向世界零度
-        FBBBCharacterMovementPacket ReleasedControl;
+        FBBBCharacterMovementLocalControlPacket ReleasedControl;
         ReleasedControl.FacingWorld = Previous->GetActorRotation();
         Previous->SubmitInput(ReleasedControl);
         SubmitRun(false);
@@ -57,8 +57,8 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         Camera = nullptr;
     }
     Character = Target;
-    MovementState = FBBBCharacterMovementPacket();
-    AimState = FBBBCharacterAimPacket();
+    MovementState = FBBBCharacterMovementLocalControlPacket();
+    AimState = FBBBCharacterAimLocalControlPacket();
     bFire = false;
     bJump = false;
     MoveAxis = FVector2D::ZeroVector;
@@ -92,8 +92,8 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     {
         SubmitRun(false);
         SubmitCrouch(false);
-        MovementState = FBBBCharacterMovementPacket();
-        AimState = FBBBCharacterAimPacket();
+        MovementState = FBBBCharacterMovementLocalControlPacket();
+        AimState = FBBBCharacterAimLocalControlPacket();
         bFire = false;
         bJump = false;
         MoveAxis = FVector2D::ZeroVector;
@@ -107,7 +107,7 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
     {
         return;
     }
-    Character->SubmitInput(FBBBEquipmentSlotPacket{Slot});
+    Character->SubmitInput(FBBBEquipmentSlotLocalControlPacket{Slot});
 }
 
 void UBBBPlayerInputSystem::SubmitReload()
@@ -118,7 +118,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     }
     if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
     {
-        Equipment->SubmitInput(FBBBEquipmentReloadPacket{});
+        Equipment->SubmitInput(FBBBEquipmentReloadLocalControlPacket{});
     }
 }
 
@@ -126,7 +126,7 @@ void UBBBPlayerInputSystem::SubmitRun(const bool bRun)
 {
     if (ABBBCharacter *Target = Character.Get())
     {
-        Target->SubmitInput(FBBBRunPacket{bRun && bInputEnabled});
+        Target->SubmitInput(FBBBRunLocalControlPacket{bRun && bInputEnabled});
     }
 }
 
@@ -134,7 +134,7 @@ void UBBBPlayerInputSystem::SubmitCrouch(const bool bCrouch)
 {
     if (ABBBCharacter *Target = Character.Get())
     {
-        Target->SubmitInput(FBBBCrouchPacket{bCrouch && bInputEnabled});
+        Target->SubmitInput(FBBBCrouchLocalControlPacket{bCrouch && bInputEnabled});
     }
 }
 
@@ -296,7 +296,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     AimState.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
     Character->SubmitInput(MovementState);
-    FBBBCharacterAimPacket Aim = AimState;
+    FBBBCharacterAimLocalControlPacket Aim = AimState;
     Aim.bAim = Aim.bAim || bFire;
     Character->SubmitInput(Aim);
 
@@ -305,12 +305,12 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     {
         if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
         {
-            Equipment->SubmitInput(FBBBEquipmentPrimaryPacket{});
+            Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket{});
         }
     }
     if (bJump)
     {
-        Character->SubmitInput(FBBBJumpPacket{});
+        Character->SubmitInput(FBBBJumpLocalControlPacket{});
     }
     bJump = false;
 }

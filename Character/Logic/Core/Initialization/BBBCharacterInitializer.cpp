@@ -1,7 +1,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterMovementPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -44,7 +44,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     //确保角色黑板更新完成后再启动骨骼动画更新
     Character.GetMesh()->AddTickPrerequisiteComponent(Movement);
 
-    FBBBCharacterMovementPacket InitialControl;
+    FBBBCharacterMovementLocalControlPacket InitialControl;
     InitialControl.FacingWorld = Character.GetActorRotation();
     Character.SubmitInput(InitialControl);
     Character.bUseControllerRotationYaw = false;

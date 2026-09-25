@@ -3,10 +3,11 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Shutdown/BBBRifleShutdown.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/Shared/Action/BBBEquipmentEquipPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentPrimaryPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentReloadPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkPayload.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentStateAuthorityFactPacket.h"
 
 ABBBRifleEquipment::ABBBRifleEquipment()
 {
@@ -24,32 +25,37 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
     FBBBRifleUpdatePipeline::Update(*this);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
 {
-    return FBBBRifleParseProcessor::SubmitShared(RuntimeData, IsEquipped(), Packet);
+    return FBBBRifleParseProcessor::SubmitEquip(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
 {
-    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
+    return FBBBRifleParseProcessor::SubmitEquip(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentReloadPacket Packet)
-{
-    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
-}
-
-bool ABBBRifleEquipment::QueueInput(FBBBRifleDetachMagazinePacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
 {
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleLoadMagazinePacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentReloadLocalControlPacket Packet)
 {
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleInterruptReloadPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRifleDetachMagazineLocalControlPacket Packet)
+{
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBRifleLoadMagazineLocalControlPacket Packet)
+{
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBRifleInterruptReloadLocalControlPacket Packet)
 {
     return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
@@ -59,7 +65,7 @@ void ABBBRifleEquipment::OnUnequipped()
     FBBBRifleShutdown::Shutdown(*this);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentNetworkPayload Payload)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload)
 {
     return FBBBRifleParseProcessor::SubmitMirror(RuntimeData, IsEquipped(), IsMirror(), Payload);
 }

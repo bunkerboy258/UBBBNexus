@@ -4,7 +4,7 @@
 
 struct FBBBRifleRuntimeData;
 struct FBBBRifleUpdateContext;
-struct FBBBRifleNetworkStatePacket;
+struct FBBBRifleActionStateAuthorityFactPacket;
 
 /** 步枪当前状态的编码 发布与接收校验 */
 class FBBBRifleNetworkProcessor final
@@ -23,5 +23,5 @@ public:
      * @param Packet	解码结果
      * @return 是否接受
      */
-    static bool Decode(const FBBBRifleRuntimeData &Data, const TArray<uint8> &Payload, FBBBRifleNetworkStatePacket &Packet);
+    static bool Decode(const FBBBRifleRuntimeData &Data, const TArray<uint8> &Payload, FBBBRifleActionStateAuthorityFactPacket &Packet);
 };

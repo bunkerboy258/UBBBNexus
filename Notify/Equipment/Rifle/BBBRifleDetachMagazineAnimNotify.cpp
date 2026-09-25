@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Local/Action/BBBRifleDetachMagazinePacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleDetachMagazineLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBRifleDetachMagazineAnimNotify::Notify(
@@ -21,5 +21,5 @@ void UBBBRifleDetachMagazineAnimNotify::Notify(
     }
 
     // 这里只提交脱匣输入 弹匣状态由步枪解析流程处理
-    Rifle->SubmitInput(FBBBRifleDetachMagazinePacket{});
+    Rifle->SubmitInput(FBBBRifleDetachMagazineLocalControlPacket{});
 }

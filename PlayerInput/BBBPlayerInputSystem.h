@@ -2,8 +2,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterAimPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterMovementPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Aim/FBBBCharacterAimLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBPlayerInputSystem.generated.h"
 class ABBBCharacter;
 class ABBBPlayerCameraSystem;
@@ -65,8 +65,8 @@ private:
     TWeakObjectPtr<ABBBCharacter> Character;
     UPROPERTY()
     TObjectPtr<ABBBPlayerCameraSystem> Camera;
-    FBBBCharacterMovementPacket MovementState;
-    FBBBCharacterAimPacket AimState;
+    FBBBCharacterMovementLocalControlPacket MovementState;
+    FBBBCharacterAimLocalControlPacket AimState;
     FVector2D MoveAxis = FVector2D::ZeroVector;
     FVector2D LookAxis = FVector2D::ZeroVector;
     bool bInputEnabled = true;

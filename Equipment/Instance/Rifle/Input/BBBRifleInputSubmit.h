@@ -16,13 +16,14 @@ struct TBBBRifleInputSlotSelector;
         } \
     };
 
-BBB_RIFLE_INPUT_SLOT(FBBBEquipmentEquipPacket, Equip)
-BBB_RIFLE_INPUT_SLOT(FBBBEquipmentPrimaryPacket, Primary)
-BBB_RIFLE_INPUT_SLOT(FBBBEquipmentReloadPacket, Reload)
-BBB_RIFLE_INPUT_SLOT(FBBBRifleDetachMagazinePacket, DetachMagazine)
-BBB_RIFLE_INPUT_SLOT(FBBBRifleLoadMagazinePacket, LoadMagazine)
-BBB_RIFLE_INPUT_SLOT(FBBBRifleInterruptReloadPacket, InterruptReload)
-BBB_RIFLE_INPUT_SLOT(FBBBRifleNetworkStatePacket, NetworkState)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentEquipLocalControlPacket, Equip)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentEquipAuthorityFactPacket, AuthorityEquip)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentPrimaryLocalControlPacket, Primary)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentReloadLocalControlPacket, Reload)
+BBB_RIFLE_INPUT_SLOT(FBBBRifleDetachMagazineLocalControlPacket, DetachMagazine)
+BBB_RIFLE_INPUT_SLOT(FBBBRifleLoadMagazineLocalControlPacket, LoadMagazine)
+BBB_RIFLE_INPUT_SLOT(FBBBRifleInterruptReloadLocalControlPacket, InterruptReload)
+BBB_RIFLE_INPUT_SLOT(FBBBRifleActionStateAuthorityFactPacket, AuthorityActionState)
 
 #undef BBB_RIFLE_INPUT_SLOT
 

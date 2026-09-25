@@ -24,7 +24,7 @@ struct FBBBRifleActionInputState final
     bool bInterruptReloadRequested = false;
 
     /** 本帧是否收到镜像当前结果 */
-    bool bHasNetworkState = false;
+    bool bHasAuthorityFact = false;
 
     /** 镜像当前装填弹药 */
     int32 LoadedAmmo = 0;

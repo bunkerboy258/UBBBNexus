@@ -5,11 +5,16 @@
 
 class UAnimMontage;
 class FBBBCharacterAnimationMontageProcessor;
-struct FBBBFullBodyMontagePacket;
-struct FBBBUpperBodyMontagePacket;
-struct FBBBFullBodyAdditivePreAimMontagePacket;
-struct FBBBUpperBodyAdditiveMontagePacket;
-struct FBBBAdditiveHitReactMontagePacket;
+struct FBBBFullBodyMontageLocalControlPacket;
+struct FBBBUpperBodyMontageLocalControlPacket;
+struct FBBBFullBodyAdditivePreAimMontageLocalControlPacket;
+struct FBBBUpperBodyAdditiveMontageLocalControlPacket;
+struct FBBBAdditiveHitReactMontageLocalControlPacket;
+struct FBBBFullBodyMontageAuthorityFactPacket;
+struct FBBBUpperBodyMontageAuthorityFactPacket;
+struct FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket;
+struct FBBBUpperBodyAdditiveMontageAuthorityFactPacket;
+struct FBBBAdditiveHitReactMontageAuthorityFactPacket;
 
 /** 动画系统固定槽位待消费的蒙太奇请求 */
 USTRUCT()
@@ -19,11 +24,16 @@ struct FBBBCharacterAnimationMontageState final
 
 private:
     friend class FBBBCharacterAnimationMontageProcessor;
-    friend struct FBBBFullBodyMontagePacket;
-    friend struct FBBBUpperBodyMontagePacket;
-    friend struct FBBBFullBodyAdditivePreAimMontagePacket;
-    friend struct FBBBUpperBodyAdditiveMontagePacket;
-    friend struct FBBBAdditiveHitReactMontagePacket;
+    friend struct FBBBFullBodyMontageLocalControlPacket;
+    friend struct FBBBUpperBodyMontageLocalControlPacket;
+    friend struct FBBBFullBodyAdditivePreAimMontageLocalControlPacket;
+    friend struct FBBBUpperBodyAdditiveMontageLocalControlPacket;
+    friend struct FBBBAdditiveHitReactMontageLocalControlPacket;
+    friend struct FBBBFullBodyMontageAuthorityFactPacket;
+    friend struct FBBBUpperBodyMontageAuthorityFactPacket;
+    friend struct FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket;
+    friend struct FBBBUpperBodyAdditiveMontageAuthorityFactPacket;
+    friend struct FBBBAdditiveHitReactMontageAuthorityFactPacket;
 
     /** FullBody 槽位待消费的蒙太奇引用 */
     UPROPERTY(Transient)
