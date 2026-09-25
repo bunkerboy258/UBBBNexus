@@ -4,6 +4,10 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBRifleEquipment.generated.h"
 
+struct FBBBRifleDetachMagazinePacket;
+struct FBBBRifleLoadMagazinePacket;
+struct FBBBRifleInterruptReloadPacket;
+
 /** 步枪实例的唯一运行时根 */
 UCLASS(Blueprintable)
 class ABBB_EVAC_API ABBBRifleEquipment : public ABBBEquipment
@@ -16,29 +20,19 @@ public:
     /** 步枪唯一聚合黑板 */
     FBBBRifleRuntimeData RuntimeData;
 
-    /** 提交装备表现 @return 无 */
-    virtual void SubmitEquipInput() override;
+    using ABBBEquipment::SubmitInput;
 
-    /** 提交本机开火请求 @return 无 */
-    virtual void SubmitPrimaryInput() override;
+    /** @param Packet	弹匣卸下通知 @return 是否接受 */
+    bool SubmitInput(FBBBRifleDetachMagazinePacket &&Packet);
 
-    /** 提交本机换弹请求 @return 无 */
-    virtual void SubmitReloadInput() override;
+    /** @param Packet	弹匣装入通知 @return 是否接受 */
+    bool SubmitInput(FBBBRifleLoadMagazinePacket &&Packet);
+
+    /** @param Packet	换弹结束通知 @return 是否接受 */
+    bool SubmitInput(FBBBRifleInterruptReloadPacket &&Packet);
 
     /** 卸下时收束自身状态 @return 无 */
     virtual void OnUnequipped() override;
-
-    /** @param Data	收到的完整步枪状态 @return 是否接受 */
-    virtual bool SubmitNetworkPayload(const TArray<uint8> &Data) override;
-
-    /** 提交本机弹匣卸下通知 @return 无 */
-    void SubmitDetachMagazineInput();
-
-    /** 提交本机弹匣装入通知 @return 无 */
-    void SubmitLoadMagazineInput();
-
-    /** 提交本机换弹结束通知 @return 无 */
-    void SubmitInterruptReloadInput();
 
 protected:
     /** @param MuzzleTransform	本次开火枪口世界变换 @return 无 */
@@ -49,6 +43,11 @@ protected:
 
 private:
     friend class FBBBRifleActionProcessor;
+
+    virtual bool QueueInput(FBBBEquipmentEquipPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentPrimaryPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentReloadPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentNetworkPayload Payload) override;
 
     virtual void Tick(float DeltaSeconds) override;
     virtual bool InitializeRuntimeData() override;

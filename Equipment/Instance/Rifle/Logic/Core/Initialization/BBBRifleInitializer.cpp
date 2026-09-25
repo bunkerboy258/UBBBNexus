@@ -3,6 +3,22 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
+#include "Components/SkeletalMeshComponent.h"
+
+void FBBBRifleInitializer::ConfigureTick(ABBBRifleEquipment &Equipment)
+{
+    Equipment.PrimaryActorTick.bCanEverTick = true;
+    Equipment.PrimaryActorTick.bStartWithTickEnabled = false;
+    Equipment.PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+    Equipment.PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
+
+    if (USkeletalMeshComponent *Mesh = Equipment.GetEquipmentSkeletalMesh())
+    {
+        Equipment.PrimaryActorTick.AddPrerequisite(Mesh, Mesh->PrimaryComponentTick);
+    }
+}
+
+//------------------------------------------------------------------------------
 
 bool FBBBRifleInitializer::Initialize(ABBBRifleEquipment &Equipment)
 {

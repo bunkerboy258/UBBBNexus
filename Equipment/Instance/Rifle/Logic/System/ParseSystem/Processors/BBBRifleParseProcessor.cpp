@@ -3,6 +3,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkPayload.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -10,7 +12,7 @@
 namespace
 {
     template<typename TPacket>
-    void Process(TBBBEquipmentInputSlot<TPacket> &Slot, FBBBRifleActionInputState &State)
+    void Process(TBBBRifleInputSlot<TPacket> &Slot, FBBBRifleActionInputState &State)
     {
         if (!Slot.bActive)
         {
@@ -29,7 +31,7 @@ namespace
     void ClearActionInput(FBBBRifleActionInputState &State)
     {
         State.bEquipRequested = false;
-        State.bFireRequested = false;
+        State.bPrimaryRequested = false;
         State.bReloadRequested = false;
         State.bDetachMagazineRequested = false;
         State.bLoadMagazineRequested = false;
@@ -43,6 +45,41 @@ namespace
     }
 }
 
+bool FBBBRifleParseProcessor::SubmitShared(
+    FBBBRifleRuntimeData &Data,
+    const bool bEquipped,
+    const FBBBEquipmentEquipPacket &Packet)
+{
+    if (!bEquipped)
+    {
+        return false;
+    }
+
+    BBBRifleInput::Submit(Data.Parse.InputState, Packet);
+    return true;
+}
+
+bool FBBBRifleParseProcessor::SubmitMirror(
+    FBBBRifleRuntimeData &Data,
+    const bool bEquipped,
+    const bool bMirror,
+    const FBBBEquipmentNetworkPayload &Payload)
+{
+    if (!bEquipped || !bMirror)
+    {
+        return false;
+    }
+
+    FBBBRifleNetworkStatePacket Packet;
+    if (!FBBBRifleNetworkProcessor::Decode(Data, Payload.Data, Packet))
+    {
+        return false;
+    }
+
+    BBBRifleInput::Submit(Data.Parse.InputState, Packet);
+    return true;
+}
+
 void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Parse.InputState;
@@ -52,7 +89,7 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
 
     if (Context.Equipment.IsMirror())
     {
-        Input.Fire.bActive = false;
+        Input.Primary.bActive = false;
         Input.Reload.bActive = false;
         Input.DetachMagazine.bActive = false;
         Input.LoadMagazine.bActive = false;
@@ -62,7 +99,7 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
     }
 
     Input.NetworkState.bActive = false;
-    Process(Input.Fire, ActionInput);
+    Process(Input.Primary, ActionInput);
     Process(Input.Reload, ActionInput);
     Process(Input.DetachMagazine, ActionInput);
     Process(Input.LoadMagazine, ActionInput);
@@ -73,7 +110,7 @@ void FBBBRifleParseProcessor::Clear(FBBBRifleRuntimeData &Data)
 {
     auto &Input = Data.Parse.InputState;
     Input.Equip.bActive = false;
-    Input.Fire.bActive = false;
+    Input.Primary.bActive = false;
     Input.Reload.bActive = false;
     Input.DetachMagazine.bActive = false;
     Input.LoadMagazine.bActive = false;

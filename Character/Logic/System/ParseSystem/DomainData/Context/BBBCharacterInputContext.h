@@ -7,6 +7,8 @@
 #include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
 
 struct FBBBCharacterAnimationMontageState;
+struct FBBBCharacterEquipmentSelectionState;
+struct FBBBCharacterEquipmentInventoryState;
 
 /**
  * 输入包应用上下文
@@ -26,6 +28,12 @@ struct FBBBCharacterInputContext final
 
     /** 输入系统最终控制状态 */
     FBBBCharacterControlState &Control;
+
+    /** 装备选择状态 */
+    FBBBCharacterEquipmentSelectionState &EquipmentSelection;
+
+    /** 装备容器只读状态 */
+    const FBBBCharacterEquipmentInventoryState &EquipmentInventory;
 
     /** 等待相机系统消费的表现输入 */
     TOptional<FBBBPlayerCameraInput> &Camera;

@@ -15,6 +15,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterAimPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Local/Control/BBBCharacterMovementPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Mirror/State/BBBRunStatePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Shared/Action/BBBEquipmentSelectionPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBEquipmentSlotPacket.h"
 
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
@@ -23,6 +25,10 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBAimStatePacket> AimState;
     /** 跑步状态输入槽位 */
     TBBBCharacterInputSlot<FBBBRunStatePacket> RunState;
+    /** 装备选择输入槽位 */
+    TBBBCharacterInputSlot<FBBBEquipmentSelectionPacket> EquipmentSelectionState;
+    /** 快捷栏装备选择输入槽位 */
+    TBBBCharacterInputSlot<FBBBEquipmentSlotPacket> EquipmentSlot;
     /** 移动命令输入槽位 */
     TBBBCharacterInputSlot<FBBBCharacterMovementPacket> Movement;
     /** 跑步动作输入槽位 */

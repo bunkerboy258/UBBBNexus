@@ -10,15 +10,15 @@ struct TBBBRifleInputSlotSelector;
     template<> \
     struct TBBBRifleInputSlotSelector<PacketType> final \
     { \
-        static TBBBEquipmentInputSlot<PacketType> &Get(FBBBRifleInputState &State) \
+        static TBBBRifleInputSlot<PacketType> &Get(FBBBRifleInputState &State) \
         { \
             return State.MemberName; \
         } \
     };
 
-BBB_RIFLE_INPUT_SLOT(FBBBRifleEquipPacket, Equip)
-BBB_RIFLE_INPUT_SLOT(FBBBRifleFirePacket, Fire)
-BBB_RIFLE_INPUT_SLOT(FBBBRifleReloadPacket, Reload)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentEquipPacket, Equip)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentPrimaryPacket, Primary)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentReloadPacket, Reload)
 BBB_RIFLE_INPUT_SLOT(FBBBRifleDetachMagazinePacket, DetachMagazine)
 BBB_RIFLE_INPUT_SLOT(FBBBRifleLoadMagazinePacket, LoadMagazine)
 BBB_RIFLE_INPUT_SLOT(FBBBRifleInterruptReloadPacket, InterruptReload)
@@ -38,7 +38,7 @@ namespace BBBRifleInput
     template<typename TPacket>
     void Submit(FBBBRifleInputState &State, const TPacket &Packet)
     {
-        TBBBEquipmentInputSlot<TPacket> &Slot = TBBBRifleInputSlotSelector<TPacket>::Get(State);
+        TBBBRifleInputSlot<TPacket> &Slot = TBBBRifleInputSlotSelector<TPacket>::Get(State);
         Slot.Packet = Packet;
         Slot.bActive = true;
     }

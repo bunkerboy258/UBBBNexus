@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Debug/Equipment/BBBEquipmentDebugActor.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/Shared/Action/BBBEquipmentSelectionPacket.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
@@ -94,7 +95,7 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
         return;
     }
 
-    const bool bSubmitted = Character->GetEquipmentSystem().RequestEquipment(EquipmentId);
+    const bool bSubmitted = Character->SubmitInput(FBBBEquipmentSelectionPacket{EquipmentId});
     SetActorTickEnabled(false);
 
     if (!bSubmitted)

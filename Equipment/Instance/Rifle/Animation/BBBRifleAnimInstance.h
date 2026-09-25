@@ -3,8 +3,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBRifleAnimInstance.generated.h"
 
-struct FBBBRifleActionState;
-
 /** 步枪动画图只读的动作结果 */
 UCLASS(BlueprintType)
 class ABBB_EVAC_API UBBBRifleAnimInstance : public UBBBEquipmentAnimInstance
@@ -12,8 +10,19 @@ class ABBB_EVAC_API UBBBRifleAnimInstance : public UBBBEquipmentAnimInstance
     GENERATED_BODY()
 
 public:
-    /** @param State	本帧动作结果 @param WorldTime	本机世界时间 @return 无 */
-    void PublishRifleState(const FBBBRifleActionState &State, float WorldTime);
+    /**
+     * 发布由动画系统整理的步枪事实
+     * @param InLoadedAmmo			当前弹量
+     * @param InAmmoCapacity			弹匣容量
+     * @param bInReloading			当前换弹状态
+     * @param InTimeSinceLastFireSeconds	距最近开火的时间
+     * @return 无
+     */
+    void PublishRifleSnapshot(
+        int32 InLoadedAmmo,
+        int32 InAmmoCapacity,
+        bool bInReloading,
+        float InTimeSinceLastFireSeconds);
 
     /** @return 步枪是否正在换弹 */
     UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))

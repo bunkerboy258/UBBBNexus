@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Mirror/State/BBBRifleNetworkStatePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
@@ -28,7 +28,10 @@ void FBBBRifleNetworkProcessor::Encode(const FBBBRifleRuntimeData &Data, TArray<
     Writer << Detached;
 }
 
-bool FBBBRifleNetworkProcessor::Submit(FBBBRifleRuntimeData &Data, const TArray<uint8> &Payload)
+bool FBBBRifleNetworkProcessor::Decode(
+    const FBBBRifleRuntimeData &Data,
+    const TArray<uint8> &Payload,
+    FBBBRifleNetworkStatePacket &Packet)
 {
     // 固定格式必须完整到达 不接受部分结果或额外尾部数据
     if (!ensureMsgf(Payload.Num() == 3 * sizeof(int32) + 2 * sizeof(uint8), TEXT("步枪网络状态长度错误")))
@@ -36,7 +39,6 @@ bool FBBBRifleNetworkProcessor::Submit(FBBBRifleRuntimeData &Data, const TArray<
         return false;
     }
 
-    FBBBRifleNetworkStatePacket Packet;
     uint8 Reloading = 0;
     uint8 Detached = 0;
     FMemoryReader Reader(Payload);
@@ -59,7 +61,6 @@ bool FBBBRifleNetworkProcessor::Submit(FBBBRifleRuntimeData &Data, const TArray<
         return false;
     }
 
-    FBBBRifleParseProcessor::Submit(Data, Packet);
     return true;
 }
 

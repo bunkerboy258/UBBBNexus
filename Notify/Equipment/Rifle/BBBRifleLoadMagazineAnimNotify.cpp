@@ -2,6 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/Local/Action/BBBRifleLoadMagazinePacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBRifleLoadMagazineAnimNotify::Notify(
@@ -20,5 +21,5 @@ void UBBBRifleLoadMagazineAnimNotify::Notify(
     }
 
     // 这里只提交装入输入 弹药状态由步枪解析流程处理
-    Rifle->SubmitLoadMagazineInput();
+    Rifle->SubmitInput(FBBBRifleLoadMagazinePacket{});
 }

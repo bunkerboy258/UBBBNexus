@@ -64,5 +64,9 @@ void FBBBRifleAnimationProcessor::Update(FBBBRifleUpdateContext &Context)
     }
 
     Animation->PublishAnimationFacts(State.Pose);
-    Animation->PublishRifleState(Action, Context.World.GetTimeSeconds());
+    Animation->PublishRifleSnapshot(
+        Action.LoadedAmmo,
+        Action.AmmoCapacity,
+        Action.bIsReloading,
+        Context.World.GetTimeSeconds() - Action.LastFireTimeSeconds);
 }

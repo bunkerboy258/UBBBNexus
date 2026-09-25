@@ -9,7 +9,7 @@ struct FBBBRifleActionInputState final
     bool bEquipRequested = false;
 
     /** 本帧是否收到开火请求 */
-    bool bFireRequested = false;
+    bool bPrimaryRequested = false;
 
     /** 本帧是否收到换弹请求 */
     bool bReloadRequested = false;

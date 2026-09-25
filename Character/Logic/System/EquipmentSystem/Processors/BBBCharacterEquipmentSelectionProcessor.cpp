@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Shared/Action/BBBEquipmentEquipPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
@@ -143,5 +144,5 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpda
         }
     }
 
-    Desired->SubmitEquipInput();
+    Desired->SubmitInput(FBBBEquipmentEquipPacket{});
 }

@@ -3,7 +3,10 @@
 #include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBJumpPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBRunPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBCrouchPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/Local/Action/BBBEquipmentSlotPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentPrimaryPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentReloadPacket.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
@@ -104,7 +107,7 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
     {
         return;
     }
-    Character->GetEquipmentSystem().RequestSlot(Slot);
+    Character->SubmitInput(FBBBEquipmentSlotPacket{Slot});
 }
 
 void UBBBPlayerInputSystem::SubmitReload()
@@ -115,7 +118,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     }
     if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
     {
-        Equipment->SubmitReloadInput();
+        Equipment->SubmitInput(FBBBEquipmentReloadPacket{});
     }
 }
 
@@ -302,7 +305,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     {
         if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
         {
-            Equipment->SubmitPrimaryInput();
+            Equipment->SubmitInput(FBBBEquipmentPrimaryPacket{});
         }
     }
     if (bJump)

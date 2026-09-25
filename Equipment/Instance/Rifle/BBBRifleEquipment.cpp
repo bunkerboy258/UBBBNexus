@@ -3,11 +3,14 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Shutdown/BBBRifleShutdown.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Shared/Action/BBBEquipmentEquipPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentPrimaryPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentReloadPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkPayload.h"
 
 ABBBRifleEquipment::ABBBRifleEquipment()
 {
-    FBBBRifleUpdatePipeline::ConfigureTick(*this);
+    FBBBRifleInitializer::ConfigureTick(*this);
 }
 
 bool ABBBRifleEquipment::InitializeRuntimeData()
@@ -21,52 +24,49 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
     FBBBRifleUpdatePipeline::Update(*this);
 }
 
-void ABBBRifleEquipment::SubmitEquipInput()
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipPacket Packet)
 {
-    if (IsEquipped())
-    {
-        FBBBRifleParseProcessor::Submit(RuntimeData, FBBBRifleEquipPacket{});
-    }
+    return FBBBRifleParseProcessor::SubmitShared(RuntimeData, IsEquipped(), Packet);
 }
 
-void ABBBRifleEquipment::SubmitPrimaryInput()
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryPacket Packet)
 {
-    if (IsEquipped() && !IsMirror())
-    {
-        FBBBRifleParseProcessor::Submit(RuntimeData, FBBBRifleFirePacket{});
-    }
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-void ABBBRifleEquipment::SubmitReloadInput()
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentReloadPacket Packet)
 {
-    if (IsEquipped() && !IsMirror())
-    {
-        FBBBRifleParseProcessor::Submit(RuntimeData, FBBBRifleReloadPacket{});
-    }
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-void ABBBRifleEquipment::SubmitDetachMagazineInput()
+bool ABBBRifleEquipment::SubmitInput(FBBBRifleDetachMagazinePacket &&Packet)
 {
-    if (IsEquipped() && !IsMirror())
+    if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪脱匣输入线程或数据无效")))
     {
-        FBBBRifleParseProcessor::Submit(RuntimeData, FBBBRifleDetachMagazinePacket{});
+        return false;
     }
+
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-void ABBBRifleEquipment::SubmitLoadMagazineInput()
+bool ABBBRifleEquipment::SubmitInput(FBBBRifleLoadMagazinePacket &&Packet)
 {
-    if (IsEquipped() && !IsMirror())
+    if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪装匣输入线程或数据无效")))
     {
-        FBBBRifleParseProcessor::Submit(RuntimeData, FBBBRifleLoadMagazinePacket{});
+        return false;
     }
+
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
-void ABBBRifleEquipment::SubmitInterruptReloadInput()
+bool ABBBRifleEquipment::SubmitInput(FBBBRifleInterruptReloadPacket &&Packet)
 {
-    if (IsEquipped() && !IsMirror())
+    if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("步枪换弹结束输入线程或数据无效")))
     {
-        FBBBRifleParseProcessor::Submit(RuntimeData, FBBBRifleInterruptReloadPacket{});
+        return false;
     }
+
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
 void ABBBRifleEquipment::OnUnequipped()
@@ -74,9 +74,9 @@ void ABBBRifleEquipment::OnUnequipped()
     FBBBRifleShutdown::Shutdown(*this);
 }
 
-bool ABBBRifleEquipment::SubmitNetworkPayload(const TArray<uint8> &Data)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentNetworkPayload Payload)
 {
-    return IsEquipped() && IsMirror() && FBBBRifleNetworkProcessor::Submit(RuntimeData, Data);
+    return FBBBRifleParseProcessor::SubmitMirror(RuntimeData, IsEquipped(), IsMirror(), Payload);
 }
 
 void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform)

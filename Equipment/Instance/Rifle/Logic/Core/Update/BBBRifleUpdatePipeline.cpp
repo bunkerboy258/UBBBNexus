@@ -16,21 +16,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/BBBRifleNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
 
-void FBBBRifleUpdatePipeline::ConfigureTick(ABBBRifleEquipment &Equipment)
-{
-    Equipment.PrimaryActorTick.bCanEverTick = true;
-    Equipment.PrimaryActorTick.bStartWithTickEnabled = false;
-    Equipment.PrimaryActorTick.TickGroup = TG_PostUpdateWork;
-    Equipment.PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
-
-    if (USkeletalMeshComponent *Mesh = Equipment.GetEquipmentSkeletalMesh())
-    {
-        Equipment.PrimaryActorTick.AddPrerequisite(Mesh, Mesh->PrimaryComponentTick);
-    }
-}
-
-//------------------------------------------------------------------------------
-
 void FBBBRifleUpdatePipeline::Update(ABBBRifleEquipment &Equipment)
 {
     if (!Equipment.IsEquipped())

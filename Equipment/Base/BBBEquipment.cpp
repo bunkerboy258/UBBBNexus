@@ -2,6 +2,11 @@
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Logic/Core/Initialization/BBBEquipmentInitializer.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Shared/Action/BBBEquipmentEquipPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentPrimaryPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/Local/Action/BBBEquipmentReloadPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkPayload.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -41,43 +46,33 @@ UBBBEquipmentAnimInstance *ABBBEquipment::GetEquipmentAnimationInstance() const
     return EquipmentAnimationInstance;
 }
 
-void ABBBEquipment::SubmitEquipInput()
+bool ABBBEquipment::QueueInput(FBBBEquipmentEquipPacket Packet)
 {
-    ensureMsgf(false, TEXT("抽象装备未实现装备输入"));
+    ensureMsgf(false, TEXT("抽象装备未实现装备表现输入"));
+    return false;
 }
 
-void ABBBEquipment::SubmitPrimaryInput()
+bool ABBBEquipment::QueueInput(FBBBEquipmentPrimaryPacket Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现主行为输入"));
+    return false;
 }
 
-void ABBBEquipment::SubmitReloadInput()
+bool ABBBEquipment::QueueInput(FBBBEquipmentReloadPacket Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现换弹输入"));
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentNetworkPayload Payload)
+{
+    ensureMsgf(false, TEXT("抽象装备未实现网络状态输入"));
+    return false;
 }
 
 bool ABBBEquipment::InitializeEquipment()
 {
-    if (!ensureMsgf(
-        IsValid(Definition) && !Definition->EquipmentId.IsNone() && EquipmentSkeletalMesh,
-        TEXT("装备 %s 缺少有效静态配置、装备标识或骨骼网格"),
-        *GetClass()->GetName()))
-    {
-        return false;
-    }
-
-    EquipmentSkeletalMesh->SetSkeletalMesh(Definition->EquipmentMesh);
-    EquipmentSkeletalMesh->SetAnimInstanceClass(Definition->EquipmentAnimationClass);
-    EquipmentAnimationInstance = Cast<UBBBEquipmentAnimInstance>(EquipmentSkeletalMesh->GetAnimInstance());
-    if (!ensureMsgf(
-        EquipmentAnimationInstance,
-        TEXT("装备 %s 没有创建有效的 UBBBEquipmentAnimInstance"),
-        *Definition->EquipmentId.ToString()))
-    {
-        return false;
-    }
-
-    return InitializeRuntimeData();
+    return FBBBEquipmentInitializer::Initialize(*this);
 }
 
 bool ABBBEquipment::InitializeRuntimeData()
@@ -101,10 +96,4 @@ bool ABBBEquipment::IsEquipped() const
 void ABBBEquipment::OnUnequipped()
 {
     ensureMsgf(false, TEXT("装备未实现卸下清理"));
-}
-
-bool ABBBEquipment::SubmitNetworkPayload(const TArray<uint8> &Data)
-{
-    ensureMsgf(false, TEXT("装备未实现网络状态输入"));
-    return false;
 }

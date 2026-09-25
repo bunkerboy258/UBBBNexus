@@ -7,6 +7,7 @@
 
 class FBBBCharacterEquipmentSystem;
 class FBBBCharacterEquipmentSelectionProcessor;
+class FBBBCharacterParseSystem;
 
 /** 角色装备领域状态的唯一持有者 */
 USTRUCT(BlueprintType)
@@ -30,6 +31,7 @@ public:
 private:
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterEquipmentSelectionProcessor;
+    friend class FBBBCharacterParseSystem;
 
     /** 角色装备容器状态 */
     UPROPERTY()

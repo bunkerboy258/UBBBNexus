@@ -1,7 +1,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/Shared/Action/BBBEquipmentSelectionPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkPayload.h"
 #include "Net/UnrealNetwork.h"
 
 UBBBEquipmentNetworkComponent::UBBBEquipmentNetworkComponent()
@@ -117,7 +119,7 @@ void UBBBEquipmentNetworkComponent::TickComponent(
     if (RequestedGeneration != ReplicatedState.Generation)
     {
         PreviousEquipment = Equipment;
-        if (!Character->GetEquipmentSystem().RequestEquipment(ReplicatedState.EquipmentId))
+        if (!Character->SubmitInput(FBBBEquipmentSelectionPacket{ReplicatedState.EquipmentId}))
         {
             return;
         }
@@ -148,8 +150,12 @@ void UBBBEquipmentNetworkComponent::TickComponent(
         return;
     }
 
-    ensureMsgf(Equipment->SubmitNetworkPayload(ReplicatedState.Data),
+    if (!ensureMsgf(Equipment->SubmitInput(FBBBEquipmentNetworkPayload{ReplicatedState.Data}),
         TEXT("装备拒绝当前网络状态 %s Generation=%llu Revision=%llu"),
-        *ReplicatedState.EquipmentId.ToString(), ReplicatedState.Generation, ReplicatedState.Revision);
+        *ReplicatedState.EquipmentId.ToString(), ReplicatedState.Generation, ReplicatedState.Revision))
+    {
+        return;
+    }
+
     AppliedRevision = ReplicatedState.Revision;
 }

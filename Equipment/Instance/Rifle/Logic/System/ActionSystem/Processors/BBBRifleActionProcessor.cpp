@@ -12,7 +12,7 @@ namespace
     void Clear(FBBBRifleActionInputState &Input)
     {
         Input.bEquipRequested = false;
-        Input.bFireRequested = false;
+        Input.bPrimaryRequested = false;
         Input.bReloadRequested = false;
         Input.bDetachMagazineRequested = false;
         Input.bLoadMagazineRequested = false;
@@ -95,7 +95,7 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
         }
     }
 
-    if (Input.bFireRequested && !State.bIsReloading && State.LoadedAmmo > 0
+    if (Input.bPrimaryRequested && !State.bIsReloading && State.LoadedAmmo > 0
         && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
