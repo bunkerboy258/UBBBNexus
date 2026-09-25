@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
@@ -17,6 +18,14 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
     ABBBEquipment *ActiveInstance = EquipmentState.ActiveMainHandInstance;
+
+    UBBBEquipmentAnimInstance *DesiredWeaponAnimation = ActiveInstance
+        ? ActiveInstance->GetEquipmentAnimationInstance()
+        : nullptr;
+    if (Context.AnimationInstance.TryGetWeaponAnimInstance() != DesiredWeaponAnimation)
+    {
+        Context.AnimationInstance.BindWeaponAnimInstance(DesiredWeaponAnimation);
+    }
 
     if (ActiveInstance)
     {

@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 
 struct FBBBRifleUpdateContext;
-struct FBBBEquipmentStateAuthorityFactPacket;
+struct FBBBRifleActionStateAuthorityFactPacket;
 
 /** 固定输入存储与来源检查 */
 class FBBBRifleParseProcessor final
@@ -75,9 +75,9 @@ public:
      * @param Payload		收到的网络数据
      * @return 是否接受
      */
-    static bool SubmitMirror(
+    static bool SubmitAuthorityFact(
         FBBBRifleRuntimeData &Data,
         bool bEquipped,
         bool bMirror,
-        const FBBBEquipmentStateAuthorityFactPacket &Payload);
+        const FBBBRifleActionStateAuthorityFactPacket &Payload);
 };

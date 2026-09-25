@@ -3,8 +3,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentStateAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -75,24 +73,18 @@ bool FBBBRifleParseProcessor::SubmitEquip(
     return true;
 }
 
-bool FBBBRifleParseProcessor::SubmitMirror(
+bool FBBBRifleParseProcessor::SubmitAuthorityFact(
     FBBBRifleRuntimeData &Data,
     const bool bEquipped,
     const bool bMirror,
-    const FBBBEquipmentStateAuthorityFactPacket &Payload)
+    const FBBBRifleActionStateAuthorityFactPacket &Payload)
 {
     if (!bEquipped || !bMirror)
     {
         return false;
     }
 
-    FBBBRifleActionStateAuthorityFactPacket Packet;
-    if (!FBBBRifleNetworkProcessor::Decode(Data, Payload.Data, Packet))
-    {
-        return false;
-    }
-
-    BBBRifleInput::Submit(Data.Parse.InputState, Packet);
+    BBBRifleInput::Submit(Data.Parse.InputState, Payload);
     return true;
 }
 

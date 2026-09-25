@@ -5,14 +5,19 @@
 class ABBBCharacter;
 class ABBBEquipment;
 class USkeletalMeshComponent;
-class FBBBCharacterEquipmentSelectionProcessor;
+class FBBBCharacterEquipmentSystem;
 class FBBBCharacterShutdown;
+struct FBBBCharacterEquipmentUpdateContext;
 
 /** 由角色集中管理持有装备的外层生命周期 */
 class FBBBCharacterEquipmentLifecycleProcessor final
 {
+public:
+    /** @param Context 本次装备更新上下文 @return 无 */
+    void Update(FBBBCharacterEquipmentUpdateContext &Context) const;
+
 private:
-    friend class FBBBCharacterEquipmentSelectionProcessor;
+    friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterShutdown;
 
     /** 创建并初始化角色持有的装备 */

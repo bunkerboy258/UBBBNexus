@@ -46,4 +46,5 @@ void FBBBCharacterEquipmentSystem::Update()
         RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
 
     SelectionProcessor.Update(Context);
+    LifecycleProcessor.Update(Context);
 }

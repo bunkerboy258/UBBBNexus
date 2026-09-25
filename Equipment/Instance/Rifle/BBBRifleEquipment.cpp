@@ -3,6 +3,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Shutdown/BBBRifleShutdown.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/BBBRifleNetworkSystem.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Action/FBBBRifleActionStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
@@ -67,7 +69,13 @@ void ABBBRifleEquipment::OnUnequipped()
 
 bool ABBBRifleEquipment::QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload)
 {
-    return FBBBRifleParseProcessor::SubmitMirror(RuntimeData, IsEquipped(), IsMirror(), Payload);
+    FBBBRifleActionStateAuthorityFactPacket Packet;
+    if (!FBBBRifleNetworkSystem::DecodeAuthorityFact(RuntimeData, Payload.Data, Packet))
+    {
+        return false;
+    }
+
+    return FBBBRifleParseProcessor::SubmitAuthorityFact(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
 void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform)

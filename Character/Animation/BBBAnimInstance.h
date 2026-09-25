@@ -6,6 +6,7 @@
 #include "BBBAnimInstance.generated.h"
 
 class FBBBCharacterAnimationActionProcessor;
+class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationMontageProcessor;
 class FBBBCharacterAnimationSystem;
 class UBBBEquipmentAnimInstance;
@@ -27,6 +28,7 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     GENERATED_BODY()
 
     friend class FBBBCharacterAnimationActionProcessor;
+    friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterAnimationSystem;
 
@@ -153,6 +155,11 @@ public:
 
 
 
+    /** 角色胶囊体底部到地面的距离 供动画属性存取节点直接读取 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    float GroundDistance = 0.0f;
+
+private:
     /**
      * 绑定装备实际使用的武器动画实例
      * @param InWeaponAnimInstance 武器动画实例 卸下时传入空
@@ -160,11 +167,6 @@ public:
      */
     void BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance);
 
-    /** 角色胶囊体底部到地面的距离 供动画属性存取节点直接读取 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
-    float GroundDistance = 0.0f;
-
-private:
     /**
      * 提交移动完成后的角色事实快照
      * @param FactState 新事实状态

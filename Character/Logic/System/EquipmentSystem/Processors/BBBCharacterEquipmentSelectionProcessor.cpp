@@ -2,22 +2,21 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
-#include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
 {
     auto &Selection = Context.SelectionState;
     auto &Inventory = Context.InventoryState;
     const bool bCreateRequested = Selection.bHasEquipmentRequest;
+    Context.bHasSelectionResult = false;
+    Context.PendingEquipmentClass = nullptr;
+    Context.bCreateRequested = false;
+
     if (bCreateRequested)
     {
         Selection.bHasEquipmentRequest = false;
         Selection.PendingSlot.Reset();
-        ABBBEquipment *Created = nullptr;
         if (!Selection.PendingEquipmentId.IsNone())
         {
             const UBBBEquipmentCatalog *Catalog = Context.Character.GetCharacterConfig().Equipment.EquipmentCatalog;
@@ -44,14 +43,14 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpda
                 return;
             }
 
-            Created = FBBBCharacterEquipmentLifecycleProcessor::Create(Context.Character, Class);
-            if (!Created)
-            {
-                return;
-            }
+            Context.PendingEquipmentClass = Class;
+        }
+        else
+        {
+            Selection.DesiredMainHandInstance = nullptr;
         }
 
-        Selection.DesiredMainHandInstance = Created;
+        Context.bCreateRequested = true;
     }
 
     if (Selection.PendingSlot.IsSet())
@@ -69,87 +68,5 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpda
         Selection.DesiredMainHandInstance = nullptr;
     }
 
-    if (Selection.ActiveMainHandInstance == Selection.DesiredMainHandInstance
-        && IsValid(Selection.ActiveMainHandInstance))
-    {
-        return;
-    }
-
-    ABBBEquipment *Previous = Selection.ActiveMainHandInstance;
-    if (IsValid(Previous))
-    {
-        Previous->OnUnequipped();
-        if (Context.bIsMirror || bCreateRequested)
-        {
-            FBBBCharacterEquipmentLifecycleProcessor::Destroy(&Context.CharacterMesh, *Previous);
-        }
-        if (!Context.bIsMirror && !bCreateRequested)
-        {
-            FBBBCharacterEquipmentLifecycleProcessor::Detach(&Context.CharacterMesh, *Previous);
-        }
-    }
-
-    for (FBBBCharacterItem &Item : Inventory.BackpackSlots)
-    {
-        if (!IsValid(Item.ItemActor.Get()))
-        {
-            Item.ItemActor = nullptr;
-        }
-    }
-
-    for (FBBBCharacterItem &Item : Inventory.ItemBarSlots)
-    {
-        if (!IsValid(Item.ItemActor.Get()))
-        {
-            Item.ItemActor = nullptr;
-        }
-    }
-
-    ABBBEquipment *Desired = Selection.DesiredMainHandInstance;
-    Selection.ActiveMainHandInstance = nullptr;
-    Selection.ActiveEquipmentId = NAME_None;
-    if (!Desired)
-    {
-        return;
-    }
-
-    if (!ensureMsgf(FBBBCharacterEquipmentLifecycleProcessor::Attach(
-        Context.CharacterMesh, Context.RightHandWeaponSocketName, *Desired),
-        TEXT("装备挂接失败 %s"), *GetNameSafe(Desired)))
-    {
-        FBBBCharacterEquipmentLifecycleProcessor::Destroy(&Context.CharacterMesh, *Desired);
-        Selection.DesiredMainHandInstance = nullptr;
-        return;
-    }
-
-    Selection.ActiveMainHandInstance = Desired;
-    Selection.ActiveEquipmentId = Desired->GetEquipmentId();
-    if (bCreateRequested)
-    {
-        for (FBBBCharacterItem &Item : Inventory.BackpackSlots)
-        {
-            if (!Item.ItemActor)
-            {
-                Item.ItemActor = Desired;
-                break;
-            }
-        }
-
-        for (FBBBCharacterItem &Item : Inventory.ItemBarSlots)
-        {
-            if (!Item.ItemActor)
-            {
-                Item.ItemActor = Desired;
-                break;
-            }
-        }
-    }
-
-    if (Desired->IsMirror())
-    {
-        Desired->SubmitInput(FBBBEquipmentEquipAuthorityFactPacket{});
-        return;
-    }
-
-    Desired->SubmitInput(FBBBEquipmentEquipLocalControlPacket{});
+    Context.bHasSelectionResult = true;
 }

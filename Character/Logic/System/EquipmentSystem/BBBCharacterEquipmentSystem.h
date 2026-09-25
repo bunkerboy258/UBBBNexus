@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
 
 class FBBBCharacterInitializer;
 class FBBBCharacterUpdatePipeline;
@@ -54,5 +55,8 @@ private:
 
     /** 装备选择处理器 */
     FBBBCharacterEquipmentSelectionProcessor SelectionProcessor;
+
+    /** 装备生命周期处理器 */
+    FBBBCharacterEquipmentLifecycleProcessor LifecycleProcessor;
 
 };

@@ -4,6 +4,7 @@
 
 class ABBBCharacter;
 class USkeletalMeshComponent;
+class ABBBEquipment;
 struct FBBBCharacterEquipmentInventoryState;
 struct FBBBCharacterEquipmentSelectionState;
 
@@ -27,4 +28,13 @@ struct FBBBCharacterEquipmentUpdateContext final
 
     /** 是否只能执行镜像还原 */
     bool bIsMirror = true;
+
+    /** 本次请求创建的装备类型 */
+    TSubclassOf<ABBBEquipment> PendingEquipmentClass = nullptr;
+
+    /** 本次是否存在有效选择结果 */
+    bool bHasSelectionResult = false;
+
+    /** 本次是否请求创建或清空装备 */
+    bool bCreateRequested = false;
 };
