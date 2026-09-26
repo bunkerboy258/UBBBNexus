@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Action/FBBBRifleActionStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -71,7 +71,7 @@ void FBBBRifleNetworkProcessor::Update(FBBBRifleUpdateContext &Context)
         return;
     }
 
-    UBBBEquipmentNetworkComponent *Network = Context.Character.FindComponentByClass<UBBBEquipmentNetworkComponent>();
+    UBBBEquipmentNetworkComponent *Network = Context.Character.GetEquipmentNetworkComponent();
     if (!ensureMsgf(Network, TEXT("持有角色缺少装备网络组件")))
     {
         return;

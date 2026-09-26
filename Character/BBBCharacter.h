@@ -17,8 +17,25 @@ class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
+class UBBBEquipmentNetworkComponent;
 class ABBBPlayerCameraSystem;
 class ABBBEquipment;
+
+enum class EBBBCharacterMontageSlot : uint8
+{
+    /** 未知槽位 */
+    Unknown,
+    /** 全身槽位 */
+    FullBody,
+    /** 上半身槽位 */
+    UpperBody,
+    /** 瞄准前全身叠加槽位 */
+    FullBodyAdditivePreAim,
+    /** 上半身叠加槽位 */
+    UpperBodyAdditive,
+    /** 受击叠加槽位 */
+    AdditiveHitReact
+};
 
 UCLASS()
 class ABBB_EVAC_API ABBBCharacter : public ACharacter
@@ -97,6 +114,29 @@ public:
         return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
     }
 
+    /** @return 角色是否只执行网络镜像还原 */
+    bool IsNetworkMirror() const;
+
+    /** @return 角色是否拥有网络权威 */
+    bool HasNetworkAuthority() const;
+
+    /** @return 装备独立网络组件 */
+    UBBBEquipmentNetworkComponent *GetEquipmentNetworkComponent() const;
+
+    /**
+     * 读取右手骨骼世界变换
+     * @param OutTransform	有效时写入右手骨骼世界变换
+     * @return 是否成功读取
+     */
+    bool TryGetRightHandWorldTransform(FTransform &OutTransform) const;
+
+    /**
+     * 将公开槽位名称映射到角色动画入口
+     * @param SlotName	槽位名称
+     * @return 已知槽位类别 未知时返回 Unknown
+     */
+    static EBBBCharacterMontageSlot ClassifyMontageSlot(FName SlotName);
+
     /** 角色公开持有的唯一运行时聚合黑板 */
     UPROPERTY(Transient)
     FBBBCharacterRuntimeData RuntimeData;
@@ -108,6 +148,9 @@ protected:
     
     UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
     TObjectPtr<UBBBCharacterNetworkComponent> CharacterNetworkComponent;
+    /** 装备独立网络传输组件 */
+    UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
+    TObjectPtr<UBBBEquipmentNetworkComponent> EquipmentNetworkComponent;
     /*分类命名为ABBB是为了快点找到（bushi*/
 
 private:

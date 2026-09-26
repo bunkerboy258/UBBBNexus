@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentAnimationFacts.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 
 /** 动画发布快照与已经表现的动作结果 */
 struct FBBBRifleAnimationState final

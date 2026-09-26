@@ -31,7 +31,7 @@ void UBBBEquipmentNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeP
 void UBBBEquipmentNetworkComponent::PublishState(ABBBEquipment *Equipment, const TArray<uint8> &Data)
 {
     ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    if (!Character || Character->RuntimeData.External.ReadNetworkIdentityState().bIsMirror
+    if (!Character || Character->IsNetworkMirror()
         || Character->GetActiveEquipment() != Equipment)
     {
         return;
@@ -59,7 +59,7 @@ void UBBBEquipmentNetworkComponent::PublishState(ABBBEquipment *Equipment, const
     ReplicatedState.EquipmentId = Equipment ? Equipment->GetEquipmentId() : NAME_None;
     ReplicatedState.Data = Data;
     ++ReplicatedState.Revision;
-    if (Character->RuntimeData.External.ReadNetworkIdentityState().bHasAuthority)
+    if (Character->HasNetworkAuthority())
     {
         Character->ForceNetUpdate();
         return;
@@ -102,7 +102,7 @@ void UBBBEquipmentNetworkComponent::TickComponent(
     }
 
     ABBBEquipment *Equipment = Character->GetActiveEquipment();
-    if (!Character->RuntimeData.External.ReadNetworkIdentityState().bIsMirror)
+    if (!Character->IsNetworkMirror())
     {
         if (!IsValid(Equipment))
         {

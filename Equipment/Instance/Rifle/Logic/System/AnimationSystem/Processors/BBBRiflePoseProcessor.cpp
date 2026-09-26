@@ -2,14 +2,10 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Engine/World.h"
-
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentAnimationFacts.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBRiflePoseProcessor::Update(FBBBRifleUpdateContext &Context)
@@ -23,11 +19,10 @@ void FBBBRiflePoseProcessor::Update(FBBBRifleUpdateContext &Context)
         return;
     }
 
-    const USkeletalMeshComponent *CharacterMesh = Context.Character.GetMesh();
-    const FName HandBoneName(TEXT("hand_r"));
     const FName SocketName = Context.Definition.LeftHandSocketName;
+    FTransform HandWorld;
     if (!ensureMsgf(
-        CharacterMesh && CharacterMesh->GetBoneIndex(HandBoneName) != INDEX_NONE,
+        Context.Character.TryGetRightHandWorldTransform(HandWorld),
         TEXT("角色 %s 缺少左手握持转换所需的 hand_r 骨骼"),
         *Context.Character.GetName()))
     {
@@ -46,7 +41,6 @@ void FBBBRiflePoseProcessor::Update(FBBBRifleUpdateContext &Context)
 
     // 根的 Tick 依赖保证两侧网格已完成更新 动画线程仅消费随后发布的快照
     const FTransform SocketWorld = Context.WeaponMesh.GetSocketTransform(SocketName, RTS_World);
-    const FTransform HandWorld = CharacterMesh->GetSocketTransform(HandBoneName, RTS_World);
     const FVector TargetWorld = SocketWorld.TransformPosition(Context.Definition.LeftHandSocketOffset);
     const FVector TargetHandRSpace = HandWorld.InverseTransformPosition(TargetWorld)
         + Context.Definition.LeftHandIKOffset;

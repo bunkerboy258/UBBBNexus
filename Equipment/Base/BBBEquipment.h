@@ -24,6 +24,9 @@ class ABBB_EVAC_API ABBBEquipment : public AActor
 public:
     ABBBEquipment();
 
+    /** 装备开始运行时初始化自身 @return 无 */
+    virtual void BeginPlay() override;
+
     /** @return 装备配置标识 */
     FName GetEquipmentId() const;
 
@@ -32,6 +35,22 @@ public:
     {
         return Definition;
     }
+
+    /** @return 装备自身是否完成初始化 */
+    bool IsInitialized() const
+    {
+        return bInitialized;
+    }
+
+    /**
+     * 读取装备挂接偏移
+     * @param OutOffset	有效时写入挂接偏移
+     * @return 是否具有有效配置
+     */
+    bool TryGetAttachmentOffset(FTransform &OutOffset) const;
+
+    /** @return 角色应链接的动画层类型 */
+    TSubclassOf<UAnimInstance> GetCharacterAnimationLayerClass() const;
 
     /** @return 持有角色当前是否只执行镜像还原 */
     bool IsMirror() const;
@@ -65,15 +84,7 @@ public:
     virtual void OnUnequipped();
 
 private:
-    friend class FBBBCharacterEquipmentLifecycleProcessor;
-    friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBEquipmentInitializer;
-
-    /** @return 角色应链接的动画层类型 */
-    TSubclassOf<UAnimInstance> GetCharacterAnimationLayerClass() const;
-
-    /** 初始化公共组件与具体装备状态 @return 是否初始化成功 */
-    bool InitializeEquipment();
 
 protected:
     /** 初始化具体装备状态 @return 是否初始化成功 */
@@ -106,4 +117,8 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UBBBEquipmentAnimInstance> EquipmentAnimationInstance = nullptr;
+
+    /** 装备初始化结果 */
+    UPROPERTY(Transient)
+    bool bInitialized = false;
 };

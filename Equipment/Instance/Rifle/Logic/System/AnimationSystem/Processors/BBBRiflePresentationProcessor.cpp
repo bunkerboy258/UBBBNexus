@@ -2,11 +2,10 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Definition/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
@@ -31,7 +30,8 @@ void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
 
     for (const FSlotAnimationTrack &Track : Montage->SlotAnimTracks)
     {
-        if (Track.SlotName == BBBCharacterMontageSlots::FullBody)
+        const EBBBCharacterMontageSlot Slot = ABBBCharacter::ClassifyMontageSlot(Track.SlotName);
+        if (Slot == EBBBCharacterMontageSlot::FullBody)
         {
             if (bMirror)
             {
@@ -43,7 +43,7 @@ void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
             continue;
         }
 
-        if (Track.SlotName == BBBCharacterMontageSlots::UpperBody)
+        if (Slot == EBBBCharacterMontageSlot::UpperBody)
         {
             if (bMirror)
             {
@@ -55,7 +55,7 @@ void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
             continue;
         }
 
-        if (Track.SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
+        if (Slot == EBBBCharacterMontageSlot::FullBodyAdditivePreAim)
         {
             if (bMirror)
             {
@@ -67,7 +67,7 @@ void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
             continue;
         }
 
-        if (Track.SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
+        if (Slot == EBBBCharacterMontageSlot::UpperBodyAdditive)
         {
             if (bMirror)
             {
@@ -79,7 +79,7 @@ void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
             continue;
         }
 
-        if (Track.SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
+        if (Slot == EBBBCharacterMontageSlot::AdditiveHitReact)
         {
             if (bMirror)
             {

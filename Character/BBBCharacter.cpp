@@ -3,12 +3,13 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 ABBBCharacter::ABBBCharacter()
 {
-    CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
+    EquipmentNetworkComponent = CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
 
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
@@ -86,3 +87,62 @@ bool ABBBCharacter::ShouldReplicateAcceleration() const
 }
 
 //------------------------------------------------------------------------------
+
+bool ABBBCharacter::IsNetworkMirror() const
+{
+    return RuntimeData.External.ReadNetworkIdentityState().bIsMirror;
+}
+
+bool ABBBCharacter::HasNetworkAuthority() const
+{
+    return RuntimeData.External.ReadNetworkIdentityState().bHasAuthority;
+}
+
+UBBBEquipmentNetworkComponent *ABBBCharacter::GetEquipmentNetworkComponent() const
+{
+    return EquipmentNetworkComponent;
+}
+
+bool ABBBCharacter::TryGetRightHandWorldTransform(FTransform &OutTransform) const
+{
+    const USkeletalMeshComponent *CharacterMesh = GetMesh();
+    const FName HandBoneName(TEXT("hand_r"));
+    if (!ensureMsgf(CharacterMesh && CharacterMesh->GetBoneIndex(HandBoneName) != INDEX_NONE,
+        TEXT("角色 %s 缺少 hand_r 骨骼"), *GetName()))
+    {
+        return false;
+    }
+
+    OutTransform = CharacterMesh->GetSocketTransform(HandBoneName, RTS_World);
+    return true;
+}
+
+EBBBCharacterMontageSlot ABBBCharacter::ClassifyMontageSlot(FName SlotName)
+{
+    if (SlotName == BBBCharacterMontageSlots::FullBody)
+    {
+        return EBBBCharacterMontageSlot::FullBody;
+    }
+
+    if (SlotName == BBBCharacterMontageSlots::UpperBody)
+    {
+        return EBBBCharacterMontageSlot::UpperBody;
+    }
+
+    if (SlotName == BBBCharacterMontageSlots::FullBodyAdditivePreAim)
+    {
+        return EBBBCharacterMontageSlot::FullBodyAdditivePreAim;
+    }
+
+    if (SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
+    {
+        return EBBBCharacterMontageSlot::UpperBodyAdditive;
+    }
+
+    if (SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
+    {
+        return EBBBCharacterMontageSlot::AdditiveHitReact;
+    }
+
+    return EBBBCharacterMontageSlot::Unknown;
+}

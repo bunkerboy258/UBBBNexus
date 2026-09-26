@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Logic/Core/Initialization/BBBEquipmentInitializer.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
@@ -27,6 +27,15 @@ ABBBEquipment::ABBBEquipment()
     EquipmentSkeletalMesh->SetGenerateOverlapEvents(false);
 }
 
+void ABBBEquipment::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // 装备自己完成初始化 持有者仅检查结果并管理演员生命周期
+    bInitialized = FBBBEquipmentInitializer::Initialize(*this);
+    ensureMsgf(bInitialized, TEXT("装备 %s 初始化失败"), *GetName());
+}
+
 FName ABBBEquipment::GetEquipmentId() const
 {
     return Definition ? Definition->EquipmentId : NAME_None;
@@ -35,6 +44,17 @@ FName ABBBEquipment::GetEquipmentId() const
 TSubclassOf<UAnimInstance> ABBBEquipment::GetCharacterAnimationLayerClass() const
 {
     return Definition ? Definition->CharacterAnimationLayerClass : nullptr;
+}
+
+bool ABBBEquipment::TryGetAttachmentOffset(FTransform &OutOffset) const
+{
+    if (!Definition)
+    {
+        return false;
+    }
+
+    OutOffset = Definition->SpawnOffset;
+    return true;
 }
 
 USkeletalMeshComponent *ABBBEquipment::GetEquipmentSkeletalMesh() const
@@ -77,11 +97,6 @@ bool ABBBEquipment::QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload)
     return false;
 }
 
-bool ABBBEquipment::InitializeEquipment()
-{
-    return FBBBEquipmentInitializer::Initialize(*this);
-}
-
 bool ABBBEquipment::InitializeRuntimeData()
 {
     ensureMsgf(false, TEXT("抽象装备未实现运行时数据初始化"));
@@ -91,7 +106,7 @@ bool ABBBEquipment::InitializeRuntimeData()
 bool ABBBEquipment::IsMirror() const
 {
     const ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    return !Character || Character->RuntimeData.External.ReadNetworkIdentityState().bIsMirror;
+    return !Character || Character->IsNetworkMirror();
 }
 
 bool ABBBEquipment::IsEquipped() const

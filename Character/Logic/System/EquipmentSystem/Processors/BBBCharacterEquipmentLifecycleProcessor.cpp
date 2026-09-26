@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Definition/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -152,7 +151,7 @@ ABBBEquipment *FBBBCharacterEquipmentLifecycleProcessor::Create(
 
     Equipment->SetActorHiddenInGame(true);
     UGameplayStatics::FinishSpawningActor(Equipment, FTransform::Identity);
-    if (!Equipment->InitializeEquipment())
+    if (!Equipment->IsInitialized())
     {
         Equipment->Destroy();
         return nullptr;
@@ -172,7 +171,8 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
     UBBBEquipmentAnimInstance *WeaponAnim = WeaponMesh
         ? Cast<UBBBEquipmentAnimInstance>(WeaponMesh->GetAnimInstance())
         : nullptr;
-    if (!(WeaponAnim && Equipment.GetDefinition()
+    FTransform AttachmentOffset;
+    if (!(WeaponAnim && Equipment.TryGetAttachmentOffset(AttachmentOffset)
         && Equipment.GetOwner() == CharacterMesh.GetOwner()
         && !AttachmentSocketName.IsNone() && CharacterMesh.DoesSocketExist(AttachmentSocketName)))
     {
@@ -187,13 +187,7 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
         return false;
     }
 
-    const UBBBEquipmentDefinition *Definition = Equipment.GetDefinition();
-    if (!Definition)
-    {
-        return false;
-    }
-
-    Equipment.SetActorRelativeTransform(Definition->SpawnOffset);
+    Equipment.SetActorRelativeTransform(AttachmentOffset);
     Equipment.SetActorHiddenInGame(false);
     // 让武器网格等待角色网格完成更新
     WeaponMesh->PrimaryComponentTick.AddPrerequisite(&CharacterMesh, CharacterMesh.PrimaryComponentTick);
