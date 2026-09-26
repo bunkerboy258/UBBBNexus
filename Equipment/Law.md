@@ -1,7 +1,5 @@
 # Equipment Law
 
-严格遵守 `Constitution/Data/Law.md`
-
 物理目录固定为
 
 - `Catalog/` 保存装备静态Actor配置的检索入口
