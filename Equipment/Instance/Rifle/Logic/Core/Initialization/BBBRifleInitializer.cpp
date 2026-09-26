@@ -28,6 +28,9 @@ bool FBBBRifleInitializer::Initialize(ABBBRifleEquipment &Equipment)
         return false;
     }
 
+    UE_LOG(LogTemp, Log, TEXT("[BBBRifle] Initialized Equipment=%s Definition=%s FireInterval=%.3f"),
+        *Equipment.GetName(), *RifleDefinition->GetPathName(), RifleDefinition->FireInterval);
+
     FBBBRifleActionProcessor::Initialize(Equipment.RuntimeData, *RifleDefinition);
     return true;
 }

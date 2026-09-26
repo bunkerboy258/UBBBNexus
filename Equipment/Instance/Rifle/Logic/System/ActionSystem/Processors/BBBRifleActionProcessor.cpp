@@ -95,15 +95,30 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
         }
     }
 
+    if (Input.bPrimaryRequested)
+    {
+        UE_LOG(LogTemp, VeryVerbose,
+            TEXT("[BBBRifle] PrimaryRequest Equipment=%s Reloading=%d Ammo=%d Elapsed=%.3f Required=%.3f"),
+            *Context.Equipment.GetName(), State.bIsReloading, State.LoadedAmmo,
+            Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
+    }
+
     if (Input.bPrimaryRequested && !State.bIsReloading && State.LoadedAmmo > 0
         && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
             TEXT("步枪缺少枪口 Socket")))
         {
+            const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
+            const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
             --State.LoadedAmmo;
             ++State.FireSequence;
-            State.LastFireTimeSeconds = Context.World.GetTimeSeconds();
+            State.LastFireTimeSeconds = CurrentTimeSeconds;
+
+            UE_LOG(LogTemp, VeryVerbose,
+                TEXT("[BBBRifle] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
+                *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
+                Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
 
             // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
             Context.Equipment.EmitShot(Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName));
