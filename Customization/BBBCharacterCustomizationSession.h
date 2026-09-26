@@ -10,6 +10,7 @@ class AActor;
 class APlayerController;
 class ASceneCapture2D;
 class FPreviewScene;
+class UMaterialInterface;
 class UBBBAppearanceComponent;
 class UBBBCharacterCustomizationView;
 class UTextureRenderTarget2D;
@@ -106,6 +107,9 @@ public:
 private:
     bool CreatePreview();
 
+    /** 创建仅由预览世界持有的灯光与背景 */
+    bool ConfigurePreviewLighting();
+
     bool SetDraft(FBBBAppearanceSelection Selection);
 
     bool TickPreview(float DeltaTime);
@@ -121,6 +125,10 @@ private:
     /** 模块唯一的预览人物配置 */
     UPROPERTY(Config)
     TSoftClassPtr<AActor> PreviewActorClass;
+
+    /** 独立预览世界的深蓝紫背景材质 */
+    UPROPERTY(Config)
+    TSoftObjectPtr<UMaterialInterface> PreviewBackdropMaterial;
 
     TUniquePtr<FPreviewScene> Scene;
 

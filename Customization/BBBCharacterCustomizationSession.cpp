@@ -4,12 +4,18 @@
 #include "BBBWork/UBBBNexus/Customization/UI/BBBCharacterCustomizationView.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/DirectionalLightComponent.h"
+#include "Components/RectLightComponent.h"
+#include "Components/SkyLightComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Containers/Ticker.h"
+#include "ContentStreaming.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/SceneCapture2D.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Engine/TextureCube.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
@@ -97,8 +103,7 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     Options.SetEditor(false);
     Options.SetCreatePhysicsScene(false);
     Options.SetForceMipsResident(false);
-    Options.SetLightRotation(FRotator(-35.0f, 0.0f, 0.0f));
-    Options.SetLightBrightness(UE_PI * 2.0f);
+    Options.SetCreateDefaultLighting(false);
     Scene = MakeUnique<FPreviewScene>(Options);
     UWorld *PreviewWorld = Scene->GetWorld();
     if (!PreviewWorld || PreviewWorld->GetNetDriver())
@@ -109,10 +114,11 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     }
 
     // 预览世界没有关卡环境光 反向补光保证旋转查看背面时仍可辨认
-    UDirectionalLightComponent *FillLight = NewObject<UDirectionalLightComponent>(GetTransientPackage(), NAME_None, RF_Transient);
-    FillLight->Intensity = UE_PI;
-    FillLight->LightColor = FColor::White;
-    Scene->AddComponent(FillLight, FTransform(FRotator(-30.0f, 180.0f, 0.0f)));
+    if (!ConfigurePreviewLighting())
+    {
+        Shutdown();
+        return false;
+    }
 
     PreviewActor = PreviewWorld->SpawnActor<AActor>(PreviewClass, FVector::ZeroVector, FRotator::ZeroRotator);
     CaptureActor = PreviewWorld->SpawnActor<ASceneCapture2D>();
@@ -145,8 +151,23 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     CaptureComponent->TextureTarget = PreviewTexture;
     CaptureComponent->bCaptureEveryFrame = false;
     CaptureComponent->bCaptureOnMovement = false;
+    CaptureComponent->bAlwaysPersistRenderingState = true;
     CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
     CaptureComponent->FOVAngle = 35.0f;
+
+    // 固定曝光避免切换衣服与机位时亮度漂移 保留暗部而不依赖强泛光
+    FPostProcessSettings &PostProcess = CaptureComponent->PostProcessSettings;
+    PostProcess.bOverride_AutoExposureMethod = true;
+    PostProcess.AutoExposureMethod = AEM_Manual;
+    PostProcess.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+    PostProcess.AutoExposureApplyPhysicalCameraExposure = false;
+    PostProcess.bOverride_AutoExposureBias = true;
+    PostProcess.AutoExposureBias = 0.0f;
+    PostProcess.bOverride_BloomIntensity = true;
+    PostProcess.BloomIntensity = 0.0f;
+    PostProcess.bOverride_VignetteIntensity = true;
+    PostProcess.VignetteIntensity = 0.15f;
+    CaptureComponent->PostProcessBlendWeight = 1.0f;
 
     // FPreviewScene 初始化世界但不会代替游戏主循环分发 BeginPlay 和 Tick
     if (!PreviewWorld->GetBegunPlay())
@@ -160,6 +181,71 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
 
     TickHandle = FTSTicker::GetCoreTicker().AddTicker(
         FTickerDelegate::CreateUObject(this, &ThisClass::TickPreview));
+    return true;
+}
+
+bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
+{
+    UMaterialInterface *BackdropMaterial = PreviewBackdropMaterial.LoadSynchronous();
+    UStaticMesh *BackdropMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+    UTextureCube *AmbientCubemap = LoadObject<UTextureCube>(nullptr, TEXT("/Engine/EngineMaterials/DefaultCubemap.DefaultCubemap"));
+    if (!BackdropMaterial || !BackdropMesh || !AmbientCubemap)
+    {
+        UE_LOG(LogBBBCustomization, Error, TEXT("预览灯光资源不完整 Backdrop=%s Mesh=%s Cubemap=%s"),
+            *PreviewBackdropMaterial.ToString(), *GetNameSafe(BackdropMesh), *GetNameSafe(AmbientCubemap));
+        return false;
+    }
+
+    // 灯光留在预览世界而不挂到人物上 旋转人物时照明方向保持不变
+    const FVector Focus(0.0f, 0.0f, 120.0f);
+    URectLightComponent *KeyLight = NewObject<URectLightComponent>(this, TEXT("KeyLight"), RF_Transient);
+    KeyLight->SetIntensityUnits(ELightUnits::Lumens);
+    KeyLight->SetIntensity(120.0f);
+    KeyLight->SetLightColor(FLinearColor(FColor(242, 247, 255)));
+    KeyLight->SetSourceWidth(60.0f);
+    KeyLight->SetSourceHeight(80.0f);
+    KeyLight->SetAttenuationRadius(1200.0f);
+    const FVector KeyPosition(-260.0f, -220.0f, 260.0f);
+    Scene->AddComponent(KeyLight, FTransform((Focus - KeyPosition).Rotation(), KeyPosition));
+
+    URectLightComponent *FillLight = NewObject<URectLightComponent>(this, TEXT("FillLight"), RF_Transient);
+    FillLight->SetIntensityUnits(ELightUnits::Lumens);
+    FillLight->SetIntensity(60.0f);
+    FillLight->SetLightColor(FLinearColor(0.65f, 0.76f, 1.0f));
+    FillLight->SetSourceWidth(220.0f);
+    FillLight->SetSourceHeight(260.0f);
+    FillLight->SetAttenuationRadius(1200.0f);
+    FillLight->SetCastShadows(false);
+    const FVector FillPosition(-200.0f, 240.0f, 180.0f);
+    Scene->AddComponent(FillLight, FTransform((Focus - FillPosition).Rotation(), FillPosition));
+
+    URectLightComponent *RimLight = NewObject<URectLightComponent>(this, TEXT("RimLight"), RF_Transient);
+    RimLight->SetIntensityUnits(ELightUnits::Lumens);
+    RimLight->SetIntensity(150.0f);
+    RimLight->SetLightColor(FLinearColor(0.48f, 0.38f, 1.0f));
+    RimLight->SetSourceWidth(100.0f);
+    RimLight->SetSourceHeight(220.0f);
+    RimLight->SetAttenuationRadius(1200.0f);
+    RimLight->SetCastShadows(false);
+    const FVector RimPosition(200.0f, 180.0f, 250.0f);
+    Scene->AddComponent(RimLight, FTransform((Focus - RimPosition).Rotation(), RimPosition));
+
+    // 少量环境光与反射托住眼窝和背面 主光仍决定形体 不实时捕获背景
+    USkyLightComponent *AmbientLight = NewObject<USkyLightComponent>(this, TEXT("AmbientLight"), RF_Transient);
+    AmbientLight->SetMobility(EComponentMobility::Movable);
+    AmbientLight->SourceType = SLS_SpecifiedCubemap;
+    AmbientLight->SetCubemap(AmbientCubemap);
+    AmbientLight->SetIntensity(0.1f);
+    AmbientLight->bLowerHemisphereIsBlack = false;
+    Scene->AddComponent(AmbientLight, FTransform::Identity);
+
+    // 背景不是人物部件 不计入人物包围盒 也不影响预览机位的自动取景
+    UStaticMeshComponent *Backdrop = NewObject<UStaticMeshComponent>(this, TEXT("PreviewBackdrop"), RF_Transient);
+    Backdrop->SetStaticMesh(BackdropMesh);
+    Backdrop->SetMaterial(0, BackdropMaterial);
+    Backdrop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Backdrop->SetCastShadow(false);
+    Scene->AddComponent(Backdrop, FTransform(FRotator::ZeroRotator, Focus, FVector(30.0f)));
     return true;
 }
 
@@ -195,7 +281,13 @@ void UBBBCharacterCustomizationSession::Capture()
         return;
     }
 
-    CaptureActor->GetCaptureComponent2D()->CaptureScene();
+    USceneCaptureComponent2D *CaptureComponent = CaptureActor->GetCaptureComponent2D();
+    // 独立世界没有玩家视口 用捕获相机提交纹理需求 关闭预览后不再维持高分辨率请求
+    const float ScreenSize = static_cast<float>(PreviewTexture->SizeX);
+    const float FOVScreenSize = ScreenSize / FMath::Tan(FMath::DegreesToRadians(CaptureComponent->FOVAngle * 0.5f));
+    IStreamingManager::Get().AddViewInformation(CaptureActor->GetActorLocation(), ScreenSize,
+        FOVScreenSize, 1.0f, false, 0.0f, PreviewActor.Get(), Scene->GetWorld());
+    CaptureComponent->CaptureScene();
 }
 
 void UBBBCharacterCustomizationSession::UpdateCamera()
