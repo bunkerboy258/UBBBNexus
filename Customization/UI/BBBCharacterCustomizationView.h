@@ -7,12 +7,14 @@
 
 class UBBBCharacterCustomizationSession;
 class UTextureRenderTarget2D;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
 
 /**
  * 本地换装界面
  * 只显示独立世界的画面并转交操作
  */
-UCLASS()
+UCLASS(Config = Game)
 class ABBB_EVAC_API UBBBCharacterCustomizationView : public UUserWidget
 {
     GENERATED_BODY()
@@ -50,6 +52,12 @@ protected:
 private:
     TSharedRef<SWidget> MakeSelectionRow(FName PartSlot);
 
+    /** 创建身体或背心的徽章选择行 */
+    TSharedRef<SWidget> MakePatchRow(FName PartSlot);
+
+    /** 将当前草稿的徽章坐标写入对应缩略图材质 */
+    void UpdatePatchPreview(FName PartSlot);
+
     FText GetSelectedItem(FName PartSlot) const;
 
     UPROPERTY(Transient)
@@ -59,4 +67,18 @@ private:
     TObjectPtr<UTextureRenderTarget2D> PreviewTexture;
 
     FSlateBrush PreviewBrush;
+
+    /** 徽章图集的界面材质 */
+    UPROPERTY(Config)
+    TSoftObjectPtr<UMaterialInterface> PatchPreviewMaterial;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> BodyPatchMaterial;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> VestPatchMaterial;
+
+    FSlateBrush BodyPatchBrush;
+
+    FSlateBrush VestPatchBrush;
 };

@@ -64,4 +64,30 @@ bool FBBBAppearanceMatchingTest::RunTest(const FString &Parameters)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBAppearancePatchTest, "BBB.Appearance.PatchCoordinates",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBAppearancePatchTest::RunTest(const FString &Parameters)
+{
+    FBBBAppearanceSelection Selection;
+    FBBBAppearancePart Body;
+    Body.Slot = TEXT("Body");
+    Body.Item = TEXT("Body_Shirt");
+    Selection.Parts.Add(Body);
+
+    for (int32 Index = 0; Index < 64; ++Index)
+    {
+        Selection.Parts[0].Patch = FVector2D(Index % 8, Index / 8) / 8.0;
+        TestTrue(FString::Printf(TEXT("图集格子 %d 可保存和传输"), Index), Selection.IsValid());
+    }
+
+    Selection.Parts[0].Patch = FVector2D(1.0, 0.0);
+    TestFalse(TEXT("拒绝图集右边界外的坐标"), Selection.IsValid());
+    Selection.Parts[0].Patch = FVector2D(0.0, -0.125);
+    TestFalse(TEXT("拒绝负坐标"), Selection.IsValid());
+    Selection.Parts[0].Patch = FVector2D(0.1, 0.0);
+    TestFalse(TEXT("拒绝不落在图案格子起点的坐标"), Selection.IsValid());
+    return true;
+}
+
 #endif

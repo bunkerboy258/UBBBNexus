@@ -57,6 +57,15 @@ public:
     bool CycleItem(FName Slot, int32 Direction);
 
     /**
+     * 切换身体或背心的徽章图案
+     * @param Slot	部位名称
+     * @param Direction	正数选择下一项 负数选择上一项
+     * @return 是否预览成功
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    bool CyclePatch(FName Slot, int32 Direction);
+
+    /**
      * 设置整体表面参数
      * @param Dirt	污渍强度
      * @param Weathering	磨损强度

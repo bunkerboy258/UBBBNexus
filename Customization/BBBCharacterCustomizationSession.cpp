@@ -376,6 +376,34 @@ bool UBBBCharacterCustomizationSession::CycleItem(const FName Slot, const int32 
     return SetDraft(MoveTemp(Selection));
 }
 
+bool UBBBCharacterCustomizationSession::CyclePatch(const FName Slot, const int32 Direction)
+{
+    if (!IsOpen() || Direction == 0 || (Slot != TEXT("Body") && Slot != TEXT("Vest")))
+    {
+        return false;
+    }
+
+    FBBBAppearanceSelection Selection = Draft;
+    for (FBBBAppearancePart &Part : Selection.Parts)
+    {
+        if (Part.Slot != Slot)
+        {
+            continue;
+        }
+
+        // 作者图集按八行八列排列 草稿直接保存材质使用的坐标
+        const int32 Column = FMath::RoundToInt(Part.Patch.X * 8.0);
+        const int32 Row = FMath::RoundToInt(Part.Patch.Y * 8.0);
+        const int32 Step = Direction > 0 ? 1 : -1;
+        const int32 Index = (Row * 8 + Column + Step + 64) % 64;
+        Part.Patch = FVector2D(Index % 8, Index / 8) / 8.0;
+        return SetDraft(MoveTemp(Selection));
+    }
+
+    UE_LOG(LogBBBCustomization, Warning, TEXT("徽章部位不存在 Slot=%s"), *Slot.ToString());
+    return false;
+}
+
 bool UBBBCharacterCustomizationSession::SetSurface(const float Dirt, const float Weathering)
 {
     FBBBAppearanceSelection Selection = Draft;
