@@ -14,11 +14,11 @@ struct FBBBCharacterLocomotionConfig
 
     /** 前进、侧移、后退方向的行走速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
-    FVector WalkSpeeds = FVector(500.0f, 350.0f, 300.0f);
+    FVector WalkSpeeds = FVector(200.0f, 180.0f, 150.0f);
 
     /** 前进、侧移、后退方向的奔跑速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
-    FVector RunSpeeds = FVector(700.0f, 700.0f, 700.0f);
+    FVector RunSpeeds = FVector(500.0f, 350.0f, 300.0f);
 
     /** 前进、侧移、后退方向的蹲伏速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
