@@ -16,9 +16,11 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     GENERATED_BODY()
 
 public:
+    /** 角色移动参数与碰撞配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterLocomotionConfig Locomotion;
 
+    /** 角色瞄准动画配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBAimAnimationConfig AimAnimation;
 
@@ -26,9 +28,11 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterAnimationConfig Animation;
 
+    /** 角色装备目录与容器配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterEquipmentConfig Equipment;
 
+    /** 角色网络状态同步配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FBBBCharacterNetworkConfig Network;
 };
