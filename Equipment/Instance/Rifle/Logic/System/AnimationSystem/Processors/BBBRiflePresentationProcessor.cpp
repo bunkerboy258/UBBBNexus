@@ -8,6 +8,8 @@
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket.h"
@@ -114,15 +116,20 @@ void FBBBRiflePresentationProcessor::PlayFire(const FBBBRifleUpdateContext &Cont
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
     if (Context.Equipment.IsMirror())
     {
+        Context.Character.SubmitInput(FBBBAimImpulseAuthorityFactPacket{
+            FVector2D(Context.Definition.AimPitchImpulseDegrees, Context.Definition.AimYawImpulseDegrees)});
         return;
     }
 
+    Context.Character.SubmitInput(FBBBAimImpulseLocalControlPacket{
+        FVector2D(Context.Definition.AimPitchImpulseDegrees, Context.Definition.AimYawImpulseDegrees)});
+
     FBBBCameraLocalControlPacket Packet;
-    Packet.Impulse = FVector2D(
+    Packet.Impulse = FVector(
         Context.Definition.VerticalRecoilAmount + FMath::FRandRange(
             -Context.Definition.VerticalRecoilRandom, Context.Definition.VerticalRecoilRandom),
         Context.Definition.HorizontalRecoilAmount + FMath::FRandRange(
-            -Context.Definition.HorizontalRecoilRandom, Context.Definition.HorizontalRecoilRandom));
-    Packet.RecoverySpeed = Context.Definition.RecoilRecoverySpeed;
+            -Context.Definition.HorizontalRecoilRandom, Context.Definition.HorizontalRecoilRandom),
+        Context.Definition.CameraRollImpulseDegrees);
     Context.Character.SubmitInput(Packet);
 }

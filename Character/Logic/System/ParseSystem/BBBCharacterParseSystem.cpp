@@ -21,6 +21,7 @@ void FBBBCharacterParseSystem::Update() const
         Data->Parse.ControlState,
         Data->Equipment.EquipmentSelectionState,
         Data->Equipment.ReadEquipmentInventoryState(),
-        Data->Parse.CameraState.PendingInput};
+        Data->Parse.CameraState.PendingInput,
+        Data->Animation.AimImpulseState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

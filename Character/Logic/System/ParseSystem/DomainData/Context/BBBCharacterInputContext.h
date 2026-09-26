@@ -9,6 +9,7 @@
 struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterEquipmentInventoryState;
+struct FBBBCharacterAimImpulseState;
 
 /**
  * 输入包应用上下文
@@ -37,5 +38,8 @@ struct FBBBCharacterInputContext final
 
     /** 等待相机系统消费的表现输入 */
     TOptional<FBBBPlayerCameraInput> &Camera;
+
+    /** 动画系统维护的额外瞄准冲击 */
+    FBBBCharacterAimImpulseState &AimImpulse;
 
 };

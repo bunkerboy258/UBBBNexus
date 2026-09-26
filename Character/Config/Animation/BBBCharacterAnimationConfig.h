@@ -29,4 +29,12 @@ struct FBBBCharacterAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Facing", meta = (ClampMin = "0.0"))
     float MaxTurnRateChangeSpeed = 720.0f;
 
+    /** 额外瞄准冲击的指数回正速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Impulse", meta = (ClampMin = "0.01"))
+    float AimImpulseRecoverySpeed = 14.0f;
+
+    /** 额外瞄准上下与左右偏移的最大绝对角度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Animation|Impulse")
+    FVector2D AimImpulseLimitDegrees = FVector2D(8.0f, 5.0f);
+
 };

@@ -8,7 +8,7 @@ struct FBBBPlayerCameraInput
 {
     GENERATED_BODY()
 
-    FVector2D Impulse = FVector2D::ZeroVector;
-    float RecoverySpeed = 1.0f;
+    /** 上下 左右 倾斜的角度冲击 */
+    FVector Impulse = FVector::ZeroVector;
 
 };

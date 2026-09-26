@@ -32,4 +32,6 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.AdditiveHitReactMontage, Context);
     Process(InputState.AuthorityAdditiveHitReactMontage, Context);
     Process(InputState.Camera, Context);
+    Process(InputState.AimImpulse, Context);
+    Process(InputState.AuthorityAimImpulse, Context);
 }

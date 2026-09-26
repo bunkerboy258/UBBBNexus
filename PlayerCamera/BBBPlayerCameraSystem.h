@@ -7,6 +7,7 @@ class ABBBCharacter;
 class APlayerController;
 class UCameraComponent;
 class USpringArmComponent;
+class FBBBPlayerCameraImpulseProcessor;
 
 /** 独立玩家相机只持有角色弱引用 */
 UCLASS(Blueprintable)
@@ -32,6 +33,7 @@ public:
     void Submit(const FBBBPlayerCameraInput &Packet);
 
 private:
+    friend class FBBBPlayerCameraImpulseProcessor;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Camera", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<USpringArmComponent> Boom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Camera", meta = (AllowPrivateAccess = "true"))
@@ -46,7 +48,17 @@ private:
     float DefaultBoomLength = 0.0f;
     TWeakObjectPtr<ABBBCharacter> Character;
     TWeakObjectPtr<APlayerController> Controller;
-    TArray<FBBBPlayerCameraInput> Pending;
-    FVector2D RecoilOffset = FVector2D::ZeroVector;
-    float RecoverySpeed = 1.0f;
+    /** 当前等待消费的最后一次相机冲击 */
+    TOptional<FBBBPlayerCameraInput> Pending;
+
+    /** 当前相机三轴冲击偏移 */
+    FVector RecoilOffset = FVector::ZeroVector;
+
+    /** 相机冲击的指数回正速度 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera|Impulse", meta = (ClampMin = "0.01"))
+    float RecoverySpeed = 10.0f;
+
+    /** 上下 左右 倾斜冲击的最大绝对角度 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera|Impulse")
+    FVector ImpulseLimitDegrees = FVector(5.0f, 3.0f, 2.0f);
 };

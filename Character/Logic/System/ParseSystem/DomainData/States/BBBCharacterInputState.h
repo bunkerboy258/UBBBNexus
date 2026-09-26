@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Definitions/BBBCharacterInputSlot.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
@@ -69,4 +71,10 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBAdditiveHitReactMontageAuthorityFactPacket> AuthorityAdditiveHitReactMontage;
     /** 摄像机输入槽位 */
     TBBBCharacterInputSlot<FBBBCameraLocalControlPacket> Camera;
+
+    /** 本机额外瞄准冲击输入槽位 */
+    TBBBCharacterInputSlot<FBBBAimImpulseLocalControlPacket> AimImpulse;
+
+    /** 还原额外瞄准冲击输入槽位 */
+    TBBBCharacterInputSlot<FBBBAimImpulseAuthorityFactPacket> AuthorityAimImpulse;
 };

@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/PlayerCamera/Processors/BBBPlayerCameraImpulseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -33,48 +34,15 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
 
 void ABBBPlayerCameraSystem::Submit(const FBBBPlayerCameraInput &Packet)
 {
-    if (ensureMsgf(IsInGameThread() && !Packet.Impulse.ContainsNaN()
-        && FMath::IsFinite(Packet.RecoverySpeed) && Packet.RecoverySpeed > 0.0f,
+    if (ensureMsgf(IsInGameThread() && !Packet.Impulse.ContainsNaN(),
         TEXT("[BBBCamera]Invalid camera contribution")))
     {
-        Pending.Add(Packet);
+        Pending = Packet;
     }
 }
 
 void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    if (!Character.IsValid() || !Controller.IsValid())
-    {
-        return;
-    }
-    // 角色只发布提交方已经累计完成的最终相机输入
-    TOptional<FBBBPlayerCameraInput> &CameraInput =
-        Character->RuntimeData.Parse.CameraState.PendingInput;
-    if (CameraInput.IsSet())
-    {
-        Submit(CameraInput.GetValue());
-        CameraInput.Reset();
-    }
-    FRotator Rotation = Controller->GetControlRotation();
-    for (const FBBBPlayerCameraInput &Packet : Pending)
-    {
-        RecoilOffset += Packet.Impulse;
-        Rotation.Pitch += Packet.Impulse.X;
-        Rotation.Yaw += Packet.Impulse.Y;
-        RecoverySpeed = Packet.RecoverySpeed;
-    }
-    Pending.Reset();
-    const FVector2D NextOffset(
-        FMath::FInterpTo(RecoilOffset.X, 0.0f, DeltaSeconds, RecoverySpeed),
-        FMath::FInterpTo(RecoilOffset.Y, 0.0f, DeltaSeconds, RecoverySpeed));
-    const FVector2D Delta = NextOffset - RecoilOffset;
-    Rotation.Pitch += Delta.X;
-    Rotation.Yaw += Delta.Y;
-    RecoilOffset = NextOffset;
-    Controller->SetControlRotation(Rotation);
-    const bool bAiming = Character->RuntimeData.Parse.ReadControlState().bAim;
-    Boom->TargetArmLength = FMath::FInterpTo(Boom->TargetArmLength,
-        bAiming ? AimBoomLength : DefaultBoomLength, DeltaSeconds, AimBoomInterpSpeed);
-    SetActorLocationAndRotation(Character->GetActorLocation(), Rotation);
+    FBBBPlayerCameraImpulseProcessor::Update(*this, DeltaSeconds);
 }

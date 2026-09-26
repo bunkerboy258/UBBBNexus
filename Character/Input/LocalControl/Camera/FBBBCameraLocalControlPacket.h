@@ -9,14 +9,12 @@
 struct FBBBCameraLocalControlPacket final
 {
 
-    FVector2D Impulse = FVector2D::ZeroVector;
-
-    float RecoverySpeed = 0.0f;
+    FVector Impulse = FVector::ZeroVector;
 
     /** @return 包内容是否合法 */
     bool IsValid() const
     {
-        return RecoverySpeed > 0.0f && !Impulse.ContainsNaN() && FMath::IsFinite(RecoverySpeed);
+        return !Impulse.ContainsNaN();
     }
 
     /**
@@ -36,6 +34,6 @@ struct FBBBCameraLocalControlPacket final
     void Apply(FBBBCharacterInputContext &Context) const
     {
         // 相机输入由提交方预先累计，角色黑板只保留最后一次完整结果
-        Context.Camera = FBBBPlayerCameraInput{Impulse, RecoverySpeed};
+        Context.Camera = FBBBPlayerCameraInput{Impulse};
     }
 };

@@ -59,6 +59,15 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
     float HorizontalRecoilRandom = 0.4f;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire", meta = (ClampMin = "0.01"))
-    float RecoilRecoverySpeed = 8.0f;
+    /** 每次开火贡献的镜头倾斜角度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
+    float CameraRollImpulseDegrees = 0.0f;
+
+    /** 每次开火贡献的角色额外向上瞄准角度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
+    float AimPitchImpulseDegrees = 0.0f;
+
+    /** 每次开火贡献的角色额外向右瞄准角度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
+    float AimYawImpulseDegrees = 0.0f;
 };
