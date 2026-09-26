@@ -90,6 +90,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FVector AimTargetComponentSpace = FVector::ZeroVector;
 
+    /** 当前枪口在角色 hand_r 骨骼空间中的变换 获取失败时为单位变换 */
+    UPROPERTY(Transient)
+    FTransform MuzzleTransformHandRSpace = FTransform::Identity;
+
     /** 瞄准目标平滑速度 */
     FVector AimTargetSmoothVelocity = FVector::ZeroVector;
 

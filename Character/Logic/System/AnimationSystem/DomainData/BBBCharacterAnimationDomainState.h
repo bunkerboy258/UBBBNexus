@@ -10,6 +10,7 @@ class FBBBCharacterAnimationFactProcessor;
 class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterParseSystem;
+class FBBBCharacterMuzzleProcessor;
 
 /** 角色动画领域全部状态的唯一直接持有者 */
 USTRUCT()
@@ -41,6 +42,7 @@ private:
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterAnimationSystem;
     friend class FBBBCharacterParseSystem;
+    friend class FBBBCharacterMuzzleProcessor;
 
     /** 角色动画事实状态 */
     UPROPERTY(Transient)

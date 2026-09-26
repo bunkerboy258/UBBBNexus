@@ -28,20 +28,6 @@ public:
         return AnimationFacts;
     }
 
-    /** @return 瞄准来源相对右手骨骼的本地变换 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    FTransform GetAimSourceLocalTransform() const
-    {
-        return AnimationFacts.AimSourceLocalTransform;
-    }
-
-    /** @return 瞄准来源是否有效 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    bool HasValidAimSource() const
-    {
-        return AnimationFacts.bHasValidAimSource;
-    }
-
     /** @return 左手握持目标在角色 hand_r 骨骼空间中的位置 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
     FVector GetLeftHandTargetHandRSpace() const

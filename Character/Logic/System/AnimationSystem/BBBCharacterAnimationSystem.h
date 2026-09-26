@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationMontageProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterMuzzleProcessor.h"
 
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
@@ -46,4 +47,5 @@ private:
     FBBBCharacterAnimationMontageProcessor MontageProcessor;
     FBBBCharacterAnimationActionProcessor ActionProcessor;
     FBBBCharacterAnimationFactProcessor FactProcessor;
+    FBBBCharacterMuzzleProcessor MuzzleProcessor;
 };

@@ -44,6 +44,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceAimIntentAlpha = FactState.AimIntentAlpha;
     SourceAimIKAlpha = FactState.AimIKAlpha;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
+    SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
 }
 
 //------------------------------------------------------------------------------
@@ -186,15 +187,9 @@ UBBBEquipmentAnimInstance *UBBBAnimInstance::TryGetWeaponAnimInstance() const
     return GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance.Get();
 }
 
-FTransform UBBBAnimInstance::TryGetWeaponAimSourceLocalTransform() const
+FTransform UBBBAnimInstance::TryGetMuzzleTransformHandRSpace() const
 {
-    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
-    if (Weapon)
-    {
-        return Weapon->GetAimSourceLocalTransform();
-    }
-
-    return FTransform::Identity;
+    return GetBBBMainAnimInstanceThreadSafe()->SourceMuzzleTransformHandRSpace;
 }
 
 FVector UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpace() const

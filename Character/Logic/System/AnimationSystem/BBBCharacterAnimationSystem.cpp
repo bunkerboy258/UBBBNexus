@@ -56,5 +56,6 @@ void FBBBCharacterAnimationSystem::Update()
     MontageProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
+    MuzzleProcessor.Update(Context);
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState);
 }

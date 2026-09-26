@@ -141,9 +141,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     UBBBEquipmentAnimInstance *TryGetWeaponAnimInstance() const;
 
-    /** @return 武器瞄准来源本地变换 未装备时返回单位变换 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
-    FTransform TryGetWeaponAimSourceLocalTransform() const;
+    /** @return 枪口在角色 hand_r 骨骼空间中的快照变换 获取失败时返回单位变换 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    FTransform TryGetMuzzleTransformHandRSpace() const;
 
     /** @return 左手目标在右手骨骼空间中的位置 未装备时返回零向量 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
@@ -222,6 +222,10 @@ private:
 
     UPROPERTY(Transient)
     FVector SourceAimTargetComponentSpace = FVector::ZeroVector;
+
+    /** 动画系统统一发布的枪口骨骼空间变换 */
+    UPROPERTY(Transient)
+    FTransform SourceMuzzleTransformHandRSpace = FTransform::Identity;
 
     /** 当前主手武器实际使用的动画实例 */
     UPROPERTY(Transient)

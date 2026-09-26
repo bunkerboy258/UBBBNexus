@@ -10,12 +10,6 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
     GENERATED_BODY()
 
     UPROPERTY(BlueprintReadOnly)
-    FTransform AimSourceLocalTransform = FTransform::Identity;
-
-    UPROPERTY(BlueprintReadOnly)
-    bool bHasValidAimSource = false;
-
-    UPROPERTY(BlueprintReadOnly)
     FVector LeftHandTargetHandRSpace = FVector::ZeroVector;
 
     UPROPERTY(BlueprintReadOnly)
