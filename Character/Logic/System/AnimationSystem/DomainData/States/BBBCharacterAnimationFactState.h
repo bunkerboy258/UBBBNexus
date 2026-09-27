@@ -86,6 +86,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     float AimIKAlpha = 0.0f;
 
+    /** 角色当前后坐力大小 */
+    UPROPERTY(Transient)
+    float RecoilMagnitude = 0.0f;
+
     /** 角色组件空间中的瞄准目标 */
     UPROPERTY(Transient)
     FVector AimTargetComponentSpace = FVector::ZeroVector;

@@ -27,6 +27,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceVelocity = FactState.Velocity;
     SourceLastUpdateVelocity = FactState.LastUpdateVelocity;
     SourceAcceleration = FactState.Acceleration;
+    SourceRecoilMagnitude = FactState.RecoilMagnitude;
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
 

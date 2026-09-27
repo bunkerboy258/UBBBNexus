@@ -19,6 +19,7 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
     {
         State.PendingDegrees = FVector2D::ZeroVector;
         State.OffsetDegrees = FVector2D::ZeroVector;
+        Facts.RecoilMagnitude = 0.0f;
         return;
     }
 
@@ -26,6 +27,7 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
     {
         State.PendingDegrees = FVector2D::ZeroVector;
         State.OffsetDegrees = FVector2D::ZeroVector;
+        Facts.RecoilMagnitude = 0.0f;
         return;
     }
 
@@ -34,6 +36,14 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
     State.PendingDegrees = FVector2D::ZeroVector;
     State.OffsetDegrees.X = FMath::Clamp(State.OffsetDegrees.X, -Config.AimImpulseLimitDegrees.X, Config.AimImpulseLimitDegrees.X);
     State.OffsetDegrees.Y = FMath::Clamp(State.OffsetDegrees.Y, -Config.AimImpulseLimitDegrees.Y, Config.AimImpulseLimitDegrees.Y);
+    Facts.RecoilMagnitude = State.OffsetDegrees.Size();
+    if (!ensureMsgf(FMath::IsFinite(Facts.RecoilMagnitude), TEXT("角色后坐力大小无效")))
+    {
+        State.PendingDegrees = FVector2D::ZeroVector;
+        State.OffsetDegrees = FVector2D::ZeroVector;
+        Facts.RecoilMagnitude = 0.0f;
+        return;
+    }
 
     const FName HandBoneName(TEXT("hand_r"));
     if (Context.CharacterMesh.GetBoneIndex(HandBoneName) == INDEX_NONE)

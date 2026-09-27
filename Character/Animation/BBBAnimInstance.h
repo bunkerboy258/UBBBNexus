@@ -57,6 +57,10 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
     FVector SourceAcceleration = FVector::ZeroVector;
 
+    /** 本帧角色后坐力大小 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    float SourceRecoilMagnitude = 0.0f;
+
     /** 本帧引擎移动模式 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
     TEnumAsByte<EMovementMode> SourceMovementMode = MOVE_None;
@@ -160,6 +164,10 @@ public:
     float GroundDistance = 0.0f;
 
 private:
+    /** 本帧后坐力大小是否增加 */
+    UPROPERTY(BlueprintReadWrite, Transient, Category = "BBB|Animation", meta = (AllowPrivateAccess = "true"))
+    bool bRecoilMagnitudeIncreasedThisUpdate = false;
+
     /**
      * 绑定装备实际使用的武器动画实例
      * @param InWeaponAnimInstance 武器动画实例 卸下时传入空
