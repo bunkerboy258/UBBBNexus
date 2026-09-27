@@ -4,6 +4,7 @@
 #include "BBBProjectilePresentationFragment.generated.h"
 
 class UNiagaraDataChannelAsset;
+class UNiagaraSystem;
 
 /** 子弹批量表现通道 */
 USTRUCT()
@@ -14,5 +15,27 @@ struct ABBB_EVAC_API FBBBProjectilePresentationFragment final : public FMassFrag
     /** 批量光效通道 */
     UPROPERTY()
     TWeakObjectPtr<UNiagaraDataChannelAsset> Channel;
+
+    /** 当前实体使用的共享光效系统 */
+    UPROPERTY()
+    TWeakObjectPtr<UNiagaraSystem> System;
+
+    /** 当前实体的飞行光段长度 */
+    float LengthCm = 0.0f;
+
+    /** 当前实体的飞行光段宽度 */
+    float WidthCm = 0.0f;
+
+    /** 当前实体的飞行光段颜色 */
+    FLinearColor Color = FLinearColor::White;
+
+    /** 共享 Niagara 数据中的表现槽位 */
+    int32 Slot = INDEX_NONE;
+
+    /** 新槽位仅在首帧请求生成光段 */
+    bool bSpawnPending = false;
+
+    /** 仅供光效读取的当前存活标记 */
+    bool bVisualAlive = false;
 
 };

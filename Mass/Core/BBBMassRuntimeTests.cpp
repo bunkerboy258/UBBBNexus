@@ -12,6 +12,8 @@
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
 #include "MassExecutionContext.h"
+#include "NiagaraDataChannel.h"
+#include "NiagaraSystem.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
@@ -92,6 +94,8 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBProjectileLifetimeFragment::StaticStruct(), FBBBProjectilePresentationFragment::StaticStruct(),
         FBBBProjectileSpawnInputFragment::StaticStruct()
     });
+    UNiagaraDataChannelAsset* TestChannel = NewObject<UNiagaraDataChannelAsset>(World);
+    UNiagaraSystem* TestSystem = NewObject<UNiagaraSystem>(World);
     const auto Shoot = [&](bool bDamage)
     {
         const FMassEntityHandle Projectile = Manager.CreateEntity(ProjectileType);
@@ -99,6 +103,8 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         Spawn.MuzzleTransform = FTransform(FRotator(0.0f, 90.0f, 0.0f), FVector::ZeroVector);
         Spawn.Speed = 1000.0f;
         Spawn.Damage = 20.0f;
+        Spawn.Channel = TestChannel;
+        Spawn.System = TestSystem;
         Spawn.bCanCauseDamage = bDamage;
         Mass->SubmitInput(Projectile, Spawn);
         Run(UBBBProjectileParseProcessor::StaticClass());

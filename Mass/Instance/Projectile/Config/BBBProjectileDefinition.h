@@ -7,6 +7,7 @@
 
 class UMassEntityConfigAsset;
 class UNiagaraDataChannelAsset;
+class UNiagaraSystem;
 
 /** 描述一类本地实体弹丸的弹道、伤害与实体模板 */
 UCLASS(BlueprintType)
@@ -50,6 +51,22 @@ public:
     /** 批量曳光与命中光效的数据通道 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Projectile|Presentation")
     TObjectPtr<UNiagaraDataChannelAsset> PresentationChannel = nullptr;
+
+    /** 子弹共享曳光系统 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Projectile|Presentation")
+    TObjectPtr<UNiagaraSystem> PresentationSystem = nullptr;
+
+    /** 飞行光段长度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Projectile|Presentation", meta = (ClampMin = "1.0", ForceUnits = "cm"))
+    float TracerLengthCm = 1000.0f;
+
+    /** 飞行光段宽度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Projectile|Presentation", meta = (ClampMin = "0.1", ForceUnits = "cm"))
+    float TracerWidthCm = 2.5f;
+
+    /** 飞行光段的线性发光颜色 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Projectile|Presentation")
+    FLinearColor TracerColor = FLinearColor(20.0f, 8.0f, 1.0f, 1.0f);
 
     /** @return 配置资产和运行参数是否完整有效 */
     bool IsValid() const;

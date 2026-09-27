@@ -10,51 +10,55 @@
 void FBBBProjectilePresentation::Publish(UWorld& World, TConstArrayView<FTransformFragment> Transforms,
     TConstArrayView<FBBBProjectileMotionFragment> Motion, TConstArrayView<FBBBProjectilePresentationFragment> Presentation)
 {
-    TMap<TTuple<UNiagaraDataChannelAsset*, FIntVector>, TArray<int32>> Batches;
-    for (int32 Index = 0; Index < Transforms.Num(); ++Index)
+    if (!ensureMsgf(!Presentation.IsEmpty()
+        && Transforms.Num() == Motion.Num() && Motion.Num() == Presentation.Num(),
+        TEXT("子弹表现批量数据长度不一致")))
     {
-        if (Motion[Index].bInitialized && Presentation[Index].Channel.IsValid())
-        {
-            const FVector Location = Transforms[Index].GetTransform().GetLocation();
-            const FIntVector Cell(FMath::FloorToInt(Location.X / 10000.0),
-                FMath::FloorToInt(Location.Y / 10000.0), FMath::FloorToInt(Location.Z / 10000.0));
-            Batches.FindOrAdd(MakeTuple(Presentation[Index].Channel.Get(), Cell)).Add(Index);
-        }
+        return;
     }
 
-    for (const auto& Batch : Batches)
+    UNiagaraDataChannelAsset* Asset = Presentation[0].Channel.Get();
+    UNiagaraDataChannel* Channel = Asset != nullptr ? Asset->Get() : nullptr;
+    if (!ensureMsgf(Channel != nullptr, TEXT("子弹共享光效通道尚未配置")))
     {
-        UNiagaraDataChannelAsset* Asset = Batch.Key.Get<0>();
-        UNiagaraDataChannel* Channel = Asset->Get();
-        if (!ensureMsgf(Channel != nullptr, TEXT("子弹光效通道尚未配置")))
-        {
-            continue;
-        }
+        return;
+    }
 
-        FNDCAccessContextInst AccessContext(Channel->GetAccessContextType());
-        if (auto* Legacy = AccessContext.Get<FNDCAccessContextLegacy>())
-        {
-            Legacy->Location = FVector(Batch.Key.Get<1>()) * 10000.0 + FVector(5000.0);
-            Legacy->bOverrideLocation = true;
-        }
-        UNiagaraDataChannelWriter* Writer = UNiagaraDataChannelLibrary::WriteToNiagaraDataChannel_WithContext(
-            &World, Asset, AccessContext, Batch.Value.Num(), false, true, false, TEXT("BBBMassProjectile"));
-        if (Writer == nullptr)
-        {
-            continue;
-        }
+    int32 RecordCount = 0;
+    for (const FBBBProjectilePresentationFragment& Visual : Presentation)
+    {
+        RecordCount = FMath::Max(RecordCount, Visual.Slot + 1);
+    }
 
-        for (int32 Output = 0; Output < Batch.Value.Num(); ++Output)
-        {
-            const int32 Index = Batch.Value[Output];
-            const FVector End = Transforms[Index].GetTransform().GetLocation();
-            const FVector Delta = End - Motion[Index].PreviousLocation;
-            const FVector Direction = Delta.GetSafeNormal();
-            const double Length = FMath::Min(Delta.Size(), 250.0);
-            Writer->WritePosition(TEXT("Position"), Output, End - Direction * Length * 0.5);
-            Writer->WriteVector(TEXT("SpriteAlignment"), Output, Direction);
-            Writer->WriteVector2D(TEXT("SpriteSize"), Output, FVector2D(2.5, FMath::Max(Length, 2.5)));
-            Writer->WriteLinearColor(TEXT("Color"), Output, FLinearColor(20.0f, 8.0f, 1.0f, 1.0f));
-        }
+    FNDCAccessContextInst AccessContext(Channel->GetAccessContextType());
+    UNiagaraDataChannelWriter* Writer = UNiagaraDataChannelLibrary::WriteToNiagaraDataChannel_WithContext(
+        &World, Asset, AccessContext, RecordCount, false, true, false, TEXT("BBBMassProjectile"));
+    if (!ensureMsgf(Writer != nullptr, TEXT("子弹共享光效通道写入失败")))
+    {
+        return;
+    }
+
+    // 空槽也占据固定记录索引 粒子直接以自己的槽位读取而无需全表搜索
+    for (int32 Slot = 0; Slot < RecordCount; ++Slot)
+    {
+        Writer->WriteInt(TEXT("Spawn"), Slot, 0);
+        Writer->WriteBool(TEXT("Active"), Slot, false);
+    }
+
+    for (int32 Index = 0; Index < Presentation.Num(); ++Index)
+    {
+        const FBBBProjectilePresentationFragment& Visual = Presentation[Index];
+        const FVector End = Transforms[Index].GetTransform().GetLocation();
+        const FVector Delta = End - Motion[Index].PreviousLocation;
+        const FVector Direction = Delta.IsNearlyZero()
+            ? Transforms[Index].GetTransform().GetUnitAxis(EAxis::X)
+            : Delta.GetSafeNormal();
+
+        Writer->WriteInt(TEXT("Spawn"), Visual.Slot, Visual.bSpawnPending ? 1 : 0);
+        Writer->WriteBool(TEXT("Active"), Visual.Slot, Visual.bVisualAlive);
+        Writer->WritePosition(TEXT("Position"), Visual.Slot, End - Direction * Visual.LengthCm * 0.5);
+        Writer->WriteVector(TEXT("SpriteAlignment"), Visual.Slot, Direction);
+        Writer->WriteVector2D(TEXT("SpriteSize"), Visual.Slot, FVector2D(Visual.WidthCm, Visual.LengthCm));
+        Writer->WriteLinearColor(TEXT("Color"), Visual.Slot, Visual.Color);
     }
 }

@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "MassEntityConfigAsset.h"
 #include "NiagaraDataChannelAsset.h"
+#include "NiagaraSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -167,6 +168,10 @@ void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
     Packet.Pawn = &Context.Character;
     Packet.Controller = Context.Character.GetController();
     Packet.Channel = Definition->PresentationChannel.Get();
+    Packet.System = Definition->PresentationSystem.Get();
+    Packet.TracerLengthCm = Definition->TracerLengthCm;
+    Packet.TracerWidthCm = Definition->TracerWidthCm;
+    Packet.TracerColor = Definition->TracerColor;
     Packet.bCanCauseDamage = !Context.Equipment.IsMirror();
 
     const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);

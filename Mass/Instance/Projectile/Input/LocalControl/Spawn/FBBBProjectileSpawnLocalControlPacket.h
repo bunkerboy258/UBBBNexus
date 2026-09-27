@@ -26,6 +26,10 @@ struct FBBBProjectileSpawnLocalControlPacket final
     TWeakObjectPtr<APawn> Pawn;
     TWeakObjectPtr<AController> Controller;
     TWeakObjectPtr<UNiagaraDataChannelAsset> Channel;
+    TWeakObjectPtr<UNiagaraSystem> System;
+    float TracerLengthCm = 1000.0f;
+    float TracerWidthCm = 2.5f;
+    FLinearColor TracerColor = FLinearColor(20.0f, 8.0f, 1.0f, 1.0f);
     bool bCanCauseDamage = false;
 
     /** @return 出生数据是否有效 */
@@ -38,7 +42,14 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && FMath::IsFinite(Radius) && Radius >= 0.0f
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
-            && PenetrationMultiplier >= 0.0f && PenetrationMultiplier <= 1.0f;
+            && PenetrationMultiplier >= 0.0f && PenetrationMultiplier <= 1.0f
+            && Channel.IsValid() && System.IsValid()
+            && FMath::IsFinite(TracerLengthCm) && TracerLengthCm > 0.0f
+            && FMath::IsFinite(TracerWidthCm) && TracerWidthCm > 0.0f
+            && FMath::IsFinite(TracerColor.R)
+            && FMath::IsFinite(TracerColor.G)
+            && FMath::IsFinite(TracerColor.B)
+            && FMath::IsFinite(TracerColor.A);
     }
 
     /** @return 是否尚未完成出生 */
@@ -76,5 +87,9 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Collision.bCanCauseDamage = bCanCauseDamage;
         Life.RemainingSeconds = Lifetime;
         Presentation.Channel = Channel;
+        Presentation.System = System;
+        Presentation.LengthCm = TracerLengthCm;
+        Presentation.WidthCm = TracerWidthCm;
+        Presentation.Color = TracerColor;
     }
 };

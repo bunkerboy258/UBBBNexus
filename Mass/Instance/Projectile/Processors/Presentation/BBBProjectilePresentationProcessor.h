@@ -4,6 +4,10 @@
 #include "MassEntityQuery.h"
 #include "BBBProjectilePresentationProcessor.generated.h"
 
+class UNiagaraComponent;
+class UNiagaraDataChannelAsset;
+class UNiagaraSystem;
+
 /** 按通道批量发布子弹光效事实 */
 UCLASS()
 class ABBB_EVAC_API UBBBProjectilePresentationProcessor final : public UMassProcessor
@@ -20,5 +24,24 @@ protected:
 
 private:
     FMassEntityQuery EntityQuery;
+
+    /** 当前世界唯一的共享子弹光效组件 */
+    UPROPERTY(Transient)
+    TObjectPtr<UNiagaraComponent> SystemComponent;
+
+    /** 可重用的表现数据槽位 */
+    TArray<int32> FreeSlots;
+
+    /** 上一帧结束的槽位 在光效读取消亡标记后重用 */
+    TArray<int32> PendingReleaseSlots;
+
+    /** 尚未分配过的下一个槽位 */
+    int32 NextSlot = 0;
+
+    /** 当前世界唯一的子弹表现通道 */
+    TWeakObjectPtr<UNiagaraDataChannelAsset> ActiveChannel;
+
+    /** 当前世界唯一的子弹表现系统 */
+    TWeakObjectPtr<UNiagaraSystem> ActiveSystem;
 
 };

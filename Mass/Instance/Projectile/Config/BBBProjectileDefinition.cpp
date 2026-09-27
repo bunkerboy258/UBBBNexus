@@ -25,5 +25,15 @@ bool UBBBProjectileDefinition::IsValid() const
         && MaximumPenetrations <= 32
         && FMath::IsFinite(PenetrationDamageMultiplier)
         && PenetrationDamageMultiplier >= 0.0f
-        && PenetrationDamageMultiplier <= 1.0f;
+        && PenetrationDamageMultiplier <= 1.0f
+        && PresentationChannel != nullptr
+        && PresentationSystem != nullptr
+        && FMath::IsFinite(TracerLengthCm)
+        && TracerLengthCm > 0.0f
+        && FMath::IsFinite(TracerWidthCm)
+        && TracerWidthCm > 0.0f
+        && FMath::IsFinite(TracerColor.R)
+        && FMath::IsFinite(TracerColor.G)
+        && FMath::IsFinite(TracerColor.B)
+        && FMath::IsFinite(TracerColor.A);
 }
