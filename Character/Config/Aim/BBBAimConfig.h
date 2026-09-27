@@ -21,8 +21,4 @@ struct FBBBAimAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float AimIKTargetSmoothTime = 0.1f;
 
-    /** 瞄准意图强度的插值速度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimIntentAlphaInterpSpeed = 8.0f;
-
 };

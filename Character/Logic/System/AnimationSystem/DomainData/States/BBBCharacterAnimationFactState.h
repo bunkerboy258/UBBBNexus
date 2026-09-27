@@ -78,14 +78,6 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsAiming = false;
 
-    /** 平滑后的角色瞄准意图权重 */
-    UPROPERTY(Transient)
-    float AimIntentAlpha = 0.0f;
-
-    /** 角色计算的瞄准 IK 最终权重 */
-    UPROPERTY(Transient)
-    float AimIKAlpha = 0.0f;
-
     /** 角色当前后坐力大小 */
     UPROPERTY(Transient)
     float RecoilMagnitude = 0.0f;

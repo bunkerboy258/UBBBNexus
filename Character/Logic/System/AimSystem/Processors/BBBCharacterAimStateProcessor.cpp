@@ -8,20 +8,3 @@ void FBBBCharacterAimStateProcessor::Update(
 {
     State.bIsAiming = ControlData.bAim;
 }
-
-void FBBBCharacterAimStateProcessor::InterpolateAimAlpha(
-    FBBBAimState &State,
-    const bool bCanAim,
-    const float DeltaSeconds,
-    const float InterpSpeed) const
-{
-    const float TargetAimAlpha = bCanAim && State.bIsAiming ? 1.0f : 0.0f;
-    State.AimAlpha = FMath::Clamp(
-        FMath::FInterpTo(
-            State.AimAlpha,
-            TargetAimAlpha,
-            DeltaSeconds,
-            FMath::Max(InterpSpeed, 0.0f)),
-        0.0f,
-        1.0f);
-}

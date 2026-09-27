@@ -4,13 +4,9 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/Processors/BBBCharacterAimStateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/Processors/BBBCharacterAimTargetProcessor.h"
 
-class APawn;
 class FBBBCharacterInitializer;
-struct FBBBAimAnimationConfig;
 struct FBBBAimDomainState;
-struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterControlState;
-struct FBBBCharacterWorldState;
 
 /**
  * 按角色瞄准状态分流各个瞄准处理器
@@ -36,16 +32,10 @@ private:
      */
     void Initialize(
         FBBBAimDomainState &InAimData,
-        const FBBBCharacterControlState &InIntentData,
-        const FBBBCharacterEquipmentSelectionState &InEquipmentState,
-        const FBBBCharacterWorldState &InWorldState,
-        const FBBBAimAnimationConfig &InAimConfig);
+        const FBBBCharacterControlState &InIntentData);
 
     FBBBAimDomainState *AimData = nullptr;
     const FBBBCharacterControlState *ControlData = nullptr;
-    const FBBBCharacterEquipmentSelectionState *EquipmentState = nullptr;
-    const FBBBCharacterWorldState *WorldState = nullptr;
-    const FBBBAimAnimationConfig *AimConfig = nullptr;
 
     FBBBCharacterAimStateProcessor AimStateProcessor;
     FBBBCharacterAimTargetProcessor AimTargetProcessor;

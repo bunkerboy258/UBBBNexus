@@ -109,8 +109,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     FactState.bIsAiming = AimState.bIsAiming;
-    FactState.AimIntentAlpha = AimState.AimAlpha;
-    FactState.AimIKAlpha = AimState.AimAlpha;
     FactState.AimTargetComponentSpace = FactState.SmoothedAimTargetComponentSpace;
 
     FactState.ActorLocation = Character.GetActorLocation();

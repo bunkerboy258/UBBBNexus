@@ -13,7 +13,6 @@ void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Cont
     // 只投影本次需要复制的字段 避免观察流程改变领域瞄准状态
     FBBBReplicatedAimState ReplicatedAimState;
     ReplicatedAimState.bIsAiming = Context.AimState.bIsAiming;
-    ReplicatedAimState.AimAlpha = Context.AimState.AimAlpha;
     ReplicatedAimState.AimTargetWorld = Context.AimState.AimTargetWorld;
 
     // 首次观测立即发送 瞄准开关变化优先于周期节流
@@ -23,18 +22,13 @@ void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Cont
         const FBBBReplicatedAimState &Previous = Context.AimObservationState.LastObservedAim.GetValue();
         bShouldTransmit = Previous.bIsAiming != ReplicatedAimState.bIsAiming;
 
-        // 目标位置使用半厘米容差 瞄准权重使用百分之一容差以过滤细微变化
         const bool bIntervalElapsed = Context.WorldState.WorldTimeSeconds
             - Context.AimObservationState.LastAimUploadTime
             >= Context.NetworkConfig.AimUploadInterval;
         const bool bTargetChanged = !FVector(Previous.AimTargetWorld).Equals(
             FVector(ReplicatedAimState.AimTargetWorld),
             0.5f);
-        const bool bAimAlphaChanged = !FMath::IsNearlyEqual(
-            Previous.AimAlpha,
-            ReplicatedAimState.AimAlpha,
-            0.01f);
-        bShouldTransmit |= bIntervalElapsed && (bTargetChanged || bAimAlphaChanged);
+        bShouldTransmit |= bIntervalElapsed && bTargetChanged;
     }
 
     // 只在发送条件成立时推进快照和时间 保证间隔从上次实际提交计算

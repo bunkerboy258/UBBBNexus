@@ -120,20 +120,6 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->bSourceAiming;
     }
 
-    /** @return 玩家瞄准意图的连续强度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    float GetAimIntentAlpha() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceAimIntentAlpha;
-    }
-
-    /** @return 瞄准 IK 权重 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
-    float GetAimIKAlpha() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceAimIKAlpha;
-    }
-
     /** @return 组件空间的瞄准目标点 */
     UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
     FVector GetAimTargetComponentSpace() const
@@ -221,12 +207,6 @@ private:
 
     UPROPERTY(Transient)
     bool bSourceAiming = false;
-
-    UPROPERTY(Transient)
-    float SourceAimIntentAlpha = 0.0f;
-
-    UPROPERTY(Transient)
-    float SourceAimIKAlpha = 0.0f;
 
     UPROPERTY(Transient)
     FVector SourceAimTargetComponentSpace = FVector::ZeroVector;
