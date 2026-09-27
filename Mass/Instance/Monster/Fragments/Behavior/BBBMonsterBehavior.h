@@ -1,0 +1,29 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "MassEntityTypes.h"
+
+#include "BBBMonsterBehavior.generated.h"
+
+/** 小怪当前的权威逻辑状态 */
+UENUM(BlueprintType)
+enum class EBBBMonsterBehavior : uint8
+{
+    /** 未发现目标时的待机状态 */
+    Idle,
+
+    /** 等待玩家进入可侦察范围 */
+    Scout,
+
+    /** 沿导航路径接近目标 */
+    Chase,
+
+    /** 处于攻击距离内 */
+    Attack,
+
+    /** 收到伤害后的短暂硬直 */
+    Hurt,
+
+    /** 生命值归零后的死亡状态 */
+    Dead
+};

@@ -16,4 +16,8 @@ public:
 
     /** @param Data	步枪运行时数据 @return 无 */
     static void Stop(FBBBRifleRuntimeData &Data);
+
+private:
+    /** @param Context	本机枪口与控制权上下文 @return 无 */
+    static void SpawnProjectile(FBBBRifleUpdateContext& Context);
 };

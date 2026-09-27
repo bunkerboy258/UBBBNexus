@@ -3,9 +3,11 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/ProjectileMass/Config/BBBProjectileDefinition.h"
-#include "BBBWork/UBBBNexus/ProjectileMass/Requests/BBBProjectileSpawnRequest.h"
-#include "BBBWork/UBBBNexus/ProjectileMass/System/BBBProjectileMassSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Config/BBBProjectileDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
+#include "MassEntityConfigAsset.h"
+#include "NiagaraDataChannelAsset.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -56,6 +58,7 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
                 && Context.RuntimeData.Animation.ReadRifleAnimationState().bInitialized)
             {
                 State.LastFireTimeSeconds = Context.World.GetTimeSeconds();
+                SpawnProjectile(Context);
             }
 
             State.LoadedAmmo = Input.LoadedAmmo;
@@ -125,24 +128,48 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
 
             // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
             const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
-            UBBBProjectileMassSubsystem* ProjectileSubsystem = Context.World.GetSubsystem<UBBBProjectileMassSubsystem>();
-
-            if (ensureMsgf(ProjectileSubsystem != nullptr && Context.Definition.ProjectileDefinition != nullptr,
-                TEXT("[BBBRifle] 开火缺少ProjectileMass子系统或弹丸定义 Equipment=%s"), *Context.Equipment.GetName()))
-            {
-                FBBBProjectileSpawnRequest SpawnRequest;
-                SpawnRequest.Definition = Context.Definition.ProjectileDefinition.Get();
-                SpawnRequest.MuzzleTransform = MuzzleTransform;
-                SpawnRequest.DamageCauser = &Context.Equipment;
-                SpawnRequest.InstigatorPawn = &Context.Character;
-                SpawnRequest.EventInstigator = Context.Character.GetController();
-                const bool bProjectileSpawned = ProjectileSubsystem->SubmitSpawnRequest(SpawnRequest);
-                ensureMsgf(bProjectileSpawned, TEXT("[BBBRifle] 本地弹丸创建失败 Equipment=%s"), *Context.Equipment.GetName());
-            }
+            SpawnProjectile(Context);
 
             Context.Equipment.EmitShot(MuzzleTransform);
         }
     }
 
     Clear(Input);
+}
+
+
+void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
+{
+    const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
+    UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();
+    if (!ensureMsgf(Mass != nullptr && Definition != nullptr && Definition->IsValid(),
+        TEXT("步枪缺少有效 Mass 子弹配置 %s"), *Context.Equipment.GetName()))
+    {
+        return;
+    }
+
+    if (!ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
+        TEXT("步枪无法取得本机枪口")))
+    {
+        return;
+    }
+
+    FBBBProjectileSpawnLocalControlPacket Packet;
+    Packet.MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
+    Packet.Speed = Definition->InitialSpeedCmPerSecond;
+    Packet.Lifetime = Definition->MaximumLifetimeSeconds;
+    Packet.Damage = Definition->BaseDamage;
+    Packet.Radius = Definition->CollisionRadiusCm;
+    Packet.Penetrations = Definition->MaximumPenetrations;
+    Packet.PenetrationMultiplier = Definition->PenetrationDamageMultiplier;
+    Packet.CollisionChannel = Definition->CollisionChannel;
+    Packet.Source = &Context.Equipment;
+    Packet.Pawn = &Context.Character;
+    Packet.Controller = Context.Character.GetController();
+    Packet.Channel = Definition->PresentationChannel.Get();
+    Packet.bCanCauseDamage = !Context.Equipment.IsMirror();
+
+    const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);
+    ensureMsgf(Entity.IsSet() && Mass->SubmitInput(Entity, MoveTemp(Packet)),
+        TEXT("步枪 Mass 子弹出生失败 %s"), *Context.Equipment.GetName());
 }
