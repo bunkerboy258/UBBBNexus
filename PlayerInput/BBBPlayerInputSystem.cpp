@@ -296,9 +296,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     AimState.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
     Character->SubmitInput(MovementState);
-    FBBBCharacterAimLocalControlPacket Aim = AimState;
-    Aim.bAim = Aim.bAim || bFire;
-    Character->SubmitInput(Aim);
+    Character->SubmitInput(AimState);
 
     // 开火与跳跃以包的存在与否表达按下 未按下时不投递
     if (bFire)
