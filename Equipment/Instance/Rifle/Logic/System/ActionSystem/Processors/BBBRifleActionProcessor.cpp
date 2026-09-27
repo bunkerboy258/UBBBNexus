@@ -3,6 +3,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/ProjectileMass/Config/BBBProjectileDefinition.h"
+#include "BBBWork/UBBBNexus/ProjectileMass/Requests/BBBProjectileSpawnRequest.h"
+#include "BBBWork/UBBBNexus/ProjectileMass/System/BBBProjectileMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -121,7 +124,23 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
                 Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
 
             // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
-            Context.Equipment.EmitShot(Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName));
+            const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
+            UBBBProjectileMassSubsystem* ProjectileSubsystem = Context.World.GetSubsystem<UBBBProjectileMassSubsystem>();
+
+            if (ensureMsgf(ProjectileSubsystem != nullptr && Context.Definition.ProjectileDefinition != nullptr,
+                TEXT("[BBBRifle] 开火缺少ProjectileMass子系统或弹丸定义 Equipment=%s"), *Context.Equipment.GetName()))
+            {
+                FBBBProjectileSpawnRequest SpawnRequest;
+                SpawnRequest.Definition = Context.Definition.ProjectileDefinition.Get();
+                SpawnRequest.MuzzleTransform = MuzzleTransform;
+                SpawnRequest.DamageCauser = &Context.Equipment;
+                SpawnRequest.InstigatorPawn = &Context.Character;
+                SpawnRequest.EventInstigator = Context.Character.GetController();
+                const bool bProjectileSpawned = ProjectileSubsystem->SubmitSpawnRequest(SpawnRequest);
+                ensureMsgf(bProjectileSpawned, TEXT("[BBBRifle] 本地弹丸创建失败 Equipment=%s"), *Context.Equipment.GetName());
+            }
+
+            Context.Equipment.EmitShot(MuzzleTransform);
         }
     }
 

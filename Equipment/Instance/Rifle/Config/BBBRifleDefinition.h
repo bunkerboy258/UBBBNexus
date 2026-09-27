@@ -6,6 +6,7 @@
 
 class UAnimMontage;
 class USoundBase;
+class UBBBProjectileDefinition;
 
 /** 步枪实例的静态资源与数值配置 */
 UCLASS(BlueprintType)
@@ -41,6 +42,10 @@ public:
     /** 步枪开火时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
     TObjectPtr<UAnimMontage> EquipmentFireMontage = nullptr;
+
+    /** 当前步枪发射时使用的本地实体弹丸定义 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
+    TObjectPtr<UBBBProjectileDefinition> ProjectileDefinition = nullptr;
 
     /** 弹匣可容纳的子弹数量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire", meta = (ClampMin = "1"))
