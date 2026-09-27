@@ -14,7 +14,6 @@ void FBBBCharacterAimSystem::Initialize(
 
 void FBBBCharacterAimSystem::Update()
 {
-    // 瞄准更新需要角色视角瞄准状态意图和配置全部有效
     if (!AimData || !ControlData)
     {
         return;
