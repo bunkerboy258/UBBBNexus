@@ -114,17 +114,17 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     }
 
     // 预览世界没有关卡环境光 反向补光保证旋转查看背面时仍可辨认
-    if (!ConfigurePreviewLighting())
-    {
-        Shutdown();
-        return false;
-    }
-
     PreviewActor = PreviewWorld->SpawnActor<AActor>(PreviewClass, FVector::ZeroVector, FRotator::ZeroRotator);
     CaptureActor = PreviewWorld->SpawnActor<ASceneCapture2D>();
     if (!PreviewActor || !CaptureActor)
     {
         UE_LOG(LogBBBCustomization, Error, TEXT("预览人物或捕获相机创建失败"));
+        Shutdown();
+        return false;
+    }
+
+    if (!ConfigurePreviewLighting())
+    {
         Shutdown();
         return false;
     }
@@ -144,7 +144,7 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
 
     PreviewTexture = NewObject<UTextureRenderTarget2D>(this, NAME_None, RF_Transient);
     PreviewTexture->RenderTargetFormat = RTF_RGBA8;
-    PreviewTexture->InitAutoFormat(1024, 1024);
+    PreviewTexture->InitAutoFormat(768, 1024);
     PreviewTexture->UpdateResourceImmediate(true);
 
     USceneCaptureComponent2D *CaptureComponent = CaptureActor->GetCaptureComponent2D();
@@ -153,7 +153,7 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     CaptureComponent->bCaptureOnMovement = false;
     CaptureComponent->bAlwaysPersistRenderingState = true;
     CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-    CaptureComponent->FOVAngle = 35.0f;
+    CaptureComponent->FOVAngle = 23.0f;
 
     // 固定曝光避免切换衣服与机位时亮度漂移 保留暗部而不依赖强泛光
     FPostProcessSettings &PostProcess = CaptureComponent->PostProcessSettings;
@@ -187,12 +187,15 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
 bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 {
     UMaterialInterface *BackdropMaterial = PreviewBackdropMaterial.LoadSynchronous();
+    UMaterialInterface *FloorMaterial = PreviewFloorMaterial.LoadSynchronous();
     UStaticMesh *BackdropMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+    UStaticMesh *FloorMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
     UTextureCube *AmbientCubemap = LoadObject<UTextureCube>(nullptr, TEXT("/Engine/EngineMaterials/DefaultCubemap.DefaultCubemap"));
-    if (!BackdropMaterial || !BackdropMesh || !AmbientCubemap)
+    if (!BackdropMaterial || !FloorMaterial || !BackdropMesh || !FloorMesh || !AmbientCubemap)
     {
-        UE_LOG(LogBBBCustomization, Error, TEXT("预览灯光资源不完整 Backdrop=%s Mesh=%s Cubemap=%s"),
-            *PreviewBackdropMaterial.ToString(), *GetNameSafe(BackdropMesh), *GetNameSafe(AmbientCubemap));
+        UE_LOG(LogBBBCustomization, Error, TEXT("预览灯光资源不完整 Backdrop=%s Floor=%s Sphere=%s Plane=%s Cubemap=%s"),
+            *PreviewBackdropMaterial.ToString(), *PreviewFloorMaterial.ToString(), *GetNameSafe(BackdropMesh),
+            *GetNameSafe(FloorMesh), *GetNameSafe(AmbientCubemap));
         return false;
     }
 
@@ -200,20 +203,20 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     const FVector Focus(0.0f, 0.0f, 120.0f);
     URectLightComponent *KeyLight = NewObject<URectLightComponent>(this, TEXT("KeyLight"), RF_Transient);
     KeyLight->SetIntensityUnits(ELightUnits::Lumens);
-    KeyLight->SetIntensity(120.0f);
-    KeyLight->SetLightColor(FLinearColor(FColor(242, 247, 255)));
-    KeyLight->SetSourceWidth(60.0f);
-    KeyLight->SetSourceHeight(80.0f);
+    KeyLight->SetIntensity(300.0f);
+    KeyLight->SetLightColor(FLinearColor(1.0f, 0.90f, 0.80f));
+    KeyLight->SetSourceWidth(150.0f);
+    KeyLight->SetSourceHeight(220.0f);
     KeyLight->SetAttenuationRadius(1200.0f);
     const FVector KeyPosition(-260.0f, -220.0f, 260.0f);
     Scene->AddComponent(KeyLight, FTransform((Focus - KeyPosition).Rotation(), KeyPosition));
 
     URectLightComponent *FillLight = NewObject<URectLightComponent>(this, TEXT("FillLight"), RF_Transient);
     FillLight->SetIntensityUnits(ELightUnits::Lumens);
-    FillLight->SetIntensity(60.0f);
-    FillLight->SetLightColor(FLinearColor(0.65f, 0.76f, 1.0f));
-    FillLight->SetSourceWidth(220.0f);
-    FillLight->SetSourceHeight(260.0f);
+    FillLight->SetIntensity(70.0f);
+    FillLight->SetLightColor(FLinearColor(0.30f, 0.34f, 0.48f));
+    FillLight->SetSourceWidth(260.0f);
+    FillLight->SetSourceHeight(320.0f);
     FillLight->SetAttenuationRadius(1200.0f);
     FillLight->SetCastShadows(false);
     const FVector FillPosition(-200.0f, 240.0f, 180.0f);
@@ -221,10 +224,10 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 
     URectLightComponent *RimLight = NewObject<URectLightComponent>(this, TEXT("RimLight"), RF_Transient);
     RimLight->SetIntensityUnits(ELightUnits::Lumens);
-    RimLight->SetIntensity(150.0f);
-    RimLight->SetLightColor(FLinearColor(0.48f, 0.38f, 1.0f));
-    RimLight->SetSourceWidth(100.0f);
-    RimLight->SetSourceHeight(220.0f);
+    RimLight->SetIntensity(80.0f);
+    RimLight->SetLightColor(FLinearColor(0.42f, 0.34f, 0.65f));
+    RimLight->SetSourceWidth(160.0f);
+    RimLight->SetSourceHeight(260.0f);
     RimLight->SetAttenuationRadius(1200.0f);
     RimLight->SetCastShadows(false);
     const FVector RimPosition(200.0f, 180.0f, 250.0f);
@@ -246,6 +249,24 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     Backdrop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Backdrop->SetCastShadow(false);
     Scene->AddComponent(Backdrop, FTransform(FRotator::ZeroRotator, Focus, FVector(30.0f)));
+
+    FVector ActorCenter;
+    FVector ActorExtent;
+    PreviewActor->GetActorBounds(false, ActorCenter, ActorExtent);
+    if (ActorExtent.IsNearlyZero())
+    {
+        UE_LOG(LogBBBCustomization, Error, TEXT("预览人物没有有效网格边界 无法放置投影地面"));
+        return false;
+    }
+
+    // 按预览人物当前网格最低点放置地面 让拼接部件始终落在投影面上
+    UStaticMeshComponent *Floor = NewObject<UStaticMeshComponent>(this, TEXT("PreviewFloor"), RF_Transient);
+    Floor->SetStaticMesh(FloorMesh);
+    Floor->SetMaterial(0, FloorMaterial);
+    Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Floor->SetCastShadow(false);
+    const float FloorHeight = ActorCenter.Z - ActorExtent.Z + 1.0f;
+    Scene->AddComponent(Floor, FTransform(FRotator::ZeroRotator, FVector(0.0f, 0.0f, FloorHeight), FVector(30.0f)));
     return true;
 }
 

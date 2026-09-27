@@ -130,6 +130,10 @@ private:
     UPROPERTY(Config)
     TSoftObjectPtr<UMaterialInterface> PreviewBackdropMaterial;
 
+    /** 预览人物脚下接收投影的暗色地面材质 */
+    UPROPERTY(Config)
+    TSoftObjectPtr<UMaterialInterface> PreviewFloorMaterial;
+
     TUniquePtr<FPreviewScene> Scene;
 
     UPROPERTY(Transient)

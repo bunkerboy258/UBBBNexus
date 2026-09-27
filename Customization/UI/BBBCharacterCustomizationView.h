@@ -68,6 +68,9 @@ private:
 
     FSlateBrush PreviewBrush;
 
+    /** 当前预览机位 */
+    FName CurrentView = TEXT("Full");
+
     /** 徽章图集的界面材质 */
     UPROPERTY(Config)
     TSoftObjectPtr<UMaterialInterface> PatchPreviewMaterial;
