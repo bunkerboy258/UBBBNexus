@@ -19,10 +19,6 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Equip")
     FName LeftHandSocketName = TEXT("LeftHand");
 
-    /** 左手握持目标在装备插槽局部空间中的偏移 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Equip")
-    FVector LeftHandSocketOffset = FVector::ZeroVector;
-
     /** 左手握持目标在右手骨骼空间中的额外偏移 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Equip")
     FVector LeftHandIKOffset = FVector::ZeroVector;
