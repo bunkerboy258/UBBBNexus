@@ -4,9 +4,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBRifleEquipment.generated.h"
 
-struct FBBBRifleDetachMagazineLocalControlPacket;
-struct FBBBRifleReleaseMagazineLocalControlPacket;
-struct FBBBRifleTakeMagazineLocalControlPacket;
 struct FBBBRifleLoadMagazineLocalControlPacket;
 struct FBBBRifleInterruptReloadLocalControlPacket;
 
@@ -56,15 +53,6 @@ private:
     virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentReloadLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload) override;
-
-    /** @param Packet	弹匣卸下通知 @return 是否接受 */
-    bool QueueInput(FBBBRifleDetachMagazineLocalControlPacket Packet);
-
-    /** @param Packet	甩出旧弹匣通知 @return 是否接受 */
-    bool QueueInput(FBBBRifleReleaseMagazineLocalControlPacket Packet);
-
-    /** @param Packet	拿起新弹匣通知 @return 是否接受 */
-    bool QueueInput(FBBBRifleTakeMagazineLocalControlPacket Packet);
 
     /** @param Packet	弹匣装入通知 @return 是否接受 */
     bool QueueInput(FBBBRifleLoadMagazineLocalControlPacket Packet);

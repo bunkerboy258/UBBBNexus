@@ -18,24 +18,12 @@ struct FBBBRifleActionStateAuthorityFactPacket final
     /** 当前是否正在换弹 */
     bool bIsReloading = false;
 
-    /** 当前弹匣是否已经卸下 */
-    bool bMagazineDetached = false;
-
-    /** 当前旧弹匣是否已甩出 */
-    bool bMagazineReleased = false;
-
-    /** 当前左手是否持有新弹匣 */
-    bool bFreshMagazineHeld = false;
-
     /** @return 镜像结果自身的数据约束是否有效 */
     bool IsValid() const
     {
         return LoadedAmmo >= 0
             && FireSequence >= 0
-            && ReloadSequence >= 0
-            && (!bMagazineDetached || bIsReloading)
-            && (!bMagazineReleased || bMagazineDetached)
-            && (!bFreshMagazineHeld || bMagazineReleased);
+            && ReloadSequence >= 0;
     }
 
     /** @return 镜像结果是否可写入本帧状态 */
@@ -56,8 +44,5 @@ struct FBBBRifleActionStateAuthorityFactPacket final
         State.FireSequence = FireSequence;
         State.ReloadSequence = ReloadSequence;
         State.bIsReloading = bIsReloading;
-        State.bMagazineDetached = bMagazineDetached;
-        State.bMagazineReleased = bMagazineReleased;
-        State.bFreshMagazineHeld = bFreshMagazineHeld;
     }
 };

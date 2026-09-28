@@ -7,7 +7,6 @@
 class UAnimMontage;
 class USoundBase;
 class UBBBProjectileDefinition;
-class UStaticMesh;
 
 /** 步枪实例的静态资源与数值配置 */
 UCLASS(BlueprintType)
@@ -39,22 +38,6 @@ public:
     /** 步枪开火时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
     TObjectPtr<UAnimMontage> EquipmentFireMontage = nullptr;
-
-    /** 换弹时由手持有并可掉落的独立弹匣网格 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Reload")
-    TObjectPtr<UStaticMesh> MagazineMesh = nullptr;
-
-    /** 枪上弹匣对应的骨骼名称 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Reload")
-    FName MagazineBoneName = TEXT("Magazine_joint");
-
-    /** 角色抓取弹匣使用的左手骨骼名称 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Reload")
-    FName MagazineHandBoneName = TEXT("hand_l");
-
-    /** 新弹匣相对左手骨骼的握持变换 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Reload")
-    FTransform FreshMagazineHandTransform = FTransform::Identity;
 
     /** 当前步枪发射时使用的本地实体弹丸定义 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")

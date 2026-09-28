@@ -23,15 +23,6 @@ struct FBBBRifleActionState final
     /** 当前是否处于换弹流程 */
     bool bIsReloading = false;
 
-    /** 当前换弹流程是否已经取下旧弹匣 */
-    bool bMagazineDetached = false;
-
-    /** 当前旧弹匣是否已由左手甩出 */
-    bool bMagazineReleased = false;
-
-    /** 当前左手是否已拿起新弹匣 */
-    bool bFreshMagazineHeld = false;
-
     /** 本帧是否由装入新弹匣自然完成换弹 */
     bool bReloadCompletedThisFrame = false;
 
