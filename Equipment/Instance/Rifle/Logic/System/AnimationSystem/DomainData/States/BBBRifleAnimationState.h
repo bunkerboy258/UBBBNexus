@@ -25,12 +25,6 @@ struct FBBBRifleAnimationState final
     /** 当前由左手持有的临时弹匣 */
     TWeakObjectPtr<UStaticMeshComponent> HandMagazine;
 
-    /** 弹匣相对左手的抓取变换 */
-    FTransform MagazineHandTransform = FTransform::Identity;
-
-    /** 抓取变换是否已经由拔匣动作校准 */
-    bool bHasMagazineHandTransform = false;
-
     /** 最近已经表现的弹匣脱离状态 */
     bool bWasMagazineDetached = false;
 

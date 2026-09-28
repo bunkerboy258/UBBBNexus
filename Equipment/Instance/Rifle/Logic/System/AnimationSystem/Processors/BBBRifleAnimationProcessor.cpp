@@ -30,7 +30,6 @@ namespace
         State.bWasMagazineReleased = false;
         State.bWasFreshMagazineHeld = false;
         State.bHasPreviousMagazineHandLocation = false;
-        State.bHasMagazineHandTransform = false;
     }
 
     UStaticMeshComponent *CreateHandMagazine(
@@ -86,9 +85,6 @@ namespace
                 {
                     return;
                 }
-
-                State.MagazineHandTransform = MagazineWorld.GetRelativeTransform(HandWorld);
-                State.bHasMagazineHandTransform = true;
             }
 
             Context.WeaponMesh.HideBoneByName(Context.Definition.MagazineBoneName, EPhysBodyOp::PBO_None);
@@ -135,16 +131,10 @@ namespace
 
         if (Action.bFreshMagazineHeld && !State.bWasFreshMagazineHeld)
         {
-            if (!ensureMsgf(State.bHasMagazineHandTransform,
-                TEXT("步枪拿取新弹匣时尚无左手抓取变换 %s"), *Context.Equipment.GetName()))
-            {
-                State.MagazineHandTransform = FTransform::Identity;
-            }
-
             State.HandMagazine = CreateHandMagazine(
                 Context,
                 *HandMesh,
-                State.MagazineHandTransform * HandWorld);
+                Context.Definition.FreshMagazineHandTransform * HandWorld);
             if (!State.HandMagazine.IsValid())
             {
                 return;

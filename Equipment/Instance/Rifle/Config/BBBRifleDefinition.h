@@ -52,6 +52,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Reload")
     FName MagazineHandBoneName = TEXT("hand_l");
 
+    /** 新弹匣相对左手骨骼的握持变换 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Reload")
+    FTransform FreshMagazineHandTransform = FTransform::Identity;
+
     /** 当前步枪发射时使用的本地实体弹丸定义 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
     TObjectPtr<UBBBProjectileDefinition> ProjectileDefinition = nullptr;
