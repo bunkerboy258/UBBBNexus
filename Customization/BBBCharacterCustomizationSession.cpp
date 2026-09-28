@@ -143,7 +143,8 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     Preview = PreviewAppearance;
 
     PreviewTexture = NewObject<UTextureRenderTarget2D>(this, NAME_None, RF_Transient);
-    PreviewTexture->RenderTargetFormat = RTF_RGBA8;
+    // 保留色调映射后的线性浮点颜色 避免八位输出抖动在深色棚景中形成颗粒
+    PreviewTexture->RenderTargetFormat = RTF_RGBA16f;
     PreviewTexture->InitAutoFormat(1920, 1080);
     PreviewTexture->UpdateResourceImmediate(true);
 
@@ -152,7 +153,9 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     CaptureComponent->bCaptureEveryFrame = false;
     CaptureComponent->bCaptureOnMovement = false;
     CaptureComponent->bAlwaysPersistRenderingState = true;
-    CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+    CaptureComponent->ShowFlags.SetTemporalAA(true);
+    CaptureComponent->ShowFlags.SetAntiAliasing(true);
+    CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalToneCurveHDR;
     CaptureComponent->FOVAngle = FMath::RadiansToDegrees(
         2.0f * FMath::Atan(FMath::Tan(FMath::DegreesToRadians(15.0f)) * (16.0f / 9.0f)));
 
@@ -171,6 +174,13 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     // 只在换装预览关闭胶片颗粒 避免暗色摄影棚出现随机噪点
     PostProcess.bOverride_FilmGrainIntensity = true;
     PostProcess.FilmGrainIntensity = 0.0f;
+    // 独立棚景使用明确布光 避免屏幕空间间接光在低频捕获时留下采样噪点
+    PostProcess.bOverride_DynamicGlobalIlluminationMethod = true;
+    PostProcess.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::None;
+    PostProcess.bOverride_ReflectionMethod = true;
+    PostProcess.ReflectionMethod = EReflectionMethod::None;
+    PostProcess.bOverride_AmbientOcclusionIntensity = true;
+    PostProcess.AmbientOcclusionIntensity = 0.0f;
     CaptureComponent->PostProcessBlendWeight = 1.0f;
 
     // FPreviewScene 初始化世界但不会代替游戏主循环分发 BeginPlay 和 Tick
@@ -207,8 +217,8 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     const FVector Focus(0.0f, 0.0f, 120.0f);
     URectLightComponent *KeyLight = NewObject<URectLightComponent>(this, TEXT("KeyLight"), RF_Transient);
     KeyLight->SetIntensityUnits(ELightUnits::Lumens);
-    KeyLight->SetIntensity(300.0f);
-    KeyLight->SetLightColor(FLinearColor(1.0f, 0.90f, 0.80f));
+    KeyLight->SetIntensity(140.0f);
+    KeyLight->SetLightColor(FLinearColor(1.0f, 0.96f, 0.90f));
     KeyLight->SetSourceWidth(150.0f);
     KeyLight->SetSourceHeight(220.0f);
     KeyLight->SetAttenuationRadius(1200.0f);
@@ -217,8 +227,8 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 
     URectLightComponent *FillLight = NewObject<URectLightComponent>(this, TEXT("FillLight"), RF_Transient);
     FillLight->SetIntensityUnits(ELightUnits::Lumens);
-    FillLight->SetIntensity(70.0f);
-    FillLight->SetLightColor(FLinearColor(0.30f, 0.34f, 0.48f));
+    FillLight->SetIntensity(25.0f);
+    FillLight->SetLightColor(FLinearColor(0.52f, 0.59f, 0.72f));
     FillLight->SetSourceWidth(260.0f);
     FillLight->SetSourceHeight(320.0f);
     FillLight->SetAttenuationRadius(1200.0f);
@@ -228,8 +238,8 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 
     URectLightComponent *RimLight = NewObject<URectLightComponent>(this, TEXT("RimLight"), RF_Transient);
     RimLight->SetIntensityUnits(ELightUnits::Lumens);
-    RimLight->SetIntensity(80.0f);
-    RimLight->SetLightColor(FLinearColor(0.42f, 0.34f, 0.65f));
+    RimLight->SetIntensity(100.0f);
+    RimLight->SetLightColor(FLinearColor(0.55f, 0.57f, 0.72f));
     RimLight->SetSourceWidth(160.0f);
     RimLight->SetSourceHeight(260.0f);
     RimLight->SetAttenuationRadius(1200.0f);
@@ -269,7 +279,7 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     Floor->SetMaterial(0, FloorMaterial);
     Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Floor->SetCastShadow(false);
-    const float FloorHeight = ActorCenter.Z - ActorExtent.Z + 1.0f;
+    const float FloorHeight = ActorCenter.Z - ActorExtent.Z + 5.0f;
     Scene->AddComponent(Floor, FTransform(FRotator::ZeroRotator, FVector(0.0f, 0.0f, FloorHeight), FVector(300.0f)));
     return true;
 }

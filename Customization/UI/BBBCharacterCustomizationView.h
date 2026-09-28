@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Styling/SlateBrush.h"
+#include "Styling/SlateTypes.h"
 #include "BBBCharacterCustomizationView.generated.h"
 
 class UBBBCharacterCustomizationSession;
@@ -52,6 +53,31 @@ protected:
     virtual FReply NativeOnKeyDown(const FGeometry &Geometry, const FKeyEvent &KeyEvent) override;
 
 private:
+    /** 加载图卡纹理并准备本界面的按钮样式 */
+    void LoadInterfaceArt();
+
+    /** 构建底部操作栏 */
+    TSharedRef<SWidget> MakeActionBar();
+
+    /** 构建单个机位选择按钮 */
+    TSharedRef<SWidget> MakeViewButton(FName ViewName);
+
+    /** 返回上一级选择 总览状态取消换装 */
+    FReply GoBack();
+
+    /** 保持图卡底纹和边框在界面存续期间有效 */
+    UPROPERTY(Transient)
+    TObjectPtr<UTexture2D> CardSurfaceTexture;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UTexture2D> CardFrameTexture;
+
+    FSlateBrush CardSurfaceBrush;
+    FSlateBrush CardFrameBrush;
+    FButtonStyle ActionButtonStyle;
+    FScrollBarStyle ItemScrollBarStyle;
+    FScrollBoxStyle ItemScrollBoxStyle;
+
     /** 构建指定一侧的穿戴与款式面板 */
     TSharedRef<SWidget> MakeSidePanel(bool bLeft);
 
