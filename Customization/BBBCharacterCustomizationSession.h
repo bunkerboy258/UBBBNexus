@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Containers/Ticker.h"
 #include "UObject/Object.h"
+#include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceItem.h"
 #include "BBBWork/UBBBNexus/Customization/Appearance/Data/BBBAppearanceSelection.h"
 #include "BBBCharacterCustomizationSession.generated.h"
 
@@ -56,6 +57,37 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
     bool CycleItem(FName Slot, int32 Direction);
+
+    /**
+     * 直接选择指定部位款式
+     * @param Slot	目标部位
+     * @param ItemId	目录中的款式行名
+     * @return 是否成功预览
+     */
+    bool SelectItem(FName Slot, FName ItemId);
+
+    /**
+     * 直接选择身体或背心的徽章图案
+     * @param Slot	目标部位
+     * @param PatchIndex	从零开始的图案索引
+     * @return 是否成功预览
+     */
+    bool SelectPatch(FName Slot, int32 PatchIndex);
+
+    /**
+     * 读取指定部位的可选款式
+     * @param Slot	目标部位
+     * @return 有效的目录行名
+     */
+    TArray<FName> GetItems(FName Slot) const;
+
+    /**
+     * 读取指定款式配置
+     * @param ItemId	目录中的款式行名
+     * @param Item	找到的款式配置
+     * @return 条目是否有效
+     */
+    bool GetItem(FName ItemId, FBBBAppearanceItem &Item) const;
 
     /**
      * 切换身体或背心的徽章图案

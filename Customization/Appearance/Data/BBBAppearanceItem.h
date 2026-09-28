@@ -5,6 +5,7 @@
 #include "BBBAppearanceItem.generated.h"
 
 class USkeletalMesh;
+class UTexture2D;
 
 /** 外观目录中的一项资源与搭配说明 */
 USTRUCT(BlueprintType)
@@ -19,6 +20,10 @@ struct ABBB_EVAC_API FBBBAppearanceItem : public FTableRowBase
     /** 界面名称 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FText DisplayName;
+
+    /** 款式选择界面显示的部件缩略图 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TSoftObjectPtr<UTexture2D> Thumbnail;
 
     /** 骨骼网格 空资源表示此部位不显示 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)

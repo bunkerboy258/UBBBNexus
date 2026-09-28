@@ -144,7 +144,7 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
 
     PreviewTexture = NewObject<UTextureRenderTarget2D>(this, NAME_None, RF_Transient);
     PreviewTexture->RenderTargetFormat = RTF_RGBA8;
-    PreviewTexture->InitAutoFormat(768, 1024);
+    PreviewTexture->InitAutoFormat(1920, 1080);
     PreviewTexture->UpdateResourceImmediate(true);
 
     USceneCaptureComponent2D *CaptureComponent = CaptureActor->GetCaptureComponent2D();
@@ -153,7 +153,8 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     CaptureComponent->bCaptureOnMovement = false;
     CaptureComponent->bAlwaysPersistRenderingState = true;
     CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-    CaptureComponent->FOVAngle = 23.0f;
+    CaptureComponent->FOVAngle = FMath::RadiansToDegrees(
+        2.0f * FMath::Atan(FMath::Tan(FMath::DegreesToRadians(15.0f)) * (16.0f / 9.0f)));
 
     // 固定曝光避免切换衣服与机位时亮度漂移 保留暗部而不依赖强泛光
     FPostProcessSettings &PostProcess = CaptureComponent->PostProcessSettings;
@@ -248,7 +249,7 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     Backdrop->SetMaterial(0, BackdropMaterial);
     Backdrop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Backdrop->SetCastShadow(false);
-    Scene->AddComponent(Backdrop, FTransform(FRotator::ZeroRotator, Focus, FVector(30.0f)));
+    Scene->AddComponent(Backdrop, FTransform(FRotator::ZeroRotator, Focus, FVector(300.0f)));
 
     FVector ActorCenter;
     FVector ActorExtent;
@@ -266,7 +267,7 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Floor->SetCastShadow(false);
     const float FloorHeight = ActorCenter.Z - ActorExtent.Z + 1.0f;
-    Scene->AddComponent(Floor, FTransform(FRotator::ZeroRotator, FVector(0.0f, 0.0f, FloorHeight), FVector(30.0f)));
+    Scene->AddComponent(Floor, FTransform(FRotator::ZeroRotator, FVector(0.0f, 0.0f, FloorHeight), FVector(300.0f)));
     return true;
 }
 
@@ -302,6 +303,40 @@ void UBBBCharacterCustomizationSession::Capture()
         return;
     }
 
+    APlayerController *Player = Controller.Get();
+    int32 ViewportWidth = 1920;
+    int32 ViewportHeight = 1080;
+    if (Player)
+    {
+        Player->GetViewportSize(ViewportWidth, ViewportHeight);
+    }
+
+    if (ViewportWidth <= 0 || ViewportHeight <= 0)
+    {
+        UE_LOG(LogBBBCustomization, Warning, TEXT("换装预览视口尺寸无效 Width=%d Height=%d"),
+            ViewportWidth, ViewportHeight);
+        return;
+    }
+
+    const float ResolutionScale = FMath::Min(1.0f, 2560.0f / FMath::Max(ViewportWidth, ViewportHeight));
+    const int32 TargetWidth = FMath::Max(2, FMath::RoundToInt(ViewportWidth * ResolutionScale));
+    const int32 TargetHeight = FMath::Max(2, FMath::RoundToInt(ViewportHeight * ResolutionScale));
+    if (PreviewTexture->SizeX != TargetWidth || PreviewTexture->SizeY != TargetHeight)
+    {
+        PreviewTexture->ResizeTarget(TargetWidth, TargetHeight);
+        PreviewTexture->UpdateResourceImmediate(true);
+        if (View)
+        {
+            View->SetPreviewTexture(PreviewTexture);
+        }
+
+        const float AspectRatio = static_cast<float>(TargetWidth) / TargetHeight;
+        const float VerticalHalfFov = FMath::DegreesToRadians(15.0f);
+        CaptureActor->GetCaptureComponent2D()->FOVAngle = FMath::RadiansToDegrees(
+            2.0f * FMath::Atan(FMath::Tan(VerticalHalfFov) * AspectRatio));
+        UpdateCamera();
+    }
+
     USceneCaptureComponent2D *CaptureComponent = CaptureActor->GetCaptureComponent2D();
     // 独立世界没有玩家视口 用捕获相机提交纹理需求 关闭预览后不再维持高分辨率请求
     const float ScreenSize = static_cast<float>(PreviewTexture->SizeX);
@@ -328,7 +363,7 @@ void UBBBCharacterCustomizationSession::UpdateCamera()
     }
 
     FVector Focus = Center;
-    float Distance = FMath::Max(Extent.Z * 4.3f, 360.0f);
+    float Distance = FMath::Max(Extent.Z * 4.6f, 360.0f);
     if (CurrentView == TEXT("Head"))
     {
         Focus.Z += Extent.Z * 0.65f;
@@ -487,6 +522,80 @@ bool UBBBCharacterCustomizationSession::CycleItem(const FName Slot, const int32 
     const int32 Start = Index == INDEX_NONE ? (Step > 0 ? -1 : 0) : Index;
     *Selected = Items[(Start + Step + Items.Num()) % Items.Num()];
     return SetDraft(MoveTemp(Selection));
+}
+
+bool UBBBCharacterCustomizationSession::SelectItem(const FName Slot, const FName ItemId)
+{
+    if (!IsOpen() || !Target.IsValid() || Slot.IsNone() || ItemId.IsNone())
+    {
+        return false;
+    }
+
+    FBBBAppearanceItem Item;
+    if (!Target->GetItem(ItemId, Item) || Item.Slot != Slot)
+    {
+        UE_LOG(LogBBBCustomization, Warning, TEXT("款式不属于请求部位 Slot=%s Item=%s"),
+            *Slot.ToString(), *ItemId.ToString());
+        return false;
+    }
+
+    FBBBAppearanceSelection Selection = Draft;
+    if (Slot == TEXT("Attachments"))
+    {
+        Selection.Attachments = ItemId;
+        return SetDraft(MoveTemp(Selection));
+    }
+
+    for (FBBBAppearancePart &Part : Selection.Parts)
+    {
+        if (Part.Slot == Slot)
+        {
+            Part.Item = ItemId;
+            return SetDraft(MoveTemp(Selection));
+        }
+    }
+
+    UE_LOG(LogBBBCustomization, Warning, TEXT("人物未配置请求部位 Slot=%s"), *Slot.ToString());
+    return false;
+}
+
+bool UBBBCharacterCustomizationSession::SelectPatch(const FName Slot, const int32 PatchIndex)
+{
+    if (!IsOpen() || (Slot != TEXT("Body") && Slot != TEXT("Vest"))
+        || PatchIndex < 0 || PatchIndex >= 64)
+    {
+        return false;
+    }
+
+    FBBBAppearanceSelection Selection = Draft;
+    for (FBBBAppearancePart &Part : Selection.Parts)
+    {
+        if (Part.Slot != Slot)
+        {
+            continue;
+        }
+
+        Part.Patch = FVector2D(PatchIndex % 8, PatchIndex / 8) / 8.0;
+        return SetDraft(MoveTemp(Selection));
+    }
+
+    UE_LOG(LogBBBCustomization, Warning, TEXT("徽章部位不存在 Slot=%s"), *Slot.ToString());
+    return false;
+}
+
+TArray<FName> UBBBCharacterCustomizationSession::GetItems(const FName Slot) const
+{
+    return Target.IsValid() ? Target->GetItems(Slot) : TArray<FName>();
+}
+
+bool UBBBCharacterCustomizationSession::GetItem(const FName ItemId, FBBBAppearanceItem &Item) const
+{
+    if (!Target.IsValid() || !Target->GetItem(ItemId, Item))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool UBBBCharacterCustomizationSession::CyclePatch(const FName Slot, const int32 Direction)
