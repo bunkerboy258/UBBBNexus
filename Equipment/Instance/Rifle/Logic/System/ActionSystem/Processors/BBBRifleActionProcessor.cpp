@@ -21,6 +21,8 @@ namespace
         Input.bPrimaryRequested = false;
         Input.bReloadRequested = false;
         Input.bDetachMagazineRequested = false;
+        Input.bReleaseMagazineRequested = false;
+        Input.bTakeMagazineRequested = false;
         Input.bLoadMagazineRequested = false;
         Input.bInterruptReloadRequested = false;
         Input.bHasAuthorityFact = false;
@@ -29,6 +31,8 @@ namespace
         Input.ReloadSequence = 0;
         Input.bIsReloading = false;
         Input.bMagazineDetached = false;
+        Input.bMagazineReleased = false;
+        Input.bFreshMagazineHeld = false;
     }
 }
 
@@ -43,6 +47,9 @@ void FBBBRifleActionProcessor::Stop(FBBBRifleRuntimeData &Data)
 {
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bMagazineDetached = false;
+    Data.Action.ActionState.bMagazineReleased = false;
+    Data.Action.ActionState.bFreshMagazineHeld = false;
+    Data.Action.ActionState.bReloadCompletedThisFrame = false;
 }
 
 void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
@@ -50,11 +57,17 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
     State.bEquippedThisFrame = Input.bEquipRequested;
+    State.bReloadCompletedThisFrame = false;
 
     if (Context.Equipment.IsMirror())
     {
         if (Input.bHasAuthorityFact)
         {
+            State.bReloadCompletedThisFrame = State.bIsReloading
+                && !Input.bIsReloading
+                && State.bFreshMagazineHeld
+                && Input.LoadedAmmo == State.AmmoCapacity;
+
             if (State.FireSequence != Input.FireSequence
                 && Context.RuntimeData.Animation.ReadRifleAnimationState().bInitialized)
             {
@@ -67,6 +80,8 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
             State.ReloadSequence = Input.ReloadSequence;
             State.bIsReloading = Input.bIsReloading;
             State.bMagazineDetached = Input.bMagazineDetached;
+            State.bMagazineReleased = Input.bMagazineReleased;
+            State.bFreshMagazineHeld = Input.bFreshMagazineHeld;
         }
 
         Clear(Input);
@@ -79,11 +94,26 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
         State.bMagazineDetached = true;
     }
 
-    if (Input.bLoadMagazineRequested && State.bIsReloading && State.bMagazineDetached)
+    if (Input.bReleaseMagazineRequested && State.bIsReloading && State.bMagazineDetached)
+    {
+        State.bMagazineReleased = true;
+    }
+
+    if (Input.bTakeMagazineRequested && State.bIsReloading && State.bMagazineReleased)
+    {
+        State.bFreshMagazineHeld = true;
+    }
+
+    if (Input.bLoadMagazineRequested && State.bIsReloading && State.bFreshMagazineHeld)
     {
         State.LoadedAmmo = State.AmmoCapacity;
         State.bIsReloading = false;
         State.bMagazineDetached = false;
+        State.bMagazineReleased = false;
+        State.bFreshMagazineHeld = false;
+        State.bReloadCompletedThisFrame = true;
+        UE_LOG(LogTemp, Log, TEXT("[BBBRifle] Reload completed Equipment=%s Sequence=%d"),
+            *Context.Equipment.GetName(), State.ReloadSequence);
     }
 
     if (Input.bInterruptReloadRequested)
@@ -98,6 +128,8 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
         {
             State.bIsReloading = true;
             State.bMagazineDetached = false;
+            State.bMagazineReleased = false;
+            State.bFreshMagazineHeld = false;
             ++State.ReloadSequence;
         }
     }

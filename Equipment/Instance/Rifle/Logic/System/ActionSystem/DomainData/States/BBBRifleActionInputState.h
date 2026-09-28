@@ -17,6 +17,12 @@ struct FBBBRifleActionInputState final
     /** 本帧是否收到卸下弹匣通知 */
     bool bDetachMagazineRequested = false;
 
+    /** 本帧是否收到甩出旧弹匣通知 */
+    bool bReleaseMagazineRequested = false;
+
+    /** 本帧是否收到拿起新弹匣通知 */
+    bool bTakeMagazineRequested = false;
+
     /** 本帧是否收到装入弹匣通知 */
     bool bLoadMagazineRequested = false;
 
@@ -40,6 +46,12 @@ struct FBBBRifleActionInputState final
 
     /** 镜像当前弹匣是否已经取下 */
     bool bMagazineDetached = false;
+
+    /** 镜像当前旧弹匣是否已甩出 */
+    bool bMagazineReleased = false;
+
+    /** 镜像当前左手是否持有新弹匣 */
+    bool bFreshMagazineHeld = false;
 
 private:
     friend struct FBBBRifleActionDomainState;

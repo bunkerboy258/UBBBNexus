@@ -19,6 +19,8 @@ void FBBBRifleNetworkProcessor::Encode(const FBBBRifleRuntimeData &Data, TArray<
     int32 ReloadSequence = State.ReloadSequence;
     uint8 Reloading = State.bIsReloading ? 1 : 0;
     uint8 Detached = State.bMagazineDetached ? 1 : 0;
+    uint8 Released = State.bMagazineReleased ? 1 : 0;
+    uint8 FreshHeld = State.bFreshMagazineHeld ? 1 : 0;
     Payload.Reset();
     FMemoryWriter Writer(Payload);
     Writer << LoadedAmmo;
@@ -26,6 +28,8 @@ void FBBBRifleNetworkProcessor::Encode(const FBBBRifleRuntimeData &Data, TArray<
     Writer << ReloadSequence;
     Writer << Reloading;
     Writer << Detached;
+    Writer << Released;
+    Writer << FreshHeld;
 }
 
 bool FBBBRifleNetworkProcessor::Decode(
@@ -34,26 +38,33 @@ bool FBBBRifleNetworkProcessor::Decode(
     FBBBRifleActionStateAuthorityFactPacket &Packet)
 {
     // 固定格式必须完整到达 不接受部分结果或额外尾部数据
-    if (!ensureMsgf(Payload.Num() == 3 * sizeof(int32) + 2 * sizeof(uint8), TEXT("步枪网络状态长度错误")))
+    if (!ensureMsgf(Payload.Num() == 3 * sizeof(int32) + 4 * sizeof(uint8), TEXT("步枪网络状态长度错误")))
     {
         return false;
     }
 
     uint8 Reloading = 0;
     uint8 Detached = 0;
+    uint8 Released = 0;
+    uint8 FreshHeld = 0;
     FMemoryReader Reader(Payload);
     Reader << Packet.LoadedAmmo;
     Reader << Packet.FireSequence;
     Reader << Packet.ReloadSequence;
     Reader << Reloading;
     Reader << Detached;
-    if (!ensureMsgf(!Reader.IsError() && Reloading <= 1 && Detached <= 1, TEXT("步枪网络状态编码错误")))
+    Reader << Released;
+    Reader << FreshHeld;
+    if (!ensureMsgf(!Reader.IsError() && Reloading <= 1 && Detached <= 1 && Released <= 1 && FreshHeld <= 1,
+        TEXT("步枪网络状态编码错误")))
     {
         return false;
     }
 
     Packet.bIsReloading = Reloading != 0;
     Packet.bMagazineDetached = Detached != 0;
+    Packet.bMagazineReleased = Released != 0;
+    Packet.bFreshMagazineHeld = FreshHeld != 0;
     if (!ensureMsgf(Packet.IsValid()
         && Packet.LoadedAmmo <= Data.Action.ReadRifleActionState().AmmoCapacity,
         TEXT("步枪网络状态字段无效")))

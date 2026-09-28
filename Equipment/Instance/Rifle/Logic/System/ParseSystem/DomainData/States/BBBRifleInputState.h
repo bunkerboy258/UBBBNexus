@@ -6,6 +6,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleDetachMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleReleaseMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleTakeMagazineLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadMagazineLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Action/FBBBRifleActionStateAuthorityFactPacket.h"
@@ -27,6 +29,12 @@ struct FBBBRifleInputState final
 
     /** 等待消费的卸下弹匣输入 */
     TBBBRifleInputSlot<FBBBRifleDetachMagazineLocalControlPacket> DetachMagazine;
+
+    /** 等待消费的甩出旧弹匣输入 */
+    TBBBRifleInputSlot<FBBBRifleReleaseMagazineLocalControlPacket> ReleaseMagazine;
+
+    /** 等待消费的拿起新弹匣输入 */
+    TBBBRifleInputSlot<FBBBRifleTakeMagazineLocalControlPacket> TakeMagazine;
 
     /** 等待消费的装入弹匣输入 */
     TBBBRifleInputSlot<FBBBRifleLoadMagazineLocalControlPacket> LoadMagazine;

@@ -32,6 +32,8 @@ namespace
         State.bPrimaryRequested = false;
         State.bReloadRequested = false;
         State.bDetachMagazineRequested = false;
+        State.bReleaseMagazineRequested = false;
+        State.bTakeMagazineRequested = false;
         State.bLoadMagazineRequested = false;
         State.bInterruptReloadRequested = false;
         State.bHasAuthorityFact = false;
@@ -40,6 +42,8 @@ namespace
         State.ReloadSequence = 0;
         State.bIsReloading = false;
         State.bMagazineDetached = false;
+        State.bMagazineReleased = false;
+        State.bFreshMagazineHeld = false;
     }
 }
 
@@ -111,6 +115,8 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
         Input.Primary.bActive = false;
         Input.Reload.bActive = false;
         Input.DetachMagazine.bActive = false;
+        Input.ReleaseMagazine.bActive = false;
+        Input.TakeMagazine.bActive = false;
         Input.LoadMagazine.bActive = false;
         Input.InterruptReload.bActive = false;
         Process(Input.AuthorityActionState, ActionInput);
@@ -132,6 +138,8 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
     }
 
     Process(Input.DetachMagazine, ActionInput);
+    Process(Input.ReleaseMagazine, ActionInput);
+    Process(Input.TakeMagazine, ActionInput);
     Process(Input.LoadMagazine, ActionInput);
     Process(Input.InterruptReload, ActionInput);
 }
@@ -144,6 +152,8 @@ void FBBBRifleParseProcessor::Clear(FBBBRifleRuntimeData &Data)
     Input.Primary.bActive = false;
     Input.Reload.bActive = false;
     Input.DetachMagazine.bActive = false;
+    Input.ReleaseMagazine.bActive = false;
+    Input.TakeMagazine.bActive = false;
     Input.LoadMagazine.bActive = false;
     Input.InterruptReload.bActive = false;
     Input.AuthorityActionState.bActive = false;
