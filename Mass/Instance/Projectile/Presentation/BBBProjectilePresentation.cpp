@@ -54,11 +54,20 @@ void FBBBProjectilePresentation::Publish(UWorld& World, TConstArrayView<FTransfo
             ? Transforms[Index].GetTransform().GetUnitAxis(EAxis::X)
             : Delta.GetSafeNormal();
 
+        const double TravelDistanceCm = FVector::Distance(End, Motion[Index].SpawnLocation);
+        if (!ensureMsgf(FMath::IsFinite(TravelDistanceCm), TEXT("子弹光段的出生位置或飞行位置无效")))
+        {
+            continue;
+        }
+
+        // 光段只能覆盖子弹已经飞过的距离 避免出生阶段的尾端伸回枪口后方
+        const double VisibleLengthCm = FMath::Min(static_cast<double>(Visual.LengthCm), TravelDistanceCm);
+
         Writer->WriteInt(TEXT("Spawn"), Visual.Slot, Visual.bSpawnPending ? 1 : 0);
         Writer->WriteBool(TEXT("Active"), Visual.Slot, Visual.bVisualAlive);
-        Writer->WritePosition(TEXT("Position"), Visual.Slot, End - Direction * Visual.LengthCm * 0.5);
+        Writer->WritePosition(TEXT("Position"), Visual.Slot, End - Direction * VisibleLengthCm * 0.5);
         Writer->WriteVector(TEXT("SpriteAlignment"), Visual.Slot, Direction);
-        Writer->WriteVector2D(TEXT("SpriteSize"), Visual.Slot, FVector2D(Visual.WidthCm, Visual.LengthCm));
+        Writer->WriteVector2D(TEXT("SpriteSize"), Visual.Slot, FVector2D(Visual.WidthCm, VisibleLengthCm));
         Writer->WriteLinearColor(TEXT("Color"), Visual.Slot, Visual.Color);
     }
 }

@@ -11,6 +11,9 @@ struct ABBB_EVAC_API FBBBProjectileMotionFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
+    /** 子弹出生时的枪口位置 */
+    FVector SpawnLocation = FVector::ZeroVector;
+
     /** 当前步进前的位置 */
     FVector PreviousLocation = FVector::ZeroVector;
 

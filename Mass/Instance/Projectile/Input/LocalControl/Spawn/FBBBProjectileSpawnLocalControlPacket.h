@@ -74,6 +74,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Transform.GetMutableTransform() = MuzzleTransform;
         Transform.GetMutableTransform().SetScale3D(FVector::OneVector);
         Velocity.Value = MuzzleTransform.GetUnitAxis(EAxis::X) * Speed;
+        Motion.SpawnLocation = MuzzleTransform.GetLocation();
         Motion.PreviousLocation = MuzzleTransform.GetLocation();
         Motion.bInitialized = true;
         Collision.Damage = Damage;
