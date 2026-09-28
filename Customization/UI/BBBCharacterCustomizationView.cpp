@@ -304,7 +304,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotCard(const FName Par
         && ItemId != TEXT("Attachments_None");
     const FSlateBrush *Thumbnail = GetItemBrush(ItemId);
     TSharedRef<SBox> ThumbnailBox = SNew(SBox)
-        .HeightOverride(132.0f)
+        .HeightOverride(98.0f)
         [
             Thumbnail
                 ? StaticCastSharedRef<SWidget>(SNew(SImage).Image(Thumbnail))
@@ -1357,6 +1357,8 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
                     .Font(GetCustomizationFont(18))
                     .ColorAndOpacity(FLinearColor(0.81f, 0.78f, 0.72f, 1.0f))
                     .Justification(ETextJustify::Center)
+                    .AutoWrapText(true)
+                    .WrapTextAt(190.0f)
                 ]
                 + SHorizontalBox::Slot()
                 .AutoWidth()

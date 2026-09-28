@@ -168,6 +168,9 @@ bool UBBBCharacterCustomizationSession::CreatePreview()
     PostProcess.BloomIntensity = 0.0f;
     PostProcess.bOverride_VignetteIntensity = true;
     PostProcess.VignetteIntensity = 0.15f;
+    // 只在换装预览关闭胶片颗粒 避免暗色摄影棚出现随机噪点
+    PostProcess.bOverride_FilmGrainIntensity = true;
+    PostProcess.FilmGrainIntensity = 0.0f;
     CaptureComponent->PostProcessBlendWeight = 1.0f;
 
     // FPreviewScene 初始化世界但不会代替游戏主循环分发 BeginPlay 和 Tick
@@ -363,7 +366,7 @@ void UBBBCharacterCustomizationSession::UpdateCamera()
     }
 
     FVector Focus = Center;
-    float Distance = FMath::Max(Extent.Z * 4.6f, 360.0f);
+    float Distance = FMath::Max(Extent.Z * 4.9f, 360.0f);
     if (CurrentView == TEXT("Head"))
     {
         Focus.Z += Extent.Z * 0.65f;
