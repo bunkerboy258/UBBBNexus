@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Notify/Character/Display/BBBCharacterOldMagazineDisplayAnimNotifyState.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Notify/Character/Display/BBBCharacterMagazineMotionComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimTypes.h"
@@ -13,14 +14,14 @@ namespace
 {
     const FName OldMagazineTag(TEXT("BBB_CharacterOldHandMagazine"));
 
-    UStaticMeshComponent *FindOldMagazine(USkeletalMeshComponent &HandMesh)
+    UBBBCharacterMagazineMotionComponent *FindOldMagazine(USkeletalMeshComponent &HandMesh)
     {
         TArray<USceneComponent *> Children;
         HandMesh.GetChildrenComponents(false, Children);
 
         for (USceneComponent *Child : Children)
         {
-            UStaticMeshComponent *Magazine = Cast<UStaticMeshComponent>(Child);
+            UBBBCharacterMagazineMotionComponent *Magazine = Cast<UBBBCharacterMagazineMotionComponent>(Child);
             if (Magazine && Magazine->ComponentHasTag(OldMagazineTag))
             {
                 return Magazine;
@@ -54,7 +55,7 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     }
 
     // 旧弹匣不是从武器对象转移而来 角色动画仅生成独立的手持视觉对象
-    UStaticMeshComponent *Magazine = NewObject<UStaticMeshComponent>(Character);
+    UBBBCharacterMagazineMotionComponent *Magazine = NewObject<UBBBCharacterMagazineMotionComponent>(Character);
     if (!ensureMsgf(Magazine, TEXT("旧弹匣角色表现创建组件失败 %s"), *Character->GetName()))
     {
         return;
@@ -67,6 +68,8 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     Magazine->RegisterComponent();
     Magazine->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandBoneName);
     Magazine->SetRelativeTransform(HandMagazineTransform);
+    Magazine->AddTickPrerequisiteComponent(MeshComp);
+    Magazine->SampleMotion();
 
     UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Old magazine spawned on character hand Character=%s"), *Character->GetName());
 }
@@ -81,7 +84,7 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyEnd(
         return;
     }
 
-    UStaticMeshComponent *Magazine = FindOldMagazine(*MeshComp);
+    UBBBCharacterMagazineMotionComponent *Magazine = FindOldMagazine(*MeshComp);
     ABBBCharacter *Character = Cast<ABBBCharacter>(MeshComp->GetOwner());
     if (!Magazine || !Character)
     {
@@ -109,6 +112,7 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyEnd(
         return;
     }
 
+    Magazine->SampleMotion();
     const FTransform DropWorld = Magazine->GetComponentTransform();
     AStaticMeshActor *Dropped = World->SpawnActor<AStaticMeshActor>(DropWorld.GetLocation(), DropWorld.Rotator());
     if (ensureMsgf(Dropped, TEXT("旧弹匣角色表现生成掉落对象失败 %s"), *Character->GetName()))
@@ -119,9 +123,12 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyEnd(
         DroppedMesh->SetWorldTransform(DropWorld);
         DroppedMesh->SetCollisionProfileName(TEXT("PhysicsActor"));
         DroppedMesh->SetSimulatePhysics(true);
-        DroppedMesh->SetPhysicsLinearVelocity(
-            (MeshComp->GetBoneLinearVelocity(HandBoneName) + Character->GetVelocity()).GetClampedToMaxSize(1500.0f));
+        DroppedMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+        DroppedMesh->SetPhysicsLinearVelocity(Magazine->GetReleaseLinearVelocity());
+        DroppedMesh->SetPhysicsAngularVelocityInRadians(Magazine->GetReleaseAngularVelocity());
         Dropped->SetLifeSpan(DroppedLifeSeconds);
+        UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Release motion Character=%s Linear=%s Angular=%s"),
+            *Character->GetName(), *Magazine->GetReleaseLinearVelocity().ToString(), *Magazine->GetReleaseAngularVelocity().ToString());
     }
 
     Magazine->DestroyComponent();
