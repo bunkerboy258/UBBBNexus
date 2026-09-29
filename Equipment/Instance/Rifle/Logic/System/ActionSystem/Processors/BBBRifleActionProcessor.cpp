@@ -84,7 +84,8 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
             *Context.Equipment.GetName(), State.ReloadSequence);
     }
 
-    if (Input.bInterruptReloadRequested)
+    // 装入与生命周期结束同帧到达时保留装填成功事实 避免把正常完成误判为打断
+    if (Input.bInterruptReloadRequested && !State.bReloadCompletedThisFrame)
     {
         Stop(Context.RuntimeData);
     }
