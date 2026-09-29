@@ -11,9 +11,10 @@ UBBBProjectileMovementProcessor::UBBBProjectileMovementProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = false;
-    ProcessingPhase = EMassProcessingPhase::PostPhysics;
+    ProcessingPhase = EMassProcessingPhase::FrameEnd;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Movement;
+    ExecutionOrder.ExecuteAfter.Add(BBBMassProcessingGroups::Parse);
 }
 
 void UBBBProjectileMovementProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>&)

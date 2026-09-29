@@ -11,7 +11,8 @@ UBBBProjectileParseProcessor::UBBBProjectileParseProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
-    ProcessingPhase = EMassProcessingPhase::PrePhysics;
+    // 帧末解析武器在动画写回后提交的输入 避免出生事实滞后一帧
+    ProcessingPhase = EMassProcessingPhase::FrameEnd;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Parse;
 }

@@ -4,6 +4,8 @@
 #include "NiagaraDataChannelFunctionLibrary.h"
 #include "NiagaraDataChannelAccessor.h"
 #include "NiagaraDataChannel.h"
+#include "NiagaraDataChannelHandler.h"
+#include "NiagaraDataChannelData.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Presentation/BBBProjectilePresentationFragment.h"
 
@@ -70,4 +72,16 @@ void FBBBProjectilePresentation::Publish(UWorld& World, TConstArrayView<FTransfo
         Writer->WriteVector2D(TEXT("SpriteSize"), Visual.Slot, FVector2D(Visual.WidthCm, VisibleLengthCm));
         Writer->WriteLinearColor(TEXT("Color"), Visual.Slot, Visual.Color);
     }
+
+    UNiagaraDataChannelHandler* Handler = UNiagaraDataChannelLibrary::FindDataChannelHandler(&World, Channel);
+    FNiagaraDataChannelDataPtr Data = Handler != nullptr
+        ? Handler->FindData(AccessContext, ENiagaraResourceAccess::WriteOnly)
+        : nullptr;
+    if (!ensureMsgf(Data.IsValid(), TEXT("子弹光效无法发布当帧通道缓冲")))
+    {
+        return;
+    }
+
+    // 帧末写入晚于普通通道收集 主动提交当前批次供后置共享组件读取
+    Data->ConsumePublishRequests(Handler, TG_LastDemotable);
 }

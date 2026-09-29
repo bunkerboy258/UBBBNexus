@@ -2,8 +2,11 @@
 
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
+#include "MassSimulationSubsystem.h"
+#include "MassProcessingPhaseManager.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "Misc/App.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
@@ -15,7 +18,7 @@ UBBBProjectilePresentationProcessor::UBBBProjectilePresentationProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
-    ProcessingPhase = EMassProcessingPhase::PostPhysics;
+    ProcessingPhase = EMassProcessingPhase::FrameEnd;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Presentation;
     ExecutionOrder.ExecuteAfter.Add(BBBMassProcessingGroups::Collision);
@@ -78,14 +81,29 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
 
             if (SystemComponent == nullptr && !bEnding)
             {
+                UMassSimulationSubsystem* Simulation = World->GetSubsystem<UMassSimulationSubsystem>();
+                if (!ensureMsgf(Simulation != nullptr && Simulation->IsSimulationStarted()
+                    && Visual.System->bRequireCurrentFrameData,
+                    TEXT("共享子弹光效需要运行中的 Mass 调度与当帧模拟配置")))
+                {
+                    continue;
+                }
+
                 // 仅创建一个世界级 Niagara 组件 所有 Mass 子弹共享这次模拟
                 SystemComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
                     World, Visual.System.Get(), FVector::ZeroVector, FRotator::ZeroRotator,
-                    FVector::OneVector, false, true, ENCPoolMethod::None, false);
+                    FVector::OneVector, false, false, ENCPoolMethod::None, false);
                 if (!ensureMsgf(SystemComponent != nullptr, TEXT("无法启动共享子弹曳光系统")))
                 {
                     continue;
                 }
+
+                // 共享组件脱离普通光效批次 单独等待帧末 Mass 完成后读取当帧位置
+                SystemComponent->SetForceSolo(true);
+                SystemComponent->SetTickBehavior(ENiagaraTickBehavior::ForceTickLast);
+                SystemComponent->PrimaryComponentTick.AddPrerequisite(Simulation,
+                    Simulation->GetMutablePhaseManager().GetProcessingPhaseTickFunction(EMassProcessingPhase::FrameEnd));
+                SystemComponent->Activate();
             }
 
             if (Visual.Slot == INDEX_NONE && !bEnding)

@@ -10,7 +10,7 @@ UBBBProjectileLifetimeProcessor::UBBBProjectileLifetimeProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
-    ProcessingPhase = EMassProcessingPhase::PostPhysics;
+    ProcessingPhase = EMassProcessingPhase::FrameEnd;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Lifetime;
     ExecutionOrder.ExecuteAfter.Add(BBBMassProcessingGroups::Presentation);
