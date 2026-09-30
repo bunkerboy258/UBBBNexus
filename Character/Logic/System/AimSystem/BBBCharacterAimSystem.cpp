@@ -25,9 +25,6 @@ void FBBBCharacterAimSystem::Update()
     // 先根据角色意图更新瞄准状态
     AimStateProcessor.Update(Context.ControlState, Context.AimState);
 
-    // 只有进入瞄准状态时才更新远处目标点
-    if (Context.AimState.bIsAiming)
-    {
-        AimTargetProcessor.Update(Context.ControlState, Context.AimState);
-    }
+    AimTargetProcessor.Update(Context.ControlState, Context.AimState);
+
 }
