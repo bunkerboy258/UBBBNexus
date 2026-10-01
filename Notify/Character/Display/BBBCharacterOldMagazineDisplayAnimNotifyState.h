@@ -25,14 +25,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
     FTransform HandMagazineTransform = FTransform::Identity;
 
-    /** 角色局部坐标中的抛出线速度 单位厘米每秒 正向依次为前方 右方 上方 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine|Throw", meta = (Units = "cm/s"))
-    FVector ThrowLinearVelocity = FVector(0.0, -400.0, 100.0);
-
-    /** 绕角色局部坐标轴的抛出角速度 单位弧度每秒 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine|Throw", meta = (Units = "rad/s"))
-    FVector ThrowAngularVelocity = FVector::ZeroVector;
-
     /** 掉落弹匣的世界存活时间 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine", meta = (ClampMin = "0.01"))
     float DroppedLifeSeconds = 20.0f;
