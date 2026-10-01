@@ -55,7 +55,16 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     }
 
     // 旧弹匣不是从武器对象转移而来 角色动画仅生成独立的手持视觉对象
-    UBBBCharacterMagazineMotionComponent *Magazine = NewObject<UBBBCharacterMagazineMotionComponent>(Character);
+    FName MagazineName = NAME_None;
+    EObjectFlags MagazineFlags = RF_Transient;
+
+#if WITH_EDITOR
+    // 编辑器中的临时实例使用可辨认的名称和事务标记 便于选中后调整手部相对变换
+    MagazineName = MakeUniqueObjectName(Character, UBBBCharacterMagazineMotionComponent::StaticClass(), TEXT("BBB_OldHandMagazine"));
+    MagazineFlags |= RF_Transactional;
+#endif
+
+    UBBBCharacterMagazineMotionComponent *Magazine = NewObject<UBBBCharacterMagazineMotionComponent>(Character, MagazineName, MagazineFlags);
     if (!ensureMsgf(Magazine, TEXT("旧弹匣角色表现创建组件失败 %s"), *Character->GetName()))
     {
         return;
@@ -65,8 +74,23 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     Magazine->SetStaticMesh(MagazineMesh);
     Magazine->SetMobility(EComponentMobility::Movable);
     Magazine->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+#if WITH_EDITOR
+    // 实例组件注册使详情面板开放变换编辑 销毁时引擎同步移除实例列表 不写回通知资产
+    Character->AddInstanceComponent(Magazine);
+    Magazine->bSelectable = true;
+    Magazine->bWantsEditorEffects = true;
+#endif
+
     Magazine->RegisterComponent();
-    Magazine->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandBoneName);
+    if (!ensureMsgf(Magazine->IsRegistered()
+        && Magazine->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandBoneName),
+        TEXT("旧弹匣角色表现注册或手部附着失败 %s"), *Character->GetName()))
+    {
+        Magazine->DestroyComponent();
+        return;
+    }
+
     Magazine->SetRelativeTransform(HandMagazineTransform);
     Magazine->AddTickPrerequisiteComponent(MeshComp);
     Magazine->SampleMotion();
