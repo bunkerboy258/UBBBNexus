@@ -21,6 +21,12 @@ void UBBBCharacterMagazineMotionComponent::SampleMotion()
     UpdateComponentToWorld();
     const FTransform CurrentTransform = GetComponentTransform();
     const double CurrentTime = World->GetTimeSeconds();
+    if (!ensureMsgf(!CurrentTransform.ContainsNaN() && FMath::IsFinite(CurrentTime),
+        TEXT("角色弹匣轨迹采样包含无效变换或时间 %s"), *GetName()))
+    {
+        return;
+    }
+
     const double Duration = CurrentTime - PreviousTime;
 
     // 同一游戏时刻的重复调用不推进样本基准 防止位移与时间来自不同采样区间
@@ -29,9 +35,23 @@ void UBBBCharacterMagazineMotionComponent::SampleMotion()
         return;
     }
 
+    // 使用通知区间内全部位置样本拟合世界运动趋势 在线累计均值和协方差避免保存逐帧数组
+    // 中心化累计避免世界坐标和游戏时间较大时相减损失精度 最后一次短暂回摆不会单独决定释放方向
+    ++MotionSampleCount;
+    const double TimeDeltaFromMean = CurrentTime - MeanSampleTime;
+    const FVector PositionDeltaFromMean = CurrentTransform.GetLocation() - MeanSamplePosition;
+    MeanSampleTime += TimeDeltaFromMean / MotionSampleCount;
+    MeanSamplePosition += PositionDeltaFromMean / MotionSampleCount;
+    TimeVariance += TimeDeltaFromMean * (CurrentTime - MeanSampleTime);
+    TimePositionCovariance += TimeDeltaFromMean * (CurrentTransform.GetLocation() - MeanSamplePosition);
+
+    if (MotionSampleCount > 1 && TimeVariance > 0.0)
+    {
+        LinearVelocity = (TimePositionCovariance / TimeVariance).GetClampedToMaxSize(1500.0);
+    }
+
     if (PreviousTime >= 0.0 && Duration > UE_SMALL_NUMBER)
     {
-        LinearVelocity = ((CurrentTransform.GetLocation() - PreviousTransform.GetLocation()) / Duration).GetClampedToMaxSize(1500.0);
         FQuat DeltaRotation = CurrentTransform.GetRotation() * PreviousTransform.GetRotation().Inverse();
         DeltaRotation.Normalize();
         DeltaRotation.EnforceShortestArcWith(FQuat::Identity);

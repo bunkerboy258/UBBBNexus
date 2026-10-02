@@ -48,6 +48,21 @@ public:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 
 private:
+    /** 当前通知区间内参与轨迹拟合的样本数量 */
+    int32 MotionSampleCount = 0;
+
+    /** 全部轨迹样本的平均游戏时间 */
+    double MeanSampleTime = 0.0;
+
+    /** 全部轨迹样本的平均世界位置 */
+    FVector MeanSamplePosition = FVector::ZeroVector;
+
+    /** 全部轨迹样本的时间离差平方和 */
+    double TimeVariance = 0.0;
+
+    /** 全部轨迹样本的时间与位置离差乘积和 */
+    FVector TimePositionCovariance = FVector::ZeroVector;
+
     /** 上一次采样的世界变换 */
     FTransform PreviousTransform = FTransform::Identity;
 
