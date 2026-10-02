@@ -57,9 +57,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
     FVector SourceAcceleration = FVector::ZeroVector;
 
-    /** 本帧角色后坐力大小 */
+    /** 本帧角色额外瞄准角度偏移 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
-    float SourceRecoilMagnitude = 0.0f;
+    FVector2D SourceAimOffsetDegrees = FVector2D::ZeroVector;
 
     /** 本帧引擎移动模式 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
@@ -127,6 +127,13 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceAimTargetComponentSpace;
     }
 
+    /** @return 本帧角色额外上下与左右瞄准角度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    FVector2D GetAimOffsetDegrees() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->SourceAimOffsetDegrees;
+    }
+
     /** @return 当前装备的实际武器动画实例 链接层自动读取主实例绑定 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     UBBBEquipmentAnimInstance *TryGetWeaponAnimInstance() const;
@@ -150,10 +157,6 @@ public:
     float GroundDistance = 0.0f;
 
 private:
-    /** 本帧后坐力大小是否增加 */
-    UPROPERTY(BlueprintReadWrite, Transient, Category = "BBB|Animation", meta = (AllowPrivateAccess = "true"))
-    bool bRecoilMagnitudeIncreasedThisUpdate = false;
-
     /**
      * 绑定装备实际使用的武器动画实例
      * @param InWeaponAnimInstance 武器动画实例 卸下时传入空

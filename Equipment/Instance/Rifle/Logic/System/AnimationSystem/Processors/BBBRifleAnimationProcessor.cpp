@@ -72,5 +72,8 @@ void FBBBRifleAnimationProcessor::Update(FBBBRifleUpdateContext &Context)
         Action.LoadedAmmo,
         Action.AmmoCapacity,
         Action.bIsReloading,
-        Context.World.GetTimeSeconds() - Action.LastFireTimeSeconds);
+        FMath::Max(0.0, Context.World.GetTimeSeconds() - Action.LastFireTimeSeconds),
+        Action.FireSequence,
+        Context.World.GetTimeSeconds(),
+        Context.Definition);
 }

@@ -2,6 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleHandlingSettings.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleAirborneModifiers.h"
+#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBRifleDefinition.generated.h"
 
 class UAnimMontage;
@@ -59,31 +62,31 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
     TObjectPtr<USoundBase> FireSound = nullptr;
 
-    /** 每次开火产生的固定垂直后坐量 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float VerticalRecoilAmount = 1.0f;
+    /** 腰射的枪口跟随后坐力与摇摆配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|持枪表现", meta = (DisplayName = "腰射", ToolTip = "角色没有瞄准意图时使用的基础持枪参数"))
+    FBBBRifleHandlingSettings HipFireSettings;
 
-    /** 每次开火产生的固定水平后坐量 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float HorizontalRecoilAmount = 0.0f;
+    /** 瞄准射击的枪口跟随后坐力与摇摆配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|持枪表现", meta = (DisplayName = "瞄准射击", ToolTip = "角色具有瞄准意图时使用的基础持枪参数"))
+    FBBBRifleHandlingSettings AimFireSettings;
 
-    /** 垂直后坐量的随机浮动范围 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float VerticalRecoilRandom = 0.2f;
+    /** 空中持枪对当前基础配置的修正 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|持枪表现", meta = (DisplayName = "空中叠加", ToolTip = "腾空时在当前腰射或瞄准配置上乘入这些倍率"))
+    FBBBRifleAirborneModifiers AirborneModifiers;
 
-    /** 水平后坐量的随机浮动范围 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float HorizontalRecoilRandom = 0.4f;
+    /** 腰射时贡献给相机的独立配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|相机后坐力", meta = (DisplayName = "腰射镜头", ToolTip = "由相机蓝图读取武器动画快照后应用 包含独立回零速度"))
+    FBBBPlayerCameraRecoilSettings HipFireCameraSettings;
 
-    /** 每次开火贡献的镜头倾斜角度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float CameraRollImpulseDegrees = 0.0f;
+    /** 瞄准射击时贡献给相机的独立配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|相机后坐力", meta = (DisplayName = "瞄准镜头", ToolTip = "只影响镜头冲击与恢复 不控制角色枪口方向偏移"))
+    FBBBPlayerCameraRecoilSettings AimFireCameraSettings;
 
-    /** 每次开火贡献的角色额外向上瞄准角度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float AimPitchImpulseDegrees = 0.0f;
+    /** 空中相机冲击倍率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|相机后坐力", meta = (ClampMin = "0.0", DisplayName = "空中镜头冲量倍率", ToolTip = "腾空时乘到当前镜头冲量与随机范围"))
+    float AirborneCameraImpulseScale = 1.25f;
 
-    /** 每次开火贡献的角色额外向右瞄准角度 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Fire")
-    float AimYawImpulseDegrees = 0.0f;
+    /** 空中相机回零速度倍率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|相机后坐力", meta = (ClampMin = "0.01", DisplayName = "空中镜头回零倍率", ToolTip = "腾空时乘到当前镜头回零速度"))
+    float AirborneCameraRecoveryScale = 0.8f;
 };

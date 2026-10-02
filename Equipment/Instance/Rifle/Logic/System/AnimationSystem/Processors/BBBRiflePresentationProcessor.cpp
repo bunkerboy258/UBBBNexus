@@ -6,7 +6,6 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
@@ -114,22 +113,20 @@ void FBBBRiflePresentationProcessor::PlayFire(const FBBBRifleUpdateContext &Cont
     }
 
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
+    const auto &Hip = Context.Definition.HipFireSettings;
+    const auto &Aim = Context.Definition.AimFireSettings;
+    const FVector2D Random(FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f));
+    const FVector2D HipImpulse = Hip.AimImpulseDegrees + Hip.AimImpulseRandomDegrees * Random;
+    const FVector2D AimImpulse = Aim.AimImpulseDegrees + Aim.AimImpulseRandomDegrees * Random;
     if (Context.Equipment.IsMirror())
     {
         Context.Character.SubmitInput(FBBBAimImpulseAuthorityFactPacket{
-            FVector2D(Context.Definition.AimPitchImpulseDegrees, Context.Definition.AimYawImpulseDegrees)});
+            HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
+            Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed});
         return;
     }
 
     Context.Character.SubmitInput(FBBBAimImpulseLocalControlPacket{
-        FVector2D(Context.Definition.AimPitchImpulseDegrees, Context.Definition.AimYawImpulseDegrees)});
-
-    FBBBCameraLocalControlPacket Packet;
-    Packet.Impulse = FVector(
-        Context.Definition.VerticalRecoilAmount + FMath::FRandRange(
-            -Context.Definition.VerticalRecoilRandom, Context.Definition.VerticalRecoilRandom),
-        Context.Definition.HorizontalRecoilAmount + FMath::FRandRange(
-            -Context.Definition.HorizontalRecoilRandom, Context.Definition.HorizontalRecoilRandom),
-        Context.Definition.CameraRollImpulseDegrees);
-    Context.Character.SubmitInput(Packet);
+        HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
+        Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed});
 }

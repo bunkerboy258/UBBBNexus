@@ -78,9 +78,9 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsAiming = false;
 
-    /** 角色当前后坐力大小 */
+    /** 角色当前额外瞄准角度偏移 */
     UPROPERTY(Transient)
-    float RecoilMagnitude = 0.0f;
+    FVector2D AimOffsetDegrees = FVector2D::ZeroVector;
 
     /** 角色组件空间中的瞄准目标 */
     UPROPERTY(Transient)
@@ -90,12 +90,4 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FTransform MuzzleTransformHandRSpace = FTransform::Identity;
 
-    /** 瞄准目标平滑速度 */
-    FVector AimTargetSmoothVelocity = FVector::ZeroVector;
-
-    /** 平滑后的组件空间瞄准目标 */
-    FVector SmoothedAimTargetComponentSpace = FVector::ZeroVector;
-
-    /** 是否已经建立有效平滑目标 */
-    bool bHasSmoothedAimTarget = false;
 };

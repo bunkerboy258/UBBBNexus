@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
+#include "Components/SkeletalMeshComponent.h"
 
 void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSystem, const float DeltaSeconds)
 {
@@ -19,10 +21,43 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         CameraInput.Reset();
     }
 
+    UAnimInstance *Source = nullptr;
+    int32 FireSequence = 0;
+    FBBBPlayerCameraRecoilSettings Settings = CameraSystem.DefaultRecoilSettings;
+    UBBBAnimInstance *CharacterAnimation = Cast<UBBBAnimInstance>(CameraSystem.Character->GetMesh()->GetAnimInstance());
+    const bool bHasSource = CameraSystem.ReadRecoilSource(CharacterAnimation, Source, FireSequence, Settings);
+    if (bHasSource && Source)
+    {
+        if (CameraSystem.RecoilSource.Get() != Source)
+        {
+            CameraSystem.RecoilSource = Source;
+            CameraSystem.LastFireSequence = FireSequence;
+        }
+
+        CameraSystem.ActiveRecoilSettings = Settings;
+        if (FireSequence != CameraSystem.LastFireSequence)
+        {
+            CameraSystem.LastFireSequence = FireSequence;
+            FBBBPlayerCameraInput Shot;
+            Shot.Impulse = Settings.ImpulseDegrees + FVector(
+                FMath::FRandRange(-Settings.RandomDegrees.X, Settings.RandomDegrees.X),
+                FMath::FRandRange(-Settings.RandomDegrees.Y, Settings.RandomDegrees.Y),
+                FMath::FRandRange(-Settings.RandomDegrees.Z, Settings.RandomDegrees.Z));
+            CameraSystem.Submit(Shot);
+        }
+    }
+
+    if (!bHasSource || !Source)
+    {
+        CameraSystem.RecoilSource.Reset();
+        CameraSystem.LastFireSequence = 0;
+    }
+
     const FVector Previous = CameraSystem.RecoilOffset;
-    const FVector Limit = CameraSystem.ImpulseLimitDegrees;
+    const FVector Limit = CameraSystem.ActiveRecoilSettings.LimitDegrees;
+    const float RecoverySpeed = CameraSystem.ActiveRecoilSettings.RecoverySpeed;
     if (!ensureMsgf(
-        FMath::IsFinite(CameraSystem.RecoverySpeed) && CameraSystem.RecoverySpeed > 0.0f
+        FMath::IsFinite(RecoverySpeed) && RecoverySpeed > 0.0f
             && !Limit.ContainsNaN() && Limit.X > 0.0f && Limit.Y > 0.0f && Limit.Z > 0.0f,
         TEXT("相机冲击恢复速度或角度限制无效")))
     {
@@ -30,7 +65,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         return;
     }
 
-    CameraSystem.RecoilOffset *= FMath::Exp(-CameraSystem.RecoverySpeed * FMath::Max(DeltaSeconds, 0.0f));
+    CameraSystem.RecoilOffset *= FMath::Exp(-RecoverySpeed * FMath::Max(DeltaSeconds, 0.0f));
     if (CameraSystem.Pending.IsSet())
     {
         CameraSystem.RecoilOffset += CameraSystem.Pending->Impulse;

@@ -11,6 +11,9 @@ struct FBBBCharacterAimImpulseState final
     /** 当前上下与左右角度偏移 */
     FVector2D OffsetDegrees = FVector2D::ZeroVector;
 
+    /** 最近一次输入采用的角色方向冲击恢复速度 */
+    float RecoverySpeed = 14.0f;
+
 private:
     friend struct FBBBCharacterAnimationDomainState;
 

@@ -13,12 +13,4 @@ struct FBBBAimAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FName AimIKOriginBoneName = FName("spine_03");
 
-    /** 是否平滑瞄准IK目标 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    bool bEnableAimIKTargetSmoothing = true;
-
-    /** 瞄准IK目标平滑的收敛时间 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float AimIKTargetSmoothTime = 0.1f;
-
 };

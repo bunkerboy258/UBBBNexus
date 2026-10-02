@@ -23,21 +23,4 @@ public:
      */
     void Update(FBBBCharacterAnimationUpdateContext &Context) const;
 
-private:
-    /**
-     * 对组件空间瞄准目标执行无回弹临界平滑
-     * @param Current		当前目标
-     * @param Target		原始目标
-     * @param Velocity		平滑速度状态
-     * @param SmoothTime	平滑时间
-     * @param DeltaSeconds	本帧间隔
-     * @return 平滑后的目标
-     */
-    FVector SmoothAimTarget(
-        const FVector &Current,
-        const FVector &Target,
-        FVector &Velocity,
-        float SmoothTime,
-        float DeltaSeconds) const;
-
 };

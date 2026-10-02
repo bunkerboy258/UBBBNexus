@@ -21,7 +21,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     ABBBCharacter &Character = Context.Character;
     FBBBCharacterRuntimeData &RuntimeData = Context.RuntimeData;
     FBBBCharacterAnimationFactState &FactState = Context.AnimationFactState;
-    const float DeltaSeconds = Context.WorldState.FrameDeltaSeconds;
 
     // 采集动画事实前确认角色组件和世界对象有效
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
@@ -51,33 +50,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const FVector RawAimTargetComponentSpace = bCanUseAimTarget
         ? CharacterMesh->GetComponentTransform().InverseTransformPosition(AimTargetWorld)
         : FVector::ZeroVector;
-
-    // 首次采集时直接建立平滑目标的初始值
-    if (!FactState.bHasSmoothedAimTarget)
-    {
-        FactState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
-        FactState.bHasSmoothedAimTarget = true;
-    }
-
-    if (AimConfig.bEnableAimIKTargetSmoothing
-        && AimConfig.AimIKTargetSmoothTime > 0.0f)
-    {
-        // 按配置时间平滑瞄准目标避免目标点瞬移
-        FactState.SmoothedAimTargetComponentSpace = SmoothAimTarget(
-            FactState.SmoothedAimTargetComponentSpace,
-            RawAimTargetComponentSpace,
-            FactState.AimTargetSmoothVelocity,
-            AimConfig.AimIKTargetSmoothTime,
-            DeltaSeconds);
-    }
-
-    if (!bCanUseAimTarget)
-    {
-        // 目标无效时清除平滑速度并等待下一次有效目标
-        FactState.SmoothedAimTargetComponentSpace = RawAimTargetComponentSpace;
-        FactState.AimTargetSmoothVelocity = FVector::ZeroVector;
-        FactState.bHasSmoothedAimTarget = false;
-    }
 
     float GroundDistance = 0.0f;
     if (!Movement->IsMovingOnGround())
@@ -109,7 +81,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     FactState.bIsAiming = AimState.bIsAiming;
-    FactState.AimTargetComponentSpace = FactState.SmoothedAimTargetComponentSpace;
+    FactState.AimTargetComponentSpace = RawAimTargetComponentSpace;
 
     FactState.ActorLocation = Character.GetActorLocation();
     FactState.ActorRotation = Character.GetActorRotation();
@@ -127,38 +99,4 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.bUseSeparateBrakingFriction = Movement->bUseSeparateBrakingFriction;
     FactState.bIsMovingOnGround = Movement->IsMovingOnGround();
     FactState.bIsCrouching = Movement->IsCrouching();
-}
-
-//------------------------------------------------------------------------------
-
-FVector FBBBCharacterAnimationFactProcessor::SmoothAimTarget(
-    const FVector &Current,
-    const FVector &Target,
-    FVector &Velocity,
-    float SmoothTime,
-    float DeltaSeconds) const
-{
-    // 没有有效帧间隔时保持当前平滑结果
-    if (DeltaSeconds <= 0.0f)
-    {
-        return Current;
-    }
-
-    const float SafeSmoothTime = FMath::Max(0.0001f, SmoothTime);
-    const float Omega = 2.0f / SafeSmoothTime;
-    const float X = Omega * DeltaSeconds;
-    const float Exp = 1.0f / (1.0f + X + 0.48f * X * X + 0.235f * X * X * X);
-    const FVector Change = Current - Target;
-    const FVector Temp = (Velocity + Omega * Change) * DeltaSeconds;
-    Velocity = (Velocity - Omega * Temp) * Exp;
-    FVector Output = Target + (Change + Temp) * Exp;
-
-    // 越过目标时直接收敛并清除剩余速度
-    if (FVector::DotProduct(Target - Current, Output - Target) > 0.0f)
-    {
-        Output = Target;
-        Velocity = FVector::ZeroVector;
-    }
-
-    return Output;
 }

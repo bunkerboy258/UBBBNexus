@@ -22,6 +22,7 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
 {
     Character = &InCharacter;
     Controller = &InController;
+    ActiveRecoilSettings = DefaultRecoilSettings;
     AddTickPrerequisiteComponent(InCharacter.GetCharacterMovement());
     // 组件默认值由相机蓝图提供 运行期间只改变当前臂长
     DefaultBoomLength = Boom->TargetArmLength;
