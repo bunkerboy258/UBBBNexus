@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterCameraState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 
 struct FBBBCharacterAnimationMontageState;
@@ -38,7 +38,7 @@ struct FBBBCharacterInputContext final
     const FBBBCharacterEquipmentInventoryState &EquipmentInventory;
 
     /** 等待相机系统消费的表现输入 */
-    TOptional<FBBBPlayerCameraInput> &Camera;
+    FBBBCharacterCameraState &Camera;
 
     /** 动画系统维护的额外瞄准冲击 */
     FBBBCharacterAimImpulseState &AimImpulse;

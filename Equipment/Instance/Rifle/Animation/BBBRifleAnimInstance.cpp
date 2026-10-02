@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Animation/BBBRifleAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 
 void UBBBRifleAnimInstance::PublishRifleSnapshot(
     const int32 InLoadedAmmo,
@@ -17,9 +18,18 @@ void UBBBRifleAnimInstance::PublishRifleSnapshot(
     TimeSinceLastFireSeconds = InTimeSinceLastFireSeconds;
     FireSequence = InFireSequence;
     SnapshotTimeSeconds = InSnapshotTimeSeconds;
-    HipFireSettings = Definition.HipFireSettings;
-    AimFireSettings = Definition.AimFireSettings;
-    AirborneModifiers = Definition.AirborneModifiers;
+    HipFireAimFollowSpeed = Definition.HipFireSettings.AimFollowSpeed;
+    AimFireAimFollowSpeed = Definition.AimFireSettings.AimFollowSpeed;
+    HipFireBackwardRecoilAlpha = Definition.HipFireSettings.BackwardRecoilAlpha;
+    AimFireBackwardRecoilAlpha = Definition.AimFireSettings.BackwardRecoilAlpha;
+    HipFireSwayAmplitudeDegrees = Definition.HipFireSettings.SwayAmplitudeDegrees;
+    AimFireSwayAmplitudeDegrees = Definition.AimFireSettings.SwayAmplitudeDegrees;
+    HipFireSwayFrequency = Definition.HipFireSettings.SwayFrequency;
+    AimFireSwayFrequency = Definition.AimFireSettings.SwayFrequency;
+    AirborneAimFollowScale = Definition.AirborneModifiers.AimFollowScale;
+    AirborneBackwardRecoilScale = Definition.AirborneModifiers.BackwardRecoilScale;
+    AirborneSwayAmplitudeScale = Definition.AirborneModifiers.SwayAmplitudeScale;
+    AirborneSwayFrequencyScale = Definition.AirborneModifiers.SwayFrequencyScale;
     HipFireCameraSettings = Definition.HipFireCameraSettings;
     AimFireCameraSettings = Definition.AimFireCameraSettings;
     AirborneCameraImpulseScale = Definition.AirborneCameraImpulseScale;

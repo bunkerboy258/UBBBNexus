@@ -14,11 +14,11 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         return;
     }
 
-    auto &CameraInput = CameraSystem.Character->RuntimeData.Parse.CameraState.PendingInput;
-    if (CameraInput.IsSet())
+    const auto &CameraInput = CameraSystem.Character->RuntimeData.Parse.ReadCameraState();
+    if (CameraInput.Revision != CameraSystem.LastCameraRevision)
     {
-        CameraSystem.Submit(CameraInput.GetValue());
-        CameraInput.Reset();
+        CameraSystem.LastCameraRevision = CameraInput.Revision;
+        CameraSystem.Submit(CameraInput.LatestInput);
     }
 
     UAnimInstance *Source = nullptr;
@@ -51,6 +51,10 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     {
         CameraSystem.RecoilSource.Reset();
         CameraSystem.LastFireSequence = 0;
+        if (CameraSystem.Pending.IsSet() || CameraSystem.RecoilOffset.IsNearlyZero(0.001))
+        {
+            CameraSystem.ActiveRecoilSettings = CameraSystem.DefaultRecoilSettings;
+        }
     }
 
     const FVector Previous = CameraSystem.RecoilOffset;

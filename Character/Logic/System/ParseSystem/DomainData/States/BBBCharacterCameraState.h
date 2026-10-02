@@ -11,5 +11,8 @@ struct FBBBCharacterCameraState final
     GENERATED_BODY()
 
     /** 尚未被相机系统消费的最新完整输入 */
-    TOptional<FBBBPlayerCameraInput> PendingInput;
+    FBBBPlayerCameraInput LatestInput;
+
+    /** 最新贡献的发布序号 读取方独立记录消费进度 */
+    uint64 Revision = 0;
 };

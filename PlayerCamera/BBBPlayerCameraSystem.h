@@ -74,11 +74,17 @@ private:
     FBBBPlayerCameraRecoilSettings DefaultRecoilSettings;
 
     /** 最近有效贡献使用的恢复参数 */
+    UPROPERTY(Transient)
     FBBBPlayerCameraRecoilSettings ActiveRecoilSettings;
 
     /** 当前镜头贡献来源 */
     TWeakObjectPtr<UAnimInstance> RecoilSource;
 
     /** 已经消费的来源开火序号 */
+    UPROPERTY(Transient)
     int32 LastFireSequence = 0;
+
+    /** 已消费的角色相机贡献序号 */
+    UPROPERTY(Transient)
+    uint64 LastCameraRevision = 0;
 };

@@ -49,7 +49,7 @@ struct FBBBAimImpulseAuthorityFactPacket final
     {
         FVector2D Impulse = ImpulseDegrees;
         Context.AimImpulse.RecoverySpeed = RecoverySpeed;
-        if (Context.Control.bAim)
+        if (Context.Aim.bIsAiming)
         {
             Impulse = AimingImpulseDegrees;
             Context.AimImpulse.RecoverySpeed = AimingRecoverySpeed;

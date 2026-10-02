@@ -7,10 +7,8 @@
 #include "BBBCharacterParseDomainState.generated.h"
 
 class ABBBCharacter;
-class ABBBPlayerCameraSystem;
 class FBBBCharacterInputProcessor;
 class FBBBCharacterParseSystem;
-class FBBBPlayerCameraImpulseProcessor;
 
 /** 角色输入解析状态的唯一持有者 */
 USTRUCT()
@@ -39,10 +37,8 @@ public:
 
 private:
     friend class ABBBCharacter;
-    friend class ABBBPlayerCameraSystem;
     friend class FBBBCharacterInputProcessor;
     friend class FBBBCharacterParseSystem;
-    friend class FBBBPlayerCameraImpulseProcessor;
 
     /** 角色固定输入状态 */
     FBBBCharacterInputState InputState;

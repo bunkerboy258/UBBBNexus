@@ -9,12 +9,15 @@
 ABBBPlayerCameraSystem::ABBBPlayerCameraSystem()
 {
     PrimaryActorTick.bCanEverTick = true;
-    PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+    // 步枪在 PostUpdateWork 发布快照 相机在该组全部完成后读取
+    PrimaryActorTick.TickGroup = TG_LastDemotable;
+    PrimaryActorTick.EndTickGroup = TG_LastDemotable;
     Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     SetRootComponent(Boom);
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     Camera->SetupAttachment(Boom, USpringArmComponent::SocketName);
-    Boom->PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
+    Boom->PrimaryComponentTick.TickGroup = TG_LastDemotable;
+    Boom->PrimaryComponentTick.EndTickGroup = TG_LastDemotable;
     Boom->AddTickPrerequisiteActor(this);
 }
 
@@ -23,6 +26,7 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
     Character = &InCharacter;
     Controller = &InController;
     ActiveRecoilSettings = DefaultRecoilSettings;
+    LastCameraRevision = InCharacter.RuntimeData.Parse.ReadCameraState().Revision;
     AddTickPrerequisiteComponent(InCharacter.GetCharacterMovement());
     // 组件默认值由相机蓝图提供 运行期间只改变当前臂长
     DefaultBoomLength = Boom->TargetArmLength;

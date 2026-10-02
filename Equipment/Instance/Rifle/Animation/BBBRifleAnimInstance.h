@@ -1,8 +1,10 @@
 #pragma once
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBRifleAnimInstance.generated.h"
+
+class UBBBRifleDefinition;
 
 /** 步枪动画图只读的动作结果 */
 UCLASS(BlueprintType)
@@ -40,27 +42,6 @@ public:
     int32 GetFireSequence() const
     {
         return FireSequence;
-    }
-
-    /** @return 腰射持枪参数快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    FBBBRifleHandlingSettings GetHipFireSettings() const
-    {
-        return HipFireSettings;
-    }
-
-    /** @return 瞄准持枪参数快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    FBBBRifleHandlingSettings GetAimFireSettings() const
-    {
-        return AimFireSettings;
-    }
-
-    /** @return 空中持枪修正快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    FBBBRifleAirborneModifiers GetAirborneModifiers() const
-    {
-        return AirborneModifiers;
     }
 
     /** @return 腰射相机后坐力配置快照 */
@@ -123,24 +104,60 @@ protected:
     float TimeSinceLastFireSeconds = 0.0f;
 
 private:
+    /** 腰射目标跟随速度 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float HipFireAimFollowSpeed = 18.0f;
+
+    /** 瞄准目标跟随速度 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float AimFireAimFollowSpeed = 18.0f;
+
+    /** 腰射向后震动强度 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float HipFireBackwardRecoilAlpha = 0.0f;
+
+    /** 瞄准向后震动强度 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float AimFireBackwardRecoilAlpha = 0.0f;
+
+    /** 腰射摇摆幅度 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    FVector2D HipFireSwayAmplitudeDegrees = FVector2D::ZeroVector;
+
+    /** 瞄准摇摆幅度 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    FVector2D AimFireSwayAmplitudeDegrees = FVector2D::ZeroVector;
+
+    /** 腰射摇摆频率 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    FVector2D HipFireSwayFrequency = FVector2D::ZeroVector;
+
+    /** 瞄准摇摆频率 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    FVector2D AimFireSwayFrequency = FVector2D::ZeroVector;
+
+    /** 空中跟随倍率 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float AirborneAimFollowScale = 1.0f;
+
+    /** 空中向后震动倍率 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float AirborneBackwardRecoilScale = 1.0f;
+
+    /** 空中摇摆幅度倍率 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float AirborneSwayAmplitudeScale = 1.0f;
+
+    /** 空中摇摆频率倍率 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    float AirborneSwayFrequencyScale = 1.0f;
+
     /** 世界时间基本事实 供动画图计算持枪摇摆相位 */
     float SnapshotTimeSeconds = 0.0f;
 
     /** 开火事实序号 */
     UPROPERTY(Transient)
     int32 FireSequence = 0;
-
-    /** 腰射静态参数的只读副本 */
-    UPROPERTY(Transient)
-    FBBBRifleHandlingSettings HipFireSettings;
-
-    /** 瞄准静态参数的只读副本 */
-    UPROPERTY(Transient)
-    FBBBRifleHandlingSettings AimFireSettings;
-
-    /** 空中修正的只读副本 */
-    UPROPERTY(Transient)
-    FBBBRifleAirborneModifiers AirborneModifiers;
 
     /** 腰射镜头配置的只读副本 */
     UPROPERTY(Transient)
