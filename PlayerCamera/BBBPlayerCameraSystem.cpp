@@ -10,14 +10,15 @@ ABBBPlayerCameraSystem::ABBBPlayerCameraSystem()
 {
     PrimaryActorTick.bCanEverTick = true;
     // 步枪在 PostUpdateWork 发布快照 相机在该组全部完成后读取
-    PrimaryActorTick.TickGroup = TG_LastDemotable;
-    PrimaryActorTick.EndTickGroup = TG_LastDemotable;
+    // NOTE: 相机缓存早于 PostUpdateWork 跟随必须在 PostPhysics 完成 武器贡献读取最近已发布快照
+    PrimaryActorTick.TickGroup = TG_PostPhysics;
+    PrimaryActorTick.EndTickGroup = TG_PostPhysics;
     Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     SetRootComponent(Boom);
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     Camera->SetupAttachment(Boom, USpringArmComponent::SocketName);
-    Boom->PrimaryComponentTick.TickGroup = TG_LastDemotable;
-    Boom->PrimaryComponentTick.EndTickGroup = TG_LastDemotable;
+    Boom->PrimaryComponentTick.TickGroup = TG_PostPhysics;
+    Boom->PrimaryComponentTick.EndTickGroup = TG_PostPhysics;
     Boom->AddTickPrerequisiteActor(this);
 }
 
@@ -28,6 +29,12 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
     ActiveRecoilSettings = DefaultRecoilSettings;
     LastCameraRevision = InCharacter.RuntimeData.Parse.ReadCameraState().Revision;
     AddTickPrerequisiteComponent(InCharacter.GetCharacterMovement());
+    ensureMsgf(
+        PrimaryActorTick.TickGroup == TG_PostPhysics
+            && PrimaryActorTick.EndTickGroup == TG_PostPhysics
+            && Boom->PrimaryComponentTick.TickGroup == TG_PostPhysics
+            && Boom->PrimaryComponentTick.EndTickGroup == TG_PostPhysics,
+        TEXT("[BBBCamera]相机与臂端必须在 PostPhysics 完成更新 否则相机缓存将落后一帧"));
     // 组件默认值由相机蓝图提供 运行期间只改变当前臂长
     DefaultBoomLength = Boom->TargetArmLength;
     ensureMsgf(FMath::IsFinite(DefaultBoomLength) && DefaultBoomLength > 0.0f
