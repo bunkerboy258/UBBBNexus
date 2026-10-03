@@ -23,6 +23,16 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Spawn/BBBProjectileParseProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Movement/BBBProjectileMovementProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Collision/BBBProjectileCollisionProcessor.h"
+#include "MassActorSubsystem.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationSmoothingFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationStateFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 
 /** 隔离世界验证覆盖输入 枪口运动 逻辑碰撞与伤害权限 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMassRuntimeTest, "UBBB.Mass.Runtime",
@@ -160,6 +170,164 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     return true;
 }
 
+
+/** 隔离客机世界验证显示追靠 首次对齐 碰撞分离与即时动画状态 */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterPresentationSmoothingTest, "UBBB.Mass.PresentationSmoothing",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
+{
+    const auto Initialization = UWorld::InitializationValues()
+        .AllowAudioPlayback(false)
+        .CreatePhysicsScene(true)
+        .CreateNavigation(false)
+        .CreateAISystem(false)
+        .ShouldSimulatePhysics(false);
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
+
+    if (!TestNotNull(TEXT("平滑验证世界"), World))
+    {
+        return false;
+    }
+
+    GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+    ON_SCOPE_EXIT
+    {
+        World->WorldType = EWorldType::Game;
+        GEngine->DestroyWorldContext(World);
+        World->DestroyWorld(false);
+    };
+
+    // 使用引擎的 PIE 初始网络模式测试真实客机分支 不建立测试网络连接
+    World->WorldType = EWorldType::PIE;
+    World->SetPlayInEditorInitialNetMode(NM_Client);
+    TestEqual(TEXT("进入客机分支"), World->GetNetMode(), NM_Client);
+
+    UClass* ActorClass = LoadClass<ABBBMonsterPresentationActor>(nullptr,
+        TEXT("/Game/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"));
+
+    if (!TestNotNull(TEXT("使用正式男丧尸表现蓝图"), ActorClass))
+    {
+        return false;
+    }
+
+    ABBBMonsterPresentationActor* Actor = World->SpawnActor<ABBBMonsterPresentationActor>(ActorClass);
+
+    if (!TestNotNull(TEXT("生成测试表现演员"), Actor))
+    {
+        return false;
+    }
+
+    FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
+    const FMassArchetypeHandle Type = Manager.CreateArchetype({
+        FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
+        FMassActorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
+        FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
+        FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct()
+    });
+    const FMassEntityHandle Entity = Manager.CreateEntity(Type);
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Actor, true);
+    Manager.GetFragmentDataChecked<FBBBMonsterAvoidanceFragment>(Entity).CollisionRadius = 1.0f;
+    FTransform& Target = Manager.GetFragmentDataChecked<FTransformFragment>(Entity).GetMutableTransform();
+    Target = FTransform(FRotator(0.0f, 179.0f, 0.0f), FVector(100.0f, 20.0f, 90.0f));
+    const auto Run = [&Manager, World](UClass* ProcessorClass, const float DeltaTime = 0.05f)
+    {
+        UMassProcessor* Processor = NewObject<UMassProcessor>(World, ProcessorClass);
+        Processor->CallInitialize(World, Manager.AsShared());
+        UE::Mass::FProcessingContext Context(Manager, DeltaTime);
+        UE::Mass::Executor::Run(*Processor, Context);
+    };
+
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestTrue(TEXT("首次生成直接对齐"), Actor->GetActorLocation().Equals(Target.GetLocation(), 0.001));
+    TestTrue(TEXT("首次朝向直接对齐"), Actor->GetActorQuat().Equals(Target.GetRotation(), 0.0001));
+
+    Target.SetLocation(FVector(200.0f, 20.0f, 90.0f));
+    Target.SetRotation(FRotator(0.0f, -179.0f, 0.0f).Quaternion());
+    Manager.GetFragmentDataChecked<FMassVelocityFragment>(Entity).Value = FVector(100.0f, 0.0f, 0.0f);
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    const FVector FirstDisplay = Actor->GetActorLocation();
+    TestTrue(TEXT("客机显示在旧位置与最新结果之间"), FirstDisplay.X > 100.0 && FirstDisplay.X < 200.0);
+    TestTrue(TEXT("显示步长符合零点一秒时间尺度"), FMath::IsNearlyEqual(FirstDisplay.X, 100.0 + 100.0 * (1.0 - FMath::Exp(-0.5)), 0.001));
+    TestTrue(TEXT("逻辑位置不受显示平滑影响"), Target.GetLocation().Equals(FVector(200.0f, 20.0f, 90.0f), 0.001));
+    TestTrue(TEXT("跨正负一百八十度走最短转向"), FMath::Abs(Actor->GetActorRotation().Yaw) > 179.0);
+    TestTrue(TEXT("逻辑速度不被改写"), Manager.GetFragmentDataChecked<FMassVelocityFragment>(Entity).Value.Equals(FVector(100.0f, 0.0f, 0.0f)));
+
+    Run(UBBBMonsterCollisionProcessor::StaticClass());
+    UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
+    FMassEntityHandle Hit;
+    float HitTime = 0.0f;
+    TestTrue(TEXT("碰撞立即使用最新逻辑位置"), Mass->TraceEntities(
+        Target.GetLocation() - FVector(0.0f, 0.0f, 2.0f), Target.GetLocation() + FVector(0.0f, 0.0f, 2.0f), 0.0f, {}, Hit, HitTime));
+    TestTrue(TEXT("逻辑碰撞命中正确实体"), Hit == Entity);
+    TestFalse(TEXT("显示位置没有生成第二套碰撞"), Mass->TraceEntities(
+        FirstDisplay - FVector(0.0f, 0.0f, 2.0f), FirstDisplay + FVector(0.0f, 0.0f, 2.0f), 0.0f, {}, Hit, HitTime));
+
+    auto& State = Manager.GetFragmentDataChecked<FBBBMonsterPresentationStateFragment>(Entity);
+    State.State = EBBBMonsterBehavior::Hurt;
+    State.ActionId = 1;
+    State.ActionProgress = 0.5f;
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestEqual(TEXT("受伤状态不等待位置收敛"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Hurt);
+    TestTrue(TEXT("受伤动画立即应用逻辑进度"), FMath::IsNearlyEqual(Actor->GetMonsterMesh()->GetPosition(), 0.6f, 0.001f));
+    TestTrue(TEXT("受伤时显示仍在追靠"), Actor->GetActorLocation().X < 200.0);
+    State.State = EBBBMonsterBehavior::Attack;
+    ++State.ActionId;
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestEqual(TEXT("攻击状态立即响应"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Attack);
+    State.State = EBBBMonsterBehavior::Dead;
+    ++State.ActionId;
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestEqual(TEXT("死亡状态立即响应"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Dead);
+
+    for (int32 Index = 0; Index < 20; ++Index)
+    {
+        Run(UBBBMonsterPresentationProcessor::StaticClass());
+    }
+
+    TestTrue(TEXT("目标停止后显示收敛且不外推"), Actor->GetActorLocation().Equals(Target.GetLocation(), 0.01));
+    TestTrue(TEXT("停止后朝向收敛"), Actor->GetActorQuat().Equals(Target.GetRotation(), 0.0001));
+    Target.SetLocation(FVector(800.0f, 20.0f, 90.0f));
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestTrue(TEXT("超过五百厘米直接纠正"), Actor->GetActorLocation().Equals(Target.GetLocation(), 0.001));
+
+    Target.SetLocation(FVector(810.0f, 20.0f, 90.0f));
+    Run(UBBBMonsterPresentationProcessor::StaticClass(), 0.0f);
+    TestTrue(TEXT("零时间步不移动显示"), Actor->GetActorLocation().Equals(FVector(800.0f, 20.0f, 90.0f), 0.001));
+    Run(UBBBMonsterPresentationProcessor::StaticClass(), 1.0f);
+    TestTrue(TEXT("长帧不越过目标"), Actor->GetActorLocation().X <= 810.0);
+
+    ABBBMonsterPresentationActor* Replacement = World->SpawnActor<ABBBMonsterPresentationActor>(ActorClass);
+
+    if (!TestNotNull(TEXT("生成替换表现演员"), Replacement))
+    {
+        return false;
+    }
+
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).ResetNoHandleMapUpdate();
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Replacement, true);
+    Target.SetLocation(FVector(850.0f, 20.0f, 90.0f));
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestTrue(TEXT("演员替换直接对齐而非继承旧显示位置"), Replacement->GetActorLocation().Equals(Target.GetLocation(), 0.001));
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).ResetNoHandleMapUpdate();
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestFalse(TEXT("失去表现演员后清空初始化身份"), Manager.GetFragmentDataChecked<FBBBMonsterPresentationSmoothingFragment>(Entity).LastActor.IsValid());
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Replacement, true);
+    Target.SetLocation(FVector(900.0f, 20.0f, 90.0f));
+    Run(UBBBMonsterPresentationProcessor::StaticClass());
+    TestTrue(TEXT("同一演员重新出现也直接对齐"), Replacement->GetActorLocation().Equals(Target.GetLocation(), 0.001));
+
+    for (const ENetMode Mode : {NM_ListenServer, NM_Standalone})
+    {
+        World->SetPlayInEditorInitialNetMode(Mode);
+        Target.SetLocation(Target.GetLocation() + FVector(10.0f, 0.0f, 0.0f));
+        Run(UBBBMonsterPresentationProcessor::StaticClass());
+        TestTrue(TEXT("房主与单机不使用客机平滑"), Replacement->GetActorLocation().Equals(Target.GetLocation(), 0.001));
+    }
+
+    Manager.DestroyEntity(Entity);
+    return true;
+}
 
 namespace
 {
