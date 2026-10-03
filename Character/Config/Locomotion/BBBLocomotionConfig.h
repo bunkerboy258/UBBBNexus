@@ -27,7 +27,7 @@ struct FBBBCharacterLocomotionConfig
     /** 将移动方向绝对角映射为前进、侧移、后退插值区间的官方曲线 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait")
     TSoftObjectPtr<UCurveFloat> StrafeSpeedMapCurve = TSoftObjectPtr<UCurveFloat>(
-        FSoftObjectPath(TEXT("/Game/Blueprints/Data/Curve_StrafeSpeedMap.Curve_StrafeSpeedMap")));
+        FSoftObjectPath(TEXT("/Game/_ThirdParty/Environment/ElectricDreams/Blueprints/Data/Curve_StrafeSpeedMap.Curve_StrafeSpeedMap")));
 
     /** 摇杆输入进入跑步档位的强度阈值 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Locomotion|Gait", meta = (ClampMin = "0.0", ClampMax = "1.0"))

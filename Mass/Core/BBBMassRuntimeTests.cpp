@@ -204,7 +204,7 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("进入客机分支"), World->GetNetMode(), NM_Client);
 
     UClass* ActorClass = LoadClass<ABBBMonsterPresentationActor>(nullptr,
-        TEXT("/Game/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"));
+        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"));
 
     if (!TestNotNull(TEXT("使用正式男丧尸表现蓝图"), ActorClass))
     {

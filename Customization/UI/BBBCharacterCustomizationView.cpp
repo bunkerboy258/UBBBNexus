@@ -405,7 +405,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakePatchRow(const FName Par
     if (!PatchAtlas)
     {
         PatchAtlas = LoadObject<UTexture2D>(nullptr,
-            TEXT("/Game/UkraineSoldier/Textures/Flags/T_Flags_BC.T_Flags_BC"));
+            TEXT("/Game/_ThirdParty/Characters/UkraineSoldier/Textures/Flags/T_Flags_BC.T_Flags_BC"));
     }
     if (!PatchAtlas)
     {
@@ -724,7 +724,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     LoadInterfaceArt();
     SlotThumbnailBoxes.Reset();
     PatchAtlas = LoadObject<UTexture2D>(nullptr,
-        TEXT("/Game/UkraineSoldier/Textures/Flags/T_Flags_BC.T_Flags_BC"));
+        TEXT("/Game/_ThirdParty/Characters/UkraineSoldier/Textures/Flags/T_Flags_BC.T_Flags_BC"));
     if (!PatchAtlas)
     {
         UE_LOG(LogBBBCustomizationView, Error, TEXT("身体与背心徽章图集加载失败"));
