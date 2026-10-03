@@ -35,6 +35,13 @@ public:
         return AnimationFacts.LeftHandTargetHandRSpace;
     }
 
+    /** @return 左手握持目标相对角色 hand_r 骨骼的旋转 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
+    FRotator GetLeftHandTargetHandRSpaceRotation() const
+    {
+        return AnimationFacts.LeftHandTargetHandRSpaceRotation;
+    }
+
     /** @return 本帧左手握持目标是否有效 */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
     bool HasLeftHandTarget() const

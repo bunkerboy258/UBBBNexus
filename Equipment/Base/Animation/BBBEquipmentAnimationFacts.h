@@ -12,6 +12,10 @@ struct ABBB_EVAC_API FBBBEquipmentAnimationFacts
     UPROPERTY(BlueprintReadOnly)
     FVector LeftHandTargetHandRSpace = FVector::ZeroVector;
 
+    /** 左手握持目标相对角色 hand_r 骨骼的旋转 */
+    UPROPERTY(BlueprintReadOnly)
+    FRotator LeftHandTargetHandRSpaceRotation = FRotator::ZeroRotator;
+
     UPROPERTY(BlueprintReadOnly)
     bool bHasLeftHandTarget = false;
 

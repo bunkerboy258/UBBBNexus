@@ -202,6 +202,17 @@ FVector UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpace() const
     return FVector::ZeroVector;
 }
 
+FRotator UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpaceRotation() const
+{
+    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
+    if (Weapon)
+    {
+        return Weapon->GetLeftHandTargetHandRSpaceRotation();
+    }
+
+    return FRotator::ZeroRotator;
+}
+
 bool UBBBAnimInstance::TryHasWeaponLeftHandTarget() const
 {
     const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();

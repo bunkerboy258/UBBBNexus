@@ -146,6 +146,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     FVector TryGetWeaponLeftHandTargetHandRSpace() const;
 
+    /** @return 左手目标相对右手骨骼的旋转 未装备时返回零旋转 */
+    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    FRotator TryGetWeaponLeftHandTargetHandRSpaceRotation() const;
+
     /** @return 武器左手目标是否有效 未装备时返回 false */
     UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
     bool TryHasWeaponLeftHandTarget() const;
