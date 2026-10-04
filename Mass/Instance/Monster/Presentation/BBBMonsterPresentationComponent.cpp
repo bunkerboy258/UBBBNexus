@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterAnimInstance.h"
 
 UBBBMonsterPresentationComponent::UBBBMonsterPresentationComponent()
 {
@@ -43,19 +44,62 @@ void UBBBMonsterPresentationComponent::ApplyPresentationState(
     const bool bLooping = InState == EBBBMonsterBehavior::Idle || InState == EBBBMonsterBehavior::Scout || InState == EBBBMonsterBehavior::Chase;
     if (bNewAction)
     {
-        MonsterMesh->PlayAnimation(Animation, bLooping);
-        MonsterMesh->SetPlayRate(bLooping ? 1.0f : 0.0f);
+        if (!ensureMsgf(Cast<UBBBMonsterAnimInstance>(MonsterMesh->GetAnimInstance()) != nullptr,
+            TEXT("[UBBBM]Configure a BBBMonsterAnimInstance animation blueprint on the presentation mesh; SingleNode playback is not supported")))
+        {
+            return;
+        }
     }
 
     // 非循环动作由逻辑时间定位 禁用通知触发 避免不可见时漏伤或重复伤害
     if (!bLooping)
     {
-        MonsterMesh->SetPosition(Animation->GetPlayLength() * FMath::Clamp(InActionProgress, 0.0f, 1.0f), false);
+        ActionProgress = FMath::Clamp(InActionProgress, 0.0f, 1.0f);
     }
 
     LastActionId = InActionId;
     LastPlayedState = InState;
     bHasAppliedAnimation = true;
+}
+
+UAnimSequenceBase* UBBBMonsterPresentationComponent::SelectAnimationForAction(const EBBBMonsterBehavior InState, const uint32 InActionId, const uint32 InSeed) const
+{
+    const TArray<TObjectPtr<UAnimSequenceBase>>* Variants = nullptr;
+    switch (InState)
+    {
+        case EBBBMonsterBehavior::Idle:
+            Variants = &IdleAnimationVariants;
+            break;
+
+        case EBBBMonsterBehavior::Chase:
+            Variants = &ChaseAnimationVariants;
+            break;
+
+        case EBBBMonsterBehavior::Attack:
+            Variants = &AttackAnimationVariants;
+            break;
+
+        case EBBBMonsterBehavior::Hurt:
+            Variants = &HurtAnimationVariants;
+            break;
+
+        case EBBBMonsterBehavior::Dead:
+            Variants = &DeadAnimationVariants;
+            break;
+
+        case EBBBMonsterBehavior::Scout:
+            break;
+    }
+
+    const uint32 Count = Variants ? static_cast<uint32>(Variants->Num()) + 1 : 1;
+    const uint32 Choice = (InSeed % Count + InActionId % Count) % Count;
+    UAnimSequenceBase* const Selected = Choice == 0 ? GetAnimationForState(InState) : (*Variants)[Choice - 1].Get();
+    if (!ensureMsgf(Selected != nullptr, TEXT("[UBBBM]Remove null animation variants from the presentation configuration")))
+    {
+        return nullptr;
+    }
+
+    return Selected;
 }
 
 UAnimSequenceBase* UBBBMonsterPresentationComponent::GetAnimationForState(const EBBBMonsterBehavior InState) const

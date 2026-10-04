@@ -31,6 +31,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterAnimInstance.h"
+#include "Animation/AnimSequenceBase.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 
@@ -269,7 +271,18 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     State.ActionProgress = 0.5f;
     Run(UBBBMonsterPresentationProcessor::StaticClass());
     TestEqual(TEXT("受伤状态不等待位置收敛"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Hurt);
-    TestTrue(TEXT("受伤动画立即应用逻辑进度"), FMath::IsNearlyEqual(Actor->GetMonsterMesh()->GetPosition(), 0.6f, 0.001f));
+    UBBBMonsterAnimInstance* const Animation = Cast<UBBBMonsterAnimInstance>(Actor->GetMonsterMesh()->GetAnimInstance());
+    if (!TestNotNull(TEXT("正式表现仅使用动画蓝图实例"), Animation))
+    {
+        return false;
+    }
+
+    Animation->NativeUpdateAnimation(0.0f);
+    TestNotNull(TEXT("受伤动作资产"), Animation->GetActiveAnimation());
+    if (Animation->GetActiveAnimation())
+    {
+        TestTrue(TEXT("受伤动画立即应用逻辑进度"), FMath::IsNearlyEqual(Animation->GetActiveAnimationTime(), Animation->GetActiveAnimation()->GetPlayLength() * 0.5f, 0.001f));
+    }
     TestTrue(TEXT("受伤时显示仍在追靠"), Actor->GetActorLocation().X < 200.0);
     State.State = EBBBMonsterBehavior::Attack;
     ++State.ActionId;
