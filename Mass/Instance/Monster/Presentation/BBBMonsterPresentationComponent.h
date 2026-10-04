@@ -15,6 +15,7 @@ class ABBB_EVAC_API UBBBMonsterPresentationComponent final : public UActorCompon
     GENERATED_BODY()
 
     friend class UBBBMonsterAnimInstance;
+    friend class UBBBMonsterFactAnimInstance;
 
 public:
     /** 创建小怪表现状态组件 */

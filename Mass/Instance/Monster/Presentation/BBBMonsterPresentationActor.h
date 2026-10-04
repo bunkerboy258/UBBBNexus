@@ -8,13 +8,13 @@ class UBBBMonsterPresentationComponent;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
-class ABBB_EVAC_API ABBBMonsterPresentationActor final : public AActor
+class ABBB_EVAC_API ABBBMonsterPresentationActor : public AActor
 {
     GENERATED_BODY()
 
 public:
     /** 创建不参与玩法碰撞的表现对象 */
-    ABBBMonsterPresentationActor();
+    ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     /** @return 小怪骨骼网格 */
     UFUNCTION(BlueprintPure, Category = "BBB|Monster")

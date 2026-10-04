@@ -4,7 +4,8 @@
 #include "Components/SceneComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 
-ABBBMonsterPresentationActor::ABBBMonsterPresentationActor()
+ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;

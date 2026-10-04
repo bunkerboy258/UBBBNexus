@@ -10,7 +10,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 
-/** 验证男女僵尸及耄耋统一播放路径 同状态新动作和非循环显式进度 */
+/** 验证仍使用原双通道基类的既有测试体 僵尸改由事实测试覆盖 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterAnimationRuntimeTest, "UBBB.Mass.AnimationSnapshots",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
@@ -35,9 +35,7 @@ bool FBBBMonsterAnimationRuntimeTest::RunTest(const FString& Parameters)
 
     const TArray<FString> Classes =
     {
-        TEXT("/Game/_Project/System/Mass/Monster/BP_BBBMonster.BP_BBBMonster_C"),
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"),
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Female/BP_BBBZombieFemalePresentation.BP_BBBZombieFemalePresentation_C")
+        TEXT("/Game/_Project/System/Mass/Monster/BP_BBBMonster.BP_BBBMonster_C")
     };
 
     for (const FString& ClassPath : Classes)

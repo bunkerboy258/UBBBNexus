@@ -1,0 +1,36 @@
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
+
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "GameFramework/Actor.h"
+
+void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
+{
+    Super::NativeInitializeAnimation();
+
+    AActor* const Owner = GetOwningActor();
+    PresentationIdFact = Owner ? Owner->GetUniqueID() : 0;
+    Presentation = Owner ? Owner->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;
+    ensureMsgf(Presentation.IsValid(), TEXT("[UBBBM]Fact animation requires a monster presentation component"));
+    BehaviorFact = EBBBMonsterBehavior::Idle;
+    MovementSpeedFact = 0.0f;
+    ActionProgressFact = 0.0f;
+    ActionIdFact = 0;
+    StateEnteredTimeFact = 0.0f;
+}
+
+void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds)
+{
+    Super::NativeUpdateAnimation(DeltaSeconds);
+
+    const UBBBMonsterPresentationComponent* const Source = Presentation.Get();
+    if (!Source || !Source->bHasAppliedAnimation)
+    {
+        return;
+    }
+
+    BehaviorFact = Source->BBBMonsterBehavior;
+    MovementSpeedFact = Source->MovementSpeed;
+    ActionProgressFact = Source->ActionProgress;
+    ActionIdFact = Source->LastActionId;
+    StateEnteredTimeFact = Source->StateEnteredTime;
+}

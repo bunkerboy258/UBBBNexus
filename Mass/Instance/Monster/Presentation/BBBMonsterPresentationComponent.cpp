@@ -4,6 +4,9 @@
 #include "Animation/AnimSequenceBase.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterAnimInstance.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
+#include "IAnimationBudgetAllocator.h"
+#include "SkeletalMeshComponentBudgeted.h"
 
 UBBBMonsterPresentationComponent::UBBBMonsterPresentationComponent()
 {
@@ -25,29 +28,37 @@ void UBBBMonsterPresentationComponent::ApplyPresentationState(
     MovementSpeed = FMath::Max(InSpeed, 0.0f);
     StateEnteredTime = InStateTime;
 
-    // 仅在状态切换时重新播放动画，避免每帧重置时间轴
-    UAnimSequenceBase* const Animation = GetAnimationForState(InState);
-
-    if (!ensureMsgf(Animation != nullptr, TEXT("[UBBBM]Monster presentation requires an animation for state %d"), static_cast<int32>(InState)))
-    {
-        return;
-    }
-
-    USkeletalMeshComponent* const MonsterMesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
-
-    if (!ensureMsgf(MonsterMesh != nullptr, TEXT("[UBBBM]Monster presentation requires a skeletal mesh component")))
-    {
-        return;
-    }
-
     // 移动相关状态循环播放，其余状态只播放一次
     const bool bLooping = InState == EBBBMonsterBehavior::Idle || InState == EBBBMonsterBehavior::Scout || InState == EBBBMonsterBehavior::Chase;
     if (bNewAction)
     {
-        if (!ensureMsgf(Cast<UBBBMonsterAnimInstance>(MonsterMesh->GetAnimInstance()) != nullptr,
-            TEXT("[UBBBM]Configure a BBBMonsterAnimInstance animation blueprint on the presentation mesh; SingleNode playback is not supported")))
+        USkeletalMeshComponent* const MonsterMesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
+        if (!ensureMsgf(MonsterMesh, TEXT("[UBBBM]Monster presentation requires a skeletal mesh component")))
         {
             return;
+        }
+
+        const bool bFactAnimation = Cast<UBBBMonsterFactAnimInstance>(MonsterMesh->GetAnimInstance()) != nullptr;
+        const bool bLegacyAnimation = Cast<UBBBMonsterAnimInstance>(MonsterMesh->GetAnimInstance()) != nullptr;
+        if (!ensureMsgf(bFactAnimation || bLegacyAnimation, TEXT("[UBBBM]Monster presentation requires an authored monster animation blueprint")))
+        {
+            return;
+        }
+
+        // 范围外测试体继续读取原配置 事实动画的资产仅归属于动画蓝图
+        if (bLegacyAnimation && !ensureMsgf(GetAnimationForState(InState), TEXT("[UBBBM]Legacy presentation is missing state animation %d"), static_cast<int32>(InState)))
+        {
+            return;
+        }
+
+        USkeletalMeshComponentBudgeted* const BudgetMesh = Cast<USkeletalMeshComponentBudgeted>(MonsterMesh);
+        if (BudgetMesh)
+        {
+            IAnimationBudgetAllocator* const Budget = IAnimationBudgetAllocator::Get(GetWorld());
+            if (ensureMsgf(Budget, TEXT("[UBBBM]Budgeted action requires a world animation allocator")))
+            {
+                Budget->ForceNextTickThisFrame(BudgetMesh);
+            }
         }
     }
 
