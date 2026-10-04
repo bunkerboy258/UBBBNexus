@@ -26,6 +26,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Equip")
     FVector LeftHandIKOffset = FVector::ZeroVector;
 
+    /** 左手握持目标相对装备插槽局部坐标的额外旋转 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Equip")
+    FRotator LeftHandIKRotation = FRotator::ZeroRotator;
+
     /** 角色装备步枪时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Rifle|Animation")
     TObjectPtr<UAnimMontage> CharacterEquipMontage = nullptr;

@@ -191,7 +191,7 @@ FTransform UBBBAnimInstance::TryGetMuzzleTransformHandRSpace() const
     return GetBBBMainAnimInstanceThreadSafe()->SourceMuzzleTransformHandRSpace;
 }
 
-FVector UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpace() const
+FVector UBBBAnimInstance::GetLeftHandIKPosition() const
 {
     const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
     if (Weapon)
@@ -202,7 +202,7 @@ FVector UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpace() const
     return FVector::ZeroVector;
 }
 
-FRotator UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpaceRotation() const
+FRotator UBBBAnimInstance::GetLeftHandIKRotation() const
 {
     const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
     if (Weapon)
@@ -213,7 +213,7 @@ FRotator UBBBAnimInstance::TryGetWeaponLeftHandTargetHandRSpaceRotation() const
     return FRotator::ZeroRotator;
 }
 
-bool UBBBAnimInstance::TryHasWeaponLeftHandTarget() const
+bool UBBBAnimInstance::HasLeftHandIKTarget() const
 {
     const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
     if (Weapon)

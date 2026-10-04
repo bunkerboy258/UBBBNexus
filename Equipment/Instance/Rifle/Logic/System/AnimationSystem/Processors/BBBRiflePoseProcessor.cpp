@@ -43,7 +43,17 @@ void FBBBRiflePoseProcessor::Update(FBBBRifleUpdateContext &Context)
     const FTransform SocketWorld = Context.WeaponMesh.GetSocketTransform(SocketName, RTS_World);
     const FVector TargetHandRSpace = HandWorld.InverseTransformPosition(SocketWorld.GetLocation())
         + Context.Definition.LeftHandIKOffset;
-    const FQuat TargetRotationHandRSpace = (HandWorld.GetRotation().Inverse() * SocketWorld.GetRotation()).GetNormalized();
+    if (!ensureMsgf(
+        !Context.Definition.LeftHandIKRotation.ContainsNaN(),
+        TEXT("步枪配置 %s 的左手握持旋转包含非有限数值"),
+        *Context.Definition.GetName()))
+    {
+        return;
+    }
+
+    const FQuat TargetRotationHandRSpace = (HandWorld.GetRotation().Inverse()
+        * SocketWorld.GetRotation()
+        * Context.Definition.LeftHandIKRotation.Quaternion()).GetNormalized();
     if (!ensureMsgf(
         !TargetHandRSpace.ContainsNaN() && !TargetRotationHandRSpace.ContainsNaN() && TargetRotationHandRSpace.IsNormalized(),
         TEXT("步枪配置 %s 产生非有限左手握持目标"),
