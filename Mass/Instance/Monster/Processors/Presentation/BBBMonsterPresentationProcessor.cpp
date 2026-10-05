@@ -54,7 +54,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
 
     MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha](FMassExecutionContext& ChunkContext)
     {
-        // 表现层只读取逻辑结果，不参与决策
+        // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
         const TConstArrayView<FTransformFragment> Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const TConstArrayView<FMassVelocityFragment> Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();

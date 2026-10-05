@@ -72,7 +72,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     NextPathQueryIndex = (FirstQueryIndex + PathQueriesPerFrame) % EntityCount;
     int32 EntityIndex = 0;
 
-    // 感知之后更新路径、位置、速度和朝向
+    // 感知之后更新路径 位置 速度和朝向
     MonsterQuery.ForEachEntityChunk(Context, [DeltaTime, NavigationSystem, World, WorldTime,
         EntityCount, FirstQueryIndex, &EntityIndex](FMassExecutionContext& ChunkContext)
     {
@@ -151,7 +151,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             const float MoveDistance = FMath::Min3<double>(MoveSpeed * DeltaTime, ToPathPoint.Size(), FMath::Max(ToTarget.Size() - StopRadius, 0.0f));
             const FVector NewLocation = CurrentLocation + PathDirection * MoveDistance;
 
-            // 逻辑层直接写入 Mass 变换，表现层随后读取该结果
+            // 逻辑层直接写入 Mass 变换 表现层随后读取该结果
             Transform.SetLocation(NewLocation);
             Transform.SetRotation(PathDirection.ToOrientationQuat());
             Velocity.Value = DeltaTime > SMALL_NUMBER ? PathDirection * (MoveDistance / DeltaTime) : FVector::ZeroVector;

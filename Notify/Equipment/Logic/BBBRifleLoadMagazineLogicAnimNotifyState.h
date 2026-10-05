@@ -5,7 +5,7 @@
 #include "BBBRifleLoadMagazineLogicAnimNotifyState.generated.h"
 
 /** 在武器换弹动画的装入帧提交步枪装填输入 */
-UCLASS(meta = (DisplayName = "BBB Rifle Load Magazine Logic"))
+UCLASS(meta = (DisplayName = "BBB 步枪装入弹匣逻辑"))
 class ABBB_EVAC_API UBBBRifleLoadMagazineLogicAnimNotifyState final : public UAnimNotifyState
 {
     GENERATED_BODY()

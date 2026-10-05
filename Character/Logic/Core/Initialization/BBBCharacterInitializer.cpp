@@ -10,7 +10,7 @@
 void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 {
     // 初始化开始先确认网络组件和配置资源有效
-    //网络组件存在？
+    //网络组件存在?
     if (!Character.CharacterNetworkComponent)
     {
         return;
@@ -35,7 +35,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();
 
-    //相机骨骼网格与移动组件存在？
+    //相机骨骼网格与移动组件存在?
     if (!Character.GetMesh() || !Movement)
     {
         return;

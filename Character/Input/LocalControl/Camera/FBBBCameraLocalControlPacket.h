@@ -33,7 +33,7 @@ struct FBBBCameraLocalControlPacket final
      */
     void Apply(FBBBCharacterInputContext &Context) const
     {
-        // 相机输入由提交方预先累计，角色黑板只保留最后一次完整结果
+        // 相机输入由提交方预先累计 角色黑板只保留最后一次完整结果
         Context.Camera.LatestInput = FBBBPlayerCameraInput{Impulse};
         ++Context.Camera.Revision;
     }

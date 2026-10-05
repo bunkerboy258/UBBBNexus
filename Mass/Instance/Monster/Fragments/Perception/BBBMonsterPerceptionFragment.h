@@ -12,6 +12,6 @@ struct ABBB_EVAC_API FBBBMonsterPerceptionFragment final : public FMassFragment
     GENERATED_BODY()
 
     /** 能够发现玩家的最大距离 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (DisplayName = "视野范围"))
     float SightRange = 3500.0f;
 };

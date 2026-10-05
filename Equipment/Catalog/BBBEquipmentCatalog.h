@@ -20,6 +20,6 @@ public:
      */
     TSubclassOf<ABBBEquipment> FindEquipmentClass(FName EquipmentHandle) const;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "装备类列表"))
     TArray<TSubclassOf<ABBBEquipment>> EquipmentClasses;
 };

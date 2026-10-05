@@ -5,14 +5,14 @@
 #include "BBBRifleMagazineVisibilityDisplayAnimNotifyState.generated.h"
 
 /** 在武器换弹动画中管理枪上弹匣骨骼的可见性 */
-UCLASS(meta = (DisplayName = "BBB Rifle Magazine Visibility Display"))
+UCLASS(meta = (DisplayName = "BBB 步枪弹匣可见性表现"))
 class ABBB_EVAC_API UBBBRifleMagazineVisibilityDisplayAnimNotifyState final : public UAnimNotifyState
 {
     GENERATED_BODY()
 
 public:
     /** 枪上需要隐藏的弹匣骨骼 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Rifle|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|步枪|弹匣", meta = (DisplayName = "武器弹匣骨骼名"))
     FName WeaponMagazineBoneName = TEXT("Magazine_joint");
 
     /**

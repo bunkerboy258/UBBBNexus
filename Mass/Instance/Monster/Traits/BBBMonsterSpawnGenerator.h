@@ -5,7 +5,7 @@
 #include "BBBMonsterSpawnGenerator.generated.h"
 
 /** 在生成器所在位置周围的圆盘内随机生成小怪出生点 */
-UCLASS(BlueprintType, EditInlineNew, meta = (DisplayName = "Monster Random Disc"))
+UCLASS(BlueprintType, EditInlineNew, meta = (DisplayName = "小怪随机圆盘生成器"))
 class ABBB_EVAC_API UBBBMonsterSpawnGenerator final : public UMassEntitySpawnDataGeneratorBase
 {
     GENERATED_BODY()
@@ -25,7 +25,7 @@ public:
         FFinishedGeneratingSpawnDataSignature& FinishedGeneratingSpawnPointsDelegate) const override;
 
 private:
-    /** 随机圆盘半径，单位为厘米 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Spawn", meta = (ClampMin = "0.0", UIMin = "0.0"))
+    /** 随机圆盘半径 单位为厘米 */
+    UPROPERTY(EditAnywhere, Category = "小怪|生成", meta = (ClampMin = "0.0", UIMin = "0.0", DisplayName = "生成半径"))
     float SpawnRadius = 3000.0f;
 };

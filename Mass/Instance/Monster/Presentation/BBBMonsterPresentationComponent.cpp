@@ -23,12 +23,12 @@ void UBBBMonsterPresentationComponent::ApplyPresentationState(
 {
     const bool bNewAction = !bHasAppliedAnimation || LastPlayedState != InState || LastActionId != InActionId || StateEnteredTime != InStateTime;
 
-    // 保存 Mass 提供的只读快照，供蓝图或调试读取
+    // 保存 Mass 提供的只读快照 供蓝图或调试读取
     BBBMonsterBehavior = InState;
     MovementSpeed = FMath::Max(InSpeed, 0.0f);
     StateEnteredTime = InStateTime;
 
-    // 移动相关状态循环播放，其余状态只播放一次
+    // 移动相关状态循环播放 其余状态只播放一次
     const bool bLooping = InState == EBBBMonsterBehavior::Idle || InState == EBBBMonsterBehavior::Scout || InState == EBBBMonsterBehavior::Chase;
     if (bNewAction)
     {

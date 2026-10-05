@@ -10,11 +10,11 @@ struct FBBBAimState final
     GENERATED_BODY()
 
     //是否保持瞄准姿态
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "正在瞄准"))
     bool bIsAiming = false;
 
     //理想瞄准目标点的世界坐标
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "世界空间瞄准目标"))
     FVector AimTargetWorld = FVector::ZeroVector;
 
 };

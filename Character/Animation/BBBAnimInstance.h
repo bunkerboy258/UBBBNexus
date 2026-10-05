@@ -34,71 +34,71 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
 
 public:
     /** @return 当前骨骼网格体上的 BBB 主动画实例 主实例自身调用时返回自身 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Animation Facts", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|动画事实", meta = (BlueprintThreadSafe))
     UBBBAnimInstance *GetBBBMainAnimInstanceThreadSafe() const;
 
     /** 本帧角色世界位置 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源角色位置"))
     FVector SourceActorLocation = FVector::ZeroVector;
 
     /** 本帧角色世界旋转 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源角色旋转"))
     FRotator SourceActorRotation = FRotator::ZeroRotator;
 
     /** 本帧角色世界速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源速度"))
     FVector SourceVelocity = FVector::ZeroVector;
 
     /** 移动组件上一次更新后的世界速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源上次更新速度"))
     FVector SourceLastUpdateVelocity = FVector::ZeroVector;
 
     /** 本帧角色世界加速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源加速度"))
     FVector SourceAcceleration = FVector::ZeroVector;
 
     /** 本帧角色额外瞄准角度偏移 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源瞄准偏移角度"))
     FVector2D SourceAimOffsetDegrees = FVector2D::ZeroVector;
 
     /** 本帧引擎移动模式 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动模式"))
     TEnumAsByte<EMovementMode> SourceMovementMode = MOVE_None;
 
     /** 本帧地面摩擦力 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源地面摩擦力"))
     float SourceGroundFriction = 0.0f;
 
     /** 本帧制动摩擦力 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源制动摩擦力"))
     float SourceBrakingFriction = 0.0f;
 
     /** 本帧制动摩擦系数 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源制动摩擦系数"))
     float SourceBrakingFrictionFactor = 0.0f;
 
     /** 本帧行走制动减速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源行走制动减速度"))
     float SourceBrakingDecelerationWalking = 0.0f;
 
     /** 是否使用独立制动摩擦力 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源使用独立制动摩擦力"))
     bool bSourceUseSeparateBrakingFriction = false;
 
     /** 本帧重力加速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源垂直重力"))
     float SourceGravityZ = 0.0f;
 
     /** 本帧是否在地面移动 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源正在地面移动"))
     bool bSourceMovingOnGround = false;
 
     /** 本帧是否处于蹲伏 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源正在蹲伏"))
     bool bSourceCrouching = false;
 
     /** @return 角色是否处于站立步行档位 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|移动", meta = (BlueprintThreadSafe))
     bool IsWalking() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
@@ -106,7 +106,7 @@ public:
     }
 
     /** @return 角色是否处于站立跑步档位 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Locomotion", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|移动", meta = (BlueprintThreadSafe))
     bool IsRunning() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
@@ -114,50 +114,50 @@ public:
     }
 
     /** @return 玩家是否具有瞄准意图 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     bool IsAiming() const
     {
         return GetBBBMainAnimInstanceThreadSafe()->bSourceAiming;
     }
 
     /** @return 组件空间的瞄准目标点 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     FVector GetAimTargetComponentSpace() const
     {
         return GetBBBMainAnimInstanceThreadSafe()->SourceAimTargetComponentSpace;
     }
 
     /** @return 本帧角色额外上下与左右瞄准角度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     FVector2D GetAimOffsetDegrees() const
     {
         return GetBBBMainAnimInstanceThreadSafe()->SourceAimOffsetDegrees;
     }
 
     /** @return 当前装备的实际武器动画实例 链接层自动读取主实例绑定 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     UBBBEquipmentAnimInstance *TryGetWeaponAnimInstance() const;
 
     /** @return 枪口在角色 hand_r 骨骼空间中的快照变换 获取失败时返回单位变换 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Aim", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     FTransform TryGetMuzzleTransformHandRSpace() const;
 
     /** @return 左手目标在右手骨骼空间中的位置 未装备时返回零向量 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     FVector GetLeftHandIKPosition() const;
 
     /** @return 左手目标相对右手骨骼的旋转 未装备时返回零旋转 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     FRotator GetLeftHandIKRotation() const;
 
     /** @return 武器左手目标是否有效 未装备时返回 false */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     bool HasLeftHandIKTarget() const;
 
 
 
     /** 角色胶囊体底部到地面的距离 供动画属性存取节点直接读取 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|Animation Facts")
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "地面距离"))
     float GroundDistance = 0.0f;
 
 private:

@@ -13,7 +13,7 @@ UBBBMonsterVisualizationLODProcessor::UBBBMonsterVisualizationLODProcessor()
 
 void UBBBMonsterVisualizationLODProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
-    // 为近处、远处和调试查询统一添加小怪标签
+    // 为近处 远处和调试查询统一添加小怪标签
     Super::ConfigureQueries(EntityManager);
 
     CloseEntityQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);

@@ -11,10 +11,10 @@ struct FBBBCharacterEquipmentInventoryState final
     GENERATED_BODY()
 
     /** 角色拥有的全部装备实例 */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "背包栏位"))
     TArray<FBBBCharacterItem> BackpackSlots;
 
     /** 直接引用装备实例的快捷操作槽位 */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "快捷物品栏位"))
     TArray<FBBBCharacterItem> ItemBarSlots;
 };

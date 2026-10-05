@@ -28,35 +28,35 @@ public:
     //~ End UAnimInstance Interface
 
     /** @return 通道甲当前动画 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     UAnimSequenceBase* GetChannelAAnimation() const;
 
     /** @return 通道乙当前动画 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     UAnimSequenceBase* GetChannelBAnimation() const;
 
     /** @return 通道甲显式采样时间 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     float GetChannelATime() const;
 
     /** @return 通道乙显式采样时间 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     float GetChannelBTime() const;
 
     /** @return 当前是否使用通道乙 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     bool IsChannelBActive() const;
 
     /** @return 资产配置的动作过渡时长 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     float GetTransitionBlendTime() const;
 
     /** @return 当前动作动画 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     UAnimSequenceBase* GetActiveAnimation() const;
 
     /** @return 当前动作显式采样时间 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "小怪|动画", meta = (BlueprintThreadSafe))
     float GetActiveAnimationTime() const;
 
 private:

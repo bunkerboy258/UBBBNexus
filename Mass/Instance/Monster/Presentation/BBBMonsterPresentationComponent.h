@@ -45,15 +45,15 @@ public:
         float InActionProgress);
 
     /** @return 当前小怪状态 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Presentation")
+    UFUNCTION(BlueprintPure, Category = "小怪|表现")
     EBBBMonsterBehavior GetBBBMonsterBehavior() const;
 
     /** @return 当前移动速度 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Presentation")
+    UFUNCTION(BlueprintPure, Category = "小怪|表现")
     float GetMovementSpeed() const;
 
     /** @return 当前状态进入时间 */
-    UFUNCTION(BlueprintPure, Category = "Monster|Presentation")
+    UFUNCTION(BlueprintPure, Category = "小怪|表现")
     float GetStateEnteredTime() const;
 
 private:
@@ -70,55 +70,55 @@ private:
     UAnimSequenceBase* GetAnimationForState(EBBBMonsterBehavior InState) const;
 
     /** 待机状态循环动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "待机动画"))
     TObjectPtr<UAnimSequenceBase> IdleAnimation;
 
     /** 侦察状态循环动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "侦察动画"))
     TObjectPtr<UAnimSequenceBase> ScoutAnimation;
 
     /** 追击状态循环动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "追逐动画"))
     TObjectPtr<UAnimSequenceBase> ChaseAnimation;
 
     /** 攻击状态动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "攻击动画"))
     TObjectPtr<UAnimSequenceBase> AttackAnimation;
 
     /** 受伤状态动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "受击动画"))
     TObjectPtr<UAnimSequenceBase> HurtAnimation;
 
     /** 死亡状态动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "死亡动画"))
     TObjectPtr<UAnimSequenceBase> DeadAnimation;
 
     /** 额外待机动画 与主要待机动画共同参与选择 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "待机动画变体"))
     TArray<TObjectPtr<UAnimSequenceBase>> IdleAnimationVariants;
 
     /** 额外追击动画 与主要追击动画共同参与选择 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "追逐动画变体"))
     TArray<TObjectPtr<UAnimSequenceBase>> ChaseAnimationVariants;
 
     /** 已裁剪为单次挥击的额外攻击动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "攻击动画变体"))
     TArray<TObjectPtr<UAnimSequenceBase>> AttackAnimationVariants;
 
     /** 已裁剪为独立反应的额外受伤动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "受击动画变体"))
     TArray<TObjectPtr<UAnimSequenceBase>> HurtAnimationVariants;
 
     /** 具有完整死亡过程的额外死亡动画 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation")
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "死亡动画变体"))
     TArray<TObjectPtr<UAnimSequenceBase>> DeadAnimationVariants;
 
     /** 动作间双通道姿势过渡时长 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation", meta = (ClampMin = "0.0", ClampMax = "0.5", Units = "s"))
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (ClampMin = "0.0", ClampMax = "0.5", Units = "s", DisplayName = "动画混合时间"))
     float AnimationBlendTime = 0.18f;
 
     /** 移动循环动画的标准速度 */
-    UPROPERTY(EditAnywhere, Category = "Monster|Animation", meta = (ClampMin = "1.0", Units = "cm/s"))
+    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "动画参考速度"))
     float AnimationReferenceSpeed = 100.0f;
 
     /** Mass 提供的本次非循环动作归一化时间 */

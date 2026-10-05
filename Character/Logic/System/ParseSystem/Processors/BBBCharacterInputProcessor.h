@@ -9,7 +9,7 @@ struct FBBBCharacterInputState;
 /**
  * 按源码中明确声明的顺序原地解析固定输入槽位
  *
- * 处理器不理解具体业务规则，数据合法性、通过条件和状态效果全部由对应包负责
+ * 处理器不理解具体业务规则 数据合法性 通过条件和状态效果全部由对应包负责
  */
 class FBBBCharacterInputProcessor final
 {

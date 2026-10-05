@@ -12,7 +12,7 @@ class USkeletalMeshComponent;
 struct FBBBCharacterEquipmentConfig;
 struct FBBBCharacterRuntimeData;
 
-/** 角色装备容器、选择与动作的唯一逻辑系统 */
+/** 角色装备容器 选择与动作的唯一逻辑系统 */
 class ABBB_EVAC_API FBBBCharacterEquipmentSystem final
 {
 public:

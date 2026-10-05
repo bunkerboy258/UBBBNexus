@@ -12,6 +12,6 @@ struct FBBBCharacterItem final
     GENERATED_BODY()
 
     /** 物品的运行时演员 */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "物品角色"))
     TObjectPtr<AActor> ItemActor = nullptr;
 };

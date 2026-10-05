@@ -17,19 +17,19 @@ public:
     ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     /** @return 小怪骨骼网格 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Monster")
+    UFUNCTION(BlueprintPure, Category = "BBB|小怪")
     USkeletalMeshComponent* GetMonsterMesh() const;
 
     /** @return 小怪动画桥接组件 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Monster")
+    UFUNCTION(BlueprintPure, Category = "BBB|小怪")
     UBBBMonsterPresentationComponent* GetMonsterPresentation() const;
 
 private:
     /** 骨骼网格 */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Monster", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (AllowPrivateAccess = "true", DisplayName = "小怪骨骼网格"))
     TObjectPtr<USkeletalMeshComponent> MonsterMesh;
 
     /** 动画桥接 */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Monster", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (AllowPrivateAccess = "true", DisplayName = "小怪表现组件"))
     TObjectPtr<UBBBMonsterPresentationComponent> MonsterPresentation;
 };

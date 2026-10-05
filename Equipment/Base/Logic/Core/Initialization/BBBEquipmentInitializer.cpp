@@ -10,7 +10,7 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment)
     if (!ensureMsgf(
         IsValid(Equipment.Definition) && !Equipment.Definition->EquipmentId.IsNone()
             && Equipment.EquipmentSkeletalMesh,
-        TEXT("装备 %s 缺少有效静态配置、装备标识或骨骼网格"),
+        TEXT("装备 %s 缺少有效静态配置 装备标识或骨骼网格"),
         *Equipment.GetClass()->GetName()))
     {
         return false;

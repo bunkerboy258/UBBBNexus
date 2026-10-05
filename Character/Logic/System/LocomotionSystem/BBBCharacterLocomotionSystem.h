@@ -15,7 +15,7 @@ struct FBBBCharacterControlState;
 class ABBB_EVAC_API FBBBCharacterLocomotionSystem final
 {
 public:
-    /** 逐帧更新步态、移动参数、蹲跳请求和移动输入 */
+    /** 逐帧更新步态 移动参数 蹲跳请求和移动输入 */
     void Update();
 
 private:

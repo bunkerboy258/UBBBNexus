@@ -11,19 +11,19 @@ struct ABBB_EVAC_API FBBBAppearanceSelection
     GENERATED_BODY()
 
     /** 按蓝图部位配置排列的完整选择 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "外观部件"))
     TArray<FBBBAppearancePart> Parts;
 
     /** 整体污渍强度 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "污渍程度"))
     float Dirt = 0.0f;
 
     /** 整体磨损强度 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "磨损程度"))
     float Weathering = 0.0f;
 
     /** 附件组合配置表行名 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "附加物"))
     FName Attachments;
 
     /** @return 是否满足输入与网络边界的基本结构要求 */

@@ -44,7 +44,7 @@ public:
      * 打开或关闭本地换装界面
      * @return 无
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Client")
+    UFUNCTION(BlueprintCallable, Category = "BBB|客户端")
     void ToggleCustomization();
 
 private:

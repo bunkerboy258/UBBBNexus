@@ -13,7 +13,7 @@ struct ABBB_EVAC_API FBBBMonsterBehaviorFragment final : public FMassFragment
     GENERATED_BODY()
 
     /** 当前权威状态 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (DisplayName = "行为状态"))
     EBBBMonsterBehavior State = EBBBMonsterBehavior::Idle;
 
     /** 当前状态进入的世界时间 */

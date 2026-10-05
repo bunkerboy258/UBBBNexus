@@ -143,15 +143,15 @@ public:
 
 protected:
     
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|Config")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|配置", meta = (DisplayName = "角色配置资产"))
     TObjectPtr<UBBBCharacterConfig> CharacterConfigAsset = nullptr;
     
-    UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
+    UPROPERTY(VisibleAnywhere, Category = "ABBB|网络", meta = (DisplayName = "角色网络组件"))
     TObjectPtr<UBBBCharacterNetworkComponent> CharacterNetworkComponent;
     /** 装备独立网络传输组件 */
-    UPROPERTY(VisibleAnywhere, Category = "ABBB|Network")
+    UPROPERTY(VisibleAnywhere, Category = "ABBB|网络", meta = (DisplayName = "装备网络组件"))
     TObjectPtr<UBBBEquipmentNetworkComponent> EquipmentNetworkComponent;
-    /*分类命名为ABBB是为了快点找到（bushi*/
+    /*分类命名为ABBB是为了快点找到(bushi*/
 
 private:
     FBBBCharacterAimSystem AimSystem;

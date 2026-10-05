@@ -7,26 +7,26 @@
 class UStaticMesh;
 
 /** 在角色换弹动画中生成手持旧弹匣并于区间结束时甩出 */
-UCLASS(meta = (DisplayName = "BBB Character Old Magazine Display"))
+UCLASS(meta = (DisplayName = "BBB 角色旧弹匣表现"))
 class ABBB_EVAC_API UBBBCharacterOldMagazineDisplayAnimNotifyState final : public UAnimNotifyState
 {
     GENERATED_BODY()
 
 public:
     /** 旧弹匣独立网格 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (DisplayName = "弹匣网格"))
     TObjectPtr<UStaticMesh> MagazineMesh = nullptr;
 
     /** 握持旧弹匣的手部骨骼 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (DisplayName = "手部骨骼名"))
     FName HandBoneName = TEXT("hand_l");
 
     /** 旧弹匣相对手部骨骼的握持变换 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (DisplayName = "手持弹匣变换"))
     FTransform HandMagazineTransform = FTransform::Identity;
 
     /** 掉落弹匣的世界存活时间 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine", meta = (ClampMin = "0.01"))
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (ClampMin = "0.01", DisplayName = "掉落弹匣存活时间 秒"))
     float DroppedLifeSeconds = 20.0f;
 
     /**

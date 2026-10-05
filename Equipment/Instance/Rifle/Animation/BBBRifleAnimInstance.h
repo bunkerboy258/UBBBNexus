@@ -88,68 +88,68 @@ public:
 
 protected:
     /** 当前弹量 */
-    UPROPERTY(BlueprintReadOnly, Transient)
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "已装填弹药"))
     int32 LoadedAmmo = 0;
 
     /** 当前弹匣容量 */
-    UPROPERTY(BlueprintReadOnly, Transient)
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "弹药容量"))
     int32 AmmoCapacity = 0;
 
     /** 当前换弹状态 */
-    UPROPERTY(BlueprintReadOnly, Transient)
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "正在换弹"))
     bool bIsReloading = false;
 
     /** 当前快照距离最近开火的时间 */
-    UPROPERTY(BlueprintReadOnly, Transient)
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "距上次开火时间 秒"))
     float TimeSinceLastFireSeconds = 0.0f;
 
 private:
     /** 腰射目标跟随速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "腰射瞄准跟随速度"))
     float HipFireAimFollowSpeed = 18.0f;
 
     /** 瞄准目标跟随速度 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "瞄准射击跟随速度"))
     float AimFireAimFollowSpeed = 18.0f;
 
     /** 腰射向后震动强度 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "腰射后向后坐力权重"))
     float HipFireBackwardRecoilAlpha = 0.0f;
 
     /** 瞄准向后震动强度 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "瞄准射击后向后坐力权重"))
     float AimFireBackwardRecoilAlpha = 0.0f;
 
     /** 腰射摇摆幅度 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "腰射摇摆幅度 角度"))
     FVector2D HipFireSwayAmplitudeDegrees = FVector2D::ZeroVector;
 
     /** 瞄准摇摆幅度 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "瞄准射击摇摆幅度 角度"))
     FVector2D AimFireSwayAmplitudeDegrees = FVector2D::ZeroVector;
 
     /** 腰射摇摆频率 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "腰射摇摆频率"))
     FVector2D HipFireSwayFrequency = FVector2D::ZeroVector;
 
     /** 瞄准摇摆频率 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "瞄准射击摇摆频率"))
     FVector2D AimFireSwayFrequency = FVector2D::ZeroVector;
 
     /** 空中跟随倍率 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "空中瞄准跟随倍率"))
     float AirborneAimFollowScale = 1.0f;
 
     /** 空中向后震动倍率 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "空中后向后坐力倍率"))
     float AirborneBackwardRecoilScale = 1.0f;
 
     /** 空中摇摆幅度倍率 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "空中摇摆幅度倍率"))
     float AirborneSwayAmplitudeScale = 1.0f;
 
     /** 空中摇摆频率倍率 */
-    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "空中摇摆频率倍率"))
     float AirborneSwayFrequencyScale = 1.0f;
 
     /** 世界时间基本事实 供动画图计算持枪摇摆相位 */

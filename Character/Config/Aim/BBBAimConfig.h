@@ -10,7 +10,7 @@ struct FBBBAimAnimationConfig
     GENERATED_BODY()
 
     /** 计算瞄准IK起点时使用的角色骨骼 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "瞄准 IK 起始骨骼名"))
     FName AimIKOriginBoneName = FName("spine_03");
 
 };

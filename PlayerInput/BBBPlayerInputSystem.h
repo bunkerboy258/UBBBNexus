@@ -44,15 +44,15 @@ public:
         return bInputEnabled;
     }
 
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Input")
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|输入", meta = (DisplayName = "配置"))
     FBBBPlayerInputConfig Config;
     /** 本地玩家使用的相机蓝图类 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera")
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (DisplayName = "相机类"))
     TSubclassOf<ABBBPlayerCameraSystem> CameraClass;
     /** 视角输入每单位对应的旋转角度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Input", meta = (ClampMin = "0.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|输入", meta = (ClampMin = "0.0", DisplayName = "基础转向速率"))
     float BaseTurnRate = 1.0f;
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Aim")
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|瞄准", meta = (DisplayName = "瞄准目标距离"))
     float AimTargetDistance = 10000.0f;
 
 private:

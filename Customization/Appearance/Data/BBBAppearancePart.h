@@ -10,23 +10,23 @@ struct ABBB_EVAC_API FBBBAppearancePart
     GENERATED_BODY()
 
     /** 蓝图配置的部位名称 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "部件栏位"))
     FName Slot;
 
     /** 配置表行名 空名称表示移除此可选部件 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "物品标识"))
     FName Item;
 
     /** 各染色区域的颜色 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "颜色"))
     TArray<FLinearColor> Colors;
 
     /** 是否使用迷彩 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "启用迷彩"))
     bool bCamouflage = false;
 
     /** 徽章图集坐标 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "贴片坐标"))
     FVector2D Patch = FVector2D::ZeroVector;
 
     bool operator==(const FBBBAppearancePart &Other) const

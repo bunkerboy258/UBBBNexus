@@ -40,7 +40,7 @@ public:
 
 protected:
     /** @param MuzzleTransform	本次开火枪口世界变换 @return 无 */
-    UFUNCTION(BlueprintNativeEvent, Category = "BBB|Rifle")
+    UFUNCTION(BlueprintNativeEvent, Category = "BBB|步枪")
     void EmitShot(const FTransform &MuzzleTransform);
 
     virtual void EmitShot_Implementation(const FTransform &MuzzleTransform);

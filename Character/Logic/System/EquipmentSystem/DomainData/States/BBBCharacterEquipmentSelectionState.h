@@ -14,11 +14,11 @@ struct FBBBCharacterEquipmentSelectionState final
     FName ActiveEquipmentId = NAME_None;
 
     /** 角色期望装备的唯一实例 */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "期望主手装备实例"))
     TObjectPtr<ABBBEquipment> DesiredMainHandInstance = nullptr;
 
     /** 角色当前装备的唯一实例 */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "当前主手装备实例"))
     TObjectPtr<ABBBEquipment> ActiveMainHandInstance = nullptr;
 
     /** 等待处理的装备定义 空标识表示空手 */

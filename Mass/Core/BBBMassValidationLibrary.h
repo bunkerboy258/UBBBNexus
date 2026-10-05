@@ -19,7 +19,7 @@ public:
      * @param Source		正式实体模板
      * @return 临时配置 调用方须在测试期间持有引用
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Validation")
+    UFUNCTION(BlueprintCallable, Category = "BBB|验证")
     static UMassEntityConfigAsset* CreateActorStressConfig(UObject* WorldContext, UMassEntityConfigAsset* Source);
 
     /**
@@ -31,7 +31,7 @@ public:
      * @param Spacing		相邻实体距离 厘米
      * @return 实际创建的完整代际句柄 仅在当前世界有效
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Validation")
+    UFUNCTION(BlueprintCallable, Category = "BBB|验证")
     static TArray<FMassEntityHandle> SpawnPopulation(UObject* WorldContext, const TArray<UMassEntityConfigAsset*>& Configs, int32 Count, FVector Center, float Spacing);
 
     /**
@@ -40,7 +40,7 @@ public:
      * @param Entities		本工具创建的完整句柄
      * @return JSON 验证快照 不存在的实体明确计入失效数
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Validation")
+    UFUNCTION(BlueprintCallable, Category = "BBB|验证")
     static FString InspectPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities);
 
     /**
@@ -49,6 +49,6 @@ public:
      * @param Entities		本轮完整代际句柄
      * @return 实际回收数量
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Validation")
+    UFUNCTION(BlueprintCallable, Category = "BBB|验证")
     static int32 DestroyPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities);
 };

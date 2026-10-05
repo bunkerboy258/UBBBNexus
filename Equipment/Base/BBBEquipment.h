@@ -106,13 +106,13 @@ protected:
     virtual bool QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload);
 
 private:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (AllowPrivateAccess = "true", DisplayName = "定义资产"))
     TObjectPtr<UBBBEquipmentDefinition> Definition = nullptr;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|装备", meta = (AllowPrivateAccess = "true", DisplayName = "装备根组件"))
     TObjectPtr<UArrowComponent> EquipmentRoot = nullptr;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Equipment", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|装备", meta = (AllowPrivateAccess = "true", DisplayName = "装备骨骼网格组件"))
     TObjectPtr<USkeletalMeshComponent> EquipmentSkeletalMesh = nullptr;
 
     UPROPERTY(Transient)

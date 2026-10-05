@@ -24,22 +24,22 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
     /** 剩余可穿透目标数量 */
     int32 RemainingPenetrations = 0;
 
-    /** 连续碰撞检测半径，单位厘米 */
+    /** 连续碰撞检测半径 单位厘米 */
     float CollisionRadiusCm = 0.0f;
 
     /** 执行连续碰撞查询的碰撞通道 */
     ECollisionChannel CollisionChannel = ECC_Pawn;
 
-    /** 开火装备，用于伤害来源与碰撞忽略 */
+    /** 开火装备 用于伤害来源与碰撞忽略 */
     TWeakObjectPtr<AActor> DamageCauser;
 
-    /** 发射弹丸的角色，用于碰撞忽略 */
+    /** 发射弹丸的角色 用于碰撞忽略 */
     TWeakObjectPtr<APawn> InstigatorPawn;
 
     /** 伤害事件中的控制器来源 */
     TWeakObjectPtr<AController> EventInstigator;
 
-    /** 已命中过的最近目标，防止穿透期间重复命中 */
+    /** 已命中过的最近目标 防止穿透期间重复命中 */
     TWeakObjectPtr<AActor> LastHitActor;
 
     /** 仅来源在本机控制时允许产生伤害 */

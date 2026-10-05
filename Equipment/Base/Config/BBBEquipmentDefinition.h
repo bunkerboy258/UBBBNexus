@@ -17,35 +17,35 @@ class ABBB_EVAC_API UBBBEquipmentDefinition : public UPrimaryDataAsset
 
 public:
     /** 装备在目录查找和网络同步中使用的标识 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "装备标识"))
     FName EquipmentId;
 
     /** 装备显示名称 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "显示名称"))
     FText DisplayName;
 
     /** 装备说明文本 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "说明"))
     FText Description;
 
     /** 装备显示图标 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "图标"))
     TObjectPtr<UTexture2D> Icon;
 
     /** 角色装备后链接的动画层类型 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|动画", meta = (DisplayName = "角色动画层类"))
     TSubclassOf<UAnimInstance> CharacterAnimationLayerClass;
 
     /** 装备骨骼网格使用的动画实例类型 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Animation")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|动画", meta = (DisplayName = "装备动画类"))
     TSubclassOf<UBBBEquipmentAnimInstance> EquipmentAnimationClass;
 
     /** 装备使用的骨骼网格 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Visual")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|外观", meta = (DisplayName = "装备骨骼网格"))
     TObjectPtr<USkeletalMesh> EquipmentMesh = nullptr;
 
     /** 装备挂接到角色后的相对变换 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Equipment|Visual")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|外观", meta = (DisplayName = "生成偏移"))
     FTransform SpawnOffset = FTransform::Identity;
 
 };

@@ -82,7 +82,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 }
             };
 
-            // 先扣除累计伤害，再根据剩余生命切换状态
+            // 先扣除累计伤害 再根据剩余生命切换状态
             if (State.State == EBBBMonsterBehavior::Dead || Health.CurrentHealth <= 0.0f)
             {
                 // 生命归零后进入死亡状态并延迟回收

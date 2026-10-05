@@ -43,21 +43,21 @@ public:
      * @param Settings			当前姿态下的相机配置
      * @return 是否存在有效贡献来源
      */
-    UFUNCTION(BlueprintImplementableEvent, Category = "BBB|Camera|Impulse")
+    UFUNCTION(BlueprintImplementableEvent, Category = "BBB|相机|冲量")
     bool ReadRecoilSource(UBBBAnimInstance *CharacterAnimation, UAnimInstance *&Source,
         int32 &FireSequence, FBBBPlayerCameraRecoilSettings &Settings);
 
 private:
     friend class FBBBPlayerCameraImpulseProcessor;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Camera", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|相机", meta = (AllowPrivateAccess = "true", DisplayName = "相机臂"))
     TObjectPtr<USpringArmComponent> Boom;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|Camera", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|相机", meta = (AllowPrivateAccess = "true", DisplayName = "相机"))
     TObjectPtr<UCameraComponent> Camera;
     /** 瞄准时的相机臂长度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera", meta = (ClampMin = "0.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (ClampMin = "0.0", DisplayName = "瞄准相机臂长度"))
     float AimBoomLength = 180.0f;
     /** 瞄准距离切换速度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera", meta = (ClampMin = "0.1"))
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (ClampMin = "0.1", DisplayName = "瞄准相机臂插值速度"))
     float AimBoomInterpSpeed = 12.0f;
     /** 初始化时读取组件配置 仅用于退出瞄准后恢复常态距离 */
     float DefaultBoomLength = 0.0f;
@@ -70,7 +70,7 @@ private:
     FVector RecoilOffset = FVector::ZeroVector;
 
     /** 未读取到武器贡献时采用的相机基础参数 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|Camera|Impulse", meta = (DisplayName = "默认相机后坐力", ToolTip = "无外部配置时使用的镜头冲击与恢复设置"))
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|冲量", meta = (DisplayName = "默认相机后坐力", ToolTip = "无外部配置时使用的镜头冲击与恢复设置"))
     FBBBPlayerCameraRecoilSettings DefaultRecoilSettings;
 
     /** 最近有效贡献使用的恢复参数 */

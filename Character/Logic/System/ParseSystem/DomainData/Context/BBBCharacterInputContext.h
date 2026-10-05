@@ -15,7 +15,7 @@ struct FBBBCharacterAimImpulseState;
 /**
  * 输入包应用上下文
  *
- * CanApply只读运行时事实，Apply负责写入角色黑板
+ * CanApply只读运行时事实 Apply负责写入角色黑板
  */
 struct FBBBCharacterInputContext final
 {

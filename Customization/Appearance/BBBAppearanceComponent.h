@@ -34,7 +34,7 @@ public:
      * @param Selection	完整选择
      * @return 是否应用成功
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintCallable, Category = "BBB|外观")
     bool CommitAppearance(const FBBBAppearanceSelection &Selection);
 
     /**
@@ -42,11 +42,11 @@ public:
      * @param Selection	预览组合
      * @return 是否显示成功
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintCallable, Category = "BBB|外观")
     bool PreviewAppearance(const FBBBAppearanceSelection &Selection);
 
     /** @return 当前完整外观组合 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintPure, Category = "BBB|外观")
     FBBBAppearanceSelection GetAppearance() const;
 
     /**
@@ -55,7 +55,7 @@ public:
      * @param Item	找到的资源配置
      * @return 条目是否存在
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintPure, Category = "BBB|外观")
     bool GetItem(FName ItemId, FBBBAppearanceItem &Item) const;
 
     /**
@@ -65,7 +65,7 @@ public:
      * @param Materials	模型原始材质 用于替换旧部件的材质覆盖
      * @return 是否成功解析并加载
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintCallable, Category = "BBB|外观")
     bool LoadItem(FName ItemId, USkeletalMesh *&Mesh, TArray<UMaterialInterface *> &Materials) const;
 
     /**
@@ -80,7 +80,7 @@ public:
      * @param Slot	部位名称
      * @return 条目行名
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintPure, Category = "BBB|外观")
     TArray<FName> GetItems(FName Slot) const;
 
     /**
@@ -88,15 +88,15 @@ public:
      * @param Selection	需要显示的完整组合
      * @return 是否完成组装
      */
-    UFUNCTION(BlueprintImplementableEvent, Category = "BBB|Appearance")
+    UFUNCTION(BlueprintImplementableEvent, Category = "BBB|外观")
     bool ApplyAppearance(const FBBBAppearanceSelection &Selection);
 
     /** 该人物允许使用的外观资源 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Appearance")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|外观", meta = (DisplayName = "目录表"))
     TObjectPtr<UDataTable> Catalog;
 
     /** 具体人物蓝图配置的默认组合 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Appearance")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|外观", meta = (DisplayName = "默认外观选择"))
     FBBBAppearanceSelection DefaultSelection;
 
 private:

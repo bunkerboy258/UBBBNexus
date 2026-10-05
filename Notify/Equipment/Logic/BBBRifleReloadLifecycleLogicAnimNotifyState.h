@@ -5,7 +5,7 @@
 #include "BBBRifleReloadLifecycleLogicAnimNotifyState.generated.h"
 
 /** 在武器换弹动画结束时提交步枪换弹收束输入 */
-UCLASS(meta = (DisplayName = "BBB Rifle Reload Lifecycle Logic"))
+UCLASS(meta = (DisplayName = "BBB 步枪换弹生命周期逻辑"))
 class ABBB_EVAC_API UBBBRifleReloadLifecycleLogicAnimNotifyState final : public UAnimNotifyState
 {
     GENERATED_BODY()

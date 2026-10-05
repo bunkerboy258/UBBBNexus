@@ -40,7 +40,7 @@ public:
      * 关闭界面并丢弃草稿
      * @return 无
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     void Close();
 
     /**
@@ -55,7 +55,7 @@ public:
      * @param Direction	正数选择下一项 负数选择上一项
      * @return 是否预览成功
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     bool CycleItem(FName Slot, int32 Direction);
 
     /**
@@ -95,7 +95,7 @@ public:
      * @param Direction	正数选择下一项 负数选择上一项
      * @return 是否预览成功
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     bool CyclePatch(FName Slot, int32 Direction);
 
     /**
@@ -104,18 +104,18 @@ public:
      * @param Weathering	磨损强度
      * @return 是否预览成功
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     bool SetSurface(float Dirt, float Weathering);
 
     /** @return 当前草稿 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Customization")
+    UFUNCTION(BlueprintPure, Category = "BBB|自定义")
     FBBBAppearanceSelection GetDraft() const;
 
     /**
      * 应用并保存最终组合
      * @return 是否应用成功
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     bool Apply();
 
     /**
@@ -123,7 +123,7 @@ public:
      * @param ViewName	Full Head 或 Legs
      * @return 无
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     void SelectView(FName ViewName);
 
     /**
@@ -131,7 +131,7 @@ public:
      * @param Degrees	水平旋转角度
      * @return 无
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Customization")
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
     void RotatePreview(float Degrees);
 
     virtual void BeginDestroy() override;

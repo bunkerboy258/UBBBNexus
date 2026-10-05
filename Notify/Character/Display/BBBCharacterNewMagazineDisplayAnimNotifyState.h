@@ -7,22 +7,22 @@
 class UStaticMesh;
 
 /** 在角色换弹动画中生成并清理手持新弹匣 */
-UCLASS(meta = (DisplayName = "BBB Character New Magazine Display"))
+UCLASS(meta = (DisplayName = "BBB 角色新弹匣表现"))
 class ABBB_EVAC_API UBBBCharacterNewMagazineDisplayAnimNotifyState final : public UAnimNotifyState
 {
     GENERATED_BODY()
 
 public:
     /** 新弹匣独立网格 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (DisplayName = "弹匣网格"))
     TObjectPtr<UStaticMesh> MagazineMesh = nullptr;
 
     /** 握持新弹匣的手部骨骼 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (DisplayName = "手部骨骼名"))
     FName HandBoneName = TEXT("hand_l");
 
     /** 新弹匣相对手部骨骼的握持变换 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|Character|Magazine")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|角色|弹匣", meta = (DisplayName = "手持弹匣变换"))
     FTransform HandMagazineTransform = FTransform::Identity;
 
     /**

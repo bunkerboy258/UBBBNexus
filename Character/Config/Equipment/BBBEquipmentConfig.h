@@ -12,18 +12,18 @@ struct FBBBCharacterEquipmentConfig
     GENERATED_BODY()
 
     /** 右手装备挂接插槽 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "右手武器插槽名"))
     FName RightHandWeaponSocketName = TEXT("WeaponGrip_R");
 
     /** 固定装备容器槽位数量 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "1"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "1", DisplayName = "背包栏位数量"))
     int32 InventorySlotCount = 20;
 
     /** 快捷操作槽位数量 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "1"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "1", DisplayName = "快捷栏位数量"))
     int32 QuickAccessSlotCount = 5;
 
     /** 网络装备句柄对应的静态配置表 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备目录表"))
     TObjectPtr<UBBBEquipmentCatalog> EquipmentCatalog = nullptr;
 };

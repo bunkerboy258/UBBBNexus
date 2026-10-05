@@ -36,28 +36,28 @@ public:
      * 切换鼠标指针与游戏输入模式
      */
     //让下方函数按照所列规则参与反射调用或远程调用
-    UFUNCTION(BlueprintCallable, Category = "BBB|Input")
+    UFUNCTION(BlueprintCallable, Category = "BBB|输入")
     void ToggleMouseCursor();
 
     /**
      * 转交本地换装界面的打开请求
      * @return 无
      */
-    UFUNCTION(BlueprintCallable, Category = "BBB|Client")
+    UFUNCTION(BlueprintCallable, Category = "BBB|客户端")
     void ToggleCustomization();
 protected:
 
     //让下方成员按照所列规则参与编辑序列化或网络复制
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|输入", meta = (DisplayName = "默认输入映射上下文"))
     //保存默认MappingContext供所属对象后续流程使用
     TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
     //让下方成员按照所列规则参与编辑序列化或网络复制
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|输入", meta = (DisplayName = "映射上下文优先级"))
     //更新int32MappingContextPriority供后续步骤读取
     int32 MappingContextPriority = 0;
 private:
-    UPROPERTY(VisibleAnywhere, Category = "BBB|Input")
+    UPROPERTY(VisibleAnywhere, Category = "BBB|输入", meta = (DisplayName = "玩家输入系统"))
     TObjectPtr<UBBBPlayerInputSystem> PlayerInputSystem;
 
 

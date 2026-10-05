@@ -22,28 +22,28 @@ public:
     bool PlayEquipmentMontage(UAnimMontage &Montage);
 
     /** @return 本帧装备动画事实 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
     FBBBEquipmentAnimationFacts GetAnimationFacts() const
     {
         return AnimationFacts;
     }
 
     /** @return 左手握持目标在角色 hand_r 骨骼空间中的位置 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
     FVector GetLeftHandTargetHandRSpace() const
     {
         return AnimationFacts.LeftHandTargetHandRSpace;
     }
 
     /** @return 左手握持目标相对角色 hand_r 骨骼的旋转 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
     FRotator GetLeftHandTargetHandRSpaceRotation() const
     {
         return AnimationFacts.LeftHandTargetHandRSpaceRotation;
     }
 
     /** @return 本帧左手握持目标是否有效 */
-    UFUNCTION(BlueprintPure, Category = "BBB|Equipment|Animation", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
     bool HasLeftHandTarget() const
     {
         return AnimationFacts.bHasLeftHandTarget;
@@ -57,6 +57,6 @@ public:
     void PublishAnimationFacts(const FBBBEquipmentAnimationFacts &Facts);
 
 private:
-    UPROPERTY(Transient, BlueprintReadOnly, Category = "BBB|Equipment|Animation", meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "BBB|装备|动画", meta = (AllowPrivateAccess = "true", DisplayName = "动画事实"))
     FBBBEquipmentAnimationFacts AnimationFacts;
 };
