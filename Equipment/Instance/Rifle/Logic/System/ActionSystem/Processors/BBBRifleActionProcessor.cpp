@@ -18,6 +18,8 @@ namespace
     void Clear(FBBBRifleActionInputState &Input)
     {
         Input.bEquipRequested = false;
+        Input.bBlockFireRequested = false;
+        Input.bAllowFireRequested = false;
         Input.bPrimaryRequested = false;
         Input.bReloadRequested = false;
         Input.bLoadMagazineRequested = false;
@@ -27,6 +29,7 @@ namespace
         Input.FireSequence = 0;
         Input.ReloadSequence = 0;
         Input.bIsReloading = false;
+        Input.bFireBlocked = false;
     }
 }
 
@@ -39,6 +42,7 @@ void FBBBRifleActionProcessor::Initialize(FBBBRifleRuntimeData &Data, const UBBB
 
 void FBBBRifleActionProcessor::Stop(FBBBRifleRuntimeData &Data)
 {
+    Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
 }
@@ -69,10 +73,21 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
             State.FireSequence = Input.FireSequence;
             State.ReloadSequence = Input.ReloadSequence;
             State.bIsReloading = Input.bIsReloading;
+            State.bFireBlocked = Input.bFireBlocked;
         }
 
         Clear(Input);
         return;
+    }
+
+    // 同帧收到区间结束与就绪通知时允许开火优先 不提前阻塞装备请求帧
+    if (Input.bBlockFireRequested)
+    {
+        State.bFireBlocked = true;
+    }
+    if (Input.bAllowFireRequested)
+    {
+        State.bFireBlocked = false;
     }
 
     if (Input.bLoadMagazineRequested && State.bIsReloading)
@@ -108,7 +123,7 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
             Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
     }
 
-    if (Input.bPrimaryRequested && !State.bIsReloading && State.LoadedAmmo > 0
+    if (Input.bPrimaryRequested && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0
         && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),

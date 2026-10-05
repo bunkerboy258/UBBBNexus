@@ -29,6 +29,8 @@ namespace
     void ClearActionInput(FBBBRifleActionInputState &State)
     {
         State.bEquipRequested = false;
+        State.bBlockFireRequested = false;
+        State.bAllowFireRequested = false;
         State.bPrimaryRequested = false;
         State.bReloadRequested = false;
         State.bLoadMagazineRequested = false;
@@ -38,6 +40,7 @@ namespace
         State.FireSequence = 0;
         State.ReloadSequence = 0;
         State.bIsReloading = false;
+        State.bFireBlocked = false;
     }
 }
 
@@ -106,6 +109,8 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
 
     if (Context.Equipment.IsMirror())
     {
+        Input.BlockFire.bActive = false;
+        Input.AllowFire.bActive = false;
         Input.Primary.bActive = false;
         Input.Reload.bActive = false;
         Input.LoadMagazine.bActive = false;
@@ -128,6 +133,18 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
         ActionInput.bReloadRequested = true;
     }
 
+    if (Input.BlockFire.bActive)
+    {
+        Input.BlockFire.bActive = false;
+        ActionInput.bBlockFireRequested = true;
+    }
+
+    if (Input.AllowFire.bActive)
+    {
+        Input.AllowFire.bActive = false;
+        ActionInput.bAllowFireRequested = true;
+    }
+
     Process(Input.LoadMagazine, ActionInput);
     Process(Input.InterruptReload, ActionInput);
 }
@@ -137,6 +154,8 @@ void FBBBRifleParseProcessor::Clear(FBBBRifleRuntimeData &Data)
     auto &Input = Data.Parse.InputState;
     Input.Equip.bActive = false;
     Input.AuthorityEquip.bActive = false;
+    Input.BlockFire.bActive = false;
+    Input.AllowFire.bActive = false;
     Input.Primary.bActive = false;
     Input.Reload.bActive = false;
     Input.LoadMagazine.bActive = false;

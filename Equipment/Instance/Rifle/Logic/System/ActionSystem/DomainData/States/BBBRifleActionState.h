@@ -20,6 +20,9 @@ struct FBBBRifleActionState final
     /** 最近一次确认开火的世界时间 */
     float LastFireTimeSeconds = -1000.0f;
 
+    /** 动画通知控制的开火限制 不替代弹药与射速检查 */
+    bool bFireBlocked = false;
+
     /** 当前是否处于换弹流程 */
     bool bIsReloading = false;
 

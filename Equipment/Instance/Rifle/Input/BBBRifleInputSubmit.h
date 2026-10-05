@@ -18,6 +18,8 @@ struct TBBBRifleInputSlotSelector;
 
 BBB_RIFLE_INPUT_SLOT(FBBBEquipmentEquipLocalControlPacket, Equip)
 BBB_RIFLE_INPUT_SLOT(FBBBEquipmentEquipAuthorityFactPacket, AuthorityEquip)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentBlockFireLocalControlPacket, BlockFire)
+BBB_RIFLE_INPUT_SLOT(FBBBEquipmentAllowFireLocalControlPacket, AllowFire)
 BBB_RIFLE_INPUT_SLOT(FBBBEquipmentPrimaryLocalControlPacket, Primary)
 BBB_RIFLE_INPUT_SLOT(FBBBEquipmentReloadLocalControlPacket, Reload)
 BBB_RIFLE_INPUT_SLOT(FBBBRifleLoadMagazineLocalControlPacket, LoadMagazine)

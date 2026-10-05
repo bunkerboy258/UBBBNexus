@@ -7,6 +7,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Action/FBBBRifleActionStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentStateAuthorityFactPacket.h"
@@ -35,6 +37,16 @@ bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
 bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
 {
     return FBBBRifleParseProcessor::SubmitEquip(RuntimeData, IsEquipped(), IsMirror(), Packet);
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+{
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+{
+    return FBBBRifleParseProcessor::SubmitLocal(RuntimeData, IsEquipped(), IsMirror(), Packet);
 }
 
 bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)

@@ -8,6 +8,12 @@ struct FBBBRifleActionInputState final
     /** 本帧是否收到装备表现请求 */
     bool bEquipRequested = false;
 
+    /** 本帧是否收到动画禁止开火请求 */
+    bool bBlockFireRequested = false;
+
+    /** 本帧是否收到动画允许开火请求 */
+    bool bAllowFireRequested = false;
+
     /** 本帧是否收到开火请求 */
     bool bPrimaryRequested = false;
 
@@ -34,6 +40,9 @@ struct FBBBRifleActionInputState final
 
     /** 镜像当前是否处于换弹流程 */
     bool bIsReloading = false;
+
+    /** 当前动画是否禁止开火 */
+    bool bFireBlocked = false;
 
 private:
     friend struct FBBBRifleActionDomainState;

@@ -18,6 +18,9 @@ struct FBBBRifleActionStateAuthorityFactPacket final
     /** 当前是否正在换弹 */
     bool bIsReloading = false;
 
+    /** 当前动画是否禁止开火 */
+    bool bFireBlocked = false;
+
     /** @return 镜像结果自身的数据约束是否有效 */
     bool IsValid() const
     {
@@ -44,5 +47,6 @@ struct FBBBRifleActionStateAuthorityFactPacket final
         State.FireSequence = FireSequence;
         State.ReloadSequence = ReloadSequence;
         State.bIsReloading = bIsReloading;
+        State.bFireBlocked = bFireBlocked;
     }
 };

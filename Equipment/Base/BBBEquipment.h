@@ -11,6 +11,8 @@ class USkeletalMeshComponent;
 class FBBBEquipmentInitializer;
 struct FBBBEquipmentEquipLocalControlPacket;
 struct FBBBEquipmentEquipAuthorityFactPacket;
+struct FBBBEquipmentBlockFireLocalControlPacket;
+struct FBBBEquipmentAllowFireLocalControlPacket;
 struct FBBBEquipmentPrimaryLocalControlPacket;
 struct FBBBEquipmentReloadLocalControlPacket;
 struct FBBBEquipmentStateAuthorityFactPacket;
@@ -95,6 +97,12 @@ protected:
 
     /** @param Packet	权威装备表现请求 @return 是否接受 */
     virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet);
+
+    /** 动画禁止开火输入 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet);
+
+    /** 动画允许开火输入 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet);
 
     /** @param Packet	主行为请求 @return 是否接受 */
     virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet);

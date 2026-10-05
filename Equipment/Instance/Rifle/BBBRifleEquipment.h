@@ -50,6 +50,8 @@ private:
 
     virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentReloadLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload) override;

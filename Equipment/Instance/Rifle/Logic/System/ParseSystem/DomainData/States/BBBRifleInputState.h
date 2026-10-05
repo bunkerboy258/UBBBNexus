@@ -3,6 +3,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/DomainData/Definitions/BBBRifleInputSlot.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadMagazineLocalControlPacket.h"
@@ -17,6 +19,12 @@ struct FBBBRifleInputState final
 
     /** 等待消费的权威装备表现输入 */
     TBBBRifleInputSlot<FBBBEquipmentEquipAuthorityFactPacket> AuthorityEquip;
+
+    /** 等待消费的动画禁止开火输入 */
+    TBBBRifleInputSlot<FBBBEquipmentBlockFireLocalControlPacket> BlockFire;
+
+    /** 等待消费的动画允许开火输入 */
+    TBBBRifleInputSlot<FBBBEquipmentAllowFireLocalControlPacket> AllowFire;
 
     /** 等待消费的开火输入 */
     TBBBRifleInputSlot<FBBBEquipmentPrimaryLocalControlPacket> Primary;

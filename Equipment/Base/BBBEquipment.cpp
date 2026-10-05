@@ -5,6 +5,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Logic/Core/Initialization/BBBEquipmentInitializer.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentStateAuthorityFactPacket.h"
@@ -76,6 +78,18 @@ bool ABBBEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
 bool ABBBEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现权威装备表现输入"));
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+{
+    ensureMsgf(false, TEXT("抽象装备未实现动画开火限制输入"));
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+{
+    ensureMsgf(false, TEXT("抽象装备未实现动画开火限制输入"));
     return false;
 }
 
