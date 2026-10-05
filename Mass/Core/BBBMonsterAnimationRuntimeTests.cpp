@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 
 /** 验证仍使用原双通道基类的既有测试体 僵尸改由事实测试覆盖 */
@@ -28,9 +29,12 @@ bool FBBBMonsterAnimationRuntimeTest::RunTest(const FString& Parameters)
         return false;
     }
 
+    GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+
     ON_SCOPE_EXIT
     {
         World->DestroyWorld(false);
+        GEngine->DestroyWorldContext(World);
     };
 
     const TArray<FString> Classes =
