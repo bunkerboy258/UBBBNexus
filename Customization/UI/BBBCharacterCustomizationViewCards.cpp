@@ -9,6 +9,7 @@
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/SBoxPanel.h"
+#include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
 
 using namespace BBBCustomizationStyle;
@@ -17,53 +18,22 @@ DEFINE_LOG_CATEGORY_STATIC(LogBBBCustomizationCards, Log, All);
 
 TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotCard(const FName PartSlot)
 {
-    const FName ItemId = GetSelectedItemId(PartSlot);
-    FBBBAppearanceItem CurrentItem;
-    const bool bEmptyItem = !ItemId.IsNone() && Session && Session->GetItem(ItemId, CurrentItem)
-        && CurrentItem.Mesh.IsNull() && CurrentItem.Attachments.IsEmpty();
-    const bool bUnconfiguredAttachment = PartSlot == TEXT("Attachments") && bEmptyItem
-        && ItemId != TEXT("Attachments_None");
-    const FSlateBrush *Thumbnail = GetItemBrush(ItemId);
-    FText Placeholder = FText::FromString(TEXT("缩略图缺失"));
-    if (ItemId.IsNone() || bEmptyItem)
-    {
-        Placeholder = FText::FromString(TEXT("无部件"));
-    }
-    if (bUnconfiguredAttachment)
-    {
-        Placeholder = FText::FromString(TEXT("配置未完成"));
-    }
-
-    TSharedRef<SBox> ThumbnailBox = SNew(SBox)
-        .HeightOverride(108.0f)
-        [
-            Thumbnail
-                ? StaticCastSharedRef<SWidget>(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image(Thumbnail)])
-                : StaticCastSharedRef<SWidget>(SNew(STextBlock)
-                    .Text(Placeholder)
-                    .Font(GetCustomizationFont(18))
-                    .Justification(ETextJustify::Center)
-                    .ColorAndOpacity(FLinearColor(0.84f, 0.68f, 0.52f, 1.0f)))
-        ];
+    TSharedRef<SBox> ThumbnailBox = SNew(SBox);
     SlotThumbnailBoxes.Add(PartSlot, ThumbnailBox);
-
     return SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
         .ToolTipText_Lambda([this, PartSlot]() { return GetSelectedItem(PartSlot); })
-        .ButtonColorAndOpacity(FLinearColor::Transparent)
-        .ContentPadding(FMargin(0.0f))
+        .ContentPadding(0.0f)
         .OnHovered_Lambda([this, PartSlot]()
         {
             HoveredPartSlot = PartSlot;
             HoveredItemId = NAME_None;
-            InvalidateLayoutAndVolatility();
         })
         .OnUnhovered_Lambda([this, PartSlot]()
         {
-            if (HoveredPartSlot == PartSlot && HoveredItemId.IsNone())
+            if (HoveredPartSlot == PartSlot)
             {
                 HoveredPartSlot = NAME_None;
-                InvalidateLayoutAndVolatility();
             }
         })
         .OnClicked_Lambda([this, PartSlot]()
@@ -73,51 +43,71 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotCard(const FName Par
         })
         [
             SNew(SBorder)
-            .BorderImage(&CardFrameBrush)
-            .BorderBackgroundColor_Lambda([this, PartSlot]()
+            .BorderImage_Lambda([this, PartSlot]()
             {
-                if (HoveredPartSlot == PartSlot)
-                {
-                    return FLinearColor(0.94f, 0.55f, 0.22f, 1.0f);
-                }
-                if (!GetSelectedItemId(PartSlot).IsNone())
-                {
-                    return FLinearColor(0.48f, 0.46f, 0.41f, 0.8f);
-                }
-                return FLinearColor(0.30f, 0.35f, 0.42f, 0.82f);
+                return GetCardBrush(false, HoveredPartSlot == PartSlot);
             })
-            .Padding(FMargin(3.0f))
+            .Padding(1.0f)
             [
-                SNew(SBorder)
-                .BorderImage(&CardSurfaceBrush)
-                .BorderBackgroundColor(FLinearColor(0.7f, 0.7f, 0.7f, 0.78f))
-                .Padding(FMargin(6.0f))
+                SNew(SBox)
+                .HeightOverride_Lambda([this, PartSlot]()
+                {
+                    return bSurfaceExpanded && ExpandedSlot.IsNone() && IsLeftSideSlot(PartSlot)
+                        ? 167.0f : 195.0f;
+                })
                 [
-                    SNew(SVerticalBox)
-                    + SVerticalBox::Slot()
-                    .FillHeight(1.0f)
-                    .Padding(2.0f)
+                    SNew(SOverlay)
+                    + SOverlay::Slot()
+                    [
+                        SNew(SImage)
+                        .Image(&CardFrameBrush)
+                        .ColorAndOpacity(FLinearColor(0.30f, 0.34f, 0.36f, 0.09f))
+                        .Visibility(EVisibility::HitTestInvisible)
+                    ]
+                    + SOverlay::Slot()
+                    [
+                        SNew(SImage)
+                        .Image(&CardSurfaceBrush)
+                        .ColorAndOpacity(FLinearColor(0.16f, 0.18f, 0.20f, 0.12f))
+                        .Visibility(EVisibility::HitTestInvisible)
+                    ]
+                    + SOverlay::Slot()
+                    .Padding(8.0f, 4.0f, 8.0f, 27.0f)
                     [
                         ThumbnailBox
                     ]
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(3.0f, 2.0f, 3.0f, 0.0f)
+                    + SOverlay::Slot()
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Top)
+                    .Padding(10.0f)
                     [
-                        SNew(STextBlock)
-                        .Text(GetPartSlotTitle(PartSlot))
-                        .Font(GetCustomizationFont(17))
-                        .ColorAndOpacity(FLinearColor(0.88f, 0.71f, 0.49f, 1.0f))
+                        MakeIcon(PartSlot, 22.0f, MutedInk)
                     ]
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(3.0f, 1.0f, 3.0f, 2.0f)
+                    + SOverlay::Slot()
+                    .HAlign(HAlign_Right)
+                    .VAlign(VAlign_Top)
+                    .Padding(10.0f)
+                    [
+                        SNew(SBBBCharacterCustomizationIcon)
+                        .Symbol(TEXT("Apply"))
+                        .Size(15.0f)
+                        .Color(FLinearColor(0.60f, 0.64f, 0.63f))
+                        .Visibility_Lambda([this, PartSlot]()
+                        {
+                            return GetSelectedItemId(PartSlot).IsNone()
+                                ? EVisibility::Collapsed : EVisibility::HitTestInvisible;
+                        })
+                    ]
+                    + SOverlay::Slot()
+                    .VAlign(VAlign_Bottom)
+                    .Padding(10.0f, 0.0f, 10.0f, 9.0f)
                     [
                         SNew(STextBlock)
                         .Text_Lambda([this, PartSlot]() { return GetSelectedItem(PartSlot); })
-                        .Font(GetCustomizationFont(18))
-                        .ColorAndOpacity(FLinearColor(0.94f, 0.94f, 0.93f, 1.0f))
+                        .Font(GetCustomizationFont(12))
+                        .ColorAndOpacity(Ink)
                         .OverflowPolicy(ETextOverflowPolicy::Ellipsis)
+                        .Visibility(EVisibility::HitTestInvisible)
                     ]
                 ]
             ]
@@ -129,35 +119,27 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotGrid(const bool bLef
     const FBBBAppearanceSelection Draft = Session->GetDraft();
     const TArray<FName> Order = GetPartSlotOrder(bLeft);
     TArray<FName> Slots;
-
     for (const FName SlotName : Order)
     {
         const bool bIsConfiguredPart = Draft.Parts.ContainsByPredicate(
-            [SlotName](const FBBBAppearancePart &Part) { return Part.Slot == SlotName; });
-        const bool bHasCatalogItems = !Session->GetItems(SlotName).IsEmpty();
-        if (bIsConfiguredPart || bHasCatalogItems)
+            [SlotName](const FBBBAppearancePart& Part) { return Part.Slot == SlotName; });
+        if (bIsConfiguredPart || !Session->GetItems(SlotName).IsEmpty())
         {
             Slots.Add(SlotName);
         }
     }
-
-    for (const FBBBAppearancePart &Part : Draft.Parts)
+    for (const FBBBAppearancePart& Part : Draft.Parts)
     {
         if (IsLeftSideSlot(Part.Slot) == bLeft && !Slots.Contains(Part.Slot))
         {
             Slots.Add(Part.Slot);
         }
     }
-
     TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
     for (int32 Index = 0; Index < Slots.Num(); ++Index)
     {
-        Grid->AddSlot(Index % 2, Index / 2)
-        [
-            MakeSlotCard(Slots[Index])
-        ];
+        Grid->AddSlot(Index % 2, Index / 2)[MakeSlotCard(Slots[Index])];
     }
-
     return Grid;
 }
 
@@ -166,36 +148,37 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotStrip(const bool bLe
     TSharedRef<SHorizontalBox> Strip = SNew(SHorizontalBox);
     for (const FName SlotName : GetPartSlotOrder(bLeft))
     {
-        const bool bHasCatalogItems = !Session->GetItems(SlotName).IsEmpty();
-        const bool bHasDraftPart = Session->GetDraft().Parts.ContainsByPredicate(
-            [SlotName](const FBBBAppearancePart &Part) { return Part.Slot == SlotName; });
-        if (!bHasCatalogItems && !bHasDraftPart)
+        if (Session->GetItems(SlotName).IsEmpty())
         {
             continue;
         }
-
         Strip->AddSlot()
         .FillWidth(1.0f)
-        .Padding(FMargin(2.0f, 0.0f))
+        .Padding(3.0f, 0.0f)
         [
             SNew(SButton)
-        .ButtonStyle(&ActionButtonStyle)
-            .ButtonColorAndOpacity_Lambda([this, SlotName]()
-            {
-                return FSlateColor(ExpandedSlot == SlotName
-                    ? FLinearColor(0.54f, 0.31f, 0.15f, 1.0f) : FLinearColor(0.09f, 0.11f, 0.14f, 0.94f));
-            })
-            .ContentPadding(FMargin(4.0f, 4.0f))
-            .TextStyle(&GetCustomizationButtonTextStyle())
-            .Text(GetPartSlotTitle(SlotName))
+            .ButtonStyle(&ActionButtonStyle)
+            .ToolTipText(GetPartSlotTitle(SlotName))
+            .ContentPadding(0.0f)
             .OnClicked_Lambda([this, SlotName]()
             {
                 OpenSlot(SlotName);
                 return FReply::Handled();
             })
+            [
+                SNew(SBorder)
+                .BorderImage_Lambda([this, SlotName]() { return GetCardBrush(ExpandedSlot == SlotName); })
+                .Padding(11.0f)
+                .HAlign(HAlign_Center)
+                [
+                    SNew(SBBBCharacterCustomizationIcon)
+                    .Symbol(SlotName)
+                    .Size(25.0f)
+                    .Color_Lambda([this, SlotName]() { return ExpandedSlot == SlotName ? Accent : Ink; })
+                ]
+            ]
         ];
     }
-
     return Strip;
 }
 
@@ -206,10 +189,9 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemCard(const FName Par
     {
         UE_LOG(LogBBBCustomizationCards, Error, TEXT("外观网格中出现无效条目 Slot=%s Item=%s"),
             *PartSlot.ToString(), *ItemId.ToString());
-        return SNew(STextBlock).Text(FText::FromString(TEXT("款式配置错误")));
+        return MakeIcon(TEXT("Warning"), 32.0f, Accent);
     }
-
-    const FSlateBrush *Thumbnail = GetItemBrush(ItemId);
+    const FSlateBrush* Thumbnail = GetItemBrush(ItemId);
     const bool bEmptyItem = Item.Mesh.IsNull() && Item.Attachments.IsEmpty();
     const bool bUnconfiguredAttachment = PartSlot == TEXT("Attachments") && bEmptyItem
         && ItemId != TEXT("Attachments_None");
@@ -217,107 +199,85 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemCard(const FName Par
     {
         UE_LOG(LogBBBCustomizationCards, Error, TEXT("附件组合没有挂载配置 Item=%s"), *ItemId.ToString());
     }
-
-    FText Placeholder = FText::FromString(TEXT("缩略图缺失"));
-    if (bEmptyItem)
-    {
-        Placeholder = FText::FromString(TEXT("无部件"));
-    }
-    if (bUnconfiguredAttachment)
-    {
-        Placeholder = FText::FromString(TEXT("配置未完成"));
-    }
-
     return SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
         .IsEnabled(!bUnconfiguredAttachment)
-        .ButtonColorAndOpacity(FLinearColor::Transparent)
-        .ContentPadding(FMargin(0.0f))
+        .ToolTipText(Item.DisplayName)
+        .ContentPadding(0.0f)
         .OnHovered_Lambda([this, PartSlot, ItemId]()
         {
             HoveredPartSlot = PartSlot;
             HoveredItemId = ItemId;
-            InvalidateLayoutAndVolatility();
         })
-        .OnUnhovered_Lambda([this, PartSlot, ItemId]()
+        .OnUnhovered_Lambda([this, ItemId]()
         {
-            if (HoveredPartSlot == PartSlot && HoveredItemId == ItemId)
+            if (HoveredItemId == ItemId)
             {
                 HoveredPartSlot = NAME_None;
                 HoveredItemId = NAME_None;
-                InvalidateLayoutAndVolatility();
             }
         })
         .OnClicked_Lambda([this, PartSlot, ItemId]()
         {
-            if (!Session)
-            {
-                UE_LOG(LogBBBCustomizationCards, Error, TEXT("换装会话已失效 Slot=%s Item=%s"),
-                    *PartSlot.ToString(), *ItemId.ToString());
-                return FReply::Handled();
-            }
-            if (!Session->SelectItem(PartSlot, ItemId))
+            if (!Session || !Session->SelectItem(PartSlot, ItemId))
             {
                 UE_LOG(LogBBBCustomizationCards, Warning, TEXT("款式预览失败 Slot=%s Item=%s"),
                     *PartSlot.ToString(), *ItemId.ToString());
-                StatusMessage = FText::FromString(TEXT("款式预览失败  保留原选择"));
+                StatusMessage = FText::FromString(TEXT("预览失败  保留原选择"));
                 return FReply::Handled();
             }
-
             RefreshSlotCardThumbnails();
-            StatusMessage = FText::FromString(TEXT("已预览  应用后保存"));
+            StatusMessage = FText::FromString(TEXT("预览中  应用后保存"));
             InvalidateLayoutAndVolatility();
             return FReply::Handled();
         })
         [
             SNew(SBorder)
-            .BorderImage(&CardFrameBrush)
-            .BorderBackgroundColor_Lambda([this, PartSlot, ItemId]()
+            .BorderImage_Lambda([this, PartSlot, ItemId]()
             {
-                if (HoveredPartSlot == PartSlot && HoveredItemId == ItemId)
-                {
-                    return FLinearColor(0.98f, 0.60f, 0.25f, 1.0f);
-                }
-                if (GetSelectedItemId(PartSlot) == ItemId)
-                {
-                    return FLinearColor(0.68f, 0.39f, 0.15f, 1.0f);
-                }
-                return FLinearColor(0.34f, 0.39f, 0.46f, 0.78f);
+                return GetCardBrush(GetSelectedItemId(PartSlot) == ItemId, HoveredItemId == ItemId);
             })
-            .Padding(FMargin(3.0f))
+            .Padding(1.0f)
             [
-                SNew(SBorder)
-                .BorderImage(&CardSurfaceBrush)
-                .BorderBackgroundColor(FLinearColor(0.7f, 0.7f, 0.7f, 0.80f))
-                .Padding(FMargin(5.0f))
+                SNew(SBox)
+                .HeightOverride(168.0f)
                 [
-                    SNew(SVerticalBox)
-                    + SVerticalBox::Slot()
-                    .FillHeight(1.0f)
-                    .Padding(2.0f)
+                    SNew(SOverlay)
+                    + SOverlay::Slot()
+                    .Padding(9.0f, 9.0f, 9.0f, 31.0f)
                     [
-                        SNew(SBox)
-                        .HeightOverride(110.0f)
-                        [
-                            Thumbnail
-                            ? StaticCastSharedRef<SWidget>(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image(Thumbnail)])
-                                : StaticCastSharedRef<SWidget>(SNew(STextBlock)
-                                    .Text(Placeholder)
-                                    .Font(GetCustomizationFont(18))
-                                    .Justification(ETextJustify::Center)
-                                    .ColorAndOpacity(FLinearColor(0.84f, 0.68f, 0.52f, 1.0f)))
-                        ]
+                        Thumbnail
+                            ? StaticCastSharedRef<SWidget>(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+                                [SNew(SImage).Image(Thumbnail)])
+                            : StaticCastSharedRef<SWidget>(SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+                                [MakeIcon(bEmptyItem && !bUnconfiguredAttachment ? TEXT("Empty") : TEXT("Warning"),
+                                    38.0f, MutedInk)])
                     ]
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(2.0f, 4.0f, 2.0f, 2.0f)
+                    + SOverlay::Slot()
+                    .HAlign(HAlign_Right)
+                    .VAlign(VAlign_Top)
+                    .Padding(8.0f)
+                    [
+                        SNew(SBBBCharacterCustomizationIcon)
+                        .Symbol(TEXT("Apply"))
+                        .Size(16.0f)
+                        .Color(Accent)
+                        .Visibility_Lambda([this, PartSlot, ItemId]()
+                        {
+                            return GetSelectedItemId(PartSlot) == ItemId
+                                ? EVisibility::HitTestInvisible : EVisibility::Collapsed;
+                        })
+                    ]
+                    + SOverlay::Slot()
+                    .VAlign(VAlign_Bottom)
+                    .Padding(8.0f, 0.0f, 8.0f, 8.0f)
                     [
                         SNew(STextBlock)
                         .Text(Item.DisplayName)
-                        .Font(GetCustomizationFont(18))
-                        .ColorAndOpacity(FLinearColor(0.94f, 0.94f, 0.93f, 1.0f))
-                        .AutoWrapText(true)
-                        .WrapTextAt(150.0f)
+                        .Font(GetCustomizationFont(11))
+                        .ColorAndOpacity(Ink)
+                        .OverflowPolicy(ETextOverflowPolicy::Ellipsis)
+                        .Visibility(EVisibility::HitTestInvisible)
                     ]
                 ]
             ]
@@ -328,103 +288,66 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemGrid(const FName Par
 {
     const TArray<FName> Items = Session->GetItems(PartSlot);
     TSharedRef<SVerticalBox> Panel = SNew(SVerticalBox);
-
-    Panel->AddSlot()
-    .AutoHeight()
-    .Padding(0.0f, 0.0f, 0.0f, 7.0f)
+    Panel->AddSlot().AutoHeight().Padding(0.0f, 0.0f, 0.0f, 16.0f)
     [
         MakeSlotStrip(IsLeftSideSlot(PartSlot))
     ];
-
-    Panel->AddSlot()
-    .AutoHeight()
-    .Padding(0.0f, 0.0f, 0.0f, 8.0f)
+    TSharedRef<SHorizontalBox> Header = SNew(SHorizontalBox);
+    Header->AddSlot().AutoWidth().VAlign(VAlign_Center)
     [
-        SNew(SHorizontalBox)
-        + SHorizontalBox::Slot()
-        .FillWidth(1.0f)
-        .VAlign(VAlign_Center)
-        [
-            SNew(STextBlock)
-            .Text_Lambda([this, PartSlot]() { return GetPartSlotTitle(PartSlot); })
-            .Font(GetCustomizationFont(24))
-            .ColorAndOpacity(FLinearColor(0.91f, 0.77f, 0.56f, 1.0f))
-        ]
-        + SHorizontalBox::Slot()
-        .AutoWidth()
-        .VAlign(VAlign_Center)
-        [
-            SNew(STextBlock)
-            .Text_Lambda([this, PartSlot]()
-            {
-                const TArray<FName> Available = Session ? Session->GetItems(PartSlot) : TArray<FName>();
-                return FText::AsNumber(Available.Num());
-            })
-            .Font(GetCustomizationFont(18))
-            .ColorAndOpacity(FLinearColor(0.58f, 0.62f, 0.67f, 1.0f))
-        ]
-        + SHorizontalBox::Slot()
-        .AutoWidth()
-        .Padding(7.0f, 0.0f, 0.0f, 0.0f)
-        [
-            SNew(SButton)
+        SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-            .ButtonColorAndOpacity(FLinearColor(0.09f, 0.11f, 0.14f, 0.94f))
-            .ContentPadding(FMargin(7.0f, 4.0f))
-            .TextStyle(&GetCustomizationButtonTextStyle())
-            .Text(FText::FromString(TEXT("返回部位")))
-            .OnClicked_Lambda([this]()
-            {
-                CloseSlot();
-                return FReply::Handled();
-            })
+        .ToolTipText(FText::FromString(TEXT("返回穿戴部位")))
+        .ContentPadding(10.0f)
+        .OnClicked_Lambda([this]()
+        {
+            CloseSlot();
+            return FReply::Handled();
+        })
+        [
+            MakeIcon(TEXT("Back"), 22.0f)
         ]
     ];
-
+    Header->AddSlot().FillWidth(1.0f).VAlign(VAlign_Center).Padding(10.0f, 0.0f)
+    [
+        SNew(STextBlock)
+        .Text(GetPartSlotTitle(PartSlot))
+        .Font(GetCustomizationFont(17))
+        .ColorAndOpacity(Ink)
+    ];
+    Header->AddSlot().AutoWidth().VAlign(VAlign_Center).Padding(8.0f, 0.0f)
+    [
+        SNew(STextBlock)
+        .Text(FText::AsNumber(Items.Num()))
+        .Font(GetCustomizationFont(12))
+        .ColorAndOpacity(MutedInk)
+    ];
     if (PartSlot == TEXT("Body") || PartSlot == TEXT("Vest"))
     {
-        Panel->AddSlot()
-        .AutoHeight()
-        .Padding(0.0f, 0.0f, 0.0f, 8.0f)
+        Header->AddSlot().AutoWidth().VAlign(VAlign_Center)
         [
             SNew(SButton)
-        .ButtonStyle(&ActionButtonStyle)
-            .ButtonColorAndOpacity(FLinearColor(0.11f, 0.13f, 0.16f, 0.96f))
-            .ContentPadding(FMargin(10.0f, 6.0f))
-            .TextStyle(&GetCustomizationButtonTextStyle())
-            .Text(FText::FromString(TEXT("选择徽章图案")))
+            .ButtonStyle(&ActionButtonStyle)
+            .ToolTipText(FText::FromString(TEXT("选择徽章图案")))
+            .ContentPadding(10.0f)
             .OnClicked_Lambda([this, PartSlot]()
             {
                 ShowPatchGrid(PartSlot);
                 return FReply::Handled();
             })
+            [
+                MakeIcon(TEXT("Patch"), 24.0f)
+            ]
         ];
     }
+    Panel->AddSlot().AutoHeight().Padding(0.0f, 0.0f, 0.0f, 8.0f)[Header];
 
     TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
     for (int32 Index = 0; Index < Items.Num(); ++Index)
     {
-        Grid->AddSlot(Index % 3, Index / 3)
-        [
-            MakeItemCard(PartSlot, Items[Index])
-        ];
+        Grid->AddSlot(Index % 3, Index / 3)[MakeItemCard(PartSlot, Items[Index])];
     }
-
-    if (Items.IsEmpty())
-    {
-        Panel->AddSlot()
-        .AutoHeight()
-        .Padding(0.0f, 10.0f)
-        [
-            SNew(STextBlock)
-            .Text(FText::FromString(TEXT("当前部位没有可选款式")))
-            .Font(GetCustomizationFont(18))
-            .ColorAndOpacity(FLinearColor(0.72f, 0.74f, 0.77f, 1.0f))
-        ];
-    }
-
-    Panel->AddSlot()
-    .FillHeight(1.0f)
+    Panel->AddSlot().FillHeight(1.0f)
     [
         SNew(SScrollBox)
         .Style(&ItemScrollBoxStyle)
@@ -436,6 +359,16 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemGrid(const FName Par
             Grid
         ]
     ];
-
+    Panel->AddSlot().AutoHeight().Padding(6.0f, 12.0f)
+    [
+        SNew(STextBlock)
+        .Text_Lambda([this, PartSlot]()
+        {
+            return GetItemDisplayName(HoveredItemId.IsNone() ? GetSelectedItemId(PartSlot) : HoveredItemId);
+        })
+        .Font(GetCustomizationFont(13))
+        .ColorAndOpacity(Ink)
+        .AutoWrapText(true)
+    ];
     return Panel;
 }

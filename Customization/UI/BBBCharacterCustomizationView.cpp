@@ -16,6 +16,7 @@
 #include "Widgets/SOverlay.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Text/STextBlock.h"
+#include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBBBCustomizationView, Log, All);
 
@@ -30,6 +31,9 @@ UBBBCharacterCustomizationView::UBBBCharacterCustomizationView(const FObjectInit
     : Super(ObjectInitializer)
 {
     SetIsFocusable(true);
+    static ConstructorHelpers::FObjectFinder<UFontFace> FontAsset(
+        TEXT("/Game/_Project/Customization/UI/Fonts/NotoSansCJKsc_Regular.NotoSansCJKsc_Regular"));
+    InterfaceFont = FontAsset.Object;
 }
 
 void UBBBCharacterCustomizationView::SetSession(UBBBCharacterCustomizationSession *InSession)
@@ -167,46 +171,27 @@ void UBBBCharacterCustomizationView::RefreshSlotCardThumbnails()
     {
         return;
     }
-
-    for (TPair<FName, TSharedPtr<SBox>> &Entry : SlotThumbnailBoxes)
+    for (TPair<FName, TSharedPtr<SBox>>& Entry : SlotThumbnailBoxes)
     {
         if (!Entry.Value.IsValid())
         {
             continue;
         }
-
         const FName ItemId = GetSelectedItemId(Entry.Key);
-        const FSlateBrush *Thumbnail = GetItemBrush(ItemId);
+        const FSlateBrush* Thumbnail = GetItemBrush(ItemId);
         if (Thumbnail)
         {
-            Entry.Value->SetContent(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image(Thumbnail)]);
+            Entry.Value->SetContent(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+                [SNew(SImage).Image(Thumbnail)]);
             continue;
         }
-
         FBBBAppearanceItem Item;
-        const bool bHasItem = !ItemId.IsNone() && Session->GetItem(ItemId, Item);
-        const bool bEmptyItem = bHasItem && Item.Mesh.IsNull() && Item.Attachments.IsEmpty();
-        const bool bUnconfiguredAttachment = Entry.Key == TEXT("Attachments") && bEmptyItem
+        const bool bHasItem = Session->GetItem(ItemId, Item);
+        const bool bEmpty = ItemId.IsNone() || (bHasItem && Item.Mesh.IsNull() && Item.Attachments.IsEmpty());
+        const bool bInvalidAttachment = Entry.Key == TEXT("Attachments") && bEmpty
             && ItemId != TEXT("Attachments_None");
-        FText Placeholder = FText::FromString(TEXT("配置不可用"));
-        if (bHasItem)
-        {
-            Placeholder = FText::FromString(TEXT("缩略图缺失"));
-        }
-        if (ItemId.IsNone() || bEmptyItem)
-        {
-            Placeholder = FText::FromString(TEXT("无部件"));
-        }
-        if (bUnconfiguredAttachment)
-        {
-            Placeholder = FText::FromString(TEXT("配置未完成"));
-        }
-        Entry.Value->SetContent(
-            SNew(STextBlock)
-            .Text(Placeholder)
-            .Font(GetCustomizationFont(18))
-            .Justification(ETextJustify::Center)
-            .ColorAndOpacity(FLinearColor(0.84f, 0.68f, 0.52f, 1.0f)));
+        Entry.Value->SetContent(SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+            [MakeIcon(bEmpty && !bInvalidAttachment ? TEXT("Empty") : TEXT("Warning"), 46.0f, MutedInk)]);
     }
 }
 
@@ -262,40 +247,27 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
     }
 
     TSharedRef<SVerticalBox> Contents = SNew(SVerticalBox);
-    Contents->AddSlot()
-    .AutoHeight()
-    .Padding(0.0f, 0.0f, 0.0f, 9.0f)
+    Contents->AddSlot().AutoHeight().Padding(5.0f, 0.0f, 5.0f, 18.0f)
     [
-        SNew(SVerticalBox)
-        + SVerticalBox::Slot()
-        .AutoHeight()
+        SNew(SHorizontalBox)
+        + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+        [
+            MakeIcon(bLeft ? TEXT("Vest") : TEXT("Backpack"), 27.0f)
+        ]
+        + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12.0f, 0.0f)
         [
             SNew(STextBlock)
-            .Text(FText::FromString(bLeft ? TEXT("上身与护具") : TEXT("下身与携行")))
-            .Font(GetCustomizationFont(22))
-            .ColorAndOpacity(FLinearColor(0.92f, 0.83f, 0.70f, 1.0f))
+            .Text(FText::FromString(bLeft ? TEXT("穿戴装备") : TEXT("携行装备")))
+            .Font(GetCustomizationFont(17))
+            .ColorAndOpacity(Ink)
         ]
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        .Padding(0.0f, 2.0f, 0.0f, 0.0f)
+        + SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
         [
-            SNew(STextBlock)
-            .Text(FText::FromString(TEXT("当前穿戴部位")))
-            .Font(GetCustomizationFont(18))
-            .ColorAndOpacity(FLinearColor(0.68f, 0.70f, 0.72f, 1.0f))
-        ]
-    ];
-
-    Contents->AddSlot()
-    .AutoHeight()
-    .Padding(0.0f, 0.0f, 0.0f, 8.0f)
-    [
-        SNew(SBox)
-        .HeightOverride(1.0f)
-        [
-            SNew(SBorder)
-            .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-            .BorderBackgroundColor(FLinearColor(0.35f, 0.39f, 0.46f, 0.72f))
+            SNew(SBox).HeightOverride(1.0f)
+            [
+                SNew(SImage).Image(FCoreStyle::Get().GetBrush("WhiteBrush"))
+                .ColorAndOpacity(FLinearColor(0.20f, 0.24f, 0.27f, 0.7f))
+            ]
         ]
     ];
 
@@ -331,14 +303,31 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
                 .ButtonStyle(&ActionButtonStyle)
                 .ButtonColorAndOpacity(FLinearColor(0.09f, 0.10f, 0.12f, 0.9f))
                 .ContentPadding(FMargin(8.0f, 5.0f))
-                .TextStyle(&GetCustomizationButtonTextStyle())
-                .Text(FText::FromString(TEXT("表面状态")))
+                .ToolTipText(FText::FromString(TEXT("表面状态  污渍与磨损")))
                 .OnClicked_Lambda([this]()
                 {
                     bSurfaceExpanded = !bSurfaceExpanded;
                     InvalidateLayoutAndVolatility();
                     return FReply::Handled();
                 })
+                [
+                    SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot().AutoWidth()
+                    [
+                        MakeIcon(TEXT("Surface"), 24.0f)
+                    ]
+                    + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(10.0f, 0.0f)
+                    [
+                        SNew(STextBlock)
+                        .Text(FText::FromString(TEXT("表面处理")))
+                        .Font(GetCustomizationFont(12))
+                        .ColorAndOpacity(Ink)
+                    ]
+                    + SHorizontalBox::Slot().FillWidth(1.0f).HAlign(HAlign_Right).VAlign(VAlign_Center)
+                    [
+                        MakeIcon(TEXT("Surface"), 14.0f, MutedInk)
+                    ]
+                ]
             ]
             + SVerticalBox::Slot()
             .AutoHeight()
@@ -360,7 +349,9 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
     return SNew(SBorder)
         .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
         .BorderBackgroundColor(FLinearColor::Transparent)
-        .Padding(FMargin(14.0f, 10.0f))
+        .Padding(FMargin(8.0f, 10.0f))
+        .RenderTransformPivot(FVector2D(bLeft ? 1.0f : 0.0f, 0.5f))
+        .RenderTransform(FSlateRenderTransform(FShear2D(0.0f, bLeft ? 0.04f : -0.04f)))
         [
             Contents
         ];
@@ -399,7 +390,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakePatchRow(const FName Par
     }
 
     Brush.SetResourceObject(Material);
-    Brush.ImageSize = FVector2D(72.0f, 54.0f);
+    Brush.ImageSize = FVector2D(48.0f, 48.0f);
     UpdatePatchPreview(PartSlot);
 
     if (!PatchAtlas)
@@ -435,8 +426,8 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakePatchRow(const FName Par
             [
                 SNew(STextBlock)
                 .Text(FText::FromString(PartSlot == TEXT("Body") ? TEXT("身体徽章") : TEXT("背心徽章")))
-                .Font(GetCustomizationFont(20))
-                .ColorAndOpacity(FLinearColor(0.91f, 0.85f, 0.77f, 1.0f))
+                .Font(GetCustomizationFont(15))
+                .ColorAndOpacity(Ink)
             ]
         ]
         + SVerticalBox::Slot()
@@ -484,14 +475,11 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakePatchGrid(const FName Pa
             })
             [
                 SNew(SBorder)
-                .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-                .BorderBackgroundColor_Lambda([this, PartSlot, Index]()
+                .BorderImage_Lambda([this, PartSlot, Index]()
                 {
-                    const FLinearColor Selected(0.90f, 0.49f, 0.20f, 1.0f);
-                    const FLinearColor Normal(0.20f, 0.22f, 0.25f, 0.9f);
-                    return GetSelectedPatchIndex(PartSlot) == Index ? Selected : Normal;
+                    return GetCardBrush(GetSelectedPatchIndex(PartSlot) == Index);
                 })
-                .Padding(FMargin(2.0f))
+                .Padding(FMargin(3.0f))
                 [
                     SNew(SBox)
                     .WidthOverride(46.0f)
@@ -499,10 +487,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakePatchGrid(const FName Pa
                     [
                         PatchAtlas
                             ? StaticCastSharedRef<SWidget>(SNew(SImage).Image(&PatchBrushes[Index]))
-                            : StaticCastSharedRef<SWidget>(SNew(STextBlock)
-                                .Text(FText::AsNumber(Index + 1))
-                                .Font(GetCustomizationFont(16))
-                                .Justification(ETextJustify::Center))
+                            : MakeIcon(TEXT("Warning"), 22.0f, Accent)
                     ]
                 ]
             ]
@@ -537,7 +522,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
                 [
                     SNew(STextBlock)
                     .Text(FText::FromString(TEXT("污渍")))
-                    .Font(GetCustomizationFont(18))
+                    .Font(GetCustomizationFont(12))
                     .ColorAndOpacity(FLinearColor(0.89f, 0.90f, 0.91f, 1.0f))
                 ]
                 + SHorizontalBox::Slot()
@@ -548,7 +533,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
                     {
                         return FText::AsPercent(Session ? Session->GetDraft().Dirt : 0.0f);
                     })
-                    .Font(GetCustomizationFont(18))
+                    .Font(GetCustomizationFont(12))
                     .ColorAndOpacity(FLinearColor(0.67f, 0.69f, 0.71f, 1.0f))
                 ]
             ]
@@ -557,6 +542,8 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
             .Padding(0.0f, 0.0f, 0.0f, 5.0f)
             [
                 SNew(SSlider)
+                .SliderBarColor(MutedInk)
+                .SliderHandleColor(Accent)
                 .Value_Lambda([this]()
                 {
                     return Session ? Session->GetDraft().Dirt : 0.0f;
@@ -578,7 +565,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
                 [
                     SNew(STextBlock)
                     .Text(FText::FromString(TEXT("磨损")))
-                    .Font(GetCustomizationFont(18))
+                    .Font(GetCustomizationFont(12))
                     .ColorAndOpacity(FLinearColor(0.89f, 0.90f, 0.91f, 1.0f))
                 ]
                 + SHorizontalBox::Slot()
@@ -589,7 +576,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
                     {
                         return FText::AsPercent(Session ? Session->GetDraft().Weathering : 0.0f);
                     })
-                    .Font(GetCustomizationFont(18))
+                    .Font(GetCustomizationFont(12))
                     .ColorAndOpacity(FLinearColor(0.67f, 0.69f, 0.71f, 1.0f))
                 ]
             ]
@@ -597,6 +584,8 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
             .AutoHeight()
             [
                 SNew(SSlider)
+                .SliderBarColor(MutedInk)
+                .SliderHandleColor(Accent)
                 .Value_Lambda([this]()
                 {
                     return Session ? Session->GetDraft().Weathering : 0.0f;
@@ -664,15 +653,18 @@ void UBBBCharacterCustomizationView::ShowPatchGrid(const FName PartSlot)
     [
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ButtonColorAndOpacity(FLinearColor(0.09f, 0.11f, 0.14f, 0.94f))
+        .ButtonColorAndOpacity(FLinearColor::White)
+        .HAlign(HAlign_Left)
         .ContentPadding(FMargin(7.0f, 4.0f))
-        .TextStyle(&GetCustomizationButtonTextStyle())
-        .Text(FText::FromString(TEXT("返回款式")))
+        .ToolTipText(FText::FromString(TEXT("返回款式")))
         .OnClicked_Lambda([this, PartSlot]()
         {
             OpenSlot(PartSlot);
             return FReply::Handled();
         })
+        [
+            MakeIcon(TEXT("Back"), 22.0f)
+        ]
     ];
     Panel->AddSlot()
     .FillHeight(1.0f)
@@ -746,14 +738,14 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     ];
 
     Layout->AddSlot()
-    .Anchors(FAnchors(0.075f, 0.13f, 0.315f, 0.86f))
+    .Anchors(FAnchors(0.065f, 0.17f, 0.315f, 0.86f))
     .Offset(FMargin(0.0f))
     [
         MakeSidePanel(true)
     ];
 
     Layout->AddSlot()
-    .Anchors(FAnchors(0.685f, 0.13f, 0.925f, 0.86f))
+    .Anchors(FAnchors(0.685f, 0.17f, 0.935f, 0.86f))
     .Offset(FMargin(0.0f))
     [
         MakeSidePanel(false)
@@ -766,7 +758,14 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
         MakeActionBar()
     ];
 
-    return Layout;
+    RefreshSlotCardThumbnails();
+    return SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+        [
+            SNew(SBox).WidthOverride(1920.0f).HeightOverride(1080.0f)
+            [
+                Layout
+            ]
+        ];
 }
 
 FReply UBBBCharacterCustomizationView::NativeOnKeyDown(
@@ -809,9 +808,9 @@ void UBBBCharacterCustomizationView::LoadInterfaceArt()
     CardFrameBrush.ImageSize = FVector2D(256.0f);
 
     ActionButtonStyle = FButtonStyle()
-        .SetNormal(FSlateNoResource())
-        .SetHovered(FSlateColorBrush(FLinearColor(0.15f, 0.13f, 0.10f, 0.55f)))
-        .SetPressed(FSlateColorBrush(FLinearColor(0.30f, 0.23f, 0.14f, 0.75f)))
+        .SetNormal(*GetCardBrush())
+        .SetHovered(*GetCardBrush(false, true))
+        .SetPressed(*GetCardBrush(true))
         .SetNormalPadding(FMargin(0.0f))
         .SetPressedPadding(FMargin(0.0f));
 
@@ -828,7 +827,8 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeViewButton(const FName V
 {
     return SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ContentPadding(FMargin(16.0f, 6.0f))
+        .ToolTipText(GetViewTitle(ViewName))
+        .ContentPadding(0.0f)
         .OnClicked_Lambda([this, ViewName]()
         {
             if (Session)
@@ -839,15 +839,15 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeViewButton(const FName V
             return FReply::Handled();
         })
         [
-            SNew(STextBlock)
-            .Text(GetViewTitle(ViewName))
-            .Font(GetCustomizationFont(18))
-            .ColorAndOpacity_Lambda([this, ViewName]()
-            {
-                return CurrentView == ViewName
-                    ? FSlateColor(FLinearColor(0.88f, 0.64f, 0.32f))
-                    : FSlateColor(FLinearColor(0.66f, 0.65f, 0.61f));
-            })
+            SNew(SBorder)
+            .BorderImage_Lambda([this, ViewName]() { return GetCardBrush(CurrentView == ViewName); })
+            .Padding(13.0f, 9.0f)
+            [
+                SNew(SBBBCharacterCustomizationIcon)
+                .Symbol(ViewName)
+                .Size(24.0f)
+                .Color_Lambda([this, ViewName]() { return CurrentView == ViewName ? Accent : Ink; })
+            ]
         ];
 }
 
@@ -858,35 +858,42 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
     [
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ContentPadding(FMargin(16.0f, 6.0f))
-        .TextStyle(&GetCustomizationButtonTextStyle())
-        .Text(FText::FromString(TEXT("Esc  返回")))
-        .OnClicked_Lambda([this]()
-        {
-            return GoBack();
-        })
+        .ToolTipText(FText::FromString(TEXT("Esc  返回  总览状态取消未应用修改")))
+        .ContentPadding(FMargin(14.0f, 9.0f))
+        .OnClicked_Lambda([this]() { return GoBack(); })
+        [
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot().AutoWidth()[MakeIcon(TEXT("Back"), 24.0f)]
+            + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(10.0f, 0.0f)
+            [
+                SNew(STextBlock).Text(FText::FromString(TEXT("ESC")))
+                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+                .ColorAndOpacity(Ink)
+            ]
+        ]
     ];
-    Bar->AddSlot().FillWidth(1.0f).VAlign(VAlign_Center).Padding(16.0f, 0.0f)
+    Bar->AddSlot().FillWidth(1.0f).VAlign(VAlign_Center).Padding(20.0f, 0.0f)
     [
         SNew(STextBlock)
         .Text_Lambda([this]() { return StatusMessage; })
-        .Font(GetCustomizationFont(16))
-        .ColorAndOpacity(FLinearColor(0.66f, 0.64f, 0.59f))
-        .AutoWrapText(true)
+        .Font(GetCustomizationFont(12))
+        .ColorAndOpacity(Ink)
     ];
     for (const FName ViewName : {FName(TEXT("Full")), FName(TEXT("Head")), FName(TEXT("Legs"))})
     {
-        Bar->AddSlot().AutoWidth().VAlign(VAlign_Center)[MakeViewButton(ViewName)];
+        Bar->AddSlot().AutoWidth().VAlign(VAlign_Center).Padding(3.0f, 0.0f)
+        [
+            MakeViewButton(ViewName)
+        ];
     }
     for (const float Degrees : {-15.0f, 15.0f})
     {
-        Bar->AddSlot().AutoWidth().VAlign(VAlign_Center)
+        Bar->AddSlot().AutoWidth().VAlign(VAlign_Center).Padding(3.0f, 0.0f)
         [
             SNew(SButton)
             .ButtonStyle(&ActionButtonStyle)
-            .ContentPadding(FMargin(14.0f, 6.0f))
-            .TextStyle(&GetCustomizationButtonTextStyle())
-            .Text(FText::FromString(Degrees < 0.0f ? TEXT("转左") : TEXT("转右")))
+            .ToolTipText(FText::FromString(Degrees < 0.0f ? TEXT("向左旋转") : TEXT("向右旋转")))
+            .ContentPadding(FMargin(13.0f, 9.0f))
             .OnClicked_Lambda([this, Degrees]()
             {
                 if (Session)
@@ -895,28 +902,37 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
                 }
                 return FReply::Handled();
             })
+            [
+                MakeIcon(Degrees < 0.0f ? TEXT("RotateLeft") : TEXT("RotateRight"), 24.0f)
+            ]
         ];
     }
     Bar->AddSlot().AutoWidth().VAlign(VAlign_Center).Padding(24.0f, 0.0f, 0.0f, 0.0f)
     [
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ContentPadding(FMargin(20.0f, 6.0f))
+        .ToolTipText(FText::FromString(TEXT("应用当前预览并保存")))
+        .ContentPadding(0.0f)
         .OnClicked_Lambda([this]()
         {
             if (Session)
             {
-                const bool bApplied = Session->Apply();
-                StatusMessage = FText::FromString(bApplied
-                    ? TEXT("外观已应用并保存") : TEXT("处理失败  请查看日志"));
+                StatusMessage = FText::FromString(Session->Apply()
+                    ? TEXT("外观已应用并保存") : TEXT("保存失败  请查看日志"));
             }
             return FReply::Handled();
         })
         [
-            SNew(STextBlock)
-            .Text(FText::FromString(TEXT("应用外观")))
-            .Font(GetCustomizationFont(20))
-            .ColorAndOpacity(FLinearColor(0.88f, 0.64f, 0.32f))
+            SNew(SBorder).BorderImage(GetCardBrush(true)).Padding(20.0f, 9.0f)
+            [
+                SNew(SHorizontalBox)
+                + SHorizontalBox::Slot().AutoWidth()[MakeIcon(TEXT("Apply"), 24.0f, Accent)]
+                + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12.0f, 0.0f)
+                [
+                    SNew(STextBlock).Text(FText::FromString(TEXT("应用外观")))
+                    .Font(GetCustomizationFont(13)).ColorAndOpacity(Accent)
+                ]
+            ]
         ]
     ];
     return Bar;

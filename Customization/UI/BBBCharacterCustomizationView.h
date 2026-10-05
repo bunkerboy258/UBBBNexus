@@ -12,6 +12,7 @@ class UTexture2D;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class SBox;
+class UFontFace;
 
 /**
  * 本地换装界面
@@ -53,6 +54,10 @@ protected:
     virtual FReply NativeOnKeyDown(const FGeometry &Geometry, const FKeyEvent &KeyEvent) override;
 
 private:
+    /** 保持界面字体的资源引用与打包依赖 */
+    UPROPERTY()
+    TObjectPtr<UFontFace> InterfaceFont;
+
     /** 加载图卡纹理并准备本界面的按钮样式 */
     void LoadInterfaceArt();
 

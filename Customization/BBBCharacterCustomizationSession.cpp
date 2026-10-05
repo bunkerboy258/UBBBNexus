@@ -217,17 +217,17 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     const FVector Focus(0.0f, 0.0f, 120.0f);
     URectLightComponent *KeyLight = NewObject<URectLightComponent>(this, TEXT("KeyLight"), RF_Transient);
     KeyLight->SetIntensityUnits(ELightUnits::Lumens);
-    KeyLight->SetIntensity(140.0f);
+    KeyLight->SetIntensity(165.0f);
     KeyLight->SetLightColor(FLinearColor(1.0f, 0.96f, 0.90f));
-    KeyLight->SetSourceWidth(150.0f);
+    KeyLight->SetSourceWidth(110.0f);
     KeyLight->SetSourceHeight(220.0f);
     KeyLight->SetAttenuationRadius(1200.0f);
-    const FVector KeyPosition(-260.0f, -220.0f, 260.0f);
+    const FVector KeyPosition(-210.0f, -260.0f, 285.0f);
     Scene->AddComponent(KeyLight, FTransform((Focus - KeyPosition).Rotation(), KeyPosition));
 
     URectLightComponent *FillLight = NewObject<URectLightComponent>(this, TEXT("FillLight"), RF_Transient);
     FillLight->SetIntensityUnits(ELightUnits::Lumens);
-    FillLight->SetIntensity(25.0f);
+    FillLight->SetIntensity(13.0f);
     FillLight->SetLightColor(FLinearColor(0.52f, 0.59f, 0.72f));
     FillLight->SetSourceWidth(260.0f);
     FillLight->SetSourceHeight(320.0f);
@@ -238,8 +238,8 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 
     URectLightComponent *RimLight = NewObject<URectLightComponent>(this, TEXT("RimLight"), RF_Transient);
     RimLight->SetIntensityUnits(ELightUnits::Lumens);
-    RimLight->SetIntensity(100.0f);
-    RimLight->SetLightColor(FLinearColor(0.55f, 0.57f, 0.72f));
+    RimLight->SetIntensity(115.0f);
+    RimLight->SetLightColor(FLinearColor(0.68f, 0.74f, 0.85f));
     RimLight->SetSourceWidth(160.0f);
     RimLight->SetSourceHeight(260.0f);
     RimLight->SetAttenuationRadius(1200.0f);
