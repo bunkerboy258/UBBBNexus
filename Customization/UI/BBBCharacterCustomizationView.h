@@ -13,6 +13,7 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class SBox;
 class UFontFace;
+struct FStreamableHandle;
 
 /**
  * 本地换装界面
@@ -41,6 +42,13 @@ public:
      */
     void SetPreviewTexture(UTextureRenderTarget2D *InTexture);
 
+    /**
+     * 刷新异步准备后的草稿显示
+     * @param bSuccess	预览是否成功
+     * @return 无
+     */
+    void RefreshDraft(bool bSuccess);
+
 protected:
     /** @return 本地界面的 Slate 内容 */
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -53,6 +61,14 @@ protected:
      */
     virtual FReply NativeOnKeyDown(const FGeometry &Geometry, const FKeyEvent &KeyEvent) override;
 
+    /**
+     * 在按钮消费按键前将全屏快捷键交给游戏视口
+     * @param Geometry	界面布局
+     * @param KeyEvent	按键事件
+     * @return 是否消费输入
+     */
+    virtual FReply NativeOnPreviewKeyDown(const FGeometry &Geometry, const FKeyEvent &KeyEvent) override;
+
 private:
     /** 保持界面字体的资源引用与打包依赖 */
     UPROPERTY()
@@ -60,6 +76,14 @@ private:
 
     /** 加载图卡纹理并准备本界面的按钮样式 */
     void LoadInterfaceArt();
+
+    /** 异步准备目录缩略图 保持点击回调不读取磁盘 */
+    void LoadThumbnails();
+
+    /** 将已加载纹理写入地址稳定的画刷 */
+    void RefreshLoadedThumbnails();
+
+    TSharedPtr<FStreamableHandle> ThumbnailLoad;
 
     /** 构建底部操作栏 */
     TSharedRef<SWidget> MakeActionBar();

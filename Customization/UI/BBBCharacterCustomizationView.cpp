@@ -1,6 +1,11 @@
 #include "BBBWork/UBBBNexus/Customization/UI/BBBCharacterCustomizationView.h"
 #include "BBBWork/UBBBNexus/Customization/BBBCharacterCustomizationSession.h"
 #include "Engine/Texture2D.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "InputCoreTypes.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -14,6 +19,7 @@
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SOverlay.h"
+#include "Widgets/SWindow.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Text/STextBlock.h"
 #include "UObject/ConstructorHelpers.h"
@@ -49,6 +55,15 @@ void UBBBCharacterCustomizationView::SetPreviewTexture(UTextureRenderTarget2D *I
     {
         PreviewBrush.ImageSize = FVector2D(InTexture->SizeX, InTexture->SizeY);
     }
+}
+
+void UBBBCharacterCustomizationView::RefreshDraft(const bool bSuccess)
+{
+    RefreshSlotCardThumbnails();
+    UpdatePatchPreview(TEXT("Body"));
+    UpdatePatchPreview(TEXT("Vest"));
+    StatusMessage = FText::FromString(bSuccess ? TEXT("预览中  应用后保存") : TEXT("预览失败  已恢复原选择"));
+    InvalidateLayoutAndVolatility();
 }
 
 FName UBBBCharacterCustomizationView::GetSelectedItemId(const FName PartSlot) const
@@ -128,9 +143,10 @@ const FSlateBrush *UBBBCharacterCustomizationView::GetItemBrush(const FName Item
         return nullptr;
     }
 
-    if (const TSharedPtr<FSlateBrush> *ExistingBrush = ItemThumbnailBrushes.Find(ItemId))
+    TSharedPtr<FSlateBrush> &Brush = ItemThumbnailBrushes.FindOrAdd(ItemId);
+    if (Brush && Brush->GetResourceObject())
     {
-        return ExistingBrush->Get();
+        return Brush.Get();
     }
 
     FBBBAppearanceItem Item;
@@ -149,15 +165,17 @@ const FSlateBrush *UBBBCharacterCustomizationView::GetItemBrush(const FName Item
         return nullptr;
     }
 
-    UTexture2D *Texture = Item.Thumbnail.LoadSynchronous();
+    if (!Brush)
+    {
+        Brush = MakeShared<FSlateBrush>();
+        Brush->ImageSize = FVector2D(256.0f);
+    }
+    UTexture2D *Texture = Item.Thumbnail.Get();
     if (!Texture)
     {
-        UE_LOG(LogBBBCustomizationView, Error, TEXT("外观缩略图加载失败 Item=%s Path=%s"),
-            *ItemId.ToString(), *Item.Thumbnail.ToString());
-        return nullptr;
+        return Brush.Get();
     }
 
-    TSharedPtr<FSlateBrush> Brush = MakeShared<FSlateBrush>();
     Brush->SetResourceObject(Texture);
     Brush->ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
     if (Item.Slot == TEXT("Arms"))
@@ -171,8 +189,42 @@ const FSlateBrush *UBBBCharacterCustomizationView::GetItemBrush(const FName Item
         Brush->ImageSize = FVector2D(246.0f, 358.0f);
     }
     ItemThumbnails.Add(ItemId, Texture);
-    ItemThumbnailBrushes.Add(ItemId, Brush);
     return Brush.Get();
+}
+
+void UBBBCharacterCustomizationView::LoadThumbnails()
+{
+    TArray<FSoftObjectPath> Resources;
+    const TArray<FName> Slots = {TEXT("Head"), TEXT("Helmet"), TEXT("Body"), TEXT("Arms"), TEXT("Vest"),
+        TEXT("Backpack"), TEXT("Belt"), TEXT("Legs"), TEXT("Boots"), TEXT("Attachments")};
+    for (const FName PartSlot : Slots)
+    {
+        for (const FName ItemId : Session->GetItems(PartSlot))
+        {
+            FBBBAppearanceItem Item;
+            if (Session->GetItem(ItemId, Item) && !Item.Thumbnail.IsNull())
+            {
+                Resources.AddUnique(Item.Thumbnail.ToSoftObjectPath());
+            }
+        }
+    }
+    if (!Resources.IsEmpty())
+    {
+        ThumbnailLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(Resources,
+            FStreamableDelegate::CreateUObject(this, &ThisClass::RefreshLoadedThumbnails));
+    }
+}
+
+void UBBBCharacterCustomizationView::RefreshLoadedThumbnails()
+{
+    TArray<FName> Items;
+    ItemThumbnailBrushes.GetKeys(Items);
+    for (const FName Item : Items)
+    {
+        GetItemBrush(Item);
+    }
+    RefreshSlotCardThumbnails();
+    InvalidateLayoutAndVolatility();
 }
 
 void UBBBCharacterCustomizationView::RefreshSlotCardThumbnails()
@@ -615,6 +667,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
 
 void UBBBCharacterCustomizationView::OpenSlot(const FName PartSlot)
 {
+    const double Start = FPlatformTime::Seconds();
     if (!Session || Session->GetItems(PartSlot).IsEmpty())
     {
         UE_LOG(LogBBBCustomizationView, Warning, TEXT("无法打开没有候选款式的部位 Slot=%s"), *PartSlot.ToString());
@@ -622,6 +675,8 @@ void UBBBCharacterCustomizationView::OpenSlot(const FName PartSlot)
     }
 
     ExpandedSlot = PartSlot;
+    Session->FocusSlot(PartSlot);
+    CurrentView = NAME_None;
     bShowingPatches = false;
     if (LeftPatchGrid)
     {
@@ -640,6 +695,8 @@ void UBBBCharacterCustomizationView::OpenSlot(const FName PartSlot)
         RightItemGrid->SetContent(MakeItemGrid(PartSlot));
     }
     InvalidateLayoutAndVolatility();
+    UE_LOG(LogBBBCustomizationView, Verbose, TEXT("款式列表构建 Slot=%s 耗时 %.2f ms"),
+        *PartSlot.ToString(), (FPlatformTime::Seconds() - Start) * 1000.0);
 }
 
 void UBBBCharacterCustomizationView::ShowPatchGrid(const FName PartSlot)
@@ -697,6 +754,11 @@ void UBBBCharacterCustomizationView::ShowPatchGrid(const FName PartSlot)
 
 void UBBBCharacterCustomizationView::CloseSlot()
 {
+    if (Session)
+    {
+        Session->SelectView(TEXT("Full"));
+        CurrentView = TEXT("Full");
+    }
     ExpandedSlot = NAME_None;
     bShowingPatches = false;
     if (LeftItemGrid)
@@ -726,6 +788,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     }
 
     LoadInterfaceArt();
+    LoadThumbnails();
     SlotThumbnailBoxes.Reset();
     PatchAtlas = LoadObject<UTexture2D>(nullptr,
         TEXT("/Game/_ThirdParty/Characters/UkraineSoldier/Textures/Flags/T_Flags_BC.T_Flags_BC"));
@@ -735,20 +798,6 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     }
 
     TSharedRef<SConstraintCanvas> Layout = SNew(SConstraintCanvas);
-    Layout->AddSlot()
-    .Anchors(FAnchors(0.0f, 0.0f, 1.0f, 1.0f))
-    [
-        SNew(SImage).Image(&PreviewBrush)
-    ];
-
-    Layout->AddSlot()
-    .Anchors(FAnchors(0.0f, 0.0f, 1.0f, 1.0f))
-    [
-        SNew(SBorder)
-        .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-        .BorderBackgroundColor(FLinearColor(0.005f, 0.008f, 0.014f, 0.13f))
-    ];
-
     Layout->AddSlot()
     .Anchors(FAnchors(0.065f, 0.22f, 0.32f, 0.81f))
     .Offset(FMargin(0.0f))
@@ -771,13 +820,55 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     ];
 
     RefreshSlotCardThumbnails();
-    return SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+    return SNew(SOverlay)
+        + SOverlay::Slot()
         [
-            SNew(SBox).WidthOverride(1920.0f).HeightOverride(1080.0f)
+            SNew(SImage).Image(&PreviewBrush).DesiredSizeOverride(FVector2D::ZeroVector)
+        ]
+        + SOverlay::Slot()
+        [
+            SNew(SBorder)
+            .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+            .BorderBackgroundColor(FLinearColor(0.005f, 0.008f, 0.014f, 0.13f))
+            .Visibility(EVisibility::HitTestInvisible)
+        ]
+        + SOverlay::Slot()
+        [
+            SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
             [
-                Layout
+                SNew(SBox).WidthOverride(1920.0f).HeightOverride(1080.0f)
+                [
+                    Layout
+                ]
             ]
         ];
+}
+
+FReply UBBBCharacterCustomizationView::NativeOnPreviewKeyDown(
+    const FGeometry &Geometry,
+    const FKeyEvent &KeyEvent)
+{
+    const bool bFullscreenKey = KeyEvent.GetKey() == EKeys::F11
+        || (KeyEvent.GetKey() == EKeys::Enter && KeyEvent.IsAltDown());
+    APlayerController *Player = GetOwningPlayer();
+    if (bFullscreenKey && Player && Player->GetLocalPlayer()
+        && Player->GetLocalPlayer()->ViewportClient)
+    {
+        UGameViewportClient *Viewport = Player->GetLocalPlayer()->ViewportClient;
+        TSharedPtr<SWindow> Window = Viewport->GetWindow();
+        UE_LOG(LogBBBCustomizationView, Verbose, TEXT("全屏快捷键 Window=%s Mode=%d"),
+            Window ? *Window->GetTag().ToString() : TEXT("None"), Window ? static_cast<int32>(Window->GetWindowMode()) : -1);
+        if (Window && Window->GetTag() == TEXT("PIEWindow"))
+        {
+            const EWindowMode::Type Mode = Window->GetWindowMode() == EWindowMode::Windowed
+                ? EWindowMode::WindowedFullscreen : EWindowMode::Windowed;
+            Window->SetWindowMode(Mode);
+            return FReply::Handled();
+        }
+        Viewport->HandleToggleFullscreenCommand();
+        return FReply::Handled();
+    }
+    return Super::NativeOnPreviewKeyDown(Geometry, KeyEvent);
 }
 
 FReply UBBBCharacterCustomizationView::NativeOnKeyDown(
@@ -924,6 +1015,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
         .ToolTip(MakeTooltip(FText::FromString(TEXT("应用当前预览并保存"))))
+        .IsEnabled_Lambda([this]() { return Session && !Session->IsPreparing(); })
         .ContentPadding(0.0f)
         .OnClicked_Lambda([this]()
         {

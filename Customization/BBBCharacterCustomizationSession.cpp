@@ -11,6 +11,8 @@
 #include "Containers/Ticker.h"
 #include "ContentStreaming.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Engine/SceneCapture2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/TextureCube.h"
@@ -27,6 +29,11 @@ DEFINE_LOG_CATEGORY_STATIC(LogBBBCustomization, Log, All);
 bool UBBBCharacterCustomizationSession::IsOpen() const
 {
     return View != nullptr;
+}
+
+bool UBBBCharacterCustomizationSession::IsPreparing() const
+{
+    return bDraftDirty;
 }
 
 bool UBBBCharacterCustomizationSession::Open(APlayerController &Player)
@@ -73,11 +80,14 @@ bool UBBBCharacterCustomizationSession::Open(APlayerController &Player)
     Target = Appearance;
     Draft = MoveTemp(Selection);
     View = NewView;
+    DisplayedDraft = Draft;
     View->SetSession(this);
     View->SetPreviewTexture(PreviewTexture);
     View->AddToPlayerScreen();
     CaptureInput(Player);
     UpdateCamera();
+    CaptureActor->SetActorLocation(CameraTarget);
+    CameraElapsed = 0.45f;
     TimeSinceUpdate = 1.0f / 30.0f;
 
     UE_LOG(LogBBBCustomization, Log, TEXT("独立世界换装界面已打开 World=%s"),
@@ -292,7 +302,8 @@ bool UBBBCharacterCustomizationSession::TickPreview(const float DeltaTime)
     }
 
     TimeSinceUpdate += FMath::Min(DeltaTime, 0.2f);
-    const float Interval = IsOpen() ? 1.0f / 30.0f : 0.2f;
+    const bool bMovingCamera = IsOpen() && CameraElapsed < 0.45f;
+    const float Interval = IsOpen() ? (bMovingCamera ? 1.0f / 60.0f : 1.0f / 30.0f) : 0.2f;
     if (TimeSinceUpdate < Interval)
     {
         return true;
@@ -300,6 +311,18 @@ bool UBBBCharacterCustomizationSession::TickPreview(const float DeltaTime)
 
     const float Step = TimeSinceUpdate;
     TimeSinceUpdate = 0.0f;
+    if (IsOpen())
+    {
+        UpdateDraft();
+    }
+    if (bMovingCamera)
+    {
+        CameraElapsed = FMath::Min(CameraElapsed + Step, 0.45f);
+        const float Alpha = FMath::SmoothStep(0.0f, 1.0f, CameraElapsed / 0.45f);
+        CaptureActor->SetActorLocation(FMath::Lerp(CameraStart, CameraTarget, Alpha));
+        const float YawDelta = FMath::FindDeltaAngleDegrees(RotationStart, RotationTarget);
+        PreviewActor->SetActorRotation(FRotator(0.0f, RotationStart + YawDelta * Alpha, 0.0f));
+    }
     Scene->GetWorld()->Tick(LEVELTICK_All, Step);
 
     if (IsOpen())
@@ -347,7 +370,6 @@ void UBBBCharacterCustomizationSession::Capture()
         const float VerticalHalfFov = FMath::DegreesToRadians(15.0f);
         CaptureActor->GetCaptureComponent2D()->FOVAngle = FMath::RadiansToDegrees(
             2.0f * FMath::Atan(FMath::Tan(VerticalHalfFov) * AspectRatio));
-        UpdateCamera();
     }
 
     USceneCaptureComponent2D *CaptureComponent = CaptureActor->GetCaptureComponent2D();
@@ -377,19 +399,39 @@ void UBBBCharacterCustomizationSession::UpdateCamera()
 
     FVector Focus = Center;
     float Distance = FMath::Max(Extent.Z * 4.9f, 360.0f);
-    if (CurrentView == TEXT("Head"))
+    if (CurrentView == TEXT("Head") || CurrentView == TEXT("Helmet"))
     {
-        Focus.Z += Extent.Z * 0.65f;
-        Distance = FMath::Max(Extent.Z * 2.0f, 200.0f);
+        Focus.Z += Extent.Z * 0.72f;
+        Distance = FMath::Max(Extent.Z * 1.35f, 110.0f);
+    }
+    if (CurrentView == TEXT("Body") || CurrentView == TEXT("Vest")
+        || CurrentView == TEXT("Arms") || CurrentView == TEXT("Backpack"))
+    {
+        Focus.Z += Extent.Z * 0.30f;
+        Distance = FMath::Max(Extent.Z * 2.2f, 180.0f);
+    }
+    if (CurrentView == TEXT("Belt") || CurrentView == TEXT("Attachments"))
+    {
+        Focus.Z -= Extent.Z * 0.10f;
+        Distance = FMath::Max(Extent.Z * 1.7f, 150.0f);
     }
     if (CurrentView == TEXT("Legs"))
     {
         Focus.Z -= Extent.Z * 0.55f;
         Distance = FMath::Max(Extent.Z * 2.2f, 220.0f);
     }
+    if (CurrentView == TEXT("Boots"))
+    {
+        Focus.Z -= Extent.Z * 0.82f;
+        Distance = FMath::Max(Extent.Z * 2.2f, 200.0f);
+    }
 
-    const FVector CameraLocation = Focus - FVector(Distance, 0.0f, 0.0f);
-    CaptureActor->SetActorLocationAndRotation(CameraLocation, (Focus - CameraLocation).Rotation());
+    CameraStart = CaptureActor->GetActorLocation();
+    CameraTarget = Focus - FVector(Distance, 0.0f, 0.0f);
+    CaptureActor->SetActorRotation(FRotator::ZeroRotator);
+    RotationStart = PreviewActor->GetActorRotation().Yaw;
+    RotationTarget = CurrentView == TEXT("Backpack") ? 270.0f : 90.0f;
+    CameraElapsed = 0.0f;
 }
 
 void UBBBCharacterCustomizationSession::CaptureInput(APlayerController &Player)
@@ -439,6 +481,12 @@ void UBBBCharacterCustomizationSession::RestoreInput()
 
 void UBBBCharacterCustomizationSession::Close()
 {
+    if (DraftLoad)
+    {
+        DraftLoad->CancelHandle();
+        DraftLoad.Reset();
+    }
+    bDraftDirty = false;
     if (View)
     {
         View->RemoveFromParent();
@@ -450,6 +498,7 @@ void UBBBCharacterCustomizationSession::Close()
     Controller.Reset();
     Target.Reset();
     Draft = {};
+    DisplayedDraft = {};
 }
 
 void UBBBCharacterCustomizationSession::Shutdown()
@@ -487,15 +536,79 @@ FBBBAppearanceSelection UBBBCharacterCustomizationSession::GetDraft() const
 bool UBBBCharacterCustomizationSession::SetDraft(FBBBAppearanceSelection Selection)
 {
     if (!IsOpen() || !Target.IsValid() || !Preview.IsValid()
-        || !Target->PrepareSelection(Selection) || !Preview->PreviewAppearance(Selection))
+        || !Target->PrepareSelection(Selection))
     {
         UE_LOG(LogBBBCustomization, Warning, TEXT("草稿检查或独立预览组装失败"));
         return false;
     }
 
+    if (Selection == Draft)
+    {
+        return true;
+    }
+
+    if (DraftLoad)
+    {
+        DraftLoad->CancelHandle();
+        DraftLoad.Reset();
+    }
+    TArray<FSoftObjectPath> Resources;
+    for (const FBBBAppearancePart &Part : Selection.Parts)
+    {
+        FBBBAppearanceItem Item;
+        if (Target->GetItem(Part.Item, Item) && !Item.Mesh.IsNull())
+        {
+            Resources.AddUnique(Item.Mesh.ToSoftObjectPath());
+        }
+    }
+    FBBBAppearanceItem Attachments;
+    if (!Selection.Attachments.IsNone() && Target->GetItem(Selection.Attachments, Attachments))
+    {
+        for (const auto &Attachment : Attachments.Attachments)
+        {
+            if (!Attachment.Value.IsNull())
+            {
+                Resources.AddUnique(Attachment.Value.ToSoftObjectPath());
+            }
+        }
+    }
     Draft = MoveTemp(Selection);
-    UpdateCamera();
+    bDraftDirty = true;
+    if (!Resources.IsEmpty())
+    {
+        DraftLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(Resources);
+    }
     return true;
+}
+
+void UBBBCharacterCustomizationSession::UpdateDraft()
+{
+    if (!bDraftDirty || (DraftLoad && !DraftLoad->HasLoadCompleted()))
+    {
+        return;
+    }
+    bDraftDirty = false;
+    const double Start = FPlatformTime::Seconds();
+    const bool bSuccess = Preview.IsValid() && Preview->PreviewAppearance(Draft);
+    if (!bSuccess)
+    {
+        UE_LOG(LogBBBCustomization, Error, TEXT("草稿资源加载或组装失败"));
+        Draft = DisplayedDraft;
+        if (Preview.IsValid())
+        {
+            Preview->PreviewAppearance(DisplayedDraft);
+        }
+    }
+    if (bSuccess)
+    {
+        DisplayedDraft = Draft;
+    }
+    if (View)
+    {
+        View->RefreshDraft(bSuccess);
+    }
+    const double Milliseconds = (FPlatformTime::Seconds() - Start) * 1000.0;
+    UE_LOG(LogBBBCustomization, Verbose, TEXT("预览组装耗时 %.2f ms"), Milliseconds);
 }
 
 bool UBBBCharacterCustomizationSession::CycleItem(const FName Slot, const int32 Direction)
@@ -649,6 +762,11 @@ bool UBBBCharacterCustomizationSession::SetSurface(const float Dirt, const float
 
 bool UBBBCharacterCustomizationSession::Apply()
 {
+    if (bDraftDirty)
+    {
+        UE_LOG(LogBBBCustomization, Warning, TEXT("当前款式仍在准备 请等待预览完成后应用"));
+        return false;
+    }
     APlayerController *Player = Controller.Get();
     if (!IsOpen() || !Player || !Target.IsValid()
         || Target->GetOwner() != Player->GetPawn() || !Target->CommitAppearance(Draft))
@@ -680,6 +798,16 @@ void UBBBCharacterCustomizationSession::SelectView(const FName ViewName)
     UpdateCamera();
 }
 
+void UBBBCharacterCustomizationSession::FocusSlot(const FName Slot)
+{
+    if (!IsOpen() || GetItems(Slot).IsEmpty())
+    {
+        return;
+    }
+    CurrentView = Slot;
+    UpdateCamera();
+}
+
 void UBBBCharacterCustomizationSession::RotatePreview(const float Degrees)
 {
     if (!IsOpen() || !PreviewActor || !FMath::IsFinite(Degrees))
@@ -688,4 +816,6 @@ void UBBBCharacterCustomizationSession::RotatePreview(const float Degrees)
     }
 
     PreviewActor->AddActorWorldRotation(FRotator(0.0f, Degrees, 0.0f));
+    RotationStart += Degrees;
+    RotationTarget += Degrees;
 }

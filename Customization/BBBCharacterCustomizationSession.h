@@ -15,6 +15,7 @@ class UMaterialInterface;
 class UBBBAppearanceComponent;
 class UBBBCharacterCustomizationView;
 class UTextureRenderTarget2D;
+struct FStreamableHandle;
 
 /**
  * 本地换装会话
@@ -35,6 +36,9 @@ public:
 
     /** @return 界面是否打开 */
     bool IsOpen() const;
+
+    /** @return 当前草稿是否仍在准备预览 */
+    bool IsPreparing() const;
 
     /**
      * 关闭界面并丢弃草稿
@@ -127,6 +131,14 @@ public:
     void SelectView(FName ViewName);
 
     /**
+     * 平滑查看指定穿戴部位
+     * @param Slot	穿戴部位
+     * @return 无
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|自定义")
+    void FocusSlot(FName Slot);
+
+    /**
      * 旋转预览人物
      * @param Degrees	水平旋转角度
      * @return 无
@@ -147,6 +159,9 @@ private:
     bool TickPreview(float DeltaTime);
 
     void UpdateCamera();
+
+    /** 在预览更新时合并草稿变化并等待所需模型加载完成 */
+    void UpdateDraft();
 
     void Capture();
 
@@ -183,6 +198,10 @@ private:
     UPROPERTY(Transient)
     FBBBAppearanceSelection Draft;
 
+    /** 最后成功显示的草稿 用于资源失败时恢复界面 */
+    UPROPERTY(Transient)
+    FBBBAppearanceSelection DisplayedDraft;
+
     TWeakObjectPtr<APlayerController> Controller;
 
     TWeakObjectPtr<UBBBAppearanceComponent> Target;
@@ -194,6 +213,22 @@ private:
     FName CurrentView = TEXT("Full");
 
     float TimeSinceUpdate = 0.0f;
+
+    /** 当前草稿的资源请求 只保留最后一次选择 */
+    TSharedPtr<FStreamableHandle> DraftLoad;
+
+    bool bDraftDirty = false;
+
+    /** 运镜从当前画面接续而不是从旧机位重新开始 */
+    FVector CameraStart = FVector::ZeroVector;
+
+    FVector CameraTarget = FVector::ZeroVector;
+
+    float RotationStart = 90.0f;
+
+    float RotationTarget = 90.0f;
+
+    float CameraElapsed = 0.45f;
 
     bool bInputCaptured = false;
 
