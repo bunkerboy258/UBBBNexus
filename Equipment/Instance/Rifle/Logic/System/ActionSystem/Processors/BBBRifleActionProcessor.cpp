@@ -182,6 +182,7 @@ void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
     Packet.Controller = Context.Character.GetController();
     Packet.Channel = Definition->PresentationChannel.Get();
     Packet.System = Definition->PresentationSystem.Get();
+    Packet.ImpactChannel = Definition->ImpactChannel.Get();
     Packet.TracerLengthCm = Definition->TracerLengthCm;
     Packet.TracerWidthCm = Definition->TracerWidthCm;
     Packet.TracerColor = Definition->TracerColor;

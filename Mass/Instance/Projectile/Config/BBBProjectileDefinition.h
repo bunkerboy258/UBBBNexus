@@ -56,6 +56,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|表现", meta = (DisplayName = "表现特效系统"))
     TObjectPtr<UNiagaraSystem> PresentationSystem = nullptr;
 
+    /** 当帧表面命中批次 空间岛自行启动反馈系统 不保存命中历史 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|表现", meta = (DisplayName = "命中数据通道"))
+    TObjectPtr<UNiagaraDataChannelAsset> ImpactChannel = nullptr;
+
     /** 飞行光段长度 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|表现", meta = (ClampMin = "1.0", ForceUnits = "cm", DisplayName = "曳光长度 厘米"))
     float TracerLengthCm = 1000.0f;

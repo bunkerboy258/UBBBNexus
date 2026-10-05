@@ -27,6 +27,8 @@ struct FBBBProjectileSpawnLocalControlPacket final
     TWeakObjectPtr<AController> Controller;
     TWeakObjectPtr<UNiagaraDataChannelAsset> Channel;
     TWeakObjectPtr<UNiagaraSystem> System;
+    /** 当帧表面反馈通道 */
+    TWeakObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;
     float TracerLengthCm = 1000.0f;
     float TracerWidthCm = 2.5f;
     FLinearColor TracerColor = FLinearColor(20.0f, 8.0f, 1.0f, 1.0f);
@@ -44,6 +46,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && FMath::IsFinite(PenetrationMultiplier)
             && PenetrationMultiplier >= 0.0f && PenetrationMultiplier <= 1.0f
             && Channel.IsValid() && System.IsValid()
+            && ImpactChannel.IsValid()
             && FMath::IsFinite(TracerLengthCm) && TracerLengthCm > 0.0f
             && FMath::IsFinite(TracerWidthCm) && TracerWidthCm > 0.0f
             && FMath::IsFinite(TracerColor.R)
@@ -89,6 +92,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Life.RemainingSeconds = Lifetime;
         Presentation.Channel = Channel;
         Presentation.System = System;
+        Presentation.ImpactChannel = ImpactChannel;
         Presentation.LengthCm = TracerLengthCm;
         Presentation.WidthCm = TracerWidthCm;
         Presentation.Color = TracerColor;

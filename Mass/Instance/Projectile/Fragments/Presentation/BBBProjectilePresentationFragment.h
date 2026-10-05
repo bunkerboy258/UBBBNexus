@@ -20,6 +20,10 @@ struct ABBB_EVAC_API FBBBProjectilePresentationFragment final : public FMassFrag
     UPROPERTY()
     TWeakObjectPtr<UNiagaraSystem> System;
 
+    /** 仅提交本次碰撞表面事实的批量通道 */
+    UPROPERTY()
+    TWeakObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;
+
     /** 当前实体的飞行光段长度 */
     float LengthCm = 0.0f;
 

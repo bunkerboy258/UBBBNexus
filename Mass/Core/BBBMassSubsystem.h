@@ -43,10 +43,14 @@ public:
      * @param Ignored	本次扫掠忽略的实体
      * @param HitEntity	最近命中实体
      * @param HitTime	线段归一化命中时间
+     * @param HitPosition	世界空间表面接触点
+     * @param HitNormal	世界空间表面外法线
+     * @param HitSurface	目标发布的物理表面类型
      * @return 是否命中逻辑球体
      */
     bool TraceEntities(const FVector& Start, const FVector& End, float Radius,
-        TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime) const;
+        TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime,
+        FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface) const;
 
     /**
      * 查询包含尚未消费输入的累计贡献快照 不暴露目标 Fragment

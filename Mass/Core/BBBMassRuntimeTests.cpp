@@ -16,6 +16,18 @@
 #include "MassExecutionContext.h"
 #include "NiagaraDataChannel.h"
 #include "NiagaraSystem.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraDataChannelFunctionLibrary.h"
+#include "NiagaraDataChannelHandler.h"
+#include "NiagaraDataChannelData.h"
+#include "NiagaraDataSet.h"
+#include "NiagaraDataSetAccessor.h"
+#include "NiagaraSystemInstanceController.h"
+#include "NiagaraEmitterInstance.h"
+#include "Misc/App.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
@@ -147,6 +159,12 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     });
     UNiagaraDataChannelAsset* TestChannel = NewObject<UNiagaraDataChannelAsset>(World);
     UNiagaraSystem* TestSystem = NewObject<UNiagaraSystem>(World);
+    UNiagaraDataChannelAsset* TestImpactChannel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
+        TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectileImpact.NDC_BBBProjectileImpact"));
+    if (!TestNotNull(TEXT("正式命中通道"), TestImpactChannel))
+    {
+        return false;
+    }
     APlayerController* Controller = World->SpawnActor<APlayerController>();
     APlayerState* Player = World->SpawnActor<APlayerState>();
     Player->SetPlayerId(1);
@@ -164,6 +182,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
             Spawn.Damage = Amount;
             Spawn.Channel = TestChannel;
             Spawn.System = TestSystem;
+            Spawn.ImpactChannel = TestImpactChannel;
             Spawn.Controller = Controller;
             Spawn.bCanCauseDamage = bDamage;
             Mass->SubmitInput(Projectile, Spawn);
@@ -175,7 +194,19 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         Body.Entity = Monster;
         Body.Center = FVector(0.0f, 40.0f, 0.0f);
         Body.Radius = 5.0f;
+        Body.Surface = SurfaceType2;
         Mass->AddCollisionBody(Body);
+        FMassEntityHandle HitEntity;
+        float HitTime;
+        FVector HitPosition;
+        FVector HitNormal;
+        EPhysicalSurface HitSurface;
+        TestTrue(TEXT("球体扫掠返回接触几何"), Mass->TraceEntities(FVector::ZeroVector,
+            FVector(0.0f, 50.0f, 0.0f), 2.0f, {}, HitEntity, HitTime, HitPosition, HitNormal, HitSurface));
+        TestTrue(TEXT("表面接触点不是扫掠球心"), HitPosition.Equals(FVector(0.0f, 35.0f, 0.0f), 0.001));
+        TestTrue(TEXT("表面法线朝向入射侧"), HitNormal.Equals(FVector(0.0f, -1.0f, 0.0f), 0.001));
+        TestEqual(TEXT("查询不读取小怪内部数据即可取得血肉表面"), HitSurface, SurfaceType2);
+        TestTrue(TEXT("球心命中时间保持原有连续扫掠语义"), FMath::IsNearlyEqual(HitTime, 0.66f, 0.001f));
         Run(UBBBProjectileCollisionProcessor::StaticClass());
         for (const auto Projectile : Projectiles)
         {
@@ -342,11 +373,16 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     FMassEntityHandle Hit;
     float HitTime = 0.0f;
+    FVector HitPosition;
+    FVector HitNormal;
+    EPhysicalSurface HitSurface;
     TestTrue(TEXT("碰撞立即使用最新逻辑位置"), Mass->TraceEntities(
-        Target.GetLocation() - FVector(0.0f, 0.0f, 2.0f), Target.GetLocation() + FVector(0.0f, 0.0f, 2.0f), 0.0f, {}, Hit, HitTime));
+        Target.GetLocation() - FVector(0.0f, 0.0f, 2.0f), Target.GetLocation() + FVector(0.0f, 0.0f, 2.0f),
+        0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface));
     TestTrue(TEXT("逻辑碰撞命中正确实体"), Hit == Entity);
     TestFalse(TEXT("显示位置没有生成第二套碰撞"), Mass->TraceEntities(
-        FirstDisplay - FVector(0.0f, 0.0f, 2.0f), FirstDisplay + FVector(0.0f, 0.0f, 2.0f), 0.0f, {}, Hit, HitTime));
+        FirstDisplay - FVector(0.0f, 0.0f, 2.0f), FirstDisplay + FVector(0.0f, 0.0f, 2.0f),
+        0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface));
 
     auto& State = Manager.GetFragmentDataChecked<FBBBMonsterPresentationStateFragment>(Entity);
     State.State = EBBBMonsterBehavior::Hurt;
@@ -423,6 +459,176 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     }
 
     Manager.DestroyEntity(Entity);
+    return true;
+}
+
+/** 正式曳光资产验证首帧截断 结束定格 槽位复用与粒子回收 */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBProjectilePresentationTest, "UBBB.Mass.ProjectilePresentation",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBProjectilePresentationTest::RunTest(const FString& Parameters)
+{
+    if (!FApp::CanEverRender())
+    {
+        AddWarning(TEXT("曳光粒子回归需要启用渲染的宿主"));
+        return true;
+    }
+    const auto Initialization = UWorld::InitializationValues()
+        .AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false)
+        .CreateAISystem(false).ShouldSimulatePhysics(false);
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
+    if (!TestNotNull(TEXT("曳光验证世界"), World))
+    {
+        return false;
+    }
+    GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+    ON_SCOPE_EXIT
+    {
+        GEngine->DestroyWorldContext(World);
+        World->DestroyWorld(false);
+    };
+    auto* Channel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
+        TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectile.NDC_BBBProjectile"));
+    auto* System = LoadObject<UNiagaraSystem>(nullptr,
+        TEXT("/Game/_Project/System/Mass/Projectile/NS_BBBProjectile.NS_BBBProjectile"));
+    if (!TestNotNull(TEXT("正式曳光通道"), Channel) || !TestNotNull(TEXT("正式曳光系统"), System))
+    {
+        return false;
+    }
+    FTransformFragment Transform;
+    Transform.GetMutableTransform().SetLocation(FVector(10.0f, 0.0f, 0.0f));
+    FBBBProjectileMotionFragment Motion;
+    Motion.bInitialized = true;
+    FBBBProjectilePresentationFragment Visual;
+    Visual.Channel = Channel;
+    Visual.System = System;
+    Visual.LengthCm = 1000.0f;
+    Visual.WidthCm = 2.5f;
+    Visual.Slot = 0;
+    Visual.bSpawnPending = true;
+    Visual.bVisualAlive = false;
+    FBBBProjectilePresentation::Publish(*World, {&Transform, 1}, {&Motion, 1}, {&Visual, 1});
+    auto* Handler = UNiagaraDataChannelLibrary::FindDataChannelHandler(World, Channel->Get());
+    FNDCAccessContextInst AccessContext(Channel->Get()->GetAccessContextType());
+    auto Data = Handler->FindData(AccessContext, ENiagaraResourceAccess::ReadOnly);
+    {
+        auto Buffer = Data->GetCPUData(false);
+        const auto Sizes = FNiagaraDataSetAccessor<FVector2f>::CreateReader(Buffer.GetReference(), TEXT("SpriteSize"));
+        const auto Endings = FNiagaraDataSetAccessor<FNiagaraBool>::CreateReader(Buffer.GetReference(), TEXT("Ending"));
+        if (!TestTrue(TEXT("发布截断尺寸与结束标记"), Sizes.IsValid() && Endings.IsValid()))
+        {
+            return false;
+        }
+        TestEqual(TEXT("首帧光段只覆盖实际飞过的十厘米"), Sizes.Get(0).Y, 10.0f);
+        TestTrue(TEXT("首帧命中仍然发布末帧光段"), Endings.Get(0).GetValue());
+    }
+    auto* Component = UNiagaraFunctionLibrary::SpawnSystemAtLocation(World, System, FVector::ZeroVector,
+        FRotator::ZeroRotator, FVector::OneVector, false, false, ENCPoolMethod::None, false);
+    if (!TestNotNull(TEXT("正式共享光效组件"), Component))
+    {
+        return false;
+    }
+    Component->SetForceSolo(true);
+    Component->Activate();
+    const auto ParticleData = [Component]() -> FNiagaraDataBuffer*
+    {
+        const auto Controller = Component->GetSystemInstanceController();
+        if (!Controller.IsValid() || !Controller->IsValid())
+        {
+            return nullptr;
+        }
+        Controller->WaitForConcurrentTickAndFinalize();
+        const auto& Emitters = Controller->GetSystemInstance_Unsafe()->GetEmitters();
+        return Emitters.IsEmpty() ? nullptr : Emitters[0]->GetParticleData().GetCurrentData();
+    };
+    Component->AdvanceSimulation(1, 0.016f);
+    FNiagaraDataBuffer* Particles = ParticleData();
+    if (!TestNotNull(TEXT("曳光模拟数据"), Particles) || !TestEqual(TEXT("出生当帧命中仍生成一段光效"), Particles->GetNumInstances(), 1u))
+    {
+        return false;
+    }
+    const auto ReportTracer = [this](FNiagaraDataBuffer* Buffer)
+    {
+        const auto Position = FNiagaraDataSetAccessor<FNiagaraPosition>::CreateReader(Buffer, TEXT("Position"));
+        const auto Ending = FNiagaraDataSetAccessor<FNiagaraBool>::CreateReader(Buffer, TEXT("TracerEnding"));
+        const auto FadeAge = FNiagaraDataSetAccessor<float>::CreateReader(Buffer, TEXT("TracerFadeAge"));
+        if (Buffer->GetNumInstances() > 0 && Position.IsValid() && Ending.IsValid() && FadeAge.IsValid())
+        {
+            AddInfo(FString::Printf(TEXT("曳光 Position=%s Ending=%d FadeAge=%f"),
+                *Position.Get(0).ToString(), Ending.Get(0).GetValue(), FadeAge.Get(0)));
+        }
+    };
+    ReportTracer(Particles);
+    Data->BeginFrame(Handler);
+    Transform.GetMutableTransform().SetLocation(FVector(1000.0f, 0.0f, 0.0f));
+    Visual.bSpawnPending = false;
+    Visual.bVisualAlive = true;
+    FBBBProjectilePresentation::Publish(*World, {&Transform, 1}, {&Motion, 1}, {&Visual, 1});
+    Component->AdvanceSimulation(1, 0.016f);
+    Particles = ParticleData();
+    if (!TestNotNull(TEXT("槽位复用后的粒子数据"), Particles) || Particles->GetNumInstances() != 1)
+    {
+        AddError(TEXT("结束粒子没有按短淡出生命周期保留"));
+        return false;
+    }
+    const auto Positions = FNiagaraDataSetAccessor<FNiagaraPosition>::CreateReader(Particles, TEXT("Position"));
+    ReportTracer(Particles);
+    TestTrue(TEXT("旧光段不跟随复用槽位的新位置"), Positions.IsValid() && Positions.Get(0).Equals(FVector3f(5.0f, 0.0f, 0.0f), 0.001f));
+    Component->AdvanceSimulation(5, 0.016f);
+    Particles = ParticleData();
+    ReportTracer(Particles);
+    const auto& TracerEmitters = Component->GetSystemInstanceController()->GetSystemInstance_Unsafe()->GetEmitters();
+    TestEqual(TEXT("短淡出结束后粒子归零"), TracerEmitters[0]->GetNumParticles(), 0);
+    Component->DestroyComponent();
+
+    auto* ImpactChannel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
+        TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectileImpact.NDC_BBBProjectileImpact"));
+    auto* ImpactSystem = LoadObject<UNiagaraSystem>(nullptr,
+        TEXT("/Game/_Project/System/Mass/Projectile/NS_BBBProjectileImpact.NS_BBBProjectileImpact"));
+    if (!TestNotNull(TEXT("正式命中通道"), ImpactChannel) || !TestNotNull(TEXT("正式命中系统"), ImpactSystem))
+    {
+        return false;
+    }
+    const FBBBProjectileImpact Impacts[] = {
+        {FVector::ZeroVector, FVector::UpVector, SurfaceType_Default},
+        {FVector(50.0f, 0.0f, 0.0f), FVector::UpVector, SurfaceType1},
+        {FVector(100.0f, 0.0f, 0.0f), FVector::UpVector, SurfaceType2}
+    };
+    FBBBProjectilePresentation::PublishImpacts(*World, *ImpactChannel, Impacts);
+    auto* ImpactHandler = UNiagaraDataChannelLibrary::FindDataChannelHandler(World, ImpactChannel->Get());
+    FNDCAccessContextInst ImpactContext(ImpactChannel->Get()->GetAccessContextType());
+    ImpactContext.GetChecked<FNDCAccessContextLegacy>() = FNDCAccessContextLegacy(FVector::ZeroVector);
+    auto ImpactData = ImpactHandler->FindData(ImpactContext, ENiagaraResourceAccess::ReadOnly);
+    ImpactData->ConsumePublishRequests(ImpactHandler, TG_LastDemotable);
+    ImpactData->BeginFrame(ImpactHandler);
+    UNiagaraComponent* ImpactComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+        World, ImpactSystem, FVector::ZeroVector, FRotator::ZeroRotator, FVector::OneVector,
+        false, false, ENCPoolMethod::None, false);
+    if (!TestNotNull(TEXT("命中验证组件"), ImpactComponent))
+    {
+        return false;
+    }
+    ImpactComponent->SetForceSolo(true);
+    ImpactComponent->Activate();
+    ImpactComponent->AdvanceSimulation(1, 0.016f);
+    auto ImpactController = ImpactComponent->GetSystemInstanceController();
+    ImpactController->WaitForConcurrentTickAndFinalize();
+    const auto& ImpactEmitters = ImpactController->GetSystemInstance_Unsafe()->GetEmitters();
+    TestEqual(TEXT("三类反馈发射器"), ImpactEmitters.Num(), 3);
+    const int32 ExpectedCounts[] = {10, 8, 10};
+    for (int32 Index = 0; Index < ImpactEmitters.Num(); ++Index)
+    {
+        TestEqual(FString::Printf(TEXT("表面分类%d仅生成对应粒子"), Index),
+            ImpactEmitters[Index]->GetNumParticles(), ExpectedCounts[Index]);
+    }
+    ImpactData->BeginFrame(ImpactHandler);
+    ImpactComponent->AdvanceSimulation(20, 0.016f);
+    ImpactController->WaitForConcurrentTickAndFinalize();
+    for (const auto& ImpactEmitter : ImpactEmitters)
+    {
+        TestEqual(TEXT("反馈生命周期结束后归零"), ImpactEmitter->GetNumParticles(), 0);
+    }
+    ImpactComponent->DestroyComponent();
     return true;
 }
 

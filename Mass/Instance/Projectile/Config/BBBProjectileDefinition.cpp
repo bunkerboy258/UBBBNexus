@@ -28,6 +28,7 @@ bool UBBBProjectileDefinition::IsValid() const
         && PenetrationDamageMultiplier <= 1.0f
         && PresentationChannel != nullptr
         && PresentationSystem != nullptr
+        && ImpactChannel != nullptr
         && FMath::IsFinite(TracerLengthCm)
         && TracerLengthCm > 0.0f
         && FMath::IsFinite(TracerWidthCm)

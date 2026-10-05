@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/EngineTypes.h"
 #include "MassEntityTypes.h"
 #include "Mass/EntityHandle.h"
 
@@ -15,4 +16,7 @@ struct FBBBMassCollisionBody final
 
     /** 球体半径 */
     float Radius = 0.0f;
+
+    /** 由碰撞体所属实例发布的物理表面类型 */
+    EPhysicalSurface Surface = SurfaceType_Default;
 };

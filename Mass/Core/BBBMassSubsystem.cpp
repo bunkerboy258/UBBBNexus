@@ -95,10 +95,14 @@ void UBBBMassSubsystem::AddCollisionBody(const FBBBMassCollisionBody& Body)
 }
 
 bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, const float Radius,
-    TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime) const
+    TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime,
+    FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface) const
 {
     HitTime = 1.0f;
     HitEntity.Reset();
+    HitPosition = End;
+    HitNormal = FVector::ZeroVector;
+    HitSurface = SurfaceType_Default;
     const FVector Delta = End - Start;
     const double LengthSquared = Delta.SizeSquared();
     if (LengthSquared <= UE_SMALL_NUMBER)
@@ -154,6 +158,13 @@ bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, 
                         {
                             HitTime = Time;
                             HitEntity = Body.Entity;
+                            HitNormal = (Start + Delta * Time - Body.Center).GetSafeNormal();
+                            if (HitNormal.IsNearlyZero())
+                            {
+                                HitNormal = -Delta.GetSafeNormal();
+                            }
+                            HitPosition = Body.Center + HitNormal * Body.Radius;
+                            HitSurface = Body.Surface;
                         }
                     }
                 }

@@ -47,6 +47,7 @@ void UBBBMonsterCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionC
             Body.Entity = Chunk.GetEntity(Index);
             Body.Center = Transforms[Index].GetTransform().GetLocation();
             Body.Radius = Avoidance[Index].CollisionRadius;
+            Body.Surface = SurfaceType2;
             Mass->AddCollisionBody(Body);
         }
     });

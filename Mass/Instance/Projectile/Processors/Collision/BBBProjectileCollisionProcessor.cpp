@@ -6,11 +6,16 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerState.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "NiagaraDataChannel.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileCollisionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Lifetime/BBBProjectileLifetimeFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Presentation/BBBProjectilePresentationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
 
 UBBBProjectileCollisionProcessor::UBBBProjectileCollisionProcessor()
@@ -31,6 +36,7 @@ void UBBBProjectileCollisionProcessor::ConfigureQueries(const TSharedRef<FMassEn
     EntityQuery.AddRequirement<FBBBProjectileMotionFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBProjectileCollisionFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBProjectileLifetimeFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBProjectilePresentationFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -39,13 +45,16 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     // 只汇总本轮结果 每目标最后提交一个完整累计快照
     TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket> DamageResults;
-    EntityQuery.ForEachEntityChunk(Context, [World, Mass, &DamageResults](FMassExecutionContext& Chunk)
+    TArray<FBBBProjectileImpact> Impacts;
+    TWeakObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;
+    EntityQuery.ForEachEntityChunk(Context, [World, Mass, &DamageResults, &Impacts, &ImpactChannel](FMassExecutionContext& Chunk)
     {
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         const auto Motion = Chunk.GetFragmentView<FBBBProjectileMotionFragment>();
         const auto Velocity = Chunk.GetFragmentView<FMassVelocityFragment>();
         auto Collision = Chunk.GetMutableFragmentView<FBBBProjectileCollisionFragment>();
         auto Life = Chunk.GetMutableFragmentView<FBBBProjectileLifetimeFragment>();
+        const auto Presentation = Chunk.GetFragmentView<FBBBProjectilePresentationFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Data = Collision[Index];
@@ -58,6 +67,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             const FVector End = Transforms[Index].GetTransform().GetLocation();
             const FVector Direction = Velocity[Index].Value.GetSafeNormal();
             FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMassProjectile), false);
+            Params.bReturnPhysicalMaterial = true;
             Params.AddIgnoredActor(Data.DamageCauser.Get());
             Params.AddIgnoredActor(Data.InstigatorPawn.Get());
             Params.AddIgnoredActor(Data.LastHitActor.Get());
@@ -84,7 +94,9 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
 
                 FMassEntityHandle Target;
                 float EntityTime = 1.0f;
-                const bool bEntityHit = Mass->TraceEntities(Start, End, Data.CollisionRadiusCm, IgnoredEntities, Target, EntityTime);
+                FBBBProjectileImpact Impact;
+                const bool bEntityHit = Mass->TraceEntities(Start, End, Data.CollisionRadiusCm,
+                    IgnoredEntities, Target, EntityTime, Impact.Position, Impact.Normal, Impact.Surface);
                 const bool bUseEntity = bEntityHit && (!bWorldHit || EntityTime < WorldHit.Time);
                 if (!bUseEntity && !bWorldHit)
                 {
@@ -92,6 +104,18 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 }
 
                 const FVector HitPosition = bUseEntity ? FMath::Lerp(Start, End, EntityTime) : WorldHit.Location;
+                if (!bUseEntity)
+                {
+                    Impact.Position = WorldHit.ImpactPoint;
+                    Impact.Normal = WorldHit.ImpactNormal;
+                    Impact.Surface = UPhysicalMaterial::DetermineSurfaceType(WorldHit.PhysMaterial.Get());
+                }
+                if (ensureMsgf(!ImpactChannel.IsValid() || ImpactChannel == Presentation[Index].ImpactChannel,
+                    TEXT("同一世界的子弹命中必须使用同一个批量通道")))
+                {
+                    ImpactChannel = Presentation[Index].ImpactChannel;
+                    Impacts.Add(Impact);
+                }
                 if (bUseEntity)
                 {
                     if (Data.bCanCauseDamage && Data.Damage > 0.0f)
@@ -154,5 +178,9 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     for (auto& Result : DamageResults)
     {
         Mass->SubmitInput(Result.Key, MoveTemp(Result.Value));
+    }
+    if (ImpactChannel.IsValid())
+    {
+        FBBBProjectilePresentation::PublishImpacts(*World, *ImpactChannel.Get(), Impacts);
     }
 }

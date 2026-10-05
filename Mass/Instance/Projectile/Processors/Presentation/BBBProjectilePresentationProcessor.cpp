@@ -79,7 +79,13 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
             ActiveChannel = Visual.Channel;
             ActiveSystem = Visual.System;
 
-            if (SystemComponent == nullptr && !bEnding)
+            if (bEnding && Visual.Slot == INDEX_NONE
+                && ChunkTransforms[Index].GetTransform().GetLocation().Equals(ChunkMotion[Index].SpawnLocation, UE_SMALL_NUMBER))
+            {
+                continue;
+            }
+
+            if (SystemComponent == nullptr)
             {
                 UMassSimulationSubsystem* Simulation = World->GetSubsystem<UMassSimulationSubsystem>();
                 if (!ensureMsgf(Simulation != nullptr && Simulation->IsSimulationStarted()
@@ -106,7 +112,7 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
                 SystemComponent->Activate();
             }
 
-            if (Visual.Slot == INDEX_NONE && !bEnding)
+            if (Visual.Slot == INDEX_NONE)
             {
                 Visual.Slot = FreeSlots.IsEmpty() ? NextSlot++ : FreeSlots.Pop(EAllowShrinking::No);
                 Visual.bSpawnPending = true;
