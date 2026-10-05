@@ -2,6 +2,7 @@
 
 #include "Net/Serialization/FastArraySerializer.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageContribution.h"
 #include "BBBMonsterReplicationItem.generated.h"
 
 class UBBBMonsterDefinition;
@@ -40,5 +41,5 @@ struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
     float StateEnteredTime = 0.0f;
 
     UPROPERTY()
-    float Health = 0.0f;
+    TArray<FBBBMonsterDamageContribution> Contributions;
 };

@@ -17,6 +17,9 @@ struct ABBB_EVAC_API FBBBMonsterNetworkFragment final : public FMassFragment
     /** 最新接收的事实版本 */
     uint32 ReceivedRevision = 0;
 
+    /** 最新本机贡献已经交接给可靠发送流程后才允许回收 */
+    bool bDamageSubmitted = false;
+
     /** 静态配置引用 */
     UPROPERTY()
     TWeakObjectPtr<UBBBMonsterDefinition> Definition;

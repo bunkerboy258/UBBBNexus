@@ -4,11 +4,10 @@
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 
 struct FBBBMonsterNetworkInputFragment;
 
-/** 小怪当前行动与生命事实 不重演远端决策 */
+/** 小怪当前行动事实 不重演远端决策 生命由本机伤害字典决定 */
 struct FBBBMonsterStateAuthorityFactPacket final
 {
     using FInputFragment = FBBBMonsterNetworkInputFragment;
@@ -20,14 +19,12 @@ struct FBBBMonsterStateAuthorityFactPacket final
     EBBBMonsterBehavior Behavior = EBBBMonsterBehavior::Idle;
     uint32 ActionId = 0;
     float StateEnteredTime = 0.0f;
-    float Health = 0.0f;
 
     /** @return 当前事实是否有效 */
     bool IsValid() const
     {
         return InstanceId.IsValid() && Revision > 0
             && !Transform.ContainsNaN() && !Velocity.ContainsNaN()
-            && FMath::IsFinite(Health) && Health >= 0.0f
             && FMath::IsFinite(StateEnteredTime)
             && Behavior <= EBBBMonsterBehavior::Dead;
     }
@@ -43,16 +40,13 @@ struct FBBBMonsterStateAuthorityFactPacket final
      * @param Position	位置结果
      * @param Speed	速度结果
      * @param State	行为状态
-     * @param Damage	生命结果
      * @return 无
      */
     void Apply(FBBBMonsterNetworkFragment& Network, FTransformFragment& Position,
-        FMassVelocityFragment& Speed, FBBBMonsterBehaviorFragment& State,
-        FBBBMonsterDamageFragment& Damage) const
+        FMassVelocityFragment& Speed, FBBBMonsterBehaviorFragment& State) const
     {
         Network.InstanceId = InstanceId;
         Network.ReceivedRevision = Revision;
-        Damage.ReportedHealth = Health;
         if (State.State == EBBBMonsterBehavior::Dead)
         {
             return;
@@ -60,6 +54,12 @@ struct FBBBMonsterStateAuthorityFactPacket final
 
         Position.GetMutableTransform() = Transform;
         Speed.Value = Velocity;
+        // 远端 Dead 不是本机死亡依据 生命 Processor 会根据累计贡献独立进入死亡
+        if (Behavior == EBBBMonsterBehavior::Dead)
+        {
+            Speed.Value = FVector::ZeroVector;
+            return;
+        }
         State.State = Behavior;
         State.ActionId = ActionId;
         State.StateEnteredTime = StateEnteredTime;

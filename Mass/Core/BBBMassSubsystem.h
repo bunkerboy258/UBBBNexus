@@ -10,7 +10,8 @@
 class UMassEntityConfigAsset;
 struct FBBBProjectileSpawnLocalControlPacket;
 struct FBBBMonsterDamageLocalControlPacket;
-struct FBBBMonsterHealthRemoteMessagePacket;
+struct FBBBMonsterDamageRemoteMessagePacket;
+struct FBBBMonsterDamageContribution;
 struct FBBBMonsterStateAuthorityFactPacket;
 
 /** 世界级实体生命周期与输入路由 */
@@ -48,6 +49,14 @@ public:
         TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime) const;
 
     /**
+     * 查询包含尚未消费输入的累计贡献快照 不暴露目标 Fragment
+     * @param Entity	目标小怪实体
+     * @param Result	已应用与待解析的累计贡献 当前结果按玩家身份排序
+     * @return 是否取得有效目标的快照
+     */
+    bool QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result) const;
+
+    /**
      * @param Entity	目标实体
      * @param Packet	覆盖提交的输入
      * @return 是否成功投递
@@ -61,7 +70,7 @@ public:
 private:
     bool RouteInput(FMassEntityHandle Entity, const FBBBProjectileSpawnLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageLocalControlPacket& Packet);
-    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterHealthRemoteMessagePacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageRemoteMessagePacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet);
 
     /** 每帧重建的空间桶 不持有实体玩法状态 */

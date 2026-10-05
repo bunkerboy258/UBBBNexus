@@ -3,7 +3,7 @@
 #include "MassEntityTypes.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassInputSlot.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterHealthRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
 #include "BBBMonsterHealthInputFragment.generated.h"
 
 /** 健康领域输入覆盖槽 */
@@ -13,7 +13,7 @@ struct ABBB_EVAC_API FBBBMonsterHealthInputFragment final : public FMassFragment
     GENERATED_BODY()
 
     TBBBMassInputSlot<FBBBMonsterDamageLocalControlPacket> Damage;
-    TBBBMassInputSlot<FBBBMonsterHealthRemoteMessagePacket> RemoteHealth;
+    TBBBMassInputSlot<FBBBMonsterDamageRemoteMessagePacket> RemoteDamage;
 
     template<typename TPacket>
     TBBBMassInputSlot<TPacket>& GetSlot()
@@ -24,8 +24,28 @@ struct ABBB_EVAC_API FBBBMonsterHealthInputFragment final : public FMassFragment
         }
         else
         {
-            static_assert(std::is_same_v<TPacket, FBBBMonsterHealthRemoteMessagePacket>);
-            return RemoteHealth;
+            static_assert(std::is_same_v<TPacket, FBBBMonsterDamageRemoteMessagePacket>);
+            return RemoteDamage;
         }
     }
+};
+
+/** 覆盖快照含动态贡献数组 必须深拷贝而非按字节复制 */
+template<>
+struct TStructOpsTypeTraits<FBBBMonsterHealthInputFragment>
+    : TStructOpsTypeTraitsBase2<FBBBMonsterHealthInputFragment>
+{
+    enum
+    {
+        WithCopy = true
+    };
+};
+
+template<>
+struct TMassFragmentTraits<FBBBMonsterHealthInputFragment>
+{
+    enum
+    {
+        AuthorAcceptsItsNotTriviallyCopyable = true
+    };
 };

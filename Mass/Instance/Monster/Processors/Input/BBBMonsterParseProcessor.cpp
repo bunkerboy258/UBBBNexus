@@ -25,7 +25,6 @@ void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     EntityQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
-    EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -39,7 +38,6 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
         auto State = Chunk.GetMutableFragmentView<FBBBMonsterBehaviorFragment>();
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Velocities = Chunk.GetMutableFragmentView<FMassVelocityFragment>();
-        const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Fact = NetworkInputs[Index].State;
@@ -48,15 +46,15 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
                 Fact.bActive = false;
                 if (Fact.Packet.IsValid() && Fact.Packet.CanApply(Network[Index]))
                 {
-                    Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index], Damage[Index]);
+                    Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index]);
                 }
             }
 
-            auto& Remote = HealthInputs[Index].RemoteHealth;
+            auto& Remote = HealthInputs[Index].RemoteDamage;
             if (Remote.bActive)
             {
                 Remote.bActive = false;
-                if (Remote.Packet.IsValid() && Remote.Packet.CanApply(Health[Index]))
+                if (Remote.Packet.IsValid() && Remote.Packet.CanApply(Network[Index]))
                 {
                     Remote.Packet.Apply(Damage[Index]);
                 }
@@ -66,7 +64,7 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
             if (Local.bActive)
             {
                 Local.bActive = false;
-                if (Local.Packet.IsValid() && Local.Packet.CanApply(Health[Index]))
+                if (Local.Packet.IsValid() && Local.Packet.CanApply(Damage[Index]))
                 {
                     Local.Packet.Apply(Damage[Index]);
                 }

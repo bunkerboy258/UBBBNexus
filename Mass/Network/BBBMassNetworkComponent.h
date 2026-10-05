@@ -3,7 +3,7 @@
 #include "Components/ActorComponent.h"
 #include "BBBMassNetworkComponent.generated.h"
 
-/** 挂在连接所属控制器上的 Mass 客机上报通道 */
+/** 挂在连接所有者上的客机累计贡献上报通道 */
 UCLASS()
 class ABBB_EVAC_API UBBBMassNetworkComponent final : public UActorComponent
 {
@@ -12,11 +12,7 @@ class ABBB_EVAC_API UBBBMassNetworkComponent final : public UActorComponent
 public:
     UBBBMassNetworkComponent();
 
-    /**
-     * @param InstanceId	目标小怪身份
-     * @param Health	本机已经成立的剩余血量
-     * @return 无
-     */
+    /** 来源由连接所属 PlayerState 确定 只传这一代小怪的最新累计值 */
     UFUNCTION(Server, Reliable)
-    void ServerReportHealth(FGuid InstanceId, float Health);
+    void ServerReportDamage(FGuid InstanceId, double CumulativeDamage);
 };

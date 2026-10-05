@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 
 namespace
 {
@@ -57,9 +58,14 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDa
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterHealthRemoteMessagePacket& Packet)
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageRemoteMessagePacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result) const
+{
+    return UBBBMonsterDamageProcessor::Query(*GetWorld(), Entity, Result);
 }
 
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet)

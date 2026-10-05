@@ -11,12 +11,12 @@ struct ABBB_EVAC_API FBBBMonsterHealthFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
-    /** 当前生命值 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (DisplayName = "当前生命值"))
+    /** 根据血量上限与伤害字典计算的本机缓存 不接受独立配置或网络写入 */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "小怪", meta = (DisplayName = "剩余血量"))
     float CurrentHealth = 100.0f;
 
-    /** 最大生命值 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (DisplayName = "最大生命值"))
+    /** 同一代小怪各端一致的血量上限 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪", meta = (DisplayName = "血量上限"))
     float MaxHealth = 100.0f;
 
     /** 每次受伤重新计算的硬直时长 */

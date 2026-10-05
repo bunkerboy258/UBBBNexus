@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
 
-#include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "GameFramework/GameStateBase.h"
 #include "MassSpawnerSubsystem.h"
 #include "Net/UnrealNetwork.h"
@@ -29,40 +29,50 @@ void ABBBMassNetworkActor::BeginPublish()
     Observed.Reset();
 }
 
-void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMassEntityHandle Entity)
+void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMassEntityHandle Entity, bool bUpdateAction)
 {
     Observed.Add(State.InstanceId);
     LocalEntities.Add(State.InstanceId, Entity);
     const int32* ExistingIndex = ReplicationIndices.Find(State.InstanceId);
     FBBBMonsterReplicationItem* Existing = ExistingIndex != nullptr ? &Monsters.Items[*ExistingIndex] : nullptr;
-
     if (Existing == nullptr)
     {
         Existing = &Monsters.Items.AddDefaulted_GetRef();
         ReplicationIndices.Add(State.InstanceId, Monsters.Items.Num() - 1);
+        bUpdateAction = true;
     }
 
-    // 只标记实际发生变化的当前结果 不发送逐帧历史
-    if (Existing->InstanceId == State.InstanceId && Existing->Definition == State.Definition
-        && Existing->Location.Equals(State.Location, 0.1f) && Existing->Rotation.Equals(State.Rotation, 0.1f)
-        && Existing->Velocity.Equals(State.Velocity, 0.1f) && Existing->Behavior == State.Behavior
-        && Existing->ActionId == State.ActionId && Existing->StateEnteredTime == State.StateEnteredTime
-        && Existing->Health == State.Health)
+    const bool bDamageChanged = Existing->Contributions != State.Contributions;
+    const bool bActionChanged = bUpdateAction && (Existing->InstanceId != State.InstanceId
+        || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
+        || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
+        || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
+        || Existing->StateEnteredTime != State.StateEnteredTime);
+    if (!bDamageChanged && !bActionChanged)
     {
         return;
     }
 
     Existing->InstanceId = State.InstanceId;
     Existing->Definition = State.Definition;
-    Existing->Location = State.Location;
-    Existing->Rotation = State.Rotation;
-    Existing->Velocity = State.Velocity;
-    Existing->Behavior = State.Behavior;
-    Existing->ActionId = State.ActionId;
-    Existing->StateEnteredTime = State.StateEnteredTime;
-    Existing->Health = State.Health;
+    if (bUpdateAction)
+    {
+        Existing->Location = State.Location;
+        Existing->Rotation = State.Rotation;
+        Existing->Velocity = State.Velocity;
+        Existing->Behavior = State.Behavior;
+        Existing->ActionId = State.ActionId;
+        Existing->StateEnteredTime = State.StateEnteredTime;
+    }
+    Existing->Contributions = State.Contributions;
     ++Existing->Revision;
     Monsters.MarkItemDirty(*Existing);
+
+    if (bDamageChanged)
+    {
+        // 属性快照提供当前结果 RPC 保证实体很快回收时最终贡献也已经进入可靠通道
+        MulticastDamage(State.InstanceId, State.Contributions);
+    }
 }
 
 void ABBBMassNetworkActor::EndPublish()
@@ -89,32 +99,63 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
     return Entity != nullptr ? *Entity : FMassEntityHandle();
 }
 
-void ABBBMassNetworkActor::ObserveLocalHealth(const FGuid& InstanceId, float Health)
+bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, int32 PlayerId, double CumulativeDamage)
 {
-    LocalHealth.Add(InstanceId, Health);
+    const double* Submitted = SubmittedDamage.Find(InstanceId);
+    if (CumulativeDamage <= 0.0 || (Submitted != nullptr && *Submitted >= CumulativeDamage))
+    {
+        return true;
+    }
+    APlayerController* Controller = GetWorld()->GetFirstPlayerController();
+    const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
+    UBBBMassNetworkComponent* Connection = Controller != nullptr
+        ? Controller->FindComponentByClass<UBBBMassNetworkComponent>() : nullptr;
+    if (Player == nullptr || Player->GetPlayerId() != PlayerId || Connection == nullptr)
+    {
+        return false;
+    }
+    Connection->ServerReportDamage(InstanceId, CumulativeDamage);
+    SubmittedDamage.Add(InstanceId, CumulativeDamage);
+    return true;
 }
 
-void ABBBMassNetworkActor::SendLocalHealth()
+void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,
+    const TArray<FBBBMonsterDamageContribution>& Contributions)
 {
-    APlayerController* Controller = GetWorld()->GetFirstPlayerController();
-    UBBBMassNetworkComponent* Connection = Controller != nullptr ? Controller->FindComponentByClass<UBBBMassNetworkComponent>() : nullptr;
-    if (Connection == nullptr)
+    if (!HasAuthority())
+    {
+        RouteDamage(InstanceId, Contributions);
+    }
+}
+
+void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
+    const TArray<FBBBMonsterDamageContribution>& Contributions)
+{
+    if (Retired.Contains(InstanceId))
     {
         return;
     }
-
-    for (auto It = LocalHealth.CreateIterator(); It; ++It)
+    UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
+    FBBBMonsterDamageRemoteMessagePacket Packet;
+    Packet.InstanceId = InstanceId;
+    const FMassEntityHandle Entity = FindEntity(InstanceId);
+    if (!Mass->QueryDamage(Entity, Packet.Contributions))
     {
-        const int32* Index = ReplicationIndices.Find(It.Key());
-        const auto* Server = Index != nullptr ? &Monsters.Items[*Index] : nullptr;
-        if (Server == nullptr || Server->Health <= It.Value())
+        auto& Pending = PendingDamageSnapshots.FindOrAdd(InstanceId);
+        Pending.InstanceId = InstanceId;
+        for (const auto& Value : Contributions)
         {
-            It.RemoveCurrent();
-            continue;
+            Pending.Include(Value);
         }
-
-        // 未获回显的当前结果继续提交 不是逐次扣血事件重放
-        Connection->ServerReportHealth(It.Key(), It.Value());
+        return;
+    }
+    for (const auto& Value : Contributions)
+    {
+        Packet.Include(Value);
+    }
+    if (Packet.IsValid())
+    {
+        Mass->SubmitInput(Entity, MoveTemp(Packet));
     }
 }
 
@@ -143,19 +184,13 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         FMassEntityHandle Entity = FindEntity(Item.InstanceId);
         if (Entity.IsSet() && !Manager.IsEntityValid(Entity))
         {
-            // 本机已经回收的死亡实例保留身份墓碑 不被迟到存活包重新生成
             Retired.Add(Item.InstanceId);
+            PendingDamageSnapshots.Remove(Item.InstanceId);
             continue;
         }
 
         if (!Entity.IsSet())
         {
-            if (Item.Health <= 0.0f)
-            {
-                Retired.Add(Item.InstanceId);
-                continue;
-            }
-
             if (!ensureMsgf(Item.Definition != nullptr && Item.Definition->EntityConfig != nullptr,
                 TEXT("Mass 远端小怪缺少出生配置")))
             {
@@ -177,11 +212,16 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         Packet.Velocity = Item.Velocity;
         Packet.Behavior = Item.Behavior;
         Packet.ActionId = Item.ActionId;
-        Packet.Health = Item.Health;
         const AGameStateBase* GameState = GetWorld()->GetGameState();
         const double ServerTime = GameState != nullptr ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
         Packet.StateEnteredTime = GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.StateEnteredTime);
         Mass->SubmitInput(Entity, MoveTemp(Packet));
+        RouteDamage(Item.InstanceId, Item.Contributions);
+        if (const auto* Pending = PendingDamageSnapshots.Find(Item.InstanceId))
+        {
+            RouteDamage(Item.InstanceId, Pending->Contributions);
+            PendingDamageSnapshots.Remove(Item.InstanceId);
+        }
     }
 
     for (auto It = LocalEntities.CreateIterator(); It; ++It)
@@ -192,7 +232,8 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         }
 
         Retired.Add(It.Key());
-        LocalHealth.Remove(It.Key());
+        SubmittedDamage.Remove(It.Key());
+        PendingDamageSnapshots.Remove(It.Key());
         if (Manager.IsEntityValid(It.Value()))
         {
             TArray<FMassEntityHandle> Removed;

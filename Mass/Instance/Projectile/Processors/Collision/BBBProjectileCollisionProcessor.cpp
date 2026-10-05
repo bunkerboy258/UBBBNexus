@@ -4,6 +4,8 @@
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/PlayerState.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
@@ -35,7 +37,9 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
 {
     UWorld* World = Context.GetWorld();
     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
-    EntityQuery.ForEachEntityChunk(Context, [World, Mass](FMassExecutionContext& Chunk)
+    // 只汇总本轮结果 每目标最后提交一个完整累计快照
+    TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket> DamageResults;
+    EntityQuery.ForEachEntityChunk(Context, [World, Mass, &DamageResults](FMassExecutionContext& Chunk)
     {
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         const auto Motion = Chunk.GetFragmentView<FBBBProjectileMotionFragment>();
@@ -90,11 +94,31 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 const FVector HitPosition = bUseEntity ? FMath::Lerp(Start, End, EntityTime) : WorldHit.Location;
                 if (bUseEntity)
                 {
-                    if (Data.bCanCauseDamage)
+                    if (Data.bCanCauseDamage && Data.Damage > 0.0f)
                     {
-                        FBBBMonsterDamageLocalControlPacket Packet;
-                        Packet.Damage = Data.Damage;
-                        Mass->SubmitInput(Target, MoveTemp(Packet));
+                        const AController* Controller = Data.EventInstigator.Get();
+                        const APlayerState* Player = Controller != nullptr
+                            ? Controller->GetPlayerState<APlayerState>() : nullptr;
+                        if (ensureMsgf(Player != nullptr && Player->GetPlayerId() >= 0,
+                            TEXT("有效子弹伤害需要稳定的 PlayerState 玩家身份")))
+                        {
+                            auto* Result = DamageResults.Find(Target);
+                            if (Result == nullptr)
+                            {
+                                FBBBMonsterDamageLocalControlPacket Snapshot;
+                                if (Mass->QueryDamage(Target, Snapshot.Contributions))
+                                {
+                                    Result = &DamageResults.Add(Target, MoveTemp(Snapshot));
+                                }
+                            }
+                            if (Result != nullptr)
+                            {
+                                auto* Contribution = Result->Contributions.FindByPredicate(
+                                    [Player](const auto& Value) { return Value.PlayerId == Player->GetPlayerId(); });
+                                const double Previous = Contribution != nullptr ? Contribution->Damage : 0.0;
+                                Result->Include({Player->GetPlayerId(), Previous + Data.Damage});
+                            }
+                        }
                     }
 
                     IgnoredEntities.Add(Target);
@@ -127,4 +151,8 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             }
         }
     });
+    for (auto& Result : DamageResults)
+    {
+        Mass->SubmitInput(Result.Key, MoveTemp(Result.Value));
+    }
 }

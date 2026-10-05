@@ -7,6 +7,8 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "MassExecutor.h"
@@ -16,9 +18,12 @@
 #include "NiagaraSystem.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Input/BBBMonsterParseProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterLifecycleProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Spawn/BBBProjectileParseProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Movement/BBBProjectileMovementProcessor.h"
@@ -43,20 +48,17 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMassRuntimeTest, "UBBB.Mass.Runtime",
 bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
 {
     const auto Initialization = UWorld::InitializationValues()
-        .AllowAudioPlayback(false)
-        .CreatePhysicsScene(true)
-        .CreateNavigation(false)
-        .CreateAISystem(false)
-        .ShouldSimulatePhysics(false);
+        .AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false)
+        .CreateAISystem(false).ShouldSimulatePhysics(false);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
     if (!TestNotNull(TEXT("隔离世界"), World))
     {
         return false;
     }
-
     GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
     ON_SCOPE_EXIT
     {
+        World->WorldType = EWorldType::Game;
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
     };
@@ -66,9 +68,12 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
-        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct()
+        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
+        FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()
     });
     const FMassEntityHandle Monster = Manager.CreateEntity(MonsterType);
+    const FGuid InstanceId = FGuid::NewGuid();
+    Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Monster).InstanceId = InstanceId;
     const auto Run = [&Manager, World](UClass* Type)
     {
         UMassProcessor* Processor = NewObject<UMassProcessor>(World, Type);
@@ -76,29 +81,63 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         UE::Mass::FProcessingContext Context(Manager, 0.05f);
         UE::Mass::Executor::Run(*Processor, Context);
     };
+    const auto Health = [&Manager, Monster]()
+    {
+        return Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth;
+    };
+    const auto Consume = [&Run]()
+    {
+        Run(UBBBMonsterParseProcessor::StaticClass());
+        Run(UBBBMonsterDamageProcessor::StaticClass());
+    };
 
     FBBBMonsterDamageLocalControlPacket Damage;
-    Damage.Damage = 10.0f;
+    Damage.Include({1, 10.0});
     TestTrue(TEXT("首次投递"), Mass->SubmitInput(Monster, Damage));
-    Damage.Damage = 15.0f;
+    Damage.Include({1, 25.0});
     Mass->SubmitInput(Monster, Damage);
-    TestEqual(TEXT("投递不直接扣血"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 100.0f);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    Run(UBBBMonsterDamageProcessor::StaticClass());
-    TestEqual(TEXT("后到覆盖先到"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 85.0f);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    Run(UBBBMonsterDamageProcessor::StaticClass());
-    TestEqual(TEXT("消费后不重复扣血"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 85.0f);
+    TestEqual(TEXT("投递不直接扣血"), Health(), 100.0f);
+    Manager.AddFragmentToEntity(Monster, FMassActorFragment::StaticStruct());
+    TestTrue(TEXT("实体换 Archetype 后覆盖快照仍完整"),
+        Manager.GetFragmentDataChecked<FBBBMonsterHealthInputFragment>(Monster).Damage.Packet.Contributions[0].Damage == 25.0);
+    Consume();
+    TestEqual(TEXT("覆盖后的累计结果包含前一次命中"), Health(), 75.0f);
+    Consume();
+    TestEqual(TEXT("消费后不重复扣血"), Health(), 75.0f);
+    TestEqual(TEXT("字典原生深拷贝保留贡献"),
+        Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.FindChecked(1), 25.0);
 
-    FBBBMonsterHealthRemoteMessagePacket Remote;
-    Remote.Health = 60.0f;
+    // 测试夹具重新开始独立场景 运行时不允许清空累计贡献
+    Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.Reset();
+    Consume();
+    Damage.Contributions.Reset();
+    Damage.Include({1, 20.0});
+    Mass->SubmitInput(Monster, Damage);
+    FBBBMonsterDamageRemoteMessagePacket Remote;
+    Remote.InstanceId = InstanceId;
+    TestTrue(TEXT("查询包含待消费的本机贡献"), Mass->QueryDamage(Monster, Remote.Contributions));
+    Remote.Include({2, 20.0});
     Mass->SubmitInput(Monster, Remote);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    Run(UBBBMonsterDamageProcessor::StaticClass());
+    Consume();
+    TestEqual(TEXT("两名玩家同时各造成二十伤害"), Health(), 60.0f);
     Mass->SubmitInput(Monster, Remote);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    Run(UBBBMonsterDamageProcessor::StaticClass());
-    TestEqual(TEXT("远端结果重复合并幂等"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 60.0f);
+    Consume();
+    TestEqual(TEXT("重复累计消息不重复扣血"), Health(), 60.0f);
+    Remote.Contributions.Reset();
+    Remote.Include({1, 5.0});
+    Remote.Include({2, 10.0});
+    Mass->SubmitInput(Monster, Remote);
+    Consume();
+    TestEqual(TEXT("迟到的小累计值不恢复生命"), Health(), 60.0f);
+
+    Damage.Include({1, 40.0});
+    Mass->SubmitInput(Monster, Damage);
+    Remote.Contributions.Reset();
+    Remote.Include({1, 20.0});
+    Remote.Include({2, 20.0});
+    Mass->SubmitInput(Monster, Remote);
+    Consume();
+    TestEqual(TEXT("主机旧字典不能覆盖本机未回显贡献"), Health(), 40.0f);
 
     const FMassArchetypeHandle ProjectileType = Manager.CreateArchetype({
         FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
@@ -108,22 +147,29 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     });
     UNiagaraDataChannelAsset* TestChannel = NewObject<UNiagaraDataChannelAsset>(World);
     UNiagaraSystem* TestSystem = NewObject<UNiagaraSystem>(World);
-    const auto Shoot = [&](bool bDamage)
+    APlayerController* Controller = World->SpawnActor<APlayerController>();
+    APlayerState* Player = World->SpawnActor<APlayerState>();
+    Player->SetPlayerId(1);
+    Controller->SetPlayerState(Player);
+    const auto Shoot = [&](bool bDamage, int32 Count = 1, float Amount = 20.0f)
     {
-        const FMassEntityHandle Projectile = Manager.CreateEntity(ProjectileType);
-        FBBBProjectileSpawnLocalControlPacket Spawn;
-        Spawn.MuzzleTransform = FTransform(FRotator(0.0f, 90.0f, 0.0f), FVector::ZeroVector);
-        Spawn.Speed = 1000.0f;
-        Spawn.Damage = 20.0f;
-        Spawn.Channel = TestChannel;
-        Spawn.System = TestSystem;
-        Spawn.bCanCauseDamage = bDamage;
-        Mass->SubmitInput(Projectile, Spawn);
+        TArray<FMassEntityHandle> Projectiles;
+        for (int32 Index = 0; Index < Count; ++Index)
+        {
+            const FMassEntityHandle Projectile = Manager.CreateEntity(ProjectileType);
+            Projectiles.Add(Projectile);
+            FBBBProjectileSpawnLocalControlPacket Spawn;
+            Spawn.MuzzleTransform = FTransform(FRotator(0.0f, 90.0f, 0.0f), FVector::ZeroVector);
+            Spawn.Speed = 1000.0f;
+            Spawn.Damage = Amount;
+            Spawn.Channel = TestChannel;
+            Spawn.System = TestSystem;
+            Spawn.Controller = Controller;
+            Spawn.bCanCauseDamage = bDamage;
+            Mass->SubmitInput(Projectile, Spawn);
+        }
         Run(UBBBProjectileParseProcessor::StaticClass());
         Run(UBBBProjectileMovementProcessor::StaticClass());
-        const FVector Location = Manager.GetFragmentDataChecked<FTransformFragment>(Projectile).GetTransform().GetLocation();
-        TestTrue(TEXT("沿当前枪口局部 X 前进"), Location.Equals(FVector(0.0f, 50.0f, 0.0f), 0.01f));
-
         Mass->BeginCollisionFrame();
         FBBBMassCollisionBody Body;
         Body.Entity = Monster;
@@ -131,44 +177,81 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         Body.Radius = 5.0f;
         Mass->AddCollisionBody(Body);
         Run(UBBBProjectileCollisionProcessor::StaticClass());
-        TestTrue(TEXT("无表现 Actor 仍可碰撞"), Manager.GetFragmentDataChecked<FBBBProjectileLifetimeFragment>(Projectile).bPendingDestroy);
-        Run(UBBBMonsterParseProcessor::StaticClass());
-        Run(UBBBMonsterDamageProcessor::StaticClass());
-        Manager.DestroyEntity(Projectile);
+        for (const auto Projectile : Projectiles)
+        {
+            TestTrue(TEXT("沿本机枪口 X 运动并在逻辑碰撞处结束"),
+                Manager.GetFragmentDataChecked<FBBBProjectileMotionFragment>(Projectile).PreviousLocation.IsNearlyZero()
+                && Manager.GetFragmentDataChecked<FBBBProjectileLifetimeFragment>(Projectile).bPendingDestroy);
+        }
+        Consume();
+        for (const auto Projectile : Projectiles)
+        {
+            Manager.DestroyEntity(Projectile);
+        }
     };
     Shoot(false);
-    TestEqual(TEXT("镜像子弹不造伤"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 60.0f);
+    TestEqual(TEXT("镜像子弹不造伤"), Health(), 40.0f);
     Shoot(true);
-    TestEqual(TEXT("本机控制子弹造伤"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 40.0f);
+    TestEqual(TEXT("本机控制子弹贡献二十"), Health(), 20.0f);
+    Shoot(true, 2, 5.0f);
+    TestEqual(TEXT("同轮两颗子弹全部计入累计值"), Health(), 10.0f);
 
-    Remote.Health = 0.0f;
+    Remote.Include({2, 40.0});
     Mass->SubmitInput(Monster, Remote);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    Run(UBBBMonsterDamageProcessor::StaticClass());
-    Remote.Health = 100.0f;
+    Consume();
+    TestEqual(TEXT("合计贡献达到上限立即归零"), Health(), 0.0f);
+    Remote.Contributions.Reset();
+    Remote.Include({1, 20.0});
+    Remote.Include({2, 20.0});
     Mass->SubmitInput(Monster, Remote);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    Run(UBBBMonsterDamageProcessor::StaticClass());
-    TestEqual(TEXT("旧存活结果不能恢复血量"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Monster).CurrentHealth, 0.0f);
+    Consume();
+    TestEqual(TEXT("旧字典不能复活"), Health(), 0.0f);
 
     FBBBMonsterStateAuthorityFactPacket Fact;
-    Fact.InstanceId = FGuid::NewGuid();
+    Fact.InstanceId = InstanceId;
     Fact.Revision = 2;
-    Fact.Health = 0.0f;
+    Fact.Behavior = EBBBMonsterBehavior::Dead;
     Mass->SubmitInput(Monster, Fact);
     Run(UBBBMonsterParseProcessor::StaticClass());
-    Fact.Revision = 1;
-    Fact.Transform.SetLocation(FVector(999.0f));
-    Mass->SubmitInput(Monster, Fact);
-    Run(UBBBMonsterParseProcessor::StaticClass());
-    TestEqual(TEXT("过期版本不覆盖"), Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Monster).ReceivedRevision, 2u);
-    Fact.InstanceId = FGuid::NewGuid();
+    TestTrue(TEXT("远端死亡标记不代替本机生命判定"),
+        Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Monster).State != EBBBMonsterBehavior::Dead);
+    Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Monster).State = EBBBMonsterBehavior::Dead;
+    Fact.Behavior = EBBBMonsterBehavior::Chase;
     Fact.Revision = 3;
     Mass->SubmitInput(Monster, Fact);
     Run(UBBBMonsterParseProcessor::StaticClass());
-    TestEqual(TEXT("错误实例身份不覆盖"), Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Monster).ReceivedRevision, 2u);
-    Manager.DestroyEntity(Monster);
+    TestEqual(TEXT("迟到行动不能恢复死亡"),
+        Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Monster).State, EBBBMonsterBehavior::Dead);
+    Fact.Revision = 1;
+    Mass->SubmitInput(Monster, Fact);
+    Run(UBBBMonsterParseProcessor::StaticClass());
+    TestEqual(TEXT("过期版本不覆盖"),
+        Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Monster).ReceivedRevision, 3u);
+    Fact.InstanceId = FGuid::NewGuid();
+    Fact.Revision = 4;
+    Mass->SubmitInput(Monster, Fact);
+    Run(UBBBMonsterParseProcessor::StaticClass());
+    TestEqual(TEXT("错误实例身份不覆盖"),
+        Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Monster).ReceivedRevision, 3u);
+
+    World->WorldType = EWorldType::PIE;
+    World->SetPlayInEditorInitialNetMode(NM_Client);
+    Manager.GetFragmentDataChecked<FBBBMonsterDeathFragment>(Monster).DestroyAtTime = 0.0f;
+    Run(UBBBMonsterLifecycleProcessor::StaticClass());
+    TestTrue(TEXT("尚未交接最终贡献不能回收"), Manager.IsEntityValid(Monster));
+    Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Monster).bDamageSubmitted = true;
+    Run(UBBBMonsterLifecycleProcessor::StaticClass());
+    TestFalse(TEXT("交接后允许安全回收"), Manager.IsEntityValid(Monster));
     TestFalse(TEXT("回收实体拒绝旧输入"), Mass->SubmitInput(Monster, Damage));
+    World->WorldType = EWorldType::Game;
+
+    const FMassEntityHandle NewMonster = Manager.CreateEntity(MonsterType);
+    Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(NewMonster).InstanceId = FGuid::NewGuid();
+    Mass->SubmitInput(NewMonster, Remote);
+    Consume();
+    TestEqual(TEXT("旧怪消息不能影响新怪"),
+        Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(NewMonster).CurrentHealth, 100.0f);
+    Manager.DestroyEntity(NewMonster);
     return true;
 }
 
@@ -419,8 +502,15 @@ namespace
                 if (Target.IsSet())
                 {
                     FBBBMonsterDamageLocalControlPacket Packet;
-                    Packet.Damage = 1000000.0f;
-                    World->GetSubsystem<UBBBMassSubsystem>()->SubmitInput(Target, MoveTemp(Packet));
+                    UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
+                    const APlayerController* Controller = World->GetFirstPlayerController();
+                    const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
+                    if (Player == nullptr || !Mass->QueryDamage(Target, Packet.Contributions))
+                    {
+                        return;
+                    }
+                    Packet.Include({Player->GetPlayerId(), 1000000.0});
+                    Mass->SubmitInput(Target, MoveTemp(Packet));
                     UE_LOG(LogTemp, Display, TEXT("[BBBMassCheck] Client lethal input submitted"));
                     return;
                 }

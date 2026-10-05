@@ -6,6 +6,63 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
+#include "MassEntitySubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
+#include "Engine/World.h"
+
+bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
+    TArray<FBBBMonsterDamageContribution>& Result)
+{
+    Result.Reset();
+    auto* Entities = World.GetSubsystem<UMassEntitySubsystem>();
+    if (!IsInGameThread() || Entities == nullptr)
+    {
+        return false;
+    }
+    const auto& Manager = Entities->GetEntityManager();
+    if (!Manager.IsEntityValid(Entity))
+    {
+        return false;
+    }
+    const auto* Damage = Manager.GetFragmentDataPtr<FBBBMonsterDamageFragment>(Entity);
+    const auto* Input = Manager.GetFragmentDataPtr<FBBBMonsterHealthInputFragment>(Entity);
+    const auto* Network = Manager.GetFragmentDataPtr<FBBBMonsterNetworkFragment>(Entity);
+    if (Damage == nullptr || Input == nullptr || Network == nullptr)
+    {
+        return false;
+    }
+    FBBBMonsterDamageLocalControlPacket Snapshot;
+    for (const auto& Value : Damage->Contributions)
+    {
+        Snapshot.Include({Value.Key, Value.Value});
+    }
+    if (Input->Damage.bActive && Input->Damage.Packet.IsValid())
+    {
+        for (const auto& Value : Input->Damage.Packet.Contributions)
+        {
+            Snapshot.Include(Value);
+        }
+    }
+    const auto* NetworkInput = Manager.GetFragmentDataPtr<FBBBMonsterNetworkInputFragment>(Entity);
+    const FGuid EffectiveId = Network->InstanceId.IsValid() ? Network->InstanceId
+        : (NetworkInput != nullptr && NetworkInput->State.bActive && NetworkInput->State.Packet.IsValid()
+            ? NetworkInput->State.Packet.InstanceId : FGuid());
+    if (Input->RemoteDamage.bActive && Input->RemoteDamage.Packet.IsValid()
+        && Input->RemoteDamage.Packet.InstanceId == EffectiveId)
+    {
+        for (const auto& Value : Input->RemoteDamage.Packet.Contributions)
+        {
+            Snapshot.Include(Value);
+        }
+    }
+    Result = MoveTemp(Snapshot.Contributions);
+    Result.Sort([](const auto& A, const auto& B)
+    {
+        return A.PlayerId < B.PlayerId;
+    });
+    return true;
+}
 
 UBBBMonsterDamageProcessor::UBBBMonsterDamageProcessor()
     : EntityQuery(*this)
@@ -33,12 +90,14 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             const float Previous = Health[Index].CurrentHealth;
-            // 本轮没有治疗 远端生命结果单调合并 重复投递不重复扣血
-            const float Merged = FMath::Min(Previous, Damage[Index].ReportedHealth);
-            Health[Index].CurrentHealth = FMath::Max(0.0f, Merged - Damage[Index].PendingDamage);
+            double TotalDamage = 0.0;
+            for (const auto& Value : Damage[Index].Contributions)
+            {
+                TotalDamage += Value.Value;
+            }
+            Health[Index].CurrentHealth = static_cast<float>(FMath::Max(0.0,
+                static_cast<double>(Health[Index].MaxHealth) - TotalDamage));
             Damage[Index].bReceivedDamage = Health[Index].CurrentHealth < Previous;
-            Damage[Index].PendingDamage = 0.0f;
-            Damage[Index].ReportedHealth = TNumericLimits<float>::Max();
         }
     });
 }

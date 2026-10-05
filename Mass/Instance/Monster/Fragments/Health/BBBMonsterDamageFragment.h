@@ -3,18 +3,26 @@
 #include "MassEntityTypes.h"
 #include "BBBMonsterDamageFragment.generated.h"
 
-/** 解析结果交给健康处理器消费 */
+/** 已成立的玩家累计贡献与本轮受伤结果 */
 USTRUCT()
 struct ABBB_EVAC_API FBBBMonsterDamageFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
-    /** 本帧本机有效命中伤害 */
-    float PendingDamage = 0.0f;
-
-    /** 待合并的远端剩余血量 未提交时不降低当前血量 */
-    float ReportedHealth = TNumericLimits<float>::Max();
+    /** 键为玩家身份 值为对这一代小怪的累计伤害 */
+    UPROPERTY()
+    TMap<int32, double> Contributions;
 
     /** 已扣血的受伤事实 */
     bool bReceivedDamage = false;
+};
+
+/** 累计字典需要原生构造 拷贝与析构 明确接受 Mass 非平凡 Fragment */
+template<>
+struct TMassFragmentTraits<FBBBMonsterDamageFragment>
+{
+    enum
+    {
+        AuthorAcceptsItsNotTriviallyCopyable = true
+    };
 };

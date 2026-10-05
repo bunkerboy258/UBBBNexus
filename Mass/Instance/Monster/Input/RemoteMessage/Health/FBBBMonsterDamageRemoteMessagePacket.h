@@ -2,35 +2,33 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageContribution.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 
 struct FBBBMonsterHealthInputFragment;
 
-/** 本机累计贡献快照 后来的快照包含前面已经成立的命中 */
-struct FBBBMonsterDamageLocalControlPacket final
+/** 来自远端的累计贡献快照 接收顺序不能减少任何来源的贡献 */
+struct FBBBMonsterDamageRemoteMessagePacket final
 {
     using FInputFragment = FBBBMonsterHealthInputFragment;
 
+    FGuid InstanceId;
     TArray<FBBBMonsterDamageContribution> Contributions;
 
     bool IsValid() const
     {
-        return !Contributions.IsEmpty() && !Contributions.ContainsByPredicate(
+        return InstanceId.IsValid() && !Contributions.ContainsByPredicate(
             [](const auto& Value)
             {
                 return !Value.IsValid();
             });
     }
 
-    bool CanApply(const FBBBMonsterDamageFragment& State) const
+    bool CanApply(const FBBBMonsterNetworkFragment& State) const
     {
-        return Contributions.ContainsByPredicate([&State](const auto& Value)
-        {
-            const double* Current = State.Contributions.Find(Value.PlayerId);
-            return Current == nullptr || Value.Damage > *Current;
-        });
+        return InstanceId == State.InstanceId;
     }
 
-    /** 整理当前结果包 不保存逐次命中 */
+    /** 整理当前结果包 不保存逐次消息 */
     void Include(const FBBBMonsterDamageContribution& Value)
     {
         auto* Existing = Contributions.FindByPredicate(
