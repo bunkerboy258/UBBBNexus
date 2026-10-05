@@ -217,7 +217,7 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
     const FVector Focus(0.0f, 0.0f, 120.0f);
     URectLightComponent *KeyLight = NewObject<URectLightComponent>(this, TEXT("KeyLight"), RF_Transient);
     KeyLight->SetIntensityUnits(ELightUnits::Lumens);
-    KeyLight->SetIntensity(165.0f);
+    KeyLight->SetIntensity(125.0f);
     KeyLight->SetLightColor(FLinearColor(1.0f, 0.96f, 0.90f));
     KeyLight->SetSourceWidth(110.0f);
     KeyLight->SetSourceHeight(220.0f);
@@ -227,7 +227,7 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 
     URectLightComponent *FillLight = NewObject<URectLightComponent>(this, TEXT("FillLight"), RF_Transient);
     FillLight->SetIntensityUnits(ELightUnits::Lumens);
-    FillLight->SetIntensity(13.0f);
+    FillLight->SetIntensity(7.0f);
     FillLight->SetLightColor(FLinearColor(0.52f, 0.59f, 0.72f));
     FillLight->SetSourceWidth(260.0f);
     FillLight->SetSourceHeight(320.0f);
@@ -238,7 +238,7 @@ bool UBBBCharacterCustomizationSession::ConfigurePreviewLighting()
 
     URectLightComponent *RimLight = NewObject<URectLightComponent>(this, TEXT("RimLight"), RF_Transient);
     RimLight->SetIntensityUnits(ELightUnits::Lumens);
-    RimLight->SetIntensity(115.0f);
+    RimLight->SetIntensity(85.0f);
     RimLight->SetLightColor(FLinearColor(0.68f, 0.74f, 0.85f));
     RimLight->SetSourceWidth(160.0f);
     RimLight->SetSourceHeight(260.0f);

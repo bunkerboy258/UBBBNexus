@@ -5,26 +5,30 @@
 #include "Fonts/CompositeFont.h"
 #include "Misc/Paths.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
+#include "Brushes/SlateColorBrush.h"
 #include "SBBBCharacterCustomizationIcon.h"
 #include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/SToolTip.h"
+#include "Widgets/Text/STextBlock.h"
 #include "Engine/FontFace.h"
 #include "UObject/StrongObjectPtr.h"
 
 namespace BBBCustomizationStyle
 {
-    inline const FLinearColor Accent(0.92f, 0.49f, 0.16f);
-    inline const FLinearColor Ink(0.78f, 0.80f, 0.79f);
-    inline const FLinearColor MutedInk(0.38f, 0.43f, 0.47f);
+    inline const FLinearColor Accent(0.72f, 0.43f, 0.17f);
+    inline const FLinearColor Ink(0.79f, 0.77f, 0.69f);
+    inline const FLinearColor MutedInk(0.36f, 0.36f, 0.33f);
 
     /** @return 随界面状态选取的细边卡片画刷 */
     inline const FSlateBrush* GetCardBrush(bool bSelected = false, bool bHovered = false)
     {
-        static const FSlateRoundedBoxBrush Normal(FLinearColor(0.009f, 0.013f, 0.018f, 0.78f), 1.0f,
-            FLinearColor(0.22f, 0.26f, 0.29f, 0.65f), 1.0f);
-        static const FSlateRoundedBoxBrush Hovered(FLinearColor(0.028f, 0.034f, 0.040f, 0.88f), 1.0f,
-            FLinearColor(0.65f, 0.70f, 0.72f), 1.0f);
-        static const FSlateRoundedBoxBrush Selected(FLinearColor(0.042f, 0.031f, 0.022f, 0.88f), 1.0f,
-            Accent, 1.0f);
+        static const FSlateRoundedBoxBrush Normal(FLinearColor(0.003f, 0.004f, 0.004f, 0.24f), 0.0f,
+            FLinearColor(0.26f, 0.27f, 0.25f, 0.30f), 0.65f);
+        static const FSlateRoundedBoxBrush Hovered(FLinearColor(0.034f, 0.030f, 0.021f, 0.42f), 0.0f,
+            FLinearColor(0.76f, 0.72f, 0.61f, 0.85f), 1.0f);
+        static const FSlateRoundedBoxBrush Selected(FLinearColor(0.080f, 0.046f, 0.014f, 0.34f), 0.0f,
+            Accent, 1.2f);
         if (bSelected)
         {
             return &Selected;
@@ -128,6 +132,45 @@ namespace BBBCustomizationStyle
             return Result;
         }();
         return FSlateFontInfo(Font, Size);
+    }
+
+    /**
+     * @param Text	当前控件的简短说明
+     * @return 与装备卡面一致的悬浮说明
+     */
+    inline TSharedRef<SToolTip> MakeTooltip(TAttribute<FText> Text)
+    {
+        return SNew(SToolTip)
+            .BorderImage(FCoreStyle::Get().GetBrush("NoBrush"))
+            [
+                SNew(SBorder)
+                .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+                .BorderBackgroundColor(FLinearColor(0.008f, 0.009f, 0.009f, 0.97f))
+                .Padding(12.0f, 8.0f)
+                [
+                    SNew(STextBlock).Text(Text).Font(GetCustomizationFont(11)).ColorAndOpacity(Ink)
+                ]
+            ];
+    }
+
+    /** @return 不受编辑器主题影响的细线滑杆样式 */
+    inline const FSliderStyle& GetSurfaceSliderStyle()
+    {
+        static const FSliderStyle Style = []()
+        {
+            FSlateColorBrush Bar(FLinearColor::White);
+            FSlateRoundedBoxBrush Thumb(FLinearColor::White, 3.5f);
+            Thumb.ImageSize = FVector2D(7.0f, 7.0f);
+            return FSliderStyle()
+                .SetNormalBarImage(Bar)
+                .SetHoveredBarImage(Bar)
+                .SetDisabledBarImage(Bar)
+                .SetNormalThumbImage(Thumb)
+                .SetHoveredThumbImage(Thumb)
+                .SetDisabledThumbImage(Thumb)
+                .SetBarThickness(1.5f);
+        }();
+        return Style;
     }
 
     inline const FTextBlockStyle &GetCustomizationButtonTextStyle()

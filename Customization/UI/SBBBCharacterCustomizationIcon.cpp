@@ -30,7 +30,7 @@ int32 SBBBCharacterCustomizationIcon::OnPaint(const FPaintArgs& Args, const FGeo
             Points.Add(Origin + Vertex * Scale);
         }
         FSlateDrawElement::MakeLines(Elements, Layer, Geometry.ToPaintGeometry(), Points,
-            ESlateDrawEffect::None, Tint, true, 1.35f);
+            ESlateDrawEffect::None, Tint, true, 1.8f);
     };
     if (Symbol == TEXT("Head"))
     {

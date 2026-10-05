@@ -22,7 +22,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotCard(const FName Par
     SlotThumbnailBoxes.Add(PartSlot, ThumbnailBox);
     return SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ToolTipText_Lambda([this, PartSlot]() { return GetSelectedItem(PartSlot); })
+        .ToolTip(MakeTooltip(TAttribute<FText>::CreateLambda([this, PartSlot]() { return GetSelectedItem(PartSlot); })))
         .ContentPadding(0.0f)
         .OnHovered_Lambda([this, PartSlot]()
         {
@@ -42,74 +42,52 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotCard(const FName Par
             return FReply::Handled();
         })
         [
-            SNew(SBorder)
-            .BorderImage_Lambda([this, PartSlot]()
-            {
-                return GetCardBrush(false, HoveredPartSlot == PartSlot);
-            })
-            .Padding(1.0f)
+            SNew(SVerticalBox)
+            + SVerticalBox::Slot().AutoHeight()
             [
-                SNew(SBox)
-                .HeightOverride_Lambda([this, PartSlot]()
+                SNew(SBorder)
+                .BorderImage_Lambda([this, PartSlot]()
                 {
-                    return bSurfaceExpanded && ExpandedSlot.IsNone() && IsLeftSideSlot(PartSlot)
-                        ? 167.0f : 195.0f;
+                    return GetCardBrush(false, HoveredPartSlot == PartSlot);
                 })
+                .Padding(1.0f)
                 [
-                    SNew(SOverlay)
-                    + SOverlay::Slot()
+                    SNew(SBox).HeightOverride(156.0f)
                     [
-                        SNew(SImage)
-                        .Image(&CardFrameBrush)
-                        .ColorAndOpacity(FLinearColor(0.30f, 0.34f, 0.36f, 0.09f))
-                        .Visibility(EVisibility::HitTestInvisible)
-                    ]
-                    + SOverlay::Slot()
-                    [
-                        SNew(SImage)
-                        .Image(&CardSurfaceBrush)
-                        .ColorAndOpacity(FLinearColor(0.16f, 0.18f, 0.20f, 0.12f))
-                        .Visibility(EVisibility::HitTestInvisible)
-                    ]
-                    + SOverlay::Slot()
-                    .Padding(8.0f, 4.0f, 8.0f, 27.0f)
-                    [
-                        ThumbnailBox
-                    ]
-                    + SOverlay::Slot()
-                    .HAlign(HAlign_Left)
-                    .VAlign(VAlign_Top)
-                    .Padding(10.0f)
-                    [
-                        MakeIcon(PartSlot, 22.0f, MutedInk)
-                    ]
-                    + SOverlay::Slot()
-                    .HAlign(HAlign_Right)
-                    .VAlign(VAlign_Top)
-                    .Padding(10.0f)
-                    [
-                        SNew(SBBBCharacterCustomizationIcon)
-                        .Symbol(TEXT("Apply"))
-                        .Size(15.0f)
-                        .Color(FLinearColor(0.60f, 0.64f, 0.63f))
-                        .Visibility_Lambda([this, PartSlot]()
-                        {
-                            return GetSelectedItemId(PartSlot).IsNone()
-                                ? EVisibility::Collapsed : EVisibility::HitTestInvisible;
-                        })
-                    ]
-                    + SOverlay::Slot()
-                    .VAlign(VAlign_Bottom)
-                    .Padding(10.0f, 0.0f, 10.0f, 9.0f)
-                    [
-                        SNew(STextBlock)
-                        .Text_Lambda([this, PartSlot]() { return GetSelectedItem(PartSlot); })
-                        .Font(GetCustomizationFont(12))
-                        .ColorAndOpacity(Ink)
-                        .OverflowPolicy(ETextOverflowPolicy::Ellipsis)
-                        .Visibility(EVisibility::HitTestInvisible)
+                        SNew(SOverlay)
+                        + SOverlay::Slot()
+                        [
+                            SNew(SImage).Image(&CardSurfaceBrush)
+                            .ColorAndOpacity(FLinearColor(0.70f, 0.67f, 0.60f, 0.58f))
+                            .Visibility(EVisibility::HitTestInvisible)
+                        ]
+                        + SOverlay::Slot()
+                        [
+                            SNew(SImage).Image(&CardFrameBrush)
+                            .ColorAndOpacity(FLinearColor(0.60f, 0.58f, 0.51f, 0.32f))
+                            .Visibility(EVisibility::HitTestInvisible)
+                        ]
+                        + SOverlay::Slot().Padding(5.0f, 3.0f, 5.0f, 3.0f)
+                        [
+                            ThumbnailBox
+                        ]
+                        + SOverlay::Slot().HAlign(HAlign_Right).VAlign(VAlign_Top).Padding(7.0f)
+                        [
+                            MakeIcon(PartSlot, 18.0f, Ink)
+                        ]
                     ]
                 ]
+            ]
+            + SVerticalBox::Slot().AutoHeight().Padding(2.0f, 8.0f, 0.0f, 2.0f)
+            [
+                SNew(STextBlock)
+                .Text(GetPartSlotTitle(PartSlot))
+                .Font(GetCustomizationFont(11))
+                .ColorAndOpacity_Lambda([this, PartSlot]()
+                {
+                    return HoveredPartSlot == PartSlot ? Ink : MutedInk;
+                })
+                .Visibility(EVisibility::HitTestInvisible)
             ]
         ];
 }
@@ -135,10 +113,13 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotGrid(const bool bLef
             Slots.Add(Part.Slot);
         }
     }
-    TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
+    TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f, 0.0f, 5.0f, 16.0f));
     for (int32 Index = 0; Index < Slots.Num(); ++Index)
     {
-        Grid->AddSlot(Index % 2, Index / 2)[MakeSlotCard(Slots[Index])];
+        Grid->AddSlot(Index % 3, Index / 3)
+        [
+            MakeSlotCard(Slots[Index])
+        ];
     }
     return Grid;
 }
@@ -158,7 +139,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotStrip(const bool bLe
         [
             SNew(SButton)
             .ButtonStyle(&ActionButtonStyle)
-            .ToolTipText(GetPartSlotTitle(SlotName))
+            .ToolTip(MakeTooltip(GetPartSlotTitle(SlotName)))
             .ContentPadding(0.0f)
             .OnClicked_Lambda([this, SlotName]()
             {
@@ -168,12 +149,12 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSlotStrip(const bool bLe
             [
                 SNew(SBorder)
                 .BorderImage_Lambda([this, SlotName]() { return GetCardBrush(ExpandedSlot == SlotName); })
-                .Padding(11.0f)
+                .Padding(7.0f)
                 .HAlign(HAlign_Center)
                 [
                     SNew(SBBBCharacterCustomizationIcon)
                     .Symbol(SlotName)
-                    .Size(25.0f)
+                    .Size(28.0f)
                     .Color_Lambda([this, SlotName]() { return ExpandedSlot == SlotName ? Accent : Ink; })
                 ]
             ]
@@ -202,7 +183,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemCard(const FName Par
     return SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
         .IsEnabled(!bUnconfiguredAttachment)
-        .ToolTipText(Item.DisplayName)
+        .ToolTip(MakeTooltip(Item.DisplayName))
         .ContentPadding(0.0f)
         .OnHovered_Lambda([this, PartSlot, ItemId]()
         {
@@ -240,11 +221,17 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemCard(const FName Par
             .Padding(1.0f)
             [
                 SNew(SBox)
-                .HeightOverride(168.0f)
+                .HeightOverride(155.0f)
                 [
                     SNew(SOverlay)
                     + SOverlay::Slot()
-                    .Padding(9.0f, 9.0f, 9.0f, 31.0f)
+                    [
+                        SNew(SImage).Image(&CardSurfaceBrush)
+                        .ColorAndOpacity(FLinearColor(0.70f, 0.67f, 0.60f, 0.58f))
+                        .Visibility(EVisibility::HitTestInvisible)
+                    ]
+                    + SOverlay::Slot()
+                    .Padding(5.0f, 5.0f)
                     [
                         Thumbnail
                             ? StaticCastSharedRef<SWidget>(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
@@ -268,17 +255,6 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemCard(const FName Par
                                 ? EVisibility::HitTestInvisible : EVisibility::Collapsed;
                         })
                     ]
-                    + SOverlay::Slot()
-                    .VAlign(VAlign_Bottom)
-                    .Padding(8.0f, 0.0f, 8.0f, 8.0f)
-                    [
-                        SNew(STextBlock)
-                        .Text(Item.DisplayName)
-                        .Font(GetCustomizationFont(11))
-                        .ColorAndOpacity(Ink)
-                        .OverflowPolicy(ETextOverflowPolicy::Ellipsis)
-                        .Visibility(EVisibility::HitTestInvisible)
-                    ]
                 ]
             ]
         ];
@@ -297,7 +273,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemGrid(const FName Par
     [
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ToolTipText(FText::FromString(TEXT("返回穿戴部位")))
+        .ToolTip(MakeTooltip(FText::FromString(TEXT("返回穿戴部位"))))
         .ContentPadding(10.0f)
         .OnClicked_Lambda([this]()
         {
@@ -328,7 +304,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeItemGrid(const FName Par
         [
             SNew(SButton)
             .ButtonStyle(&ActionButtonStyle)
-            .ToolTipText(FText::FromString(TEXT("选择徽章图案")))
+            .ToolTip(MakeTooltip(FText::FromString(TEXT("选择徽章图案"))))
             .ContentPadding(10.0f)
             .OnClicked_Lambda([this, PartSlot]()
             {

@@ -160,6 +160,16 @@ const FSlateBrush *UBBBCharacterCustomizationView::GetItemBrush(const FName Item
     TSharedPtr<FSlateBrush> Brush = MakeShared<FSlateBrush>();
     Brush->SetResourceObject(Texture);
     Brush->ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
+    if (Item.Slot == TEXT("Arms"))
+    {
+        Brush->SetUVRegion(FBox2d(FVector2d(0.02, 0.29), FVector2d(0.49, 0.72)));
+        Brush->ImageSize = FVector2D(240.0f, 220.0f);
+    }
+    if (Item.Slot == TEXT("Boots"))
+    {
+        Brush->SetUVRegion(FBox2d(FVector2d(0.01, 0.16), FVector2d(0.49, 0.86)));
+        Brush->ImageSize = FVector2D(246.0f, 358.0f);
+    }
     ItemThumbnails.Add(ItemId, Texture);
     ItemThumbnailBrushes.Add(ItemId, Brush);
     return Brush.Get();
@@ -191,7 +201,7 @@ void UBBBCharacterCustomizationView::RefreshSlotCardThumbnails()
         const bool bInvalidAttachment = Entry.Key == TEXT("Attachments") && bEmpty
             && ItemId != TEXT("Attachments_None");
         Entry.Value->SetContent(SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
-            [MakeIcon(bEmpty && !bInvalidAttachment ? TEXT("Empty") : TEXT("Warning"), 46.0f, MutedInk)]);
+            [MakeIcon(bEmpty && !bInvalidAttachment ? Entry.Key : FName(TEXT("Warning")), 60.0f, MutedInk)]);
     }
 }
 
@@ -252,13 +262,13 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
         SNew(SHorizontalBox)
         + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
         [
-            MakeIcon(bLeft ? TEXT("Vest") : TEXT("Backpack"), 27.0f)
+            MakeIcon(bLeft ? TEXT("Vest") : TEXT("Backpack"), 21.0f)
         ]
         + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12.0f, 0.0f)
         [
             SNew(STextBlock)
             .Text(FText::FromString(bLeft ? TEXT("穿戴装备") : TEXT("携行装备")))
-            .Font(GetCustomizationFont(17))
+            .Font(GetCustomizationFont(15))
             .ColorAndOpacity(Ink)
         ]
         + SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
@@ -266,7 +276,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
             SNew(SBox).HeightOverride(1.0f)
             [
                 SNew(SImage).Image(FCoreStyle::Get().GetBrush("WhiteBrush"))
-                .ColorAndOpacity(FLinearColor(0.20f, 0.24f, 0.27f, 0.7f))
+                .ColorAndOpacity(FLinearColor(0.36f, 0.34f, 0.28f, 0.55f))
             ]
         ]
     ];
@@ -296,6 +306,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
         .Padding(0.0f, 6.0f, 0.0f, 0.0f)
         [
             SNew(SVerticalBox)
+            .Visibility_Lambda([this]() { return ExpandedSlot.IsNone() ? EVisibility::Visible : EVisibility::Collapsed; })
             + SVerticalBox::Slot()
             .AutoHeight()
             [
@@ -303,7 +314,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSidePanel(const bool bLe
                 .ButtonStyle(&ActionButtonStyle)
                 .ButtonColorAndOpacity(FLinearColor(0.09f, 0.10f, 0.12f, 0.9f))
                 .ContentPadding(FMargin(8.0f, 5.0f))
-                .ToolTipText(FText::FromString(TEXT("表面状态  污渍与磨损")))
+                .ToolTip(MakeTooltip(FText::FromString(TEXT("表面状态  污渍与磨损"))))
                 .OnClicked_Lambda([this]()
                 {
                     bSurfaceExpanded = !bSurfaceExpanded;
@@ -508,8 +519,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakePatchGrid(const FName Pa
 TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
 {
     return SNew(SBorder)
-        .BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-        .BorderBackgroundColor(FLinearColor(0.035f, 0.041f, 0.050f, 0.88f))
+        .BorderImage(FCoreStyle::Get().GetBrush("NoBrush"))
         .Padding(FMargin(9.0f, 6.0f))
         [
             SNew(SVerticalBox)
@@ -542,6 +552,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
             .Padding(0.0f, 0.0f, 0.0f, 5.0f)
             [
                 SNew(SSlider)
+                .Style(&GetSurfaceSliderStyle())
                 .SliderBarColor(MutedInk)
                 .SliderHandleColor(Accent)
                 .Value_Lambda([this]()
@@ -584,6 +595,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeSurfaceControls()
             .AutoHeight()
             [
                 SNew(SSlider)
+                .Style(&GetSurfaceSliderStyle())
                 .SliderBarColor(MutedInk)
                 .SliderHandleColor(Accent)
                 .Value_Lambda([this]()
@@ -656,7 +668,7 @@ void UBBBCharacterCustomizationView::ShowPatchGrid(const FName PartSlot)
         .ButtonColorAndOpacity(FLinearColor::White)
         .HAlign(HAlign_Left)
         .ContentPadding(FMargin(7.0f, 4.0f))
-        .ToolTipText(FText::FromString(TEXT("返回款式")))
+        .ToolTip(MakeTooltip(FText::FromString(TEXT("返回款式"))))
         .OnClicked_Lambda([this, PartSlot]()
         {
             OpenSlot(PartSlot);
@@ -738,14 +750,14 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     ];
 
     Layout->AddSlot()
-    .Anchors(FAnchors(0.065f, 0.17f, 0.315f, 0.86f))
+    .Anchors(FAnchors(0.065f, 0.22f, 0.32f, 0.81f))
     .Offset(FMargin(0.0f))
     [
         MakeSidePanel(true)
     ];
 
     Layout->AddSlot()
-    .Anchors(FAnchors(0.685f, 0.17f, 0.935f, 0.86f))
+    .Anchors(FAnchors(0.68f, 0.22f, 0.935f, 0.81f))
     .Offset(FMargin(0.0f))
     [
         MakeSidePanel(false)
@@ -808,9 +820,9 @@ void UBBBCharacterCustomizationView::LoadInterfaceArt()
     CardFrameBrush.ImageSize = FVector2D(256.0f);
 
     ActionButtonStyle = FButtonStyle()
-        .SetNormal(*GetCardBrush())
-        .SetHovered(*GetCardBrush(false, true))
-        .SetPressed(*GetCardBrush(true))
+        .SetNormal(FSlateNoResource())
+        .SetHovered(FSlateColorBrush(FLinearColor(0.45f, 0.39f, 0.26f, 0.07f)))
+        .SetPressed(FSlateColorBrush(FLinearColor(0.60f, 0.36f, 0.12f, 0.14f)))
         .SetNormalPadding(FMargin(0.0f))
         .SetPressedPadding(FMargin(0.0f));
 
@@ -827,7 +839,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeViewButton(const FName V
 {
     return SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ToolTipText(GetViewTitle(ViewName))
+        .ToolTip(MakeTooltip(GetViewTitle(ViewName)))
         .ContentPadding(0.0f)
         .OnClicked_Lambda([this, ViewName]()
         {
@@ -840,7 +852,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeViewButton(const FName V
         })
         [
             SNew(SBorder)
-            .BorderImage_Lambda([this, ViewName]() { return GetCardBrush(CurrentView == ViewName); })
+            .BorderImage(FCoreStyle::Get().GetBrush("NoBrush"))
             .Padding(13.0f, 9.0f)
             [
                 SNew(SBBBCharacterCustomizationIcon)
@@ -858,7 +870,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
     [
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ToolTipText(FText::FromString(TEXT("Esc  返回  总览状态取消未应用修改")))
+        .ToolTip(MakeTooltip(FText::FromString(TEXT("Esc  返回  总览状态取消未应用修改"))))
         .ContentPadding(FMargin(14.0f, 9.0f))
         .OnClicked_Lambda([this]() { return GoBack(); })
         [
@@ -892,7 +904,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
         [
             SNew(SButton)
             .ButtonStyle(&ActionButtonStyle)
-            .ToolTipText(FText::FromString(Degrees < 0.0f ? TEXT("向左旋转") : TEXT("向右旋转")))
+            .ToolTip(MakeTooltip(FText::FromString(Degrees < 0.0f ? TEXT("向左旋转") : TEXT("向右旋转"))))
             .ContentPadding(FMargin(13.0f, 9.0f))
             .OnClicked_Lambda([this, Degrees]()
             {
@@ -911,7 +923,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
     [
         SNew(SButton)
         .ButtonStyle(&ActionButtonStyle)
-        .ToolTipText(FText::FromString(TEXT("应用当前预览并保存")))
+        .ToolTip(MakeTooltip(FText::FromString(TEXT("应用当前预览并保存"))))
         .ContentPadding(0.0f)
         .OnClicked_Lambda([this]()
         {
@@ -923,7 +935,7 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::MakeActionBar()
             return FReply::Handled();
         })
         [
-            SNew(SBorder).BorderImage(GetCardBrush(true)).Padding(20.0f, 9.0f)
+            SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("NoBrush")).Padding(20.0f, 9.0f)
             [
                 SNew(SHorizontalBox)
                 + SHorizontalBox::Slot().AutoWidth()[MakeIcon(TEXT("Apply"), 24.0f, Accent)]
