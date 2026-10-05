@@ -5,6 +5,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "GameFramework/Actor.h"
 #include "PhysicsEngine/BodySetup.h"
 
 void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
@@ -39,6 +40,11 @@ void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
 
     const FTransform SocketTransform = MeshComp->GetSocketTransform(SocketName);
     const FTransform Transform = RelativeTransform * SocketTransform;
+    // 从持有角色读取移动速度 避免附着武器网格的缓存速度滞后于角色移动
+    const AActor *Equipment = MeshComp->GetOwner();
+    const AActor *Holder = Equipment ? Equipment->GetOwner() : nullptr;
+    const FVector InheritedVelocity = IsValid(Holder) ? Holder->GetVelocity() : FVector::ZeroVector;
+    const FVector WorldLinearVelocity = SocketTransform.TransformVectorNoScale(LinearVelocity) + InheritedVelocity;
     FActorSpawnParameters Parameters;
     Parameters.ObjectFlags |= RF_Transient;
     Parameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -65,6 +71,7 @@ void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
         return;
     }
 
-    Component->SetPhysicsLinearVelocity(SocketTransform.TransformVectorNoScale(LinearVelocity));
+    // 只在脱离武器时继承移动速度 后续由独立物理模拟决定轨迹
+    Component->SetPhysicsLinearVelocity(WorldLinearVelocity);
     Component->SetPhysicsAngularVelocityInDegrees(SocketTransform.TransformVectorNoScale(AngularVelocityDegrees));
 }

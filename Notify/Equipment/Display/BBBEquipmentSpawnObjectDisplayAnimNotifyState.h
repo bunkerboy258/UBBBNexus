@@ -25,8 +25,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备|物体", meta = (DisplayName = "相对变换", ToolTip = "控制物体的初始位置 朝向和尺寸 缩放各轴必须大于零"))
     FTransform RelativeTransform = FTransform::Identity;
 
-    /** 插槽局部坐标中的初始线速度 单位厘米每秒 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备|物体", meta = (DisplayName = "初始线速度", ToolTip = "单位厘米每秒 方向使用生成插槽的局部坐标 不受物体缩放影响"))
+    /** 相对于装备插槽的抛出线速度 单位厘米每秒 生成时叠加持有角色的世界移动速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备|物体", meta = (DisplayName = "初始线速度", ToolTip = "单位厘米每秒 方向使用生成插槽的局部坐标 不受物体缩放影响 生成时继承持有角色的世界移动速度"))
     FVector LinearVelocity = FVector::ZeroVector;
 
     /** 插槽局部坐标中的初始旋转速度 单位度每秒 */
