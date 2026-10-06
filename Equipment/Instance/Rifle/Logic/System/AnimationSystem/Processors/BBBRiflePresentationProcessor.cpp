@@ -4,8 +4,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
@@ -15,7 +13,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
-#include "Kismet/GameplayStatics.h"
 
 void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
     const FBBBRifleUpdateContext &Context, UAnimMontage *Montage, const bool bClear)
@@ -106,12 +103,6 @@ void FBBBRiflePresentationProcessor::PlayEquipmentMontage(
 
 void FBBBRiflePresentationProcessor::PlayFire(const FBBBRifleUpdateContext &Context)
 {
-    if (Context.Definition.FireSound)
-    {
-        UGameplayStatics::SpawnSoundAtLocation(&Context.World, Context.Definition.FireSound,
-            Context.WeaponMesh.GetSocketLocation(Context.Definition.MuzzleSocketName));
-    }
-
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
     const auto &Hip = Context.Definition.HipFireSettings;
     const auto &Aim = Context.Definition.AimFireSettings;

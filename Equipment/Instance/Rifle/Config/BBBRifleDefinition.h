@@ -8,7 +8,6 @@
 #include "BBBRifleDefinition.generated.h"
 
 class UAnimMontage;
-class USoundBase;
 class UBBBProjectileDefinition;
 
 /** 步枪实例的静态资源与数值配置 */
@@ -58,13 +57,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|开火", meta = (ClampMin = "0.01", DisplayName = "开火间隔"))
     float FireInterval = 0.2f;
 
-    /** 枪口插槽名称 用于开火位置和声音位置 */
+    /** 枪口插槽名称 用于确定发射物生成位置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|开火", meta = (DisplayName = "枪口插槽名"))
     FName MuzzleSocketName = TEXT("Muzzle");
-
-    /** 开火时在枪口播放的声音 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|开火", meta = (DisplayName = "开火音效"))
-    TObjectPtr<USoundBase> FireSound = nullptr;
 
     /** 腰射的枪口跟随后坐力与摇摆配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|持枪表现", meta = (DisplayName = "腰射", ToolTip = "角色没有瞄准意图时使用的基础持枪参数"))
