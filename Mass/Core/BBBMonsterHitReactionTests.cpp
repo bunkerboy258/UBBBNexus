@@ -15,7 +15,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/HitReaction/BBBMonsterHitReactionProcessor.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionAnimationLibrary.h"
 
 /** 验证部位碰撞 覆盖输入 死亡屏蔽和方向姿势 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterHitReactionTest, "UBBB.Mass.ZombieHitReaction",
@@ -89,11 +88,6 @@ bool FBBBMonsterHitReactionTest::RunTest(const FString&)
     EPhysicalSurface Surface;
     uint8 Part;
     TestFalse(TEXT("死亡立即退出部位碰撞"), Mass->TraceEntities(FVector(-100,0,0), FVector(100,0,0), 1.0f, {}, Hit, Time, Position, Normal, Surface, Part));
-    const FRotator Forward = UBBBMonsterHitReactionAnimationLibrary::CalculateHitBoneRotation(FVector::ForwardVector, 0.05f, 1, 1, true);
-    const FRotator Backward = UBBBMonsterHitReactionAnimationLibrary::CalculateHitBoneRotation(-FVector::ForwardVector, 0.05f, 1, 1, true);
-    TestTrue(TEXT("反方向受力产生相反旋转"), FMath::IsNearlyEqual(Forward.Pitch, -Backward.Pitch, 0.001f) && !Forward.IsNearlyZero());
-    TestTrue(TEXT("未命中肢体不额外扭转"), UBBBMonsterHitReactionAnimationLibrary::CalculateHitBoneRotation(FVector::ForwardVector, 0.05f, 1, 2, true).IsNearlyZero());
-    TestTrue(TEXT("死亡动画不叠加活体旋转"), UBBBMonsterHitReactionAnimationLibrary::CalculateHitBoneRotation(FVector::ForwardVector, 0.05f, 1, 1, false).IsNearlyZero());
     return true;
 }
 

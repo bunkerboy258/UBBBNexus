@@ -126,11 +126,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             if (DamageEvent.bReceivedDamage)
             {
                 DamageEvent.bReceivedDamage = false;
-                Combat.AttackTarget.Reset();
-                Combat.bHitAttempted = true;
-                Combat.bAttackFinished = true;
-                EnterState(EBBBMonsterBehavior::Hurt, true);
-                continue;
             }
 
             if (bRemote)

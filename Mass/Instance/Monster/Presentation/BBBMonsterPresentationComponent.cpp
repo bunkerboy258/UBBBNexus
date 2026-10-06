@@ -6,12 +6,17 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterAnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 #include "IAnimationBudgetAllocator.h"
 #include "SkeletalMeshComponentBudgeted.h"
 
 void UBBBMonsterPresentationComponent::ApplyHitReaction(const FBBBMonsterHitReactionFragment& Hit)
 {
     HitReaction = Hit;
+    if (auto* Reaction = GetOwner()->FindComponentByClass<UBBBMonsterHitReactionComponent>())
+    {
+        Reaction->ApplyHitFacts(Hit, BBBMonsterBehavior != EBBBMonsterBehavior::Dead);
+    }
 }
 
 const UBBBMonsterBloodPresentationDefinition* UBBBMonsterPresentationComponent::GetBloodPresentation() const

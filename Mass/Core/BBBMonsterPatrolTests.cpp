@@ -123,6 +123,12 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     Run();
     TestEqual(TEXT("满足攻击范围直接攻击"), State.State, EBBBMonsterBehavior::Attack);
     TestEqual(TEXT("一次攻击独立编号"), Combat.AttackId, 1u);
+    Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).bReceivedDamage = true;
+    Run();
+    TestEqual(TEXT("普通受击保留当前攻击"), State.State, EBBBMonsterBehavior::Attack);
+    TestEqual(TEXT("普通受击不重启攻击编号"), Combat.AttackId, 1u);
+    TestFalse(TEXT("普通受击不取消攻击判定"), Combat.bAttackFinished);
+
 
     UBBBMonsterLocomotionProcessor* Locomotion = NewObject<UBBBMonsterLocomotionProcessor>(World);
     Locomotion->CallInitialize(World, Manager.AsShared());
@@ -188,7 +194,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
 
     Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).bReceivedDamage = true;
     Run();
-    TestEqual(TEXT("受击优先打断"), State.State, EBBBMonsterBehavior::Hurt);
+    TestEqual(TEXT("普通受击不打断追击"), State.State, EBBBMonsterBehavior::Chase);
     Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).CurrentHealth = 0.0f;
     Run();
     TestEqual(TEXT("死亡优先打断"), State.State, EBBBMonsterBehavior::Dead);

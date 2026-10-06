@@ -15,6 +15,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationStateProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterVisualizationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -85,6 +86,14 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
 
             const bool bNewActor = Smoothing.LastActor.Get() != MonsterActor;
+            if (bNewActor)
+            {
+                MonsterActor->SetActorEnableCollision(true);
+                if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
+                {
+                    Reaction->ResetPresentation();
+                }
+            }
             const double DistanceSquared = FVector::DistSquared(Smoothing.DisplayTransform.GetLocation(), MonsterTransform.GetLocation());
             const bool bLargeCorrection = DistanceSquared > FMath::Square(500.0);
 
@@ -127,7 +136,6 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 false,
                 nullptr,
                 ETeleportType::TeleportPhysics);
-            MonsterActor->SetActorEnableCollision(false);
 
             // 取得表现组件同步状态和移动速度
             UBBBMonsterPresentationComponent* Presentation = MonsterActor->GetMonsterPresentation();
