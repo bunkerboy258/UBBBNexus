@@ -44,6 +44,8 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
 
     if (!CanHitReact() || Hit.Age > 0.2f || Hit.Direction.ContainsNaN() || Hit.Direction.IsNearlyZero() || Hit.Position.ContainsNaN())
     {
+        UE_LOG(LogTemp, Verbose, TEXT("[BBBHitReact]跳过命中编号=%u LOD=%d 命中年龄=%.3f 可受击=%d"),
+            Hit.Serial, IsValid(Mesh) ? Mesh->GetPredictedLODLevel() : INDEX_NONE, Hit.Age, CanHitReact());
         ObservedHitSerial = Hit.Serial;
         return;
     }
@@ -123,14 +125,15 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
             PhysicalAnimation->AddTickPrerequisiteComponent(this);
             PhysicalAnimation->SetComponentTickEnabled(true);
         }
-        UE_LOG(LogTemp, Verbose, TEXT("[BBBHitReact]命中编号=%u 部位=%s 力度=%.2f"), Hit.Serial, *BoneName.ToString(), RepeatedScale);
+        UE_LOG(LogTemp, Verbose, TEXT("[BBBHitReact]命中编号=%u 部位=%s LOD=%d 直线=%.1f 旋转=%.1f 力度=%.2f"),
+            Hit.Serial, *BoneName.ToString(), Mesh->GetPredictedLODLevel(), LinearStrength, AngularStrength, RepeatedScale);
     }
 }
 
 bool UBBBMonsterHitReactionComponent::CanHitReact_Implementation() const
 {
     return bPresentationAlive && IsValid(GetOwner()) && !GetOwner()->IsHidden() && IsValid(Mesh)
-        && Mesh->IsVisible() && Mesh->GetPredictedLODLevel() <= 1;
+        && Mesh->IsVisible() && Mesh->GetPredictedLODLevel() <= 2;
 }
 
 void UBBBMonsterHitReactionComponent::RequestAnimationUpdate() const

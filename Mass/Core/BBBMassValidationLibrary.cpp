@@ -20,6 +20,13 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBMassSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Config/BBBProjectileDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
+#include "NiagaraDataChannelAsset.h"
+#include "NiagaraSystem.h"
 
 namespace
 {
@@ -34,6 +41,55 @@ namespace
 
         return World;
     }
+}
+
+bool UBBBMassValidationLibrary::SpawnInspectionProjectile(UObject* WorldContext, UBBBProjectileDefinition* Definition, const FVector Start, const FVector End, const float Damage)
+{
+    UWorld* const World = ValidationWorld(WorldContext);
+    if (!World || !ensureMsgf(Definition && Definition->IsValid() && !Start.ContainsNaN() && !End.ContainsNaN()
+        && !Start.Equals(End) && FMath::IsFinite(Damage) && Damage >= 0.0f && Damage <= 10000.0f,
+        TEXT("[BBBMassValidation]子弹验证配置或坐标无效")))
+    {
+        return false;
+    }
+
+    UBBBMassSubsystem* const Mass = World->GetSubsystem<UBBBMassSubsystem>();
+    APlayerController* const Controller = World->GetFirstPlayerController();
+    APawn* const Pawn = Controller ? Controller->GetPawn() : nullptr;
+    if (!ensureMsgf(Mass && (Damage == 0.0f || (Controller && Pawn)), TEXT("[BBBMassValidation]子弹伤害验证需要本地玩家")))
+    {
+        return false;
+    }
+
+    FBBBProjectileSpawnLocalControlPacket Packet;
+    Packet.MuzzleTransform = FTransform((End - Start).ToOrientationQuat(), Start);
+    Packet.Speed = Definition->InitialSpeedCmPerSecond;
+    Packet.Lifetime = Definition->MaximumLifetimeSeconds;
+    Packet.Damage = Damage;
+    Packet.Radius = Definition->CollisionRadiusCm;
+    Packet.Penetrations = Definition->MaximumPenetrations;
+    Packet.PenetrationMultiplier = Definition->PenetrationDamageMultiplier;
+    Packet.CollisionChannel = Definition->CollisionChannel;
+    Packet.Source = Pawn;
+    Packet.Pawn = Pawn;
+    Packet.Controller = Controller;
+    Packet.Channel = Definition->PresentationChannel.Get();
+    Packet.System = Definition->PresentationSystem.Get();
+    Packet.ImpactChannel = Definition->ImpactChannel.Get();
+    Packet.TracerLengthCm = Definition->TracerLengthCm;
+    Packet.TracerWidthCm = Definition->TracerWidthCm;
+    Packet.TracerColor = Definition->TracerColor;
+    Packet.bCanCauseDamage = Damage > 0.0f;
+    if (!ensureMsgf(Packet.IsValid(), TEXT("[BBBMassValidation]子弹出生输入无效")))
+    {
+        return false;
+    }
+
+    const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);
+    const bool bSubmitted = Entity.IsSet() && Mass->SubmitInput(Entity, MoveTemp(Packet));
+    ensureMsgf(bSubmitted, TEXT("[BBBMassValidation]子弹出生失败"));
+    UE_LOG(LogTemp, Display, TEXT("[BBBMassValidation]子弹提交 实体=%d 伤害=%.1f 成功=%d"), Entity.Index, Damage, bSubmitted);
+    return bSubmitted;
 }
 
 UMassEntityConfigAsset* UBBBMassValidationLibrary::CreateActorStressConfig(UObject* WorldContext, UMassEntityConfigAsset* Source)

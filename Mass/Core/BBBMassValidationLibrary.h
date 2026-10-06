@@ -5,6 +5,7 @@
 #include "BBBMassValidationLibrary.generated.h"
 
 class UMassEntityConfigAsset;
+class UBBBProjectileDefinition;
 
 /** 仅在 PIE 中创建并检查明确配置的测试实体 不实现具体实例玩法 */
 UCLASS()
@@ -13,6 +14,18 @@ class ABBB_EVAC_API UBBBMassValidationLibrary final : public UBlueprintFunctionL
     GENERATED_BODY()
 
 public:
+    /**
+     * 在当前 PIE 使用正式子弹模板提交出生输入 后续移动和碰撞由正式处理器执行
+     * @param WorldContext		当前 PIE 世界
+     * @param Definition		正式子弹配置
+     * @param Start		子弹出生位置 厘米
+     * @param End		确定飞行方向的目标位置 厘米
+     * @param Damage		本次测试伤害 零表示仅验证表现
+     * @return 是否成功提交子弹出生输入
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|验证")
+    static bool SpawnInspectionProjectile(UObject* WorldContext, UBBBProjectileDefinition* Definition, FVector Start, FVector End, float Damage);
+
     /**
      * 复制测试模板为临时全骨骼表现配置 不修改正式资产
      * @param WorldContext		当前 PIE 世界
