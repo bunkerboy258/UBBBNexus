@@ -57,15 +57,15 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
 
     int32 ProfileIndex = 0;
     FName BoneName = TEXT("spine_03");
-    float LinearStrength = 350.0f;
-    float AngularStrength = 800.0f;
+    float LinearStrength = 700.0f;
+    float AngularStrength = 1600.0f;
     switch (Hit.Region)
     {
         case EBBBMonsterHitRegion::Head:
             ProfileIndex = 1;
             BoneName = TEXT("head");
-            LinearStrength = 260.0f;
-            AngularStrength = 1200.0f;
+            LinearStrength = 520.0f;
+            AngularStrength = 2400.0f;
             break;
         case EBBBMonsterHitRegion::LeftArm:
         case EBBBMonsterHitRegion::RightArm:
@@ -75,15 +75,15 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
             {
                 BoneName = Hit.Region == EBBBMonsterHitRegion::LeftArm ? TEXT("clavicle_l") : TEXT("clavicle_r");
             }
-            LinearStrength = 500.0f;
-            AngularStrength = 2000.0f;
+            LinearStrength = 1000.0f;
+            AngularStrength = 4000.0f;
             break;
         case EBBBMonsterHitRegion::LeftLeg:
         case EBBBMonsterHitRegion::RightLeg:
             ProfileIndex = 3;
             BoneName = Hit.Region == EBBBMonsterHitRegion::LeftLeg ? TEXT("thigh_l") : TEXT("thigh_r");
-            LinearStrength = 250.0f;
-            AngularStrength = 600.0f;
+            LinearStrength = 500.0f;
+            AngularStrength = 1200.0f;
             break;
         default:
             break;
