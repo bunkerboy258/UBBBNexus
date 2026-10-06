@@ -16,6 +16,9 @@
 #include "HAL/IConsoleManager.h"
 #include "Serialization/JsonSerializer.h"
 #include "MassVisualizationTrait.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 
 namespace
 {
@@ -131,6 +134,7 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
     int32 Rendered = 0;
     FVector Sum = FVector::ZeroVector;
     TArray<TSharedPtr<FJsonValue>> Positions;
+    TArray<TSharedPtr<FJsonValue>> Locomotion;
     for (const FMassEntityHandle Entity : Entities)
     {
         if (!Manager.IsEntityValid(Entity))
@@ -142,6 +146,25 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
         const FTransformFragment* const Transform = Manager.GetFragmentDataPtr<FTransformFragment>(Entity);
         const FMassVelocityFragment* const Velocity = Manager.GetFragmentDataPtr<FMassVelocityFragment>(Entity);
         const FMassActorFragment* const ActorFragment = Manager.GetFragmentDataPtr<FMassActorFragment>(Entity);
+        const FBBBMonsterBehaviorFragment* const Behavior = Manager.GetFragmentDataPtr<FBBBMonsterBehaviorFragment>(Entity);
+        const FBBBMonsterMovementFragment* const Movement = Manager.GetFragmentDataPtr<FBBBMonsterMovementFragment>(Entity);
+        const FBBBMonsterNavigationFragment* const Navigation = Manager.GetFragmentDataPtr<FBBBMonsterNavigationFragment>(Entity);
+        if (Behavior && Movement && Navigation)
+        {
+            TSharedRef<FJsonObject> Sample = MakeShared<FJsonObject>();
+            Sample->SetNumberField(TEXT("index"), Entity.Index);
+            Sample->SetNumberField(TEXT("serial"), Entity.SerialNumber);
+            Sample->SetNumberField(TEXT("behavior"), static_cast<int32>(Behavior->State));
+            Sample->SetNumberField(TEXT("gait"), static_cast<int32>(Movement->Gait));
+            Sample->SetNumberField(TEXT("actionId"), Behavior->ActionId);
+            Sample->SetNumberField(TEXT("enteredAt"), Behavior->StateEnteredTime);
+            Sample->SetNumberField(TEXT("endsAt"), Behavior->StateEndsAtTime);
+            Sample->SetNumberField(TEXT("speedCmS"), Velocity ? Velocity->Value.Size2D() : 0.0);
+            Sample->SetBoolField(TEXT("hasPath"), Navigation->bHasPath);
+            Sample->SetBoolField(TEXT("reached"), Navigation->bReachedDestination);
+            Sample->SetNumberField(TEXT("pathPoints"), Navigation->PathPoints.Num());
+            Locomotion.Add(MakeShared<FJsonValueObject>(Sample));
+        }
         if (Transform)
         {
             const FVector Position = Transform->GetTransform().GetLocation();
@@ -173,6 +196,8 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
     Report->SetNumberField(TEXT("recentlyRenderedMeshes"), Rendered);
     Report->SetNumberField(TEXT("worldDeltaMs"), World->GetDeltaSeconds() * 1000.0);
     Report->SetArrayField(TEXT("positionsCm"), Positions);
+    Report->SetArrayField(TEXT("locomotion"), Locomotion);
+    Report->SetNumberField(TEXT("worldSeconds"), World->GetTimeSeconds());
     IAnimationBudgetAllocator* const Budget = IAnimationBudgetAllocator::Get(World);
     Report->SetBoolField(TEXT("worldBudgetEnabled"), Budget && Budget->GetEnabled());
     const IConsoleVariable* const Enabled = IConsoleManager::Get().FindConsoleVariable(TEXT("a.Budget.Enabled"));

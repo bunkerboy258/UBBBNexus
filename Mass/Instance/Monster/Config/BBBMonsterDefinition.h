@@ -28,9 +28,57 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "死亡后存活时间"))
     float DeathLifetime = 3.0f;
 
-    /** 移动速度 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "移动速度"))
-    float MoveSpeed = 300.0f;
+    /** 巡逻与近距离接近速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "走路速度"))
+    float WalkSpeed = 100.0f;
+
+    /** 中距离追击速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "跑步速度"))
+    float RunSpeed = 300.0f;
+
+    /** 远距离追击速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "冲刺速度"))
+    float SprintSpeed = 500.0f;
+
+    /** 正常移动加速度 厘米每平方秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "加速度"))
+    float Acceleration = 600.0f;
+
+    /** 正常移动减速度 厘米每平方秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "减速度"))
+    float Deceleration = 900.0f;
+
+    /** 剩余接近距离进入步行的阈值 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "步行距离阈值"))
+    float WalkDistance = 200.0f;
+
+    /** 剩余接近距离进入冲刺的阈值 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "冲刺距离阈值"))
+    float SprintDistance = 900.0f;
+
+    /** 防止目标在边界附近造成反复切档 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "0.0", DisplayName = "档位距离缓冲"))
+    float GaitHysteresis = 100.0f;
+
+    /** 随机待机时长的下界 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最短待机时间"))
+    float IdleDurationMin = 2.0f;
+
+    /** 随机待机时长的上界 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最长待机时间"))
+    float IdleDurationMax = 4.0f;
+
+    /** 随机巡逻时长的下界 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最短巡逻时间"))
+    float PatrolDurationMin = 2.0f;
+
+    /** 随机巡逻时长的上界 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最长巡逻时间"))
+    float PatrolDurationMax = 5.0f;
+
+    /** 发现或丢失目标后的警觉停留时间 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "警觉时间"))
+    float AlertDuration = 1.2f;
 
     /** 接近目标停止距离 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "停止半径"))

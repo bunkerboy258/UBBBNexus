@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterCombatFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
@@ -33,6 +34,7 @@ void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntity
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadWrite);
@@ -59,6 +61,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Movements = ChunkContext.GetFragmentView<FBBBMonsterMovementFragment>();
+        const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Targets = ChunkContext.GetFragmentView<FBBBMonsterTargetFragment>();
         auto DamageEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDamageFragment>();
         auto DeathEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDeathFragment>();
@@ -79,8 +82,28 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                     State.State = NewState;
                     State.StateEnteredTime = WorldTime;
                     ++State.ActionId;
+                    State.StateEndsAtTime = 0.0f;
+                    if (NewState == EBBBMonsterBehavior::Idle)
+                    {
+                        State.StateEndsAtTime = WorldTime + State.Random.FRandRange(State.IdleDurationMin, State.IdleDurationMax);
+                    }
+                    if (NewState == EBBBMonsterBehavior::Patrol)
+                    {
+                        State.StateEndsAtTime = WorldTime + State.Random.FRandRange(State.PatrolDurationMin, State.PatrolDurationMax);
+                    }
+                    if (NewState == EBBBMonsterBehavior::Alert)
+                    {
+                        State.StateEndsAtTime = WorldTime + State.AlertDuration;
+                    }
                 }
             };
+
+            if (!bRemote && State.StateEndsAtTime < 0.0f)
+            {
+                const FMassEntityHandle Entity = ChunkContext.GetEntity(Index);
+                State.Random.Initialize(static_cast<int32>(HashCombine(GetTypeHash(Entity.Index), GetTypeHash(Entity.SerialNumber))));
+                EnterState(EBBBMonsterBehavior::Idle, true);
+            }
 
             // 先扣除累计伤害 再根据剩余生命切换状态
             if (State.State == EBBBMonsterBehavior::Dead || Health.CurrentHealth <= 0.0f)
@@ -131,7 +154,45 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             if (!Target.bHasTarget || !Target.TargetActor.IsValid())
             {
-                EnterState(EBBBMonsterBehavior::Scout);
+                if (State.bHadTarget)
+                {
+                    State.bHadTarget = false;
+                    EnterState(EBBBMonsterBehavior::Alert, true);
+                    continue;
+                }
+                if (State.State == EBBBMonsterBehavior::Alert && WorldTime < State.StateEndsAtTime)
+                {
+                    continue;
+                }
+                if (State.State == EBBBMonsterBehavior::Patrol)
+                {
+                    if (WorldTime >= State.StateEndsAtTime ||
+                        (Navigation[Index].ActionId == State.ActionId && Navigation[Index].bReachedDestination))
+                    {
+                        EnterState(EBBBMonsterBehavior::Idle);
+                    }
+                    continue;
+                }
+                if (State.State == EBBBMonsterBehavior::Idle)
+                {
+                    if (WorldTime >= State.StateEndsAtTime)
+                    {
+                        EnterState(EBBBMonsterBehavior::Patrol);
+                    }
+                    continue;
+                }
+                EnterState(EBBBMonsterBehavior::Idle);
+                continue;
+            }
+
+            if (!State.bHadTarget)
+            {
+                State.bHadTarget = true;
+                EnterState(EBBBMonsterBehavior::Alert, true);
+                continue;
+            }
+            if (State.State == EBBBMonsterBehavior::Alert && WorldTime < State.StateEndsAtTime)
+            {
                 continue;
             }
 

@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterCombatFragment.h"
@@ -42,7 +43,13 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddFragment<FBBBMonsterNetworkInputFragment>();
     BuildContext.AddFragment<FBBBMonsterDamageFragment>();
     BuildContext.AddFragment<FBBBMonsterDeathFragment>();
-    BuildContext.AddFragment<FBBBMonsterBehaviorFragment>();
+    auto& Behavior = BuildContext.AddFragment_GetRef<FBBBMonsterBehaviorFragment>();
+    Behavior.IdleDurationMin = Settings->IdleDurationMin;
+    Behavior.IdleDurationMax = Settings->IdleDurationMax;
+    Behavior.PatrolDurationMin = Settings->PatrolDurationMin;
+    Behavior.PatrolDurationMax = Settings->PatrolDurationMax;
+    Behavior.AlertDuration = Settings->AlertDuration;
+    BuildContext.AddFragment<FBBBMonsterNavigationFragment>();
     BuildContext.AddFragment<FBBBMonsterTargetFragment>();
     BuildContext.AddFragment<FBBBMonsterPresentationStateFragment>();
     BuildContext.AddFragment<FBBBMonsterPresentationSmoothingFragment>();
@@ -55,7 +62,14 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Health.HurtDuration = Settings->HurtDuration;
     Health.DeathLifetime = Settings->DeathLifetime;
     auto& Movement = BuildContext.AddFragment_GetRef<FBBBMonsterMovementFragment>();
-    Movement.MoveSpeed = Settings->MoveSpeed;
+    Movement.WalkSpeed = Settings->WalkSpeed;
+    Movement.RunSpeed = Settings->RunSpeed;
+    Movement.SprintSpeed = Settings->SprintSpeed;
+    Movement.Acceleration = Settings->Acceleration;
+    Movement.Deceleration = Settings->Deceleration;
+    Movement.WalkDistance = Settings->WalkDistance;
+    Movement.SprintDistance = Settings->SprintDistance;
+    Movement.GaitHysteresis = Settings->GaitHysteresis;
     Movement.StopRadius = Settings->StopRadius;
     auto& Perception = BuildContext.AddFragment_GetRef<FBBBMonsterPerceptionFragment>();
     Perception.SightRange = Settings->SightRange;

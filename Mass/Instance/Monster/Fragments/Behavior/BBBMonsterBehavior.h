@@ -13,7 +13,10 @@ enum class EBBBMonsterBehavior : uint8
     Idle,
 
     /** 等待玩家进入可侦察范围 */
-    Scout,
+    Alert UMETA(DisplayName = "警觉"),
+
+    /** 随机方向的限时步行 */
+    Patrol UMETA(DisplayName = "巡逻"),
 
     /** 沿导航路径接近目标 */
     Chase,

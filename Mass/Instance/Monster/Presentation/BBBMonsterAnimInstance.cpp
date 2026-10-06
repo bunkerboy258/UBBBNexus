@@ -69,12 +69,12 @@ void UBBBMonsterAnimInstance::NativeUpdateAnimation(const float DeltaSeconds)
     UAnimSequenceBase* const Animation = GetActiveAnimation();
     float& ActiveTime = bChannelBActive ? ChannelBTime : ChannelATime;
     const float Length = Animation->GetPlayLength();
-    const bool bLooping = LastBehavior == EBBBMonsterBehavior::Idle || LastBehavior == EBBBMonsterBehavior::Scout || LastBehavior == EBBBMonsterBehavior::Chase;
+    const bool bLooping = LastBehavior == EBBBMonsterBehavior::Idle || LastBehavior == EBBBMonsterBehavior::Alert || LastBehavior == EBBBMonsterBehavior::Patrol || LastBehavior == EBBBMonsterBehavior::Chase;
 
     if (bLooping)
     {
         float Rate = 1.0f;
-        if (LastBehavior == EBBBMonsterBehavior::Scout || LastBehavior == EBBBMonsterBehavior::Chase)
+        if (LastBehavior == EBBBMonsterBehavior::Patrol || LastBehavior == EBBBMonsterBehavior::Chase)
         {
             Rate = FMath::Clamp(Source->MovementSpeed / FMath::Max(Source->AnimationReferenceSpeed, 1.0f), 0.0f, 2.0f);
         }

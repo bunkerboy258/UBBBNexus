@@ -6,7 +6,20 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(MaxHealth) && MaxHealth > 0.0f
         && FMath::IsFinite(HurtDuration) && HurtDuration > 0.0f
         && FMath::IsFinite(DeathLifetime) && DeathLifetime > 0.0f
-        && FMath::IsFinite(MoveSpeed) && MoveSpeed >= 0.0f
+        && FMath::IsFinite(WalkSpeed) && WalkSpeed > 0.0f
+        && FMath::IsFinite(RunSpeed) && RunSpeed > WalkSpeed
+        && FMath::IsFinite(SprintSpeed) && SprintSpeed > RunSpeed
+        && FMath::IsFinite(Acceleration) && Acceleration > 0.0f
+        && FMath::IsFinite(Deceleration) && Deceleration > 0.0f
+        && FMath::IsFinite(WalkDistance) && WalkDistance > 0.0f
+        && FMath::IsFinite(SprintDistance) && SprintDistance > WalkDistance
+        && FMath::IsFinite(GaitHysteresis) && GaitHysteresis >= 0.0f
+        && WalkDistance + 2.0f * GaitHysteresis < SprintDistance
+        && FMath::IsFinite(IdleDurationMin) && IdleDurationMin > 0.0f
+        && FMath::IsFinite(IdleDurationMax) && IdleDurationMax >= IdleDurationMin
+        && FMath::IsFinite(PatrolDurationMin) && PatrolDurationMin > 0.0f
+        && FMath::IsFinite(PatrolDurationMax) && PatrolDurationMax >= PatrolDurationMin
+        && FMath::IsFinite(AlertDuration) && AlertDuration > 0.0f
         && FMath::IsFinite(StopRadius) && StopRadius >= 0.0f && StopRadius <= AttackRange
         && FMath::IsFinite(SightRange) && SightRange >= 0.0f
         && FMath::IsFinite(CollisionRadius) && CollisionRadius > 0.0f

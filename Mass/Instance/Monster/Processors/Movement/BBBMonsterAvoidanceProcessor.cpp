@@ -21,7 +21,7 @@ UBBBMonsterAvoidanceProcessor::UBBBMonsterAvoidanceProcessor()
 
 void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
-    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
@@ -48,7 +48,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
     // 第一遍遍历建立二维空间桶
     MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
     {
-        TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
+        const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
 
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
 
@@ -70,14 +70,14 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
     // 第二遍遍历计算分离方向并修正位置
     MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
     {
-        TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
+        const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         TArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetMutableFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
             // 停止状态不再被分离修正推动 活体仍作为其它实体的障碍
-            if (States[Index].State != EBBBMonsterBehavior::Chase)
+            if (States[Index].State != EBBBMonsterBehavior::Chase && States[Index].State != EBBBMonsterBehavior::Patrol)
             {
                 Avoidances[Index].SeparationDirection = FVector::ZeroVector;
                 Avoidances[Index].SeparationStrength = 0.0f;
@@ -92,7 +92,6 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                 FMath::FloorToInt(Location.X / CellSize),
                 FMath::FloorToInt(Location.Y / CellSize));
             FVector Separation = FVector::ZeroVector;
-            float ClosestNeighborDistance = PersonalSpace;
 
             // 只检查当前实体周边的相邻空间桶
             for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
@@ -117,7 +116,6 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                             continue;
                         }
 
-                        ClosestNeighborDistance = FMath::Min(ClosestNeighborDistance, Distance);
                         Separation += AwayFromNeighbor / Distance * (1.0f - Distance / PersonalSpace);
                     }
                 }
@@ -126,15 +124,6 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
             Avoidances[Index].SeparationStrength = Separation.Size();
             Avoidances[Index].SeparationDirection = Separation.GetSafeNormal();
 
-            if (Avoidances[Index].SeparationDirection.IsNearlyZero())
-            {
-                continue;
-            }
-
-            // 按分离方向将过近实体推开
-            const float CorrectionDistance = (PersonalSpace - ClosestNeighborDistance) * 0.5f;
-            FTransform& Transform = Transforms[Index].GetMutableTransform();
-            Transform.SetLocation(Location + Avoidances[Index].SeparationDirection * CorrectionDistance);
         }
     });
 }

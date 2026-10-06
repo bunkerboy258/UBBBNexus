@@ -1,17 +1,16 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
-
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
-#include "MassMovementFragments.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
+#include "Engine/World.h"
 
 UBBBMonsterNavigationProcessor::UBBBMonsterNavigationProcessor()
     : MonsterQuery(*this)
@@ -20,17 +19,17 @@ UBBBMonsterNavigationProcessor::UBBBMonsterNavigationProcessor()
     ProcessingPhase = EMassProcessingPhase::PrePhysics;
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Movement;
     ExecutionOrder.ExecuteAfter.Add(BBBMassProcessingGroups::Decision);
+    ExecutionOrder.ExecuteAfter.Add(UBBBMonsterBehaviorProcessor::StaticClass()->GetFName());
     bRequiresGameThreadExecution = true;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::Server | EProcessorExecutionFlags::Standalone);
-    ExecutionOrder.ExecuteAfter.Add(UBBBMonsterBehaviorProcessor::StaticClass()->GetFName());
 }
 
 void UBBBMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
-    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
-    MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
-    MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
@@ -38,24 +37,8 @@ void UBBBMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEnti
 void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
     UWorld* World = Context.GetWorld();
-
-    if (!ensureMsgf(World != nullptr, TEXT("[UBBBM]Monster navigation requires a valid world")))
-    {
-        return;
-    }
-
-    // 获取导航系统用于查询目标路径
-    UNavigationSystemV1* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
-
-    if (!ensureMsgf(NavigationSystem != nullptr, TEXT("[UBBBM]Monster navigation requires NavigationSystem")))
-    {
-        return;
-    }
-
-    // 使用处理器时间步长更新移动距离
-    const float DeltaTime = Context.GetDeltaTimeSeconds();
-
-    if (!ensureMsgf(DeltaTime >= 0.0f, TEXT("[UBBBM]Monster navigation delta time must not be negative")))
+    UNavigationSystemV1* NavigationSystem = World ? FNavigationSystem::GetCurrent<UNavigationSystemV1>(World) : nullptr;
+    if (!ensureMsgf(World && NavigationSystem, TEXT("[UBBBM]Navigation requires a world and navigation system")))
     {
         return;
     }
@@ -72,89 +55,101 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     NextPathQueryIndex = (FirstQueryIndex + PathQueriesPerFrame) % EntityCount;
     int32 EntityIndex = 0;
 
-    // 感知之后更新路径 位置 速度和朝向
-    MonsterQuery.ForEachEntityChunk(Context, [DeltaTime, NavigationSystem, World, WorldTime,
-        EntityCount, FirstQueryIndex, &EntityIndex](FMassExecutionContext& ChunkContext)
+    MonsterQuery.ForEachEntityChunk(Context, [World, WorldTime, NavigationSystem, EntityCount, FirstQueryIndex, &EntityIndex](FMassExecutionContext& Chunk)
     {
-        TArrayView<FTransformFragment> Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
-        TArrayView<FMassVelocityFragment> Velocities = ChunkContext.GetMutableFragmentView<FMassVelocityFragment>();
-        const TConstArrayView<FBBBMonsterTargetFragment> Targets = ChunkContext.GetFragmentView<FBBBMonsterTargetFragment>();
-        TArrayView<FBBBMonsterMovementFragment> Movements = ChunkContext.GetMutableFragmentView<FBBBMonsterMovementFragment>();
-        const TConstArrayView<FBBBMonsterBehaviorFragment> States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
-
-        for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
+        const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
+        const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
+        const auto Movements = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+        const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        auto Navigation = Chunk.GetMutableFragmentView<FBBBMonsterNavigationFragment>();
+        for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
-            const bool bMayQueryPath = ((EntityIndex++ - FirstQueryIndex + EntityCount) % EntityCount) < PathQueriesPerFrame;
-            FTransform& Transform = Transforms[Index].GetMutableTransform();
-            FMassVelocityFragment& Velocity = Velocities[Index];
-            const FBBBMonsterTargetFragment& Target = Targets[Index];
-            FBBBMonsterMovementFragment& Movement = Movements[Index];
+            const bool bMayQuery = ((EntityIndex++ - FirstQueryIndex + EntityCount) % EntityCount) < PathQueriesPerFrame;
             const FBBBMonsterBehaviorFragment& State = States[Index];
+            FBBBMonsterNavigationFragment& Path = Navigation[Index];
+            const bool bPatrol = State.State == EBBBMonsterBehavior::Patrol;
+            const bool bChase = State.State == EBBBMonsterBehavior::Chase;
+            const FVector Location = Transforms[Index].GetTransform().GetLocation();
 
-            // 无目标或受控状态下停止移动
-            if (!Target.bHasTarget || State.State != EBBBMonsterBehavior::Chase)
+            if (Path.ActionId != State.ActionId)
             {
-                Velocity.Value = FVector::ZeroVector;
+                Path.PathPoints.Reset();
+                Path.TailDistances.Reset();
+                Path.bHasPath = false;
+                Path.bReachedDestination = false;
+                Path.PathPointIndex = 1;
+                Path.NextPathRefreshTime = 0.0f;
+                Path.ActionId = State.ActionId;
+            }
+            if (!bPatrol && !bChase)
+            {
+                Path.bHasPath = false;
+                continue;
+            }
+            if (bChase && (!Targets[Index].bHasTarget || !Targets[Index].TargetActor.IsValid()))
+            {
+                Path.bHasPath = false;
                 continue;
             }
 
-            const FVector CurrentLocation = Transform.GetLocation();
-            FVector ToTarget = Target.TargetLocation - CurrentLocation;
-            ToTarget.Z = 0.0f;
-
-            const float StopRadius = FMath::Max(Movement.StopRadius, 0.0f);
-
-            // 进入停止半径后交给战斗处理器
-            if (ToTarget.SizeSquared() <= FMath::Square(StopRadius))
+            while (Path.bHasPath && Path.PathPointIndex < Path.PathPoints.Num() - 1 &&
+                FVector::DistSquared2D(Location, Path.PathPoints[Path.PathPointIndex]) <= FMath::Square(15.0f))
             {
-                Velocity.Value = FVector::ZeroVector;
+                ++Path.PathPointIndex;
+            }
+            if (bPatrol && Path.bHasPath &&
+                FVector::DistSquared2D(Location, Path.Destination) <= FMath::Square(15.0f))
+            {
+                Path.bReachedDestination = true;
+                Path.bHasPath = false;
+                continue;
+            }
+            if (!bMayQuery || WorldTime < Path.NextPathRefreshTime || (bPatrol && Path.bHasPath))
+            {
                 continue;
             }
 
-            if (bMayQueryPath && WorldTime >= Movement.NextPathRefreshTime)
+            FVector Goal = Targets[Index].TargetLocation;
+            if (bPatrol)
             {
-                // 按固定间隔重新查询到玩家的导航路径
-                const UNavigationPath* Path = NavigationSystem->FindPathToLocationSynchronously(
-                    World,
-                    CurrentLocation,
-                    Target.TargetLocation);
-
-                if (Path != nullptr && Path->PathPoints.Num() > 1)
-                {
-                    Movement.NextPathPoint = Path->PathPoints[1];
-                }
-                else
-                {
-                    Movement.NextPathPoint = Target.TargetLocation;
-                }
-
-                Movement.NextPathRefreshTime = WorldTime + 0.25f;
+                // 每次巡逻使用独立方向 失败后的重试也换方向
+                const FMassEntityHandle Entity = Chunk.GetEntity(Index);
+                FRandomStream Random(static_cast<int32>(HashCombine(GetTypeHash(Entity.Index),
+                    HashCombine(State.ActionId, GetTypeHash(WorldTime)))));
+                const float Angle = Random.FRandRange(0.0f, UE_TWO_PI);
+                const float Duration = FMath::Max(State.StateEndsAtTime - WorldTime, 0.1f);
+                const float Distance = Movements[Index].WalkSpeed * Duration * 1.25f;
+                Goal = Location + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0f) * Distance;
             }
 
-            if (Movement.NextPathRefreshTime <= 0.0f)
+            Path.NextPathRefreshTime = WorldTime + 0.25f;
+            FNavLocation Projected;
+            FNavLocation ProjectedStart;
+            const bool bProjected = NavigationSystem->ProjectPointToNavigation(Goal, Projected, FVector(100.0f, 100.0f, 250.0f)) &&
+                NavigationSystem->ProjectPointToNavigation(Location, ProjectedStart, FVector(100.0f, 100.0f, 250.0f));
+            const UNavigationPath* Result = bProjected
+                ? NavigationSystem->FindPathToLocationSynchronously(World, ProjectedStart.Location, Projected.Location)
+                : nullptr;
+            if (Result == nullptr || !Result->IsValid() || Result->IsPartial() || Result->PathPoints.Num() < 2)
             {
-                Velocity.Value = FVector::ZeroVector;
+                Path.bHasPath = false;
+                Path.PathPoints.Reset();
+                Path.TailDistances.Reset();
+                UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]No navigable path Entity=%d"), Chunk.GetEntity(Index).Index);
                 continue;
             }
 
-            FVector ToPathPoint = Movement.NextPathPoint - CurrentLocation;
-            ToPathPoint.Z = 0.0f;
-
-            if (ToPathPoint.IsNearlyZero())
+            Path.PathPoints = Result->PathPoints;
+            Path.HeightOffset = Location.Z - ProjectedStart.Location.Z;
+            Path.TailDistances.SetNumZeroed(Path.PathPoints.Num());
+            for (int32 Point = Path.PathPoints.Num() - 2; Point >= 0; --Point)
             {
-                Velocity.Value = FVector::ZeroVector;
-                continue;
+                Path.TailDistances[Point] = Path.TailDistances[Point + 1] +
+                    FVector::Dist2D(Path.PathPoints[Point], Path.PathPoints[Point + 1]);
             }
-
-            const FVector PathDirection = ToPathPoint.GetSafeNormal();
-            const float MoveSpeed = FMath::Max(Movement.MoveSpeed, 0.0f);
-            const float MoveDistance = FMath::Min3<double>(MoveSpeed * DeltaTime, ToPathPoint.Size(), FMath::Max(ToTarget.Size() - StopRadius, 0.0f));
-            const FVector NewLocation = CurrentLocation + PathDirection * MoveDistance;
-
-            // 逻辑层直接写入 Mass 变换 表现层随后读取该结果
-            Transform.SetLocation(NewLocation);
-            Transform.SetRotation(PathDirection.ToOrientationQuat());
-            Velocity.Value = DeltaTime > SMALL_NUMBER ? PathDirection * (MoveDistance / DeltaTime) : FVector::ZeroVector;
+            Path.PathPointIndex = 1;
+            Path.Destination = Path.PathPoints.Last();
+            Path.bHasPath = true;
         }
     });
 }

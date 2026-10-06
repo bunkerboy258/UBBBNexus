@@ -29,7 +29,7 @@ void UBBBMonsterPresentationComponent::ApplyPresentationState(
     StateEnteredTime = InStateTime;
 
     // 移动相关状态循环播放 其余状态只播放一次
-    const bool bLooping = InState == EBBBMonsterBehavior::Idle || InState == EBBBMonsterBehavior::Scout || InState == EBBBMonsterBehavior::Chase;
+    const bool bLooping = InState == EBBBMonsterBehavior::Idle || InState == EBBBMonsterBehavior::Alert || InState == EBBBMonsterBehavior::Patrol || InState == EBBBMonsterBehavior::Chase;
     if (bNewAction)
     {
         USkeletalMeshComponent* const MonsterMesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
@@ -82,6 +82,7 @@ UAnimSequenceBase* UBBBMonsterPresentationComponent::SelectAnimationForAction(co
             Variants = &IdleAnimationVariants;
             break;
 
+        case EBBBMonsterBehavior::Patrol:
         case EBBBMonsterBehavior::Chase:
             Variants = &ChaseAnimationVariants;
             break;
@@ -98,7 +99,7 @@ UAnimSequenceBase* UBBBMonsterPresentationComponent::SelectAnimationForAction(co
             Variants = &DeadAnimationVariants;
             break;
 
-        case EBBBMonsterBehavior::Scout:
+        case EBBBMonsterBehavior::Alert:
             break;
     }
 
@@ -121,9 +122,10 @@ UAnimSequenceBase* UBBBMonsterPresentationComponent::GetAnimationForState(const 
         case EBBBMonsterBehavior::Idle:
             return IdleAnimation;
 
-        case EBBBMonsterBehavior::Scout:
+        case EBBBMonsterBehavior::Alert:
             return ScoutAnimation;
 
+        case EBBBMonsterBehavior::Patrol:
         case EBBBMonsterBehavior::Chase:
             return ChaseAnimation;
 
