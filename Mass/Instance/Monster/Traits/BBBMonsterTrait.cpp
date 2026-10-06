@@ -67,10 +67,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Movement.SprintSpeed = Settings->SprintSpeed;
     Movement.Acceleration = Settings->Acceleration;
     Movement.Deceleration = Settings->Deceleration;
-    Movement.WalkDistance = Settings->WalkDistance;
     Movement.SprintDistance = Settings->SprintDistance;
-    Movement.GaitHysteresis = Settings->GaitHysteresis;
-    Movement.StopRadius = Settings->StopRadius;
     auto& Perception = BuildContext.AddFragment_GetRef<FBBBMonsterPerceptionFragment>();
     Perception.SightRange = Settings->SightRange;
     auto& Avoidance = BuildContext.AddFragment_GetRef<FBBBMonsterAvoidanceFragment>();

@@ -13,15 +13,16 @@ bool FBBBMonsterLocomotionTest::RunTest(const FString& Parameters)
 {
     FBBBMonsterMovementFragment Movement;
     TestEqual(TEXT("巡逻始终步行"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 2000.0f, true), EBBBMonsterGait::Walk);
-    TestEqual(TEXT("近距离步行"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 150.0f, false), EBBBMonsterGait::Walk);
-    TestEqual(TEXT("步行升档缓冲"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 250.0f, false), EBBBMonsterGait::Walk);
+    TestEqual(TEXT("近距离追击仍然跑步"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 150.0f, false), EBBBMonsterGait::Run);
+    TestEqual(TEXT("刚进入追击不使用步行"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 250.0f, false), EBBBMonsterGait::Run);
     TestEqual(TEXT("中距离跑步"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 500.0f, false), EBBBMonsterGait::Run);
     TestEqual(TEXT("远距离冲刺"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 1500.0f, false), EBBBMonsterGait::Sprint);
     Movement.Gait = EBBBMonsterGait::Sprint;
-    TestEqual(TEXT("冲刺降档缓冲"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 850.0f, false), EBBBMonsterGait::Sprint);
-    TestEqual(TEXT("冲刺降档跑步"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 700.0f, false), EBBBMonsterGait::Run);
+    TestEqual(TEXT("冲刺接近后不降档"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 700.0f, false), EBBBMonsterGait::Sprint);
+    TestEqual(TEXT("冲刺贴近目标仍不降档"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 1.0f, false), EBBBMonsterGait::Sprint);
+    TestEqual(TEXT("冲刺后恢复巡逻仍然步行"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 1500.0f, true), EBBBMonsterGait::Walk);
     Movement.Gait = EBBBMonsterGait::Run;
-    TestEqual(TEXT("跑步近距离降档"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 150.0f, false), EBBBMonsterGait::Walk);
+    TestEqual(TEXT("跑步贴近目标不降档"), UBBBMonsterLocomotionProcessor::SelectGait(Movement, 1.0f, false), EBBBMonsterGait::Run);
     float Speed = 0.0f;
     const float Targets[] = { Movement.WalkSpeed, Movement.RunSpeed, Movement.SprintSpeed, Movement.RunSpeed, Movement.WalkSpeed };
     for (const float Target : Targets)
@@ -36,7 +37,8 @@ bool FBBBMonsterLocomotionTest::RunTest(const FString& Parameters)
     }
     TestEqual(TEXT("到达立即停止"), UBBBMonsterLocomotionProcessor::CalculateSpeed(Movement, 500.0f, 500.0f, 0.0f, 0.016f), 0.0f);
     TestEqual(TEXT("零时间没有虚构速度"), UBBBMonsterLocomotionProcessor::CalculateSpeed(Movement, 500.0f, 500.0f, 1000.0f, 0.0f), 0.0f);
-    TestTrue(TEXT("近终点制动上限"), UBBBMonsterLocomotionProcessor::CalculateSpeed(Movement, 500.0f, 500.0f, 1.0f, 0.016f) <= FMath::Sqrt(2.0f * Movement.Deceleration));
+    TestEqual(TEXT("近终点不提前制动"), UBBBMonsterLocomotionProcessor::CalculateSpeed(Movement, 500.0f, 500.0f, 1.0f, 0.016f), 500.0f);
+    TestEqual(TEXT("近终点保持跑速"), UBBBMonsterLocomotionProcessor::CalculateSpeed(Movement, 300.0f, 300.0f, 1.0f, 0.016f), 300.0f);
     UBBBMonsterDefinition* Definition = NewObject<UBBBMonsterDefinition>();
     Definition->EntityConfig = NewObject<UMassEntityConfigAsset>();
     TestTrue(TEXT("新配置默认有效"), Definition->IsValid());

@@ -48,17 +48,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "减速度"))
     float Deceleration = 900.0f;
 
-    /** 剩余接近距离进入步行的阈值 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "步行距离阈值"))
-    float WalkDistance = 200.0f;
-
     /** 剩余接近距离进入冲刺的阈值 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "冲刺距离阈值"))
     float SprintDistance = 900.0f;
-
-    /** 防止目标在边界附近造成反复切档 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "0.0", DisplayName = "档位距离缓冲"))
-    float GaitHysteresis = 100.0f;
 
     /** 随机待机时长的下界 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最短待机时间"))
@@ -79,10 +71,6 @@ public:
     /** 发现或丢失目标后的警觉停留时间 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "警觉时间"))
     float AlertDuration = 1.2f;
-
-    /** 接近目标停止距离 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "停止半径"))
-    float StopRadius = 120.0f;
 
     /** 感知范围 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "视野范围"))

@@ -24,19 +24,11 @@ UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
 
 EBBBMonsterGait UBBBMonsterLocomotionProcessor::SelectGait(const FBBBMonsterMovementFragment& Movement, const float RemainingDistance, const bool bPatrol)
 {
-    if (bPatrol || RemainingDistance <= Movement.WalkDistance)
+    if (bPatrol)
     {
         return EBBBMonsterGait::Walk;
     }
-    if (Movement.Gait == EBBBMonsterGait::Walk && RemainingDistance < Movement.WalkDistance + Movement.GaitHysteresis)
-    {
-        return EBBBMonsterGait::Walk;
-    }
-    if (RemainingDistance >= Movement.SprintDistance)
-    {
-        return EBBBMonsterGait::Sprint;
-    }
-    if (Movement.Gait == EBBBMonsterGait::Sprint && RemainingDistance > Movement.SprintDistance - Movement.GaitHysteresis)
+    if (Movement.Gait == EBBBMonsterGait::Sprint || RemainingDistance >= Movement.SprintDistance)
     {
         return EBBBMonsterGait::Sprint;
     }
@@ -49,11 +41,10 @@ float UBBBMonsterLocomotionProcessor::CalculateSpeed(const FBBBMonsterMovementFr
     {
         return 0.0f;
     }
-    const float BrakingSpeed = FMath::Sqrt(2.0f * Movement.Deceleration * RemainingDistance);
-    const float DesiredSpeed = FMath::Min(TargetSpeed, BrakingSpeed);
+    const float DesiredSpeed = FMath::Min(TargetSpeed, Movement.SprintSpeed);
     const float Rate = DesiredSpeed > CurrentSpeed ? Movement.Acceleration : Movement.Deceleration;
     const float Speed = FMath::FInterpConstantTo(CurrentSpeed, DesiredSpeed, DeltaSeconds, Rate);
-    return FMath::Clamp(Speed, 0.0f, FMath::Min(BrakingSpeed, Movement.SprintSpeed));
+    return FMath::Clamp(Speed, 0.0f, Movement.SprintSpeed);
 }
 
 void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
@@ -102,8 +93,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const FVector Location = Transform.GetLocation();
             const FVector ToPoint = Path.PathPoints[Path.PathPointIndex] - Location;
             const float PointDistance = ToPoint.Size2D();
-            const float StopRadius = bPatrol ? 15.0f : Movement.StopRadius;
-            const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - StopRadius, 0.0f);
+            const float ArrivalTolerance = bPatrol ? 15.0f : 0.0f;
+            const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - ArrivalTolerance, 0.0f);
             const EBBBMonsterGait PreviousGait = Movement.Gait;
             Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
             const float TargetSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :

@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterCombatFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
@@ -33,7 +32,6 @@ void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntity
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
-    MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
@@ -60,7 +58,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
     {
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
-        const auto Movements = ChunkContext.GetFragmentView<FBBBMonsterMovementFragment>();
         const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Targets = ChunkContext.GetFragmentView<FBBBMonsterTargetFragment>();
         auto DamageEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDamageFragment>();
@@ -196,8 +193,13 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
-            const float StartRange = FMath::Min(Movements[Index].StopRadius, Combat.AttackRange);
-            const bool bInRange = FVector::DistSquared2D(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(StartRange + KINDA_SMALL_NUMBER);
+            if (State.State == EBBBMonsterBehavior::Attack)
+            {
+                EnterState(EBBBMonsterBehavior::Chase);
+                continue;
+            }
+
+            const bool bInRange = FVector::DistSquared(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(Combat.AttackRange);
 
             if (bInRange && WorldTime >= Combat.NextAttackTime)
             {
@@ -211,7 +213,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
-            EnterState(bInRange ? EBBBMonsterBehavior::Idle : EBBBMonsterBehavior::Chase);
+            EnterState(EBBBMonsterBehavior::Chase);
         }
     });
 }
