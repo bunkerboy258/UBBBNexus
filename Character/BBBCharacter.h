@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -109,6 +110,7 @@ public:
     }
 
     /** @return 当前激活主手装备 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备")
     ABBBEquipment *GetActiveEquipment() const
     {
         return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
@@ -158,6 +160,8 @@ private:
 
     FBBBCharacterLocomotionSystem LocomotionSystem;
     
+    FBBBCharacterItemSystem ItemSystem;
+
     FBBBCharacterEquipmentSystem EquipmentSystem;
 
     FBBBCharacterParseSystem ParseSystem;

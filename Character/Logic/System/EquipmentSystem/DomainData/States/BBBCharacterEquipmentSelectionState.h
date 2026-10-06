@@ -13,10 +13,6 @@ struct FBBBCharacterEquipmentSelectionState final
     /** 当前激活装备的配置标识 */
     FName ActiveEquipmentId = NAME_None;
 
-    /** 角色期望装备的唯一实例 */
-    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "期望主手装备实例"))
-    TObjectPtr<ABBBEquipment> DesiredMainHandInstance = nullptr;
-
     /** 角色当前装备的唯一实例 */
     UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "当前主手装备实例"))
     TObjectPtr<ABBBEquipment> ActiveMainHandInstance = nullptr;
@@ -27,6 +23,4 @@ struct FBBBCharacterEquipmentSelectionState final
     /** 当前是否存在装备创建或清空请求 */
     bool bHasEquipmentRequest = false;
 
-    /** 等待处理的快捷栏索引 */
-    TOptional<int32> PendingSlot;
 };

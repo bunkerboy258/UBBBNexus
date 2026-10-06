@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Debug/Equipment/BBBEquipmentDebugActor.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSelectionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
@@ -88,14 +88,14 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
         return;
     }
 
-    if (Character->RuntimeData.Equipment.ReadEquipmentInventoryState().BackpackSlots.IsEmpty()
+    if (Character->RuntimeData.Item.ReadItemInventoryState().BackpackSlots.IsEmpty()
         || !Character->GetMesh()
         || !Cast<UBBBAnimInstance>(Character->GetMesh()->GetAnimInstance()))
     {
         return;
     }
 
-    const bool bSubmitted = Character->SubmitInput(FBBBEquipmentSelectionLocalControlPacket{EquipmentId});
+    const bool bSubmitted = Character->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
     SetActorTickEnabled(false);
 
     if (!bSubmitted)
@@ -104,5 +104,5 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
         return;
     }
 
-    UE_LOG(LogBBBEquipmentDebug, Display, TEXT("%s 已向角色 %s 提交装备 %s 的一次性状态输入 由角色管线执行后续创建与附着"), *GetPathName(), *Character->GetPathName(), *EquipmentId.ToString());
+    UE_LOG(LogBBBEquipmentDebug, Display, TEXT("%s 已向角色 %s 提交物品 %s 的入包输入 手持装备保持不变"), *GetPathName(), *Character->GetPathName(), *EquipmentId.ToString());
 }

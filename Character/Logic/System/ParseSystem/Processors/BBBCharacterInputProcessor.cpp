@@ -10,9 +10,10 @@ void FBBBCharacterInputProcessor::Update(
 
     Process(InputState.AimState, Context);
     Process(InputState.RunState, Context);
-    Process(InputState.EquipmentSelectionState, Context);
+    Process(InputState.ItemAdd, Context);
+    Process(InputState.ItemMove, Context);
     Process(InputState.AuthorityEquipmentSelectionState, Context);
-    Process(InputState.EquipmentSlot, Context);
+    Process(InputState.ItemSelect, Context);
 
     Process(InputState.Movement, Context);
     Process(InputState.Run, Context);

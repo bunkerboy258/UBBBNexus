@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Network/BBBNetworkConfig.h"
 #include "Engine/DataAsset.h"
+#include "BBBWork/UBBBNexus/Character/Config/Item/BBBItemConfig.h"
 #include "BBBCharacterConfig.generated.h"
 
 /** 角色全部可编辑的静态配置资产 */
@@ -27,6 +28,10 @@ public:
     /** 角色动画事实识别配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "动画"))
     FBBBCharacterAnimationConfig Animation;
+
+    /** 角色背包与前序快捷槽位配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "物品"))
+    FBBBCharacterItemConfig Item;
 
     /** 角色装备目录与容器配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备"))

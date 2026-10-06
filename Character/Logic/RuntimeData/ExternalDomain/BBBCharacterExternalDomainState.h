@@ -28,6 +28,9 @@ public:
 
 private:
     friend class FBBBCharacterUpdatePipeline;
+#if WITH_DEV_AUTOMATION_TESTS
+    friend class FBBBCharacterItemSystemTest;
+#endif
 
     /** 当前帧世界快照 */
     UPROPERTY(Transient)

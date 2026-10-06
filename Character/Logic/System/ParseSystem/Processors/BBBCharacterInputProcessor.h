@@ -44,6 +44,7 @@ private:
         }
 
         Slot.bActive = false;
+        Slot.Data = TPacket{};
     }
 
 };

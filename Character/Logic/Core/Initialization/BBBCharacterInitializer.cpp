@@ -61,6 +61,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Character.RuntimeData.Parse.ReadControlState(),
         Config.Locomotion);
     
+    Character.ItemSystem.Initialize(Character, Character.RuntimeData, Config.Item);
+
     Character.EquipmentSystem.Initialize(
         *Character.GetMesh(),
         Character.RuntimeData,

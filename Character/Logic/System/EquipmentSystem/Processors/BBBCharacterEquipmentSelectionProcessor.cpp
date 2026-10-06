@@ -1,72 +1,35 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
-
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
 {
-    auto &Selection = Context.SelectionState;
-    auto &Inventory = Context.InventoryState;
-    const bool bCreateRequested = Selection.bHasEquipmentRequest;
-    Context.bHasSelectionResult = false;
-    Context.PendingEquipmentClass = nullptr;
-    Context.bCreateRequested = false;
-
-    if (bCreateRequested)
+    auto &Selection = Context.RuntimeData.Equipment.EquipmentSelectionState;
+    if (!Context.bIsMirror)
     {
-        Selection.bHasEquipmentRequest = false;
-        Selection.PendingSlot.Reset();
-        if (!Selection.PendingEquipmentId.IsNone())
-        {
-            const UBBBEquipmentCatalog *Catalog = Context.Character.GetCharacterConfig().Equipment.EquipmentCatalog;
-            const TSubclassOf<ABBBEquipment> Class = Catalog
-                ? Catalog->FindEquipmentClass(Selection.PendingEquipmentId)
-                : nullptr;
-            if (!ensureMsgf(Class, TEXT("无法找到装备定义 %s"), *Selection.PendingEquipmentId.ToString()))
-            {
-                return;
-            }
-
-            bool bHasCapacity = false;
-            for (const FBBBCharacterItem &Item : Inventory.BackpackSlots)
-            {
-                if (!IsValid(Item.ItemActor.Get()) || Item.ItemActor == Selection.ActiveMainHandInstance)
-                {
-                    bHasCapacity = true;
-                    break;
-                }
-            }
-
-            if (!ensureMsgf(bHasCapacity, TEXT("装备容器已满 无法创建 %s"), *Selection.PendingEquipmentId.ToString()))
-            {
-                return;
-            }
-
-            Context.PendingEquipmentClass = Class;
-        }
-        else
-        {
-            Selection.DesiredMainHandInstance = nullptr;
-        }
-
-        Context.bCreateRequested = true;
+        Context.DesiredEquipment = Cast<ABBBEquipment>(
+            Context.RuntimeData.Item.ReadItemBarState().DesiredMainHandItem.Get());
+        Context.bHasSelectionResult = true;
+        return;
     }
 
-    if (Selection.PendingSlot.IsSet())
-    {
-        const int32 Slot = Selection.PendingSlot.GetValue();
-        Selection.PendingSlot.Reset();
-        Selection.DesiredMainHandInstance = Inventory.ItemBarSlots.IsValidIndex(Slot)
-            ? Cast<ABBBEquipment>(Inventory.ItemBarSlots[Slot].ItemActor.Get())
-            : nullptr;
-    }
-
-    // 已销毁对象不能继续被视为有效持有关系
-    if (!IsValid(Selection.DesiredMainHandInstance))
-    {
-        Selection.DesiredMainHandInstance = nullptr;
-    }
-
+    Context.DesiredEquipment = IsValid(Selection.ActiveMainHandInstance)
+        ? Selection.ActiveMainHandInstance.Get() : nullptr;
     Context.bHasSelectionResult = true;
+    if (!Selection.bHasEquipmentRequest)
+    {
+        return;
+    }
+
+    Selection.bHasEquipmentRequest = false;
+    Context.DesiredEquipment = nullptr;
+    if (Selection.PendingEquipmentId.IsNone())
+    {
+        return;
+    }
+    const UBBBEquipmentCatalog *Catalog = Context.Character.GetCharacterConfig().Equipment.EquipmentCatalog;
+    Context.PendingEquipmentClass = Catalog ? Catalog->FindEquipmentClass(Selection.PendingEquipmentId) : nullptr;
+    Context.bHasSelectionResult = Context.PendingEquipmentClass != nullptr;
 }

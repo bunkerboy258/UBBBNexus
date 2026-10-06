@@ -35,6 +35,27 @@ public:
         return QueueInput(Forward<TPacket>(Packet));
     }
 
+    /** @return 当前弹匣内弹量 */
+    UFUNCTION(BlueprintPure, Category = "BBB|步枪")
+    int32 GetLoadedAmmo() const
+    {
+        return RuntimeData.Action.ReadRifleActionState().LoadedAmmo;
+    }
+
+    /** @return 当前弹匣容量 */
+    UFUNCTION(BlueprintPure, Category = "BBB|步枪")
+    int32 GetAmmoCapacity() const
+    {
+        return RuntimeData.Action.ReadRifleActionState().AmmoCapacity;
+    }
+
+    /** @return 当前是否正在换弹 */
+    UFUNCTION(BlueprintPure, Category = "BBB|步枪")
+    bool IsReloading() const
+    {
+        return RuntimeData.Action.ReadRifleActionState().bIsReloading;
+    }
+
     /** 卸下时收束自身状态 @return 无 */
     virtual void OnUnequipped() override;
 

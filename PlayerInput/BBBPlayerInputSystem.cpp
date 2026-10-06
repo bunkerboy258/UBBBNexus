@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSlotLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
@@ -107,7 +107,7 @@ void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
     {
         return;
     }
-    Character->SubmitInput(FBBBEquipmentSlotLocalControlPacket{Slot});
+    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{Slot}});
 }
 
 void UBBBPlayerInputSystem::SubmitReload()

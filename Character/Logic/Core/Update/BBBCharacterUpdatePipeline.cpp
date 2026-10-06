@@ -80,6 +80,10 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     NetworkIdentityState.bIsMirror = !NetworkIdentityState.bLocallyControlled;
 
     Character->ParseSystem.Update();
+    if (!NetworkIdentityState.bIsMirror)
+    {
+        Character->ItemSystem.Update();
+    }
     Character->EquipmentSystem.Update();
 
     if (!NetworkIdentityState.bIsMirror)

@@ -17,14 +17,15 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Aim/FBBBCharacterAimLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSelectionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBEquipmentSlotLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
 
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
@@ -34,11 +35,13 @@ struct FBBBCharacterInputState final
     /** 跑步状态输入槽位 */
     TBBBCharacterInputSlot<FBBBRunStateAuthorityFactPacket> RunState;
     /** 装备选择输入槽位 */
-    TBBBCharacterInputSlot<FBBBEquipmentSelectionLocalControlPacket> EquipmentSelectionState;
+    TBBBCharacterInputSlot<FBBBItemAddLocalControlPacket> ItemAdd;
+    /** 背包移动输入槽位 */
+    TBBBCharacterInputSlot<FBBBItemMoveLocalControlPacket> ItemMove;
     /** 权威装备选择事实输入槽位 */
     TBBBCharacterInputSlot<FBBBEquipmentSelectionAuthorityFactPacket> AuthorityEquipmentSelectionState;
     /** 快捷栏装备选择输入槽位 */
-    TBBBCharacterInputSlot<FBBBEquipmentSlotLocalControlPacket> EquipmentSlot;
+    TBBBCharacterInputSlot<FBBBItemSelectLocalControlPacket> ItemSelect;
     /** 移动命令输入槽位 */
     TBBBCharacterInputSlot<FBBBCharacterMovementLocalControlPacket> Movement;
     /** 跑步动作输入槽位 */

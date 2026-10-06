@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/BBBCharacterAnimationDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/BBBCharacterNetworkDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/BBBCharacterParseDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/BBBCharacterItemDomainState.h"
 #include "BBBCharacterRuntimeData.generated.h"
 
 /** 角色全部领域状态持有者的唯一聚合黑板 */
@@ -31,6 +32,10 @@ struct FBBBCharacterRuntimeData final
     /** 角色移动状态 */
     UPROPERTY(Transient)
     FBBBCharacterLocomotionDomainState Locomotion;
+
+    /** 角色物品与快捷选择状态 */
+    UPROPERTY(Transient)
+    FBBBCharacterItemDomainState Item;
 
     /** 角色装备状态 */
     UPROPERTY(Transient)

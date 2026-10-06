@@ -9,7 +9,7 @@
 
 struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterEquipmentSelectionState;
-struct FBBBCharacterEquipmentInventoryState;
+struct FBBBCharacterItemOperationState;
 struct FBBBCharacterAimImpulseState;
 
 /**
@@ -35,7 +35,10 @@ struct FBBBCharacterInputContext final
     FBBBCharacterEquipmentSelectionState &EquipmentSelection;
 
     /** 装备容器只读状态 */
-    const FBBBCharacterEquipmentInventoryState &EquipmentInventory;
+    FBBBCharacterItemOperationState &ItemOperations;
+
+    /** 主管线已确定的执行模式 */
+    bool bIsMirror = true;
 
     /** 等待相机系统消费的表现输入 */
     FBBBCharacterCameraState &Camera;

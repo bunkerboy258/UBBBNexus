@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include <type_traits>
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterInputState.h"
 
 /** 角色输入包到固定槽位的编译期映射 */
@@ -19,9 +20,10 @@ struct TBBBCharacterInputSlotSelector;
 
 BBB_CHARACTER_INPUT_SLOT(FBBBAimStateAuthorityFactPacket, AimState)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionLocalControlPacket, EquipmentSelectionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBItemAddLocalControlPacket, ItemAdd)
+BBB_CHARACTER_INPUT_SLOT(FBBBItemMoveLocalControlPacket, ItemMove)
 BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionAuthorityFactPacket, AuthorityEquipmentSelectionState)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSlotLocalControlPacket, EquipmentSlot)
+BBB_CHARACTER_INPUT_SLOT(FBBBItemSelectLocalControlPacket, ItemSelect)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementLocalControlPacket, Movement)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunLocalControlPacket, Run)
 BBB_CHARACTER_INPUT_SLOT(FBBBCrouchLocalControlPacket, Crouch)
@@ -63,7 +65,25 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
-        Slot.Data = Forward<TPacket>(Packet);
+        if constexpr (std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>)
+        {
+            Slot.Data.EquipmentIds.Append(Packet.EquipmentIds);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>)
+        {
+            Slot.Data.Sources.Append(Packet.Sources);
+            Slot.Data.Targets.Append(Packet.Targets);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>)
+        {
+            Slot.Data.Slots.Append(Packet.Slots);
+        }
+        if constexpr (!std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>)
+        {
+            Slot.Data = Forward<TPacket>(Packet);
+        }
         Slot.bActive = true;
         return true;
     }

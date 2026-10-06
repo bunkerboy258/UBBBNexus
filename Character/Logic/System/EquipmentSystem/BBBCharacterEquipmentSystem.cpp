@@ -18,15 +18,6 @@ void FBBBCharacterEquipmentSystem::Initialize(
     RuntimeData = &InRuntimeData;
     Character = &InCharacter;
     RightHandWeaponSocketName = InEquipmentConfig.RightHandWeaponSocketName;
-
-    RuntimeData->Equipment.EquipmentInventoryState.BackpackSlots.Init(
-        FBBBCharacterItem{},
-        FMath::Max(1, InEquipmentConfig.InventorySlotCount));
-
-    RuntimeData->Equipment.EquipmentInventoryState.ItemBarSlots.Init(
-        FBBBCharacterItem{},
-        FMath::Max(1, InEquipmentConfig.QuickAccessSlotCount));
-
 }
 
 void FBBBCharacterEquipmentSystem::Update()
@@ -40,11 +31,22 @@ void FBBBCharacterEquipmentSystem::Update()
     FBBBCharacterEquipmentUpdateContext Context{
         *Character,
         *CharacterMesh,
+        *RuntimeData,
         RightHandWeaponSocketName,
-        RuntimeData->Equipment.EquipmentInventoryState,
-        RuntimeData->Equipment.EquipmentSelectionState,
         RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
 
     SelectionProcessor.Update(Context);
     LifecycleProcessor.Update(Context);
+}
+
+void FBBBCharacterEquipmentSystem::Shutdown()
+{
+    if (!RuntimeData || !CharacterMesh || !Character)
+    {
+        return;
+    }
+    FBBBCharacterEquipmentUpdateContext Context{
+        *Character, *CharacterMesh, *RuntimeData, RightHandWeaponSocketName,
+        RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
+    LifecycleProcessor.Shutdown(Context);
 }

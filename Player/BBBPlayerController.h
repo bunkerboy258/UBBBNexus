@@ -3,6 +3,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "BBBPlayerController.generated.h"
+
+class ABBBCharacter;
+class UBBBEquipmentDefinition;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBBBPlayerItemsChanged);
 //封装InputMappingContext的数据与行为
 class UInputMappingContext;
 //封装InputAction的数据与行为
@@ -45,6 +49,55 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "BBB|客户端")
     void ToggleCustomization();
+    /** @param DeltaTime	本帧时长 @return 无 观察物品结果变化并通知玩家 UI */
+    virtual void PlayerTick(float DeltaTime) override;
+
+    /** @return 当前玩家是否拥有可读取的真实背包 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    bool HasItemInventory() const;
+
+    /** @return 背包槽位内容 包含空格 前序槽位与普通格子来自同一数组 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    TArray<AActor *> GetBackpackItems() const;
+
+    /** @param Slot	背包索引 @return 物品的公共显示配置 空格返回空引用 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    UBBBEquipmentDefinition *GetItemDefinition(int32 Slot) const;
+
+    /** @return 前序快捷槽位数量 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    int32 GetQuickAccessSlotCount() const;
+
+    /** @return 当前选中的快捷槽位 未选择时返回 INDEX_NONE */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    int32 GetSelectedItemSlot() const;
+
+    /** @param EquipmentId	待获得装备定义 @return 输入是否接受 最终结果由操作完成状态提供 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|物品")
+    bool SubmitItemAdd(FName EquipmentId);
+
+    /** @param Source	起始槽位 @param Target	目标槽位 @return 输入是否接受 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|物品")
+    bool SubmitItemMove(int32 Source, int32 Target);
+
+    /** @param Slot	快捷索引 INDEX_NONE 表示取消选择 @return 输入是否接受 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|物品")
+    bool SubmitItemSelect(int32 Slot);
+
+    /**
+     * 查询最近一次处理批次的结果
+     * @param Revision	完成操作版本
+     * @param SucceededCount	该批次成功操作数
+     * @param RejectedCount	该批次失败操作数
+     * @return 无
+     */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    void GetItemOperationResult(int32 &Revision, int32 &SucceededCount, int32 &RejectedCount) const;
+
+    /** 背包内容 快捷选择 实际装备或操作完成结果改变时通知 */
+    UPROPERTY(BlueprintAssignable, Category = "BBB|物品")
+    FBBBPlayerItemsChanged OnItemsChanged;
+
 protected:
 
     //让下方成员按照所列规则参与编辑序列化或网络复制
@@ -57,6 +110,24 @@ protected:
     //更新int32MappingContextPriority供后续步骤读取
     int32 MappingContextPriority = 0;
 private:
+    /** @return 本机控制且已经初始化真实背包的角色 */
+    ABBBCharacter *GetItemCharacter() const;
+
+    /** 上次观察到的玩家角色 */
+    TWeakObjectPtr<ABBBCharacter> ObservedItemCharacter;
+
+    /** 上次观察到的实际主手物品 */
+    TWeakObjectPtr<AActor> ObservedActiveItem;
+
+    /** 上次通知 UI 的背包版本 */
+    int32 ObservedInventoryRevision = INDEX_NONE;
+
+    /** 上次通知 UI 的快捷选择版本 */
+    int32 ObservedItemBarRevision = INDEX_NONE;
+
+    /** 上次通知 UI 的操作完成版本 */
+    int32 ObservedItemOperationRevision = INDEX_NONE;
+
     UPROPERTY(VisibleAnywhere, Category = "BBB|输入", meta = (DisplayName = "玩家输入系统"))
     TObjectPtr<UBBBPlayerInputSystem> PlayerInputSystem;
 

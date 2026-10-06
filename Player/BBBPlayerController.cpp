@@ -2,6 +2,12 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Client/BBBClientSubsystem.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemMoveLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -161,4 +167,120 @@ void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
     SetInputMode(FInputModeGameOnly());
     //隐藏鼠标指针避免影响瞄准
     bShowMouseCursor = false;
+}
+
+ABBBCharacter *ABBBPlayerController::GetItemCharacter() const
+{
+    ABBBCharacter *ItemCharacter = Cast<ABBBCharacter>(GetPawn());
+    if (!IsLocalController() || !IsValid(ItemCharacter) || !ItemCharacter->IsLocallyControlled())
+    {
+        return nullptr;
+    }
+    return ItemCharacter;
+}
+
+bool ABBBPlayerController::HasItemInventory() const
+{
+    const ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter && !ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlots.IsEmpty();
+}
+
+TArray<AActor *> ABBBPlayerController::GetBackpackItems() const
+{
+    TArray<AActor *> Items;
+    if (const ABBBCharacter *ItemCharacter = GetItemCharacter())
+    {
+        for (const auto &Item : ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlots)
+        {
+            Items.Add(IsValid(Item.ItemActor.Get()) ? Item.ItemActor.Get() : nullptr);
+        }
+    }
+    return Items;
+}
+
+UBBBEquipmentDefinition *ABBBPlayerController::GetItemDefinition(const int32 Slot) const
+{
+    const ABBBCharacter *ItemCharacter = GetItemCharacter();
+    if (!ItemCharacter)
+    {
+        return nullptr;
+    }
+    const auto &Slots = ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlots;
+    if (!Slots.IsValidIndex(Slot))
+    {
+        return nullptr;
+    }
+    const ABBBEquipment *Equipment = Cast<ABBBEquipment>(Slots[Slot].ItemActor.Get());
+    return IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+}
+
+int32 ABBBPlayerController::GetQuickAccessSlotCount() const
+{
+    const ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().QuickAccessSlotCount : 0;
+}
+
+int32 ABBBPlayerController::GetSelectedItemSlot() const
+{
+    const ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().SelectedSlot : INDEX_NONE;
+}
+
+bool ABBBPlayerController::SubmitItemAdd(const FName EquipmentId)
+{
+    ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter && !EquipmentId.IsNone()
+        && ItemCharacter->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
+}
+
+bool ABBBPlayerController::SubmitItemMove(const int32 Source, const int32 Target)
+{
+    ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter && Source >= 0 && Target >= 0
+        && ItemCharacter->SubmitInput(FBBBItemMoveLocalControlPacket{{Source}, {Target}});
+}
+
+bool ABBBPlayerController::SubmitItemSelect(const int32 Slot)
+{
+    ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter && Slot >= INDEX_NONE && ItemCharacter->SubmitInput(FBBBItemSelectLocalControlPacket{{Slot}});
+}
+
+void ABBBPlayerController::GetItemOperationResult(int32 &Revision, int32 &SucceededCount, int32 &RejectedCount) const
+{
+    Revision = 0;
+    SucceededCount = 0;
+    RejectedCount = 0;
+    if (const ABBBCharacter *ItemCharacter = GetItemCharacter())
+    {
+        const auto &Result = ItemCharacter->RuntimeData.Item.ReadItemOperationState();
+        Revision = Result.Revision;
+        SucceededCount = Result.SucceededCount;
+        RejectedCount = Result.RejectedCount;
+    }
+}
+
+void ABBBPlayerController::PlayerTick(const float DeltaTime)
+{
+    Super::PlayerTick(DeltaTime);
+    if (!IsLocalController())
+    {
+        return;
+    }
+    ABBBCharacter *ItemCharacter = GetItemCharacter();
+    const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().Revision : 0;
+    const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().Revision : 0;
+    const int32 OperationRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemOperationState().Revision : 0;
+    AActor *Active = ItemCharacter ? ItemCharacter->GetActiveEquipment() : nullptr;
+    if (ObservedItemCharacter.Get() != ItemCharacter || ObservedActiveItem.Get() != Active
+        || ObservedInventoryRevision != InventoryRevision || ObservedItemBarRevision != BarRevision
+        || ObservedItemOperationRevision != OperationRevision)
+    {
+        ObservedItemCharacter = ItemCharacter;
+        ObservedActiveItem = Active;
+        ObservedInventoryRevision = InventoryRevision;
+        ObservedItemBarRevision = BarRevision;
+        ObservedItemOperationRevision = OperationRevision;
+        OnItemsChanged.Broadcast();
+    }
 }

@@ -20,7 +20,8 @@ void FBBBCharacterParseSystem::Update() const
         Data->Locomotion.LocomotionState,
         Data->Parse.ControlState,
         Data->Equipment.EquipmentSelectionState,
-        Data->Equipment.ReadEquipmentInventoryState(),
+        Data->Item.ItemOperationState,
+        Data->External.ReadNetworkIdentityState().bIsMirror,
         Data->Parse.CameraState,
         Data->Animation.AimImpulseState,
         Data->Animation.ReadAnimationFactState()};

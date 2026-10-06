@@ -16,6 +16,9 @@ public:
     /** @param Context 本次装备更新上下文 @return 无 */
     void Update(FBBBCharacterEquipmentUpdateContext &Context) const;
 
+    /** @param Context	本次装备清理上下文 @return 无 */
+    static void Shutdown(FBBBCharacterEquipmentUpdateContext &Context);
+
 private:
     friend class FBBBCharacterEquipmentSystem;
     friend class FBBBCharacterShutdown;

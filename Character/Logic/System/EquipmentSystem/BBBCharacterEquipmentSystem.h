@@ -19,6 +19,10 @@ public:
 private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterUpdatePipeline;
+    friend class FBBBCharacterShutdown;
+
+    /** @return 无 解除实际装备关系并清理镜像实例 */
+    void Shutdown();
 
     /**
      * 维护装备选择并将本帧命令转发至装备 API
