@@ -20,6 +20,10 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.Crouch, Context);
     Process(InputState.Aim, Context);
 
+    Process(InputState.TraversalStartRemoteMessage, Context);
+    Process(InputState.TraversalEndRemoteMessage, Context);
+    Process(InputState.TraversalStartAuthorityFact, Context);
+    Process(InputState.TraversalEndAuthorityFact, Context);
     Process(InputState.Jump, Context);
 
     Process(InputState.FullBodyMontage, Context);

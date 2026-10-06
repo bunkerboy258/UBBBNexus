@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBTraversalObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBRunObservationProcessor.h"
 
@@ -42,4 +43,5 @@ private:
 
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBRunObservationProcessor RunObservationProcessor;
+    FBBBTraversalObservationProcessor TraversalObservationProcessor;
 };

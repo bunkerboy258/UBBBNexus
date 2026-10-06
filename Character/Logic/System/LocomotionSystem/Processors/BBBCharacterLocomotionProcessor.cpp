@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterTraversalState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -116,6 +118,36 @@ void FBBBCharacterLocomotionProcessor::Update(
     const FBBBCharacterControlState &ControlData = Context.ControlState;
     const FBBBCharacterLocomotionConfig &Config = Context.Config;
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
+    FBBBCharacterTraversalState &Traversal = Context.Traversal;
+    if (Traversal.bEndRequested)
+    {
+        if (!Context.Execution.bIsMirror && Traversal.bMovementControlled)
+        {
+            Movement.StopMovementImmediately();
+            Movement.SetMovementMode(MOVE_Falling);
+        }
+        Traversal.bMovementControlled = false;
+        Traversal.Action = EBBBTraversalAction::None;
+        Traversal.bEndRequested = false;
+        UE_LOG(LogTemp, Display, TEXT("BBBTraversal end id=%u location=%s"),
+            Traversal.ActionId, *Character.GetActorLocation().ToString());
+    }
+    if (Context.Execution.bIsMirror)
+    {
+        return;
+    }
+    if (Traversal.Action != EBBBTraversalAction::None)
+    {
+        RuntimeData.bRun = false;
+        if (Traversal.bPlaybackRequested && !Traversal.bMovementControlled)
+        {
+            Character.StopJumping();
+            Movement.StopMovementImmediately();
+            Movement.SetMovementMode(MOVE_Flying);
+            Traversal.bMovementControlled = true;
+        }
+        return;
+    }
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
     Character.SetActorRotation(FRotator(0.0f, ControlData.FacingWorld.Yaw, 0.0f));
     const bool bWantsCrouch = ControlData.bCrouch;

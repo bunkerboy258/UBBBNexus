@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 
 struct FBBBCharacterAnimationMontageState;
+struct FBBBCharacterTraversalState;
 struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterItemOperationState;
 struct FBBBCharacterAimImpulseState;
@@ -48,5 +49,7 @@ struct FBBBCharacterInputContext final
 
     /** 输入解析时可读取的角色动画事实 */
     const FBBBCharacterAnimationFactState &AnimationFacts;
+    /** 解析器批准的翻越事实 */
+    FBBBCharacterTraversalState &Traversal;
 
 };

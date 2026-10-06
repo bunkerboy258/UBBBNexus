@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBRunNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBTraversalNetworkObservationState.h"
 #include "BBBCharacterNetworkDomainState.generated.h"
 
 class FBBBAimObservationProcessor;
@@ -28,7 +29,17 @@ public:
         return RunObservationState;
     }
 
+    /** @return 翻越网络观察基准 */
+    const FBBBTraversalNetworkObservationState &ReadTraversalNetworkObservationState() const
+    {
+        return TraversalObservationState;
+    }
+
 private:
+    friend class FBBBTraversalObservationProcessor;
+    /** 翻越独立离散同步生命周期 */
+    UPROPERTY(Transient)
+    FBBBTraversalNetworkObservationState TraversalObservationState;
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
     friend class FBBBCharacterNetworkSystem;

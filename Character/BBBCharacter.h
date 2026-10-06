@@ -21,6 +21,7 @@ class UBBBCharacterNetworkComponent;
 class UBBBEquipmentNetworkComponent;
 class ABBBPlayerCameraSystem;
 class ABBBEquipment;
+class UMotionWarpingComponent;
 
 enum class EBBBCharacterMontageSlot : uint8
 {
@@ -109,6 +110,10 @@ public:
         return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Forward<TPacket>(Packet));
     }
 
+    /** @param Packet 蓝图构造的全身蒙太奇输入 @return 是否接受输入 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|输入")
+    bool SubmitInput(const FBBBFullBodyMontageLocalControlPacket &Packet);
+
     /** @return 当前激活主手装备 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备")
     ABBBEquipment *GetActiveEquipment() const
@@ -156,6 +161,10 @@ protected:
     /*分类命名为ABBB是为了快点找到(bushi*/
 
 private:
+    /** 官方角色根运动校正组件 */
+    UPROPERTY(VisibleAnywhere, Category = "BBB|翻越")
+    TObjectPtr<UMotionWarpingComponent> MotionWarping;
+
     FBBBCharacterAimSystem AimSystem;
 
     FBBBCharacterLocomotionSystem LocomotionSystem;

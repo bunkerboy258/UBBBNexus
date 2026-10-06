@@ -27,9 +27,25 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
 
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBTraversalStartRemoteMessagePacket.h"
+
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBTraversalEndRemoteMessagePacket.h"
+
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalStartAuthorityFactPacket.h"
+
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalEndAuthorityFactPacket.h"
+
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 翻越StartRemoteMessage输入槽位 */
+    TBBBCharacterInputSlot<FBBBTraversalStartRemoteMessagePacket> TraversalStartRemoteMessage;
+    /** 翻越EndRemoteMessage输入槽位 */
+    TBBBCharacterInputSlot<FBBBTraversalEndRemoteMessagePacket> TraversalEndRemoteMessage;
+    /** 翻越StartAuthorityFact输入槽位 */
+    TBBBCharacterInputSlot<FBBBTraversalStartAuthorityFactPacket> TraversalStartAuthorityFact;
+    /** 翻越EndAuthorityFact输入槽位 */
+    TBBBCharacterInputSlot<FBBBTraversalEndAuthorityFactPacket> TraversalEndAuthorityFact;
     /** 瞄准状态输入槽位 */
     TBBBCharacterInputSlot<FBBBAimStateAuthorityFactPacket> AimState;
     /** 跑步状态输入槽位 */

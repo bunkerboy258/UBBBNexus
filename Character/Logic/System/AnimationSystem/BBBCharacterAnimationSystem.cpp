@@ -59,4 +59,5 @@ void FBBBCharacterAnimationSystem::Update()
     MuzzleProcessor.Update(Context);
     AimImpulseProcessor.Update(Context);
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState);
+    TraversalProcessor.Update(Context);
 }

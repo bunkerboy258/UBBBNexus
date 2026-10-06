@@ -1,9 +1,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterTraversalProbeProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterTraversalLifeProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterTraversalWarpProcessor.h"
+
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLocomotionProcessor.h"
 
 class ACharacter;
+class UMotionWarpingComponent;
+struct FBBBCharacterRuntimeData;
+struct FBBBTraversalConfig;
 class UCharacterMovementComponent;
 class UCurveFloat;
 class FBBBCharacterInitializer;
@@ -34,7 +41,10 @@ private:
         UCharacterMovementComponent &InMovement,
         FBBBCharacterLocomotionDomainState &InRuntimeData,
         const FBBBCharacterControlState &InIntentData,
-        const FBBBCharacterLocomotionConfig &InConfig);
+        const FBBBCharacterLocomotionConfig &InConfig,
+        const FBBBTraversalConfig &InTraversalConfig,
+        const FBBBCharacterRuntimeData &InCharacterData,
+        UMotionWarpingComponent &InWarping);
 
     ACharacter *Character = nullptr;
 
@@ -48,6 +58,12 @@ private:
 
     const UCurveFloat *StrafeSpeedMapCurve = nullptr;
 
+    const FBBBTraversalConfig *TraversalConfig = nullptr;
+    const FBBBCharacterRuntimeData *CharacterData = nullptr;
+    UMotionWarpingComponent *Warping = nullptr;
+    FBBBCharacterTraversalProbeProcessor ProbeProcessor;
+    FBBBCharacterTraversalLifeProcessor LifeProcessor;
+    FBBBCharacterTraversalWarpProcessor WarpProcessor;
     FBBBCharacterLocomotionProcessor LocomotionProcessor;
 
 };

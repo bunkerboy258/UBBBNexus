@@ -43,6 +43,14 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCameraLocalControlPacket, Camera)
 BBB_CHARACTER_INPUT_SLOT(FBBBAimImpulseLocalControlPacket, AimImpulse)
 BBB_CHARACTER_INPUT_SLOT(FBBBAimImpulseAuthorityFactPacket, AuthorityAimImpulse)
 
+BBB_CHARACTER_INPUT_SLOT(FBBBTraversalStartRemoteMessagePacket, TraversalStartRemoteMessage)
+
+BBB_CHARACTER_INPUT_SLOT(FBBBTraversalEndRemoteMessagePacket, TraversalEndRemoteMessage)
+
+BBB_CHARACTER_INPUT_SLOT(FBBBTraversalStartAuthorityFactPacket, TraversalStartAuthorityFact)
+
+BBB_CHARACTER_INPUT_SLOT(FBBBTraversalEndAuthorityFactPacket, TraversalEndAuthorityFact)
+
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */

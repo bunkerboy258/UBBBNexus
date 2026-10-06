@@ -10,6 +10,14 @@ struct FBBBCharacterAnimationFactState final
 {
     GENERATED_BODY()
 
+    /** 本帧是否正在执行翻越 */
+    UPROPERTY(Transient)
+    bool bTraversing = false;
+
+    /** 上次动画采集时全身槽位是否仍在播放 */
+    UPROPERTY(Transient)
+    bool bFullBodyPlaying = false;
+
     /** 角色世界位置 */
     UPROPERTY(Transient)
     FVector ActorLocation = FVector::ZeroVector;

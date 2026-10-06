@@ -30,6 +30,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceAimOffsetDegrees = FactState.AimOffsetDegrees;
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
+    bSourceTraversing = FactState.bTraversing;
 
     SourceGroundFriction = FactState.GroundFriction;
     SourceBrakingFriction = FactState.BrakingFriction;

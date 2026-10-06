@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAimImpulseState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterTraversalAnimationState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
 
 class FBBBCharacterAnimationFactProcessor;
@@ -45,7 +46,17 @@ public:
         return AnimationMontageState;
     }
 
+    /** @return 蓝图翻越请求的派发状态 */
+    const FBBBCharacterTraversalAnimationState &ReadTraversalAnimationState() const
+    {
+        return TraversalAnimationState;
+    }
+
 private:
+    friend class FBBBCharacterTraversalAnimationProcessor;
+    /** 蓝图动画选择请求的生命周期 */
+    UPROPERTY(Transient)
+    FBBBCharacterTraversalAnimationState TraversalAnimationState;
     friend class FBBBCharacterAimImpulseProcessor;
 
     /** 角色额外瞄准冲击状态 */

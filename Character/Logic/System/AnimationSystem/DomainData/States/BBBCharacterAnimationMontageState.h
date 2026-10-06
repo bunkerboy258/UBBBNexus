@@ -22,6 +22,19 @@ struct FBBBCharacterAnimationMontageState final
 {
     GENERATED_BODY()
 
+public:
+    /** @return 全身槽位是否存在待消费输入 */
+    bool HasFullBodyRequest() const
+    {
+        return bFullBodyMontageRequestPending;
+    }
+
+    /** @return 全身槽位是否存在非空动画请求 */
+    bool HasFullBodyAnimationRequest() const
+    {
+        return bFullBodyMontageRequestPending && FullBodyMontageRequest != nullptr;
+    }
+
 private:
     friend class FBBBCharacterAnimationMontageProcessor;
     friend struct FBBBFullBodyMontageLocalControlPacket;

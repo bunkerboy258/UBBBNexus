@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -80,6 +81,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
         }
     }
 
+    FactState.bTraversing = RuntimeData.Locomotion.ReadTraversalState().Action != EBBBTraversalAction::None;
+    FactState.bFullBodyPlaying = Context.AnimationInstance.FullBodyMontageContribution
+        && Context.AnimationInstance.Montage_IsPlaying(Context.AnimationInstance.FullBodyMontageContribution);
     FactState.bIsAiming = AimState.bIsAiming;
     FactState.AimTargetComponentSpace = RawAimTargetComponentSpace;
 

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "Components/ActorComponent.h"
+#include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
 class APawn;
@@ -35,6 +36,16 @@ public:
 private:
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
+    friend class FBBBTraversalObservationProcessor;
+
+    /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */
+    void ReplicateTraversal(uint32 Id, EBBBTraversalAction Action, const FTransform &Contact, const FTransform &End);
+    /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitTraversal(uint32 Id, EBBBTraversalAction Action, FTransform Contact, FTransform End);
+    /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastTraversal(uint32 Id, EBBBTraversalAction Action, FTransform Contact, FTransform End);
 
     /** @return 所属角色是否具有权威 */
     bool IsOwnerAuthority() const;

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
+#include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBAnimInstance.generated.h"
 
 class FBBBCharacterAnimationActionProcessor;
@@ -31,8 +32,21 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterAnimationSystem;
+    friend class FBBBCharacterTraversalAnimationProcessor;
+    friend class FBBBCharacterAnimationFactProcessor;
 
 public:
+    /** @return 角色是否正在翻越 用于临时关闭地面与握持修正 */
+    UFUNCTION(BlueprintPure, Category = "BBB|移动", meta = (BlueprintThreadSafe))
+    bool IsTraversing() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceTraversing;
+    }
+
+    /** @param Action 已确认的翻越类别 @return 无 动画引用由蓝图配置并提交全身输入 */
+    UFUNCTION(BlueprintImplementableEvent, Category = "BBB|翻越")
+    void TraversalRequested(EBBBTraversalAction Action);
+
     /** @return 当前骨骼网格体上的 BBB 主动画实例 主实例自身调用时返回自身 */
     UFUNCTION(BlueprintPure, Category = "BBB|动画事实", meta = (BlueprintThreadSafe))
     UBBBAnimInstance *GetBBBMainAnimInstanceThreadSafe() const;
@@ -208,6 +222,10 @@ private:
 
     /** 清除已经结束播放的固定槽位蒙太奇贡献 */
     void UpdateMontageContributions();
+
+    /** 动画系统发布的翻越事实 */
+    UPROPERTY(Transient)
+    bool bSourceTraversing = false;
 
     UPROPERTY(Transient)
     bool bSourceRunning = false;

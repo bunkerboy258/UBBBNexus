@@ -5,13 +5,18 @@
 
 #include "CoreMinimal.h"
 
+#include "FBBBFullBodyMontageLocalControlPacket.generated.h"
+
 class UAnimMontage;
 struct FBBBCharacterInputContext;
 
 /** FullBody 固定槽位的蒙太奇贡献 */
+USTRUCT(BlueprintType)
 struct FBBBFullBodyMontageLocalControlPacket final
 {
+    GENERATED_BODY()
     /** 待播放蒙太奇 空引用表示清除此槽 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "动画")
     TObjectPtr<UAnimMontage> Montage = nullptr;
 
     /** @return 输入是否有效 */

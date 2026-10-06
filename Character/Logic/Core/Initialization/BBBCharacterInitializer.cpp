@@ -59,7 +59,10 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Movement,
         Character.RuntimeData.Locomotion,
         Character.RuntimeData.Parse.ReadControlState(),
-        Config.Locomotion);
+        Config.Locomotion,
+        Config.Traversal,
+        Character.RuntimeData,
+        *Character.MotionWarping);
     
     Character.ItemSystem.Initialize(Character, Character.RuntimeData, Config.Item);
 

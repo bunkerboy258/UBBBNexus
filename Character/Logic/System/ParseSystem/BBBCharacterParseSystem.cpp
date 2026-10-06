@@ -24,6 +24,7 @@ void FBBBCharacterParseSystem::Update() const
         Data->External.ReadNetworkIdentityState().bIsMirror,
         Data->Parse.CameraState,
         Data->Animation.AimImpulseState,
-        Data->Animation.ReadAnimationFactState()};
+        Data->Animation.ReadAnimationFactState(),
+        Data->Locomotion.TraversalState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

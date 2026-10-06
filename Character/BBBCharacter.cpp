@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "MotionWarpingComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
@@ -9,6 +10,7 @@
 
 ABBBCharacter::ABBBCharacter()
 {
+    MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
     EquipmentNetworkComponent = CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
 
     //启用帧更新
@@ -145,4 +147,9 @@ EBBBCharacterMontageSlot ABBBCharacter::ClassifyMontageSlot(FName SlotName)
     }
 
     return EBBBCharacterMontageSlot::Unknown;
+}
+
+bool ABBBCharacter::SubmitInput(const FBBBFullBodyMontageLocalControlPacket &Packet)
+{
+    return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Packet);
 }

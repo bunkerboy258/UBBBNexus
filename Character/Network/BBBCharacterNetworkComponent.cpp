@@ -1,4 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalEndAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalStartAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBTraversalEndRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBTraversalStartRemoteMessagePacket.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
@@ -123,4 +127,41 @@ bool UBBBCharacterNetworkComponent::IsOwnerAuthority() const
 APawn *UBBBCharacterNetworkComponent::GetOwnerPawn() const
 {
     return Cast<APawn>(GetOwner());
+}
+
+void UBBBCharacterNetworkComponent::ReplicateTraversal(uint32 Id, EBBBTraversalAction Action,
+    const FTransform &Contact, const FTransform &End)
+{
+    MulticastTraversal(Id, Action, Contact, End);
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitTraversal_Implementation(uint32 Id,
+    EBBBTraversalAction Action, FTransform Contact, FTransform End)
+{
+    if (!Character || !IsOwnerAuthority() || Id == 0 || !Contact.IsValid() || !End.IsValid()
+        || Action > EBBBTraversalAction::ClimbHigh)
+    {
+        return;
+    }
+    if (Action == EBBBTraversalAction::None)
+    {
+        Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{Id});
+        return;
+    }
+    Character->SubmitInput(FBBBTraversalStartRemoteMessagePacket{Id, Action, Contact, End});
+}
+
+void UBBBCharacterNetworkComponent::MulticastTraversal_Implementation(uint32 Id,
+    EBBBTraversalAction Action, FTransform Contact, FTransform End)
+{
+    if (!Character || IsOwnerAuthority() || Character->IsLocallyControlled())
+    {
+        return;
+    }
+    if (Action == EBBBTraversalAction::None)
+    {
+        Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{Id});
+        return;
+    }
+    Character->SubmitInput(FBBBTraversalStartAuthorityFactPacket{Id, Action, Contact, End});
 }

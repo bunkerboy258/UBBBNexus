@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterTraversalAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationMontageProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationActionProcessor.h"
@@ -44,6 +45,7 @@ private:
     FBBBCharacterRuntimeData *RuntimeData = nullptr;
     USkeletalMeshComponent *CharacterMesh = nullptr;
     const FBBBCharacterAnimationConfig *AnimationConfig = nullptr;
+    FBBBCharacterTraversalAnimationProcessor TraversalProcessor;
     FBBBCharacterAnimationLayerProcessor LayerProcessor;
     FBBBCharacterAnimationMontageProcessor MontageProcessor;
     FBBBCharacterAnimationActionProcessor ActionProcessor;

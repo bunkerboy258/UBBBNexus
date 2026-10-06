@@ -41,9 +41,12 @@ void FBBBCharacterNetworkSystem::Update()
         RuntimeData->Aim.ReadAimState(),
         RuntimeData->Locomotion.ReadLocomotionState(),
         *NetworkConfig,
-        *NetworkComponent};
+        *NetworkComponent,
+        RuntimeData->Network.TraversalObservationState,
+        RuntimeData->Locomotion.ReadTraversalState()};
 
     // 固定处理顺序先观察瞄准状态再观察跑步状态
     AimObservationProcessor.Update(Context);
     RunObservationProcessor.Update(Context);
+    TraversalObservationProcessor.Update(Context);
 }
