@@ -19,4 +19,7 @@ struct FBBBMassCollisionBody final
 
     /** 由碰撞体所属实例发布的物理表面类型 */
     EPhysicalSurface Surface = SurfaceType_Default;
+
+    /** 碰撞体所属实例解释的部位编号 Core 不解释部位语义 */
+    uint8 Part = 0;
 };

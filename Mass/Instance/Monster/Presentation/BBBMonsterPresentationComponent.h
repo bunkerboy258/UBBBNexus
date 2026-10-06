@@ -2,11 +2,13 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "Components/ActorComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 
 #include "BBBMonsterPresentationComponent.generated.h"
 
 class UAnimSequenceBase;
 class UBBBMonsterAnimInstance;
+class UBBBMonsterBloodPresentationDefinition;
 
 /** 向小怪动画蓝图提供只读 Mass 表现状态 */
 UCLASS(ClassGroup = "Monster", BlueprintType, meta = (BlueprintSpawnableComponent))
@@ -56,7 +58,22 @@ public:
     UFUNCTION(BlueprintPure, Category = "小怪|表现")
     float GetStateEnteredTime() const;
 
+    /**
+     * @param Hit	最近命中事实
+     * @return 无返回值
+     */
+    void ApplyHitReaction(const FBBBMonsterHitReactionFragment& Hit);
+
+    /** @return 该表现对象使用的静态血效配置 */
+    const UBBBMonsterBloodPresentationDefinition* GetBloodPresentation() const;
+
 private:
+    /** 本对象使用的共享血粒子和地面血迹配置 */
+    UPROPERTY(EditDefaultsOnly, Category = "小怪|受击", meta = (DisplayName = "血效配置"))
+    TObjectPtr<UBBBMonsterBloodPresentationDefinition> BloodPresentation;
+
+    /** Mass 最近命中只读快照 */
+    FBBBMonsterHitReactionFragment HitReaction;
     /**
      * 按稳定的表现种子和动作编号选择本次动作资产
      * @param InState		Mass 状态

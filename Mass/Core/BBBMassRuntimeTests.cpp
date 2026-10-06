@@ -52,6 +52,7 @@
 #include "UObject/UnrealType.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 
 /** 隔离世界验证覆盖输入 枪口运动 逻辑碰撞与伤害权限 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMassRuntimeTest, "UBBB.Mass.Runtime",
@@ -81,7 +82,8 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
-        FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()
+        FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
+        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct()
     });
     const FMassEntityHandle Monster = Manager.CreateEntity(MonsterType);
     const FGuid InstanceId = FGuid::NewGuid();
@@ -201,8 +203,9 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FVector HitPosition;
         FVector HitNormal;
         EPhysicalSurface HitSurface;
+        uint8 HitPart = 0;
         TestTrue(TEXT("球体扫掠返回接触几何"), Mass->TraceEntities(FVector::ZeroVector,
-            FVector(0.0f, 50.0f, 0.0f), 2.0f, {}, HitEntity, HitTime, HitPosition, HitNormal, HitSurface));
+            FVector(0.0f, 50.0f, 0.0f), 2.0f, {}, HitEntity, HitTime, HitPosition, HitNormal, HitSurface, HitPart));
         TestTrue(TEXT("表面接触点不是扫掠球心"), HitPosition.Equals(FVector(0.0f, 35.0f, 0.0f), 0.001));
         TestTrue(TEXT("表面法线朝向入射侧"), HitNormal.Equals(FVector(0.0f, -1.0f, 0.0f), 0.001));
         TestEqual(TEXT("查询不读取小怪内部数据即可取得血肉表面"), HitSurface, SurfaceType2);
@@ -339,7 +342,8 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
         FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FMassActorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
         FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
-        FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct()
+        FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct(),
+        FBBBMonsterHitReactionFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
     Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Actor, true);
@@ -376,13 +380,14 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     FVector HitPosition;
     FVector HitNormal;
     EPhysicalSurface HitSurface;
+    uint8 HitPart = 0;
     TestTrue(TEXT("碰撞立即使用最新逻辑位置"), Mass->TraceEntities(
         Target.GetLocation() - FVector(0.0f, 0.0f, 2.0f), Target.GetLocation() + FVector(0.0f, 0.0f, 2.0f),
-        0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface));
+        0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface, HitPart));
     TestTrue(TEXT("逻辑碰撞命中正确实体"), Hit == Entity);
     TestFalse(TEXT("显示位置没有生成第二套碰撞"), Mass->TraceEntities(
         FirstDisplay - FVector(0.0f, 0.0f, 2.0f), FirstDisplay + FVector(0.0f, 0.0f, 2.0f),
-        0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface));
+        0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface, HitPart));
 
     auto& State = Manager.GetFragmentDataChecked<FBBBMonsterPresentationStateFragment>(Entity);
     State.State = EBBBMonsterBehavior::Hurt;

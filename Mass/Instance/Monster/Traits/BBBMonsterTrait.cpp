@@ -21,6 +21,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationSmoothingFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 
 void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildContext, const UWorld& World) const
 {
@@ -44,6 +45,8 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddFragment<FBBBMonsterHealthInputFragment>();
     BuildContext.AddFragment<FBBBMonsterNetworkInputFragment>();
     BuildContext.AddFragment<FBBBMonsterDamageFragment>();
+    BuildContext.AddFragment<FBBBMonsterHitReactionInputFragment>();
+    BuildContext.AddFragment<FBBBMonsterHitReactionFragment>();
     BuildContext.AddFragment<FBBBMonsterDeathFragment>();
     auto& Behavior = BuildContext.AddFragment_GetRef<FBBBMonsterBehaviorFragment>();
     Behavior.IdleDurationMin = Settings->IdleDurationMin;

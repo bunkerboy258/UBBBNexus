@@ -2,6 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "GameFramework/Actor.h"
+#include "Components/SkeletalMeshComponent.h"
 
 void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
 {
@@ -33,4 +34,7 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     ActionProgressFact = Source->ActionProgress;
     ActionIdFact = Source->LastActionId;
     StateEnteredTimeFact = Source->StateEnteredTime;
+    HitRegionFact = static_cast<int32>(Source->HitReaction.Region);
+    HitAgeFact = Source->HitReaction.Age;
+    HitDirectionFact = GetSkelMeshComponent()->GetComponentTransform().InverseTransformVectorNoScale(Source->HitReaction.Direction);
 }

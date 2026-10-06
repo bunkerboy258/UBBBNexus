@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 
 namespace
@@ -73,6 +74,11 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSt
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterHitReactionLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
 void UBBBMassSubsystem::BeginCollisionFrame()
 {
     CollisionCells.Reset();
@@ -96,13 +102,14 @@ void UBBBMassSubsystem::AddCollisionBody(const FBBBMassCollisionBody& Body)
 
 bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, const float Radius,
     TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime,
-    FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface) const
+    FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface, uint8& HitPart) const
 {
     HitTime = 1.0f;
     HitEntity.Reset();
     HitPosition = End;
     HitNormal = FVector::ZeroVector;
     HitSurface = SurfaceType_Default;
+    HitPart = 0;
     const FVector Delta = End - Start;
     const double LengthSquared = Delta.SizeSquared();
     if (LengthSquared <= UE_SMALL_NUMBER)
@@ -165,6 +172,7 @@ bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, 
                             }
                             HitPosition = Body.Center + HitNormal * Body.Radius;
                             HitSurface = Body.Surface;
+                            HitPart = Body.Part;
                         }
                     }
                 }

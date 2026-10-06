@@ -27,6 +27,18 @@ public:
     //~ End UAnimInstance Interface
 
 private:
+    /** 最近命中部位编号 与部位枚举值一致 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "命中部位事实"))
+    int32 HitRegionFact = 0;
+
+    /** 网格组件空间子弹飞行方向 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "受力方向事实"))
+    FVector HitDirectionFact = FVector::ForwardVector;
+
+    /** 最近命中之后秒数 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "命中间隔事实"))
+    float HitAgeFact = 10.0f;
+
     /** 本地表现对象身份 仅供蓝图错开姿势 不作为网络实体身份 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "表现标识事实"))
     int64 PresentationIdFact = 0;

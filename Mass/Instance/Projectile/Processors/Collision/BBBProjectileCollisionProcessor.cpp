@@ -17,6 +17,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
 
 UBBBProjectileCollisionProcessor::UBBBProjectileCollisionProcessor()
     : EntityQuery(*this)
@@ -95,8 +96,9 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 FMassEntityHandle Target;
                 float EntityTime = 1.0f;
                 FBBBProjectileImpact Impact;
+                uint8 HitPart = 0;
                 const bool bEntityHit = Mass->TraceEntities(Start, End, Data.CollisionRadiusCm,
-                    IgnoredEntities, Target, EntityTime, Impact.Position, Impact.Normal, Impact.Surface);
+                    IgnoredEntities, Target, EntityTime, Impact.Position, Impact.Normal, Impact.Surface, HitPart);
                 const bool bUseEntity = bEntityHit && (!bWorldHit || EntityTime < WorldHit.Time);
                 if (!bUseEntity && !bWorldHit)
                 {
@@ -118,6 +120,13 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 }
                 if (bUseEntity)
                 {
+                    FBBBMonsterHitReactionLocalControlPacket Hit;
+                    Hit.Region = static_cast<EBBBMonsterHitRegion>(HitPart);
+                    Hit.Position = Impact.Position;
+                    Hit.Direction = Direction;
+                    Hit.Normal = Impact.Normal;
+                    Mass->SubmitInput(Target, MoveTemp(Hit));
+
                     if (Data.bCanCauseDamage && Data.Damage > 0.0f)
                     {
                         const AController* Controller = Data.EventInstigator.Get();

@@ -13,6 +13,7 @@ struct FBBBMonsterDamageLocalControlPacket;
 struct FBBBMonsterDamageRemoteMessagePacket;
 struct FBBBMonsterDamageContribution;
 struct FBBBMonsterStateAuthorityFactPacket;
+struct FBBBMonsterHitReactionLocalControlPacket;
 
 /** 世界级实体生命周期与输入路由 */
 UCLASS()
@@ -48,9 +49,13 @@ public:
      * @param HitSurface	目标发布的物理表面类型
      * @return 是否命中逻辑球体
      */
+    /**
+     * @param HitPart	目标实例发布的部位编号 Core 原样返回
+     * @return 沿用连续扫掠结果
+     */
     bool TraceEntities(const FVector& Start, const FVector& End, float Radius,
         TConstArrayView<FMassEntityHandle> Ignored, FMassEntityHandle& HitEntity, float& HitTime,
-        FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface) const;
+        FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface, uint8& HitPart) const;
 
     /**
      * 查询包含尚未消费输入的累计贡献快照 不暴露目标 Fragment
@@ -76,6 +81,7 @@ private:
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageRemoteMessagePacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterHitReactionLocalControlPacket& Packet);
 
     /** 每帧重建的空间桶 不持有实体玩法状态 */
     TMap<FIntVector, TArray<FBBBMassCollisionBody>> CollisionCells;

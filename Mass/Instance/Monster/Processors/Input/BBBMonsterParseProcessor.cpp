@@ -6,6 +6,7 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 UBBBMonsterParseProcessor::UBBBMonsterParseProcessor()
     : EntityQuery(*this)
 {
@@ -25,6 +26,9 @@ void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     EntityQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterHitReactionInputFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -38,8 +42,21 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
         auto State = Chunk.GetMutableFragmentView<FBBBMonsterBehaviorFragment>();
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Velocities = Chunk.GetMutableFragmentView<FMassVelocityFragment>();
+        auto HitInputs = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionInputFragment>();
+        auto Hits = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
+        const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
+            auto& Hit = HitInputs[Index].Hit;
+            if (Hit.bActive)
+            {
+                Hit.bActive = false;
+                if (Hit.Packet.IsValid() && Hit.Packet.CanApply(Health[Index]))
+                {
+                    Hit.Packet.Apply(Hits[Index]);
+                }
+            }
+
             auto& Fact = NetworkInputs[Index].State;
             if (Fact.bActive)
             {

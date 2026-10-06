@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBloodPresentationDefinition.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "Animation/AnimSequenceBase.h"
@@ -7,6 +8,16 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
 #include "IAnimationBudgetAllocator.h"
 #include "SkeletalMeshComponentBudgeted.h"
+
+void UBBBMonsterPresentationComponent::ApplyHitReaction(const FBBBMonsterHitReactionFragment& Hit)
+{
+    HitReaction = Hit;
+}
+
+const UBBBMonsterBloodPresentationDefinition* UBBBMonsterPresentationComponent::GetBloodPresentation() const
+{
+    return BloodPresentation;
+}
 
 UBBBMonsterPresentationComponent::UBBBMonsterPresentationComponent()
 {
