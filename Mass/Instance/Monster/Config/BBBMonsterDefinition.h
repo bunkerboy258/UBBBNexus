@@ -80,6 +80,18 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "碰撞半径"))
     float CollisionRadius = 45.0f;
 
+    /** 逻辑胶囊中心到脚底的距离 包含端部半球 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "胶囊半高"))
+    float CapsuleHalfHeight = 90.0f;
+
+    /** 允许跨越的小台阶高度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "0.0", DisplayName = "台阶高度"))
+    float MaxStepHeight = 35.0f;
+
+    /** 支撑面的最大可行走倾角 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "0.0", ClampMax = "80.0", DisplayName = "最大坡度"))
+    float MaxWalkableSlopeAngle = 50.0f;
+
     /** 个体间隔 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "个人空间半径"))
     float PersonalSpaceRadius = 110.0f;

@@ -19,6 +19,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 
 namespace
 {
@@ -149,6 +150,7 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
         const FBBBMonsterBehaviorFragment* const Behavior = Manager.GetFragmentDataPtr<FBBBMonsterBehaviorFragment>(Entity);
         const FBBBMonsterMovementFragment* const Movement = Manager.GetFragmentDataPtr<FBBBMonsterMovementFragment>(Entity);
         const FBBBMonsterNavigationFragment* const Navigation = Manager.GetFragmentDataPtr<FBBBMonsterNavigationFragment>(Entity);
+        const FBBBMonsterGroundFragment* const Ground = Manager.GetFragmentDataPtr<FBBBMonsterGroundFragment>(Entity);
         if (Behavior && Movement && Navigation)
         {
             TSharedRef<FJsonObject> Sample = MakeShared<FJsonObject>();
@@ -160,6 +162,9 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("enteredAt"), Behavior->StateEnteredTime);
             Sample->SetNumberField(TEXT("endsAt"), Behavior->StateEndsAtTime);
             Sample->SetNumberField(TEXT("speedCmS"), Velocity ? Velocity->Value.Size2D() : 0.0);
+            Sample->SetNumberField(TEXT("verticalSpeedCmS"), Velocity ? Velocity->Value.Z : 0.0);
+            Sample->SetBoolField(TEXT("grounded"), Ground && Ground->bGrounded);
+            Sample->SetNumberField(TEXT("supportNormalZ"), Ground ? Ground->SupportNormal.Z : 0.0);
             Sample->SetBoolField(TEXT("hasPath"), Navigation->bHasPath);
             Sample->SetBoolField(TEXT("reached"), Navigation->bReachedDestination);
             Sample->SetNumberField(TEXT("pathPoints"), Navigation->PathPoints.Num());

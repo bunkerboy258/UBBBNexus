@@ -49,6 +49,11 @@ struct FBBBMonsterStateAuthorityFactPacket final
         Network.ReceivedRevision = Revision;
         if (State.State == EBBBMonsterBehavior::Dead)
         {
+            if (Behavior == EBBBMonsterBehavior::Dead)
+            {
+                Position.GetMutableTransform() = Transform;
+                Speed.Value = Velocity;
+            }
             return;
         }
 

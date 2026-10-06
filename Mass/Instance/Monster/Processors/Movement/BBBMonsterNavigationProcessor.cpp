@@ -140,7 +140,6 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             }
 
             Path.PathPoints = Result->PathPoints;
-            Path.HeightOffset = Location.Z - ProjectedStart.Location.Z;
             Path.TailDistances.SetNumZeroed(Path.PathPoints.Num());
             for (int32 Point = Path.PathPoints.Num() - 2; Point >= 0; --Point)
             {

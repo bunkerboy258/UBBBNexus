@@ -14,6 +14,7 @@
 #include "GameFramework/Actor.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Perception/BBBMonsterPerceptionProcessor.h"
 
 UBBBMonsterBehaviorProcessor::UBBBMonsterBehaviorProcessor()
@@ -33,6 +34,7 @@ void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntity
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadWrite);
@@ -59,6 +61,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
         const auto Targets = ChunkContext.GetFragmentView<FBBBMonsterTargetFragment>();
         auto DamageEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDamageFragment>();
         auto DeathEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDeathFragment>();
@@ -140,6 +143,13 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
+            if (State.State == EBBBMonsterBehavior::Attack && !Grounds[Index].bGrounded)
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
+            }
+
             // 战斗处理器先完成唯一命中判定 下一帧才允许结束攻击 防止长帧漏判
             if (State.State == EBBBMonsterBehavior::Attack && !Combat.bAttackFinished)
             {
@@ -201,7 +211,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             const bool bInRange = FVector::DistSquared(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(Combat.AttackRange);
 
-            if (bInRange && WorldTime >= Combat.NextAttackTime)
+            if (Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime)
             {
                 EnterState(EBBBMonsterBehavior::Attack, true);
                 ++Combat.AttackId;

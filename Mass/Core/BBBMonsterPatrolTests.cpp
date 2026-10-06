@@ -23,6 +23,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "GameFramework/Actor.h"
+#include "Components/BoxComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 
 /** 验证随机走停循环 警觉与受击死亡优先级 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterPatrolTest, "UBBB.Mass.ZombiePatrol",
@@ -31,7 +33,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterPatrolTest, "UBBB.Mass.ZombiePatrol"
 bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
 {
     const auto Initialization = UWorld::InitializationValues()
-        .AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false)
+        .AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false)
         .CreateAISystem(false).ShouldSimulatePhysics(false);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
     if (!TestNotNull(TEXT("巡逻隔离世界"), World))
@@ -44,6 +46,14 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
     };
+    AActor* Floor = World->SpawnActor<AActor>();
+    UBoxComponent* FloorBody = NewObject<UBoxComponent>(Floor);
+    Floor->SetRootComponent(FloorBody);
+    FloorBody->SetBoxExtent(FVector(10000.0f, 10000.0f, 50.0f));
+    FloorBody->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    FloorBody->SetCollisionResponseToAllChannels(ECR_Block);
+    FloorBody->RegisterComponent();
+    Floor->SetActorLocation(FVector(0.0f, 0.0f, -50.0f));
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const FMassArchetypeHandle Type = Manager.CreateArchetype({
         FTransformFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
@@ -51,9 +61,11 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
         FBBBMonsterCombatFragment::StaticStruct(), FBBBMonsterTargetFragment::StaticStruct(),
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
         FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
-        FMassVelocityFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct()
+        FMassVelocityFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
+        FBBBMonsterGroundFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
+    Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded = true;
     UBBBMonsterBehaviorProcessor* Processor = NewObject<UBBBMonsterBehaviorProcessor>(World);
     Processor->CallInitialize(World, Manager.AsShared());
     const auto Run = [&Manager, Processor]()
@@ -103,6 +115,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     Target.TargetLocation = TargetActor->GetActorLocation();
     FTransform& Transform = Manager.GetFragmentDataChecked<FTransformFragment>(Entity).GetMutableTransform();
     Transform.SetLocation(Target.TargetLocation - FVector(150.0f, 0.0f, 0.0f));
+    Transform.SetLocation(FVector(Transform.GetLocation().X, Transform.GetLocation().Y, 90.5f));
     FBBBMonsterCombatFragment& Combat = Manager.GetFragmentDataChecked<FBBBMonsterCombatFragment>(Entity);
     Run();
     TestEqual(TEXT("发现目标先警觉"), State.State, EBBBMonsterBehavior::Alert);
@@ -127,7 +140,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
         Velocity = FVector(500.0f, 0.0f, 0.0f);
         Run();
         RunProcessor(Locomotion);
-        TestEqual(TEXT("攻击期间位置不改变"), Transform.GetLocation(), AttackLocation);
+        TestTrue(TEXT("攻击期间位置不改变"), Transform.GetLocation().Equals(AttackLocation, 0.01f));
         TestEqual(TEXT("攻击期间速度归零"), Velocity, FVector::ZeroVector);
         TestEqual(TEXT("未完成攻击不得重启"), Combat.AttackId, 1u);
     }
@@ -155,6 +168,23 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     Run();
     TestEqual(TEXT("高度超出范围不能触发攻击"), State.State, EBBBMonsterBehavior::Chase);
     TestEqual(TEXT("不满足攻击条件不新增攻击编号"), Combat.AttackId, 2u);
+
+    Target.TargetLocation.Z -= Combat.AttackRange * 2.0f;
+    FloorBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    State.State = EBBBMonsterBehavior::Attack;
+    Combat.bHitAttempted = false;
+    Combat.bAttackFinished = false;
+    Combat.AttackTarget = TargetActor;
+    Velocity = FVector::ZeroVector;
+    RunProcessor(Locomotion);
+    TestTrue(TEXT("攻击中失去支撑仍下落"), Transform.GetLocation().Z < AttackLocation.Z && Velocity.Z < 0.0f);
+    RunProcessor(CombatProcessor);
+    TestTrue(TEXT("失去支撑当帧取消命中"), Combat.bHitAttempted && Combat.bAttackFinished && !Combat.AttackTarget.IsValid());
+    Run();
+    TestEqual(TEXT("空中取消攻击恢复追击状态"), State.State, EBBBMonsterBehavior::Chase);
+    Run();
+    TestEqual(TEXT("空中处于攻击范围也不得攻击"), State.State, EBBBMonsterBehavior::Chase);
+    TestEqual(TEXT("空中不新增攻击编号"), Combat.AttackId, 2u);
 
     Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).bReceivedDamage = true;
     Run();

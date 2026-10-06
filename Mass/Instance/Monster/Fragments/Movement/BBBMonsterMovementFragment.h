@@ -30,6 +30,18 @@ struct ABBB_EVAC_API FBBBMonsterMovementFragment final : public FMassFragment
     /** 剩余接近距离进入冲刺的阈值 */
     float SprintDistance = 900.0f;
 
+    /** 逻辑胶囊半径 */
+    float CapsuleRadius = 45.0f;
+
+    /** 逻辑胶囊半高 */
+    float CapsuleHalfHeight = 90.0f;
+
+    /** 最大台阶高度 */
+    float MaxStepHeight = 35.0f;
+
+    /** 可行走支撑面的最小向上法线分量 */
+    float WalkableFloorZ = 0.6427876f;
+
     /** 当前追击档位 仅由移动处理器维护 */
     EBBBMonsterGait Gait = EBBBMonsterGait::Walk;
 

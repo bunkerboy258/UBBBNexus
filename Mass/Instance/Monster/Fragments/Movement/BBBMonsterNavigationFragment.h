@@ -24,9 +24,6 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
     /** 本次巡逻或追击目的地 */
     FVector Destination = FVector::ZeroVector;
 
-    /** 出生中心相对导航面的高度 保持表现与碰撞中心一致 */
-    float HeightOffset = 0.0f;
-
     /** 当前路径关联的行为编号 */
     uint32 ActionId = MAX_uint32;
 

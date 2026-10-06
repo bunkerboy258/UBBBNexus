@@ -5,6 +5,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBMonsterLocomotionProcessor.generated.h"
 
+struct FBBBMonsterGroundFragment;
+
 /** 统一求解真实位移与速度的主机移动处理器 */
 UCLASS()
 class ABBB_EVAC_API UBBBMonsterLocomotionProcessor final : public UMassProcessor
@@ -32,6 +34,20 @@ public:
      * @return 经加减速与制动距离约束的速度
      */
     static float CalculateSpeed(const FBBBMonsterMovementFragment& Movement, float CurrentSpeed, float TargetSpeed, float RemainingDistance, float DeltaSeconds);
+
+    /**
+     * @param World		碰撞查询与重力来源
+     * @param Movement		逻辑胶囊与地面参数
+     * @param Ground		本次支撑结果
+     * @param Location		逻辑中心位置
+     * @param Velocity		唯一速度状态
+     * @param HorizontalDelta		本帧水平移动意图
+     * @param DeltaSeconds		完整更新时长
+     * @return 无
+     */
+    static void SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
+        FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
+        const FVector& HorizontalDelta, float DeltaSeconds);
 
 protected:
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;

@@ -3,6 +3,7 @@
 #include "MassEntityTemplateRegistry.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "MassActorSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
@@ -38,6 +39,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddTag<FMassCustomMovementTag>();
     BuildContext.AddFragment<FTransformFragment>();
     BuildContext.AddFragment<FMassVelocityFragment>();
+    BuildContext.AddFragment<FBBBMonsterGroundFragment>();
     BuildContext.AddFragment<FMassActorFragment>();
     BuildContext.AddFragment<FBBBMonsterHealthInputFragment>();
     BuildContext.AddFragment<FBBBMonsterNetworkInputFragment>();
@@ -68,6 +70,10 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Movement.Acceleration = Settings->Acceleration;
     Movement.Deceleration = Settings->Deceleration;
     Movement.SprintDistance = Settings->SprintDistance;
+    Movement.CapsuleRadius = Settings->CollisionRadius;
+    Movement.CapsuleHalfHeight = Settings->CapsuleHalfHeight;
+    Movement.MaxStepHeight = Settings->MaxStepHeight;
+    Movement.WalkableFloorZ = FMath::Cos(FMath::DegreesToRadians(Settings->MaxWalkableSlopeAngle));
     auto& Perception = BuildContext.AddFragment_GetRef<FBBBMonsterPerceptionFragment>();
     Perception.SightRange = Settings->SightRange;
     auto& Avoidance = BuildContext.AddFragment_GetRef<FBBBMonsterAvoidanceFragment>();

@@ -10,6 +10,8 @@
 #include "MassExecutionContext.h"
 #include "NavigationSystem.h"
 #include "Engine/World.h"
+#include "CollisionShape.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 
 UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
     : MonsterQuery(*this)
@@ -47,11 +49,148 @@ float UBBBMonsterLocomotionProcessor::CalculateSpeed(const FBBBMonsterMovementFr
     return FMath::Clamp(Speed, 0.0f, Movement.SprintSpeed);
 }
 
+void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
+    FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
+    const FVector& HorizontalDelta, const float DeltaSeconds)
+{
+    if (!ensureMsgf(FMath::IsFinite(DeltaSeconds) && DeltaSeconds >= 0.0f && !Location.ContainsNaN() &&
+        !Velocity.ContainsNaN() && !HorizontalDelta.ContainsNaN() && Movement.CapsuleRadius > 0.0f &&
+        Movement.CapsuleHalfHeight >= Movement.CapsuleRadius && Movement.WalkableFloorZ > 0.0f,
+        TEXT("[UBBBM]Ground solver requires finite motion and a valid capsule")))
+    {
+        return;
+    }
+    if (DeltaSeconds <= SMALL_NUMBER)
+    {
+        return;
+    }
+
+    constexpr float Skin = 0.5f;
+    constexpr float SupportDistance = 3.0f;
+    const FCollisionShape Capsule = FCollisionShape::MakeCapsule(Movement.CapsuleRadius, Movement.CapsuleHalfHeight);
+    const float SupportShrink = FMath::Min(Skin, Movement.CapsuleRadius * 0.1f);
+    const FCollisionShape SupportCapsule = FCollisionShape::MakeCapsule(Movement.CapsuleRadius - SupportShrink, Movement.CapsuleHalfHeight - SupportShrink);
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMonsterGround), false);
+    const auto Sweep = [&World, &Capsule, &Params](const FVector& Start, const FVector& End, FHitResult& Hit)
+    {
+        return World.SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Pawn, Capsule, Params);
+    };
+    const auto Walkable = [&Movement](const FHitResult& Hit)
+    {
+        return Hit.IsValidBlockingHit() && Hit.ImpactNormal.Z >= Movement.WalkableFloorZ;
+    };
+    const auto FindSupport = [&World, &SupportCapsule, &Params, &Walkable, SupportShrink](FVector& Center, const float Distance, FVector& Normal)
+    {
+        FHitResult Floor;
+        // 支撑查询略缩胶囊 避免贴墙的零时刻侧面命中遮住脚下地面
+        if (World.SweepSingleByChannel(Floor, Center + FVector::UpVector * Skin,
+            Center - FVector::UpVector * (Distance + SupportShrink), FQuat::Identity, ECC_Pawn, SupportCapsule, Params) &&
+            Walkable(Floor) && Floor.Normal.Z > KINDA_SMALL_NUMBER)
+        {
+            Center.Z = Floor.Location.Z + Skin + SupportShrink / Floor.Normal.Z;
+            Normal = Floor.ImpactNormal;
+            return true;
+        }
+        return false;
+    };
+
+    // 出生或外部支撑移动造成的浅层重叠只在此处消解 不另建位置写入者
+    for (int32 Attempt = 0; Attempt < 4; ++Attempt)
+    {
+        FHitResult Penetration;
+        if (!Sweep(Location, Location, Penetration) || !Penetration.bStartPenetrating)
+        {
+            break;
+        }
+        Location += Penetration.Normal * (Penetration.PenetrationDepth + Skin);
+    }
+
+    const int32 Steps = FMath::Max(1, FMath::CeilToInt(DeltaSeconds / (1.0f / 60.0f)));
+    const float StepSeconds = DeltaSeconds / Steps;
+    const FVector HorizontalStep = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f) / Steps;
+    const FVector FrameStart = Location;
+    for (int32 Step = 0; Step < Steps; ++Step)
+    {
+        Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SupportDistance, Ground.SupportNormal);
+        const bool bWasGrounded = Ground.bGrounded;
+        FVector Delta = HorizontalStep;
+        if (bWasGrounded)
+        {
+            Velocity.Z = 0.0f;
+            Delta.Z = -FVector::DotProduct(HorizontalStep, Ground.SupportNormal) / Ground.SupportNormal.Z;
+        }
+        if (!bWasGrounded)
+        {
+            Ground.SupportNormal = FVector::UpVector;
+            Delta.Z = Velocity.Z * StepSeconds + 0.5f * World.GetGravityZ() * StepSeconds * StepSeconds;
+            Velocity.Z += World.GetGravityZ() * StepSeconds;
+        }
+
+        const FVector Start = Location;
+        FHitResult Hit;
+        const bool bBlocked = Sweep(Start, Start + Delta, Hit);
+        if (bBlocked)
+        {
+            UE_LOG(LogTemp, VeryVerbose, TEXT("[BBBMonsterGroundBlock] Actor=%s Component=%s Position=%s Normal=%s Delta=%s Penetrating=%d"),
+                *GetPathNameSafe(Hit.GetActor()), *GetPathNameSafe(Hit.GetComponent()), *Start.ToString(),
+                *Hit.Normal.ToString(), *Delta.ToString(), Hit.bStartPenetrating);
+        }
+        Location = bBlocked ? Start + Delta * Hit.Time : Start + Delta;
+        bool bStepped = false;
+        if (bBlocked && bWasGrounded && !HorizontalStep.IsNearlyZero() && Movement.MaxStepHeight > 0.0f)
+        {
+            const FVector Raised = Start + FVector::UpVector * Movement.MaxStepHeight;
+            FVector Candidate = Raised + HorizontalStep;
+            FVector CandidateNormal = FVector::UpVector;
+            FHitResult UpHit;
+            FHitResult ForwardHit;
+            if (!Sweep(Start, Raised, UpHit) && !Sweep(Raised, Candidate, ForwardHit) &&
+                FindSupport(Candidate, Movement.MaxStepHeight + SupportDistance, CandidateNormal) &&
+                Candidate.Z <= Start.Z + Movement.MaxStepHeight + Skin)
+            {
+                Location = Candidate;
+                Ground.SupportNormal = CandidateNormal;
+                bStepped = true;
+            }
+        }
+        if (bBlocked && !bStepped && !Hit.bStartPenetrating)
+        {
+            Location += Hit.Normal * Skin;
+            const FVector Remainder = FVector::VectorPlaneProject(Delta * (1.0f - Hit.Time), Hit.Normal);
+            FHitResult SlideHit;
+            const bool bSlideBlocked = Sweep(Location, Location + Remainder, SlideHit);
+            Location += Remainder * (bSlideBlocked ? SlideHit.Time : 1.0f);
+            if (Walkable(Hit) && Velocity.Z <= 0.0f)
+            {
+                Velocity.Z = 0.0f;
+            }
+            if (Hit.Normal.Z < -KINDA_SMALL_NUMBER && Velocity.Z > 0.0f)
+            {
+                Velocity.Z = 0.0f;
+            }
+        }
+
+        const float SnapDistance = bWasGrounded ? Movement.MaxStepHeight + SupportDistance : SupportDistance;
+        Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SnapDistance, Ground.SupportNormal);
+        if (Ground.bGrounded)
+        {
+            Velocity.Z = 0.0f;
+        }
+        if (!Ground.bGrounded)
+        {
+            Ground.SupportNormal = FVector::UpVector;
+        }
+    }
+    Velocity.X = (Location.X - FrameStart.X) / DeltaSeconds;
+    Velocity.Y = (Location.Y - FrameStart.Y) / DeltaSeconds;
+}
+
 void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
@@ -71,6 +210,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Velocities = Chunk.GetMutableFragmentView<FMassVelocityFragment>();
         auto Movements = Chunk.GetMutableFragmentView<FBBBMonsterMovementFragment>();
+        auto Grounds = Chunk.GetMutableFragmentView<FBBBMonsterGroundFragment>();
         const auto Navigation = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
@@ -82,60 +222,67 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const FBBBMonsterNavigationFragment& Path = Navigation[Index];
             const bool bPatrol = States[Index].State == EBBBMonsterBehavior::Patrol;
             const bool bChase = States[Index].State == EBBBMonsterBehavior::Chase;
-            if ((!bPatrol && !bChase) || DeltaSeconds <= SMALL_NUMBER || !Path.bHasPath ||
-                !Path.PathPoints.IsValidIndex(Path.PathPointIndex) || !Path.TailDistances.IsValidIndex(Path.PathPointIndex))
+            if (DeltaSeconds <= SMALL_NUMBER)
             {
-                Velocity = FVector::ZeroVector;
+                continue;
+            }
+            FVector Location = Transform.GetLocation();
+            FVector HorizontalDelta = FVector::ZeroVector;
+            const bool bMayMove = (bPatrol || bChase) && Path.bHasPath &&
+                Path.PathPoints.IsValidIndex(Path.PathPointIndex) && Path.TailDistances.IsValidIndex(Path.PathPointIndex);
+            if (!bMayMove)
+            {
                 Movement.Gait = EBBBMonsterGait::Walk;
+            }
+            if (bMayMove && Grounds[Index].bGrounded)
+            {
+                const FVector ToPoint = Path.PathPoints[Path.PathPointIndex] - Location;
+                const float PointDistance = ToPoint.Size2D();
+                const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - (bPatrol ? 15.0f : 0.0f), 0.0f);
+                Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
+                const float TargetSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :
+                    Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
+                const float Speed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
+                const float Distance = FMath::Min3(Speed * DeltaSeconds, PointDistance, Remaining);
+                const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
+                const float Steering = FMath::Clamp(Neighbors.SeparationStrength * Neighbors.AvoidanceWeight, 0.0f, 0.65f);
+                const FVector Direction = (ToPoint.GetSafeNormal2D() + Neighbors.SeparationDirection * Steering).GetSafeNormal2D();
+                FVector Destination = Location + Direction * Distance;
+
+                // 同一求解内约束导航边界 防止避让把实体推到墙外
+                FVector HitLocation = Destination;
+                const FVector FootOffset(0.0f, 0.0f, Movement.CapsuleHalfHeight);
+                if (UNavigationSystemV1::NavigationRaycast(World, Location - FootOffset, Destination - FootOffset, HitLocation))
+                {
+                    Destination.X = HitLocation.X;
+                    Destination.Y = HitLocation.Y;
+                }
+                if (!Destination.ContainsNaN() && FVector::Dist2D(Location, Destination) <= Distance + 1.0f)
+                {
+                    HorizontalDelta = FVector(Destination.X - Location.X, Destination.Y - Location.Y, 0.0f);
+                }
+            }
+            if (bMayMove && !Grounds[Index].bGrounded)
+            {
+                HorizontalDelta = FVector(Velocity.X, Velocity.Y, 0.0f) * DeltaSeconds;
+            }
+
+            const bool bPreviouslyGrounded = Grounds[Index].bGrounded;
+            SolveGroundMotion(*World, Movement, Grounds[Index], Location, Velocity, HorizontalDelta, DeltaSeconds);
+            if (!ensureMsgf(!Location.ContainsNaN() && !Velocity.ContainsNaN(), TEXT("[UBBBM]Ground solver produced invalid motion")))
+            {
                 continue;
             }
-
-            const FVector Location = Transform.GetLocation();
-            const FVector ToPoint = Path.PathPoints[Path.PathPointIndex] - Location;
-            const float PointDistance = ToPoint.Size2D();
-            const float ArrivalTolerance = bPatrol ? 15.0f : 0.0f;
-            const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - ArrivalTolerance, 0.0f);
-            const EBBBMonsterGait PreviousGait = Movement.Gait;
-            Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
-            const float TargetSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :
-                Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
-            const float Speed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
-            const float Distance = FMath::Min3(Speed * DeltaSeconds, PointDistance, Remaining);
-            if (Distance <= SMALL_NUMBER || PointDistance <= SMALL_NUMBER)
+            Transform.SetLocation(Location);
+            if (bPreviouslyGrounded != Grounds[Index].bGrounded)
             {
-                Velocity = FVector::ZeroVector;
-                continue;
+                UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Ground Entity=%d Supported=%d Z=%.2f VerticalSpeed=%.2f"),
+                    Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
-
-            const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
-            const float Steering = FMath::Clamp(Neighbors.SeparationStrength * Neighbors.AvoidanceWeight, 0.0f, 0.65f);
-            const FVector Direction = (ToPoint.GetSafeNormal2D() + Neighbors.SeparationDirection * Steering).GetSafeNormal2D();
-            FVector Destination = Location + Direction * Distance;
-            Destination.Z = FMath::Lerp(Location.Z, Path.PathPoints[Path.PathPointIndex].Z + Path.HeightOffset, Distance / PointDistance);
-
-            // 同一求解内约束导航边界 防止避让把实体推到墙外
-            FVector HitLocation = Destination;
-            if (UNavigationSystemV1::NavigationRaycast(World, Location, Destination, HitLocation))
+            const FVector HorizontalVelocity(Velocity.X, Velocity.Y, 0.0f);
+            if (!HorizontalVelocity.IsNearlyZero())
             {
-                Destination = HitLocation;
-            }
-            if (Destination.ContainsNaN() || FVector::Dist2D(Location, Destination) > Distance + 1.0f)
-            {
-                ensureMsgf(false, TEXT("[UBBBM]Navigation constraint produced an invalid movement"));
-                Velocity = FVector::ZeroVector;
-                continue;
-            }
-
-            Transform.SetLocation(Destination);
-            Velocity = (Destination - Location) / DeltaSeconds;
-            if (!Velocity.IsNearlyZero())
-            {
-                Transform.SetRotation(Velocity.ToOrientationQuat());
-            }
-            if (PreviousGait != Movement.Gait)
-            {
-                UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Gait Entity=%d Gait=%d Speed=%.1f Remaining=%.1f"),
-                    Chunk.GetEntity(Index).Index, static_cast<int32>(Movement.Gait), Velocity.Size2D(), Remaining);
+                Transform.SetRotation(HorizontalVelocity.ToOrientationQuat());
             }
         }
     });

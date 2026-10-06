@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
 
 UBBBMonsterCombatProcessor::UBBBMonsterCombatProcessor()
@@ -21,11 +23,13 @@ UBBBMonsterCombatProcessor::UBBBMonsterCombatProcessor()
     bRequiresGameThreadExecution = true;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::Server | EProcessorExecutionFlags::Standalone);
     ExecutionOrder.ExecuteAfter.Add(UBBBMonsterAvoidanceProcessor::StaticClass()->GetFName());
+    ExecutionOrder.ExecuteAfter.Add(UBBBMonsterLocomotionProcessor::StaticClass()->GetFName());
 }
 
 void UBBBMonsterCombatProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterCombatFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
@@ -51,6 +55,7 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         const auto Actors = ChunkContext.GetFragmentView<FMassActorFragment>();
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
         auto Combats = ChunkContext.GetMutableFragmentView<FBBBMonsterCombatFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
@@ -59,6 +64,14 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
 
             if (States[Index].State != EBBBMonsterBehavior::Attack)
             {
+                continue;
+            }
+
+            if (!Grounds[Index].bGrounded)
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
                 continue;
             }
 

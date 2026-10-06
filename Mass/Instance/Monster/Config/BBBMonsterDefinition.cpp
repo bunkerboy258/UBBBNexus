@@ -19,6 +19,9 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AlertDuration) && AlertDuration > 0.0f
         && FMath::IsFinite(SightRange) && SightRange >= 0.0f
         && FMath::IsFinite(CollisionRadius) && CollisionRadius > 0.0f
+        && FMath::IsFinite(CapsuleHalfHeight) && CapsuleHalfHeight >= CollisionRadius
+        && FMath::IsFinite(MaxStepHeight) && MaxStepHeight >= 0.0f && MaxStepHeight < CapsuleHalfHeight
+        && FMath::IsFinite(MaxWalkableSlopeAngle) && MaxWalkableSlopeAngle >= 0.0f && MaxWalkableSlopeAngle <= 80.0f
         && FMath::IsFinite(PersonalSpaceRadius) && PersonalSpaceRadius >= 0.0f
         && FMath::IsFinite(NeighborSearchRadius) && NeighborSearchRadius >= PersonalSpaceRadius
         && FMath::IsFinite(AvoidanceWeight) && AvoidanceWeight >= 0.0f
