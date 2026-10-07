@@ -1,7 +1,9 @@
 
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
+#include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Client/BBBClientSubsystem.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemMoveLocalControlPacket.h"
@@ -40,6 +42,7 @@ void ABBBPlayerController::SetupInputComponent()
     Super::SetupInputComponent();
 
     InputComponent->BindKey(EKeys::F6, IE_Pressed, this, &ABBBPlayerController::ToggleCustomization);
+    InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ABBBPlayerController::ToggleBackpack);
 
     // 每个运行时控制器独立创建菜单动作 避免构造阶段对象被蓝图默认值覆盖
     //创建不依赖资产文件的鼠标模式切换动作
@@ -102,6 +105,11 @@ void ABBBPlayerController::BeginPlay()
         //结束当前读取Local玩家流程
         return;
     }
+    ItemView = CreateWidget<UBBBPlayerItemView>(this, UBBBPlayerItemView::StaticClass());
+    if (ensureMsgf(ItemView, TEXT("[BBBItems]玩家物品界面创建失败")))
+    {
+        ItemView->AddToPlayerScreen();
+    }
     //获取负责管理本地输入映射上下文的增强输入子系统
     UEnhancedInputLocalPlayerSubsystem *Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
     //增强输入子系统未建立时停止注册映射
@@ -133,16 +141,87 @@ void ABBBPlayerController::ToggleMouseCursor()
         //结束当前切换鼠标指针与游戏输入模式流程
         return;
     }
+    if (IsBackpackOpen())
+    {
+        ToggleBackpack();
+        return;
+    }
     //切换鼠标菜单输入模式
     SetMouseMenuMode(!bShowMouseCursor);
 }
 
 void ABBBPlayerController::ToggleCustomization()
 {
+    if (IsBackpackOpen())
+    {
+        ToggleBackpack();
+    }
     if (ULocalPlayer *LocalPlayer = GetLocalPlayer())
     {
         LocalPlayer->GetSubsystem<UBBBClientSubsystem>()->ToggleCustomization();
     }
+}
+
+bool ABBBPlayerController::IsBackpackOpen() const
+{
+    return ItemView && ItemView->IsBackpackOpen();
+}
+
+bool ABBBPlayerController::IsPlayerMenuOpen() const
+{
+    const ULocalPlayer *LocalPlayer = GetLocalPlayer();
+    const UBBBClientSubsystem *Client = LocalPlayer ? LocalPlayer->GetSubsystem<UBBBClientSubsystem>() : nullptr;
+    return IsBackpackOpen() || (Client && Client->IsCustomizationOpen());
+}
+
+void ABBBPlayerController::ToggleBackpack()
+{
+    if (!IsLocalController() || !ItemView)
+    {
+        return;
+    }
+    if (IsBackpackOpen())
+    {
+        ItemView->SetBackpackOpen(false);
+        SetMouseMenuMode(bBackpackPreviousCursor);
+        PlayerInputSystem->SetInputEnabled(bBackpackPreviousGameplayInput);
+        return;
+    }
+    if (!HasItemInventory())
+    {
+        UE_LOG(LogBBBPlayerController, Warning, TEXT("[BBBItems]当前无法打开背包 Controller=%s"), *GetName());
+        return;
+    }
+    UBBBClientSubsystem *Client = GetLocalPlayer()->GetSubsystem<UBBBClientSubsystem>();
+    if (Client->IsCustomizationOpen())
+    {
+        Client->ToggleCustomization();
+    }
+    bBackpackPreviousCursor = bShowMouseCursor;
+    bBackpackPreviousGameplayInput = PlayerInputSystem->IsInputEnabled();
+    SetMouseMenuMode(true);
+    ItemView->SetBackpackOpen(true);
+    FInputModeGameAndUI InputMode;
+    InputMode.SetWidgetToFocus(ItemView->TakeWidget());
+    InputMode.SetHideCursorDuringCapture(false);
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    SetInputMode(InputMode);
+}
+
+void ABBBPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (ItemView)
+    {
+        ItemView->RemoveFromParent();
+        ItemView = nullptr;
+    }
+    Super::EndPlay(EndPlayReason);
+}
+
+AActor *ABBBPlayerController::GetActiveItem() const
+{
+    const ABBBCharacter *ItemCharacter = GetItemCharacter();
+    return ItemCharacter ? ItemCharacter->GetActiveEquipment() : nullptr;
 }
 
 //切换鼠标菜单输入模式
@@ -220,6 +299,32 @@ int32 ABBBPlayerController::GetQuickAccessSlotCount() const
     return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().QuickAccessSlotCount : 0;
 }
 
+FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 Slot) const
+{
+    FBBBPlayerItemDisplayData Data;
+    const TArray<AActor *> Items = GetBackpackItems();
+    Data.bOccupied = Items.IsValidIndex(Slot) && IsValid(Items[Slot]);
+    Data.bQuick = Slot >= 0 && Slot < GetQuickAccessSlotCount();
+    Data.bSelected = Slot >= 0 && Slot == GetSelectedItemSlot();
+    Data.bActive = Data.bOccupied && Items[Slot] == GetActiveItem();
+    if (const UBBBEquipmentDefinition *Definition = GetItemDefinition(Slot))
+    {
+        Data.Name = Definition->DisplayName.IsEmpty()
+            ? FText::FromName(Definition->EquipmentId) : Definition->DisplayName;
+        Data.Description = Definition->Description;
+        Data.Icon = Definition->Icon;
+    }
+    return Data;
+}
+
+FText ABBBPlayerController::GetActiveItemName() const
+{
+    const ABBBEquipment *Equipment = Cast<ABBBEquipment>(GetActiveItem());
+    const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+    return Definition ? (Definition->DisplayName.IsEmpty()
+        ? FText::FromName(Definition->EquipmentId) : Definition->DisplayName) : FText::GetEmpty();
+}
+
 int32 ABBBPlayerController::GetSelectedItemSlot() const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
@@ -272,6 +377,10 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
     const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().Revision : 0;
     const int32 OperationRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemOperationState().Revision : 0;
     AActor *Active = ItemCharacter ? ItemCharacter->GetActiveEquipment() : nullptr;
+    if (ObservedItemCharacter.Get() != ItemCharacter && IsBackpackOpen())
+    {
+        ToggleBackpack();
+    }
     if (ObservedItemCharacter.Get() != ItemCharacter || ObservedActiveItem.Get() != Active
         || ObservedInventoryRevision != InventoryRevision || ObservedItemBarRevision != BarRevision
         || ObservedItemOperationRevision != OperationRevision)

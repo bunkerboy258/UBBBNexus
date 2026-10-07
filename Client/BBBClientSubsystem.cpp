@@ -127,3 +127,8 @@ void UBBBClientSubsystem::ToggleCustomization()
     }
     Customization->Open(*Player);
 }
+
+bool UBBBClientSubsystem::IsCustomizationOpen() const
+{
+    return Customization && Customization->IsOpen();
+}

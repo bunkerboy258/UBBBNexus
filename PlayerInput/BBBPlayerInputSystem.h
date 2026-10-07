@@ -56,7 +56,8 @@ public:
     float AimTargetDistance = 10000.0f;
 
 private:
-    void SubmitEquipSlot(int32 Slot);
+    /** @param Slot\t前序快捷槽位索引 @return 无 */
+    void SubmitItemSlot(int32 Slot);
     void SubmitReload();
     /** @param bRun 是否请求跑步 @return 无 */
     void SubmitRun(bool bRun);

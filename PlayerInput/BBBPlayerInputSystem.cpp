@@ -101,9 +101,13 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     }
 }
 
-void UBBBPlayerInputSystem::SubmitEquipSlot(const int32 Slot)
+void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
 {
     if (!bInputEnabled || !Character.IsValid())
+    {
+        return;
+    }
+    if (Slot < 0 || Slot >= Character->RuntimeData.Item.ReadItemBarState().QuickAccessSlotCount)
     {
         return;
     }
@@ -257,20 +261,16 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
                 SubmitReload();
             });
     }
-    if (Config.EquipSlot1Action)
+    for (int32 Slot = 0; Slot < Config.ItemSlotActions.Num(); ++Slot)
     {
-        Input.BindActionValueLambda(Config.EquipSlot1Action, ETriggerEvent::Started,
-            [this](const FInputActionValue &Value)
+        if (!ensureMsgf(Config.ItemSlotActions[Slot], TEXT("[BBBInput]快捷槽位动作缺失 Slot=%d"), Slot))
+        {
+            continue;
+        }
+        Input.BindActionValueLambda(Config.ItemSlotActions[Slot], ETriggerEvent::Started,
+            [this, Slot](const FInputActionValue &Value)
             {
-                SubmitEquipSlot(0);
-            });
-    }
-    if (Config.EquipSlot2Action)
-    {
-        Input.BindActionValueLambda(Config.EquipSlot2Action, ETriggerEvent::Started,
-            [this](const FInputActionValue &Value)
-            {
-                SubmitEquipSlot(1);
+                SubmitItemSlot(Slot);
             });
     }
 }

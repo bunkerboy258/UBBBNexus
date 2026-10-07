@@ -1,5 +1,7 @@
 #include "BBBWork/UBBBNexus/Customization/UI/BBBCharacterCustomizationView.h"
 #include "BBBWork/UBBBNexus/Customization/BBBCharacterCustomizationSession.h"
+#include "BBBWork/UBBBNexus/Client/UI/BBBPlayerMenuStyle.h"
+#include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "Engine/Texture2D.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -798,6 +800,17 @@ TSharedRef<SWidget> UBBBCharacterCustomizationView::RebuildWidget()
     }
 
     TSharedRef<SConstraintCanvas> Layout = SNew(SConstraintCanvas);
+    Layout->AddSlot().Anchors(FAnchors(0.065f, 0.055f, 0.935f, 0.16f)).Offset(FMargin(0.0f))
+    [
+        BBBPlayerMenuStyle::MakeNavigation(false, FOnClicked(), FOnClicked::CreateWeakLambda(this, [this]()
+        {
+            if (ABBBPlayerController *Player = Cast<ABBBPlayerController>(GetOwningPlayer()))
+            {
+                Player->ToggleBackpack();
+            }
+            return FReply::Handled();
+        }))
+    ];
     Layout->AddSlot()
     .Anchors(FAnchors(0.065f, 0.22f, 0.32f, 0.81f))
     .Offset(FMargin(0.0f))
@@ -848,6 +861,17 @@ FReply UBBBCharacterCustomizationView::NativeOnPreviewKeyDown(
     const FGeometry &Geometry,
     const FKeyEvent &KeyEvent)
 {
+    if (KeyEvent.GetKey() == EKeys::Tab)
+    {
+        if (!KeyEvent.IsRepeat())
+        {
+            if (ABBBPlayerController *Player = Cast<ABBBPlayerController>(GetOwningPlayer()))
+            {
+                Player->ToggleBackpack();
+            }
+        }
+        return FReply::Handled();
+    }
     const bool bFullscreenKey = KeyEvent.GetKey() == EKeys::F11
         || (KeyEvent.GetKey() == EKeys::Enter && KeyEvent.IsAltDown());
     APlayerController *Player = GetOwningPlayer();

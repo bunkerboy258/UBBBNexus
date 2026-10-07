@@ -39,11 +39,9 @@ struct FBBBPlayerInputConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "换弹输入动作"))
     TObjectPtr<UInputAction> ReloadAction;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备栏位 1 输入动作"))
-    TObjectPtr<UInputAction> EquipSlot1Action;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备栏位 2 输入动作"))
-    TObjectPtr<UInputAction> EquipSlot2Action;
+    /** 按数组索引对应前序快捷槽位的输入动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "物品快捷槽位输入动作"))
+    TArray<TObjectPtr<UInputAction>> ItemSlotActions;
 
 
 };

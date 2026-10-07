@@ -6,12 +6,14 @@
 
 class ABBBCharacter;
 class UBBBEquipmentDefinition;
+struct FBBBPlayerItemDisplayData;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBBBPlayerItemsChanged);
 //封装InputMappingContext的数据与行为
 class UInputMappingContext;
 //封装InputAction的数据与行为
 class UInputAction;
 class UBBBPlayerInputSystem;
+class UBBBPlayerItemView;
 
 //将下方类型注册为受虚幻对象系统管理的类
 UCLASS()
@@ -49,6 +51,23 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "BBB|客户端")
     void ToggleCustomization();
+
+    /** @return 无 打开或关闭背包并维护输入模式 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|物品")
+    void ToggleBackpack();
+
+    /** @return 背包面板是否打开 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    bool IsBackpackOpen() const;
+
+    /** @return 任一同级玩家页面是否打开 供游玩 HUD 控制可见性 */
+    bool IsPlayerMenuOpen() const;
+
+    /** @return 当前实际手持的物品 挂接失败或空手时返回空引用 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    AActor *GetActiveItem() const;
+
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     /** @param DeltaTime	本帧时长 @return 无 观察物品结果变化并通知玩家 UI */
     virtual void PlayerTick(float DeltaTime) override;
 
@@ -63,6 +82,12 @@ public:
     /** @param Slot	背包索引 @return 物品的公共显示配置 空格返回空引用 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     UBBBEquipmentDefinition *GetItemDefinition(int32 Slot) const;
+
+    /** @param Slot\t背包索引 @return 该格子的只读展示数据 */
+    FBBBPlayerItemDisplayData GetItemDisplayData(int32 Slot) const;
+
+    /** @return 实际手持装备的显示名称 空手时为空文本 */
+    FText GetActiveItemName() const;
 
     /** @return 前序快捷槽位数量 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
@@ -110,6 +135,14 @@ protected:
     //更新int32MappingContextPriority供后续步骤读取
     int32 MappingContextPriority = 0;
 private:
+    /** 本地玩家唯一物品界面 */
+    UPROPERTY(Transient)
+    TObjectPtr<UBBBPlayerItemView> ItemView;
+
+    /** 背包关闭时恢复打开前的输入状态 */
+    bool bBackpackPreviousCursor = false;
+    bool bBackpackPreviousGameplayInput = true;
+
     /** @return 本机控制且已经初始化真实背包的角色 */
     ABBBCharacter *GetItemCharacter() const;
 

@@ -135,6 +135,13 @@ int32 SBBBCharacterCustomizationIcon::OnPaint(const FPaintArgs& Args, const FGeo
         Stroke({{7, 3}, {17, 3}, {21, 7}, {21, 17}, {17, 21}, {7, 21}, {3, 17}, {3, 7}, {7, 3}});
         Stroke({{6, 18}, {18, 6}});
     }
+    if (Symbol == TEXT("Item"))
+    {
+        Stroke({{3, 7}, {12, 3}, {21, 7}, {21, 18}, {12, 22}, {3, 18}, {3, 7}});
+        Stroke({{3, 7}, {12, 11}, {21, 7}});
+        Stroke({{12, 11}, {12, 22}});
+        Stroke({{7, 5}, {16, 9}, {16, 13}});
+    }
     if (Symbol == TEXT("Warning"))
     {
         Stroke({{12, 3}, {22, 21}, {2, 21}, {12, 3}});

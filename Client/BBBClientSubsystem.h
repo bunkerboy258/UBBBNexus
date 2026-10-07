@@ -47,6 +47,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "BBB|客户端")
     void ToggleCustomization();
 
+    /** @return 当前本地换装界面是否打开 */
+    bool IsCustomizationOpen() const;
+
 private:
     /**
      * 人物重建后恢复本地选择
