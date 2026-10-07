@@ -4,11 +4,12 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterTraversalState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 namespace
 {
@@ -118,34 +119,39 @@ void FBBBCharacterLocomotionProcessor::Update(
     const FBBBCharacterControlState &ControlData = Context.ControlState;
     const FBBBCharacterLocomotionConfig &Config = Context.Config;
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
-    FBBBCharacterTraversalState &Traversal = Context.Traversal;
-    if (Traversal.bEndRequested)
+    const FBBBCharacterTraversalState &Traversal = Context.Traversal;
+    const bool bWantsTraversalControl = Traversal.Action != EBBBTraversalAction::None
+        && Traversal.bPlaybackRequested
+        && !(Traversal.bEndRequested && (Context.Execution.bIsMirror || Traversal.bAnimationReleased));
+
+    // 镜像直接执行接受的结束结果 控制方等待自身根运动释放后交接
+    if (RuntimeData.bTraversalControlled && !bWantsTraversalControl)
     {
-        if (!Context.Execution.bIsMirror && Traversal.bMovementControlled)
-        {
-            Movement.StopMovementImmediately();
-            Movement.SetMovementMode(MOVE_Falling);
-        }
-        Traversal.bMovementControlled = false;
-        Traversal.Action = EBBBTraversalAction::None;
-        Traversal.bEndRequested = false;
-        UE_LOG(LogTemp, Display, TEXT("BBBTraversal end id=%u location=%s"),
-            Traversal.ActionId, *Character.GetActorLocation().ToString());
+        Movement.StopMovementImmediately();
+        FFindFloorResult Floor;
+        Movement.ComputeFloorDist(Character.GetActorLocation(), 8.0f, 8.0f, Floor,
+            Character.GetCapsuleComponent()->GetScaledCapsuleRadius());
+        Movement.SetMovementMode(Floor.IsWalkableFloor() ? MOVE_Walking : MOVE_Falling);
+        RuntimeData.bTraversalControlled = false;
     }
+
+    if (bWantsTraversalControl && !RuntimeData.bTraversalControlled)
+    {
+        Character.StopJumping();
+        Character.ConsumeMovementInputVector();
+        Movement.StopMovementImmediately();
+        Movement.SetMovementMode(MOVE_Flying);
+        RuntimeData.bTraversalControlled = true;
+    }
+
     if (Context.Execution.bIsMirror)
     {
         return;
     }
-    if (Traversal.Action != EBBBTraversalAction::None)
+
+    if (Traversal.Action != EBBBTraversalAction::None && !Traversal.bAnimationReleased)
     {
         RuntimeData.bRun = false;
-        if (Traversal.bPlaybackRequested && !Traversal.bMovementControlled)
-        {
-            Character.StopJumping();
-            Movement.StopMovementImmediately();
-            Movement.SetMovementMode(MOVE_Flying);
-            Traversal.bMovementControlled = true;
-        }
         return;
     }
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器

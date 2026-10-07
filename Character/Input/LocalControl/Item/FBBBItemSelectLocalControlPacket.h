@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
@@ -30,7 +31,7 @@ struct FBBBItemSelectLocalControlPacket final
     /** @param Context	本次输入上下文 @return 当前角色是否拥有真实物品控制权 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror;
+        return Context.Traversal.Action == EBBBTraversalAction::None && !Context.bIsMirror;
     }
 
     /** @param Context	本次输入上下文 @return 无 */

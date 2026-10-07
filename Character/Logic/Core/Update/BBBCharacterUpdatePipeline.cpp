@@ -117,8 +117,11 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
 
     }
 
-    Character->LocomotionSystem.Update();
+    // 攀爬只生成交接结果 移动系统独占 CMC 写入
+    Character->TraversalSystem.Update();
+    // 操作许可位于攀爬决策后与 CMC 前 不重复装备关系维护
     Character->EquipmentSystem.UpdateActionPermission();
+    Character->LocomotionSystem.Update();
 
     // 网络只观察已经成立的状态与事实
     Character->NetworkSystem.Update();

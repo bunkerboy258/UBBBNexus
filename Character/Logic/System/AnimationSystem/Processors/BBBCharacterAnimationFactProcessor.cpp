@@ -86,7 +86,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
         }
     }
 
-    FactState.bTraversing = RuntimeData.Locomotion.ReadTraversalState().Action != EBBBTraversalAction::None;
+    FactState.bTraversing = RuntimeData.Traversal.ReadTraversalState().Action != EBBBTraversalAction::None;
     FactState.bFullBodyPlaying = Context.AnimationInstance.FullBodyMontageContribution
         && Context.AnimationInstance.Montage_IsPlaying(Context.AnimationInstance.FullBodyMontageContribution);
     FactState.bIsAiming = AimState.bIsAiming;

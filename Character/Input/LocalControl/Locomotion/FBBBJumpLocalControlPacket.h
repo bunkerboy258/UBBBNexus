@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 /**
@@ -22,7 +23,7 @@ struct FBBBJumpLocalControlPacket final
      */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return true;
+        return Context.Traversal.Action == EBBBTraversalAction::None;
     }
 
     /**

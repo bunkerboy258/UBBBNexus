@@ -37,6 +37,7 @@ public:
 
 private:
     friend class FBBBCharacterAnimationMontageProcessor;
+    friend class FBBBCharacterTraversalAnimationProcessor;
     friend struct FBBBFullBodyMontageLocalControlPacket;
     friend struct FBBBUpperBodyMontageLocalControlPacket;
     friend struct FBBBFullBodyAdditivePreAimMontageLocalControlPacket;

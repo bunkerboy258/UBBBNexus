@@ -14,24 +14,21 @@ void FBBBCharacterLocomotionSystem::Initialize(
     FBBBCharacterLocomotionDomainState &InRuntimeData,
     const FBBBCharacterControlState &InIntentData,
     const FBBBCharacterLocomotionConfig &InConfig,
-    const FBBBTraversalConfig &InTraversalConfig,
-    const FBBBCharacterRuntimeData &InCharacterData,
-    UMotionWarpingComponent &InWarping)
+    const FBBBCharacterRuntimeData &InCharacterData
+)
 {
     Character = &InCharacter;
     Movement = &InMovement;
     RuntimeData = &InRuntimeData;
     ControlData = &InIntentData;
     Config = &InConfig;
-    TraversalConfig = &InTraversalConfig;
     CharacterData = &InCharacterData;
-    Warping = &InWarping;
     StrafeSpeedMapCurve = InConfig.StrafeSpeedMapCurve.LoadSynchronous();
 }
 
 void FBBBCharacterLocomotionSystem::Update()
 {
-    if (!Character || !Movement || !RuntimeData || !ControlData || !Config || !StrafeSpeedMapCurve || !TraversalConfig || !CharacterData || !Warping)
+    if (!Character || !Movement || !RuntimeData || !ControlData || !Config || !StrafeSpeedMapCurve || !CharacterData)
     {
         return;
     }
@@ -43,15 +40,8 @@ void FBBBCharacterLocomotionSystem::Update()
         *ControlData,
         *Config,
         *StrafeSpeedMapCurve,
-        RuntimeData->TraversalState,
-        *TraversalConfig,
-        CharacterData->External.ReadWorldState(),
+        CharacterData->Traversal.ReadTraversalState(),
         CharacterData->External.ReadNetworkIdentityState(),
-        CharacterData->Animation.ReadAnimationFactState(),
-        CharacterData->Animation.ReadAnimationMontageState(),
-        *Warping};
-    ProbeProcessor.Update(Context);
-    LifeProcessor.Update(Context);
-    WarpProcessor.Update(Context);
+        CharacterData->Animation.ReadAnimationFactState()};
     LocomotionProcessor.Update(Context);
 }

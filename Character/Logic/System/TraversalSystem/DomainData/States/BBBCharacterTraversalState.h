@@ -44,7 +44,12 @@ struct FBBBCharacterTraversalState final
     /** 本次动作是否需要结束并恢复移动 */
     bool bEndRequested = false;
 
-    /** 移动处理器是否已经进入根运动控制模式 */
-    bool bMovementControlled = false;
+    /** 本次动作需要的动画退出已经完成 */
+    bool bAnimationReleased = false;
 
+    /** 控制端已经提交的播放进度用于恢复当前表现 */
+    float PlaybackPosition = 0.0f;
+
+    /** 本动作已经安装的命名目标需要在退出后清理 */
+    bool bTargetsInstalled = false;
 };

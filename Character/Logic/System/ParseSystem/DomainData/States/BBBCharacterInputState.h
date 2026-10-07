@@ -28,13 +28,13 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBTraversalStartRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalStartRemoteMessagePacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBTraversalEndRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalEndRemoteMessagePacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalStartAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalStartAuthorityFactPacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalEndAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalEndAuthorityFactPacket.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginActionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndActionLocalControlPacket.h"

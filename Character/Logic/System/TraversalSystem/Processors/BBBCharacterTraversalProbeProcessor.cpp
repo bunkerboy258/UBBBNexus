@@ -1,6 +1,6 @@
-#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterTraversalProbeProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/Context/BBBCharacterLocomotionUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterTraversalState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/Processors/BBBCharacterTraversalProbeProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/Context/BBBCharacterTraversalUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalConfig.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
@@ -10,15 +10,15 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterLocomotionUpdateContext &Context) const
+void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterTraversalUpdateContext &Context) const
 {
     const FBBBTraversalConfig &Config = Context.TraversalConfig;
     if (Context.Execution.bIsMirror || !Config.bEnabled || !Context.ControlState.bJump
         || Context.ControlState.bCrouch || !Context.Movement.IsMovingOnGround()
-        || Context.Traversal.Action != EBBBTraversalAction::None || Context.Character.bIsCrouched
-        || Context.AnimationFacts.bFullBodyPlaying || Context.Montages.HasFullBodyRequest())
+        || Context.Traversal.Action != EBBBTraversalAction::None || Context.Character.bIsCrouched)
     {
         return;
     }
@@ -69,18 +69,47 @@ void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterLocomotionUpdateC
     {
         const float Step = FMath::Max(Config.TopSampleSpacing, 1.0f);
         const float Search = FMath::Min(Config.TopSearchDistance, Config.VaultMaxDepth);
-        for (float Distance = Step; Distance <= Search; Distance += Step)
+        const float TopDepth = FVector::DotProduct(Top.ImpactPoint - Front.ImpactPoint, Forward);
+        float LastTopDepth = TopDepth;
+        for (float Distance = TopDepth + Step; Distance <= Search + Step; Distance += Step)
         {
-            const FVector Sample = Top.ImpactPoint + Forward * Distance;
-            FHitResult Back;
-            const bool bTop = World->LineTraceSingleByChannel(Back,
-                Sample + FVector(0, 0, Config.Clearance + 5),
-                Sample - FVector(0, 0, Config.Clearance + 10), ECC_Pawn, Query);
-            if (bTop && Context.Movement.IsWalkable(Back))
+            const auto HasTop = [&](const float Depth)
             {
+                const FVector Sample = Front.ImpactPoint + Forward * Depth;
+                FHitResult Back;
+                return World->LineTraceSingleByChannel(Back,
+                    FVector(Sample.X, Sample.Y, Top.ImpactPoint.Z + Config.Clearance + 5.0f),
+                    FVector(Sample.X, Sample.Y, Top.ImpactPoint.Z - Config.Clearance - 10.0f), ECC_Pawn, Query)
+                    && Context.Movement.IsWalkable(Back);
+            };
+            if (HasTop(Distance))
+            {
+                LastTopDepth = Distance;
                 continue;
             }
-            const FVector Landing = Sample + Forward * (Radius + Config.Clearance);
+
+            // 从实际前表面计量厚度 并细化采样区间中的背面位置
+            float Low = LastTopDepth;
+            float High = Distance;
+            for (int32 SampleIndex = 0; SampleIndex < 8; ++SampleIndex)
+            {
+                const float Middle = (Low + High) * 0.5f;
+                const bool bHasTop = HasTop(Middle);
+                if (bHasTop)
+                {
+                    Low = Middle;
+                }
+                if (!bHasTop)
+                {
+                    High = Middle;
+                }
+            }
+            if (High > Search + 0.1f)
+            {
+                break;
+            }
+
+            const FVector Landing = Front.ImpactPoint + Forward * (High + Radius + Config.Clearance);
             FHitResult Ground;
             if (World->LineTraceSingleByChannel(Ground,
                 FVector(Landing.X, Landing.Y, Top.ImpactPoint.Z + Config.Clearance),
@@ -91,6 +120,27 @@ void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterLocomotionUpdateC
                 Action = EBBBTraversalAction::Vault;
             }
             break;
+        }
+    }
+
+    // 空间为空不代表能够落脚 要求胶囊中心与周边均有可行走支撑
+    const FVector SupportOffsets[] = {
+        FVector::ZeroVector,
+        Forward * Radius * 0.9f,
+        -Forward * Radius * 0.9f,
+        FVector::CrossProduct(Forward, FVector::UpVector) * Radius * 0.9f,
+        FVector::CrossProduct(Forward, FVector::UpVector) * Radius * -0.9f};
+    for (const FVector &Offset : SupportOffsets)
+    {
+        FHitResult Support;
+        const FVector Sample = End + Offset;
+        if (!World->LineTraceSingleByChannel(Support,
+                Sample + FVector(0, 0, Config.Clearance + 1.0f),
+                Sample - FVector(0, 0, Context.Movement.MaxStepHeight), ECC_Pawn, Query)
+            || !Context.Movement.IsWalkable(Support)
+            || FMath::Abs(Support.ImpactPoint.Z - End.Z) > Context.Movement.MaxStepHeight)
+        {
+            return;
         }
     }
     /** 脚底目标对应官方 Character Adapter 的 VisualRootLocation */
@@ -121,13 +171,16 @@ void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterLocomotionUpdateC
     {
         ++State.ActionId;
     }
-    State.ContactTarget = FTransform(Forward.Rotation(), Top.ImpactPoint);
+    // 手部接触实际前缘 顶面向内的采样点仅用于确认支撑 不把胶囊拉进墙面
+    State.ContactTarget = FTransform(Forward.Rotation(), FVector(Front.ImpactPoint.X, Front.ImpactPoint.Y, Top.ImpactPoint.Z));
     State.EndTarget = FTransform(Forward.Rotation(), End);
     State.Obstacle = Obstacle;
     State.StartTime = Context.World.WorldTimeSeconds;
     State.bPlaybackRequested = false;
     State.bPlaybackObserved = false;
     State.bEndRequested = false;
+    State.bAnimationReleased = false;
+    State.PlaybackPosition = 0.0f;
     UE_LOG(LogTemp, Display, TEXT("BBBTraversal start id=%u action=%d height=%.1f end=%s"),
         State.ActionId, int32(Action), Height, *End.ToString());
 }

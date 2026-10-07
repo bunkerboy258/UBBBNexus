@@ -13,6 +13,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/BBBCharacterTraversalSystem.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -175,6 +176,8 @@ private:
 
     FBBBCharacterLocomotionSystem LocomotionSystem;
 
+    /** 无独立 Tick 的攀爬业务系统 */
+    FBBBCharacterTraversalSystem TraversalSystem;
     
     FBBBCharacterItemSystem ItemSystem;
 

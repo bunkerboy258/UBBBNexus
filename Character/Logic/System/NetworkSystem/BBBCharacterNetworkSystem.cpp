@@ -37,7 +37,7 @@ void FBBBCharacterNetworkSystem::Update()
         *NetworkConfig,
         *NetworkComponent,
         RuntimeData->Network.TraversalObservationState,
-        RuntimeData->Locomotion.ReadTraversalState(),
+        RuntimeData->Traversal.ReadTraversalState(),
         RuntimeData->Network.EquipmentObservationState,
         RuntimeData->Equipment.ReadEquipmentSelectionState()};
 

@@ -79,6 +79,21 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        // 保留同帧全部交接结果 输入解析再按动作标识拒绝过期结果
+        if constexpr (std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
+            || std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>)
+        {
+            Slot.Data.ActionIds.Append(Packet.ActionIds);
+            Slot.Data.Actions.Append(Packet.Actions);
+            Slot.Data.Contacts.Append(Packet.Contacts);
+            Slot.Data.Ends.Append(Packet.Ends);
+            Slot.Data.Positions.Append(Packet.Positions);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket>
+            || std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket>)
+        {
+            Slot.Data.ActionIds.Append(Packet.ActionIds);
+        }
         if constexpr (std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
             || std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>)
         {
@@ -120,6 +135,10 @@ namespace BBBCharacterInput
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
         if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>

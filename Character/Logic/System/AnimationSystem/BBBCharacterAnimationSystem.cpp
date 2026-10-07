@@ -53,11 +53,11 @@ void FBBBCharacterAnimationSystem::Update()
         *AnimationConfig};
 
     LayerProcessor.Update(Context);
+    TraversalProcessor.Update(Context);
     MontageProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
     MuzzleProcessor.Update(Context);
     AimImpulseProcessor.Update(Context);
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState);
-    TraversalProcessor.Update(Context);
 }

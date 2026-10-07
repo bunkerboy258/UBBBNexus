@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 
 struct FBBBCharacterInputContext;
 
@@ -21,7 +22,7 @@ struct FBBBCrouchLocalControlPacket final
     /** @param Context	本次输入上下文 @return 是否允许应用 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return true;
+        return !bCrouch || Context.Traversal.Action == EBBBTraversalAction::None;
     }
 
     /** @param Context	本次输入上下文 @return 无 */

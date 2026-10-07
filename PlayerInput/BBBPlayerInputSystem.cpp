@@ -111,7 +111,7 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
     {
         return;
     }
-    if (Character->RuntimeData.Locomotion.ReadTraversalState().Action != EBBBTraversalAction::None)
+    if (Character->RuntimeData.Traversal.ReadTraversalState().Action != EBBBTraversalAction::None)
     {
         return;
     }
@@ -124,7 +124,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     {
         return;
     }
-    if (Character->RuntimeData.Locomotion.ReadTraversalState().Action != EBBBTraversalAction::None)
+    if (Character->RuntimeData.Traversal.ReadTraversalState().Action != EBBBTraversalAction::None)
     {
         return;
     }
@@ -307,7 +307,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Character->SubmitInput(AimState);
 
     // 开火与跳跃以包的存在与否表达按下 未按下时不投递
-    if (bFire && Character->RuntimeData.Locomotion.ReadTraversalState().Action == EBBBTraversalAction::None)
+    if (bFire && Character->RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None)
     {
         if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
         {

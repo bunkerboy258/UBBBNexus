@@ -60,13 +60,33 @@ private:
     friend class FBBBTraversalObservationProcessor;
 
     /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */
-    void ReplicateTraversal(uint32 Id, EBBBTraversalAction Action, const FTransform &Contact, const FTransform &End);
+    void ReplicateTraversal(uint32 Id, EBBBTraversalAction Action, const FTransform &Contact, const FTransform &End, float Position);
     /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitTraversal(uint32 Id, EBBBTraversalAction Action, FTransform Contact, FTransform End);
-    /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastTraversal(uint32 Id, EBBBTraversalAction Action, FTransform Contact, FTransform End);
+    void ServerSubmitTraversal(uint32 Id, EBBBTraversalAction Action, FTransform Contact, FTransform End, float Position);
+    /** 当前攀爬结果到达后构造对应的角色输入 */
+    UFUNCTION()
+    void OnRep_Traversal();
+
+    /** 当前动作序号 即使结束也保留以拒绝旧消息 */
+    UPROPERTY(ReplicatedUsing = OnRep_Traversal)
+    uint32 ReplicatedTraversalId = 0;
+
+    /** 当前有效动作 结束时为无 */
+    UPROPERTY(ReplicatedUsing = OnRep_Traversal)
+    EBBBTraversalAction ReplicatedTraversalAction = EBBBTraversalAction::None;
+
+    /** 与当前动作序号绑定的接触目标 */
+    UPROPERTY(Replicated)
+    FTransform ReplicatedTraversalContact = FTransform::Identity;
+
+    /** 与当前动作序号绑定的落脚目标 */
+    UPROPERTY(Replicated)
+    FTransform ReplicatedTraversalEnd = FTransform::Identity;
+
+    /** 服务器时间基准用于迟到观察者恢复当前进度 */
+    UPROPERTY(Replicated)
+    float ReplicatedTraversalStartTime = 0.0f;
 
     /** @return 所属角色是否具有权威 */
     bool IsOwnerAuthority() const;

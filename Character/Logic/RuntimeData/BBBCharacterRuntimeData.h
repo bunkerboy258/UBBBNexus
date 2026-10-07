@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/BBBCharacterNetworkDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/BBBCharacterParseDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/BBBCharacterItemDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/BBBCharacterTraversalDomainState.h"
 #include "BBBCharacterRuntimeData.generated.h"
 
 /** 角色全部领域状态持有者的唯一聚合黑板 */
@@ -32,6 +33,10 @@ struct FBBBCharacterRuntimeData final
     /** 角色移动状态 */
     UPROPERTY(Transient)
     FBBBCharacterLocomotionDomainState Locomotion;
+
+    /** 独立维护攀爬检测与动作交接 */
+    UPROPERTY(Transient)
+    FBBBCharacterTraversalDomainState Traversal;
 
     /** 角色物品与快捷选择状态 */
     UPROPERTY(Transient)
