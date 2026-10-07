@@ -163,6 +163,13 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     FTransform TryGetMuzzleTransformHandRSpace() const;
 
+    /** @return 本帧是否具有有效枪口 只读取已发布的动画事实 */
+    UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe, DisplayName = "有枪口"))
+    bool HasMuzzle() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceHasMuzzle;
+    }
+
     /** @return 左手目标在右手骨骼空间中的位置 未装备时返回零向量 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     FVector GetLeftHandIKPosition() const;
@@ -250,6 +257,10 @@ private:
     /** 动画系统统一发布的枪口骨骼空间变换 */
     UPROPERTY(Transient)
     FTransform SourceMuzzleTransformHandRSpace = FTransform::Identity;
+
+    /** 动画系统统一发布的枪口获取结果 */
+    UPROPERTY(Transient)
+    bool bSourceHasMuzzle = false;
 
     /** 当前主手武器实际使用的动画实例 */
     UPROPERTY(Transient)

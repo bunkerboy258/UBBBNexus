@@ -40,10 +40,9 @@ bool UBBBMeleeNetworkComponent::ReceiveMessage(
     }
 
     int32 Sequence = 0;
-    uint8 Completed = 0;
     FMemoryReader Reader(Data);
     Reader << Sequence;
-    if (Reader.IsError() || Sequence < 0 || Completed > 1)
+    if (Reader.IsError() || Sequence < 0)
     {
         return false;
     }

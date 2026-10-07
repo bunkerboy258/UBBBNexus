@@ -69,6 +69,13 @@ public:
     /** @return 装备骨骼网格 */
     USkeletalMeshComponent *GetEquipmentSkeletalMesh() const;
 
+    /**
+     * 尝试读取装备提供的枪口世界变换 不具备枪口时正常返回失败
+     * @param OutTransform	成功时写入枪口世界变换 失败时清为单位变换
+     * @return 是否存在有效枪口
+     */
+    virtual bool TryGetMuzzleTransform(FTransform &OutTransform) const;
+
     /** @return 装备动画实例 */
     UBBBEquipmentAnimInstance *GetEquipmentAnimationInstance() const;
 

@@ -103,4 +103,8 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FTransform MuzzleTransformHandRSpace = FTransform::Identity;
 
+    /** 本帧是否成功采集有效枪口 获取失败时禁用瞄准求解 */
+    UPROPERTY(Transient)
+    bool bHasMuzzle = false;
+
 };

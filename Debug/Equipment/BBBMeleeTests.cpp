@@ -16,6 +16,9 @@
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Misc/ScopeExit.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
+#include "UObject/UnrealType.h"
 
 /** 隔离物理世界验证通知窗口与攻击生命周期 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMeleeWindowTest, "BBB.Equipment.Melee.WindowLifecycle",
@@ -61,6 +64,37 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
     Equipment->DispatchBeginPlay();
     TestTrue(TEXT("真实资产通过装备初始化"), Equipment->IsInitialized());
     TestTrue(TEXT("近战配置具有明确类型"), Definition->EquipmentType == EBBBEquipmentType::Melee);
+    FTransform MuzzleResult(FVector(1.0f, 2.0f, 3.0f));
+    TestFalse(TEXT("近战没有枪口是正常获取失败"), Equipment->TryGetMuzzleTransform(MuzzleResult));
+    TestTrue(TEXT("枪口获取失败清除旧变换"), MuzzleResult.Equals(FTransform::Identity));
+
+    UClass *RifleClass = LoadClass<ABBBRifleEquipment>(nullptr,
+        TEXT("/Game/_Project/Characters/BBBC_UA/Equipment/Rifle/Rifle_01/BP_ModernWeapons_Rifle_01.BP_ModernWeapons_Rifle_01_C"));
+    if (!TestNotNull(TEXT("现有步枪蓝图"), RifleClass))
+    {
+        return false;
+    }
+
+    auto *Rifle = World->SpawnActor<ABBBRifleEquipment>(RifleClass);
+    Rifle->SetOwner(Character);
+    Rifle->DispatchBeginPlay();
+    auto *RifleDefinition = DuplicateObject<UBBBRifleDefinition>(Cast<UBBBRifleDefinition>(Rifle->GetDefinition()), GetTransientPackage());
+    auto *DefinitionProperty = FindFProperty<FObjectPropertyBase>(ABBBEquipment::StaticClass(), TEXT("Definition"));
+    if (!TestNotNull(TEXT("步枪独立测试配置"), RifleDefinition)
+        || !TestNotNull(TEXT("装备配置字段"), DefinitionProperty))
+    {
+        return false;
+    }
+
+    DefinitionProperty->SetObjectPropertyValue_InContainer(Rifle, RifleDefinition);
+    TestTrue(TEXT("步枪默认枪口可获取"), Rifle->TryGetMuzzleTransform(MuzzleResult));
+    RifleDefinition->MuzzleSocketName = Rifle->GetEquipmentSkeletalMesh()->GetBoneName(0);
+    TestTrue(TEXT("枪口配置变更后读取新名称"), Rifle->TryGetMuzzleTransform(MuzzleResult));
+    TestTrue(TEXT("动画枪口与开火配置使用相同位置"), MuzzleResult.Equals(
+        Rifle->GetEquipmentSkeletalMesh()->GetSocketTransform(RifleDefinition->MuzzleSocketName, RTS_World)));
+    RifleDefinition->MuzzleSocketName = TEXT("BBBMeleeTestMissingSocket");
+    TestFalse(TEXT("步枪缺少指定枪口正常返回失败"), Rifle->TryGetMuzzleTransform(MuzzleResult));
+    TestTrue(TEXT("步枪枪口失效不沿用旧变换"), MuzzleResult.Equals(FTransform::Identity));
     TestTrue(TEXT("真实网格具有扫掠起点"), Equipment->GetEquipmentSkeletalMesh()->DoesSocketExist(Definition->TraceStartSocket));
     TestTrue(TEXT("真实网格具有扫掠终点"), Equipment->GetEquipmentSkeletalMesh()->DoesSocketExist(Definition->TraceEndSocket));
     UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Test geometry Base=%s Tip=%s Target=%s"),

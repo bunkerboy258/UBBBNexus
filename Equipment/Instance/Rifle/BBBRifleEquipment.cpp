@@ -11,11 +11,33 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
+#include "Components/SkeletalMeshComponent.h"
 
 ABBBRifleEquipment::ABBBRifleEquipment()
 {
     NetworkComponent = CreateDefaultSubobject<UBBBRifleNetworkComponent>(TEXT("RifleNetwork"));
     FBBBEquipmentUpdatePipeline::ConfigureTick(*this);
+}
+
+bool ABBBRifleEquipment::TryGetMuzzleTransform(FTransform &OutTransform) const
+{
+    OutTransform = FTransform::Identity;
+    const UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(GetDefinition());
+    const USkeletalMeshComponent *Mesh = GetEquipmentSkeletalMesh();
+    if (!RifleDefinition || !Mesh || !Mesh->DoesSocketExist(RifleDefinition->MuzzleSocketName))
+    {
+        return false;
+    }
+
+    const FTransform Muzzle = Mesh->GetSocketTransform(RifleDefinition->MuzzleSocketName, RTS_World);
+    if (!Muzzle.IsValid())
+    {
+        return false;
+    }
+
+    OutTransform = Muzzle;
+    return true;
 }
 
 bool ABBBRifleEquipment::InitializeRuntimeData()

@@ -73,6 +73,12 @@ UBBBEquipmentAnimInstance *ABBBEquipment::GetEquipmentAnimationInstance() const
     return EquipmentAnimationInstance;
 }
 
+bool ABBBEquipment::TryGetMuzzleTransform(FTransform &OutTransform) const
+{
+    OutTransform = FTransform::Identity;
+    return false;
+}
+
 bool ABBBEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现装备表现输入"));

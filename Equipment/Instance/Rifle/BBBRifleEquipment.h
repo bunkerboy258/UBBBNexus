@@ -32,6 +32,13 @@ class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
 public:
     ABBBRifleEquipment();
 
+    /**
+     * 按步枪开火配置读取同一个枪口 不存在时正常返回失败
+     * @param OutTransform	成功时写入枪口世界变换 失败时清为单位变换
+     * @return 是否存在有效枪口
+     */
+    virtual bool TryGetMuzzleTransform(FTransform &OutTransform) const override;
+
     /** 步枪唯一聚合黑板 */
     FBBBRifleRuntimeData RuntimeData;
 

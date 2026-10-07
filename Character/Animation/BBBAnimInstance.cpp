@@ -46,6 +46,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceEquipmentType = FactState.EquipmentType;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
     SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
+    bSourceHasMuzzle = FactState.bHasMuzzle;
 }
 
 //------------------------------------------------------------------------------
