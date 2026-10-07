@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerState.h"
+#include "GameFramework/GameStateBase.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "NiagaraDataChannel.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
@@ -148,8 +149,17 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                             {
                                 auto* Contribution = Result->Contributions.FindByPredicate(
                                     [Player](const auto& Value) { return Value.PlayerId == Player->GetPlayerId(); });
-                                const double Previous = Contribution != nullptr ? Contribution->Damage : 0.0;
-                                Result->Include({Player->GetPlayerId(), Previous + Data.Damage});
+                                FBBBMonsterDamageContribution Current = Contribution ? *Contribution : FBBBMonsterDamageContribution{};
+                                Current.PlayerId = Player->GetPlayerId();
+                                Current.Damage += Data.Damage;
+                                if (HitPart == static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg) || HitPart == static_cast<uint8>(EBBBMonsterHitRegion::RightLeg))
+                                {
+                                    Current.LegDamage += Data.Damage;
+                                }
+                                const auto* GameState = World->GetGameState();
+                                Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World->GetTimeSeconds();
+                                Current.LastHitRegion = static_cast<EBBBMonsterHitRegion>(HitPart);
+                                Result->Include(Current);
                             }
                         }
                     }

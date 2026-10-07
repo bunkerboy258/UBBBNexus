@@ -53,6 +53,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 
 /** 隔离世界验证覆盖输入 枪口运动 逻辑碰撞与伤害权限 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMassRuntimeTest, "UBBB.Mass.Runtime",
@@ -82,7 +83,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
-        FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
+        FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
         FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct()
     });
     const FMassEntityHandle Monster = Manager.CreateEntity(MonsterType);
@@ -119,7 +120,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     Consume();
     TestEqual(TEXT("消费后不重复扣血"), Health(), 75.0f);
     TestEqual(TEXT("字典原生深拷贝保留贡献"),
-        Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.FindChecked(1), 25.0);
+        Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.FindChecked(1).Damage, 25.0);
 
     // 测试夹具重新开始独立场景 运行时不允许清空累计贡献
     Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.Reset();
@@ -343,7 +344,7 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
         FMassActorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
         FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
         FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct(),
-        FBBBMonsterHitReactionFragment::StaticStruct()
+        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
     Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Actor, true);

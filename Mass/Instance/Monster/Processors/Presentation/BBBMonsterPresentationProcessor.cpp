@@ -16,6 +16,10 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterVisualizationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -33,6 +37,8 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
 {
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
@@ -55,7 +61,8 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     const bool bRemote = World->GetNetMode() == NM_Client;
     const float Alpha = 1.0f - FMath::Exp(-DeltaTime / 0.1f);
 
-    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha](FMassExecutionContext& ChunkContext)
+    const float Now = World->GetTimeSeconds();
+    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now](FMassExecutionContext& ChunkContext)
     {
         // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
@@ -146,6 +153,14 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
 
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
+            const auto& Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>()[Index];
+            const auto* Definition = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].Definition.Get();
+            if (Definition)
+            {
+                const float Progress = Mobility.bCrawling ? FMath::Clamp((Now - Mobility.CrawlStartedAt) / Definition->CrawlTransitionDuration, 0.0f, 1.0f) : 0.0f;
+                Presentation->ApplyMobilityState(Mobility.bCrawling, Progress,
+                    FMath::Lerp(Definition->CapsuleHalfHeight, Definition->CrawlCapsuleHalfHeight, Progress));
+            }
             // 将状态和速度交给表现组件选择动画
             Presentation->ApplyPresentationState(
                 PresentationState.State,

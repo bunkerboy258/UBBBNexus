@@ -38,7 +38,7 @@ public:
      * @param CumulativeDamage	本机玩家对目标的最新累计伤害
      * @return 是否已交接可靠通道
      */
-    bool ReportLocalDamage(const FGuid& InstanceId, int32 PlayerId, double CumulativeDamage);
+    bool ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution);
 
 private:
     UFUNCTION()

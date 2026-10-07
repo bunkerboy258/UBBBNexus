@@ -15,6 +15,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/HitReaction/BBBMonsterHitReactionProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 
 /** 验证部位碰撞 覆盖输入 死亡屏蔽和方向姿势 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterHitReactionTest, "UBBB.Mass.ZombieHitReaction",
@@ -35,7 +37,8 @@ bool FBBBMonsterHitReactionTest::RunTest(const FString&)
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(), FMassActorFragment::StaticStruct(),
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
-        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct()});
+        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(),
+        FBBBMonsterMobilityFragment::StaticStruct()});
     const auto Entity = Manager.CreateEntity(Type);
     const auto Run = [&Manager, World](UClass* Class)
     {

@@ -4,6 +4,7 @@
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "MassActorSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
@@ -41,6 +42,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddFragment<FTransformFragment>();
     BuildContext.AddFragment<FMassVelocityFragment>();
     BuildContext.AddFragment<FBBBMonsterGroundFragment>();
+    BuildContext.AddFragment<FBBBMonsterMobilityFragment>();
     BuildContext.AddFragment<FMassActorFragment>();
     BuildContext.AddFragment<FBBBMonsterHealthInputFragment>();
     BuildContext.AddFragment<FBBBMonsterNetworkInputFragment>();

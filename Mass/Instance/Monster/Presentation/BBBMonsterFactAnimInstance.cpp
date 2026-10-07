@@ -13,6 +13,8 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     Presentation = Owner ? Owner->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;
     ensureMsgf(Presentation.IsValid(), TEXT("[UBBBM]Fact animation requires a monster presentation component"));
     BehaviorFact = EBBBMonsterBehavior::Idle;
+    CrawlingFact = false;
+    CrawlProgressFact = 0.0f;
     MovementSpeedFact = 0.0f;
     ActionProgressFact = 0.0f;
     ActionIdFact = 0;
@@ -30,6 +32,8 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     }
 
     BehaviorFact = Source->BBBMonsterBehavior;
+    CrawlingFact = Source->bCrawling;
+    CrawlProgressFact = Source->CrawlProgress;
     MovementSpeedFact = Source->MovementSpeed;
     ActionProgressFact = Source->ActionProgress;
     ActionIdFact = Source->LastActionId;

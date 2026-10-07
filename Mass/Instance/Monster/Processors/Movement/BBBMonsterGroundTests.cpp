@@ -1,6 +1,8 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -124,7 +126,8 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
         FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterMovementFragment::StaticStruct(), FBBBMonsterGroundFragment::StaticStruct(),
         FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
-        FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()
+        FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
+        FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
     UBBBMonsterLocomotionProcessor* Processor = NewObject<UBBBMonsterLocomotionProcessor>(World);

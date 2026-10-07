@@ -11,6 +11,9 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "MassActorSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 UBBBMonsterCollisionProcessor::UBBBMonsterCollisionProcessor()
     : EntityQuery(*this)
@@ -30,18 +33,23 @@ void UBBBMonsterCollisionProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     EntityQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
     UBBBMassSubsystem* Mass = Context.GetWorld()->GetSubsystem<UBBBMassSubsystem>();
     Mass->BeginCollisionFrame();
-    EntityQuery.ForEachEntityChunk(Context, [Mass](FMassExecutionContext& Chunk)
+    const float Now = Context.GetWorld()->GetTimeSeconds();
+    EntityQuery.ForEachEntityChunk(Context, [Mass, Now](FMassExecutionContext& Chunk)
     {
         const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
         const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
+        const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (Health[Index].CurrentHealth <= 0.0f)
@@ -56,14 +64,19 @@ void UBBBMonsterCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionC
             const auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
             const auto* Mesh = Actor ? Actor->GetMonsterMesh() : nullptr;
             const float Scale = FMath::Clamp(Avoidance[Index].CollisionRadius / 45.0f, 0.5f, 2.0f);
-            const auto BonePoint = [Mesh, &Transform, Scale](const FName Bone, const FVector& Fallback)
+            const auto* Definition = Network[Index].Definition.Get();
+            const float CrawlProgress = Mobility[Index].bCrawling
+                ? FMath::Clamp((Now - Mobility[Index].CrawlStartedAt) / (Definition ? Definition->CrawlTransitionDuration : 1.0f), 0.0f, 1.0f)
+                : 0.0f;
+            const auto BonePoint = [Mesh, &Transform, Scale, CrawlProgress](const FName Bone, const FVector& Fallback)
             {
                 if (Mesh && Mesh->GetBoneIndex(Bone) != INDEX_NONE)
                 {
                     const FVector Local = Mesh->GetRelativeTransform().TransformPosition(Mesh->GetBoneLocation(Bone, EBoneSpaces::ComponentSpace));
                     return Transform.TransformPosition(Local);
                 }
-                return Transform.TransformPosition(Fallback * Scale);
+                const FVector Prone(Fallback.Z, Fallback.Y, -20.0f + Fallback.X);
+                return Transform.TransformPosition(FMath::Lerp(Fallback, Prone, CrawlProgress) * Scale);
             };
             const auto Sphere = [Mass, &Body, Scale](const FVector& Center, const float Radius, const EBBBMonsterHitRegion Region)
             {

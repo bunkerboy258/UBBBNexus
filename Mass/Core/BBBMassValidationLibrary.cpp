@@ -27,6 +27,13 @@
 #include "GameFramework/Pawn.h"
 #include "NiagaraDataChannelAsset.h"
 #include "NiagaraSystem.h"
+#include "NavigationSystem.h"
+#include "NavMesh/RecastNavMesh.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+#include "MassEntityQuery.h"
+#include "MassExecutionContext.h"
 
 namespace
 {
@@ -184,6 +191,22 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
     }
 
     FMassEntityManager& Manager = Subsystem->GetMutableEntityManager();
+    if (Entities.IsEmpty())
+    {
+        TArray<FMassEntityHandle> CurrentEntities;
+        FMassEntityQuery Query(Manager.AsShared());
+        Query.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
+        Query.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+        FMassExecutionContext Context(Manager, 0.0f, false);
+        Query.ForEachEntityChunk(Context, [&CurrentEntities](FMassExecutionContext& Chunk)
+        {
+            CurrentEntities.Append(Chunk.GetEntities());
+        });
+        if (!CurrentEntities.IsEmpty())
+        {
+            return InspectPopulation(WorldContext, CurrentEntities);
+        }
+    }
     int32 Valid = 0;
     int32 Moving = 0;
     int32 Actors = 0;
@@ -224,6 +247,56 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetBoolField(TEXT("hasPath"), Navigation->bHasPath);
             Sample->SetBoolField(TEXT("reached"), Navigation->bReachedDestination);
             Sample->SetNumberField(TEXT("pathPoints"), Navigation->PathPoints.Num());
+            Sample->SetNumberField(TEXT("pathPointIndex"), Navigation->PathPointIndex);
+            TArray<TSharedPtr<FJsonValue>> PathCoordinates;
+            for (const FVector& Point : Navigation->PathPoints)
+            {
+                PathCoordinates.Add(MakeShared<FJsonValueString>(Point.ToString()));
+            }
+            Sample->SetArrayField(TEXT("pathCoordinates"), PathCoordinates);
+            const auto* Mobility = Manager.GetFragmentDataPtr<FBBBMonsterMobilityFragment>(Entity);
+            const auto* Health = Manager.GetFragmentDataPtr<FBBBMonsterHealthFragment>(Entity);
+            Sample->SetBoolField(TEXT("crawling"), Mobility && Mobility->bCrawling);
+            Sample->SetNumberField(TEXT("crawlStartedAt"), Mobility ? Mobility->CrawlStartedAt : 0.0f);
+            Sample->SetNumberField(TEXT("slowMinimumRatio"), Mobility ? Mobility->SlowMinimumRatio : 1.0f);
+            Sample->SetNumberField(TEXT("slowEndsAt"), Mobility ? Mobility->SlowEndsAt : 0.0f);
+            Sample->SetNumberField(TEXT("health"), Health ? Health->CurrentHealth : 0.0f);
+            Sample->SetStringField(TEXT("actorPath"), ActorFragment && ActorFragment->Get() ? ActorFragment->Get()->GetPathName() : TEXT(""));
+            if (Transform && Navigation->PathPoints.IsValidIndex(Navigation->PathPointIndex))
+            {
+                const FVector Position = Transform->GetTransform().GetLocation();
+                const FVector Waypoint = Navigation->PathPoints[Navigation->PathPointIndex];
+                const FVector Foot = Position - FVector(0.0f, 0.0f, Ground && Ground->CapsuleHalfHeight > 0.0f ? Ground->CapsuleHalfHeight : Movement->CapsuleHalfHeight);
+                const FVector End = Foot + (Waypoint - Position).GetSafeNormal2D() * 10.0f;
+                FVector Hit = End;
+                const bool bBlocked = UNavigationSystemV1::NavigationRaycast(World, Foot, End, Hit);
+                Sample->SetNumberField(TEXT("waypointDistanceCm"), FVector::Dist2D(Position, Waypoint));
+                Sample->SetStringField(TEXT("waypoint"), Waypoint.ToString());
+                Sample->SetStringField(TEXT("navigationFoot"), Foot.ToString());
+                Sample->SetBoolField(TEXT("navigationRayBlocked"), bBlocked);
+                Sample->SetNumberField(TEXT("navigationRayTravelCm"), FVector::Dist2D(Foot, Hit));
+                auto* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+                FNavLocation Projected;
+                const bool bProjected = NavSystem && NavSystem->ProjectPointToNavigation(Foot, Projected, FVector(100.0f, 100.0f, 250.0f));
+                Sample->SetBoolField(TEXT("navigationFootProjected"), bProjected);
+                if (bProjected)
+                {
+                    FVector ProjectedHit = Projected.Location + (End - Foot);
+                    const bool bProjectedBlocked = UNavigationSystemV1::NavigationRaycast(World, Projected.Location, ProjectedHit, ProjectedHit);
+                    Sample->SetStringField(TEXT("projectedFoot"), Projected.Location.ToString());
+                    Sample->SetBoolField(TEXT("projectedRayBlocked"), bProjectedBlocked);
+                    Sample->SetNumberField(TEXT("projectedRayTravelCm"), FVector::Dist2D(Projected.Location, ProjectedHit));
+                    const auto* NavData = Cast<ARecastNavMesh>(NavSystem->GetDefaultNavDataInstance());
+                    if (NavData)
+                    {
+                        const FVector NavEnd = Projected.Location + (End - Foot);
+                        FVector NodeHit;
+                        const bool bNodeBlocked = ARecastNavMesh::NavMeshRaycast(NavData, Projected.NodeRef, Projected.Location, NavEnd, NodeHit, NavData->GetDefaultQueryFilter());
+                        Sample->SetBoolField(TEXT("explicitNodeRayBlocked"), bNodeBlocked);
+                        Sample->SetNumberField(TEXT("explicitNodeRayTravelCm"), FVector::Dist2D(Projected.Location, NodeHit));
+                    }
+                }
+            }
             Locomotion.Add(MakeShared<FJsonValueObject>(Sample));
         }
         if (Transform)

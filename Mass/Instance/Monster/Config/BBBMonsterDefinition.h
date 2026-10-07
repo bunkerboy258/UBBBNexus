@@ -4,6 +4,7 @@
 #include "BBBMonsterDefinition.generated.h"
 
 class UMassEntityConfigAsset;
+class UBBBMonsterBloodPresentationDefinition;
 
 /** 小怪模板与静态玩法参数 */
 UCLASS(BlueprintType)
@@ -51,6 +52,54 @@ public:
     /** 剩余接近距离进入冲刺的阈值 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "冲刺距离阈值"))
     float SprintDistance = 900.0f;
+
+    /** 头部与躯干有效命中的最低速度比例 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "躯干受击速度比例"))
+    float BodyHitSpeedRatio = 0.7f;
+
+    /** 头部与躯干减速的平滑恢复秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "躯干减速恢复时间"))
+    float BodyHitSlowDuration = 0.35f;
+
+    /** 手臂有效命中的最低速度比例 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "手臂受击速度比例"))
+    float ArmHitSpeedRatio = 0.85f;
+
+    /** 手臂减速的平滑恢复秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "手臂减速恢复时间"))
+    float ArmHitSlowDuration = 0.25f;
+
+    /** 腿部有效命中的最低速度比例 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "腿部受击速度比例"))
+    float LegHitSpeedRatio = 0.5f;
+
+    /** 腿部减速的平滑恢复秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "腿部减速恢复时间"))
+    float LegHitSlowDuration = 0.5f;
+
+    /** 累计腿伤达到最大生命的此比例后持续爬行 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "0.01", ClampMax = "1.0", DisplayName = "爬行腿伤阈值比例"))
+    float CrawlLegDamageFraction = 0.3f;
+
+    /** 爬行的水平移动速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "爬行速度"))
+    float CrawlSpeed = 75.0f;
+
+    /** 爬行逻辑胶囊半高 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "1.0", Units = "cm", DisplayName = "爬行胶囊半高"))
+    float CrawlCapsuleHalfHeight = 45.0f;
+
+    /** 腿部失去支撑到完成爬行姿势的秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "0.01", Units = "s", DisplayName = "转入爬行时间"))
+    float CrawlTransitionDuration = 1.0f;
+
+    /** 爬行时允许跨越的台阶高度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "0.0", Units = "cm", DisplayName = "爬行台阶高度"))
+    float CrawlMaxStepHeight = 10.0f;
+
+    /** 血效由实体配置持有 不依赖表现演员是否存在 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (DisplayName = "血效配置"))
+    TObjectPtr<UBBBMonsterBloodPresentationDefinition> BloodPresentation;
 
     /** 随机待机时长的下界 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最短待机时间"))

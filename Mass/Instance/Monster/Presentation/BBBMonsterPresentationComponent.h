@@ -6,9 +6,6 @@
 
 #include "BBBMonsterPresentationComponent.generated.h"
 
-class UAnimSequenceBase;
-class UBBBMonsterAnimInstance;
-class UBBBMonsterBloodPresentationDefinition;
 
 /** 向小怪动画蓝图提供只读 Mass 表现状态 */
 UCLASS(ClassGroup = "Monster", BlueprintType, meta = (BlueprintSpawnableComponent))
@@ -16,7 +13,6 @@ class ABBB_EVAC_API UBBBMonsterPresentationComponent final : public UActorCompon
 {
     GENERATED_BODY()
 
-    friend class UBBBMonsterAnimInstance;
     friend class UBBBMonsterFactAnimInstance;
 
 public:
@@ -64,80 +60,24 @@ public:
      */
     void ApplyHitReaction(const FBBBMonsterHitReactionFragment& Hit);
 
-    /** @return 该表现对象使用的静态血效配置 */
-    const UBBBMonsterBloodPresentationDefinition* GetBloodPresentation() const;
+    /**
+     * 复制 Mass 姿态与几何事实 不参与爬行裁决
+     * @param bInCrawling	本代实体是否持续爬行
+     * @param InProgress	转入爬行归一化进度
+     * @param InHalfHeight	当前逻辑胶囊半高
+     * @return 无
+     */
+    void ApplyMobilityState(bool bInCrawling, float InProgress, float InHalfHeight);
 
 private:
-    /** 本对象使用的共享血粒子和地面血迹配置 */
-    UPROPERTY(EditDefaultsOnly, Category = "小怪|受击", meta = (DisplayName = "血效配置"))
-    TObjectPtr<UBBBMonsterBloodPresentationDefinition> BloodPresentation;
-
     /** Mass 最近命中只读快照 */
     FBBBMonsterHitReactionFragment HitReaction;
-    /**
-     * 按稳定的表现种子和动作编号选择本次动作资产
-     * @param InState		Mass 状态
-     * @param InActionId		Mass 动作编号
-     * @param InSeed		仅用于表现的稳定种子
-     * @return 本次动画 无效配置返回空并报警
-     */
-    UAnimSequenceBase* SelectAnimationForAction(EBBBMonsterBehavior InState, uint32 InActionId, uint32 InSeed) const;
 
-    /** 根据逻辑状态选择表现动画 */
-    UAnimSequenceBase* GetAnimationForState(EBBBMonsterBehavior InState) const;
+    /** Mass 持续爬行结果的只读快照 */
+    bool bCrawling = false;
 
-    /** 待机状态循环动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "待机动画"))
-    TObjectPtr<UAnimSequenceBase> IdleAnimation;
-
-    /** 侦察状态循环动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "侦察动画"))
-    TObjectPtr<UAnimSequenceBase> ScoutAnimation;
-
-    /** 追击状态循环动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "追逐动画"))
-    TObjectPtr<UAnimSequenceBase> ChaseAnimation;
-
-    /** 攻击状态动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "攻击动画"))
-    TObjectPtr<UAnimSequenceBase> AttackAnimation;
-
-    /** 受伤状态动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "受击动画"))
-    TObjectPtr<UAnimSequenceBase> HurtAnimation;
-
-    /** 死亡状态动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "死亡动画"))
-    TObjectPtr<UAnimSequenceBase> DeadAnimation;
-
-    /** 额外待机动画 与主要待机动画共同参与选择 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "待机动画变体"))
-    TArray<TObjectPtr<UAnimSequenceBase>> IdleAnimationVariants;
-
-    /** 额外追击动画 与主要追击动画共同参与选择 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "追逐动画变体"))
-    TArray<TObjectPtr<UAnimSequenceBase>> ChaseAnimationVariants;
-
-    /** 已裁剪为单次挥击的额外攻击动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "攻击动画变体"))
-    TArray<TObjectPtr<UAnimSequenceBase>> AttackAnimationVariants;
-
-    /** 已裁剪为独立反应的额外受伤动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "受击动画变体"))
-    TArray<TObjectPtr<UAnimSequenceBase>> HurtAnimationVariants;
-
-    /** 具有完整死亡过程的额外死亡动画 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (DisplayName = "死亡动画变体"))
-    TArray<TObjectPtr<UAnimSequenceBase>> DeadAnimationVariants;
-
-    /** 动作间双通道姿势过渡时长 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (ClampMin = "0.0", ClampMax = "0.5", Units = "s", DisplayName = "动画混合时间"))
-    float AnimationBlendTime = 0.18f;
-
-    /** 移动循环动画的标准速度 */
-    UPROPERTY(EditAnywhere, Category = "小怪|动画", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "动画参考速度"))
-    float AnimationReferenceSpeed = 100.0f;
-
+    /** Mass 爬行姿态过渡的只读进度 */
+    float CrawlProgress = 0.0f;
     /** Mass 提供的本次非循环动作归一化时间 */
     float ActionProgress = 0.0f;
 

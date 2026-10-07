@@ -13,11 +13,11 @@ UBBBMassNetworkComponent::UBBBMassNetworkComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void UBBBMassNetworkComponent::ServerReportDamage_Implementation(FGuid InstanceId, double CumulativeDamage)
+void UBBBMassNetworkComponent::ServerReportDamage_Implementation(FGuid InstanceId, FBBBMonsterDamageContribution Contribution)
 {
     const APlayerController* Controller = Cast<APlayerController>(GetOwner());
     const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
-    const FBBBMonsterDamageContribution Contribution{Player != nullptr ? Player->GetPlayerId() : INDEX_NONE, CumulativeDamage};
+    Contribution.PlayerId = Player != nullptr ? Player->GetPlayerId() : INDEX_NONE;
     if (!InstanceId.IsValid() || !Contribution.IsValid())
     {
         return;

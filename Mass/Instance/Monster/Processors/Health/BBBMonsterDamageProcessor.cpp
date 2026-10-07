@@ -10,6 +10,9 @@
 #include "MassEntitySubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "Engine/World.h"
+#include "GameFramework/GameStateBase.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 
 bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
     TArray<FBBBMonsterDamageContribution>& Result)
@@ -35,7 +38,7 @@ bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
     FBBBMonsterDamageLocalControlPacket Snapshot;
     for (const auto& Value : Damage->Contributions)
     {
-        Snapshot.Include({Value.Key, Value.Value});
+        Snapshot.Include(Value.Value);
     }
     if (Input->Damage.bActive && Input->Damage.Packet.IsValid())
     {
@@ -79,25 +82,85 @@ void UBBBMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
 {
     EntityQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadWrite);
 }
 
 void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
-    EntityQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& Chunk)
+    const UWorld* World = Context.GetWorld();
+    const float Now = World->GetTimeSeconds();
+    const AGameStateBase* GameState = World->GetGameState();
+    const double ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : Now;
+    EntityQuery.ForEachEntityChunk(Context, [Now, ServerTime](FMassExecutionContext& Chunk)
     {
         auto Damage = Chunk.GetMutableFragmentView<FBBBMonsterDamageFragment>();
         auto Health = Chunk.GetMutableFragmentView<FBBBMonsterHealthFragment>();
+        auto Mobility = Chunk.GetMutableFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             const float Previous = Health[Index].CurrentHealth;
             double TotalDamage = 0.0;
+            double LegDamage = 0.0;
+            const FBBBMonsterDamageContribution* Latest = nullptr;
             for (const auto& Value : Damage[Index].Contributions)
             {
-                TotalDamage += Value.Value;
+                TotalDamage += Value.Value.Damage;
+                LegDamage += Value.Value.LegDamage;
+                if (!Latest || Value.Value.LastHitTime > Latest->LastHitTime)
+                {
+                    Latest = &Value.Value;
+                }
             }
             Health[Index].CurrentHealth = static_cast<float>(FMath::Max(0.0,
                 static_cast<double>(Health[Index].MaxHealth) - TotalDamage));
             Damage[Index].bReceivedDamage = Health[Index].CurrentHealth < Previous;
+            auto& Motion = Mobility[Index];
+            const auto* Settings = Network[Index].Definition.Get();
+            if (Health[Index].CurrentHealth <= 0.0f)
+            {
+                Motion.SlowMinimumRatio = 1.0f;
+                Motion.SlowEndsAt = Now;
+                continue;
+            }
+            if (!Settings)
+            {
+                continue;
+            }
+            if (!Motion.bCrawling && LegDamage + KINDA_SMALL_NUMBER >= static_cast<double>(Health[Index].MaxHealth) * Settings->CrawlLegDamageFraction)
+            {
+                Motion.bCrawling = true;
+                Motion.CrawlStartedAt = Now;
+                UE_LOG(LogTemp, Log, TEXT("[BBBMonsterCrawl] Entity=%d LegDamage=%.2f Threshold=%.2f"),
+                    Chunk.GetEntity(Index).Index, LegDamage, Health[Index].MaxHealth * Settings->CrawlLegDamageFraction);
+            }
+            if (!Damage[Index].bReceivedDamage || !Latest)
+            {
+                continue;
+            }
+            float Ratio = Settings->BodyHitSpeedRatio;
+            float Duration = Settings->BodyHitSlowDuration;
+            if (Latest->LastHitRegion == EBBBMonsterHitRegion::LeftArm || Latest->LastHitRegion == EBBBMonsterHitRegion::RightArm)
+            {
+                Ratio = Settings->ArmHitSpeedRatio;
+                Duration = Settings->ArmHitSlowDuration;
+            }
+            if (Latest->LastHitRegion == EBBBMonsterHitRegion::LeftLeg || Latest->LastHitRegion == EBBBMonsterHitRegion::RightLeg)
+            {
+                Ratio = Settings->LegHitSpeedRatio;
+                Duration = Settings->LegHitSlowDuration;
+            }
+            const double Age = ServerTime - Latest->LastHitTime;
+            if (Age < -0.1 || Age >= Duration)
+            {
+                continue;
+            }
+            const float CurrentRatio = FMath::Lerp(Motion.SlowMinimumRatio, 1.0f,
+                FMath::Clamp((Now - Motion.SlowStartedAt) / FMath::Max(Motion.SlowEndsAt - Motion.SlowStartedAt, SMALL_NUMBER), 0.0f, 1.0f));
+            Motion.SlowMinimumRatio = FMath::Min(CurrentRatio, Ratio);
+            Motion.SlowStartedAt = Now;
+            Motion.SlowEndsAt = FMath::Max(Motion.SlowEndsAt, Now + Duration - static_cast<float>(FMath::Max(Age, 0.0)));
         }
     });
 }

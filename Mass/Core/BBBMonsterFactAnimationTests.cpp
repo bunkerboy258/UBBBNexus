@@ -83,6 +83,10 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
 
         TestTrue(TEXT("事实属性禁止蓝图写入"), Speed->HasAllPropertyFlags(CPF_BlueprintReadOnly) && Progress->HasAllPropertyFlags(CPF_BlueprintReadOnly));
         TestTrue(TEXT("动画蓝图必须拥有正式状态机"), Animation->GetStateMachineIndex(TEXT("FactDrivenActions")) != INDEX_NONE);
+        TestTrue(TEXT("动画蓝图必须拥有持续爬行姿势分支"), Animation->GetStateMachineIndex(TEXT("FactDrivenCrawl")) != INDEX_NONE);
+        const FBoolProperty* Crawl = FindFProperty<FBoolProperty>(Animation->GetClass(), TEXT("CrawlingFact"));
+        const FFloatProperty* CrawlProgress = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("CrawlProgressFact"));
+        TestTrue(TEXT("爬行事实只读且可反射"), Crawl && CrawlProgress && Crawl->HasAllPropertyFlags(CPF_BlueprintReadOnly) && CrawlProgress->HasAllPropertyFlags(CPF_BlueprintReadOnly));
         TestNull(TEXT("事实基类没有旧资产查询"), Animation->GetClass()->FindFunctionByName(TEXT("GetActiveAnimation")));
         const FIntProperty* const Epoch = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("ActionEpoch"));
         const FIntProperty* const PoseIndex = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("AttackPoseIndex"));
@@ -93,6 +97,13 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         }
 
         UBBBMonsterPresentationComponent* const Presentation = Actor->GetMonsterPresentation();
+        Presentation->ApplyMobilityState(true, 1.0f, 45.0f);
+        Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 75.0f, 0.0f, 0, 0.0f);
+        Animation->NativeUpdateAnimation(0.016f);
+        TestTrue(TEXT("持续爬行快照准确复制"), Crawl->GetPropertyValue_InContainer(Animation));
+        TestEqual(TEXT("倒地进度只读复制"), CrawlProgress->GetPropertyValue_InContainer(Animation), 1.0f);
+        TestEqual(TEXT("表现脚底偏移随胶囊降低"), Actor->GetMonsterMesh()->GetRelativeLocation().Z, -45.0);
+        Presentation->ApplyMobilityState(false, 0.0f, 90.0f);
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 180.0f, 1.0f, 7, 0.0f);
         Animation->NativeUpdateAnimation(0.01f);
         TestEqual(TEXT("实际速度原样复制"), Speed->GetPropertyValue_InContainer(Animation), 180.0f);

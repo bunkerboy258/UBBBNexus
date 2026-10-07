@@ -31,7 +31,7 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
     {
         return;
     }
-    if (!ensureMsgf(Settings.ImpactChannel && Settings.ImpactChannel->Get() && !Settings.GroundMaterials.IsEmpty(), TEXT("[BBBMonsterBlood]血效配置不完整")))
+    if (!ensureMsgf(Settings.ImpactChannel && Settings.ImpactChannel->Get(), TEXT("[BBBMonsterBlood]血效配置不完整")))
     {
         return;
     }
@@ -65,21 +65,35 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
             {
                 const auto& Impact = Impacts[Batch.Value[Index]];
                 Writer->WritePosition(TEXT("Position"), Index, Impact.Position);
-                Writer->WriteVector(TEXT("Normal"), Index, Impact.Normal);
-                Writer->WriteVector(TEXT("Direction"), Index, Impact.Direction);
+                const FVector Outward = Impact.Normal.GetSafeNormal();
+                const FVector Tangent = FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal();
+                const FVector Spray = (Outward * 0.85f + Tangent * 0.3f + FVector::UpVector * 0.15f).GetSafeNormal();
+                Writer->WriteVector(TEXT("Normal"), Index, Outward);
+                Writer->WriteVector(TEXT("Direction"), Index, Spray);
                 Writer->WriteInt(TEXT("Surface"), Index, 2);
             }
         }
     }
+    if (Settings.GroundMaterials.IsEmpty())
+    {
+        return;
+    }
     const double Now = World->GetTimeSeconds();
     for (const FBBBMonsterBloodImpact& Impact : Impacts)
     {
-        const FVector Spray = Impact.Direction * 35.0f;
-        const FVector Start = Impact.Position + Spray + FVector(0, 0, 12);
+        const FVector Outward = Impact.Normal.GetSafeNormal();
+        const FVector Spray = (Outward * 0.85f + FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal() * 0.3f
+            + FVector::UpVector * 0.15f).GetSafeNormal();
+        const FVector Start = Impact.Position + Outward * 4.0f;
         FHitResult Ground;
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMonsterBloodGround), false);
-        if (!World->LineTraceSingleByChannel(Ground, Start, Start - FVector(0, 0, 260), ECC_WorldStatic, Params)
-            || Ground.ImpactNormal.Z < 0.55f)
+        bool bHitSurface = World->LineTraceSingleByChannel(Ground, Start, Start + Spray * 180.0f, ECC_WorldStatic, Params);
+        if (!bHitSurface)
+        {
+            const FVector DropletEnd = Start + Spray * 90.0f - FVector::UpVector * 260.0f;
+            bHitSurface = World->LineTraceSingleByChannel(Ground, Start, DropletEnd, ECC_WorldStatic, Params);
+        }
+        if (!bHitSurface || Ground.bStartPenetrating || Ground.ImpactNormal.Z < -0.1f)
         {
             continue;
         }
@@ -89,7 +103,8 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         for (int32 Index = 0; Index < Decals.Num(); ++Index)
         {
             if (Now - DecalTimes[Index] < Settings.DecalLifetime
-                && FVector::DistSquared(Decals[Index]->GetComponentLocation(), Ground.ImpactPoint) < FMath::Square(Settings.DecalSpacing))
+                && FVector::DistSquared(Decals[Index]->GetComponentLocation(), Ground.ImpactPoint) < FMath::Square(Settings.DecalSpacing)
+                && FVector::DotProduct(-Decals[Index]->GetForwardVector(), Ground.ImpactNormal) > 0.8f)
             {
                 bNearby = true;
             }

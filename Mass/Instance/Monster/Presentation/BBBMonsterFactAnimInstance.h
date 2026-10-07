@@ -27,6 +27,14 @@ public:
     //~ End UAnimInstance Interface
 
 private:
+    /** Mass 持续爬行事实 不在动画侧重新判定腿伤 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "爬行事实"))
+    bool CrawlingFact = false;
+
+    /** Mass 转入爬行的归一化姿态进度 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "转爬行进度事实"))
+    float CrawlProgressFact = 0.0f;
+
     /** 最近命中部位编号 与部位枚举值一致 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "命中部位事实"))
     int32 HitRegionFact = 0;

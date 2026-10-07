@@ -25,6 +25,8 @@
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 
 /** 验证随机走停循环 警觉与受击死亡优先级 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterPatrolTest, "UBBB.Mass.ZombiePatrol",
@@ -62,7 +64,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
         FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
         FMassVelocityFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
-        FBBBMonsterGroundFragment::StaticStruct()
+        FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
     Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded = true;

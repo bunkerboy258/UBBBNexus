@@ -96,10 +96,9 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
         {
             if (!bHost)
             {
-                const double* LocalDamage = Damage[Index].Contributions.Find(LocalPlayerId);
+                const auto* LocalDamage = Damage[Index].Contributions.Find(LocalPlayerId);
                 Network[Index].bDamageSubmitted = Network[Index].InstanceId.IsValid()
-                    && Transport->ReportLocalDamage(Network[Index].InstanceId, LocalPlayerId,
-                        LocalDamage != nullptr ? *LocalDamage : 0.0);
+                    && (LocalDamage == nullptr || Transport->ReportLocalDamage(Network[Index].InstanceId, *LocalDamage));
                 continue;
             }
 
@@ -118,7 +117,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             Item.StateEnteredTime = Behavior[Index].StateEnteredTime;
             for (const auto& Value : Damage[Index].Contributions)
             {
-                Item.Contributions.Add({Value.Key, Value.Value});
+                Item.Contributions.Add(Value.Value);
             }
             Item.Contributions.Sort([](const auto& A, const auto& B)
             {

@@ -12,6 +12,17 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(Acceleration) && Acceleration > 0.0f
         && FMath::IsFinite(Deceleration) && Deceleration > 0.0f
         && FMath::IsFinite(SprintDistance) && SprintDistance > 0.0f
+        && FMath::IsFinite(BodyHitSpeedRatio) && BodyHitSpeedRatio >= 0.1f && BodyHitSpeedRatio <= 1.0f
+        && FMath::IsFinite(ArmHitSpeedRatio) && ArmHitSpeedRatio >= 0.1f && ArmHitSpeedRatio <= 1.0f
+        && FMath::IsFinite(LegHitSpeedRatio) && LegHitSpeedRatio >= 0.1f && LegHitSpeedRatio <= 1.0f
+        && FMath::IsFinite(BodyHitSlowDuration) && BodyHitSlowDuration > 0.0f
+        && FMath::IsFinite(ArmHitSlowDuration) && ArmHitSlowDuration > 0.0f
+        && FMath::IsFinite(LegHitSlowDuration) && LegHitSlowDuration > 0.0f
+        && FMath::IsFinite(CrawlLegDamageFraction) && CrawlLegDamageFraction > 0.0f && CrawlLegDamageFraction <= 1.0f
+        && FMath::IsFinite(CrawlSpeed) && CrawlSpeed > 0.0f && CrawlSpeed <= WalkSpeed
+        && FMath::IsFinite(CrawlCapsuleHalfHeight) && CrawlCapsuleHalfHeight >= CollisionRadius && CrawlCapsuleHalfHeight <= CapsuleHalfHeight
+        && FMath::IsFinite(CrawlTransitionDuration) && CrawlTransitionDuration > 0.0f
+        && FMath::IsFinite(CrawlMaxStepHeight) && CrawlMaxStepHeight >= 0.0f && CrawlMaxStepHeight < CrawlCapsuleHalfHeight
         && FMath::IsFinite(IdleDurationMin) && IdleDurationMin > 0.0f
         && FMath::IsFinite(IdleDurationMax) && IdleDurationMax >= IdleDurationMin
         && FMath::IsFinite(PatrolDurationMin) && PatrolDurationMin > 0.0f

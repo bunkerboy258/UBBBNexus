@@ -9,9 +9,13 @@
 #include "MassMovementFragments.h"
 #include "MassExecutionContext.h"
 #include "NavigationSystem.h"
+#include "NavMesh/RecastNavMesh.h"
 #include "Engine/World.h"
 #include "CollisionShape.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
     : MonsterQuery(*this)
@@ -191,6 +195,8 @@ void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
@@ -214,6 +220,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Navigation = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             FTransform& Transform = Transforms[Index].GetMutableTransform();
@@ -227,8 +235,25 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 continue;
             }
             FVector Location = Transform.GetLocation();
+            const auto& Injury = Mobility[Index];
+            const auto* Settings = Network[Index].Definition.Get();
+            const float Now = World->GetTimeSeconds();
+            FBBBMonsterMovementFragment Geometry = Movement;
+            bool bChangingPosture = false;
+            if (Injury.bCrawling && Settings)
+            {
+                const float Progress = FMath::Clamp((Now - Injury.CrawlStartedAt) / Settings->CrawlTransitionDuration, 0.0f, 1.0f);
+                Geometry.CapsuleHalfHeight = FMath::Lerp(Movement.CapsuleHalfHeight, Settings->CrawlCapsuleHalfHeight, Progress);
+                Geometry.MaxStepHeight = Settings->CrawlMaxStepHeight;
+                bChangingPosture = Progress < 1.0f;
+            }
+            if (Grounds[Index].CapsuleHalfHeight > 0.0f && Grounds[Index].bGrounded)
+            {
+                Location.Z += Geometry.CapsuleHalfHeight - Grounds[Index].CapsuleHalfHeight;
+            }
+            Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
-            const bool bMayMove = (bPatrol || bChase) && Path.bHasPath &&
+            const bool bMayMove = !bChangingPosture && (bPatrol || bChase) && Path.bHasPath &&
                 Path.PathPoints.IsValidIndex(Path.PathPointIndex) && Path.TailDistances.IsValidIndex(Path.PathPointIndex);
             if (!bMayMove)
             {
@@ -240,8 +265,11 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 const float PointDistance = ToPoint.Size2D();
                 const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - (bPatrol ? 15.0f : 0.0f), 0.0f);
                 Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
-                const float TargetSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :
+                const float UprightSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :
                     Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
+                const float SlowProgress = FMath::Clamp((Now - Injury.SlowStartedAt) / FMath::Max(Injury.SlowEndsAt - Injury.SlowStartedAt, SMALL_NUMBER), 0.0f, 1.0f);
+                const float SpeedRatio = FMath::Lerp(Injury.SlowMinimumRatio, 1.0f, SlowProgress);
+                const float TargetSpeed = (Injury.bCrawling && Settings ? Settings->CrawlSpeed : UprightSpeed) * SpeedRatio;
                 const float Speed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
                 const float Distance = FMath::Min3(Speed * DeltaSeconds, PointDistance, Remaining);
                 const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
@@ -250,12 +278,26 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 FVector Destination = Location + Direction * Distance;
 
                 // 同一求解内约束导航边界 防止避让把实体推到墙外
-                FVector HitLocation = Destination;
-                const FVector FootOffset(0.0f, 0.0f, Movement.CapsuleHalfHeight);
-                if (UNavigationSystemV1::NavigationRaycast(World, Location - FootOffset, Destination - FootOffset, HitLocation))
+                const FVector FootOffset(0.0f, 0.0f, Geometry.CapsuleHalfHeight);
+                auto* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+                const auto* NavMesh = NavigationSystem ? Cast<ARecastNavMesh>(NavigationSystem->GetDefaultNavDataInstance()) : nullptr;
+                FNavLocation ProjectedFoot;
+                if (!NavMesh || !NavigationSystem->ProjectPointToNavigation(Location - FootOffset, ProjectedFoot,
+                    FVector(Geometry.CapsuleRadius, Geometry.CapsuleRadius, 250.0f), NavMesh))
                 {
-                    Destination.X = HitLocation.X;
-                    Destination.Y = HitLocation.Y;
+                    Destination = Location;
+                }
+                else
+                {
+                    // 使用最近导航多边形作为唯一射线起点 允许边界外的浅层偏移沿物理可行方向进入导航区
+                    const FVector NavEnd = ProjectedFoot.Location + Direction * Distance;
+                    FVector HitLocation;
+                    if (ARecastNavMesh::NavMeshRaycast(NavMesh, ProjectedFoot.NodeRef, ProjectedFoot.Location,
+                        NavEnd, HitLocation, NavMesh->GetDefaultQueryFilter()))
+                    {
+                        const float Travel = FMath::Clamp(FVector::DotProduct(HitLocation - ProjectedFoot.Location, Direction), 0.0, double(Distance));
+                        Destination = Location + Direction * Travel;
+                    }
                 }
                 if (!Destination.ContainsNaN() && FVector::Dist2D(Location, Destination) <= Distance + 1.0f)
                 {
@@ -268,7 +310,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
 
             const bool bPreviouslyGrounded = Grounds[Index].bGrounded;
-            SolveGroundMotion(*World, Movement, Grounds[Index], Location, Velocity, HorizontalDelta, DeltaSeconds);
+            SolveGroundMotion(*World, Geometry, Grounds[Index], Location, Velocity, HorizontalDelta, DeltaSeconds);
             if (!ensureMsgf(!Location.ContainsNaN() && !Velocity.ContainsNaN(), TEXT("[UBBBM]Ground solver produced invalid motion")))
             {
                 continue;

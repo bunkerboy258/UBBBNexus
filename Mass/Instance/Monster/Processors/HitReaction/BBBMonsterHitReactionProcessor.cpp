@@ -8,6 +8,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 #include "MassActorSubsystem.h"
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 UBBBMonsterHitReactionProcessor::UBBBMonsterHitReactionProcessor()
     : EntityQuery(*this)
@@ -24,7 +26,7 @@ UBBBMonsterHitReactionProcessor::UBBBMonsterHitReactionProcessor()
 void UBBBMonsterHitReactionProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>&)
 {
     EntityQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadWrite);
-    EntityQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterHitReactionProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -33,7 +35,7 @@ void UBBBMonsterHitReactionProcessor::Execute(FMassEntityManager&, FMassExecutio
     EntityQuery.ForEachEntityChunk(Context, [&Batches](FMassExecutionContext& Chunk)
     {
         auto Hits = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
-        const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
+        const auto Definitions = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Hit = Hits[Index];
@@ -43,9 +45,9 @@ void UBBBMonsterHitReactionProcessor::Execute(FMassEntityManager&, FMassExecutio
                 continue;
             }
             Hit.PublishedSerial = Hit.Serial;
-            const auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
-            const auto* Settings = Actor ? Actor->GetMonsterPresentation()->GetBloodPresentation() : nullptr;
-            if (Settings)
+            const auto* Definition = Definitions[Index].Definition.Get();
+            const auto* Settings = Definition ? Definition->BloodPresentation.Get() : nullptr;
+            if (Hit.Age <= 0.2f && Settings)
             {
                 Batches.FindOrAdd(Settings).Add({Hit.Position, Hit.Direction, Hit.Normal, Hit.Region});
             }

@@ -99,10 +99,10 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
     return Entity != nullptr ? *Entity : FMassEntityHandle();
 }
 
-bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, int32 PlayerId, double CumulativeDamage)
+bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution)
 {
     const double* Submitted = SubmittedDamage.Find(InstanceId);
-    if (CumulativeDamage <= 0.0 || (Submitted != nullptr && *Submitted >= CumulativeDamage))
+    if (Contribution.Damage <= 0.0 || (Submitted != nullptr && *Submitted >= Contribution.Damage))
     {
         return true;
     }
@@ -110,12 +110,12 @@ bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, int32 Play
     const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
     UBBBMassNetworkComponent* Connection = Controller != nullptr
         ? Controller->FindComponentByClass<UBBBMassNetworkComponent>() : nullptr;
-    if (Player == nullptr || Player->GetPlayerId() != PlayerId || Connection == nullptr)
+    if (Player == nullptr || Player->GetPlayerId() != Contribution.PlayerId || Connection == nullptr || !Contribution.IsValid())
     {
         return false;
     }
-    Connection->ServerReportDamage(InstanceId, CumulativeDamage);
-    SubmittedDamage.Add(InstanceId, CumulativeDamage);
+    Connection->ServerReportDamage(InstanceId, Contribution);
+    SubmittedDamage.Add(InstanceId, Contribution.Damage);
     return true;
 }
 

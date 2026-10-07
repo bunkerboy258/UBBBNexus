@@ -10,6 +10,8 @@
 #include "MassExecutionContext.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
+#include "NavMesh/NavMeshPath.h"
+#include "NavMesh/RecastNavMesh.h"
 #include "Engine/World.h"
 
 UBBBMonsterNavigationProcessor::UBBBMonsterNavigationProcessor()
@@ -95,6 +97,12 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             while (Path.bHasPath && Path.PathPointIndex < Path.PathPoints.Num() - 1 &&
                 FVector::DistSquared2D(Location, Path.PathPoints[Path.PathPointIndex]) <= FMath::Square(15.0f))
             {
+                const FVector NavigationLocation(Location.X, Location.Y, Path.PathPoints[Path.PathPointIndex].Z);
+                FVector Hit;
+                if (UNavigationSystemV1::NavigationRaycast(World, NavigationLocation, Path.PathPoints[Path.PathPointIndex + 1], Hit))
+                {
+                    break;
+                }
                 ++Path.PathPointIndex;
             }
             if (bPatrol && Path.bHasPath &&
@@ -127,7 +135,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             FNavLocation ProjectedStart;
             const bool bProjected = NavigationSystem->ProjectPointToNavigation(Goal, Projected, FVector(100.0f, 100.0f, 250.0f)) &&
                 NavigationSystem->ProjectPointToNavigation(Location, ProjectedStart, FVector(100.0f, 100.0f, 250.0f));
-            const UNavigationPath* Result = bProjected
+            UNavigationPath* Result = bProjected
                 ? NavigationSystem->FindPathToLocationSynchronously(World, ProjectedStart.Location, Projected.Location)
                 : nullptr;
             if (Result == nullptr || !Result->IsValid() || Result->IsPartial() || Result->PathPoints.Num() < 2)
@@ -139,7 +147,21 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 continue;
             }
 
-            Path.PathPoints = Result->PathPoints;
+            auto NativePath = Result->GetPath();
+            auto* MeshPath = NativePath.IsValid() ? NativePath->CastPath<FNavMeshPath>() : nullptr;
+            const auto* NavData = MeshPath ? Cast<ARecastNavMesh>(MeshPath->GetNavigationDataUsed()) : nullptr;
+            if (!ensureMsgf(MeshPath && NavData, TEXT("[UBBBM]Monster route requires a Recast corridor")))
+            {
+                Path.bHasPath = false;
+                continue;
+            }
+            const float CornerInset = FMath::Max(Movements[Index].CapsuleRadius - NavData->GetConfig().AgentRadius, 0.0f) + 16.0f;
+            MeshPath->OffsetFromCorners(CornerInset);
+            Path.PathPoints.Reset();
+            for (const auto& Point : MeshPath->GetPathPoints())
+            {
+                Path.PathPoints.Add(Point.Location);
+            }
             Path.TailDistances.SetNumZeroed(Path.PathPoints.Num());
             for (int32 Point = Path.PathPoints.Num() - 2; Point >= 0; --Point)
             {

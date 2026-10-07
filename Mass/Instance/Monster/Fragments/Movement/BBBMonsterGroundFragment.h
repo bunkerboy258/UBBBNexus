@@ -14,4 +14,7 @@ struct ABBB_EVAC_API FBBBMonsterGroundFragment final : public FMassFragment
 
     /** 当前支撑面的法线 */
     FVector SupportNormal = FVector::UpVector;
+
+    /** 移动求解器上次使用的胶囊半高 首帧由静态配置初始化 */
+    float CapsuleHalfHeight = 0.0f;
 };

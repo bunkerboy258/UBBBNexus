@@ -1,10 +1,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBloodPresentationDefinition.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
-#include "Animation/AnimSequenceBase.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterAnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 #include "IAnimationBudgetAllocator.h"
@@ -19,9 +16,16 @@ void UBBBMonsterPresentationComponent::ApplyHitReaction(const FBBBMonsterHitReac
     }
 }
 
-const UBBBMonsterBloodPresentationDefinition* UBBBMonsterPresentationComponent::GetBloodPresentation() const
+void UBBBMonsterPresentationComponent::ApplyMobilityState(const bool bInCrawling, const float InProgress, const float InHalfHeight)
 {
-    return BloodPresentation;
+    bCrawling = bInCrawling;
+    CrawlProgress = FMath::Clamp(InProgress, 0.0f, 1.0f);
+    if (auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+    {
+        FVector Offset = Mesh->GetRelativeLocation();
+        Offset.Z = -InHalfHeight;
+        Mesh->SetRelativeLocation(Offset);
+    }
 }
 
 UBBBMonsterPresentationComponent::UBBBMonsterPresentationComponent()
@@ -55,14 +59,7 @@ void UBBBMonsterPresentationComponent::ApplyPresentationState(
         }
 
         const bool bFactAnimation = Cast<UBBBMonsterFactAnimInstance>(MonsterMesh->GetAnimInstance()) != nullptr;
-        const bool bLegacyAnimation = Cast<UBBBMonsterAnimInstance>(MonsterMesh->GetAnimInstance()) != nullptr;
-        if (!ensureMsgf(bFactAnimation || bLegacyAnimation, TEXT("[UBBBM]Monster presentation requires an authored monster animation blueprint")))
-        {
-            return;
-        }
-
-        // 范围外测试体继续读取原配置 事实动画的资产仅归属于动画蓝图
-        if (bLegacyAnimation && !ensureMsgf(GetAnimationForState(InState), TEXT("[UBBBM]Legacy presentation is missing state animation %d"), static_cast<int32>(InState)))
+        if (!ensureMsgf(bFactAnimation, TEXT("[UBBBM]Monster presentation requires an authored monster animation blueprint")))
         {
             return;
         }
@@ -87,75 +84,6 @@ void UBBBMonsterPresentationComponent::ApplyPresentationState(
     LastActionId = InActionId;
     LastPlayedState = InState;
     bHasAppliedAnimation = true;
-}
-
-UAnimSequenceBase* UBBBMonsterPresentationComponent::SelectAnimationForAction(const EBBBMonsterBehavior InState, const uint32 InActionId, const uint32 InSeed) const
-{
-    const TArray<TObjectPtr<UAnimSequenceBase>>* Variants = nullptr;
-    switch (InState)
-    {
-        case EBBBMonsterBehavior::Idle:
-            Variants = &IdleAnimationVariants;
-            break;
-
-        case EBBBMonsterBehavior::Patrol:
-        case EBBBMonsterBehavior::Chase:
-            Variants = &ChaseAnimationVariants;
-            break;
-
-        case EBBBMonsterBehavior::Attack:
-            Variants = &AttackAnimationVariants;
-            break;
-
-        case EBBBMonsterBehavior::Hurt:
-            Variants = &HurtAnimationVariants;
-            break;
-
-        case EBBBMonsterBehavior::Dead:
-            Variants = &DeadAnimationVariants;
-            break;
-
-        case EBBBMonsterBehavior::Alert:
-            break;
-    }
-
-    const uint32 Count = Variants ? static_cast<uint32>(Variants->Num()) + 1 : 1;
-    const uint32 Choice = (InSeed % Count + InActionId % Count) % Count;
-    UAnimSequenceBase* const Selected = Choice == 0 ? GetAnimationForState(InState) : (*Variants)[Choice - 1].Get();
-    if (!ensureMsgf(Selected != nullptr, TEXT("[UBBBM]Remove null animation variants from the presentation configuration")))
-    {
-        return nullptr;
-    }
-
-    return Selected;
-}
-
-UAnimSequenceBase* UBBBMonsterPresentationComponent::GetAnimationForState(const EBBBMonsterBehavior InState) const
-{
-    // 根据当前状态选择对应动画
-    switch (InState)
-    {
-        case EBBBMonsterBehavior::Idle:
-            return IdleAnimation;
-
-        case EBBBMonsterBehavior::Alert:
-            return ScoutAnimation;
-
-        case EBBBMonsterBehavior::Patrol:
-        case EBBBMonsterBehavior::Chase:
-            return ChaseAnimation;
-
-        case EBBBMonsterBehavior::Attack:
-            return AttackAnimation;
-
-        case EBBBMonsterBehavior::Hurt:
-            return HurtAnimation;
-
-        case EBBBMonsterBehavior::Dead:
-            return DeadAnimation;
-    }
-
-    return nullptr;
 }
 
 EBBBMonsterBehavior UBBBMonsterPresentationComponent::GetBBBMonsterBehavior() const

@@ -15,6 +15,9 @@
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Perception/BBBMonsterPerceptionProcessor.h"
 
 UBBBMonsterBehaviorProcessor::UBBBMonsterBehaviorProcessor()
@@ -35,6 +38,8 @@ void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntity
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadWrite);
@@ -62,6 +67,8 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
+        const auto Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Network = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Targets = ChunkContext.GetFragmentView<FBBBMonsterTargetFragment>();
         auto DamageEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDamageFragment>();
         auto DeathEvents = ChunkContext.GetMutableFragmentView<FBBBMonsterDeathFragment>();
@@ -130,6 +137,16 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             if (bRemote)
             {
+                continue;
+            }
+
+            const auto* Settings = Network[Index].Definition.Get();
+            if (Mobility[Index].bCrawling && Settings && WorldTime < Mobility[Index].CrawlStartedAt + Settings->CrawlTransitionDuration)
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
+                EnterState(EBBBMonsterBehavior::Chase);
                 continue;
             }
 

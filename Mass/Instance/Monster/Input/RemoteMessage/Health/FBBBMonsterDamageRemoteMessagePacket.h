@@ -38,7 +38,12 @@ struct FBBBMonsterDamageRemoteMessagePacket final
             });
         if (Existing != nullptr)
         {
-            Existing->Damage = FMath::Max(Existing->Damage, Value.Damage);
+            const double LegDamage = FMath::Max(Existing->LegDamage, Value.LegDamage);
+            if (Value.Damage > Existing->Damage)
+            {
+                *Existing = Value;
+            }
+            Existing->LegDamage = LegDamage;
         }
         else
         {
@@ -50,8 +55,13 @@ struct FBBBMonsterDamageRemoteMessagePacket final
     {
         for (const auto& Value : Contributions)
         {
-            double& Current = State.Contributions.FindOrAdd(Value.PlayerId);
-            Current = FMath::Max(Current, Value.Damage);
+            auto& Current = State.Contributions.FindOrAdd(Value.PlayerId);
+            const double LegDamage = FMath::Max(Current.LegDamage, Value.LegDamage);
+            if (Current.PlayerId == INDEX_NONE || Value.Damage > Current.Damage)
+            {
+                Current = Value;
+            }
+            Current.LegDamage = LegDamage;
         }
     }
 };
