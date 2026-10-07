@@ -39,9 +39,13 @@ void FBBBCharacterNetworkSystem::Update()
         RuntimeData->Network.TraversalObservationState,
         RuntimeData->Traversal.ReadTraversalState(),
         RuntimeData->Network.EquipmentObservationState,
-        RuntimeData->Equipment.ReadEquipmentSelectionState()};
+        RuntimeData->Equipment.ReadEquipmentSelectionState(),
+        RuntimeData->Equipment.ReadEquipmentUseState(),
+        *RuntimeData};
 
     EquipmentObservationProcessor.Update(Context);
+    DamageObservationProcessor.Update(Context);
+    LifeObservationProcessor.Update(Context);
     if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
     {
         return;

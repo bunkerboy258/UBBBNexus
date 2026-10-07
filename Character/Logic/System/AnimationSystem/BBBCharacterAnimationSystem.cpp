@@ -54,6 +54,7 @@ void FBBBCharacterAnimationSystem::Update()
 
     LayerProcessor.Update(Context);
     TraversalProcessor.Update(Context);
+    LifeProcessor.Update(Context);
     MontageProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);

@@ -1,6 +1,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/BBBCharacterPhysicalPresentationSystem.h"
 #include "BBBWork/UBBBNexus/Character/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputSubmit.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/BBBCharacterAimSystem.h"
@@ -14,6 +15,7 @@
 #include "GameFramework/Character.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/BBBCharacterTraversalSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/BBBCharacterLifeSystem.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -23,6 +25,8 @@ class UBBBEquipmentNetworkComponent;
 class ABBBPlayerCameraSystem;
 class ABBBEquipment;
 class UMotionWarpingComponent;
+class UBBBCharacterHitReactionComponent;
+class UPhysicalAnimationComponent;
 
 enum class EBBBCharacterMontageSlot : uint8
 {
@@ -55,6 +59,32 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
 
     
 public:
+    /** @return 当前角色已经成立的生命阶段 */
+    UFUNCTION(BlueprintPure, Category = "BBB|生命", meta = (DisplayName = "当前生命阶段"))
+    EBBBCharacterLifePhase GetLifePhase() const
+    {
+        return RuntimeData.Life.ReadLifeState().Phase;
+    }
+
+    /** @return 当前生命阶段的剩余生命 */
+    UFUNCTION(BlueprintPure, Category = "BBB|生命", meta = (DisplayName = "当前生命"))
+    float GetHealth() const
+    {
+        return RuntimeData.Life.ReadLifeState().Health;
+    }
+
+    /** @return 当前持有装备已经成立的使用许可 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (DisplayName = "装备可使用"))
+    bool IsEquipmentUsable() const
+    {
+        return RuntimeData.Equipment.ReadEquipmentUseState().bUsable;
+    }
+
+    /** @return 当前装备使用许可的修订号 */
+    uint64 GetEquipmentUseRevision() const
+    {
+        return RuntimeData.Equipment.ReadEquipmentUseState().Revision;
+    }
     
     /**
      * 构造角色并装配相机臂与相机等默认组件
@@ -76,6 +106,17 @@ public:
      * @param DeltaSeconds	帧间隔秒数
      */
     virtual void Tick(float DeltaSeconds) override;
+
+    /**
+     * 引擎命中适配器 只转发伤害输入
+     * @param DamageAmount		本次生命损失
+     * @param DamageEvent		引擎命中数据
+     * @param EventInstigator	来源控制者 允许环境来源为空
+     * @param DamageCauser		直接命中来源
+     * @return 接受的伤害值 输入被拒绝时返回零
+     */
+    virtual float TakeDamage(float DamageAmount, const FDamageEvent &DamageEvent,
+        AController *EventInstigator, AActor *DamageCauser) override;
 
     /**
      * 注册角色主管线与移动后更新函数
@@ -136,6 +177,11 @@ public:
 
     /** @return 装备独立网络组件 */
     UBBBEquipmentNetworkComponent *GetEquipmentNetworkComponent() const;
+    /** @return 角色所属的独立网络传输组件 */
+    UBBBCharacterNetworkComponent *GetCharacterNetworkComponent() const
+    {
+        return CharacterNetworkComponent;
+    }
 
     /**
      * 读取右手骨骼世界变换
@@ -168,6 +214,14 @@ protected:
     /*分类命名为ABBB是为了快点找到(bushi*/
 
 private:
+    /** 与角色网格绑定的局部物理受击组件 */
+    UPROPERTY(VisibleAnywhere, Category = "BBB|物理", meta = (DisplayName = "物理受击"))
+    TObjectPtr<UBBBCharacterHitReactionComponent> HitReaction;
+    /** 局部受击的姿势恢复组件 */
+    UPROPERTY(VisibleAnywhere, Category = "BBB|物理", meta = (DisplayName = "物理动画"))
+    TObjectPtr<UPhysicalAnimationComponent> PhysicalAnimation;
+    /** 角色物理表现调度器 */
+    FBBBCharacterPhysicalPresentationSystem PhysicalPresentationSystem;
     /** 官方角色根运动校正组件 */
     UPROPERTY(VisibleAnywhere, Category = "BBB|翻越")
     TObjectPtr<UMotionWarpingComponent> MotionWarping;
@@ -178,6 +232,9 @@ private:
 
     /** 无独立 Tick 的攀爬业务系统 */
     FBBBCharacterTraversalSystem TraversalSystem;
+
+    /** 独立维护生命阶段和受击事实 */
+    FBBBCharacterLifeSystem LifeSystem;
     
     FBBBCharacterItemSystem ItemSystem;
 

@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 
 void FBBBCharacterAnimationLayerProcessor::Update(
     FBBBCharacterAnimationUpdateContext &Context) const
@@ -18,6 +19,10 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
     ABBBEquipment *ActiveInstance = EquipmentState.ActiveMainHandInstance;
+    if (!Context.RuntimeData.Equipment.ReadEquipmentUseState().bUsable)
+    {
+        ActiveInstance = nullptr;
+    }
 
     UBBBEquipmentAnimInstance *DesiredWeaponAnimation = ActiveInstance
         ? ActiveInstance->GetEquipmentAnimationInstance()

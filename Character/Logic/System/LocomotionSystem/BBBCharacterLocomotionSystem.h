@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLocomotionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLifeMovementProcessor.h"
 
 class ACharacter;
 class UMotionWarpingComponent;
@@ -39,7 +40,7 @@ private:
         FBBBCharacterLocomotionDomainState &InRuntimeData,
         const FBBBCharacterControlState &InIntentData,
         const FBBBCharacterLocomotionConfig &InConfig,
-        const FBBBCharacterRuntimeData &InCharacterData);
+        FBBBCharacterRuntimeData &InCharacterData);
 
     ACharacter *Character = nullptr;
 
@@ -53,7 +54,8 @@ private:
 
     const UCurveFloat *StrafeSpeedMapCurve = nullptr;
 
-    const FBBBCharacterRuntimeData *CharacterData = nullptr;
+    FBBBCharacterRuntimeData *CharacterData = nullptr;
     FBBBCharacterLocomotionProcessor LocomotionProcessor;
+    FBBBCharacterLifeMovementProcessor LifeMovementProcessor;
 
 };

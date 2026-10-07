@@ -23,7 +23,8 @@ struct FBBBJumpLocalControlPacket final
      */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return Context.Traversal.Action == EBBBTraversalAction::None || Context.Traversal.bAnimationReleased;
+        return Context.Life.Phase == EBBBCharacterLifePhase::Alive
+            && (Context.Traversal.Action == EBBBTraversalAction::None || Context.Traversal.bAnimationReleased);
     }
 
     /**

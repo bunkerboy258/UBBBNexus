@@ -31,6 +31,8 @@ struct FBBBCharacterTraversalAnimationState final
 
     /** 本动作动画是否仍在运行 */
     bool bPlaying = false;
+    /** 本动作仍对姿势有贡献 包括已停止的淡出尾段 */
+    bool bPoseActive = false;
 
     /** 本动作已经不再贡献根运动 */
     bool bRootMotionReleased = false;

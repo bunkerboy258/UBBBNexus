@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/BBBCharacterPhysicalPresentationDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/BBBAimDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/BBBCharacterEquipmentDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/BBBCharacterLocomotionDomainState.h"
@@ -10,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/BBBCharacterParseDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/BBBCharacterItemDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/BBBCharacterTraversalDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/BBBCharacterLifeDomainState.h"
 #include "BBBCharacterRuntimeData.generated.h"
 
 /** 角色全部领域状态持有者的唯一聚合黑板 */
@@ -37,6 +39,13 @@ struct FBBBCharacterRuntimeData final
     /** 独立维护攀爬检测与动作交接 */
     UPROPERTY(Transient)
     FBBBCharacterTraversalDomainState Traversal;
+
+    /** 角色生命和独立受击事实 */
+    UPROPERTY(Transient)
+    FBBBCharacterLifeDomainState Life;
+    /** 独立骨骼物理表现结果 */
+    UPROPERTY(Transient)
+    FBBBCharacterPhysicalPresentationDomainState PhysicalPresentation;
 
     /** 角色物品与快捷选择状态 */
     UPROPERTY(Transient)

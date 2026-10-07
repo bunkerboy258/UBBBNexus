@@ -11,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
 
 void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateContext &Context) const
 {
@@ -18,6 +19,12 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
     if (State.Action == EBBBTraversalAction::None)
     {
         return;
+    }
+
+    // 生命阶段改变即结束动作 不等待播放尾段再交还移动权
+    if (Context.Life.Phase != EBBBCharacterLifePhase::Alive)
+    {
+        State.bEndRequested = true;
     }
 
     const bool bOwnPlayback = Context.Playback.LastActionId == State.ActionId;

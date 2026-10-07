@@ -5,6 +5,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterHitReactionComponent.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
 
 void FBBBCharacterUpdatePipeline::Initialize(ABBBCharacter &InCharacter)
 {
@@ -31,6 +33,8 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
 
     if (bRegister)
     {
+        InCharacter.HitReaction->AddTickPrerequisiteComponent(CharacterMesh);
+        InCharacter.PhysicalAnimation->AddTickPrerequisiteComponent(InCharacter.HitReaction);
         // 后更新与 CMC 同组并等待 CMC 完成本帧移动
         LateUpdateTick.bCanEverTick = true;
         LateUpdateTick.bStartWithTickEnabled = false;
@@ -54,6 +58,8 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
     CleanupSource.Reset();
 
     // 注销时按反向顺序移除依赖与 Tick 注册
+    InCharacter.PhysicalAnimation->RemoveTickPrerequisiteComponent(InCharacter.HitReaction);
+    InCharacter.HitReaction->RemoveTickPrerequisiteComponent(CharacterMesh);
     CharacterMesh->PrimaryComponentTick.RemovePrerequisite(&InCharacter, LateUpdateTick);
     LateUpdateTick.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
     LateUpdateTick.UnRegisterTickFunction();
@@ -110,6 +116,8 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         CleanupSource = PreviousEquipment;
     }
 
+    Character->LifeSystem.Update();
+
     if (!NetworkIdentityState.bIsMirror)
     {
         // 只有本机控制角色可以根据控制输入产生新的瞄准与移动事实.
@@ -120,8 +128,9 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     // 攀爬只生成交接结果 移动系统独占 CMC 写入
     Character->TraversalSystem.Update();
     // 操作许可位于攀爬决策后与 CMC 前 不重复装备关系维护
-    Character->EquipmentSystem.UpdateActionPermission();
+    Character->EquipmentSystem.UpdateUsage();
     Character->LocomotionSystem.Update();
+    Character->PhysicalPresentationSystem.Update();
 
     // 网络只观察已经成立的状态与事实
     Character->NetworkSystem.Update();

@@ -7,9 +7,15 @@
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterHitReactionComponent.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
+#include "Engine/DamageEvents.h"
+#include "GameFramework/Controller.h"
 
 ABBBCharacter::ABBBCharacter()
 {
+    HitReaction = CreateDefaultSubobject<UBBBCharacterHitReactionComponent>(TEXT("HitReaction"));
+    PhysicalAnimation = CreateDefaultSubobject<UPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
     MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
     EquipmentNetworkComponent = CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
 
@@ -86,6 +92,18 @@ void ABBBCharacter::RegisterActorTickFunctions(bool bRegister)
 bool ABBBCharacter::ShouldReplicateAcceleration() const
 {
     return true;
+}
+
+float ABBBCharacter::TakeDamage(float DamageAmount, const FDamageEvent &DamageEvent,
+    AController *EventInstigator, AActor *DamageCauser)
+{
+    FHitResult Hit;
+    FVector Direction;
+    DamageEvent.GetBestHitInfo(this, DamageCauser, Hit, Direction);
+    FBBBCharacterDamageLocalControlPacket Packet{
+        {DamageAmount}, {Hit.BoneName}, {Hit.ImpactPoint}, {Direction},
+        {EventInstigator ? EventInstigator->GetPawn() : nullptr}};
+    return SubmitInput(MoveTemp(Packet)) ? DamageAmount : 0.0f;
 }
 
 //------------------------------------------------------------------------------

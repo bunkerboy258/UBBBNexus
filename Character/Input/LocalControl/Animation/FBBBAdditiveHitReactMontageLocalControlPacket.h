@@ -21,9 +21,9 @@ struct FBBBAdditiveHitReactMontageLocalControlPacket final
     }
 
     /** @param Context	角色解析上下文 @return 是否允许贡献到固定槽位 */
-    bool CanApply(const FBBBCharacterInputContext &) const
+    bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return true;
+        return !Montage || Context.Life.Phase == EBBBCharacterLifePhase::Alive;
     }
 
     /** @param Context	角色解析上下文 @return 无 */

@@ -14,6 +14,8 @@ struct FBBBCharacterWorldState;
 struct FBBBCharacterNetworkIdentityState;
 struct FBBBCharacterAnimationFactState;
 struct FBBBCharacterAnimationMontageState;
+struct FBBBCharacterLifeState;
+struct FBBBCharacterRuntimeData;
 
 /** 本次角色移动更新使用的栈上上下文 */
 struct FBBBCharacterLocomotionUpdateContext final
@@ -41,4 +43,10 @@ struct FBBBCharacterLocomotionUpdateContext final
     const FBBBCharacterNetworkIdentityState &Execution;
     /** 上次动画更新发布的播放事实 */
     const FBBBCharacterAnimationFactState &AnimationFacts;
+    /** 生命领域已经成立的阶段 */
+    const FBBBCharacterLifeState &Life;
+    /** 本帧朝向插值时间 */
+    float DeltaSeconds;
+    /** 领域写入只沿唯一黑板持有链完成 */
+    FBBBCharacterRuntimeData &Data;
 };

@@ -30,7 +30,7 @@ struct FBBBCharacterAimLocalControlPacket final
      */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return true;
+        return Context.Life.Phase == EBBBCharacterLifePhase::Alive || !bAim;
     }
 
     /**

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentType.h"
 #include "BBBCharacterAnimationFactState.generated.h"
@@ -10,6 +11,9 @@ USTRUCT()
 struct FBBBCharacterAnimationFactState final
 {
     GENERATED_BODY()
+    /** 当前生命阶段 */
+    UPROPERTY(Transient)
+    EBBBCharacterLifePhase LifePhase = EBBBCharacterLifePhase::Alive;
 
     /** 实际持有装备的配置类别 空手时为无 */
     UPROPERTY(Transient)

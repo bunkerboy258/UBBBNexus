@@ -11,6 +11,7 @@ struct FBBBCharacterNetworkIdentityState;
 struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterLocomotionState;
 struct FBBBCharacterTraversalAnimationState;
+struct FBBBCharacterLifeState;
 
 /** CMC 执行前生成攀爬结果的栈上上下文 */
 struct FBBBCharacterTraversalUpdateContext final
@@ -37,4 +38,6 @@ struct FBBBCharacterTraversalUpdateContext final
     const FBBBCharacterTraversalAnimationState &Playback;
     /** 官方根运动校正组件 */
     UMotionWarpingComponent &Warping;
+    /** 生命阶段限定可开始和可继续的动作 */
+    const FBBBCharacterLifeState &Life;
 };

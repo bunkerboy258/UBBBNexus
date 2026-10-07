@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "BBBCharacterLocomotionState.generated.h"
 
 /** 角色移动系统持久运行事实 */
@@ -17,4 +18,6 @@ struct FBBBCharacterLocomotionState final
 
     /** 接管前的水平速度用于交还控制时延续移动惯性 */
     float TraversalEntrySpeed = 0.0f;
+    /** 胶囊与移动组件最后应用的生命阶段 */
+    EBBBCharacterLifePhase AppliedLifePhase = EBBBCharacterLifePhase::Alive;
 };

@@ -7,6 +7,7 @@
 class FBBBCharacterInitializer;
 struct FBBBAimDomainState;
 struct FBBBCharacterControlState;
+struct FBBBCharacterLifeState;
 
 /**
  * 按角色瞄准状态分流各个瞄准处理器
@@ -29,10 +30,12 @@ private:
      */
     void Initialize(
         FBBBAimDomainState &InAimData,
-        const FBBBCharacterControlState &InIntentData);
+        const FBBBCharacterControlState &InIntentData,
+        const FBBBCharacterLifeState &InLife);
 
     FBBBAimDomainState *AimData = nullptr;
     const FBBBCharacterControlState *ControlData = nullptr;
+    const FBBBCharacterLifeState *Life = nullptr;
 
     FBBBCharacterAimStateProcessor AimStateProcessor;
     FBBBCharacterAimTargetProcessor AimTargetProcessor;

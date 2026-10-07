@@ -11,10 +11,11 @@
 void FBBBCharacterEquipmentAnimationInputProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
 {
     auto &State = Context.RuntimeData.Equipment.EquipmentAnimationInputState;
+    const bool bUsable = Context.RuntimeData.Equipment.ReadEquipmentUseState().bUsable;
     for (int32 Index = 0; Index < State.BeginActionRecipients.Num(); ++Index)
     {
         ABBBEquipment *Recipient = State.BeginActionRecipients[Index].Get();
-        if (Recipient && Recipient == Context.Character.GetActiveEquipment())
+        if (bUsable && Recipient && Recipient == Context.Character.GetActiveEquipment())
         {
             Recipient->SubmitInput(FBBBEquipmentBeginActionLocalControlPacket{{State.BeginActionTokens[Index]}});
         }
@@ -36,7 +37,7 @@ void FBBBCharacterEquipmentAnimationInputProcessor::Update(FBBBCharacterEquipmen
     for (int32 Index = 0; Index < State.BeginContactRecipients.Num(); ++Index)
     {
         ABBBEquipment *Recipient = State.BeginContactRecipients[Index].Get();
-        if (Recipient && Recipient == Context.Character.GetActiveEquipment())
+        if (bUsable && Recipient && Recipient == Context.Character.GetActiveEquipment())
         {
             Recipient->SubmitInput(FBBBEquipmentBeginContactLocalControlPacket{{State.BeginContactTokens[Index]}});
         }

@@ -17,6 +17,10 @@ struct FBBBCharacterAnimationConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|动画层", meta = (DisplayName = "默认动画层类"))
     TSubclassOf<UAnimInstance> DefaultAnimationLayerClass;
 
+    /** 当前倒地转换的入场动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|生命", meta = (DisplayName = "倒地入场蒙太奇"))
+    TObjectPtr<UAnimMontage> DownedEntryMontage;
+
     /** 角色实际水平转速超过该值时生成对应方向的原地转身信号 单位为度每秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|朝向", meta = (ClampMin = "0.0", DisplayName = "转身信号转速阈值"))
     float TurnSignalRateThreshold = 20.0f;

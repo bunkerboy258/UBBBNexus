@@ -13,6 +13,11 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/GameStateBase.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterLifeRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterDamageDeliveryRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBCharacterEquipmentUseAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBCharacterEquipmentUseRemoteMessagePacket.h"
 
 UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
 {
@@ -29,8 +34,17 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifePhase, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHealth, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifeRevision, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitSerial, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitBone, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitPosition, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitDirection, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentGeneration, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedEquipmentUsable, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentUseRevision, COND_SimulatedOnly);
 
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalAction, COND_SimulatedOnly);
@@ -199,7 +213,8 @@ void UBBBCharacterNetworkComponent::OnRep_Traversal()
         {ReplicatedTraversalId}, {ReplicatedTraversalAction}, {ReplicatedTraversalContact}, {ReplicatedTraversalEnd}, {Position}});
 }
 
-void UBBBCharacterNetworkComponent::ReplicateEquipment(const FName EquipmentId, const uint64 Generation)
+void UBBBCharacterNetworkComponent::ReplicateEquipment(const FName EquipmentId, const uint64 Generation,
+    const bool bUsable, const uint64 UseRevision)
 {
     if (!IsOwnerAuthority() || Generation == 0 || Generation < ReplicatedEquipmentGeneration)
     {
@@ -208,14 +223,18 @@ void UBBBCharacterNetworkComponent::ReplicateEquipment(const FName EquipmentId, 
 
     ReplicatedEquipmentId = EquipmentId;
     ReplicatedEquipmentGeneration = Generation;
+    bReplicatedEquipmentUsable = bUsable;
+    ReplicatedEquipmentUseRevision = UseRevision;
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitEquipment_Implementation(const FName EquipmentId, const uint64 Generation)
+void UBBBCharacterNetworkComponent::ServerSubmitEquipment_Implementation(const FName EquipmentId, const uint64 Generation,
+    const bool bUsable, const uint64 UseRevision)
 {
-    if (Character && IsOwnerAuthority() && Generation > ReplicatedEquipmentGeneration)
+    if (Character && IsOwnerAuthority() && Generation > 0 && UseRevision > ReplicatedEquipmentUseRevision)
     {
         Character->SubmitInput(FBBBEquipmentSelectionRemoteMessagePacket{{EquipmentId}, {Generation}});
+        Character->SubmitInput(FBBBCharacterEquipmentUseRemoteMessagePacket{{Generation}, {UseRevision}, {bUsable}});
     }
 }
 
@@ -224,5 +243,65 @@ void UBBBCharacterNetworkComponent::OnRep_Equipment()
     if (Character && Character->IsNetworkMirror() && ReplicatedEquipmentGeneration > 0)
     {
         Character->SubmitInput(FBBBEquipmentSelectionAuthorityFactPacket{{ReplicatedEquipmentId}, {ReplicatedEquipmentGeneration}});
+        if (ReplicatedEquipmentUseRevision > 0)
+        {
+            Character->SubmitInput(FBBBCharacterEquipmentUseAuthorityFactPacket{
+                {ReplicatedEquipmentGeneration}, {ReplicatedEquipmentUseRevision}, {bReplicatedEquipmentUsable}});
+        }
+    }
+}
+
+void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, float Health,
+    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction)
+{
+    ReplicatedLifePhase = Phase;
+    ReplicatedHealth = Health;
+    ReplicatedLifeRevision = Revision;
+    ReplicatedHitSerial = HitSerial;
+    ReplicatedHitBone = Bone;
+    ReplicatedHitPosition = Position;
+    ReplicatedHitDirection = Direction;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitLife_Implementation(EBBBCharacterLifePhase Phase, float Health,
+    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBCharacterLifeRemoteMessagePacket{
+            {Phase}, {Health}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Life()
+{
+    if (!Character) Character = Cast<ABBBCharacter>(GetOwner());
+    if (Character && ReplicatedLifeRevision > 0)
+    {
+        Character->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{
+            {ReplicatedLifePhase}, {ReplicatedHealth}, {ReplicatedLifeRevision},
+            {ReplicatedHitSerial}, {ReplicatedHitBone}, {ReplicatedHitPosition}, {ReplicatedHitDirection}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitDamage_Implementation(ABBBCharacter *Target,
+    float Damage, FName Bone, FVector Position, FVector Direction, uint64 Sequence)
+{
+    if (IsValid(Target) && Character)
+    {
+        Target->SubmitInput(FBBBCharacterDamageDeliveryRemoteMessagePacket{
+            {Damage}, {Bone}, {Position}, {Direction}, {Character}, {Sequence}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ClientDeliverDamage_Implementation(float Damage,
+    FName Bone, FVector Position, FVector Direction)
+{
+    if (!Character) Character = Cast<ABBBCharacter>(GetOwner());
+    if (Character && Character->IsLocallyControlled())
+    {
+        Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
+            {Damage}, {Bone}, {Position}, {Direction}, {nullptr}});
     }
 }

@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterCameraState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
 
 struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterTraversalState;
@@ -13,6 +14,9 @@ struct FBBBCharacterEquipmentSelectionState;
 struct FBBBCharacterEquipmentAnimationInputState;
 struct FBBBCharacterItemOperationState;
 struct FBBBCharacterAimImpulseState;
+struct FBBBCharacterLifeInputState;
+struct FBBBCharacterEquipmentUseInputState;
+struct FBBBCharacterDamageInboxState;
 
 /**
  * 输入包应用上下文
@@ -55,5 +59,15 @@ struct FBBBCharacterInputContext final
 
     /** 待转交给装备的动画通知 */
     FBBBCharacterEquipmentAnimationInputState &EquipmentAnimationInputs;
+
+    /** 本帧依次处理的独立伤害输入 */
+    FBBBCharacterLifeInputState &LifeInputs;
+
+    /** 当前生命阶段 仅用于输入许可 */
+    const FBBBCharacterLifeState &Life;
+    /** 待还原的装备独立使用结果 */
+    FBBBCharacterEquipmentUseInputState &EquipmentUseInputs;
+    /** 待投送的独立命中消息 */
+    FBBBCharacterDamageInboxState &DamageInbox;
 
 };

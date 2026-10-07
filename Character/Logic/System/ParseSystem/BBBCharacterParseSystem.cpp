@@ -26,6 +26,10 @@ void FBBBCharacterParseSystem::Update() const
         Data->Animation.AimImpulseState,
         Data->Animation.ReadAnimationFactState(),
         Data->Traversal.TraversalState,
-        Data->Equipment.EquipmentAnimationInputState};
+        Data->Equipment.EquipmentAnimationInputState,
+        Data->Life.LifeInputState,
+        Data->Life.ReadLifeState(),
+        Data->Equipment.EquipmentUseInputState,
+        Data->Network.DamageInboxState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

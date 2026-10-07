@@ -2,8 +2,6 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
@@ -84,12 +82,6 @@ void FBBBCharacterEquipmentLifecycleProcessor::Update(FBBBCharacterEquipmentUpda
     }
     Selection.ActiveMainHandInstance = Desired;
     Selection.ActiveEquipmentId = Desired->GetEquipmentId();
-    if (Context.bIsMirror)
-    {
-        Desired->SubmitInput(FBBBEquipmentEquipAuthorityFactPacket{});
-        return;
-    }
-    Desired->SubmitInput(FBBBEquipmentEquipLocalControlPacket{});
 }
 
 void FBBBCharacterEquipmentLifecycleProcessor::Shutdown(FBBBCharacterEquipmentUpdateContext &Context)

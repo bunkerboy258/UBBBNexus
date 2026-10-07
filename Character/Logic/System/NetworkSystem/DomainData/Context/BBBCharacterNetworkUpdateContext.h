@@ -13,6 +13,8 @@ struct FBBBCharacterNetworkConfig;
 struct FBBBCharacterNetworkIdentityState;
 struct FBBBCharacterWorldState;
 struct FBBBRunNetworkObservationState;
+struct FBBBCharacterEquipmentUseState;
+struct FBBBCharacterRuntimeData;
 
 /** 本次角色网络观察与发送使用的栈上上下文 */
 struct FBBBCharacterNetworkUpdateContext final
@@ -49,4 +51,8 @@ struct FBBBCharacterNetworkUpdateContext final
 
     /** 装备系统已经完成的实际关系 */
     const FBBBCharacterEquipmentSelectionState &Equipment;
+    /** 装备系统已经成立的使用结果 */
+    const FBBBCharacterEquipmentUseState &EquipmentUse;
+    /** 本系统观察状态的直接持有链 */
+    FBBBCharacterRuntimeData &Data;
 };

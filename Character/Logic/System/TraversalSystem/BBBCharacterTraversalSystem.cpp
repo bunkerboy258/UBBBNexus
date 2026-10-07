@@ -31,7 +31,8 @@ void FBBBCharacterTraversalSystem::Update()
         Data->Animation.ReadAnimationMontageState(),
         Data->Locomotion.ReadLocomotionState(),
         Data->Animation.ReadTraversalAnimationState(),
-        *Warping};
+        *Warping,
+        Data->Life.ReadLifeState()};
 
     LifeProcessor.Update(Context);
     ProbeProcessor.Update(Context);

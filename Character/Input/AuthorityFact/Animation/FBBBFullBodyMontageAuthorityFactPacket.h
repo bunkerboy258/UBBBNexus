@@ -25,7 +25,7 @@ struct FBBBFullBodyMontageAuthorityFactPacket final
      */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return true;
+        return !Montage || Context.Life.Phase == EBBBCharacterLifePhase::Alive;
     }
 
     /**

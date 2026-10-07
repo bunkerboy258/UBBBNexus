@@ -2,6 +2,7 @@
 
 struct FBBBAimState;
 struct FBBBCharacterControlState;
+struct FBBBCharacterLifeState;
 
 /**
  * 根据角色意图生成瞄准状态
@@ -16,6 +17,7 @@ public:
      */
     void Update(
         const FBBBCharacterControlState &ControlData,
-        FBBBAimState &State) const;
+        FBBBAimState &State,
+        const FBBBCharacterLifeState &Life) const;
 
 };

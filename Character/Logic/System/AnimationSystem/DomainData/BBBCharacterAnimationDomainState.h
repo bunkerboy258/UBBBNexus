@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAimImpulseState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterTraversalAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterLifeAnimationState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
 
 class FBBBCharacterAnimationFactProcessor;
@@ -53,6 +54,11 @@ public:
     }
 
 private:
+    friend class FBBBCharacterLifeAnimationProcessor;
+    /** 生命阶段动画的应用进度 */
+    UPROPERTY(Transient)
+    FBBBCharacterLifeAnimationState LifeAnimationState;
+
     friend class FBBBCharacterTraversalAnimationProcessor;
     /** 蓝图动画选择请求的生命周期 */
     UPROPERTY(Transient)

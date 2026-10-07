@@ -22,7 +22,8 @@ struct FBBBRunLocalControlPacket final
     /** @param Context	本次输入上下文 @return 是否允许应用 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !bRun || Context.Traversal.Action == EBBBTraversalAction::None;
+        return !bRun || (Context.Life.Phase == EBBBCharacterLifePhase::Alive
+            && Context.Traversal.Action == EBBBTraversalAction::None);
     }
 
     /** @param Context	本次输入上下文 @return 无 */

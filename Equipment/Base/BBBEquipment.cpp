@@ -106,7 +106,7 @@ bool ABBBEquipment::IsMirror() const
 bool ABBBEquipment::IsEquipped() const
 {
     const ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    return Character && Character->GetActiveEquipment() == this;
+    return Character && Character->GetActiveEquipment() == this && Character->IsEquipmentUsable();
 }
 
 bool ABBBEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet)

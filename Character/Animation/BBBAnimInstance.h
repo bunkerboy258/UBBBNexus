@@ -33,9 +33,13 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterAnimationSystem;
     friend class FBBBCharacterTraversalAnimationProcessor;
+    friend class FBBBCharacterLifeAnimationProcessor;
     friend class FBBBCharacterAnimationFactProcessor;
 
 public:
+    /** 本帧生命阶段 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段"))
+    EBBBCharacterLifePhase SourceLifePhase = EBBBCharacterLifePhase::Alive;
     /** @return 实际持有装备的类型快照是否为步枪 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "是步枪"))
     bool IsRifle() const

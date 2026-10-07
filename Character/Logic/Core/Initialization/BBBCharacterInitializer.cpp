@@ -6,6 +6,8 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterHitReactionComponent.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
 
 void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 {
@@ -25,6 +27,12 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     }
 
     const UBBBCharacterConfig &Config = *Character.CharacterConfigAsset;
+    if (!ensureMsgf(FMath::IsFinite(Config.MaximumHealth) && Config.MaximumHealth > 0.0f
+        && FMath::IsFinite(Config.DownedHealth) && Config.DownedHealth > 0.0f,
+        TEXT("角色生命配置必须为有限正数 %s"), *Character.GetName()))
+    {
+        return;
+    }
     if (!ensureMsgf(
         Config.Equipment.EquipmentCatalog.Get() != nullptr,
         TEXT("角色 %s 的配置资产缺少装备目录"),
@@ -52,7 +60,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     // 按固定顺序注入各角色系统和运行数据
     Character.AimSystem.Initialize(
         Character.RuntimeData.Aim,
-        Character.RuntimeData.Parse.ReadControlState());
+        Character.RuntimeData.Parse.ReadControlState(),
+        Character.RuntimeData.Life.ReadLifeState());
 
     Character.LocomotionSystem.Initialize(
         Character,
@@ -69,6 +78,11 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Character.MotionWarping);
     
     Character.ItemSystem.Initialize(Character, Character.RuntimeData, Config.Item);
+
+    Character.LifeSystem.Initialize(Character, Character.RuntimeData, Config);
+    Character.PhysicalAnimation->SetSkeletalMeshComponent(Character.GetMesh());
+    Character.PhysicalPresentationSystem.Initialize(Character, Character.RuntimeData,
+        *Character.GetMesh(), *Character.HitReaction, *Character.PhysicalAnimation);
 
     Character.EquipmentSystem.Initialize(
         *Character.GetMesh(),

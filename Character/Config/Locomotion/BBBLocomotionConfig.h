@@ -96,4 +96,20 @@ struct FBBBCharacterLocomotionConfig
     /** 蹲伏胶囊半高 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|碰撞", meta = (ClampMin = "0.0", DisplayName = "蹲伏胶囊体半高"))
     float CrouchedHalfHeight = 60.0f;
+
+    /** 倒地四向与斜向的统一速度上限 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|倒地", meta = (DisplayName = "倒地移动速度", ClampMin = "0"))
+    float DownedSpeed = 60.0f;
+
+    /** 倒地身体最大转向速度 单位度每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|倒地", meta = (DisplayName = "倒地转向速度", ClampMin = "0"))
+    float DownedTurnSpeed = 90.0f;
+
+    /** 跪姿独立碰撞胶囊半径 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|倒地", meta = (DisplayName = "倒地胶囊半径", ClampMin = "1"))
+    float DownedCapsuleRadius = 32.0f;
+
+    /** 跪姿独立碰撞胶囊半高 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|倒地", meta = (DisplayName = "倒地胶囊半高", ClampMin = "1"))
+    float DownedCapsuleHalfHeight = 40.0f;
 };

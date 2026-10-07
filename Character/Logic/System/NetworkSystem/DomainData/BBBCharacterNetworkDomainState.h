@@ -2,6 +2,9 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBEquipmentNetworkObservationState.h"
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterLifeNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterDamageNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterDamageInboxState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBRunNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBTraversalNetworkObservationState.h"
@@ -18,6 +21,12 @@ struct FBBBCharacterNetworkDomainState final
     GENERATED_BODY()
 
 public:
+    /** @return 生命结果发送基准 */
+    const FBBBCharacterLifeNetworkObservationState &ReadLifeNetworkObservationState() const { return LifeObservationState; }
+    /** @return 独立伤害转送基准 */
+    const FBBBCharacterDamageNetworkObservationState &ReadDamageNetworkObservationState() const { return DamageObservationState; }
+    /** @return 待投送的独立命中 */
+    const FBBBCharacterDamageInboxState &ReadDamageInboxState() const { return DamageInboxState; }
     /** @return 瞄准网络观察状态 */
     const FBBBAimNetworkObservationState &ReadAimNetworkObservationState() const
     {
@@ -43,6 +52,15 @@ public:
     }
 
 private:
+    friend class FBBBCharacterLifeObservationProcessor;
+    friend class FBBBCharacterDamageObservationProcessor;
+    friend class FBBBCharacterParseSystem;
+    /** 生命结果发送基准 */
+    FBBBCharacterLifeNetworkObservationState LifeObservationState;
+    /** 伤害转送基准 */
+    FBBBCharacterDamageNetworkObservationState DamageObservationState;
+    /** 待投送的独立命中 */
+    FBBBCharacterDamageInboxState DamageInboxState;
     friend class FBBBEquipmentObservationProcessor;
     FBBBEquipmentNetworkObservationState EquipmentObservationState;
 

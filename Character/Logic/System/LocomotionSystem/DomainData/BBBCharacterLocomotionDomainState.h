@@ -22,6 +22,7 @@ public:
     }
 
 private:
+    friend class FBBBCharacterLifeMovementProcessor;
     friend class FBBBCharacterLocomotionSystem;
     friend class FBBBCharacterLocomotionProcessor;
     friend class FBBBCharacterParseSystem;

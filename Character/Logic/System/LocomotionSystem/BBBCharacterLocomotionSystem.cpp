@@ -14,7 +14,7 @@ void FBBBCharacterLocomotionSystem::Initialize(
     FBBBCharacterLocomotionDomainState &InRuntimeData,
     const FBBBCharacterControlState &InIntentData,
     const FBBBCharacterLocomotionConfig &InConfig,
-    const FBBBCharacterRuntimeData &InCharacterData
+    FBBBCharacterRuntimeData &InCharacterData
 )
 {
     Character = &InCharacter;
@@ -42,6 +42,10 @@ void FBBBCharacterLocomotionSystem::Update()
         *StrafeSpeedMapCurve,
         CharacterData->Traversal.ReadTraversalState(),
         CharacterData->External.ReadNetworkIdentityState(),
-        CharacterData->Animation.ReadAnimationFactState()};
+        CharacterData->Animation.ReadAnimationFactState(),
+        CharacterData->Life.ReadLifeState(),
+        CharacterData->External.ReadWorldState().FrameDeltaSeconds,
+        *CharacterData};
+    LifeMovementProcessor.Update(Context);
     LocomotionProcessor.Update(Context);
 }

@@ -36,6 +36,7 @@ public:
     }
 
 private:
+    friend class FBBBCharacterLifeAnimationProcessor;
     friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterTraversalAnimationProcessor;
     friend struct FBBBFullBodyMontageLocalControlPacket;

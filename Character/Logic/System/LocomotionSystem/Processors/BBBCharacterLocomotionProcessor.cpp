@@ -10,6 +10,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
 
 namespace
 {
@@ -113,6 +114,10 @@ float ResolveMaxSpeed(
 void FBBBCharacterLocomotionProcessor::Update(
     FBBBCharacterLocomotionUpdateContext &Context) const
 {
+    if (Context.Life.Phase != EBBBCharacterLifePhase::Alive)
+    {
+        return;
+    }
     ACharacter &Character = Context.Character;
     UCharacterMovementComponent &Movement = Context.Movement;
     FBBBCharacterLocomotionState &RuntimeData = Context.LocomotionState;

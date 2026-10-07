@@ -18,6 +18,14 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     GENERATED_BODY()
 
 public:
+    /** 正常生命上限与出生生命 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "最大生命", ClampMin = "1"))
+    float MaximumHealth = 500.0f;
+
+    /** 每次进入倒地状态的独立生命 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "倒地生命", ClampMin = "1"))
+    float DownedHealth = 300.0f;
+
     /** 角色移动参数与碰撞配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "移动配置"))
     FBBBCharacterLocomotionConfig Locomotion;

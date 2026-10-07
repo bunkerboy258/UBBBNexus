@@ -17,6 +17,10 @@ struct FBBBEquipmentNetworkMessage
     UPROPERTY()
     uint64 Generation = 0;
 
+    /** 消息成立时的使用许可修订号 */
+    UPROPERTY()
+    uint64 UseRevision = 0;
+
     /** 同一次持有期间的消息顺序 */
     UPROPERTY()
     uint64 Revision = 0;

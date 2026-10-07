@@ -8,12 +8,19 @@ void FBBBCharacterInputProcessor::Update(
 {
     Context.Control.bJump = false;
 
+    Process(InputState.Damage, Context);
+    Process(InputState.AuthorityLife, Context);
+    Process(InputState.RemoteLife, Context);
+    Process(InputState.DamageDelivery, Context);
+
     Process(InputState.AimState, Context);
     Process(InputState.RunState, Context);
     Process(InputState.ItemAdd, Context);
     Process(InputState.ItemMove, Context);
     Process(InputState.RemoteEquipmentSelectionState, Context);
     Process(InputState.AuthorityEquipmentSelectionState, Context);
+    Process(InputState.RemoteMessageEquipmentUse, Context);
+    Process(InputState.AuthorityFactEquipmentUse, Context);
     Process(InputState.ItemSelect, Context);
     Process(InputState.EquipmentBeginAction, Context);
     Process(InputState.EquipmentEndAction, Context);

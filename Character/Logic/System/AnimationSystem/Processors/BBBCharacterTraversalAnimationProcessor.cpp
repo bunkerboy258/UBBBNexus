@@ -10,6 +10,9 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
 {
     const FBBBCharacterTraversalState &Traversal = Context.RuntimeData.Traversal.ReadTraversalState();
     FBBBCharacterTraversalAnimationState &Dispatch = Context.RuntimeData.Animation.TraversalAnimationState;
+    FAnimMontageInstance *PoseInstance = Dispatch.MontageInstanceId != INDEX_NONE
+        ? Context.AnimationInstance.GetMontageInstanceForID(Dispatch.MontageInstanceId) : nullptr;
+    Dispatch.bPoseActive = PoseInstance && PoseInstance->GetWeight() > KINDA_SMALL_NUMBER;
     if (Traversal.Action == EBBBTraversalAction::None)
     {
         return;
@@ -32,6 +35,7 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
         Dispatch.Montage = nullptr;
         Dispatch.MontageInstanceId = INDEX_NONE;
         Dispatch.bPlaying = false;
+        Dispatch.bPoseActive = true;
         Dispatch.bRootMotionReleased = false;
         Dispatch.bExitWindowReached = false;
         Dispatch.Position = 0.0f;

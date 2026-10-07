@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentUseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionPermissionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
@@ -35,7 +36,7 @@ private:
     void Update();
 
     /** @return 无 在攀爬结果成立后交接装备操作许可 */
-    void UpdateActionPermission();
+    void UpdateUsage();
 
     /**
      * 注入装备系统依赖并建立空容器
@@ -74,5 +75,7 @@ private:
 
     /** CMC 前的持有者操作许可通信 */
     FBBBCharacterEquipmentActionPermissionProcessor ActionPermissionProcessor;
+    /** 临时收起与恢复通信 */
+    FBBBCharacterEquipmentUseProcessor UseProcessor;
 
 };

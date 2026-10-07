@@ -12,11 +12,12 @@
 #include "GameFramework/Character.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
 
 void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterTraversalUpdateContext &Context) const
 {
     const FBBBTraversalConfig &Config = Context.TraversalConfig;
-    if (Context.Execution.bIsMirror || !Config.bEnabled || !Context.ControlState.bJump
+    if (Context.Life.Phase != EBBBCharacterLifePhase::Alive || Context.Execution.bIsMirror || !Config.bEnabled || !Context.ControlState.bJump
         || Context.ControlState.bCrouch || !Context.Movement.IsMovingOnGround()
         || Context.Traversal.Action != EBBBTraversalAction::None || Context.Character.bIsCrouched)
     {

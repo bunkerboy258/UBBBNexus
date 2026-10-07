@@ -19,6 +19,12 @@ struct TBBBCharacterInputSlotSelector;
     };
 
 BBB_CHARACTER_INPUT_SLOT(FBBBAimStateAuthorityFactPacket, AimState)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeAuthorityFactPacket, AuthorityLife)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeRemoteMessagePacket, RemoteLife)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageDeliveryRemoteMessagePacket, DamageDelivery)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentUseAuthorityFactPacket, AuthorityFactEquipmentUse)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentUseRemoteMessagePacket, RemoteMessageEquipmentUse)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageLocalControlPacket, Damage)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemAddLocalControlPacket, ItemAdd)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemMoveLocalControlPacket, ItemMove)
@@ -79,6 +85,37 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
+            || std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>)
+        {
+            Slot.Data.Phases.Append(Packet.Phases);
+            Slot.Data.Healths.Append(Packet.Healths);
+            Slot.Data.Revisions.Append(Packet.Revisions);
+            Slot.Data.HitSerials.Append(Packet.HitSerials);
+            Slot.Data.Bones.Append(Packet.Bones);
+            Slot.Data.Positions.Append(Packet.Positions);
+            Slot.Data.Directions.Append(Packet.Directions);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentUseAuthorityFactPacket>
+            || std::is_same_v<FPacket, FBBBCharacterEquipmentUseRemoteMessagePacket>)
+        {
+            Slot.Data.Generations.Append(Packet.Generations);
+            Slot.Data.Revisions.Append(Packet.Revisions);
+            Slot.Data.Usable.Append(Packet.Usable);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
+            || std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>)
+        {
+            Slot.Data.Damages.Append(Packet.Damages);
+            Slot.Data.Bones.Append(Packet.Bones);
+            Slot.Data.Positions.Append(Packet.Positions);
+            Slot.Data.Directions.Append(Packet.Directions);
+            Slot.Data.Sources.Append(Packet.Sources);
+            if constexpr (std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>)
+            {
+                Slot.Data.Sequences.Append(Packet.Sequences);
+            }
+        }
         // 保留同帧全部交接结果 输入解析再按动作标识拒绝过期结果
         if constexpr (std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
             || std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>)
@@ -135,6 +172,12 @@ namespace BBBCharacterInput
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
         if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentUseAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentUseRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket>

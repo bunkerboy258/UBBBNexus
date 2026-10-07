@@ -2,6 +2,12 @@
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterLifeRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterDamageDeliveryRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBCharacterEquipmentUseAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBCharacterEquipmentUseRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Definitions/BBBCharacterInputSlot.h"
@@ -44,6 +50,18 @@
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 接收的生命结果 */
+    TBBBCharacterInputSlot<FBBBCharacterLifeAuthorityFactPacket> AuthorityLife;
+    /** 控制者生成的生命结果 */
+    TBBBCharacterInputSlot<FBBBCharacterLifeRemoteMessagePacket> RemoteLife;
+    /** 需向控制者投送的独立命中 */
+    TBBBCharacterInputSlot<FBBBCharacterDamageDeliveryRemoteMessagePacket> DamageDelivery;
+    /** 装备独立使用结果输入 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentUseAuthorityFactPacket> AuthorityFactEquipmentUse;
+    /** 装备独立使用结果输入 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentUseRemoteMessagePacket> RemoteMessageEquipmentUse;
+    /** 本帧全部独立伤害输入 */
+    TBBBCharacterInputSlot<FBBBCharacterDamageLocalControlPacket> Damage;
     /** 装备BeginAction通知输入槽 */
     TBBBCharacterInputSlot<FBBBCharacterEquipmentBeginActionLocalControlPacket> EquipmentBeginAction;
     /** 装备EndAction通知输入槽 */

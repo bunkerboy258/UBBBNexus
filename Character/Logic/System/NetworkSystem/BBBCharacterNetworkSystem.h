@@ -2,6 +2,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentObservationProcessor.h"
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterLifeObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterDamageObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBTraversalObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBRunObservationProcessor.h"
@@ -19,6 +21,8 @@ public:
     void Update();
 
 private:
+    FBBBCharacterLifeObservationProcessor LifeObservationProcessor;
+    FBBBCharacterDamageObservationProcessor DamageObservationProcessor;
     friend class FBBBCharacterInitializer;
 
     /**

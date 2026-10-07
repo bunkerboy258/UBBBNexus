@@ -6,10 +6,12 @@
 
 void FBBBCharacterAimSystem::Initialize(
     FBBBAimDomainState &InAimData,
-    const FBBBCharacterControlState &InIntentData)
+    const FBBBCharacterControlState &InIntentData,
+    const FBBBCharacterLifeState &InLife)
 {
     AimData = &InAimData;
     ControlData = &InIntentData;
+    Life = &InLife;
 }
 
 void FBBBCharacterAimSystem::Update()
@@ -23,7 +25,7 @@ void FBBBCharacterAimSystem::Update()
     FBBBAimUpdateContext Context{AimData->AimState, *ControlData};
 
     // 先根据角色意图更新瞄准状态
-    AimStateProcessor.Update(Context.ControlState, Context.AimState);
+    AimStateProcessor.Update(Context.ControlState, Context.AimState, *Life);
 
     AimTargetProcessor.Update(Context.ControlState, Context.AimState);
 

@@ -36,8 +36,10 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
+    FactState.LifePhase = RuntimeData.Life.ReadLifeState().Phase;
     const ABBBEquipment *Equipment = Character.GetActiveEquipment();
-    const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+    const UBBBEquipmentDefinition *Definition = IsValid(Equipment)
+        && RuntimeData.Equipment.ReadEquipmentUseState().bUsable ? Equipment->GetDefinition() : nullptr;
     FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
 

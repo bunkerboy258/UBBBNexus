@@ -7,6 +7,8 @@ struct FBBBEquipmentNetworkObservationState final
 {
     /** 已发送的实际持有实例 */
     uint64 Generation = 0;
+    /** 已发送的独立使用结果版本 */
+    uint64 UseRevision = 0;
 
 private:
     friend struct FBBBCharacterNetworkDomainState;

@@ -21,6 +21,7 @@ UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFactState &FactState)
 {
+    SourceLifePhase = FactState.LifePhase;
     // 将角色运行事实复制到动画实例供动画图安全读取
     SourceActorLocation = FactState.ActorLocation;
     SourceActorRotation = FactState.ActorRotation;

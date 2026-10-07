@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
@@ -34,14 +35,60 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
 private:
+    friend class FBBBCharacterLifeObservationProcessor;
+    friend class FBBBCharacterDamageObservationProcessor;
+
+    /** 复制已经成立的生命结果 */
+    void ReplicateLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
+        uint64 HitSerial, FName Bone, FVector Position, FVector Direction);
+
+    /** 控制者上报自己的既成生命结果 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
+        uint64 HitSerial, FName Bone, FVector Position, FVector Direction);
+
+    /** 通过发送者拥有的连接投送命中 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitDamage(ABBBCharacter *Target, float Damage, FName Bone,
+        FVector Position, FVector Direction, uint64 Sequence);
+
+    /** 向目标自身的控制者投送独立命中 */
+    UFUNCTION(Client, Reliable)
+    void ClientDeliverDamage(float Damage, FName Bone, FVector Position, FVector Direction);
+
+    /** 当前生命结果到达时提交还原输入 */
+    UFUNCTION()
+    void OnRep_Life();
+
+    /** 当前阶段 */
+    UPROPERTY(Replicated)
+    EBBBCharacterLifePhase ReplicatedLifePhase = EBBBCharacterLifePhase::Alive;
+    /** 当前生命 */
+    UPROPERTY(Replicated)
+    float ReplicatedHealth = 500.0f;
+    /** 当前结果版本 */
+    UPROPERTY(ReplicatedUsing = OnRep_Life)
+    uint64 ReplicatedLifeRevision = 0;
+    /** 最新命中序号 */
+    UPROPERTY(Replicated)
+    uint64 ReplicatedHitSerial = 0;
+    /** 最新命中骨骼 */
+    UPROPERTY(Replicated)
+    FName ReplicatedHitBone;
+    /** 最新命中位置 */
+    UPROPERTY(Replicated)
+    FVector ReplicatedHitPosition = FVector::ZeroVector;
+    /** 最新命中方向 */
+    UPROPERTY(Replicated)
+    FVector ReplicatedHitDirection = FVector::ForwardVector;
     friend class FBBBEquipmentObservationProcessor;
 
     /** @param EquipmentId	实际装备标识 @param Generation	持有实例标识 @return 无 */
-    void ReplicateEquipment(FName EquipmentId, uint64 Generation);
+    void ReplicateEquipment(FName EquipmentId, uint64 Generation, bool bUsable, uint64 UseRevision);
 
     /** @param EquipmentId	已经成立的装备标识 @param Generation	持有实例标识 @return 无 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitEquipment(FName EquipmentId, uint64 Generation);
+    void ServerSubmitEquipment(FName EquipmentId, uint64 Generation, bool bUsable, uint64 UseRevision);
 
     /** @return 无 将当前持有关系提交为角色输入 */
     UFUNCTION()
@@ -54,6 +101,14 @@ private:
     /** 当前实际持有实例标识 */
     UPROPERTY(ReplicatedUsing = OnRep_Equipment)
     uint64 ReplicatedEquipmentGeneration = 0;
+
+    /** 当前装备的独立使用许可 */
+    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
+    bool bReplicatedEquipmentUsable = false;
+
+    /** 当前装备独立使用结果版本 */
+    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
+    uint64 ReplicatedEquipmentUseRevision = 0;
 
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
