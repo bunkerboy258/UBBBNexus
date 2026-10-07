@@ -91,6 +91,8 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
         if (Instance && !Dispatch.bRootMotionReleased)
         {
             Instance->PushDisableRootMotion();
+            // 从实际交接姿势淡出 避免继续推进到源动画的站立收尾
+            Instance->Pause();
             Context.AnimationInstance.Montage_Stop(Dispatch.Montage->BlendOut.GetBlendTime(), Dispatch.Montage);
         }
         Dispatch.bRootMotionReleased = true;

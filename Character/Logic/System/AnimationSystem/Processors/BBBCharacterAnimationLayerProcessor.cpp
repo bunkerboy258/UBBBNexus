@@ -19,12 +19,9 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
     ABBBEquipment *ActiveInstance = EquipmentState.ActiveMainHandInstance;
-    if (!Context.RuntimeData.Equipment.ReadEquipmentUseState().bUsable)
-    {
-        ActiveInstance = nullptr;
-    }
-
-    UBBBEquipmentAnimInstance *DesiredWeaponAnimation = ActiveInstance
+    // 暂时收起只解除握持数据 动画层继续使用原装备以保留移动状态
+    UBBBEquipmentAnimInstance *DesiredWeaponAnimation = IsValid(ActiveInstance)
+        && Context.RuntimeData.Equipment.ReadEquipmentUseState().bUsable
         ? ActiveInstance->GetEquipmentAnimationInstance()
         : nullptr;
     if (Context.AnimationInstance.TryGetWeaponAnimInstance() != DesiredWeaponAnimation)
@@ -32,7 +29,7 @@ void FBBBCharacterAnimationLayerProcessor::Update(
         Context.AnimationInstance.BindWeaponAnimInstance(DesiredWeaponAnimation);
     }
 
-    if (ActiveInstance)
+    if (IsValid(ActiveInstance))
     {
         // 已装备武器时优先使用武器指定的角色动画层
         const TSubclassOf<UAnimInstance> EquipmentLayerClass = ActiveInstance->GetCharacterAnimationLayerClass();
