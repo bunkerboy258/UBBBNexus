@@ -51,27 +51,31 @@ public:
 
     /** 头部与躯干有效命中的最低速度比例 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "躯干受击速度比例"))
-    float BodyHitSpeedRatio = 0.7f;
+    float BodyHitSpeedRatio = 0.5f;
 
     /** 头部与躯干减速的平滑恢复秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "躯干减速恢复时间"))
-    float BodyHitSlowDuration = 0.35f;
+    float BodyHitSlowDuration = 0.45f;
 
     /** 手臂有效命中的最低速度比例 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "手臂受击速度比例"))
-    float ArmHitSpeedRatio = 0.85f;
+    float ArmHitSpeedRatio = 0.7f;
 
     /** 手臂减速的平滑恢复秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "手臂减速恢复时间"))
-    float ArmHitSlowDuration = 0.25f;
+    float ArmHitSlowDuration = 0.4f;
 
     /** 腿部有效命中的最低速度比例 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "腿部受击速度比例"))
-    float LegHitSpeedRatio = 0.5f;
+    float LegHitSpeedRatio = 0.3f;
 
     /** 腿部减速的平滑恢复秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "腿部减速恢复时间"))
-    float LegHitSlowDuration = 0.5f;
+    float LegHitSlowDuration = 0.6f;
+
+    /** 命中后保持最低速度的秒数 连射刷新保持阶段 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.0", Units = "s", DisplayName = "受击减速保持时间"))
+    float HitSlowHoldDuration = 0.18f;
 
     /** 累计腿伤达到最大生命的此比例后持续爬行 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "0.01", ClampMax = "1.0", DisplayName = "爬行腿伤阈值比例"))

@@ -47,8 +47,11 @@ private:
     UPROPERTY(Transient, VisibleInstanceOnly, Category = "小怪|受击", meta = (DisplayName = "已消费命中编号"))
     uint32 ObservedHitSerial = 0;
 
-    /** 最近成功触发的表现时间 仅用于连射力度限制 */
-    float LastAppliedTime = -1.0f;
+    /** 本轮已经施加物理反应 结束时必须完成清理 */
+    bool bHasAppliedReaction = false;
+
+    /** 致死命中的局部冲击完成时间 只影响死亡姿态衔接 */
+    float DeathReactionEndsAt = -1.0f;
 
     /** 最近接收的存活事实 */
     bool bPresentationAlive = true;

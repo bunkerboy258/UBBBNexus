@@ -57,7 +57,11 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     First.LastHitRegion = EBBBMonsterHitRegion::LeftLeg;
     Damage.Contributions.Add(1, First);
     Run();
-    TestEqual(TEXT("腿伤首次减速"), Mobility.SlowMinimumRatio, 0.5f);
+    TestEqual(TEXT("腿伤首次减速"), Mobility.SlowMinimumRatio, 0.3f);
+    TestEqual(TEXT("保持阶段最低速度不提前恢复"), Mobility.GetSpeedRatio(Mobility.SlowRecoveryStartedAt - 0.01f), 0.3f);
+    TestTrue(TEXT("恢复中点平滑回升"), FMath::IsNearlyEqual(Mobility.GetSpeedRatio(
+        (Mobility.SlowRecoveryStartedAt + Mobility.SlowEndsAt) * 0.5f), 0.65f));
+    TestEqual(TEXT("恢复结束重新达到正常速度"), Mobility.GetSpeedRatio(Mobility.SlowEndsAt), 1.0f);
     TestFalse(TEXT("未达到腿伤阈值"), Mobility.bCrawling);
     const float End = Mobility.SlowEndsAt;
     Run();
@@ -70,7 +74,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     Damage.Contributions.Add(2, Second);
     Run();
     TestTrue(TEXT("合并不同玩家腿伤达到阈值"), Mobility.bCrawling);
-    TestEqual(TEXT("第二次命中不叠乘"), Mobility.SlowMinimumRatio, 0.5f);
+    TestEqual(TEXT("第二次命中不叠乘"), Mobility.SlowMinimumRatio, 0.3f);
     TestEqual(TEXT("生命按全部累计贡献计算"), Health.CurrentHealth, 70.0f);
     FBBBMonsterDamageLocalControlPacket Packet;
     Packet.Include(First);

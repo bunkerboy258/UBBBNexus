@@ -121,6 +121,7 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             if (Health[Index].CurrentHealth <= 0.0f)
             {
                 Motion.SlowMinimumRatio = 1.0f;
+                Motion.SlowRecoveryStartedAt = Now;
                 Motion.SlowEndsAt = Now;
                 continue;
             }
@@ -152,15 +153,15 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 Duration = Settings->LegHitSlowDuration;
             }
             const double Age = ServerTime - Latest->LastHitTime;
-            if (Age < -0.1 || Age >= Duration)
+            const float HoldDuration = Settings->HitSlowHoldDuration;
+            if (Age < -0.1 || Age >= HoldDuration + Duration)
             {
                 continue;
             }
-            const float CurrentRatio = FMath::Lerp(Motion.SlowMinimumRatio, 1.0f,
-                FMath::Clamp((Now - Motion.SlowStartedAt) / FMath::Max(Motion.SlowEndsAt - Motion.SlowStartedAt, SMALL_NUMBER), 0.0f, 1.0f));
-            Motion.SlowMinimumRatio = FMath::Min(CurrentRatio, Ratio);
-            Motion.SlowStartedAt = Now;
-            Motion.SlowEndsAt = FMath::Max(Motion.SlowEndsAt, Now + Duration - static_cast<float>(FMath::Max(Age, 0.0)));
+            const float HitTime = Now - static_cast<float>(FMath::Max(Age, 0.0));
+            Motion.SlowMinimumRatio = FMath::Min(Motion.GetSpeedRatio(Now), Ratio);
+            Motion.SlowRecoveryStartedAt = FMath::Max(Motion.SlowRecoveryStartedAt, HitTime + HoldDuration);
+            Motion.SlowEndsAt = FMath::Max(Motion.SlowEndsAt, Motion.SlowRecoveryStartedAt + Duration);
         }
     });
 }

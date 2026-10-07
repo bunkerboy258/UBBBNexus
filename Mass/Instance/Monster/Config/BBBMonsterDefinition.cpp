@@ -17,6 +17,7 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(BodyHitSlowDuration) && BodyHitSlowDuration > 0.0f
         && FMath::IsFinite(ArmHitSlowDuration) && ArmHitSlowDuration > 0.0f
         && FMath::IsFinite(LegHitSlowDuration) && LegHitSlowDuration > 0.0f
+        && FMath::IsFinite(HitSlowHoldDuration) && HitSlowHoldDuration >= 0.0f
         && FMath::IsFinite(CrawlLegDamageFraction) && CrawlLegDamageFraction > 0.0f && CrawlLegDamageFraction <= 1.0f
         && FMath::IsFinite(CrawlSpeed) && CrawlSpeed > 0.0f && CrawlSpeed <= WalkSpeed
         && FMath::IsFinite(CrawlCapsuleHalfHeight) && CrawlCapsuleHalfHeight >= CollisionRadius && CrawlCapsuleHalfHeight <= CapsuleHalfHeight

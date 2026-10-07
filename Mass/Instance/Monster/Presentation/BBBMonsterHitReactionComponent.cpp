@@ -24,11 +24,21 @@ UBBBMonsterHitReactionComponent::UBBBMonsterHitReactionComponent(const FObjectIn
 
 void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, const bool bAlive)
 {
+    const bool bEnteredDeath = bPresentationAlive && !bAlive;
     bPresentationAlive = bAlive;
-    if (!bAlive)
+    if (bEnteredDeath)
+    {
+        DeathReactionEndsAt = GetWorld()->GetTimeSeconds() + 0.45f;
+    }
+    if (!bAlive && GetWorld()->GetTimeSeconds() >= DeathReactionEndsAt)
     {
         ResetHitReactSystem();
         ObservedHitSerial = Hit.Serial;
+        return;
+    }
+
+    if (!bAlive && !bEnteredDeath)
+    {
         return;
     }
 
@@ -58,34 +68,30 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 
     int32 ProfileIndex = 0;
-    FName BoneName = TEXT("spine_03");
-    float LinearStrength = 700.0f;
-    float AngularStrength = 1600.0f;
+    FName BoneName = TEXT("spine_01");
+    float LinearStrength = 600.0f;
+    float AngularStrength = 1400.0f;
     switch (Hit.Region)
     {
         case EBBBMonsterHitRegion::Head:
             ProfileIndex = 1;
             BoneName = TEXT("head");
-            LinearStrength = 520.0f;
-            AngularStrength = 2400.0f;
+            LinearStrength = 300.0f;
+            AngularStrength = 2000.0f;
             break;
         case EBBBMonsterHitRegion::LeftArm:
         case EBBBMonsterHitRegion::RightArm:
             ProfileIndex = 2;
             BoneName = Hit.Region == EBBBMonsterHitRegion::LeftArm ? TEXT("upperarm_l") : TEXT("upperarm_r");
-            if (PhysicsAsset->FindBodyIndex(BoneName) == INDEX_NONE)
-            {
-                BoneName = Hit.Region == EBBBMonsterHitRegion::LeftArm ? TEXT("clavicle_l") : TEXT("clavicle_r");
-            }
-            LinearStrength = 1000.0f;
-            AngularStrength = 4000.0f;
+            LinearStrength = 600.0f;
+            AngularStrength = 2600.0f;
             break;
         case EBBBMonsterHitRegion::LeftLeg:
         case EBBBMonsterHitRegion::RightLeg:
             ProfileIndex = 3;
             BoneName = Hit.Region == EBBBMonsterHitRegion::LeftLeg ? TEXT("thigh_l") : TEXT("thigh_r");
-            LinearStrength = 500.0f;
-            AngularStrength = 1200.0f;
+            LinearStrength = 260.0f;
+            AngularStrength = 1400.0f;
             break;
         default:
             break;
@@ -100,13 +106,23 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     const FVector Direction = Hit.Direction.GetSafeNormal();
     const FVector Lever = Hit.Position - Mesh->GetBoneLocation(BoneName);
     FVector AngularAxis = FVector::CrossProduct(Lever, Direction).GetSafeNormal();
-    if (AngularAxis.IsNearlyZero())
+    if (ProfileIndex <= 1)
     {
         AngularAxis = FVector::CrossProduct(FVector::UpVector, Direction).GetSafeNormal();
     }
+    if (ProfileIndex == 3 || (ProfileIndex == 2 && AngularAxis.IsNearlyZero()))
+    {
+        AngularAxis = FVector::CrossProduct(Direction, FVector::UpVector).GetSafeNormal();
+    }
 
-    const float Now = GetWorld()->GetTimeSeconds();
-    const float RepeatedScale = LastAppliedTime < 0.0f ? 1.0f : FMath::Lerp(0.55f, 1.0f, FMath::Clamp((Now - LastAppliedTime) / 0.25f, 0.0f, 1.0f));
+    // 连射刷新同一局部混合而不追加同骨骼状态 每次命中保留完整冲击
+    for (int32 Index = PhysicsBlends.Num() - 1; Index >= 0; --Index)
+    {
+        if (PhysicsBlends[Index].SimulatedBoneName == BoneName)
+        {
+            PhysicsBlends.RemoveAt(Index);
+        }
+    }
     FHitReactImpulseParams Impulse;
     Impulse.LinearImpulse.bApplyImpulse = true;
     Impulse.LinearImpulse.Impulse = LinearStrength;
@@ -117,22 +133,23 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     World.AngularDirection = AngularAxis;
     const FHitReactInputParams Params(AvailableProfiles[ProfileIndex], BoneName, true);
     RequestAnimationUpdate();
-    if (HitReact(Params, Impulse, World, RepeatedScale))
+    if (HitReact(Params, Impulse, World, 1.0f))
     {
-        LastAppliedTime = Now;
+        bHasAppliedReaction = true;
         if (IsValid(PhysicalAnimation))
         {
             PhysicalAnimation->AddTickPrerequisiteComponent(this);
             PhysicalAnimation->SetComponentTickEnabled(true);
         }
         UE_LOG(LogTemp, Verbose, TEXT("[BBBHitReact]命中编号=%u 部位=%s LOD=%d 直线=%.1f 旋转=%.1f 力度=%.2f"),
-            Hit.Serial, *BoneName.ToString(), Mesh->GetPredictedLODLevel(), LinearStrength, AngularStrength, RepeatedScale);
+            Hit.Serial, *BoneName.ToString(), Mesh->GetPredictedLODLevel(), LinearStrength, AngularStrength, 1.0f);
     }
 }
 
 bool UBBBMonsterHitReactionComponent::CanHitReact_Implementation() const
 {
-    return bPresentationAlive && IsValid(GetOwner()) && !GetOwner()->IsHidden() && IsValid(Mesh)
+    return (bPresentationAlive || (GetWorld() && GetWorld()->GetTimeSeconds() < DeathReactionEndsAt))
+        && IsValid(GetOwner()) && !GetOwner()->IsHidden() && IsValid(Mesh)
         && Mesh->IsVisible() && Mesh->GetPredictedLODLevel() <= 2;
 }
 
@@ -172,7 +189,7 @@ void UBBBMonsterHitReactionComponent::ResetHitReactSystem()
     {
         PhysicalAnimation->SetComponentTickEnabled(false);
     }
-    const bool bHadReaction = LastAppliedTime >= 0.0f || !PhysicsBlends.IsEmpty() || PendingImpulse.IsValid() || bCollisionEnabledChanged || bPhysicalAnimationProfileChanged || bConstraintProfileChanged;
+    const bool bHadReaction = bHasAppliedReaction || !PhysicsBlends.IsEmpty() || PendingImpulse.IsValid() || bCollisionEnabledChanged || bPhysicalAnimationProfileChanged || bConstraintProfileChanged;
     if (bHadReaction && IsValid(Mesh))
     {
         Mesh->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
@@ -197,7 +214,7 @@ void UBBBMonsterHitReactionComponent::ResetHitReactSystem()
     PendingImpulse = {};
     LastProfileHitReactTimes.Reset();
     LastHitReactTime = -1.0f;
-    LastAppliedTime = -1.0f;
+    bHasAppliedReaction = false;
     bCollisionEnabledChanged = false;
     bPhysicalAnimationProfileChanged = false;
     bConstraintProfileChanged = false;
@@ -209,6 +226,7 @@ void UBBBMonsterHitReactionComponent::ResetPresentation()
     ResetHitReactSystem();
     ObservedHitSerial = 0;
     bPresentationAlive = true;
+    DeathReactionEndsAt = -1.0f;
 }
 
 uint32 UBBBMonsterHitReactionComponent::GetObservedHitSerial() const

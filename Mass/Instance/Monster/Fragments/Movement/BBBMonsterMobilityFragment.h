@@ -13,7 +13,7 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
     float SlowMinimumRatio = 1.0f;
 
     /** 当前减速开始时间 使用本机世界秒数 */
-    float SlowStartedAt = 0.0f;
+    float SlowRecoveryStartedAt = 0.0f;
 
     /** 当前减速恢复完成时间 */
     float SlowEndsAt = 0.0f;
@@ -23,4 +23,12 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
 
     /** 首次转入爬行的本机世界时间 */
     float CrawlStartedAt = 0.0f;
+
+    /** @return 当前减速比例 保持阶段不提前回升 */
+    float GetSpeedRatio(const float Now) const
+    {
+        const float Progress = FMath::Clamp((Now - SlowRecoveryStartedAt)
+            / FMath::Max(SlowEndsAt - SlowRecoveryStartedAt, SMALL_NUMBER), 0.0f, 1.0f);
+        return FMath::Lerp(SlowMinimumRatio, 1.0f, Progress);
+    }
 };

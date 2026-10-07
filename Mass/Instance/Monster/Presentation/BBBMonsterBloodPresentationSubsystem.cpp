@@ -67,7 +67,7 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
                 Writer->WritePosition(TEXT("Position"), Index, Impact.Position);
                 const FVector Outward = Impact.Normal.GetSafeNormal();
                 const FVector Tangent = FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal();
-                const FVector Spray = (Outward * 0.85f + Tangent * 0.3f + FVector::UpVector * 0.15f).GetSafeNormal();
+                const FVector Spray = (Outward * 0.75f + Tangent * 0.25f + FVector::UpVector * 0.25f).GetSafeNormal();
                 Writer->WriteVector(TEXT("Normal"), Index, Outward);
                 Writer->WriteVector(TEXT("Direction"), Index, Spray);
                 Writer->WriteInt(TEXT("Surface"), Index, 2);
@@ -82,8 +82,8 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
     for (const FBBBMonsterBloodImpact& Impact : Impacts)
     {
         const FVector Outward = Impact.Normal.GetSafeNormal();
-        const FVector Spray = (Outward * 0.85f + FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal() * 0.3f
-            + FVector::UpVector * 0.15f).GetSafeNormal();
+        const FVector Spray = (Outward * 0.75f + FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal() * 0.25f
+            + FVector::UpVector * 0.25f).GetSafeNormal();
         const FVector Start = Impact.Position + Outward * 4.0f;
         FHitResult Ground;
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMonsterBloodGround), false);
@@ -133,8 +133,9 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         UDecalComponent* Decal = Decals[Slot];
         const int32 Choice = (FMath::Abs(FMath::RoundToInt(Ground.ImpactPoint.X)) + Slot) % Settings.GroundMaterials.Num();
         Decal->SetDecalMaterial(Settings.GroundMaterials[Choice]);
-        const float Size = Impact.Region == EBBBMonsterHitRegion::Head ? 22.0f : 17.0f;
-        Decal->DecalSize = FVector(5.0f, Size, Size * 1.3f);
+        const float Variation = 0.8f + (Choice % 4) * 0.15f;
+        const float Size = (Impact.Region == EBBBMonsterHitRegion::Head ? 32.0f : 26.0f) * Variation;
+        Decal->DecalSize = FVector(3.0f, Size, Size * 1.15f);
         FRotator Rotation = (-Ground.ImpactNormal).Rotation();
         Rotation.Roll = FMath::Fmod(Impact.Direction.Rotation().Yaw + Slot * 47.0f, 360.0f);
         Decal->SetWorldLocationAndRotation(Ground.ImpactPoint + Ground.ImpactNormal * 0.5f, Rotation);

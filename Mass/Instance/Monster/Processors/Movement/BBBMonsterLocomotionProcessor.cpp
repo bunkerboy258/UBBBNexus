@@ -292,10 +292,11 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
                 const float UprightSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :
                     Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
-                const float SlowProgress = FMath::Clamp((Now - Injury.SlowStartedAt) / FMath::Max(Injury.SlowEndsAt - Injury.SlowStartedAt, SMALL_NUMBER), 0.0f, 1.0f);
-                const float SpeedRatio = FMath::Lerp(Injury.SlowMinimumRatio, 1.0f, SlowProgress);
+                const float SpeedRatio = Injury.GetSpeedRatio(Now);
                 const float TargetSpeed = (Injury.bCrawling && Settings ? Settings->CrawlSpeed : UprightSpeed) * SpeedRatio;
-                const float Speed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
+                const float InterpolatedSpeed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
+                // 受击压制在保持阶段直接限制实际速度 恢复阶段仍由正常加速度推进
+                const float Speed = Now < Injury.SlowRecoveryStartedAt ? FMath::Min(InterpolatedSpeed, TargetSpeed) : InterpolatedSpeed;
                 const float Distance = FMath::Min3(Speed * DeltaSeconds, PointDistance, Remaining);
                 const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
                 const float Steering = FMath::Clamp(Neighbors.SeparationStrength * Neighbors.AvoidanceWeight, 0.0f, 0.65f);
