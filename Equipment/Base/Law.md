@@ -13,6 +13,7 @@ Base/
     Config/                              定义公共静态配置
     Animation/                           定义公共动画实例基类与基本事实
     Input/                               声明实际共用的固定输入
+    Network/                             定义公共网络组件基类
     Logic/                               定义公共生命周期骨架
         Core/
             Initialization/
@@ -30,10 +31,7 @@ Base/
 - 装备 Actor 类
 - 配置类
 - 动画实例类
+- 网络组件类
 - 初始化类
 - 更新管线类
-- 关闭类
-
-Base 对应基类不声明 final
-
-输入包 枚举与事实数据不继承
+- 关闭类(BBBXShutdown)
