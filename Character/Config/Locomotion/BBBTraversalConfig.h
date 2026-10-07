@@ -23,11 +23,11 @@ struct FBBBTraversalConfig final
 
     /** 可触发翻越的最低障碍高度 单位厘米 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "最低障碍高度", ClampMin = "1"))
-    float MinHeight = 55.0f;
+    float MinHeight = 140.0f;
 
     /** 低平台动作允许的最大高度 单位厘米 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "低平台最高高度", ClampMin = "1"))
-    float LowMaxHeight = 125.0f;
+    float LowMaxHeight = 170.0f;
 
     /** 高平台动作允许的最大高度 单位厘米 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "最高攀爬高度", ClampMin = "1"))

@@ -14,4 +14,7 @@ struct FBBBCharacterLocomotionState final
 
     /** 移动处理器是否已经进入根运动控制模式 */
     bool bTraversalControlled = false;
+
+    /** 接管前的水平速度用于交还控制时延续移动惯性 */
+    float TraversalEntrySpeed = 0.0f;
 };

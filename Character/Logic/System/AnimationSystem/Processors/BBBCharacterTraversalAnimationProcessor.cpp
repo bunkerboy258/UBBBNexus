@@ -36,6 +36,7 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
         Dispatch.bExitWindowReached = false;
         Dispatch.Position = 0.0f;
         Dispatch.LastWarpEndTime = 0.0f;
+        Dispatch.ContactWarpEndTime = 0.0f;
         Layer->TraversalRequested(Traversal.Action);
     }
 
@@ -50,6 +51,10 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
             if (Warp && (Warp->WarpTargetName == TEXT("TraversalContact") || Warp->WarpTargetName == TEXT("TraversalEnd")))
             {
                 Dispatch.LastWarpEndTime = FMath::Max(Dispatch.LastWarpEndTime, Notify.GetEndTriggerTime());
+            }
+            if (Warp && Warp->WarpTargetName == TEXT("TraversalContact"))
+            {
+                Dispatch.ContactWarpEndTime = FMath::Max(Dispatch.ContactWarpEndTime, Notify.GetEndTriggerTime());
             }
         }
     }
@@ -82,7 +87,7 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
         if (Instance && !Dispatch.bRootMotionReleased)
         {
             Instance->PushDisableRootMotion();
-            Context.AnimationInstance.Montage_Stop(0.2f, Dispatch.Montage);
+            Context.AnimationInstance.Montage_Stop(Dispatch.Montage->BlendOut.GetBlendTime(), Dispatch.Montage);
         }
         Dispatch.bRootMotionReleased = true;
     }

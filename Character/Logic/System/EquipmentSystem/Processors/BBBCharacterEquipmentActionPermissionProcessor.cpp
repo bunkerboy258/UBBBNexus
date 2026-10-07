@@ -13,6 +13,7 @@ void FBBBCharacterEquipmentActionPermissionProcessor::Update(FBBBCharacterEquipm
     }
 
     // 在攀爬检测后且 CMC 前发送 确保装备本帧不能抢先开火或装匣
-    const bool bAllowed = Context.RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None;
+    const FBBBCharacterTraversalState &Traversal = Context.RuntimeData.Traversal.ReadTraversalState();
+    const bool bAllowed = Traversal.Action == EBBBTraversalAction::None || Traversal.bAnimationReleased;
     Equipment->SubmitInput(FBBBEquipmentActionPermissionLocalControlPacket{{bAllowed}});
 }

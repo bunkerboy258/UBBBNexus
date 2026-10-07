@@ -23,6 +23,9 @@ struct FBBBCharacterTraversalAnimationState final
     /** 最后一个攀爬校正窗口的结束位置 */
     float LastWarpEndTime = 0.0f;
 
+    /** 手部接触校正完成后才允许翻越在障碍背面转为自由下落 */
+    float ContactWarpEndTime = 0.0f;
+
     /** 当前实际播放位置 */
     float Position = 0.0f;
 

@@ -127,19 +127,24 @@ void FBBBCharacterLocomotionProcessor::Update(
     // 镜像直接执行接受的结束结果 控制方等待自身根运动释放后交接
     if (RuntimeData.bTraversalControlled && !bWantsTraversalControl)
     {
-        Movement.StopMovementImmediately();
+        /** 校正位移不作为额外加速来源 退出速度受当前移动档位约束 */
+        const float ExitSpeed = FMath::Min(
+            FMath::Max(RuntimeData.TraversalEntrySpeed, Movement.Velocity.Size2D()),
+            Movement.MaxWalkSpeed);
+        Movement.Velocity = Traversal.EndTarget.GetRotation().GetForwardVector() * ExitSpeed;
         FFindFloorResult Floor;
         Movement.ComputeFloorDist(Character.GetActorLocation(), 8.0f, 8.0f, Floor,
             Character.GetCapsuleComponent()->GetScaledCapsuleRadius());
         Movement.SetMovementMode(Floor.IsWalkableFloor() ? MOVE_Walking : MOVE_Falling);
         RuntimeData.bTraversalControlled = false;
+        RuntimeData.TraversalEntrySpeed = 0.0f;
     }
 
     if (bWantsTraversalControl && !RuntimeData.bTraversalControlled)
     {
         Character.StopJumping();
         Character.ConsumeMovementInputVector();
-        Movement.StopMovementImmediately();
+        RuntimeData.TraversalEntrySpeed = Movement.Velocity.Size2D();
         Movement.SetMovementMode(MOVE_Flying);
         RuntimeData.bTraversalControlled = true;
     }
@@ -151,7 +156,6 @@ void FBBBCharacterLocomotionProcessor::Update(
 
     if (Traversal.Action != EBBBTraversalAction::None && !Traversal.bAnimationReleased)
     {
-        RuntimeData.bRun = false;
         return;
     }
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
