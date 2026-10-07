@@ -53,6 +53,31 @@ float UBBBMonsterLocomotionProcessor::CalculateSpeed(const FBBBMonsterMovementFr
     return FMath::Clamp(Speed, 0.0f, Movement.SprintSpeed);
 }
 
+FQuat UBBBMonsterLocomotionProcessor::CalculateFacing(const FQuat& CurrentRotation, const FVector& HorizontalDelta,
+    const FVector& Velocity, const float DeltaSeconds)
+{
+    if (!ensureMsgf(!CurrentRotation.ContainsNaN() && !HorizontalDelta.ContainsNaN() && !Velocity.ContainsNaN() &&
+        FMath::IsFinite(DeltaSeconds) && DeltaSeconds >= 0.0f, TEXT("[UBBBM]Facing requires finite current motion")))
+    {
+        return CurrentRotation;
+    }
+
+    const FVector HorizontalVelocity(Velocity.X, Velocity.Y, 0.0f);
+    if (DeltaSeconds <= SMALL_NUMBER || HorizontalDelta.IsNearlyZero() ||
+        HorizontalVelocity.SizeSquared() <= FMath::Square(10.0f) ||
+        FVector::DotProduct(HorizontalDelta, HorizontalVelocity) <= 0.0f)
+    {
+        return CurrentRotation;
+    }
+
+    constexpr float TurnDegreesPerSecond = 360.0f;
+    const float CurrentYaw = CurrentRotation.Rotator().Yaw;
+    const float TargetYaw = HorizontalDelta.Rotation().Yaw;
+    const float DeltaYaw = FMath::Clamp(FMath::FindDeltaAngleDegrees(CurrentYaw, TargetYaw),
+        -TurnDegreesPerSecond * DeltaSeconds, TurnDegreesPerSecond * DeltaSeconds);
+    return FRotator(0.0f, CurrentYaw + DeltaYaw, 0.0f).Quaternion();
+}
+
 void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
     FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
     const FVector& HorizontalDelta, const float DeltaSeconds)
@@ -321,11 +346,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Ground Entity=%d Supported=%d Z=%.2f VerticalSpeed=%.2f"),
                     Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
-            const FVector HorizontalVelocity(Velocity.X, Velocity.Y, 0.0f);
-            if (!HorizontalVelocity.IsNearlyZero())
-            {
-                Transform.SetRotation(HorizontalVelocity.ToOrientationQuat());
-            }
+            Transform.SetRotation(CalculateFacing(Transform.GetRotation(), HorizontalDelta, Velocity, DeltaSeconds));
         }
     });
 }

@@ -143,6 +143,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     };
     FVector& Velocity = Manager.GetFragmentDataChecked<FMassVelocityFragment>(Entity).Value;
     const FVector AttackLocation = Transform.GetLocation();
+    const FQuat AttackFacing = Transform.GetRotation();
     for (int32 Frame = 0; Frame < 5; ++Frame)
     {
         Velocity = FVector(500.0f, 0.0f, 0.0f);
@@ -150,6 +151,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
         RunProcessor(Locomotion);
         TestTrue(TEXT("攻击期间位置不改变"), Transform.GetLocation().Equals(AttackLocation, 0.01f));
         TestEqual(TEXT("攻击期间速度归零"), Velocity, FVector::ZeroVector);
+        TestEqual(TEXT("攻击期间不受速度修正影响朝向"), Transform.GetRotation(), AttackFacing);
         TestEqual(TEXT("未完成攻击不得重启"), Combat.AttackId, 1u);
     }
 
@@ -159,15 +161,18 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("每次攻击只判定一次命中"), Combat.bHitAttempted);
     Combat.NextAttackTime = World->GetTimeSeconds();
     Run();
-    TestEqual(TEXT("攻击完成先恢复移动而非立即连击"), State.State, EBBBMonsterBehavior::Chase);
-    TestEqual(TEXT("恢复移动不新建攻击编号"), Combat.AttackId, 1u);
+    TestEqual(TEXT("攻击完成当帧重新检测并攻击"), State.State, EBBBMonsterBehavior::Attack);
+    TestEqual(TEXT("下一次攻击使用新编号"), Combat.AttackId, 2u);
+    TestFalse(TEXT("下一次攻击重新开放唯一命中"), Combat.bHitAttempted);
+    RunProcessor(Locomotion);
+    TestTrue(TEXT("连续攻击之间不插入前移"), Transform.GetLocation().Equals(AttackLocation, 0.01f));
+    TestEqual(TEXT("连续攻击之间速度保持归零"), Velocity, FVector::ZeroVector);
     TestEqual(TEXT("恢复追击后的目标档位为跑步"), UBBBMonsterLocomotionProcessor::SelectGait(
         Manager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Entity), 150.0f, false), EBBBMonsterGait::Run);
     Run();
-    TestEqual(TEXT("恢复移动后再次检测并攻击"), State.State, EBBBMonsterBehavior::Attack);
-    TestEqual(TEXT("下一次攻击使用新编号"), Combat.AttackId, 2u);
+    TestEqual(TEXT("未完成的新攻击保持原地执行"), State.State, EBBBMonsterBehavior::Attack);
+    TestEqual(TEXT("逐帧检测不重复开启新攻击"), Combat.AttackId, 2u);
     Combat.bAttackFinished = true;
-    Run();
     Combat.NextAttackTime = World->GetTimeSeconds() + 10.0f;
     Run();
     TestEqual(TEXT("范围内冷却期间仍追击而非待机"), State.State, EBBBMonsterBehavior::Chase);

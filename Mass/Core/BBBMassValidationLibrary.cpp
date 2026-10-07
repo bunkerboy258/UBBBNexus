@@ -31,6 +31,8 @@
 #include "NavMesh/RecastNavMesh.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterCombatFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "MassEntityQuery.h"
 #include "MassExecutionContext.h"
@@ -241,6 +243,15 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("enteredAt"), Behavior->StateEnteredTime);
             Sample->SetNumberField(TEXT("endsAt"), Behavior->StateEndsAtTime);
             Sample->SetNumberField(TEXT("speedCmS"), Velocity ? Velocity->Value.Size2D() : 0.0);
+            Sample->SetNumberField(TEXT("yawDegrees"), Transform ? Transform->GetTransform().Rotator().Yaw : 0.0);
+            Sample->SetNumberField(TEXT("velocityX"), Velocity ? Velocity->Value.X : 0.0);
+            Sample->SetNumberField(TEXT("velocityY"), Velocity ? Velocity->Value.Y : 0.0);
+            const auto* Combat = Manager.GetFragmentDataPtr<FBBBMonsterCombatFragment>(Entity);
+            const auto* Avoidance = Manager.GetFragmentDataPtr<FBBBMonsterAvoidanceFragment>(Entity);
+            Sample->SetNumberField(TEXT("attackId"), Combat ? Combat->AttackId : 0);
+            Sample->SetBoolField(TEXT("attackFinished"), Combat && Combat->bAttackFinished);
+            Sample->SetBoolField(TEXT("hitAttempted"), Combat && Combat->bHitAttempted);
+            Sample->SetNumberField(TEXT("separationStrength"), Avoidance ? Avoidance->SeparationStrength : 0.0);
             Sample->SetNumberField(TEXT("verticalSpeedCmS"), Velocity ? Velocity->Value.Z : 0.0);
             Sample->SetBoolField(TEXT("grounded"), Ground && Ground->bGrounded);
             Sample->SetNumberField(TEXT("supportNormalZ"), Ground ? Ground->SupportNormal.Z : 0.0);
@@ -262,6 +273,10 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("slowEndsAt"), Mobility ? Mobility->SlowEndsAt : 0.0f);
             Sample->SetNumberField(TEXT("health"), Health ? Health->CurrentHealth : 0.0f);
             Sample->SetStringField(TEXT("actorPath"), ActorFragment && ActorFragment->Get() ? ActorFragment->Get()->GetPathName() : TEXT(""));
+            const AActor* const DisplayActor = ActorFragment ? ActorFragment->Get() : nullptr;
+            Sample->SetNumberField(TEXT("actorYawDegrees"), DisplayActor ? DisplayActor->GetActorRotation().Yaw : 0.0);
+            Sample->SetNumberField(TEXT("actorPositionErrorCm"), DisplayActor && Transform ?
+                FVector::Distance(DisplayActor->GetActorLocation(), Transform->GetTransform().GetLocation()) : 0.0);
             if (Transform && Navigation->PathPoints.IsValidIndex(Navigation->PathPointIndex))
             {
                 const FVector Position = Transform->GetTransform().GetLocation();

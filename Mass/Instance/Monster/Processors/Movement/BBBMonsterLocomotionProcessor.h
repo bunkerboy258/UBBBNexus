@@ -36,6 +36,16 @@ public:
     static float CalculateSpeed(const FBBBMonsterMovementFragment& Movement, float CurrentSpeed, float TargetSpeed, float RemainingDistance, float DeltaSeconds);
 
     /**
+     * @param CurrentRotation		当前逻辑朝向
+     * @param HorizontalDelta		本帧主动水平位移
+     * @param Velocity		碰撞后的真实速度
+     * @param DeltaSeconds		当前更新步长
+     * @return 过滤低速修正并限制转身速度的水平朝向
+     */
+    static FQuat CalculateFacing(const FQuat& CurrentRotation, const FVector& HorizontalDelta,
+        const FVector& Velocity, float DeltaSeconds);
+
+    /**
      * @param World		碰撞查询与重力来源
      * @param Movement		逻辑胶囊与地面参数
      * @param Ground		本次支撑结果

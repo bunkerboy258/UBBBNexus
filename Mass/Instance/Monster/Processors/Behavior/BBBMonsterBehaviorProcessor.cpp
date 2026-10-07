@@ -209,12 +209,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
-            if (State.State == EBBBMonsterBehavior::Attack)
-            {
-                EnterState(EBBBMonsterBehavior::Chase);
-                continue;
-            }
-
             const bool bInRange = FVector::DistSquared(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(Combat.AttackRange);
 
             if (Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime)
