@@ -8,28 +8,11 @@ class UBBBRifleDefinition;
 
 /** 步枪动画图只读的动作结果 */
 UCLASS(BlueprintType)
-class ABBB_EVAC_API UBBBRifleAnimInstance : public UBBBEquipmentAnimInstance
+class ABBB_EVAC_API UBBBRifleAnimInstance final : public UBBBEquipmentAnimInstance
 {
     GENERATED_BODY()
 
 public:
-    /**
-     * 发布由动画系统整理的步枪事实
-     * @param InLoadedAmmo			当前弹量
-     * @param InAmmoCapacity			弹匣容量
-     * @param bInReloading			当前换弹状态
-     * @param InTimeSinceLastFireSeconds	距最近开火的时间
-     * @return 无
-     */
-    void PublishRifleSnapshot(
-        int32 InLoadedAmmo,
-        int32 InAmmoCapacity,
-        bool bInReloading,
-        float InTimeSinceLastFireSeconds,
-        int32 InFireSequence,
-        float InSnapshotTimeSeconds,
-        const UBBBRifleDefinition &Definition);
-
     /** @return 本次武器快照的世界时间 */
     UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
     float GetSnapshotTimeSeconds() const
@@ -104,6 +87,26 @@ protected:
     float TimeSinceLastFireSeconds = 0.0f;
 
 private:
+    friend class FBBBRifleAnimationProcessor;
+
+    /**
+     * 发布由动画系统整理的步枪事实
+     * @param InLoadedAmmo			当前弹量
+     * @param InAmmoCapacity			弹匣容量
+     * @param bInReloading			当前换弹状态
+     * @param InTimeSinceLastFireSeconds	距最近开火的时间
+     * @return 无
+     */
+    void PublishRifleSnapshot(
+        int32 InLoadedAmmo,
+        int32 InAmmoCapacity,
+        bool bInReloading,
+        float InTimeSinceLastFireSeconds,
+        int32 InFireSequence,
+        float InSnapshotTimeSeconds,
+        const UBBBRifleDefinition &Definition);
+
+
     /** 腰射目标跟随速度 */
     UPROPERTY(BlueprintReadOnly, Transient, meta = (AllowPrivateAccess = "true", DisplayName = "腰射瞄准跟随速度"))
     float HipFireAimFollowSpeed = 18.0f;

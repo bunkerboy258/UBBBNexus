@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentType.h"
 #include "BBBEquipmentDefinition.generated.h"
 
 class UBBBEquipmentAnimInstance;
@@ -16,6 +17,10 @@ class ABBB_EVAC_API UBBBEquipmentDefinition : public UPrimaryDataAsset
     GENERATED_BODY()
 
 public:
+    /** 装备所属类别 供角色动画读取统一分类 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "装备类型"))
+    EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;
+
     /** 装备在目录查找和网络同步中使用的标识 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (DisplayName = "装备标识"))
     FName EquipmentId;

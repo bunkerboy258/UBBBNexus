@@ -1,8 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentActionPermissionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentLifecycleProcessor.h"
+
+#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentAnimationInputProcessor.h"
 
 class FBBBCharacterInitializer;
 class FBBBCharacterUpdatePipeline;
@@ -30,6 +33,9 @@ private:
      * @return 无
      */
     void Update();
+
+    /** @return 无 在攀爬结果成立后交接装备操作许可 */
+    void UpdateActionPermission();
 
     /**
      * 注入装备系统依赖并建立空容器
@@ -62,5 +68,11 @@ private:
 
     /** 装备生命周期处理器 */
     FBBBCharacterEquipmentLifecycleProcessor LifecycleProcessor;
+
+    /** 动画通知通信处理器 */
+    FBBBCharacterEquipmentAnimationInputProcessor AnimationInputProcessor;
+
+    /** CMC 前的持有者操作许可通信 */
+    FBBBCharacterEquipmentActionPermissionProcessor ActionPermissionProcessor;
 
 };

@@ -6,6 +6,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -34,6 +36,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
+    const ABBBEquipment *Equipment = Character.GetActiveEquipment();
+    const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+    FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
 
     // 优先使用配置骨骼作为瞄准起点否则使用角色网格位置

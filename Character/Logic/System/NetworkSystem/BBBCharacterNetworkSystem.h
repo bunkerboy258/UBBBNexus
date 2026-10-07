@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentObservationProcessor.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBTraversalObservationProcessor.h"
@@ -41,6 +42,7 @@ private:
     /** 角色网络发送配置 */
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 
+    FBBBEquipmentObservationProcessor EquipmentObservationProcessor;
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBRunObservationProcessor RunObservationProcessor;
     FBBBTraversalObservationProcessor TraversalObservationProcessor;

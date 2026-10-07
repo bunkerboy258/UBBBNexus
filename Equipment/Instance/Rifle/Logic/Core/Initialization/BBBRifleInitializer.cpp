@@ -5,23 +5,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBRifleInitializer::ConfigureTick(ABBBRifleEquipment &Equipment)
+bool FBBBRifleInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) const
 {
-    Equipment.PrimaryActorTick.bCanEverTick = true;
-    Equipment.PrimaryActorTick.bStartWithTickEnabled = false;
-    Equipment.PrimaryActorTick.TickGroup = TG_PostUpdateWork;
-    Equipment.PrimaryActorTick.EndTickGroup = TG_PostUpdateWork;
-
-    if (USkeletalMeshComponent *Mesh = Equipment.GetEquipmentSkeletalMesh())
-    {
-        Equipment.PrimaryActorTick.AddPrerequisite(Mesh, Mesh->PrimaryComponentTick);
-    }
-}
-
-//------------------------------------------------------------------------------
-
-bool FBBBRifleInitializer::Initialize(ABBBRifleEquipment &Equipment)
-{
+    auto &Equipment = static_cast<ABBBRifleEquipment &>(BaseEquipment);
     const UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(Equipment.GetDefinition());
     if (!ensureMsgf(RifleDefinition, TEXT("步枪必须配置 UBBBRifleDefinition")))
     {

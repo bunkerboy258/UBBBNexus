@@ -1,20 +1,15 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Logic/BBBEquipmentAllowFireLogicAnimNotify.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentAllowFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Fire/FBBBRifleAllowFireLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBEquipmentAllowFireLogicAnimNotify::Notify(USkeletalMeshComponent* MeshComp,
     UAnimSequenceBase*, const FAnimNotifyEventReference&)
 {
     if (!MeshComp) { return; }
-    ABBBEquipment* Equipment = Cast<ABBBEquipment>(MeshComp->GetOwner());
-    if (ABBBCharacter* Character = Cast<ABBBCharacter>(MeshComp->GetOwner()))
-    {
-        Equipment = Character->GetActiveEquipment();
-    }
+    ABBBRifleEquipment* Equipment = Cast<ABBBRifleEquipment>(MeshComp->GetOwner());
     if (IsValid(Equipment) && Equipment->IsEquipped() && !Equipment->IsMirror())
     {
-        Equipment->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+        Equipment->SubmitInput(FBBBRifleAllowFireLocalControlPacket{});
     }
 }

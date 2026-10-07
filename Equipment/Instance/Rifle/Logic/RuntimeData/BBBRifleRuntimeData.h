@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/DomainData/BBBRifleNetworkDomainState.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/DomainData/BBBRifleParseDomainState.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/BBBRifleActionDomainState.h"
@@ -16,4 +17,6 @@ struct FBBBRifleRuntimeData final
     /** Animation 领域 */
     FBBBRifleAnimationDomainState Animation;
 
+    /** 当前事实的网络观察基准 */
+    FBBBRifleNetworkDomainState Network;
 };

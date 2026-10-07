@@ -34,6 +34,27 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
 private:
+    friend class FBBBEquipmentObservationProcessor;
+
+    /** @param EquipmentId	实际装备标识 @param Generation	持有实例标识 @return 无 */
+    void ReplicateEquipment(FName EquipmentId, uint64 Generation);
+
+    /** @param EquipmentId	已经成立的装备标识 @param Generation	持有实例标识 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitEquipment(FName EquipmentId, uint64 Generation);
+
+    /** @return 无 将当前持有关系提交为角色输入 */
+    UFUNCTION()
+    void OnRep_Equipment();
+
+    /** 当前实际装备标识 */
+    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
+    FName ReplicatedEquipmentId;
+
+    /** 当前实际持有实例标识 */
+    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
+    uint64 ReplicatedEquipmentGeneration = 0;
+
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
     friend class FBBBTraversalObservationProcessor;

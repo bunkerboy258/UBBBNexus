@@ -127,6 +127,12 @@ public:
     /** @return 角色是否拥有网络权威 */
     bool HasNetworkAuthority() const;
 
+    /** @return 当前实际持有实例标识 */
+    uint64 GetEquipmentGeneration() const
+    {
+        return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveGeneration;
+    }
+
     /** @return 装备独立网络组件 */
     UBBBEquipmentNetworkComponent *GetEquipmentNetworkComponent() const;
 
@@ -168,6 +174,7 @@ private:
     FBBBCharacterAimSystem AimSystem;
 
     FBBBCharacterLocomotionSystem LocomotionSystem;
+
     
     FBBBCharacterItemSystem ItemSystem;
 

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentType.h"
 #include "BBBCharacterAnimationFactState.generated.h"
 
 /** 游戏线程维护并提交给动画实例的角色动画事实状态 */
@@ -9,6 +10,10 @@ USTRUCT()
 struct FBBBCharacterAnimationFactState final
 {
     GENERATED_BODY()
+
+    /** 实际持有装备的配置类别 空手时为无 */
+    UPROPERTY(Transient)
+    EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;
 
     /** 本帧是否正在执行翻越 */
     UPROPERTY(Transient)

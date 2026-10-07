@@ -2,7 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRifleAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
@@ -10,8 +10,9 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 
-void FBBBRifleShutdown::Shutdown(ABBBRifleEquipment &Equipment)
+void FBBBRifleShutdown::ShutdownInstance(ABBBEquipment &BaseEquipment) const
 {
+    auto &Equipment = static_cast<ABBBRifleEquipment &>(BaseEquipment);
     ABBBCharacter *Character = Cast<ABBBCharacter>(Equipment.GetOwner());
     USkeletalMeshComponent *Mesh = Equipment.GetEquipmentSkeletalMesh();
     const UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(Equipment.GetDefinition());
@@ -25,7 +26,7 @@ void FBBBRifleShutdown::Shutdown(ABBBRifleEquipment &Equipment)
             *Mesh,
             *RifleDefinition,
             Equipment.RuntimeData,
-            *World};
+            *World, !Equipment.IsMirror()};
         FBBBRifleAnimationProcessor::Stop(Context);
     }
 

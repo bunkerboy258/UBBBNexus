@@ -7,6 +7,9 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -31,7 +34,8 @@ void FBBBCharacterEquipmentLifecycleProcessor::Update(FBBBCharacterEquipmentUpda
     {
         Context.DesiredEquipment = nullptr;
     }
-    if (Selection.ActiveMainHandInstance == Context.DesiredEquipment)
+    if (Selection.ActiveMainHandInstance == Context.DesiredEquipment
+        && (!Context.bIsMirror || Context.DesiredGeneration == 0 || Selection.ActiveGeneration == Context.DesiredGeneration))
     {
         return;
     }
@@ -39,7 +43,14 @@ void FBBBCharacterEquipmentLifecycleProcessor::Update(FBBBCharacterEquipmentUpda
     ABBBEquipment *Previous = Selection.ActiveMainHandInstance;
     if (IsValid(Previous))
     {
-        Previous->OnUnequipped();
+        if (Context.bIsMirror)
+        {
+            Previous->SubmitInput(FBBBEquipmentUnequipAuthorityFactPacket{});
+        }
+        if (!Context.bIsMirror)
+        {
+            Previous->SubmitInput(FBBBEquipmentUnequipLocalControlPacket{});
+        }
         Detach(&Context.CharacterMesh, *Previous);
         if (Context.bIsMirror)
         {
@@ -48,6 +59,14 @@ void FBBBCharacterEquipmentLifecycleProcessor::Update(FBBBCharacterEquipmentUpda
     }
     Selection.ActiveMainHandInstance = nullptr;
     Selection.ActiveEquipmentId = NAME_None;
+    if (Context.bIsMirror)
+    {
+        Selection.ActiveGeneration = Context.DesiredGeneration;
+    }
+    if (!Context.bIsMirror)
+    {
+        ++Selection.ActiveGeneration;
+    }
     ABBBEquipment *Desired = Context.DesiredEquipment;
     if (!Desired)
     {
@@ -79,7 +98,14 @@ void FBBBCharacterEquipmentLifecycleProcessor::Shutdown(FBBBCharacterEquipmentUp
     ABBBEquipment *Active = Selection.ActiveMainHandInstance.Get();
     if (IsValid(Active))
     {
-        Active->OnUnequipped();
+        if (Context.bIsMirror)
+        {
+            Active->SubmitInput(FBBBEquipmentUnequipAuthorityFactPacket{});
+        }
+        if (!Context.bIsMirror)
+        {
+            Active->SubmitInput(FBBBEquipmentUnequipLocalControlPacket{});
+        }
         Detach(&Context.CharacterMesh, *Active);
         if (Context.bIsMirror)
         {
@@ -155,34 +181,20 @@ bool FBBBCharacterEquipmentLifecycleProcessor::Attach(
 
     Equipment.SetActorRelativeTransform(AttachmentOffset);
     Equipment.SetActorHiddenInGame(false);
-    Equipment.PrimaryActorTick.AddPrerequisite(CharacterMesh.GetOwner(), CharacterMesh.GetOwner()->PrimaryActorTick);
-    Equipment.PrimaryActorTick.AddPrerequisite(&CharacterMesh, CharacterMesh.PrimaryComponentTick);
+    FBBBCharacterUpdatePipeline::RegisterEquipmentTicks(CharacterMesh, Equipment);
     Equipment.SetActorTickEnabled(true);
-    // 让武器网格等待角色网格完成更新
-    WeaponMesh->PrimaryComponentTick.AddPrerequisite(&CharacterMesh, CharacterMesh.PrimaryComponentTick);
     return true;
 }
 
 void FBBBCharacterEquipmentLifecycleProcessor::Detach(
     USkeletalMeshComponent *CharacterMesh, ABBBEquipment &Equipment)
 {
-    // 分离前移除武器网格对角色网格的更新依赖
-    USkeletalMeshComponent *WeaponMesh = Equipment.GetEquipmentSkeletalMesh();
-    if (CharacterMesh && WeaponMesh)
+    if (CharacterMesh)
     {
-        WeaponMesh->PrimaryComponentTick.RemovePrerequisite(CharacterMesh, CharacterMesh->PrimaryComponentTick);
+        FBBBCharacterUpdatePipeline::UnregisterEquipmentTicks(*CharacterMesh, Equipment);
     }
 
     Equipment.SetActorHiddenInGame(true);
-    Equipment.SetActorTickEnabled(false);
-    if (CharacterMesh)
-    {
-        Equipment.PrimaryActorTick.RemovePrerequisite(CharacterMesh, CharacterMesh->PrimaryComponentTick);
-    }
-    if (AActor *Holder = Equipment.GetOwner())
-    {
-        Equipment.PrimaryActorTick.RemovePrerequisite(Holder, Holder->PrimaryActorTick);
-    }
     Equipment.DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 }
 

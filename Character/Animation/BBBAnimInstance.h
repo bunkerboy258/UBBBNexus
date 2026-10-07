@@ -36,6 +36,13 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationFactProcessor;
 
 public:
+    /** @return 实际持有装备的类型快照是否为步枪 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "是步枪"))
+    bool IsRifle() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->SourceEquipmentType == EBBBEquipmentType::Rifle;
+    }
+
     /** @return 角色是否正在翻越 用于临时关闭地面与握持修正 */
     UFUNCTION(BlueprintPure, Category = "BBB|移动", meta = (BlueprintThreadSafe))
     bool IsTraversing() const
@@ -175,6 +182,10 @@ public:
     float GroundDistance = 0.0f;
 
 private:
+    /** 由角色动画系统发布的实际装备类别 */
+    UPROPERTY(Transient)
+    EBBBEquipmentType SourceEquipmentType = EBBBEquipmentType::None;
+
     /**
      * 绑定装备实际使用的武器动画实例
      * @param InWeaponAnimInstance 武器动画实例 卸下时传入空

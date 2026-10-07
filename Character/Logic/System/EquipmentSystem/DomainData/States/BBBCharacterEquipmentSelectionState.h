@@ -23,4 +23,9 @@ struct FBBBCharacterEquipmentSelectionState final
     /** 当前是否存在装备创建或清空请求 */
     bool bHasEquipmentRequest = false;
 
+    /** 当前实际持有实例标识 */
+    uint64 ActiveGeneration = 1;
+
+    /** 待还原的持有实例标识 */
+    uint64 PendingGeneration = 0;
 };

@@ -2,48 +2,61 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkState.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkMessage.h"
 #include "BBBEquipmentNetworkComponent.generated.h"
 
 class ABBBEquipment;
 
-/** 借用持有角色连接传输当前装备状态 */
+/** 公共消息载体与具体装备协议组件的基类 */
 UCLASS(ClassGroup = "BBB")
-class ABBB_EVAC_API UBBBEquipmentNetworkComponent final : public UActorComponent
+class ABBB_EVAC_API UBBBEquipmentNetworkComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
     UBBBEquipmentNetworkComponent();
 
-    /** @param Equipment	当前装备 空引用表示空手 @param Data	具体装备状态 @return 无 */
-    void PublishState(ABBBEquipment *Equipment, const TArray<uint8> &Data);
-
-    /** @param OutLifetimeProps	复制属性列表 @return 无 */
+    /** @param OutLifetimeProps	复制字段 @return 无 */
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
+    /** @return 无 向已经创建的当前实例投递待接收消息 */
+    void DeliverPending();
+
 protected:
-    virtual void BeginPlay() override;
-    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+    /** @param Kind	本类协议编号 @param Data	已编码结果 @return 是否接受发送 */
+    bool PublishMessage(uint8 Kind, TArray<uint8> Data);
+
+    /** @param Kind	协议编号 @param Data	消息内容 @param Revision	消息顺序 @param bRemoteMessage	是否为主机收到的事件 @return 是否接受 */
+    virtual bool ReceiveMessage(uint8 Kind, const TArray<uint8> &Data, uint64 Revision, bool bRemoteMessage);
 
 private:
-    /** @param State	本机操控端产生的完整状态 @return 无 */
+    /** @param Message	本机已经成立的结果 @return 无 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitState(FBBBEquipmentNetworkState State);
+    void ServerSubmitMessage(FBBBEquipmentNetworkMessage Message);
 
-    /** 只复制当前结果 不保留事件历史 */
-    UPROPERTY(Replicated)
-    FBBBEquipmentNetworkState ReplicatedState;
+    /** @return 无 当前消息到达后尝试投递 */
+    UFUNCTION()
+    void OnRep_Messages();
 
-    /** 发送侧最近一次持有实例 */
-    TWeakObjectPtr<ABBBEquipment> PublishedEquipment;
+    /** @param Message	待保存的消息 @param Destination	当前协议槽位 @return 无 */
+    static void StoreMessage(FBBBEquipmentNetworkMessage Message, TArray<FBBBEquipmentNetworkMessage> &Destination);
 
-    /** 接收侧发起切换时的旧实例 */
-    TWeakObjectPtr<ABBBEquipment> PreviousEquipment;
+    /** 每个协议编号仅保留当前消息 不保存事件历史 */
+    UPROPERTY(ReplicatedUsing = OnRep_Messages)
+    TArray<FBBBEquipmentNetworkMessage> Messages;
 
-    /** 已投递持有关系切换的代次 */
-    uint64 RequestedGeneration = 0;
+    /** 主机等待持有关系建立的当前事件 */
+    TArray<FBBBEquipmentNetworkMessage> RemoteMessages;
 
-    /** 已消费的当前代次版本 */
-    uint64 AppliedRevision = 0;
+    /** 当前发送实例 */
+    uint64 PublishedGeneration = 0;
+
+    /** 当前发送顺序 */
+    uint64 PublishedRevision = 0;
+
+    /** 当前接收实例 */
+    uint64 DeliveredGeneration = 0;
+
+    /** 各协议槽位已经消费的顺序 */
+    TMap<uint8, uint64> DeliveredRevisions;
 };

@@ -12,8 +12,14 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.RunState, Context);
     Process(InputState.ItemAdd, Context);
     Process(InputState.ItemMove, Context);
+    Process(InputState.RemoteEquipmentSelectionState, Context);
     Process(InputState.AuthorityEquipmentSelectionState, Context);
     Process(InputState.ItemSelect, Context);
+    Process(InputState.EquipmentBeginAction, Context);
+    Process(InputState.EquipmentEndAction, Context);
+    Process(InputState.EquipmentBeginContact, Context);
+    Process(InputState.EquipmentEndContact, Context);
+
 
     Process(InputState.Movement, Context);
     Process(InputState.Run, Context);

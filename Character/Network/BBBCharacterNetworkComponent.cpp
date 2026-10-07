@@ -7,6 +7,8 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -25,6 +27,9 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentId, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentGeneration, COND_SimulatedOnly);
 
     // 本机控制角色已经生成同一份事实 只让模拟代理执行接收投递
     DOREPLIFETIME_CONDITION(
@@ -164,4 +169,32 @@ void UBBBCharacterNetworkComponent::MulticastTraversal_Implementation(uint32 Id,
         return;
     }
     Character->SubmitInput(FBBBTraversalStartAuthorityFactPacket{Id, Action, Contact, End});
+}
+
+void UBBBCharacterNetworkComponent::ReplicateEquipment(const FName EquipmentId, const uint64 Generation)
+{
+    if (!IsOwnerAuthority() || Generation == 0 || Generation < ReplicatedEquipmentGeneration)
+    {
+        return;
+    }
+
+    ReplicatedEquipmentId = EquipmentId;
+    ReplicatedEquipmentGeneration = Generation;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitEquipment_Implementation(const FName EquipmentId, const uint64 Generation)
+{
+    if (Character && IsOwnerAuthority() && Generation > ReplicatedEquipmentGeneration)
+    {
+        Character->SubmitInput(FBBBEquipmentSelectionRemoteMessagePacket{{EquipmentId}, {Generation}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Equipment()
+{
+    if (Character && Character->IsNetworkMirror() && ReplicatedEquipmentGeneration > 0)
+    {
+        Character->SubmitInput(FBBBEquipmentSelectionAuthorityFactPacket{{ReplicatedEquipmentId}, {ReplicatedEquipmentGeneration}});
+    }
 }

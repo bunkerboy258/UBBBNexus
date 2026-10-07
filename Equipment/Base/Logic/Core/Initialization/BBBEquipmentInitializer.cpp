@@ -5,7 +5,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 
-bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment)
+bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment) const
 {
     if (!ensureMsgf(
         IsValid(Equipment.Definition) && !Equipment.Definition->EquipmentId.IsNone()
@@ -28,5 +28,5 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment)
         return false;
     }
 
-    return Equipment.InitializeRuntimeData();
+    return InitializeInstance(Equipment);
 }

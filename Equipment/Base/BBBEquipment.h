@@ -9,13 +9,19 @@ class UBBBEquipmentDefinition;
 class UArrowComponent;
 class USkeletalMeshComponent;
 class FBBBEquipmentInitializer;
+class UBBBEquipmentNetworkComponent;
+struct FBBBEquipmentSecondaryLocalControlPacket;
+struct FBBBEquipmentUnequipLocalControlPacket;
+struct FBBBEquipmentUnequipAuthorityFactPacket;
 struct FBBBEquipmentEquipLocalControlPacket;
 struct FBBBEquipmentEquipAuthorityFactPacket;
-struct FBBBEquipmentBlockFireLocalControlPacket;
-struct FBBBEquipmentAllowFireLocalControlPacket;
 struct FBBBEquipmentPrimaryLocalControlPacket;
-struct FBBBEquipmentReloadLocalControlPacket;
-struct FBBBEquipmentStateAuthorityFactPacket;
+struct FBBBEquipmentActionPermissionLocalControlPacket;
+struct FBBBEquipmentBeginActionLocalControlPacket;
+struct FBBBEquipmentEndActionLocalControlPacket;
+struct FBBBEquipmentBeginContactLocalControlPacket;
+struct FBBBEquipmentEndContactLocalControlPacket;
+
 
 /** 单件装备的共享演员 配置和固定行为入口 */
 UCLASS(Abstract, BlueprintType)
@@ -82,15 +88,34 @@ public:
         return QueueInput(Forward<TPacket>(Packet));
     }
 
-    /** 卸下前收束自身输入和表现 @return 无 */
-    virtual void OnUnequipped();
+    /** @return 装备自身的网络协议组件 */
+    UBBBEquipmentNetworkComponent *GetNetworkComponent() const;
+
+    /** @param EndPlayReason 结束原因 @return 无 */
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
     friend class FBBBEquipmentInitializer;
 
 protected:
     /** 初始化具体装备状态 @return 是否初始化成功 */
-    virtual bool InitializeRuntimeData();
+    virtual bool InitializeRuntimeData() PURE_VIRTUAL(ABBBEquipment::InitializeRuntimeData, return false;);
+
+    /** @return 无 通过具体关闭类收束自身 */
+    virtual void ShutdownRuntimeData() PURE_VIRTUAL(ABBBEquipment::ShutdownRuntimeData, );
+
+    /** @param Packet 通用次行为请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet);
+
+    /** @param Packet 本机解除持有请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet);
+
+    /** @param Packet 镜像解除持有请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet);
+
+    /** 由具体装备根创建自己的协议组件 */
+    UPROPERTY(VisibleAnywhere, Category = "BBB|装备", meta = (DisplayName = "装备协议组件"))
+    TObjectPtr<UBBBEquipmentNetworkComponent> NetworkComponent = nullptr;
 
     /** @param Packet	装备表现请求 @return 是否接受 */
     virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet);
@@ -98,20 +123,23 @@ protected:
     /** @param Packet	权威装备表现请求 @return 是否接受 */
     virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet);
 
-    /** 动画禁止开火输入 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet);
-
-    /** 动画允许开火输入 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet);
-
     /** @param Packet	主行为请求 @return 是否接受 */
     virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet);
 
-    /** @param Packet	换弹请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentReloadLocalControlPacket Packet);
+    /** @param Packet\t持有者操作许可 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet);
 
-    /** @param Payload	当前网络结果 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload);
+    /** @param Packet BeginAction动画事实 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet);
+
+    /** @param Packet EndAction动画事实 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentEndActionLocalControlPacket Packet);
+
+    /** @param Packet BeginContact动画事实 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentBeginContactLocalControlPacket Packet);
+
+    /** @param Packet EndContact动画事实 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket Packet);
 
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (AllowPrivateAccess = "true", DisplayName = "定义资产"))

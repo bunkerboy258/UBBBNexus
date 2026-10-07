@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRiflePresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
@@ -13,16 +13,25 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "Animation/AnimInstance.h"
+#include "Components/SkeletalMeshComponent.h"
 
 void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
     const FBBBRifleUpdateContext &Context, UAnimMontage *Montage, const bool bClear)
 {
-    if (!Montage || !Context.Equipment.IsEquipped())
+    if (!Montage || (!bClear && !Context.Equipment.IsEquipped()))
     {
         return;
     }
 
-    const bool bMirror = Context.Equipment.IsMirror();
+    // 仅允许收束仍属于此装备的动画 不能清掉同槽中接替它的攀爬
+    UAnimInstance *CharacterAnimation = Context.Character.GetMesh()->GetAnimInstance();
+    if (bClear && (!CharacterAnimation || !CharacterAnimation->Montage_IsActive(Montage)))
+    {
+        return;
+    }
+
+    const bool bMirror = !Context.bCausal;
 
     for (const FSlotAnimationTrack &Track : Montage->SlotAnimTracks)
     {
@@ -109,7 +118,7 @@ void FBBBRiflePresentationProcessor::PlayFire(const FBBBRifleUpdateContext &Cont
     const FVector2D Random(FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f));
     const FVector2D HipImpulse = Hip.AimImpulseDegrees + Hip.AimImpulseRandomDegrees * Random;
     const FVector2D AimImpulse = Aim.AimImpulseDegrees + Aim.AimImpulseRandomDegrees * Random;
-    if (Context.Equipment.IsMirror())
+    if (!Context.bCausal)
     {
         Context.Character.SubmitInput(FBBBAimImpulseAuthorityFactPacket{
             HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,

@@ -1,17 +1,23 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/BBBRifleNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Action/FBBBRifleActionStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
 
-void FBBBRifleNetworkSystem::Update(FBBBRifleUpdateContext &Context)
+void FBBBRifleNetworkSystem::Update(FBBBRifleUpdateContext &Context, const bool bAuthority)
 {
-    FBBBRifleNetworkProcessor::Update(Context);
-}
+    if (Context.bCausal && bAuthority)
+    {
+        FBBBRifleNetworkProcessor::Update(Context);
+        return;
+    }
 
-bool FBBBRifleNetworkSystem::DecodeAuthorityFact(
-    const FBBBRifleRuntimeData &Data,
-    const TArray<uint8> &Payload,
-    FBBBRifleActionStateAuthorityFactPacket &Packet)
-{
-    return FBBBRifleNetworkProcessor::Decode(Data, Payload, Packet);
+    if (Context.bCausal && !bAuthority)
+    {
+        FBBBRifleNetworkProcessor::Update(Context);
+        return;
+    }
+
+    if (!Context.bCausal && bAuthority)
+    {
+        FBBBRifleNetworkProcessor::Update(Context);
+    }
 }

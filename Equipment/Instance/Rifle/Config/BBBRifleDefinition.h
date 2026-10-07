@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleHandlingSettings.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleAirborneModifiers.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/Handling/BBBRifleHandlingSettings.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/Handling/BBBRifleAirborneModifiers.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBRifleDefinition.generated.h"
 
@@ -17,6 +17,12 @@ class ABBB_EVAC_API UBBBRifleDefinition final : public UBBBEquipmentDefinition
     GENERATED_BODY()
 
 public:
+    /** @return 无 为步枪配置建立明确类型 */
+    UBBBRifleDefinition()
+    {
+        EquipmentType = EBBBEquipmentType::Rifle;
+    }
+
     /** 左手握持目标所使用的装备插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|装备", meta = (DisplayName = "左手插槽名"))
     FName LeftHandSocketName = TEXT("LeftHand");

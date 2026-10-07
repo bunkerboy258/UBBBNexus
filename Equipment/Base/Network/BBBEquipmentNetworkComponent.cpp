@@ -1,161 +1,160 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentStateAuthorityFactPacket.h"
 #include "Net/UnrealNetwork.h"
 
 UBBBEquipmentNetworkComponent::UBBBEquipmentNetworkComponent()
 {
+    PrimaryComponentTick.bCanEverTick = false;
     SetIsReplicatedByDefault(true);
-    PrimaryComponentTick.bCanEverTick = true;
-    PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
-}
-
-void UBBBEquipmentNetworkComponent::BeginPlay()
-{
-    Super::BeginPlay();
-    if (AActor *Owner = GetOwner())
-    {
-        AddTickPrerequisiteActor(Owner);
-    }
 }
 
 void UBBBEquipmentNetworkComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME_CONDITION(UBBBEquipmentNetworkComponent, ReplicatedState, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBEquipmentNetworkComponent, Messages, COND_SimulatedOnly);
 }
 
-void UBBBEquipmentNetworkComponent::PublishState(ABBBEquipment *Equipment, const TArray<uint8> &Data)
+void UBBBEquipmentNetworkComponent::StoreMessage(
+    FBBBEquipmentNetworkMessage Message, TArray<FBBBEquipmentNetworkMessage> &Destination)
 {
-    ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    if (!Character || Character->IsNetworkMirror()
-        || Character->GetActiveEquipment() != Equipment)
+    Destination.RemoveAll([&Message](const auto &Existing)
     {
+        return Existing.Generation < Message.Generation;
+    });
+
+    auto *Existing = Destination.FindByPredicate([&Message](const auto &Value)
+    {
+        return Value.Generation == Message.Generation && Value.Kind == Message.Kind;
+    });
+
+    if (Existing)
+    {
+        if (Message.Revision > Existing->Revision)
+        {
+            *Existing = MoveTemp(Message);
+        }
         return;
     }
 
-    if (!ensureMsgf(Data.Num() <= 128, TEXT("装备当前状态超过传输容量")))
+    if (Destination.IsEmpty() || Destination[0].Generation <= Message.Generation)
     {
-        return;
+        Destination.Add(MoveTemp(Message));
+    }
+}
+
+bool UBBBEquipmentNetworkComponent::PublishMessage(const uint8 Kind, TArray<uint8> Data)
+{
+    auto *Equipment = Cast<ABBBEquipment>(GetOwner());
+    auto *Character = Equipment ? Cast<ABBBCharacter>(Equipment->GetOwner()) : nullptr;
+    if (!Character || Character->GetActiveEquipment() != Equipment
+        || Kind >= 8 || Data.IsEmpty() || Data.Num() > 32)
+    {
+        return false;
     }
 
-    const TWeakObjectPtr<ABBBEquipment> Current(Equipment);
-    const bool bChangedEquipment = PublishedEquipment != Current || ReplicatedState.Generation == 0;
-    if (!bChangedEquipment && ReplicatedState.Data == Data)
+    auto *Carrier = Character->GetEquipmentNetworkComponent();
+    if (!Carrier)
     {
-        return;
+        return false;
     }
 
-    if (bChangedEquipment)
+    const uint64 Generation = Character->GetEquipmentGeneration();
+    if (Generation == 0)
     {
-        ++ReplicatedState.Generation;
-        ReplicatedState.Revision = 0;
-        PublishedEquipment = Current;
+        return false;
     }
 
-    ReplicatedState.EquipmentId = Equipment ? Equipment->GetEquipmentId() : NAME_None;
-    ReplicatedState.Data = Data;
-    ++ReplicatedState.Revision;
+    if (Carrier->PublishedGeneration != Generation)
+    {
+        Carrier->PublishedGeneration = Generation;
+        Carrier->PublishedRevision = 0;
+        Carrier->Messages.Reset();
+    }
+
+    FBBBEquipmentNetworkMessage Message;
+    Message.EquipmentId = Equipment->GetEquipmentId();
+    Message.Generation = Generation;
+    Message.Revision = ++Carrier->PublishedRevision;
+    Message.Kind = Kind;
+    Message.Data = MoveTemp(Data);
+
     if (Character->HasNetworkAuthority())
     {
+        StoreMessage(MoveTemp(Message), Carrier->Messages);
         Character->ForceNetUpdate();
-        return;
+        return true;
     }
 
-    ServerSubmitState(ReplicatedState);
+    Carrier->ServerSubmitMessage(MoveTemp(Message));
+    return true;
 }
 
-void UBBBEquipmentNetworkComponent::ServerSubmitState_Implementation(FBBBEquipmentNetworkState State)
+void UBBBEquipmentNetworkComponent::ServerSubmitMessage_Implementation(FBBBEquipmentNetworkMessage Message)
 {
-    const ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    if (!ensureMsgf(Character && Character->HasAuthority()
-        && State.Generation > 0 && State.Revision > 0 && State.Data.Num() <= 128
-        && (!State.EquipmentId.IsNone() || State.Data.IsEmpty()),
-        TEXT("装备状态传输边界无效")))
+    auto *Character = Cast<ABBBCharacter>(GetOwner());
+    if (!Character || !Character->HasAuthority() || Message.EquipmentId.IsNone()
+        || Message.Generation == 0 || Message.Revision == 0 || Message.Kind >= 8
+        || Message.Data.IsEmpty() || Message.Data.Num() > 32
+        || Message.Generation < Character->GetEquipmentGeneration())
     {
         return;
     }
 
-    if (State.Generation < ReplicatedState.Generation
-        || (State.Generation == ReplicatedState.Generation && State.Revision <= ReplicatedState.Revision))
-    {
-        UE_LOG(LogTemp, Verbose, TEXT("丢弃过期装备状态 Generation=%llu Revision=%llu"), State.Generation, State.Revision);
-        return;
-    }
-
-    // 房主只保留并分发结果 不重新执行发送者的动作
-    ReplicatedState = MoveTemp(State);
-    GetOwner()->ForceNetUpdate();
+    StoreMessage(MoveTemp(Message), RemoteMessages);
+    DeliverPending();
 }
 
-void UBBBEquipmentNetworkComponent::TickComponent(
-    const float DeltaTime, const ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
+void UBBBEquipmentNetworkComponent::OnRep_Messages()
 {
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-    ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    if (!Character)
+    DeliverPending();
+}
+
+void UBBBEquipmentNetworkComponent::DeliverPending()
+{
+    auto *Character = Cast<ABBBCharacter>(GetOwner());
+    ABBBEquipment *Equipment = Character ? Character->GetActiveEquipment() : nullptr;
+    if (!Character || !Character->IsNetworkMirror() || !IsValid(Equipment) || !Equipment->IsInitialized())
     {
         return;
     }
 
-    ABBBEquipment *Equipment = Character->GetActiveEquipment();
-    if (!Character->IsNetworkMirror())
+    UBBBEquipmentNetworkComponent *Protocol = Equipment->GetNetworkComponent();
+    if (!Protocol)
     {
-        if (!IsValid(Equipment))
+        return;
+    }
+
+    const uint64 Generation = Character->GetEquipmentGeneration();
+    if (DeliveredGeneration != Generation)
+    {
+        DeliveredGeneration = Generation;
+        DeliveredRevisions.Reset();
+    }
+
+    const bool bRemoteMessage = Character->HasNetworkAuthority();
+    auto &Pending = bRemoteMessage ? RemoteMessages : Messages;
+    Pending.Sort([](const auto &A, const auto &B)
+    {
+        return A.Revision < B.Revision;
+    });
+
+    for (const auto &Message : Pending)
+    {
+        if (Message.Generation != Generation || Message.EquipmentId != Equipment->GetEquipmentId()
+            || Message.Revision <= DeliveredRevisions.FindRef(Message.Kind))
         {
-            PublishState(nullptr, {});
-        }
-        return;
-    }
-
-    if (ReplicatedState.Generation == 0)
-    {
-        return;
-    }
-
-    if (RequestedGeneration != ReplicatedState.Generation)
-    {
-        PreviousEquipment = Equipment;
-        if (!Character->SubmitInput(FBBBEquipmentSelectionAuthorityFactPacket{ReplicatedState.EquipmentId}))
-        {
-            return;
+            continue;
         }
 
-        RequestedGeneration = ReplicatedState.Generation;
-        AppliedRevision = 0;
-        return;
+        Protocol->ReceiveMessage(Message.Kind, Message.Data, Message.Revision, bRemoteMessage);
+        DeliveredRevisions.Add(Message.Kind, Message.Revision);
     }
+}
 
-    if (AppliedRevision == ReplicatedState.Revision)
-    {
-        return;
-    }
-
-    if (ReplicatedState.EquipmentId.IsNone())
-    {
-        if (!IsValid(Equipment))
-        {
-            AppliedRevision = ReplicatedState.Revision;
-        }
-        return;
-    }
-
-    // 即使定义相同也等待新的持有实例 防止旧枪接收切回后的状态
-    if (!IsValid(Equipment) || Equipment == PreviousEquipment.Get()
-        || Equipment->GetEquipmentId() != ReplicatedState.EquipmentId)
-    {
-        return;
-    }
-
-    if (!ensureMsgf(Equipment->SubmitInput(FBBBEquipmentStateAuthorityFactPacket{ReplicatedState.Data}),
-        TEXT("装备拒绝当前网络状态 %s Generation=%llu Revision=%llu"),
-        *ReplicatedState.EquipmentId.ToString(), ReplicatedState.Generation, ReplicatedState.Revision))
-    {
-        return;
-    }
-
-    AppliedRevision = ReplicatedState.Revision;
+bool UBBBEquipmentNetworkComponent::ReceiveMessage(
+    uint8 Kind, const TArray<uint8> &Data, uint64 Revision, bool bRemoteMessage)
+{
+    return false;
 }

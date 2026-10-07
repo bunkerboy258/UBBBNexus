@@ -23,6 +23,7 @@ BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemAddLocalControlPacket, ItemAdd)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemMoveLocalControlPacket, ItemMove)
 BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionAuthorityFactPacket, AuthorityEquipmentSelectionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionRemoteMessagePacket, RemoteEquipmentSelectionState)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemSelectLocalControlPacket, ItemSelect)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementLocalControlPacket, Movement)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunLocalControlPacket, Run)
@@ -51,6 +52,11 @@ BBB_CHARACTER_INPUT_SLOT(FBBBTraversalStartAuthorityFactPacket, TraversalStartAu
 
 BBB_CHARACTER_INPUT_SLOT(FBBBTraversalEndAuthorityFactPacket, TraversalEndAuthorityFact)
 
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentBeginActionLocalControlPacket, EquipmentBeginAction)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentEndActionLocalControlPacket, EquipmentEndAction)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentBeginContactLocalControlPacket, EquipmentBeginContact)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentEndContactLocalControlPacket, EquipmentEndContact)
+
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */
@@ -73,6 +79,13 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
+            || std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>)
+        {
+            Slot.Data.EquipmentIds.Append(Packet.EquipmentIds);
+            Slot.Data.Generations.Append(Packet.Generations);
+        }
+
         if constexpr (std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>)
         {
             Slot.Data.EquipmentIds.Append(Packet.EquipmentIds);
@@ -86,9 +99,35 @@ namespace BBBCharacterInput
         {
             Slot.Data.Slots.Append(Packet.Slots);
         }
-        if constexpr (!std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentBeginActionLocalControlPacket>)
+        {
+            Slot.Data.Recipients.Append(Packet.Recipients);
+            Slot.Data.Tokens.Append(Packet.Tokens);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentEndActionLocalControlPacket>)
+        {
+            Slot.Data.Recipients.Append(Packet.Recipients);
+            Slot.Data.Tokens.Append(Packet.Tokens);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentBeginContactLocalControlPacket>)
+        {
+            Slot.Data.Recipients.Append(Packet.Recipients);
+            Slot.Data.Tokens.Append(Packet.Tokens);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentEndContactLocalControlPacket>)
+        {
+            Slot.Data.Recipients.Append(Packet.Recipients);
+            Slot.Data.Tokens.Append(Packet.Tokens);
+        }
+        if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>)
+            && !std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentBeginActionLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndActionLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentBeginContactLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndContactLocalControlPacket>)
         {
             Slot.Data = Forward<TPacket>(Packet);
         }

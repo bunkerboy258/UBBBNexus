@@ -23,6 +23,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpda
         return;
     }
 
+    Context.DesiredGeneration = Selection.PendingGeneration;
     Selection.bHasEquipmentRequest = false;
     Context.DesiredEquipment = nullptr;
     if (Selection.PendingEquipmentId.IsNone())

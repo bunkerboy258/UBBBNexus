@@ -23,6 +23,9 @@ struct FBBBRifleActionState final
     /** 动画通知控制的开火限制 不替代弹药与射速检查 */
     bool bFireBlocked = false;
 
+    /** 持有者操作限制 与动画开火通知独立 */
+    bool bOwnerActionsAllowed = true;
+
     /** 当前是否处于换弹流程 */
     bool bIsReloading = false;
 
@@ -31,6 +34,9 @@ struct FBBBRifleActionState final
 
     /** 本帧是否建立持有关系 */
     bool bEquippedThisFrame = false;
+
+    /** 当前已成立动作的顺序 */
+    uint64 ActionRevision = 0;
 
 private:
     friend struct FBBBRifleActionDomainState;

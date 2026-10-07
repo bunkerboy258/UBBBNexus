@@ -43,6 +43,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     bSourceCrouching = FactState.bIsCrouching;
     GroundDistance = FactState.GroundDistance;
     bSourceAiming = FactState.bIsAiming;
+    SourceEquipmentType = FactState.EquipmentType;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
     SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
 }

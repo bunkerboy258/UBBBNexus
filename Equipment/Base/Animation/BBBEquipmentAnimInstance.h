@@ -49,6 +49,10 @@ public:
         return AnimationFacts.bHasLeftHandTarget;
     }
 
+private:
+    friend class FBBBRifleAnimationProcessor;
+    friend class FBBBMeleeAnimationProcessor;
+
     /**
      * 一次性发布本帧装备动画事实
      * @param Facts	装备动画系统计算完成的事实
@@ -56,7 +60,7 @@ public:
      */
     void PublishAnimationFacts(const FBBBEquipmentAnimationFacts &Facts);
 
-private:
+
     UPROPERTY(Transient, BlueprintReadOnly, Category = "BBB|装备|动画", meta = (AllowPrivateAccess = "true", DisplayName = "动画事实"))
     FBBBEquipmentAnimationFacts AnimationFacts;
 };

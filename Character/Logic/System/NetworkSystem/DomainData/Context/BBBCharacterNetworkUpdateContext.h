@@ -1,5 +1,8 @@
 #pragma once
 
+struct FBBBEquipmentNetworkObservationState;
+struct FBBBCharacterEquipmentSelectionState;
+
 class UBBBCharacterNetworkComponent;
 struct FBBBTraversalNetworkObservationState;
 struct FBBBCharacterTraversalState;
@@ -41,4 +44,9 @@ struct FBBBCharacterNetworkUpdateContext final
     FBBBTraversalNetworkObservationState &TraversalObservation;
     /** 控制者已经确定的翻越事实 */
     const FBBBCharacterTraversalState &Traversal;
+    /** 实际持有关系的发送基准 */
+    FBBBEquipmentNetworkObservationState &EquipmentObservation;
+
+    /** 装备系统已经完成的实际关系 */
+    const FBBBCharacterEquipmentSelectionState &Equipment;
 };

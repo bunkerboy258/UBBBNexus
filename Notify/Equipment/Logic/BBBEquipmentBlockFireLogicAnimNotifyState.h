@@ -4,7 +4,7 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "BBBEquipmentBlockFireLogicAnimNotifyState.generated.h"
 
-class ABBBEquipment;
+class ABBBRifleEquipment;
 
 /** 区间开始禁止开火 区间正常结束或中断时解除限制 */
 UCLASS(meta = (DisplayName = "BBB 装备禁止开火"))
@@ -18,5 +18,5 @@ public:
         const FAnimNotifyEventReference& EventReference) override;
 private:
     /** 记录区间开始时的接收装备 结束回调不能解锁后来切换的新装备 */
-    TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<ABBBEquipment>> Recipients;
+    TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<ABBBRifleEquipment>> Recipients;
 };

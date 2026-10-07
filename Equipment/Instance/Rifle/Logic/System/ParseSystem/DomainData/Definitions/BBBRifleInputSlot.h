@@ -9,4 +9,7 @@ struct TBBBRifleInputSlot final
 
     /** 同类输入最后一次提交的数据 */
     TPacket Packet;
+private:
+    friend struct FBBBRifleInputState;
+    TBBBRifleInputSlot() = default;
 };

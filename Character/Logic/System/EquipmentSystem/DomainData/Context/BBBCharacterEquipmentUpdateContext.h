@@ -33,4 +33,6 @@ struct FBBBCharacterEquipmentUpdateContext final
 
     /** 本次是否存在有效选择结果 */
     bool bHasSelectionResult = false;
+    /** 本次镜像目标的持有实例标识 */
+    uint64 DesiredGeneration = 0;
 };

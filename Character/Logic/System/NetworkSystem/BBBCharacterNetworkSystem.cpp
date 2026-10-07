@@ -26,12 +26,6 @@ void FBBBCharacterNetworkSystem::Update()
     const FBBBCharacterNetworkIdentityState &NetworkIdentityState =
         RuntimeData->External.ReadNetworkIdentityState();
 
-    // 远程模拟代理只消费网络组件投递的输入 不参与本机网络观察和发送
-    if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
-    {
-        return;
-    }
-
     // 上下文只聚合已经生成的黑板状态 网络系统只观察状态不生成玩法事实
     FBBBCharacterNetworkUpdateContext Context{
         RuntimeData->Network.AimObservationState,
@@ -43,7 +37,15 @@ void FBBBCharacterNetworkSystem::Update()
         *NetworkConfig,
         *NetworkComponent,
         RuntimeData->Network.TraversalObservationState,
-        RuntimeData->Locomotion.ReadTraversalState()};
+        RuntimeData->Locomotion.ReadTraversalState(),
+        RuntimeData->Network.EquipmentObservationState,
+        RuntimeData->Equipment.ReadEquipmentSelectionState()};
+
+    EquipmentObservationProcessor.Update(Context);
+    if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
+    {
+        return;
+    }
 
     // 固定处理顺序先观察瞄准状态再观察跑步状态
     AimObservationProcessor.Update(Context);

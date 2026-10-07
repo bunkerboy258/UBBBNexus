@@ -37,6 +37,7 @@ void FBBBCharacterEquipmentSystem::Update()
 
     SelectionProcessor.Update(Context);
     LifecycleProcessor.Update(Context);
+    AnimationInputProcessor.Update(Context);
 }
 
 void FBBBCharacterEquipmentSystem::Shutdown()
@@ -49,4 +50,20 @@ void FBBBCharacterEquipmentSystem::Shutdown()
         *Character, *CharacterMesh, *RuntimeData, RightHandWeaponSocketName,
         RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
     LifecycleProcessor.Shutdown(Context);
+}
+
+void FBBBCharacterEquipmentSystem::UpdateActionPermission()
+{
+    if (!RuntimeData || !CharacterMesh || !Character)
+    {
+        return;
+    }
+
+    FBBBCharacterEquipmentUpdateContext Context{
+        *Character,
+        *CharacterMesh,
+        *RuntimeData,
+        RightHandWeaponSocketName,
+        RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
+    ActionPermissionProcessor.Update(Context);
 }

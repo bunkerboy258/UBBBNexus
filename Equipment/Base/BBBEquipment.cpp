@@ -1,16 +1,20 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Logic/Core/Initialization/BBBEquipmentInitializer.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBlockFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -34,7 +38,7 @@ void ABBBEquipment::BeginPlay()
     Super::BeginPlay();
 
     // 装备自己完成初始化 持有者仅检查结果并管理演员生命周期
-    bInitialized = FBBBEquipmentInitializer::Initialize(*this);
+    bInitialized = InitializeRuntimeData();
     ensureMsgf(bInitialized, TEXT("装备 %s 初始化失败"), *GetName());
 }
 
@@ -81,39 +85,9 @@ bool ABBBEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现动画开火限制输入"));
-    return false;
-}
-
-bool ABBBEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现动画开火限制输入"));
-    return false;
-}
-
 bool ABBBEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现主行为输入"));
-    return false;
-}
-
-bool ABBBEquipment::QueueInput(FBBBEquipmentReloadLocalControlPacket Packet)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现换弹输入"));
-    return false;
-}
-
-bool ABBBEquipment::QueueInput(FBBBEquipmentStateAuthorityFactPacket Payload)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现网络状态输入"));
-    return false;
-}
-
-bool ABBBEquipment::InitializeRuntimeData()
-{
-    ensureMsgf(false, TEXT("抽象装备未实现运行时数据初始化"));
     return false;
 }
 
@@ -129,7 +103,58 @@ bool ABBBEquipment::IsEquipped() const
     return Character && Character->GetActiveEquipment() == this;
 }
 
-void ABBBEquipment::OnUnequipped()
+bool ABBBEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet)
 {
-    ensureMsgf(false, TEXT("装备未实现卸下清理"));
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet)
+{
+    ensureMsgf(false, TEXT("装备未实现持有者操作许可输入"));
+    return false;
+}
+
+UBBBEquipmentNetworkComponent *ABBBEquipment::GetNetworkComponent() const
+{
+    return NetworkComponent;
+}
+
+void ABBBEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (bInitialized)
+    {
+        ShutdownRuntimeData();
+    }
+
+    Super::EndPlay(EndPlayReason);
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet)
+{
+    return false;
 }

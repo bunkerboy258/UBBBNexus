@@ -10,6 +10,7 @@
 struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterTraversalState;
 struct FBBBCharacterEquipmentSelectionState;
+struct FBBBCharacterEquipmentAnimationInputState;
 struct FBBBCharacterItemOperationState;
 struct FBBBCharacterAimImpulseState;
 
@@ -51,5 +52,8 @@ struct FBBBCharacterInputContext final
     const FBBBCharacterAnimationFactState &AnimationFacts;
     /** 解析器批准的翻越事实 */
     FBBBCharacterTraversalState &Traversal;
+
+    /** 待转交给装备的动画通知 */
+    FBBBCharacterEquipmentAnimationInputState &EquipmentAnimationInputs;
 
 };

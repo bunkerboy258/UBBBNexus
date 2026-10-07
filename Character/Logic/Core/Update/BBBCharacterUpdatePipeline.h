@@ -3,12 +3,21 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterLateUpdate.h"
 
 class ABBBCharacter;
+class ABBBEquipment;
+class USkeletalMeshComponent;
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
 
 /** 角色根管线只选择更新路径并调度阶段 */
 class FBBBCharacterUpdatePipeline final
 {
+public:
+    /** @param Mesh	持有角色网格 @param Equipment	装备实例 @return 无 */
+    static void RegisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment);
+
+    /** @param Mesh	持有角色网格 @param Equipment	装备实例 @return 无 */
+    static void UnregisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment);
+
 private:
     friend class ABBBCharacter;
     friend class FBBBCharacterInitializer;
@@ -42,13 +51,19 @@ private:
      *
      * @param DeltaSeconds 当前帧间隔
      */
-    void Update(float DeltaSeconds) const;
+    void Update(float DeltaSeconds);
 
     /** 调度移动完成后的动画事实更新 */
     void LateUpdate() const;
 
     /** 管线所属角色 */
     ABBBCharacter *Character = nullptr;
+
+    /** 切换帧中等待旧装备清理的装备 */
+    TWeakObjectPtr<ABBBEquipment> CleanupWaiter;
+
+    /** 切换帧中执行清理的旧装备 */
+    TWeakObjectPtr<ABBBEquipment> CleanupSource;
 
     /** CMC 后执行的引擎 Tick 适配器 */
     FBBBCharacterLateUpdate LateUpdateTick;

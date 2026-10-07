@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBEquipmentNetworkObservationState.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
@@ -35,7 +36,16 @@ public:
         return TraversalObservationState;
     }
 
+    /** @return 实际持有关系的网络发送基准 */
+    const FBBBEquipmentNetworkObservationState &ReadEquipmentNetworkObservationState() const
+    {
+        return EquipmentObservationState;
+    }
+
 private:
+    friend class FBBBEquipmentObservationProcessor;
+    FBBBEquipmentNetworkObservationState EquipmentObservationState;
+
     friend class FBBBTraversalObservationProcessor;
     /** 翻越独立离散同步生命周期 */
     UPROPERTY(Transient)

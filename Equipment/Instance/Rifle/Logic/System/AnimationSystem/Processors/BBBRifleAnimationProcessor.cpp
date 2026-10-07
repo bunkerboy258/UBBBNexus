@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRifleAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
@@ -31,7 +31,7 @@ void FBBBRifleAnimationProcessor::Update(FBBBRifleUpdateContext &Context)
     }
 
     // 第一次镜像快照只建立当前状态 不补播进入视野以前的射击
-    if (State.FireSequence != Action.FireSequence && (State.bInitialized || !Context.Equipment.IsMirror()))
+    if (State.FireSequence != Action.FireSequence && (State.bInitialized || Context.bCausal))
     {
         FBBBRiflePresentationProcessor::PlayFire(Context);
     }

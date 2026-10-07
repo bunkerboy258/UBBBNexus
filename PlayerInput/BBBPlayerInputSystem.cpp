@@ -6,7 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
@@ -130,7 +130,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     }
     if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
     {
-        Equipment->SubmitInput(FBBBEquipmentReloadLocalControlPacket{});
+        Equipment->SubmitInput(FBBBEquipmentSecondaryLocalControlPacket{});
     }
 }
 

@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
@@ -18,18 +18,13 @@ namespace
     void Clear(FBBBRifleActionInputState &Input)
     {
         Input.bEquipRequested = false;
+        Input.bActionPermissionReceived = false;
         Input.bBlockFireRequested = false;
         Input.bAllowFireRequested = false;
         Input.bPrimaryRequested = false;
         Input.bReloadRequested = false;
         Input.bLoadMagazineRequested = false;
         Input.bInterruptReloadRequested = false;
-        Input.bHasAuthorityFact = false;
-        Input.LoadedAmmo = 0;
-        Input.FireSequence = 0;
-        Input.ReloadSequence = 0;
-        Input.bIsReloading = false;
-        Input.bFireBlocked = false;
     }
 }
 
@@ -52,30 +47,33 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
     State.bEquippedThisFrame = Input.bEquipRequested;
-    State.bReloadCompletedThisFrame = false;
-
-    if (Context.Equipment.IsMirror())
+    if (Context.bCausal)
     {
-        if (Input.bHasAuthorityFact)
+        State.bReloadCompletedThisFrame = false;
+    }
+
+    if (!Context.bCausal)
+    {
+        if (State.FireSequence != Context.RuntimeData.Animation.ReadRifleAnimationState().FireSequence
+            && Context.RuntimeData.Animation.ReadRifleAnimationState().bInitialized)
         {
-            State.bReloadCompletedThisFrame = State.bIsReloading
-                && !Input.bIsReloading
-                && Input.LoadedAmmo == State.AmmoCapacity;
-
-            if (State.FireSequence != Input.FireSequence
-                && Context.RuntimeData.Animation.ReadRifleAnimationState().bInitialized)
-            {
-                State.LastFireTimeSeconds = Context.World.GetTimeSeconds();
-                SpawnProjectile(Context);
-            }
-
-            State.LoadedAmmo = Input.LoadedAmmo;
-            State.FireSequence = Input.FireSequence;
-            State.ReloadSequence = Input.ReloadSequence;
-            State.bIsReloading = Input.bIsReloading;
-            State.bFireBlocked = Input.bFireBlocked;
+            State.LastFireTimeSeconds = Context.World.GetTimeSeconds();
+            SpawnProjectile(Context);
         }
 
+        Clear(Input);
+        return;
+    }
+
+    // 操作许可先于装匣与开火通知处理 禁止旧通知在攀爬中补结算
+    if (Input.bActionPermissionReceived)
+    {
+        State.bOwnerActionsAllowed = Input.bActionsAllowed;
+    }
+    if (!State.bOwnerActionsAllowed)
+    {
+        State.bIsReloading = false;
+        State.bEquippedThisFrame = false;
         Clear(Input);
         return;
     }
@@ -186,7 +184,7 @@ void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
     Packet.TracerLengthCm = Definition->TracerLengthCm;
     Packet.TracerWidthCm = Definition->TracerWidthCm;
     Packet.TracerColor = Definition->TracerColor;
-    Packet.bCanCauseDamage = !Context.Equipment.IsMirror();
+    Packet.bCanCauseDamage = Context.bCausal;
 
     const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);
     ensureMsgf(Entity.IsSet() && Mass->SubmitInput(Entity, MoveTemp(Packet)),

@@ -25,6 +25,7 @@ void FBBBCharacterParseSystem::Update() const
         Data->Parse.CameraState,
         Data->Animation.AimImpulseState,
         Data->Animation.ReadAnimationFactState(),
-        Data->Locomotion.TraversalState};
+        Data->Locomotion.TraversalState,
+        Data->Equipment.EquipmentAnimationInputState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

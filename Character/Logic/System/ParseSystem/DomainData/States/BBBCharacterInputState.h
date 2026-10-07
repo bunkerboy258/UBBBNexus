@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
@@ -35,9 +36,22 @@
 
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBTraversalEndAuthorityFactPacket.h"
 
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndContactLocalControlPacket.h"
+
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 装备BeginAction通知输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentBeginActionLocalControlPacket> EquipmentBeginAction;
+    /** 装备EndAction通知输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentEndActionLocalControlPacket> EquipmentEndAction;
+    /** 装备BeginContact通知输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentBeginContactLocalControlPacket> EquipmentBeginContact;
+    /** 装备EndContact通知输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentEndContactLocalControlPacket> EquipmentEndContact;
     /** 翻越StartRemoteMessage输入槽位 */
     TBBBCharacterInputSlot<FBBBTraversalStartRemoteMessagePacket> TraversalStartRemoteMessage;
     /** 翻越EndRemoteMessage输入槽位 */
@@ -54,6 +68,9 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBItemAddLocalControlPacket> ItemAdd;
     /** 背包移动输入槽位 */
     TBBBCharacterInputSlot<FBBBItemMoveLocalControlPacket> ItemMove;
+    /** 远端已经成立的装备持有关系 */
+    TBBBCharacterInputSlot<FBBBEquipmentSelectionRemoteMessagePacket> RemoteEquipmentSelectionState;
+
     /** 权威装备选择事实输入槽位 */
     TBBBCharacterInputSlot<FBBBEquipmentSelectionAuthorityFactPacket> AuthorityEquipmentSelectionState;
     /** 快捷栏装备选择输入槽位 */

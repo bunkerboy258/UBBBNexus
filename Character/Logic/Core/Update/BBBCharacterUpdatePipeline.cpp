@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -45,6 +46,13 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
         return;
     }
 
+    if (CleanupWaiter.IsValid() && CleanupSource.IsValid())
+    {
+        CleanupWaiter->PrimaryActorTick.RemovePrerequisite(CleanupSource.Get(), CleanupSource->PrimaryActorTick);
+    }
+    CleanupWaiter.Reset();
+    CleanupSource.Reset();
+
     // 注销时按反向顺序移除依赖与 Tick 注册
     CharacterMesh->PrimaryComponentTick.RemovePrerequisite(&InCharacter, LateUpdateTick);
     LateUpdateTick.RemovePrerequisite(Movement, Movement->PrimaryComponentTick);
@@ -55,7 +63,7 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
 
 //------------------------------------------------------------------------------
 
-void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
+void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
 {
     if (!Character)
     {
@@ -67,6 +75,13 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     {
         return;
     }
+
+    if (CleanupWaiter.IsValid() && CleanupSource.IsValid())
+    {
+        CleanupWaiter->PrimaryActorTick.RemovePrerequisite(CleanupSource.Get(), CleanupSource->PrimaryActorTick);
+    }
+    CleanupWaiter.Reset();
+    CleanupSource.Reset();
 
     // 所有领域系统读取同一份本帧世界时间快照
     FBBBCharacterWorldState &WorldState = Character->RuntimeData.External.WorldState;
@@ -84,7 +99,16 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     {
         Character->ItemSystem.Update();
     }
+    ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
     Character->EquipmentSystem.Update();
+    ABBBEquipment *CurrentEquipment = Character->GetActiveEquipment();
+    if (IsValid(PreviousEquipment) && IsValid(CurrentEquipment) && PreviousEquipment != CurrentEquipment &&
+        PreviousEquipment->IsActorTickEnabled())
+    {
+        CurrentEquipment->PrimaryActorTick.AddPrerequisite(PreviousEquipment, PreviousEquipment->PrimaryActorTick);
+        CleanupWaiter = CurrentEquipment;
+        CleanupSource = PreviousEquipment;
+    }
 
     if (!NetworkIdentityState.bIsMirror)
     {
@@ -94,6 +118,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds) const
     }
 
     Character->LocomotionSystem.Update();
+    Character->EquipmentSystem.UpdateActionPermission();
 
     // 网络只观察已经成立的状态与事实
     Character->NetworkSystem.Update();
@@ -111,4 +136,24 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
     // CMC 结束后采集最终移动结果并更新动画事实
     Character->AnimationSystem.Update();
 
+}
+
+void FBBBCharacterUpdatePipeline::RegisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment)
+{
+    Equipment.PrimaryActorTick.AddPrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
+    Equipment.PrimaryActorTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+    if (auto *EquipmentMesh = Equipment.GetEquipmentSkeletalMesh())
+    {
+        EquipmentMesh->PrimaryComponentTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+    }
+}
+
+void FBBBCharacterUpdatePipeline::UnregisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment)
+{
+    Equipment.PrimaryActorTick.RemovePrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
+    Equipment.PrimaryActorTick.RemovePrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+    if (auto *EquipmentMesh = Equipment.GetEquipmentSkeletalMesh())
+    {
+        EquipmentMesh->PrimaryComponentTick.RemovePrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+    }
 }
