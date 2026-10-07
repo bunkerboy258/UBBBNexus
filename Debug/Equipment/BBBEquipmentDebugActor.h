@@ -32,7 +32,7 @@ public:
 protected:
     /** 要注入的装备配置 必须已登记在目标角色现有装备目录中 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备调试", meta = (DisplayName = "装备类"))
-    TSubclassOf<ABBBEquipment> EquipmentClass;
+    TArray<TSubclassOf<ABBBEquipment>> EquipmentClasses;
 
     /** 显式目标角色 留空时使用本地玩家角色 */
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "BBB|装备调试", meta = (DisplayName = "目标角色"))

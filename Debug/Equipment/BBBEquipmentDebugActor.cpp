@@ -32,12 +32,22 @@ void ABBBEquipmentDebugActor::BeginPlay()
         return;
     }
 
-    const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
-    if (!ClassDefault || !IsValid(ClassDefault->GetDefinition()) || ClassDefault->GetEquipmentId().IsNone()
-        || PlayerIndex < 0 || !FMath::IsFinite(WaitTimeout) || WaitTimeout <= 0.0f)
+    if (EquipmentClasses.IsEmpty() || PlayerIndex < 0 || !FMath::IsFinite(WaitTimeout) || WaitTimeout <= 0.0f)
     {
         UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 装备注入配置无效 请检查装备 ID 玩家索引和等待时限"), *GetPathName());
         SetActorTickEnabled(false);
+        return;
+    }
+
+    for (const TSubclassOf<ABBBEquipment> EquipmentClass : EquipmentClasses)
+    {
+        const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
+        if (!ClassDefault || !IsValid(ClassDefault->GetDefinition()) || ClassDefault->GetEquipmentId().IsNone())
+        {
+            UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 装备列表包含无效类或装备 ID 不提交入包输入"), *GetPathName());
+            SetActorTickEnabled(false);
+            return;
+        }
     }
 }
 
@@ -78,14 +88,28 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
     }
 
     const UBBBEquipmentCatalog *Catalog = Character->GetCharacterConfig().Equipment.EquipmentCatalog;
-    const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
-    const FName EquipmentId = ClassDefault ? ClassDefault->GetEquipmentId() : NAME_None;
-    if (!ClassDefault || !IsValid(ClassDefault->GetDefinition()) || EquipmentId.IsNone()
-        || !IsValid(Catalog) || Catalog->FindEquipmentClass(EquipmentId) != EquipmentClass)
+    if (!IsValid(Catalog) || EquipmentClasses.IsEmpty())
     {
-        UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 所选装备未登记在目标角色目录或 ID 对应配置不一致 不修改角色配置"), *GetPathName());
+        UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 装备目录或待注入装备列表无效 不提交入包输入"), *GetPathName());
         SetActorTickEnabled(false);
         return;
+    }
+
+    FBBBItemAddLocalControlPacket Packet;
+    Packet.EquipmentIds.Reserve(EquipmentClasses.Num());
+    for (const TSubclassOf<ABBBEquipment> EquipmentClass : EquipmentClasses)
+    {
+        const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
+        const FName EquipmentId = ClassDefault ? ClassDefault->GetEquipmentId() : NAME_None;
+        if (!ClassDefault || !IsValid(ClassDefault->GetDefinition()) || EquipmentId.IsNone()
+            || Catalog->FindEquipmentClass(EquipmentId) != EquipmentClass)
+        {
+            UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 所选装备未登记在目标角色目录或 ID 对应配置不一致 不修改角色配置"), *GetPathName());
+            SetActorTickEnabled(false);
+            return;
+        }
+
+        Packet.EquipmentIds.Add(EquipmentId);
     }
 
     if (Character->RuntimeData.Item.ReadItemInventoryState().BackpackSlots.IsEmpty()
@@ -95,14 +119,18 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
         return;
     }
 
-    const bool bSubmitted = Character->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
+    const FString EquipmentNames = FString::JoinBy(Packet.EquipmentIds, TEXT(" "), [](const FName Id)
+    {
+        return Id.ToString();
+    });
+    const bool bSubmitted = Character->SubmitInput(MoveTemp(Packet));
     SetActorTickEnabled(false);
 
     if (!bSubmitted)
     {
-        UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 向角色 %s 提交装备 %s 失败"), *GetPathName(), *Character->GetPathName(), *EquipmentId.ToString());
+        UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 向角色 %s 提交装备 %s 失败"), *GetPathName(), *Character->GetPathName(), *EquipmentNames);
         return;
     }
 
-    UE_LOG(LogBBBEquipmentDebug, Display, TEXT("%s 已向角色 %s 提交物品 %s 的入包输入 手持装备保持不变"), *GetPathName(), *Character->GetPathName(), *EquipmentId.ToString());
+    UE_LOG(LogBBBEquipmentDebug, Display, TEXT("%s 已向角色 %s 提交物品 %s 的入包输入 手持装备保持不变"), *GetPathName(), *Character->GetPathName(), *EquipmentNames);
 }
