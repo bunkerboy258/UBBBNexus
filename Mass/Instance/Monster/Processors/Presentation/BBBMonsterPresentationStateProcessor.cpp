@@ -72,11 +72,6 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
                     : Combat.AnimationHitFraction + (1.0f - Combat.AnimationHitFraction) * (Elapsed - Combat.AttackWindup) / Combat.AttackRecovery;
             }
 
-            if (States[Index].State == EBBBMonsterBehavior::Hurt)
-            {
-                PresentationState.ActionProgress = Elapsed / Healths[Index].HurtDuration;
-            }
-
             if (States[Index].State == EBBBMonsterBehavior::Dead)
             {
                 PresentationState.ActionProgress = Elapsed / Healths[Index].DeathLifetime;

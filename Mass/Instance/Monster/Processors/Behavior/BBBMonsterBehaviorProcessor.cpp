@@ -150,11 +150,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
-            if (State.State == EBBBMonsterBehavior::Hurt && WorldTime < State.StateEnteredTime + Health.HurtDuration)
-            {
-                continue;
-            }
-
             if (State.State == EBBBMonsterBehavior::Attack && !Grounds[Index].bGrounded)
             {
                 Combat.AttackTarget.Reset();
@@ -168,7 +163,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
-            // 受伤硬直结束后恢复追击状态
             const FBBBMonsterTargetFragment& Target = Targets[Index];
 
             if (!Target.bHasTarget || !Target.TargetActor.IsValid())

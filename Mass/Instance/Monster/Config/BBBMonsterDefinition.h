@@ -21,10 +21,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "最大生命值"))
     float MaxHealth = 100.0f;
 
-    /** 受伤硬直秒数 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "受击持续时间"))
-    float HurtDuration = 0.2f;
-
     /** 死亡表现保留秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "死亡后存活时间"))
     float DeathLifetime = 3.0f;

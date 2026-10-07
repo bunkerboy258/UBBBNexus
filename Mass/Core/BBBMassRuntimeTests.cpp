@@ -391,11 +391,11 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
         0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface, HitPart));
 
     auto& State = Manager.GetFragmentDataChecked<FBBBMonsterPresentationStateFragment>(Entity);
-    State.State = EBBBMonsterBehavior::Hurt;
+    State.State = EBBBMonsterBehavior::Alert;
     State.ActionId = 1;
     State.ActionProgress = 0.5f;
     Run(UBBBMonsterPresentationProcessor::StaticClass());
-    TestEqual(TEXT("受伤状态不等待位置收敛"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Hurt);
+    TestEqual(TEXT("警觉状态不等待位置收敛"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Alert);
     UBBBMonsterFactAnimInstance* const Animation = Cast<UBBBMonsterFactAnimInstance>(Actor->GetMonsterMesh()->GetAnimInstance());
     if (!TestNotNull(TEXT("正式表现仅使用动画蓝图实例"), Animation))
     {
@@ -408,12 +408,14 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     {
         return false;
     }
-    TestEqual(TEXT("受伤动画立即应用逻辑进度"), Progress->GetPropertyValue_InContainer(Animation), 0.5f);
-    TestTrue(TEXT("受伤时显示仍在追靠"), Actor->GetActorLocation().X < 200.0);
+    TestEqual(TEXT("警觉循环姿势不使用动作进度"), Progress->GetPropertyValue_InContainer(Animation), 0.0f);
+    TestTrue(TEXT("警觉时显示仍在追靠"), Actor->GetActorLocation().X < 200.0);
     State.State = EBBBMonsterBehavior::Attack;
     ++State.ActionId;
     Run(UBBBMonsterPresentationProcessor::StaticClass());
     TestEqual(TEXT("攻击状态立即响应"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Attack);
+    Animation->NativeUpdateAnimation(0.0f);
+    TestEqual(TEXT("攻击动画立即应用逻辑进度"), Progress->GetPropertyValue_InContainer(Animation), 0.5f);
     State.State = EBBBMonsterBehavior::Dead;
     ++State.ActionId;
     Run(UBBBMonsterPresentationProcessor::StaticClass());

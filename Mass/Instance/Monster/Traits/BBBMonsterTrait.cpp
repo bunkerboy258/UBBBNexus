@@ -66,7 +66,6 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     auto& Health = BuildContext.AddFragment_GetRef<FBBBMonsterHealthFragment>();
     Health.CurrentHealth = Settings->MaxHealth;
     Health.MaxHealth = Settings->MaxHealth;
-    Health.HurtDuration = Settings->HurtDuration;
     Health.DeathLifetime = Settings->DeathLifetime;
     auto& Movement = BuildContext.AddFragment_GetRef<FBBBMonsterMovementFragment>();
     Movement.WalkSpeed = Settings->WalkSpeed;

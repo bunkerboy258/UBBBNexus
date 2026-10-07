@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "GameFramework/Actor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
 
 void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
 {
@@ -11,7 +12,11 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     AActor* const Owner = GetOwningActor();
     PresentationIdFact = Owner ? Owner->GetUniqueID() : 0;
     Presentation = Owner ? Owner->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;
-    ensureMsgf(Presentation.IsValid(), TEXT("[UBBBM]Fact animation requires a monster presentation component"));
+    UWorld* const World = GetWorld();
+    if (World && World->IsGameWorld())
+    {
+        ensureMsgf(Presentation.IsValid(), TEXT("[UBBBM]Fact animation requires a monster presentation component"));
+    }
     BehaviorFact = EBBBMonsterBehavior::Idle;
     CrawlingFact = false;
     CrawlProgressFact = 0.0f;

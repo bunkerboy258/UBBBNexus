@@ -4,7 +4,6 @@ bool UBBBMonsterDefinition::IsValid() const
 {
     return EntityConfig != nullptr
         && FMath::IsFinite(MaxHealth) && MaxHealth > 0.0f
-        && FMath::IsFinite(HurtDuration) && HurtDuration > 0.0f
         && FMath::IsFinite(DeathLifetime) && DeathLifetime > 0.0f
         && FMath::IsFinite(WalkSpeed) && WalkSpeed > 0.0f
         && FMath::IsFinite(RunSpeed) && RunSpeed > WalkSpeed

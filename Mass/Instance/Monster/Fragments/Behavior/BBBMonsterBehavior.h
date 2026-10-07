@@ -24,9 +24,6 @@ enum class EBBBMonsterBehavior : uint8
     /** 处于攻击距离内 */
     Attack,
 
-    /** 收到伤害后的短暂硬直 */
-    Hurt,
-
     /** 生命值归零后的死亡状态 */
     Dead
 };

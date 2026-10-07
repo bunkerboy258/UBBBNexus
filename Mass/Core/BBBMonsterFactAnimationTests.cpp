@@ -16,6 +16,7 @@
 #include "MassVisualizationTrait.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 
 /** 验证男女僵尸的新基类只复制事实 不选择动画或推进玩法时间 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterFactAnimationTest, "UBBB.Mass.ZombieAnimationFacts",
@@ -23,6 +24,10 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterFactAnimationTest, "UBBB.Mass.Zombie
 
 bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
 {
+    TestEqual(TEXT("六行为死亡枚举值"), static_cast<int32>(EBBBMonsterBehavior::Dead), 5);
+    TestEqual(TEXT("行为枚举只包含六种行为与引擎末尾标记"), StaticEnum<EBBBMonsterBehavior>()->NumEnums(), 7);
+    TestNull(TEXT("定义不保留硬直时长"), FindFProperty<FProperty>(UBBBMonsterDefinition::StaticClass(), TEXT("HurtDuration")));
+    TestNull(TEXT("生命片段不保留硬直时长"), FindFProperty<FProperty>(FBBBMonsterHealthFragment::StaticStruct(), TEXT("HurtDuration")));
     const auto Initialization = UWorld::InitializationValues()
         .AllowAudioPlayback(false)
         .CreatePhysicsScene(false)
@@ -88,6 +93,8 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         const FFloatProperty* CrawlProgress = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("CrawlProgressFact"));
         TestTrue(TEXT("爬行事实只读且可反射"), Crawl && CrawlProgress && Crawl->HasAllPropertyFlags(CPF_BlueprintReadOnly) && CrawlProgress->HasAllPropertyFlags(CPF_BlueprintReadOnly));
         TestNull(TEXT("事实基类没有旧资产查询"), Animation->GetClass()->FindFunctionByName(TEXT("GetActiveAnimation")));
+        TestNull(TEXT("动画蓝图不保留硬直姿势索引"), FindFProperty<FProperty>(Animation->GetClass(), TEXT("HurtPoseIndex")));
+        TestNull(TEXT("动画蓝图不保留硬直采样时间"), FindFProperty<FProperty>(Animation->GetClass(), TEXT("HurtSampleTime")));
         const FIntProperty* const Epoch = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("ActionEpoch"));
         const FIntProperty* const PoseIndex = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("AttackPoseIndex"));
         const FFloatProperty* const SampleTime = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("AttackSampleTime"));
