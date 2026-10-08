@@ -15,6 +15,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     EBBBCharacterLifePhase LifePhase = EBBBCharacterLifePhase::Alive;
 
+    /** 本次倒地入场的经过秒数 负值表示无需播放入场 */
+    UPROPERTY(Transient)
+    float DownedEntryElapsed = -1.0f;
+
     /** 实际持有装备的配置类别 空手时为无 */
     UPROPERTY(Transient)
     EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;

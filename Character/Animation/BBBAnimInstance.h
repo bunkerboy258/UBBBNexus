@@ -40,6 +40,10 @@ public:
     /** 本帧生命阶段 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段"))
     EBBBCharacterLifePhase SourceLifePhase = EBBBCharacterLifePhase::Alive;
+
+    /** 本次倒地入场的经过秒数 负值表示直接展示持续倒地姿态 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源倒地入场时间"))
+    float SourceDownedEntryElapsed = -1.0f;
     /** @return 实际持有装备的类型快照是否为步枪 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "是步枪"))
     bool IsRifle() const

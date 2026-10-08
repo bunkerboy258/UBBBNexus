@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterLifeAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
-#include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 
 void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateContext &Context) const
@@ -14,6 +13,7 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
     }
 
     State.AppliedPhase = Life.Phase;
+    State.DownedEntryStartTime = -1.0;
     if (Life.Phase == EBBBCharacterLifePhase::Alive)
     {
         return;
@@ -34,10 +34,9 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
     Requests.bAdditiveHitReactMontageRequestPending = false;
 
     const auto &Hit = Context.RuntimeData.Life.ReadHitState();
-    if (Life.Phase == EBBBCharacterLifePhase::Downed && Context.AnimationConfig.DownedEntryMontage &&
-        Context.WorldState.WorldTimeSeconds - Hit.Time <= 0.25)
+    const double HitAge = Context.WorldState.WorldTimeSeconds - Hit.Time;
+    if (Life.Phase == EBBBCharacterLifePhase::Downed && Hit.Serial != 0 && HitAge >= 0.0 && HitAge <= 0.25)
     {
-        Context.AnimationInstance.RegisterMontageContribution(BBBCharacterMontageSlots::FullBody,
-                                                              Context.AnimationConfig.DownedEntryMontage);
+        State.DownedEntryStartTime = Hit.Time;
     }
 }

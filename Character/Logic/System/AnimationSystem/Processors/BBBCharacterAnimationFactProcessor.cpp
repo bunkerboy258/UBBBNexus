@@ -37,6 +37,11 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
     FactState.LifePhase = RuntimeData.Life.ReadLifeState().Phase;
+    const auto &LifeAnimation = RuntimeData.Animation.ReadLifeAnimationState();
+    FactState.DownedEntryElapsed = FactState.LifePhase == EBBBCharacterLifePhase::Downed
+        && LifeAnimation.DownedEntryStartTime >= 0.0
+        ? static_cast<float>(FMath::Max(Context.WorldState.WorldTimeSeconds - LifeAnimation.DownedEntryStartTime, 0.0))
+        : -1.0f;
     const ABBBEquipment *Equipment = Character.GetActiveEquipment();
     const UBBBEquipmentDefinition *Definition = IsValid(Equipment)
         && RuntimeData.Equipment.ReadEquipmentUseState().bUsable ? Equipment->GetDefinition() : nullptr;

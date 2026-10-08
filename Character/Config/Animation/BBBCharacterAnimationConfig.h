@@ -4,7 +4,6 @@
 #include "BBBCharacterAnimationConfig.generated.h"
 
 class UAnimInstance;
-class UAnimMontage;
 /**
  * 配置动画系统从角色实际运动中识别表现事实所需的阈值
  */
@@ -16,10 +15,6 @@ struct FBBBCharacterAnimationConfig
     /** 未装备专用动画层时链接的默认动画层 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|动画层", meta = (DisplayName = "默认动画层类"))
     TSubclassOf<UAnimInstance> DefaultAnimationLayerClass;
-
-    /** 当前倒地转换的入场动作 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|生命", meta = (DisplayName = "倒地入场蒙太奇"))
-    TObjectPtr<UAnimMontage> DownedEntryMontage;
 
     /** 角色实际水平转速超过该值时生成对应方向的原地转身信号 单位为度每秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|朝向", meta = (ClampMin = "0.0", DisplayName = "转身信号转速阈值"))

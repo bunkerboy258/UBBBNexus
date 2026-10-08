@@ -23,6 +23,12 @@ struct FBBBCharacterAnimationDomainState final
     GENERATED_BODY()
 
 public:
+    /** @return 生命阶段动画的应用进度 */
+    const FBBBCharacterLifeAnimationState &ReadLifeAnimationState() const
+    {
+        return LifeAnimationState;
+    }
+
     /** @return 角色额外瞄准冲击状态 */
     const FBBBCharacterAimImpulseState &ReadAimImpulseState() const
     {
