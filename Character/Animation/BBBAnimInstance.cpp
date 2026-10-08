@@ -23,16 +23,18 @@ void UBBBAnimInstance::PublishAnimationFacts(
 {
     SourceLifePhase = FactState.LifePhase;
     SourceDownedEntryElapsed = FactState.DownedEntryElapsed;
+    SourceTraversalAction = FactState.TraversalAction;
+    bSourceTraversalControlReleased = FactState.bTraversalControlReleased;
     // 将角色运行事实复制到动画实例供动画图安全读取
     SourceActorLocation = FactState.ActorLocation;
     SourceActorRotation = FactState.ActorRotation;
     SourceVelocity = FactState.Velocity;
     SourceLastUpdateVelocity = FactState.LastUpdateVelocity;
     SourceAcceleration = FactState.Acceleration;
+    SourceMovementInput = FactState.MovementInput;
     SourceAimOffsetDegrees = FactState.AimOffsetDegrees;
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
-    bSourceTraversing = FactState.bTraversing;
 
     SourceGroundFriction = FactState.GroundFriction;
     SourceBrakingFriction = FactState.BrakingFriction;
@@ -53,24 +55,26 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-TStaticArray<TObjectPtr<UAnimMontage> *, 5> UBBBAnimInstance::GetMontageContributions()
+TStaticArray<TObjectPtr<UAnimMontage> *, 6> UBBBAnimInstance::GetMontageContributions()
 {
     return {
         &FullBodyMontageContribution,
         &UpperBodyMontageContribution,
         &FullBodyAdditivePreAimMontageContribution,
         &UpperBodyAdditiveMontageContribution,
-        &AdditiveHitReactMontageContribution};
+        &AdditiveHitReactMontageContribution,
+        &TraversalMontageContribution};
 }
 
-TStaticArray<const TObjectPtr<UAnimMontage> *, 5> UBBBAnimInstance::GetMontageContributions() const
+TStaticArray<const TObjectPtr<UAnimMontage> *, 6> UBBBAnimInstance::GetMontageContributions() const
 {
     return {
         &FullBodyMontageContribution,
         &UpperBodyMontageContribution,
         &FullBodyAdditivePreAimMontageContribution,
         &UpperBodyAdditiveMontageContribution,
-        &AdditiveHitReactMontageContribution};
+        &AdditiveHitReactMontageContribution,
+        &TraversalMontageContribution};
 }
 
 TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const FName SlotName)
@@ -98,6 +102,11 @@ TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const FName 
     if (SlotName == BBBCharacterMontageSlots::AdditiveHitReact)
     {
         return &AdditiveHitReactMontageContribution;
+    }
+
+    if (SlotName == BBBCharacterMontageSlots::Traversal)
+    {
+        return &TraversalMontageContribution;
     }
 
     return nullptr;
@@ -156,7 +165,7 @@ void UBBBAnimInstance::ClearMontageContributions()
         UAnimMontage *Montage = Contribution->Get();
         *Contribution = nullptr;
 
-        if (!Montage || !Montage_IsPlaying(Montage))
+        if (!Montage || !Montage_IsActive(Montage))
         {
             continue;
         }
@@ -174,7 +183,8 @@ void UBBBAnimInstance::UpdateMontageContributions()
             continue;
         }
 
-        if (Montage_IsPlaying(Contribution->Get()))
+        // 暂停的攀爬尾姿仍属于状态过渡 不能按停止推进清除
+        if (Montage_IsActive(Contribution->Get()))
         {
             continue;
         }

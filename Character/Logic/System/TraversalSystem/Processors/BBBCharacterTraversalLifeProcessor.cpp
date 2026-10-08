@@ -53,10 +53,10 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
 
     if (Context.Montages.HasFullBodyRequest())
     {
-        /** 新全身请求中断已开始的翻越 初始请求则允许接管根运动 */
+        // 全身请求只中断已有动作 不再充当攀爬播放的启动确认
         State.bEndRequested |= State.bPlaybackRequested;
-        State.bPlaybackRequested |= Context.Montages.HasFullBodyAnimationRequest();
     }
+    State.bPlaybackRequested |= bOwnPlayback && Context.Playback.MontageInstanceId != INDEX_NONE;
 
     const bool bEnded = State.bPlaybackObserved && bOwnPlayback && !Context.Playback.bPlaying;
     const double Elapsed = Context.World.WorldTimeSeconds - State.StartTime;
@@ -65,7 +65,7 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
 
     if (bFault)
     {
-        /** 异常结束通过既有输入槽停止动画 不留下继续驱动角色的根运动 */
+        /** 异常结束只发布退出请求 由动画晚更新暂停根运动并保留状态混合尾姿 */
         State.bEndRequested = true;
     }
 

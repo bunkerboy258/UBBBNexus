@@ -10,7 +10,7 @@ USTRUCT()
 struct FBBBCharacterTraversalAnimationState final
 {
     GENERATED_BODY()
-    /** 上次已交给蓝图选择动画的动作序号 */
+    /** 上次已经准备专用槽请求的动作序号 */
     uint32 LastActionId = 0;
 
     /** 本动作实际使用的动画 用于定向中断而不误停接替动作 */

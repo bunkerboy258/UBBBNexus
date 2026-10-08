@@ -32,6 +32,8 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
     Requests.bUpperBodyAdditiveMontageRequestPending = false;
     Requests.AdditiveHitReactMontageRequest = nullptr;
     Requests.bAdditiveHitReactMontageRequestPending = false;
+    Requests.TraversalMontageRequest = nullptr;
+    Requests.bTraversalMontageRequestPending = false;
 
     const auto &Hit = Context.RuntimeData.Life.ReadHitState();
     const double HitAge = Context.WorldState.WorldTimeSeconds - Hit.Time;

@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBTraversalObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBRunObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAccelerationObservationProcessor.h"
 
 class FBBBCharacterInitializer;
 class UBBBCharacterNetworkComponent;
@@ -49,5 +50,6 @@ private:
     FBBBEquipmentObservationProcessor EquipmentObservationProcessor;
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBRunObservationProcessor RunObservationProcessor;
+    FBBBAccelerationObservationProcessor AccelerationObservationProcessor;
     FBBBTraversalObservationProcessor TraversalObservationProcessor;
 };

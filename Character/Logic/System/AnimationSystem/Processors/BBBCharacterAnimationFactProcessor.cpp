@@ -94,7 +94,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     const FBBBCharacterTraversalState &Traversal = RuntimeData.Traversal.ReadTraversalState();
-    FactState.bTraversing = Traversal.Action != EBBBTraversalAction::None && !Traversal.bAnimationReleased;
+    const FBBBCharacterTraversalAnimationState &Playback = RuntimeData.Animation.ReadTraversalAnimationState();
+    FactState.TraversalAction = Traversal.Action;
+    FactState.bTraversalControlReleased = Playback.LastActionId == Traversal.ActionId && Playback.bRootMotionReleased;
     FactState.bFullBodyPlaying = Context.AnimationInstance.FullBodyMontageContribution
         && Context.AnimationInstance.Montage_IsPlaying(Context.AnimationInstance.FullBodyMontageContribution);
     FactState.bIsAiming = AimState.bIsAiming;
@@ -104,7 +106,13 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.ActorRotation = Character.GetActorRotation();
     FactState.Velocity = Movement->Velocity;
     FactState.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
-    FactState.Acceleration = Movement->GetCurrentAcceleration();
+    // 镜像 CMC 不保证保留控制者加速度 表现只读取已经还原的原始移动事实
+    FactState.Acceleration = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
+        ? RuntimeData.Locomotion.ReadLocomotionState().RestoredAcceleration
+        : Movement->GetCurrentAcceleration();
+    FactState.MovementInput = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
+        ? RuntimeData.Locomotion.ReadLocomotionState().RestoredMovementInput
+        : RuntimeData.Parse.ReadControlState().MoveWorld;
     FactState.bIsRunning = RuntimeData.Locomotion.ReadLocomotionState().bRun;
     FactState.MovementMode = Movement->MovementMode;
     FactState.GroundFriction = Movement->GroundFriction;

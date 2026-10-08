@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "Components/ActorComponent.h"
+#include "Engine/NetSerialization.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
@@ -112,6 +113,30 @@ private:
 
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
+    friend class FBBBAccelerationObservationProcessor;
+
+    /** 向镜像分发控制者已经产生的当前加速度 */
+    void ReplicateAcceleration(uint64 Revision, const FVector &Acceleration, const FVector &MovementInput);
+
+    /** 控制者上报当前加速度快照 不重演移动输入 */
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitAcceleration(uint64 Revision, FVector_NetQuantize10 Acceleration, FVector_NetQuantize100 MovementInput);
+
+    /** 新加速度版本到达后仅投递还原输入 */
+    UFUNCTION()
+    void OnRep_Acceleration();
+
+    /** 与当前版本绑定的世界空间加速度 */
+    UPROPERTY(Replicated)
+    FVector_NetQuantize10 ReplicatedAcceleration = FVector::ZeroVector;
+
+    /** 与当前加速度版本对应的已解析移动输入 */
+    UPROPERTY(Replicated)
+    FVector_NetQuantize100 ReplicatedMovementInput = FVector::ZeroVector;
+
+    /** 当前快照版本用于拒绝乱序消息 */
+    UPROPERTY(ReplicatedUsing = OnRep_Acceleration)
+    uint64 ReplicatedAccelerationRevision = 0;
     friend class FBBBTraversalObservationProcessor;
 
     /** @param Id 动作序号 @param Action 动作结果 @param Contact 前沿目标 @param End 脚底目标 @return 无 */

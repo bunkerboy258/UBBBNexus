@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentType.h"
@@ -23,9 +24,13 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;
 
-    /** 本帧是否正在执行翻越 */
+    /** 本帧已经成立的攀爬类别 */
     UPROPERTY(Transient)
-    bool bTraversing = false;
+    EBBBTraversalAction TraversalAction = EBBBTraversalAction::None;
+
+    /** 本帧攀爬根运动是否已停止贡献 */
+    UPROPERTY(Transient)
+    bool bTraversalControlReleased = false;
 
     /** 上次动画采集时全身槽位是否仍在播放 */
     UPROPERTY(Transient)
@@ -50,6 +55,10 @@ struct FBBBCharacterAnimationFactState final
     /** 移动组件当前加速度 */
     UPROPERTY(Transient)
     FVector Acceleration = FVector::ZeroVector;
+
+    /** 已解析或还原的持续移动输入 不表示 CMC 的实际加速度 */
+    UPROPERTY(Transient)
+    FVector MovementInput = FVector::ZeroVector;
 
     /** 角色当前是否跑步 */
     UPROPERTY(Transient)

@@ -56,6 +56,7 @@ void FBBBCharacterAnimationSystem::Update()
     TraversalProcessor.Update(Context);
     LifeProcessor.Update(Context);
     MontageProcessor.Update(Context);
+    TraversalPlaybackProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
     MuzzleProcessor.Update(Context);

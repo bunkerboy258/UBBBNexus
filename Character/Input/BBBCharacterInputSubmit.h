@@ -26,6 +26,8 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentUseAuthorityFactPacket, Authority
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentUseRemoteMessagePacket, RemoteMessageEquipmentUse)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageLocalControlPacket, Damage)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
+BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationRemoteMessagePacket, RemoteAcceleration)
+BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationAuthorityFactPacket, AuthorityAcceleration)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemAddLocalControlPacket, ItemAdd)
 BBB_CHARACTER_INPUT_SLOT(FBBBItemMoveLocalControlPacket, ItemMove)
 BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionAuthorityFactPacket, AuthorityEquipmentSelectionState)
@@ -37,6 +39,7 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCrouchLocalControlPacket, Crouch)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimLocalControlPacket, Aim)
 BBB_CHARACTER_INPUT_SLOT(FBBBJumpLocalControlPacket, Jump)
 BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontageLocalControlPacket, FullBodyMontage)
+BBB_CHARACTER_INPUT_SLOT(FBBBTraversalMontageLocalControlPacket, TraversalMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontageAuthorityFactPacket, AuthorityFullBodyMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontageLocalControlPacket, UpperBodyMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontageAuthorityFactPacket, AuthorityUpperBodyMontage)
@@ -85,6 +88,13 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
+            || std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>)
+        {
+            Slot.Data.Revisions.Append(Packet.Revisions);
+            Slot.Data.Accelerations.Append(Packet.Accelerations);
+            Slot.Data.MovementInputs.Append(Packet.MovementInputs);
+        }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
             || std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>)
         {
@@ -172,6 +182,8 @@ namespace BBBCharacterInput
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
         if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>

@@ -15,6 +15,7 @@ struct FBBBUpperBodyMontageAuthorityFactPacket;
 struct FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket;
 struct FBBBUpperBodyAdditiveMontageAuthorityFactPacket;
 struct FBBBAdditiveHitReactMontageAuthorityFactPacket;
+struct FBBBTraversalMontageLocalControlPacket;
 
 /** 动画系统固定槽位待消费的蒙太奇请求 */
 USTRUCT()
@@ -49,6 +50,7 @@ private:
     friend struct FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket;
     friend struct FBBBUpperBodyAdditiveMontageAuthorityFactPacket;
     friend struct FBBBAdditiveHitReactMontageAuthorityFactPacket;
+    friend struct FBBBTraversalMontageLocalControlPacket;
 
     /** FullBody 槽位待消费的蒙太奇引用 */
     UPROPERTY(Transient)
@@ -89,4 +91,12 @@ private:
     /** AdditiveHitReact 槽位是否存在待消费请求 */
     UPROPERTY(Transient)
     bool bAdditiveHitReactMontageRequestPending = false;
+
+    /** 攀爬状态内根运动槽位的待消费引用 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimMontage> TraversalMontageRequest = nullptr;
+
+    /** 攀爬状态内根运动槽位是否存在待消费请求 */
+    UPROPERTY(Transient)
+    bool bTraversalMontageRequestPending = false;
 };

@@ -16,6 +16,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBTraversalMontageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyAdditivePreAimMontageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyAdditiveMontageLocalControlPacket.h"
@@ -24,6 +25,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Aim/FBBBCharacterAimLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
@@ -82,6 +85,10 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBAimStateAuthorityFactPacket> AimState;
     /** 跑步状态输入槽位 */
     TBBBCharacterInputSlot<FBBBRunStateAuthorityFactPacket> RunState;
+    /** 控制者已经产生的加速度结果 */
+    TBBBCharacterInputSlot<FBBBAccelerationRemoteMessagePacket> RemoteAcceleration;
+    /** 当前加速度事实的镜像还原 */
+    TBBBCharacterInputSlot<FBBBAccelerationAuthorityFactPacket> AuthorityAcceleration;
     /** 装备选择输入槽位 */
     TBBBCharacterInputSlot<FBBBItemAddLocalControlPacket> ItemAdd;
     /** 背包移动输入槽位 */
@@ -105,6 +112,8 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBJumpLocalControlPacket> Jump;
     /** 全身蒙太奇输入槽位 */
     TBBBCharacterInputSlot<FBBBFullBodyMontageLocalControlPacket> FullBodyMontage;
+    /** 攀爬状态专用蒙太奇输入槽位 */
+    TBBBCharacterInputSlot<FBBBTraversalMontageLocalControlPacket> TraversalMontage;
     /** 权威全身蒙太奇输入槽位 */
     TBBBCharacterInputSlot<FBBBFullBodyMontageAuthorityFactPacket> AuthorityFullBodyMontage;
     /** 上半身蒙太奇输入槽位 */

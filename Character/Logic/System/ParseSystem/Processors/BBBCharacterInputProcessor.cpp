@@ -15,6 +15,8 @@ void FBBBCharacterInputProcessor::Update(
 
     Process(InputState.AimState, Context);
     Process(InputState.RunState, Context);
+    Process(InputState.RemoteAcceleration, Context);
+    Process(InputState.AuthorityAcceleration, Context);
     Process(InputState.ItemAdd, Context);
     Process(InputState.ItemMove, Context);
     Process(InputState.RemoteEquipmentSelectionState, Context);
@@ -40,6 +42,7 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.Jump, Context);
 
     Process(InputState.FullBodyMontage, Context);
+    Process(InputState.TraversalMontage, Context);
     Process(InputState.AuthorityFullBodyMontage, Context);
     Process(InputState.UpperBodyMontage, Context);
     Process(InputState.AuthorityUpperBodyMontage, Context);

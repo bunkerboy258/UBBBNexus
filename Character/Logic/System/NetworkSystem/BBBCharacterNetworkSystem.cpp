@@ -54,5 +54,6 @@ void FBBBCharacterNetworkSystem::Update()
     // 固定处理顺序先观察瞄准状态再观察跑步状态
     AimObservationProcessor.Update(Context);
     RunObservationProcessor.Update(Context);
+    AccelerationObservationProcessor.Update(Context);
     TraversalObservationProcessor.Update(Context);
 }

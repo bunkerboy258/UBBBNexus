@@ -7,6 +7,8 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
 #include "GameFramework/Pawn.h"
@@ -34,6 +36,9 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAcceleration, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMovementInput, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAccelerationRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifePhase, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHealth, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifeRevision, COND_SimulatedOnly);
@@ -97,6 +102,49 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedRunState()
 {
     SubmitRunStateInput(bReplicatedRun);
+}
+
+void UBBBCharacterNetworkComponent::ReplicateAcceleration(
+    const uint64 Revision, const FVector &Acceleration, const FVector &MovementInput)
+{
+    if (!IsOwnerAuthority() || Revision <= ReplicatedAccelerationRevision)
+    {
+        return;
+    }
+    ReplicatedAcceleration = Acceleration;
+    ReplicatedMovementInput = MovementInput;
+    ReplicatedAccelerationRevision = Revision;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitAcceleration_Implementation(
+    const uint64 Revision, const FVector_NetQuantize10 Acceleration, const FVector_NetQuantize100 MovementInput)
+{
+    if (!Character || !IsOwnerAuthority() || Character->IsLocallyControlled()
+        || Revision <= ReplicatedAccelerationRevision)
+    {
+        return;
+    }
+    // 只投递已经完成的移动事实 结构和版本校验交由输入包处理
+    FBBBAccelerationRemoteMessagePacket Packet{{Revision}, {FVector(Acceleration)}, {FVector(MovementInput)}};
+    if (Packet.IsValid())
+    {
+        Character->SubmitInput(MoveTemp(Packet));
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Acceleration()
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    if (Character && !IsOwnerAuthority() && !Character->IsLocallyControlled()
+        && ReplicatedAccelerationRevision != 0)
+    {
+        Character->SubmitInput(FBBBAccelerationAuthorityFactPacket{
+            {ReplicatedAccelerationRevision}, {FVector(ReplicatedAcceleration)}, {FVector(ReplicatedMovementInput)}});
+    }
 }
 
 void UBBBCharacterNetworkComponent::ReplicateAimState(

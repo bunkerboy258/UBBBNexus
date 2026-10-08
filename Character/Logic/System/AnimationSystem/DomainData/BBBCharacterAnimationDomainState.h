@@ -66,6 +66,7 @@ private:
     FBBBCharacterLifeAnimationState LifeAnimationState;
 
     friend class FBBBCharacterTraversalAnimationProcessor;
+    friend class FBBBCharacterTraversalPlaybackProcessor;
     /** 蓝图动画选择请求的生命周期 */
     UPROPERTY(Transient)
     FBBBCharacterTraversalAnimationState TraversalAnimationState;

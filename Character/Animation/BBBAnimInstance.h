@@ -20,6 +20,7 @@ namespace BBBCharacterMontageSlots
     inline const FName FullBodyAdditivePreAim(TEXT("FullBodyAdditivePreAim"));
     inline const FName UpperBodyAdditive(TEXT("UpperBodyAdditive"));
     inline const FName AdditiveHitReact(TEXT("AdditiveHitReact"));
+    inline const FName Traversal(TEXT("Traversal"));
 }
 
 /** 角色动画事实快照 蓝图读取与已批准蒙太奇执行入口 */
@@ -33,6 +34,7 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterAnimationSystem;
     friend class FBBBCharacterTraversalAnimationProcessor;
+    friend class FBBBCharacterTraversalPlaybackProcessor;
     friend class FBBBCharacterLifeAnimationProcessor;
     friend class FBBBCharacterAnimationFactProcessor;
 
@@ -44,6 +46,15 @@ public:
     /** 本次倒地入场的经过秒数 负值表示直接展示持续倒地姿态 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源倒地入场时间"))
     float SourceDownedEntryElapsed = -1.0f;
+
+    /** 已成立的攀爬类别 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
+    EBBBTraversalAction SourceTraversalAction = EBBBTraversalAction::None;
+
+    /** 根运动已释放 姿势过渡仍由状态机完成 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
+    bool bSourceTraversalControlReleased = false;
+
     /** @return 实际持有装备的类型快照是否为步枪 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "是步枪"))
     bool IsRifle() const
@@ -55,12 +66,13 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|移动", meta = (BlueprintThreadSafe))
     bool IsTraversing() const
     {
-        return GetBBBMainAnimInstanceThreadSafe()->bSourceTraversing;
+        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+        return Main->SourceTraversalAction != EBBBTraversalAction::None && !Main->bSourceTraversalControlReleased;
     }
 
-    /** @param Action 已确认的翻越类别 @return 无 动画引用由蓝图配置并提交全身输入 */
-    UFUNCTION(BlueprintImplementableEvent, Category = "BBB|翻越")
-    void TraversalRequested(EBBBTraversalAction Action);
+    /** @param Action 已确认的攀爬类别 @return 基础继承层配置的根运动蒙太奇 */
+    UFUNCTION(BlueprintImplementableEvent, BlueprintPure, Category = "BBB|翻越", meta = (BlueprintThreadSafe))
+    UAnimMontage *SelectTraversalMontage(EBBBTraversalAction Action) const;
 
     /** @return 当前骨骼网格体上的 BBB 主动画实例 主实例自身调用时返回自身 */
     UFUNCTION(BlueprintPure, Category = "BBB|动画事实", meta = (BlueprintThreadSafe))
@@ -85,6 +97,10 @@ public:
     /** 本帧角色世界加速度 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源加速度"))
     FVector SourceAcceleration = FVector::ZeroVector;
+
+    /** 本帧已解析的持续移动输入 根运动期间仍保留输入意图 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动输入"))
+    FVector SourceMovementInput = FVector::ZeroVector;
 
     /** 本帧角色额外瞄准角度偏移 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源瞄准偏移角度"))
@@ -216,10 +232,10 @@ private:
     void PublishAnimationFacts(const FBBBCharacterAnimationFactState &FactState);
 
     /** @return 全部固定槽位蒙太奇贡献 */
-    TStaticArray<TObjectPtr<UAnimMontage> *, 5> GetMontageContributions();
+    TStaticArray<TObjectPtr<UAnimMontage> *, 6> GetMontageContributions();
 
     /** @return 全部固定槽位蒙太奇贡献 */
-    TStaticArray<const TObjectPtr<UAnimMontage> *, 5> GetMontageContributions() const;
+    TStaticArray<const TObjectPtr<UAnimMontage> *, 6> GetMontageContributions() const;
 
     /**
      * 查找固定槽位蒙太奇贡献
@@ -248,10 +264,6 @@ private:
 
     /** 清除已经结束播放的固定槽位蒙太奇贡献 */
     void UpdateMontageContributions();
-
-    /** 动画系统发布的翻越事实 */
-    UPROPERTY(Transient)
-    bool bSourceTraversing = false;
 
     UPROPERTY(Transient)
     bool bSourceRunning = false;
@@ -288,4 +300,8 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UAnimMontage> AdditiveHitReactMontageContribution = nullptr;
+
+    /** 攀爬状态专用槽位 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimMontage> TraversalMontageContribution = nullptr;
 };

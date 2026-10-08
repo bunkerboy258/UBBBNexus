@@ -28,23 +28,10 @@ void FBBBCharacterAnimationMontageProcessor::Update(
         Context.AnimationInstance.RegisterMontageContribution(SlotName, RequestedMontage);
     };
 
-    const FBBBCharacterTraversalState &Traversal = Context.RuntimeData.Traversal.ReadTraversalState();
-    const FBBBCharacterTraversalAnimationState &Playback = Context.RuntimeData.Animation.ReadTraversalAnimationState();
-    const bool bRestoreCurrentPose = MontageState.HasFullBodyAnimationRequest()
-        && MontageState.FullBodyMontageRequest == Playback.Montage
-        && Traversal.PlaybackPosition > 0.0f && !Traversal.bEndRequested;
-
     ConsumeRequest(
         MontageState.FullBodyMontageRequest,
         MontageState.bFullBodyMontageRequestPending,
         BBBCharacterMontageSlots::FullBody);
-    if (bRestoreCurrentPose)
-    {
-        // 迟到观察者直接显示当前动画进度 不补播进入视野以前的过程
-        Context.AnimationInstance.Montage_SetPosition(Playback.Montage,
-            FMath::Min(Traversal.PlaybackPosition, Playback.Montage->GetPlayLength()));
-    }
-
     ConsumeRequest(
         MontageState.UpperBodyMontageRequest,
         MontageState.bUpperBodyMontageRequestPending,
@@ -61,4 +48,8 @@ void FBBBCharacterAnimationMontageProcessor::Update(
         MontageState.AdditiveHitReactMontageRequest,
         MontageState.bAdditiveHitReactMontageRequestPending,
         BBBCharacterMontageSlots::AdditiveHitReact);
+    ConsumeRequest(
+        MontageState.TraversalMontageRequest,
+        MontageState.bTraversalMontageRequestPending,
+        BBBCharacterMontageSlots::Traversal);
 }
