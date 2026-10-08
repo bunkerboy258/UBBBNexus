@@ -1,10 +1,11 @@
 # Character Update Law
 
 - Update 在 CMC 前执行。
-- 固定顺序为 世界与身份快照 → 输入解析 → ItemSystem → EquipmentSystem → 其它 Causal 玩法系统 → 网络观察。
+- 固定顺序为 世界与身份快照 → 输入解析 → ItemSystem → EquipmentSystem → AppearanceSystem → 其它 Causal 玩法系统 → 网络观察。
 - ItemSystem 只在 Causal 路径维护真实背包和物品栏选择。
 - ItemSystem 必须先完成背包操作 再生成本帧目标主手物品结果。
 - EquipmentSystem 必须在 ItemSystem 之后维护本帧实际装备关系。
+- AppearanceSystem 位于物品与装备维护之后 CMC 和网络观察之前。
 - Mirror 路径不执行真实背包与快捷选择逻辑 EquipmentSystem 只消费接收的持有关系结果。
 - LateUpdate 必须等待 CMC 完成 只负责动画事实采集和帧末清理。
 - Causal/Mirror 由主管线确定 禁止使用 HasAuthority 代替玩法执行身份。

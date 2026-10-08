@@ -16,6 +16,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/BBBCharacterTraversalSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/BBBCharacterLifeSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/BBBCharacterAppearanceSystem.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -54,6 +55,7 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
     friend class FBBBCharacterShutdown;
     /** 允许主管线调度角色持有的子管线 */
     friend class FBBBCharacterUpdatePipeline;
+    friend class FBBBCharacterAppearanceDisplayProcessor;
 
     friend class ABBBPlayerCameraSystem;
 
@@ -254,6 +256,9 @@ public:
     FBBBCharacterRuntimeData RuntimeData;
 
 protected:
+    /** @param Parts 完整机械组装结果 @return 是否完成显示更新 */
+    UFUNCTION(BlueprintNativeEvent, Category = "BBB|外观", meta = (DisplayName = "应用外观显示结果"))
+    bool ApplyAppearanceDisplay(const TArray<FBBBCharacterAppearanceDisplayPart> &Parts);
     
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|配置", meta = (DisplayName = "角色配置资产"))
     TObjectPtr<UBBBCharacterConfig> CharacterConfigAsset = nullptr;
@@ -289,6 +294,8 @@ private:
     FBBBCharacterLifeSystem LifeSystem;
     
     FBBBCharacterItemSystem ItemSystem;
+
+    FBBBCharacterAppearanceSystem AppearanceSystem;
 
     FBBBCharacterEquipmentSystem EquipmentSystem;
 

@@ -12,17 +12,19 @@ struct FBBBItemMoveLocalControlPacket final
 
     /** 目标槽位 */
     TArray<int32> Targets;
+    /** 提交时观察到的源实例 防止排队后移动另一件物品 */
+    TArray<FGuid> Instances;
 
     /** @return 输入数据格式是否有效 */
     bool IsValid() const
     {
-        if (Sources.IsEmpty() || Sources.Num() != Targets.Num())
+        if (Sources.IsEmpty() || Sources.Num() != Targets.Num() || Sources.Num() != Instances.Num())
         {
             return false;
         }
         for (int32 Index = 0; Index < Sources.Num(); ++Index)
         {
-            if (Sources[Index] < 0 || Targets[Index] < 0)
+            if (Sources[Index] < 0 || Targets[Index] < INDEX_NONE || !Instances[Index].IsValid())
             {
                 return false;
             }
@@ -41,5 +43,6 @@ struct FBBBItemMoveLocalControlPacket final
     {
         Context.ItemOperations.PendingMoveSources.Append(Sources);
         Context.ItemOperations.PendingMoveTargets.Append(Targets);
+        Context.ItemOperations.PendingMoveInstances.Append(Instances);
     }
 };

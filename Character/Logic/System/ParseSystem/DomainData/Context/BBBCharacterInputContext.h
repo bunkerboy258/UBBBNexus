@@ -20,6 +20,7 @@ struct FBBBCharacterAimImpulseState;
 struct FBBBCharacterLifeInputState;
 struct FBBBCharacterEquipmentUseInputState;
 struct FBBBCharacterDamageInboxState;
+struct FBBBCharacterAppearanceInputState;
 
 /**
  * 输入包应用上下文
@@ -79,4 +80,6 @@ struct FBBBCharacterInputContext final
     const FBBBCharacterRescueState &Rescue;
     /** 网络路由待投送数据 */
     FBBBCharacterRescueInboxState &RescueInbox;
+    /** 待消费的外观输入 */
+    FBBBCharacterAppearanceInputState &AppearanceInputs;
 };

@@ -16,6 +16,7 @@ private:
     friend class FBBBCharacterUpdatePipeline;
     friend class FBBBCharacterShutdown;
     friend class FBBBCharacterItemSystemTest;
+    friend class FBBBCharacterItemRegionsTest;
 
     /**
      * 初始化角色物品领域

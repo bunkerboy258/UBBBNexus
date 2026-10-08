@@ -8,5 +8,6 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
     Character.CharacterUpdatePipeline.LateUpdateTick.SetTickFunctionEnable(false);
 
     Character.EquipmentSystem.Shutdown();
+    Character.AppearanceSystem.Shutdown();
     Character.ItemSystem.Shutdown();
 }

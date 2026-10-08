@@ -56,14 +56,16 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_02"));
     Character->Tick(1.0f / 60.0f);
-    const TArray<AActor *> InitialItems = Controller->GetBackpackItems();
-    if (!TestTrue(TEXT("角色生命周期初始化真实背包"), InitialItems.Num() >= 3
-        && IsValid(InitialItems[0]) && IsValid(InitialItems[1])))
+    if (!TestTrue(TEXT("角色生命周期初始化真实背包"), Controller->GetItemSlotCount() == 63
+        && Controller->GetItemDisplayData(0).bOccupied && Controller->GetItemDisplayData(1).bOccupied))
     {
         return false;
     }
-    AActor *First = InitialItems[0];
-    AActor *Second = InitialItems[1];
+    const FGuid First = Controller->GetItemDisplayData(0).InstanceId;
+    const FGuid Second = Controller->GetItemDisplayData(1).InstanceId;
+    TestTrue(TEXT("公开身份查询与展示数据一致"), Controller->GetItemInstanceId(0) == First);
+    TestFalse(TEXT("空格身份无效"), Controller->GetItemInstanceId(2).IsValid());
+    TestFalse(TEXT("越界身份无效"), Controller->GetItemInstanceId(-1).IsValid());
 
     UBBBPlayerItemView *View = NewObject<UBBBPlayerItemView>(Controller);
     View->SetOwningPlayer(Controller);
@@ -79,13 +81,12 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("界面读取角色处理后的选择"), Controller->GetSelectedItemSlot(), 0);
     TestTrue(TEXT("控制器区分实际装备状态"), Controller->GetItemDisplayData(0).bActive);
     TestTrue(TEXT("界面提交拖动交换"), View->MoveItem(0, 1, Character, First));
-    TestTrue(TEXT("界面不提前改变槽位内容"), Controller->GetBackpackItems()[0] == First);
+    TestTrue(TEXT("界面不提前改变槽位内容"), Controller->GetItemDisplayData(0).InstanceId == First);
     Character->Tick(1.0f / 60.0f);
-    const TArray<AActor *> SwappedItems = Controller->GetBackpackItems();
-    TestTrue(TEXT("角色完成交换"), SwappedItems[0] == Second && SwappedItems[1] == First);
-    TestTrue(TEXT("手持装备跟随选择格内容"), Controller->GetActiveItem() == Second);
+    TestTrue(TEXT("角色完成交换"), Controller->GetItemDisplayData(0).InstanceId == Second
+        && Controller->GetItemDisplayData(1).InstanceId == First);
+    TestTrue(TEXT("手持装备跟随选择格内容"), Controller->GetItemDisplayData(0).bActive);
 
-    AddExpectedError(TEXT("拖动物品状态已变化"), EAutomationExpectedErrorFlags::Contains, 3);
     TestFalse(TEXT("拒绝物品已换位的旧拖动"), View->MoveItem(0, 1, Character, First));
     TestFalse(TEXT("拒绝角色失效的旧拖动"), View->MoveItem(1, 0, nullptr, First));
     View->SetBackpackOpen(false);
@@ -94,8 +95,8 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestNull(TEXT("收起后实际空手"), Controller->GetActiveItem());
-    TestEqual(TEXT("快捷栏使用前三格"), Controller->GetQuickAccessSlotCount(), 3);
-    TestEqual(TEXT("背包共二十格"), Controller->GetBackpackItems().Num(), 20);
+    TestEqual(TEXT("快捷栏使用前五格"), Controller->GetQuickAccessSlotCount(), 5);
+    TestEqual(TEXT("背包与穿戴共六十三格"), Controller->GetItemSlotCount(), 63);
     TestEqual(TEXT("满生命显示完整白线"), Controller->GetHudHealthFraction(), 1.0f);
     TestFalse(TEXT("空手不显示瞄准界面"), Controller->ShouldShowAimHud());
     const float MaximumHealth = Character->GetCharacterConfig().MaximumHealth;
@@ -104,6 +105,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("白线读取真实生命损失"), Controller->GetHudHealthFraction(), 0.75f);
     Controller->UnPossess();
+    TestFalse(TEXT("失去角色后身份无效"), Controller->GetItemInstanceId(0).IsValid());
     TestEqual(TEXT("失去角色后生命接口归零"), Controller->GetHudHealthFraction(), 0.0f);
     return true;
 }

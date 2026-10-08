@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/Config/Network/BBBNetworkConfig.h"
 #include "Engine/DataAsset.h"
 #include "BBBWork/UBBBNexus/Character/Config/Item/BBBItemConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBCharacterAppearanceConfig.h"
 #include "BBBCharacterConfig.generated.h"
 
 /** 角色全部可编辑的静态配置资产 */
@@ -57,6 +58,9 @@ public:
     /** 角色背包与前序快捷槽位配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "物品"))
     FBBBCharacterItemConfig Item;
+    /** 基础身体与无装备回退资源 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "外观配置"))
+    FBBBCharacterAppearanceConfig Appearance;
 
     /** 角色装备目录与容器配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备"))

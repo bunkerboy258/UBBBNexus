@@ -5,7 +5,7 @@
 #include "BBBPlayerController.generated.h"
 
 class ABBBCharacter;
-class UBBBEquipmentDefinition;
+class UBBBItemDefinition;
 struct FBBBPlayerItemDisplayData;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBBBPlayerItemsChanged);
 //封装InputMappingContext的数据与行为
@@ -45,16 +45,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "BBB|输入")
     void ToggleMouseCursor();
 
-    /**
-     * 转交本地换装界面的打开请求
-     * @return 无
-     */
-    UFUNCTION(BlueprintCallable, Category = "BBB|客户端")
-    void ToggleCustomization();
-
-    /** @return 无 打开或关闭背包并维护输入模式 */
+    /** @return 无 按 B 打开或关闭背包 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")
     void ToggleBackpack();
+    /** @return 无 按住 TAB 展开快捷格子 */
+    void BeginQuickBar();
+    /** @return 无 松开 TAB 隐藏快捷格子 */
+    void EndQuickBar();
 
     /** @return 背包面板是否打开 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
@@ -87,13 +84,23 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     bool HasItemInventory() const;
 
-    /** @return 背包槽位内容 包含空格 前序槽位与普通格子来自同一数组 */
+    /** @return 唯一物品数组的槽位数量 包含穿戴位置 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
-    TArray<AActor *> GetBackpackItems() const;
+    int32 GetItemSlotCount() const;
+    /** @return 普通装备区域起点与数量 */
+    void GetEquipmentStorageRange(int32 &Start, int32 &Count) const;
+    /** @return 杂物区域起点与数量 */
+    void GetMiscStorageRange(int32 &Start, int32 &Count) const;
+    /** @return 穿戴位置起点与用途名称 */
+    void GetWearSlotRange(int32 &Start, TArray<FName> &Names) const;
 
     /** @param Slot	背包索引 @return 物品的公共显示配置 空格返回空引用 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
-    UBBBEquipmentDefinition *GetItemDefinition(int32 Slot) const;
+    UBBBItemDefinition *GetItemDefinition(int32 Slot) const;
+
+    /** @param Slot	真实物品索引 @return 当前物品稳定身份 空格或无效索引返回无效身份 */
+    UFUNCTION(BlueprintPure, Category = "BBB|物品")
+    FGuid GetItemInstanceId(int32 Slot) const;
 
     /** @param Slot\t背包索引 @return 该格子的只读展示数据 */
     FBBBPlayerItemDisplayData GetItemDisplayData(int32 Slot) const;
@@ -115,7 +122,7 @@ public:
 
     /** @param Source	起始槽位 @param Target	目标槽位 @return 输入是否接受 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")
-    bool SubmitItemMove(int32 Source, int32 Target);
+    bool SubmitItemMove(int32 Source, int32 Target, FGuid InstanceId);
 
     /** @param Slot	快捷索引 INDEX_NONE 表示取消选择 @return 输入是否接受 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")

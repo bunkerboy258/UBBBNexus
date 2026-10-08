@@ -44,7 +44,7 @@ void ABBBEquipment::BeginPlay()
 
 FName ABBBEquipment::GetEquipmentId() const
 {
-    return Definition ? Definition->EquipmentId : NAME_None;
+    return Definition ? Definition->ItemId : NAME_None;
 }
 
 TSubclassOf<UAnimInstance> ABBBEquipment::GetCharacterAnimationLayerClass() const

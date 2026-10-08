@@ -30,6 +30,8 @@ private:
     friend class FBBBCharacterUpdatePipeline;
 #if WITH_DEV_AUTOMATION_TESTS
     friend class FBBBCharacterItemSystemTest;
+    friend class FBBBCharacterItemRegionsTest;
+    friend class FBBBMeleeWindowTest;
 #endif
 
     /** 当前帧世界快照 */

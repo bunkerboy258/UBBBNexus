@@ -44,6 +44,7 @@ void FBBBCharacterNetworkSystem::Update()
         *RuntimeData};
 
     EquipmentObservationProcessor.Update(Context);
+    AppearanceObservationProcessor.Update(Context);
     DamageObservationProcessor.Update(Context);
     LifeObservationProcessor.Update(Context);
     RescueObservationProcessor.Update(Context);

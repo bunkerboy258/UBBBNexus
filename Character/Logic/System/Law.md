@@ -34,7 +34,8 @@
 - 处理器 `.cpp` 超过二百行时必须重新检查职责是否需要拆分
 
 - ItemSystem 与 EquipmentSystem 可以读取主管线确定的执行模式。
-- ItemSystem 只维护 Causal 路径的真实背包及快捷选择。
+- ItemSystem 只维护 Causal 路径的真实物品位置及快捷选择。
+- AppearanceSystem 在 Causal 生成外观事实 在 Mirror 只还原接收的结果。
 - EquipmentSystem 分别维护 Causal 的实际装备关系与 Mirror 的装备还原。
 - 执行模式读取不得引入具体网络逻辑。
 - 跨系统持久结果只能通过所属领域的公开只读状态读取。

@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Engine/NetSerialization.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/Definitions/BBBCharacterAppearanceSnapshot.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
 class APawn;
@@ -36,6 +37,18 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
 private:
+    friend class FBBBCharacterAppearanceObservationProcessor;
+    /** @param Snapshot 既成外观事实 @return 无 */
+    void ReplicateAppearance(const FBBBCharacterAppearanceSnapshot &Snapshot);
+    /** @param Snapshot 控制端既成外观事实 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitAppearance(FBBBCharacterAppearanceSnapshot Snapshot);
+    /** @return 无 通过角色输入投递当前事实 */
+    UFUNCTION()
+    void OnRep_Appearance();
+    /** 完整原子外观快照 用于后加入与重新相关 */
+    UPROPERTY(ReplicatedUsing = OnRep_Appearance)
+    FBBBCharacterAppearanceSnapshot ReplicatedAppearance;
     friend class FBBBCharacterRescueObservationProcessor;
     /** @return 无 分发当前救援结果 */
     void ReplicateRescue(APawn *Partner, uint64 Operation, uint64 Round, uint64 Revision,

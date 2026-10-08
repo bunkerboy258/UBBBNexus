@@ -10,13 +10,15 @@ struct FBBBCharacterItemOperationState final
     GENERATED_BODY()
 
     /** 待创建并入包的装备定义 */
-    TArray<FName> PendingEquipmentIds;
+    TArray<FName> PendingItemIds;
 
     /** 待移动操作的起始槽位 与目标数组一一对应 */
     TArray<int32> PendingMoveSources;
 
     /** 待移动操作的目标槽位 */
     TArray<int32> PendingMoveTargets;
+    /** 与移动请求对应的预期源实例 */
+    TArray<FGuid> PendingMoveInstances;
 
     /** 待应用的快捷槽位选择 */
     TArray<int32> PendingSelectedSlots;

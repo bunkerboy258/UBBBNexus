@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/Processors/BBBCharacterEquipmentSelectionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/Context/BBBCharacterEquipmentUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 
 void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
@@ -30,7 +30,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpda
     {
         return;
     }
-    const UBBBEquipmentCatalog *Catalog = Context.Character.GetCharacterConfig().Equipment.EquipmentCatalog;
+    const UBBBItemCatalog *Catalog = Context.Character.GetCharacterConfig().Item.Catalog;
     Context.PendingEquipmentClass = Catalog ? Catalog->FindEquipmentClass(Selection.PendingEquipmentId) : nullptr;
     Context.bHasSelectionResult = Context.PendingEquipmentClass != nullptr;
 }

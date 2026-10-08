@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBTraversalNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueInboxState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterAppearanceNetworkObservationState.h"
 #include "BBBCharacterNetworkDomainState.generated.h"
 
 class FBBBAimObservationProcessor;
@@ -80,7 +81,16 @@ public:
         return RescueObservationState;
     }
 
+    /** @return 外观发送基准 */
+    const FBBBCharacterAppearanceNetworkObservationState &ReadAppearanceNetworkObservationState() const
+    {
+        return AppearanceObservationState;
+    }
 private:
+    friend class FBBBCharacterAppearanceObservationProcessor;
+    /** 外观结果发送基准 */
+    UPROPERTY()
+    FBBBCharacterAppearanceNetworkObservationState AppearanceObservationState;
     friend class FBBBAccelerationObservationProcessor;
     /** 加速度当前快照的独立发送基准 */
     UPROPERTY(Transient)

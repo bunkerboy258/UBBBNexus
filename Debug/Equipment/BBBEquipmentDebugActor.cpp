@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "Components/SceneComponent.h"
@@ -87,7 +87,7 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
         return;
     }
 
-    const UBBBEquipmentCatalog *Catalog = Character->GetCharacterConfig().Equipment.EquipmentCatalog;
+    const UBBBItemCatalog *Catalog = Character->GetCharacterConfig().Item.Catalog;
     if (!IsValid(Catalog) || EquipmentClasses.IsEmpty())
     {
         UE_LOG(LogBBBEquipmentDebug, Error, TEXT("%s 装备目录或待注入装备列表无效 不提交入包输入"), *GetPathName());
@@ -96,7 +96,7 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
     }
 
     FBBBItemAddLocalControlPacket Packet;
-    Packet.EquipmentIds.Reserve(EquipmentClasses.Num());
+    Packet.ItemIds.Reserve(EquipmentClasses.Num());
     for (const TSubclassOf<ABBBEquipment> EquipmentClass : EquipmentClasses)
     {
         const ABBBEquipment *ClassDefault = EquipmentClass ? EquipmentClass.GetDefaultObject() : nullptr;
@@ -109,17 +109,17 @@ void ABBBEquipmentDebugActor::Tick(float DeltaSeconds)
             return;
         }
 
-        Packet.EquipmentIds.Add(EquipmentId);
+        Packet.ItemIds.Add(EquipmentId);
     }
 
-    if (Character->RuntimeData.Item.ReadItemInventoryState().BackpackSlots.IsEmpty()
+    if (Character->RuntimeData.Item.ReadItemInventoryState().Slots.IsEmpty()
         || !Character->GetMesh()
         || !Cast<UBBBAnimInstance>(Character->GetMesh()->GetAnimInstance()))
     {
         return;
     }
 
-    const FString EquipmentNames = FString::JoinBy(Packet.EquipmentIds, TEXT(" "), [](const FName Id)
+    const FString EquipmentNames = FString::JoinBy(Packet.ItemIds, TEXT(" "), [](const FName Id)
     {
         return Id.ToString();
     });

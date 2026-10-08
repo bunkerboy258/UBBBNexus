@@ -51,6 +51,6 @@ bool FBBBMeleeInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) cons
         }
     }
     UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Initialized Equipment=%s Damage=%.1f Interval=%.3f"),
-        *Definition->EquipmentId.ToString(), Definition->Damage, Definition->AttackInterval);
+        *Definition->ItemId.ToString(), Definition->Damage, Definition->AttackInterval);
     return true;
 }

@@ -16,6 +16,7 @@ public:
 private:
     friend class FBBBCharacterInitializer;
     friend class FBBBCharacterItemSystemTest;
+    friend class FBBBCharacterItemRegionsTest;
 
     void Initialize(FBBBCharacterRuntimeData &InData);
 

@@ -107,6 +107,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     }
     ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
     Character->EquipmentSystem.Update();
+    Character->AppearanceSystem.Update();
     ABBBEquipment *CurrentEquipment = Character->GetActiveEquipment();
     if (IsValid(PreviousEquipment) && IsValid(CurrentEquipment) && PreviousEquipment != CurrentEquipment &&
         PreviousEquipment->IsActorTickEnabled())

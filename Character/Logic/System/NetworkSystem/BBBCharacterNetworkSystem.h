@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterAppearanceObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRescueObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentObservationProcessor.h"
 
@@ -50,6 +51,7 @@ private:
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 
     FBBBEquipmentObservationProcessor EquipmentObservationProcessor;
+    FBBBCharacterAppearanceObservationProcessor AppearanceObservationProcessor;
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBRunObservationProcessor RunObservationProcessor;
     FBBBAccelerationObservationProcessor AccelerationObservationProcessor;

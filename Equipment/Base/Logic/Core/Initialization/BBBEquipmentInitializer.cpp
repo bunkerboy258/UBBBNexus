@@ -8,7 +8,7 @@
 bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment) const
 {
     if (!ensureMsgf(
-        IsValid(Equipment.Definition) && !Equipment.Definition->EquipmentId.IsNone()
+        IsValid(Equipment.Definition) && !Equipment.Definition->ItemId.IsNone()
             && Equipment.EquipmentSkeletalMesh,
         TEXT("装备 %s 缺少有效静态配置 装备标识或骨骼网格"),
         *Equipment.GetClass()->GetName()))
@@ -23,7 +23,7 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment) const
     if (!ensureMsgf(
         Equipment.EquipmentAnimationInstance,
         TEXT("装备 %s 没有创建有效的 UBBBEquipmentAnimInstance"),
-        *Equipment.Definition->EquipmentId.ToString()))
+        *Equipment.Definition->ItemId.ToString()))
     {
         return false;
     }

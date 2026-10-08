@@ -8,6 +8,7 @@
 - 禁止在 `Character/Logic/RuntimeData/` 新增直属文件夹或文件
 
 - FBBBCharacterRuntimeData 直接持有 ItemSystem 与 EquipmentSystem 各自独立的 DomainState。
-- 背包与物品栏选择状态只属于 ItemSystem 的 DomainState。
+- 背包 穿戴物品位置与物品栏选择状态只属于 ItemSystem 的 DomainState。
+- AppearanceSystem 的 DomainState 独占参数 显示与既成外观状态。
 - 实际装备关系与镜像装备还原状态只属于 EquipmentSystem 的 DomainState。
 - 禁止在两个领域之间重复保存同一份背包 快捷选择或目标主手状态。

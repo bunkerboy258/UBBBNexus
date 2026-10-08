@@ -13,6 +13,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Appearance/FBBBCharacterAppearanceRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Appearance/FBBBCharacterAppearanceAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueRequestLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueEndLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueReplyLocalControlPacket.h"
@@ -45,6 +47,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAppearance, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAcceleration, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMovementInput, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAccelerationRevision, COND_SimulatedOnly);
@@ -479,5 +482,40 @@ void UBBBCharacterNetworkComponent::ClientReplyRescue_Implementation(APawn *Sour
     {
         Character->SubmitInput(FBBBCharacterRescueReplyLocalControlPacket{{Source}, {Operation}, {Round},
             {Revision}, {bActive}, {Duration}, {Reason}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ReplicateAppearance(const FBBBCharacterAppearanceSnapshot &Snapshot)
+{
+    if (IsOwnerAuthority() && Snapshot.IsValid() && Snapshot.Revision > ReplicatedAppearance.Revision)
+    {
+        ReplicatedAppearance = Snapshot;
+        GetOwner()->FlushNetDormancy();
+        GetOwner()->ForceNetUpdate();
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitAppearance_Implementation(FBBBCharacterAppearanceSnapshot Snapshot)
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    if (Character && IsOwnerAuthority() && !Character->IsLocallyControlled()
+        && Snapshot.IsValid() && Snapshot.Revision > ReplicatedAppearance.Revision)
+    {
+        Character->SubmitInput(FBBBCharacterAppearanceRemoteMessagePacket{{MoveTemp(Snapshot)}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Appearance()
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    if (Character && !IsOwnerAuthority() && !Character->IsLocallyControlled() && ReplicatedAppearance.IsValid())
+    {
+        Character->SubmitInput(FBBBCharacterAppearanceAuthorityFactPacket{{ReplicatedAppearance}});
     }
 }

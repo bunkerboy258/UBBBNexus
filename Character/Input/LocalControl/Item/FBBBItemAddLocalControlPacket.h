@@ -8,16 +8,16 @@
 struct FBBBItemAddLocalControlPacket final
 {
     /** 待获得的装备定义 按提交顺序累计 */
-    TArray<FName> EquipmentIds;
+    TArray<FName> ItemIds;
 
     /** @return 输入数据格式是否有效 */
     bool IsValid() const
     {
-        if (EquipmentIds.IsEmpty())
+        if (ItemIds.IsEmpty())
         {
             return false;
         }
-        for (const FName Id : EquipmentIds)
+        for (const FName Id : ItemIds)
         {
             if (Id.IsNone())
             {
@@ -36,6 +36,6 @@ struct FBBBItemAddLocalControlPacket final
     /** @param Context	本次输入上下文 @return 无 */
     void Apply(FBBBCharacterInputContext &Context) const
     {
-        Context.ItemOperations.PendingEquipmentIds.Append(EquipmentIds);
+        Context.ItemOperations.PendingItemIds.Append(ItemIds);
     }
 };

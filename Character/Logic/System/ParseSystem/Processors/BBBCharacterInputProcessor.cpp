@@ -35,6 +35,14 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.RemoteMessageEquipmentUse, Context);
     Process(InputState.AuthorityFactEquipmentUse, Context);
     Process(InputState.ItemSelect, Context);
+    Process(InputState.AppearanceColorLocalControl, Context);
+    Process(InputState.AppearanceCamouflageLocalControl, Context);
+    Process(InputState.AppearanceBaseLocalControl, Context);
+    Process(InputState.AppearanceDirtLocalControl, Context);
+    Process(InputState.AppearanceWeatheringLocalControl, Context);
+    Process(InputState.AppearanceRemoteMessage, Context);
+    Process(InputState.AppearanceAuthorityFact, Context);
+
     Process(InputState.EquipmentBeginAction, Context);
     Process(InputState.EquipmentEndAction, Context);
     Process(InputState.EquipmentBeginContact, Context);

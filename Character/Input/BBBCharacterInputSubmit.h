@@ -77,6 +77,14 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueReplyRemoteMessagePacket, RescueRepl
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueSnapshotRemoteMessagePacket, RescueSnapshotRemoteMessage)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueSnapshotAuthorityFactPacket, RescueSnapshotAuthorityFact)
 
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceColorLocalControlPacket, AppearanceColorLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceCamouflageLocalControlPacket, AppearanceCamouflageLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceBaseLocalControlPacket, AppearanceBaseLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceDirtLocalControlPacket, AppearanceDirtLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceWeatheringLocalControlPacket, AppearanceWeatheringLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceRemoteMessagePacket, AppearanceRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceAuthorityFactPacket, AppearanceAuthorityFact)
+
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */
@@ -164,12 +172,13 @@ namespace BBBCharacterInput
 
         if constexpr (std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>)
         {
-            Slot.Data.EquipmentIds.Append(Packet.EquipmentIds);
+            Slot.Data.ItemIds.Append(Packet.ItemIds);
         }
         if constexpr (std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>)
         {
             Slot.Data.Sources.Append(Packet.Sources);
             Slot.Data.Targets.Append(Packet.Targets);
+            Slot.Data.Instances.Append(Packet.Instances);
         }
         if constexpr (std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>)
         {
@@ -268,6 +277,39 @@ namespace BBBCharacterInput
             Slot.Data.SnapshotDurations.Append(Packet.SnapshotDurations);
             Slot.Data.SnapshotReasons.Append(Packet.SnapshotReasons);
         }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceColorLocalControlPacket>)
+        {
+            Slot.Data.Instances.Append(Packet.Instances);
+            Slot.Data.Slots.Append(Packet.Slots);
+            Slot.Data.Colors.Append(Packet.Colors);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceCamouflageLocalControlPacket>)
+        {
+            Slot.Data.Instances.Append(Packet.Instances);
+            Slot.Data.Slots.Append(Packet.Slots);
+            Slot.Data.Values.Append(Packet.Values);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceBaseLocalControlPacket>)
+        {
+            Slot.Data.Slots.Append(Packet.Slots);
+            Slot.Data.Resources.Append(Packet.Resources);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceDirtLocalControlPacket>)
+        {
+            Slot.Data.Values.Append(Packet.Values);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceWeatheringLocalControlPacket>)
+        {
+            Slot.Data.Values.Append(Packet.Values);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceRemoteMessagePacket>)
+        {
+            Slot.Data.Snapshots.Append(Packet.Snapshots);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterAppearanceAuthorityFactPacket>)
+        {
+            Slot.Data.Snapshots.Append(Packet.Snapshots);
+        }
         if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>
@@ -296,7 +338,14 @@ namespace BBBCharacterInput
             && !std::is_same_v<FPacket, FBBBCharacterRescueReplyLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBCharacterRescueReplyRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotAuthorityFactPacket>)
+            && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceColorLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceCamouflageLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceBaseLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceDirtLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceWeatheringLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterAppearanceAuthorityFactPacket>)
         {
             Slot.Data = Forward<TPacket>(Packet);
         }

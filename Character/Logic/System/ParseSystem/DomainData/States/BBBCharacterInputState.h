@@ -1,4 +1,11 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceColorLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceCamouflageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceBaseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceDirtLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceWeatheringLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Appearance/FBBBCharacterAppearanceRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Appearance/FBBBCharacterAppearanceAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
 
 #include "CoreMinimal.h"
@@ -171,4 +178,18 @@ struct FBBBCharacterInputState final
     /** 救援输入固定槽位 */
     TBBBCharacterInputSlot<FBBBCharacterRescueSnapshotAuthorityFactPacket> RescueSnapshotAuthorityFact;
 
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceColorLocalControlPacket> AppearanceColorLocalControl;
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceCamouflageLocalControlPacket> AppearanceCamouflageLocalControl;
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceBaseLocalControlPacket> AppearanceBaseLocalControl;
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceDirtLocalControlPacket> AppearanceDirtLocalControl;
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceWeatheringLocalControlPacket> AppearanceWeatheringLocalControl;
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceRemoteMessagePacket> AppearanceRemoteMessage;
+    /** 外观固定输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterAppearanceAuthorityFactPacket> AppearanceAuthorityFact;
 };

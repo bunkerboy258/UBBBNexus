@@ -5,6 +5,7 @@
 #include "BBBEquipment.generated.h"
 
 class UBBBEquipmentAnimInstance;
+class UAnimInstance;
 class UBBBEquipmentDefinition;
 class UArrowComponent;
 class USkeletalMeshComponent;

@@ -42,7 +42,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         return;
     }
     if (!ensureMsgf(
-        Config.Equipment.EquipmentCatalog.Get() != nullptr,
+        Config.Item.Catalog.Get() != nullptr,
         TEXT("角色 %s 的配置资产缺少装备目录"),
         *Character.GetPathName()))
     {
@@ -86,6 +86,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         *Character.MotionWarping);
     
     Character.ItemSystem.Initialize(Character, Character.RuntimeData, Config.Item);
+    Character.AppearanceSystem.Initialize(Character, Character.RuntimeData, Config.Appearance);
 
     Character.LifeSystem.Initialize(Character, Character.RuntimeData, Config);
     Character.PhysicalAnimation->SetSkeletalMeshComponent(Character.GetMesh());
