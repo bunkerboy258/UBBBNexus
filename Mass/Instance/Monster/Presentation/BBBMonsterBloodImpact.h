@@ -10,4 +10,6 @@ struct FBBBMonsterBloodImpact final
     FVector Direction = FVector::ForwardVector;
     FVector Normal = FVector::UpVector;
     EBBBMonsterHitRegion Region = EBBBMonsterHitRegion::Torso;
+    /** 当前命中编号只参与表现随机化 不保存编号列表 */
+    uint32 Seed = 0;
 };

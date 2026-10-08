@@ -16,6 +16,7 @@ UBBBMonsterHitReactionProcessor::UBBBMonsterHitReactionProcessor()
 {
     bAutoRegisterWithProcessingPhases = true;
     bRequiresGameThreadExecution = true;
+    QueryBasedPruning = EMassQueryBasedPruning::Never;
     ProcessingPhase = EMassProcessingPhase::PrePhysics;
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Presentation;
@@ -49,11 +50,12 @@ void UBBBMonsterHitReactionProcessor::Execute(FMassEntityManager&, FMassExecutio
             const auto* Settings = Definition ? Definition->BloodPresentation.Get() : nullptr;
             if (Hit.Age <= 0.2f && Settings)
             {
-                Batches.FindOrAdd(Settings).Add({Hit.Position, Hit.Direction, Hit.Normal, Hit.Region});
+                Batches.FindOrAdd(Settings).Add({Hit.Position, Hit.Direction, Hit.Normal, Hit.Region, Hit.Serial});
             }
         }
     });
     auto* Presentation = Context.GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>();
+    Presentation->AdvancePresentation(Context.GetDeltaTimeSeconds());
     for (const auto& Batch : Batches)
     {
         Presentation->Publish(*Batch.Key, Batch.Value);
