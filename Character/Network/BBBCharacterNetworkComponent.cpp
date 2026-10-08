@@ -66,6 +66,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalAction, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalContact, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalEnd, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalExitVelocity, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalStartTime, COND_SimulatedOnly);
 
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescuePartner, COND_SimulatedOnly);
@@ -226,7 +227,7 @@ APawn *UBBBCharacterNetworkComponent::GetOwnerPawn() const
 }
 
 void UBBBCharacterNetworkComponent::ReplicateTraversal(uint32 Id, EBBBTraversalAction Action,
-    const FTransform &Contact, const FTransform &End, const float Position)
+    const FTransform &Contact, const FTransform &End, const float Position, const FVector &ExitVelocity)
 {
     if (!IsOwnerAuthority() || Id == 0)
     {
@@ -241,20 +242,22 @@ void UBBBCharacterNetworkComponent::ReplicateTraversal(uint32 Id, EBBBTraversalA
     ReplicatedTraversalAction = Action;
     ReplicatedTraversalContact = Contact;
     ReplicatedTraversalEnd = End;
+    ReplicatedTraversalExitVelocity = ExitVelocity;
     GetOwner()->ForceNetUpdate();
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitTraversal_Implementation(uint32 Id,
-    EBBBTraversalAction Action, FTransform Contact, FTransform End, const float Position)
+    EBBBTraversalAction Action, FTransform Contact, FTransform End, const float Position, FVector_NetQuantize10 ExitVelocity)
 {
     if (!Character || !IsOwnerAuthority() || Id == 0 || !Contact.IsValid() || !End.IsValid()
-        || Action > EBBBTraversalAction::ClimbHigh || !FMath::IsFinite(Position) || Position < 0.0f)
+        || Action > EBBBTraversalAction::ClimbHigh || !FMath::IsFinite(Position) || Position < 0.0f
+        || ExitVelocity.ContainsNaN() || ExitVelocity.GetAbsMax() > 10000.0)
     {
         return;
     }
     if (Action == EBBBTraversalAction::None)
     {
-        Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{Id}});
+        Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{Id}, {FVector(ExitVelocity)}});
         return;
     }
     Character->SubmitInput(FBBBTraversalStartRemoteMessagePacket{{Id}, {Action}, {Contact}, {End}, {Position}});
@@ -272,7 +275,7 @@ void UBBBCharacterNetworkComponent::OnRep_Traversal()
     }
     if (ReplicatedTraversalAction == EBBBTraversalAction::None)
     {
-        Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{ReplicatedTraversalId}});
+        Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{ReplicatedTraversalId}, {FVector(ReplicatedTraversalExitVelocity)}});
         return;
     }
 

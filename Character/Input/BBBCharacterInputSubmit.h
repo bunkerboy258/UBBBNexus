@@ -153,6 +153,7 @@ namespace BBBCharacterInput
             || std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket>)
         {
             Slot.Data.ActionIds.Append(Packet.ActionIds);
+            Slot.Data.ExitVelocities.Append(Packet.ExitVelocities);
         }
         if constexpr (std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
             || std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>)

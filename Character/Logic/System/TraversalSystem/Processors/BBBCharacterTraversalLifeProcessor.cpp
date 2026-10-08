@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/Context/BBBCharacterTraversalUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalConfig.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterWorldState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterTraversalAnimationState.h"
@@ -28,7 +29,10 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
     }
 
     const bool bOwnPlayback = Context.Playback.LastActionId == State.ActionId;
-    State.bAnimationReleased = bOwnPlayback && Context.Playback.bRootMotionReleased;
+    // 尚未形成播放贡献的动作可以直接释放 已启动的各端都必须等待根运动退出确认
+    State.bAnimationReleased = bOwnPlayback
+        ? Context.Playback.bRootMotionReleased
+        : State.bEndRequested && !State.bPlaybackObserved;
     if (bOwnPlayback && Context.Playback.bPlaying)
     {
         State.PlaybackPosition = Context.Playback.Position;
@@ -70,8 +74,15 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
     }
 
     // 最后一个校正窗口完成后只在脚下已具备支撑时提前交还控制权
+    const bool bWarpComplete = Context.Playback.bExitWindowReached;
+    // 移动可以在主动作完成后接管 无输入保留整段姿势直到播放实际结束
+    const bool bWantsMove = !Context.ControlState.MoveWorld.IsNearlyZero();
+    const float InputExitTime = FMath::Max(Context.Playback.ContactWarpEndTime,
+        Context.Playback.LastWarpEndTime - FMath::Max(Context.TraversalConfig.InputExitLeadTime, 0.0f));
+    const bool bInputExitWindow = Context.Playback.ContactWarpEndTime > 0.0f
+        && Context.Playback.Position >= InputExitTime;
     FFindFloorResult Floor;
-    if (!State.bEndRequested && bOwnPlayback && Context.Playback.bExitWindowReached)
+    if (!State.bEndRequested && bOwnPlayback && bWantsMove && (bWarpComplete || bInputExitWindow))
     {
         const float FloorDistance = Context.TraversalConfig.Clearance + 5.0f;
         Context.Movement.ComputeFloorDist(Context.Character.GetActorLocation(), FloorDistance, FloorDistance,
@@ -79,14 +90,15 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
         const FVector End = State.EndTarget.GetLocation();
         const FVector Feet = Context.Character.GetActorLocation()
             - FVector(0, 0, Context.Character.GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-        State.bEndRequested |= Floor.IsWalkableFloor() && Floor.FloorDist <= FloorDistance
+        State.bEndRequested |= Floor.IsWalkableFloor() && !Floor.HitResult.bStartPenetrating
+            && Floor.FloorDist <= FloorDistance
             && FVector::Dist2D(Feet, End) <= Context.Character.GetCapsuleComponent()->GetScaledCapsuleRadius()
             && FMath::Abs(Feet.Z - End.Z) <= FloorDistance;
     }
     State.bEndRequested |= bEnded;
 
     /** 翻越已离开背面碰撞区后由 CMC 完成落地 不再等待落地动画尾段 */
-    if (!State.bEndRequested && State.Action == EBBBTraversalAction::Vault && bOwnPlayback
+    if (!State.bEndRequested && bWantsMove && State.Action == EBBBTraversalAction::Vault && bOwnPlayback
         && Context.Playback.ContactWarpEndTime > 0.0f
         && Context.Playback.Position >= Context.Playback.ContactWarpEndTime)
     {

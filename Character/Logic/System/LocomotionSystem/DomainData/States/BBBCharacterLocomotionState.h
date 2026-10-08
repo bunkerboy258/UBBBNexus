@@ -27,6 +27,18 @@ struct FBBBCharacterLocomotionState final
 
     /** 接管前的水平速度用于交还控制时延续移动惯性 */
     float TraversalEntrySpeed = 0.0f;
+    /** 动作结束裁决时确定的交权速度 镜像只还原同一结果 */
+    FVector TraversalExitVelocity = FVector::ZeroVector;
+    /** 当前动作的交权速度已经由控制端确定或由镜像接收 */
+    bool bTraversalExitPrepared = false;
+    /** 移动处理器已经应用攀爬期间的纠正策略 */
+    bool bTraversalCorrectionOverride = false;
+    /** 进入攀爬前的服务器误差检查策略 */
+    bool bSavedIgnoreMovementError = false;
+    /** 进入攀爬前的客户端纠正策略 */
+    bool bSavedIgnoreMovementCorrection = false;
+    /** 进入攀爬前的客户端位置接收策略 */
+    bool bSavedAcceptClientPosition = false;
     /** 胶囊与移动组件最后应用的生命阶段 */
     EBBBCharacterLifePhase AppliedLifePhase = EBBBCharacterLifePhase::Alive;
 };

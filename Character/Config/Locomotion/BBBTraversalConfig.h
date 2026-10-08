@@ -49,6 +49,10 @@ struct FBBBTraversalConfig final
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "空间检查间隙", ClampMin = "0"))
     float Clearance = 3.0f;
 
+    /** 有移动输入时允许先于最终校正窗口结束检查退出 单位为源动画秒 仍须满足实际支撑 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "移动提前退出窗口", ClampMin = "0"))
+    float InputExitLeadTime = 0.15f;
+
     /** 动画未能启动时取消翻越的等待时间 单位秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "动画启动超时", ClampMin = "0.1"))
     float StartTimeout = 1.0f;

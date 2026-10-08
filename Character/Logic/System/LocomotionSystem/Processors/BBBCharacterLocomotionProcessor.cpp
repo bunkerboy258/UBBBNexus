@@ -12,6 +12,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBTraversalNetworkObservationState.h"
 
 namespace
 {
@@ -115,29 +116,58 @@ float ResolveMaxSpeed(
 void FBBBCharacterLocomotionProcessor::Update(
     FBBBCharacterLocomotionUpdateContext &Context) const
 {
+    ACharacter &Character = Context.Character;
+    UCharacterMovementComponent &Movement = Context.Movement;
+    FBBBCharacterLocomotionState &RuntimeData = Context.LocomotionState;
+    const bool bSuppressCorrection = Context.Data.Network.ReadTraversalNetworkObservationState()
+        .bMovementCorrectionSuppressed;
+    if (bSuppressCorrection && !RuntimeData.bTraversalCorrectionOverride)
+    {
+        // 网络领域决定策略 移动领域集中应用并保留接管前的组件设置
+        RuntimeData.bSavedIgnoreMovementError = Movement.bIgnoreClientMovementErrorChecksAndCorrection;
+        RuntimeData.bSavedIgnoreMovementCorrection = Movement.bClientIgnoreMovementCorrections;
+        RuntimeData.bSavedAcceptClientPosition = Movement.bServerAcceptClientAuthoritativePosition;
+        Movement.bIgnoreClientMovementErrorChecksAndCorrection = true;
+        Movement.bClientIgnoreMovementCorrections = true;
+        Movement.bServerAcceptClientAuthoritativePosition = true;
+        RuntimeData.bTraversalCorrectionOverride = true;
+    }
+    if (!bSuppressCorrection && RuntimeData.bTraversalCorrectionOverride)
+    {
+        Movement.bIgnoreClientMovementErrorChecksAndCorrection = RuntimeData.bSavedIgnoreMovementError;
+        Movement.bClientIgnoreMovementCorrections = RuntimeData.bSavedIgnoreMovementCorrection;
+        Movement.bServerAcceptClientAuthoritativePosition = RuntimeData.bSavedAcceptClientPosition;
+        RuntimeData.bTraversalCorrectionOverride = false;
+    }
     if (!Context.Life.bActionsAllowed)
     {
         return;
     }
-    ACharacter &Character = Context.Character;
-    UCharacterMovementComponent &Movement = Context.Movement;
-    FBBBCharacterLocomotionState &RuntimeData = Context.LocomotionState;
     const FBBBCharacterControlState &ControlData = Context.ControlState;
     const FBBBCharacterLocomotionConfig &Config = Context.Config;
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
     const FBBBCharacterTraversalState &Traversal = Context.Traversal;
     const bool bWantsTraversalControl = Traversal.Action != EBBBTraversalAction::None
         && Traversal.bPlaybackRequested
-        && !(Traversal.bEndRequested && (Context.Execution.bIsMirror || Traversal.bAnimationReleased));
+        && !(Traversal.bEndRequested && Traversal.bAnimationReleased);
 
-    // 镜像直接执行接受的结束结果 控制方等待自身根运动释放后交接
-    if (RuntimeData.bTraversalControlled && !bWantsTraversalControl)
+    // 结束裁决与交权速度同帧成立 在关闭根运动前发布供各端还原
+    if (RuntimeData.bTraversalControlled && Traversal.bEndRequested
+        && !Context.Execution.bIsMirror && !RuntimeData.bTraversalExitPrepared)
     {
         /** 校正位移不作为额外加速来源 退出速度受当前移动档位约束 */
         const float ExitSpeed = FMath::Min(
             FMath::Max(RuntimeData.TraversalEntrySpeed, Movement.Velocity.Size2D()),
             Movement.MaxWalkSpeed);
-        Movement.Velocity = Traversal.EndTarget.GetRotation().GetForwardVector() * ExitSpeed;
+        // 校正动画不决定接管后的方向 无输入立即消除尾速 有输入沿已解析的世界方向交接
+        RuntimeData.TraversalExitVelocity = ControlData.MoveWorld.GetSafeNormal2D() * ExitSpeed;
+        RuntimeData.bTraversalExitPrepared = true;
+    }
+
+    // 镜像直接执行接受的结束结果 控制方等待自身根运动释放后交接
+    if (RuntimeData.bTraversalControlled && !bWantsTraversalControl)
+    {
+        Movement.Velocity = RuntimeData.TraversalExitVelocity;
         FFindFloorResult Floor;
         Movement.ComputeFloorDist(Character.GetActorLocation(), 8.0f, 8.0f, Floor,
             Character.GetCapsuleComponent()->GetScaledCapsuleRadius());
@@ -151,6 +181,8 @@ void FBBBCharacterLocomotionProcessor::Update(
         Character.StopJumping();
         Character.ConsumeMovementInputVector();
         RuntimeData.TraversalEntrySpeed = Movement.Velocity.Size2D();
+        RuntimeData.TraversalExitVelocity = FVector::ZeroVector;
+        RuntimeData.bTraversalExitPrepared = false;
         Movement.SetMovementMode(MOVE_Flying);
         RuntimeData.bTraversalControlled = true;
     }

@@ -6,6 +6,9 @@
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalEndAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalEndRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalStartRemoteMessagePacket.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
@@ -96,6 +99,35 @@ bool FBBBCharacterAccelerationTest::RunTest(const FString &Parameters)
     TestFalse(TEXT("异常移动输入被结构校验拒绝"),
         FBBBAccelerationAuthorityFactPacket{{1}, {FVector::ZeroVector}, {FVector(2, 0, 0)}}.IsValid());
 
+    // 结束结果与交权速度按同一动作合并 镜像不从校正尾速或移动输入重新推导
+    Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{10}, {FVector(0, 200, 0)}});
+    Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{11}, {FVector(-150, 0, 0)}});
+    Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{9}, {FVector(300, 0, 0)}});
+    Step();
+    TestEqual(TEXT("同帧结束结果取最新动作"), Character->RuntimeData.Traversal.ReadTraversalState().ActionId, uint32(11));
+    TestEqual(TEXT("交权速度与最新动作严格对应"), Locomotion.TraversalExitVelocity, FVector(-150, 0, 0));
+    TestTrue(TEXT("镜像已经接收交权结果"), Locomotion.bTraversalExitPrepared);
+    Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{10}, {FVector(0, 300, 0)}});
+    Step();
+    TestEqual(TEXT("迟到结束不得覆盖交权方向"), Locomotion.TraversalExitVelocity, FVector(-150, 0, 0));
+    Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{12}, {FVector::ZeroVector}});
+    Step();
+    TestEqual(TEXT("无输入结束明确还原零尾速"), Locomotion.TraversalExitVelocity, FVector::ZeroVector);
+    TestEqual(TEXT("交权事实不重演镜像加速度"),
+        Character->GetCharacterMovement()->GetCurrentAcceleration(), FVector::ZeroVector);
+    TestFalse(TEXT("动作与交权速度数量错位被拒绝"), FBBBTraversalEndRemoteMessagePacket{{1}, {}}.IsValid());
+    TestFalse(TEXT("未生成动作的交权结果被拒绝"), FBBBTraversalEndAuthorityFactPacket{{0}, {FVector::ZeroVector}}.IsValid());
+    TestFalse(TEXT("异常交权速度被拒绝"), FBBBTraversalEndAuthorityFactPacket{{1}, {FVector(10001, 0, 0)}}.IsValid());
+
+    // 开始与结束同帧到达时没有根运动贡献 不等待一个从未创建的播放实例
+    Character->SubmitInput(FBBBTraversalStartRemoteMessagePacket{{20}, {EBBBTraversalAction::ClimbLow},
+        {FTransform::Identity}, {FTransform::Identity}, {0.0f}});
+    Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{20}, {FVector::ZeroVector}});
+    Step();
+    TestEqual(TEXT("尚未播放就结束的动作立即完成清理"),
+        Character->RuntimeData.Traversal.ReadTraversalState().Action, EBBBTraversalAction::None);
+    TestFalse(TEXT("已结束动作不再占用根运动控制"), Locomotion.bTraversalControlled);
+
     // 本机控制者继续使用自身 CMC 结果 不接收镜像还原输入
     APlayerController *Controller = World->SpawnActor<APlayerController>();
     ULocalPlayer *LocalPlayer = NewObject<ULocalPlayer>(GEngine);
@@ -106,6 +138,9 @@ bool FBBBCharacterAccelerationTest::RunTest(const FString &Parameters)
     Character->SubmitInput(FBBBAccelerationAuthorityFactPacket{{7}, {FVector(1200, 0, 0)}, {FVector(1, 0, 0)}});
     Step();
     TestEqual(TEXT("控制者拒绝镜像事实"), Locomotion.AccelerationRevision, uint64(6));
+    Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{21}, {FVector(300, 0, 0)}});
+    Step();
+    TestEqual(TEXT("控制者拒绝镜像交权结果"), Character->RuntimeData.Traversal.ReadTraversalState().ActionId, uint32(20));
     return true;
 }
 #endif
