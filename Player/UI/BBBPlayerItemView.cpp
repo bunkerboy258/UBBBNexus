@@ -230,7 +230,7 @@ void UBBBPlayerItemView::RefreshItems()
         Grid->AddSlot(
             Position % Columns,
             Position /
-                Columns)[SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Position).Width(Width).Height(Width * 0.57f)];
+                Columns)[SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Position).Width(Width).Height(Width * 0.72f)];
     }
     BackpackSlots->AddSlot().AutoHeight()[Grid];
     TArray<FName> WearNames;

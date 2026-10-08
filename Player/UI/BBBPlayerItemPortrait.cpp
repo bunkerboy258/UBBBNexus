@@ -51,7 +51,7 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
         Light->SetLightingChannels(false, true, false);
         Light->SetCastShadows(false);
         Light->SetAttenuationRadius(650.0f);
-        Light->SetIntensity(Index == 0 ? 2800.0f : 1100.0f);
+        Light->SetIntensity(Index == 0 ? 3800.0f : 1800.0f);
         Light->SetLightColor(Index == 0 ? FLinearColor(1.0f, 0.91f, 0.78f) : FLinearColor(0.68f, 0.78f, 1.0f));
         Light->SetRelativeLocation(Index == 0 ? FVector(190.0f, -155.0f, 240.0f) : FVector(100.0f, 170.0f, 130.0f));
         Light->RegisterComponent();
@@ -103,11 +103,11 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     Camera->PostProcessSettings.bOverride_DynamicGlobalIlluminationMethod = true;
     Camera->PostProcessSettings.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::None;
     Camera->ProjectionType = ECameraProjectionMode::Orthographic;
-    Camera->OrthoWidth = 125.0f;
+    Camera->OrthoWidth = 114.0f;
     Camera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
     Camera->PostProcessSettings.bOverride_AutoExposureMethod = true;
     Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
-    Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 90.0f));
+    Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 95.0f));
     Capture->SetActorRotation(FRotator(0.0f, 180.0f, 0.0f));
     Update(1.0f);
     return true;
@@ -120,7 +120,7 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         return;
     }
     Elapsed += DeltaTime;
-    if (Elapsed < 1.0f / 20.0f)
+    if (Elapsed < 1.0f / 12.0f)
     {
         return;
     }

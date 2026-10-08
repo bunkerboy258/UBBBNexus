@@ -35,6 +35,18 @@ inline const FSlateBrush *Slot()
 {
     return Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Item_Slot.T_Item_Slot"));
 }
+/** @return 使用素材包边缘绘制清晰的物品选择框 */
+inline const FSlateBrush *Selection()
+{
+    static const FSlateBrush Frame = []()
+    {
+        FSlateBrush Result = *Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Attachment_Slot.T_Attachment_Slot"));
+        Result.DrawAs = ESlateBrushDrawType::Border;
+        Result.Margin = FMargin(2.0f / 858.0f, 2.0f / 394.0f);
+        return Result;
+    }();
+    return &Frame;
+}
 /** @param Path	明确字体资产 @return 原稿字形与显式中文字体 */
 inline TSharedPtr<const FCompositeFont> Typeface(const TCHAR *Path)
 {

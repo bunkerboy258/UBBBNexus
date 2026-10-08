@@ -76,7 +76,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                        .TextMargin(FMargin(12.0f, 8.0f))
                            [SNew(STextBlock)
                                 .Text(ItemName)
-                                .Font(BBBItemUI::Font(12))
+                                .Font(BBBItemUI::Font(16))
                                 .ColorAndOpacity(FLinearColor::White)]);
     }
     ChildSlot[SNew(SBox)
@@ -95,14 +95,14 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .VAlign(VAlign_Bottom)
                            .Padding(0.0f, 4.0f)[SNew(STextBlock)
                                                     .Text(Arguments._PositionLabel)
-                                                    .Font(BBBItemUI::Font(12))
-                                                    .ColorAndOpacity(FLinearColor(0.6f, 0.6f, 0.6f))] +
+                                                    .Font(BBBItemUI::Font(14))
+                                                    .ColorAndOpacity(FLinearColor(0.68f, 0.68f, 0.64f))] +
                        SOverlay::Slot()
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
                            .VAlign(bCompact ? VAlign_Bottom : VAlign_Top)
                            .Padding(8.0f, 5.0f)[SNew(STextBlock)
                                                     .Text(IsQuickSlot() ? FText::AsNumber(Slot + 1) : FText::GetEmpty())
-                                                    .Font(BBBItemUI::Font(10))
+                                                    .Font(BBBItemUI::Font(bCompact ? 16 : 14))
                                                     .ColorAndOpacity_Lambda(
                                                         [this]()
                                                         {
@@ -131,6 +131,12 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         FSlateDrawElement::MakeBox(Elements, Layer, Geometry.ToPaintGeometry(),
                                    BBBItemUI::Slot(), ESlateDrawEffect::None,
                                    Tint * Style.GetColorAndOpacityTint());
+        if (bSelected || (bOccupied && IsHovered()))
+        {
+            const FLinearColor Edge = bSelected ? BBBItemUI::Accent : BBBItemUI::MutedText * 0.55f;
+            FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(), BBBItemUI::Selection(),
+                                       ESlateDrawEffect::None, Edge * Style.GetColorAndOpacityTint());
+        }
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

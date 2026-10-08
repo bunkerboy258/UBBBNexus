@@ -67,8 +67,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                       auto *Controller = GetItemController();
                       return Controller ? Controller->GetItemDisplayData(InspectedSlot).Name : FText::GetEmpty();
                   })
-              .Font(Font(26))
-              .ColorAndOpacity(FLinearColor::White));
+              .Font(TitleFont(34))
+              .ColorAndOpacity(FLinearColor(0.75f, 0.75f, 0.72f)));
     Place(100.0f, 245.0f, 750.0f, 270.0f,
           SAssignNew(DetailImage, SBox)[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
               [this]()
@@ -81,20 +81,26 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
             [this, bMisc]()
             {
                 return ShowStorage(bMisc);
-            })[SNew(STextBlock)
+            })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
                    .Text(FText::FromString(Text))
-                   .Font(Font(19))
+                   .Font(Font(22))
                    .ColorAndOpacity_Lambda(
                        [this, bMisc]()
                        {
                            return bMiscPage == bMisc ? FSlateColor(Accent) : FSlateColor::UseForeground();
-                       })];
+                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Left).Padding(16.0f, 0.0f, 0.0f, 0.0f)
+                [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
+                    [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
+                        .Visibility_Lambda([this, bMisc]()
+                        {
+                            return bMiscPage == bMisc ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+                        })]]];
     };
     Place(60.0f, 550.0f, 156.0f, 40.0f, TabButton(TEXT("EQUIPMENT"), false));
     Place(240.0f, 550.0f, 100.0f, 40.0f, TabButton(TEXT("MISC"), true));
     Place(58.0f, 608.0f, 862.0f, 398.0f,
           SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
-              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.82f)));
+              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));
     static const FScrollBarStyle Scroll = []()
     {
         FScrollBarStyle Result;
@@ -107,7 +113,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         return Result;
     }();
     TSharedRef<SScrollBar> Bar =
-        SNew(SScrollBar).Style(&Scroll).Orientation(Orient_Horizontal).AlwaysShowScrollbar(true);
+        SNew(SScrollBar).Style(&Scroll).Orientation(Orient_Horizontal).AlwaysShowScrollbar(true)
+            .Padding(FMargin(0.0f)).Thickness(FVector2D(3.0f));
     Place(65.0f, 1018.0f, 845.0f, 3.0f, Bar);
     Place(
         68.0f, 620.0f, 844.0f, 373.0f,
@@ -120,14 +127,20 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
             [this, bGear]()
             {
                 return ShowGear(bGear);
-            })[SNew(STextBlock)
+            })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
                    .Text(FText::FromString(Text))
                    .Font(Font(23))
                    .ColorAndOpacity_Lambda(
                        [this, bGear]()
                        {
                            return bGearPage == bGear ? FSlateColor(Accent) : FSlateColor::UseForeground();
-                       })];
+                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Left).Padding(18.0f, 0.0f, 0.0f, 0.0f)
+                [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
+                    [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
+                        .Visibility_Lambda([this, bGear]()
+                        {
+                            return bGearPage == bGear ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+                        })]]];
     };
     Place(1485.0f, 41.0f, 175.0f, 50.0f, MakeNavigation(TEXT("QUICKBAR"), false));
     Place(1700.0f, 41.0f, 120.0f, 50.0f, MakeNavigation(TEXT("GEAR"), true));
