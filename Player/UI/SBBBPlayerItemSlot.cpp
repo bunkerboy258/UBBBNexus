@@ -41,7 +41,7 @@ class FBBBPlayerItemDrag final : public FDragDropOperation
     virtual TSharedPtr<SWidget> GetDefaultDecorator() const override
     {
         return SNew(SBorder)
-            .BorderImage(BBBItemUI::GearSlot())
+            .BorderImage(BBBItemUI::Slot())
             .Padding(12.0f)[SNew(STextBlock).Text(Name).Font(BBBItemUI::Font(12)).ColorAndOpacity(FLinearColor::White)];
     }
 };
@@ -71,8 +71,13 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
 
     if (bOccupied && !bCompact)
     {
-        SetToolTip(SNew(
-            SToolTip)[SNew(STextBlock).Text(ItemName).Font(BBBItemUI::Font(12)).ColorAndOpacity(FLinearColor::White)]);
+        SetToolTip(SNew(SToolTip)
+                       .BorderImage(BBBItemUI::Slot())
+                       .TextMargin(FMargin(12.0f, 8.0f))
+                           [SNew(STextBlock)
+                                .Text(ItemName)
+                                .Font(BBBItemUI::Font(12))
+                                .ColorAndOpacity(FLinearColor::White)]);
     }
     ChildSlot[SNew(SBox)
                   .WidthOverride(Arguments._Width)
@@ -82,7 +87,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                                                 bCompact || bWearSlot ? 25.0f : 12.0f)[SNew(SScaleBox).Stretch(
                            EStretch::ScaleToFit)[SNew(SImage)
                                                      .Image(&IconBrush)
-                                                     .ColorAndOpacity(FLinearColor::White)
+                                                     .ColorAndOpacity(FLinearColor(0.82f, 0.82f, 0.79f))
                                                      .Visibility(IconTexture.IsValid() ? EVisibility::HitTestInvisible
                                                                                        : EVisibility::Hidden)]] +
                        SOverlay::Slot()
@@ -90,7 +95,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .VAlign(VAlign_Bottom)
                            .Padding(0.0f, 4.0f)[SNew(STextBlock)
                                                     .Text(Arguments._PositionLabel)
-                                                    .Font(BBBItemUI::ArtFont(12))
+                                                    .Font(BBBItemUI::Font(12))
                                                     .ColorAndOpacity(FLinearColor(0.6f, 0.6f, 0.6f))] +
                        SOverlay::Slot()
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
@@ -121,9 +126,10 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
     if (!bCompact)
     {
         const bool bSelected = View.IsValid() && View->GetInspectedSlot() == Slot;
-        const FLinearColor Tint = bSelected ? BBBItemUI::Accent : FLinearColor::White;
+        const FLinearColor Tint = bSelected ? FLinearColor(1.0f, 0.72f, 0.38f, 0.94f)
+                                          : FLinearColor(1.0f, 1.0f, 0.98f, IsHovered() ? 1.0f : 0.85f);
         FSlateDrawElement::MakeBox(Elements, Layer, Geometry.ToPaintGeometry(),
-                                   bWearSlot ? BBBItemUI::GearSlot() : BBBItemUI::Slot(), ESlateDrawEffect::None,
+                                   BBBItemUI::Slot(), ESlateDrawEffect::None,
                                    Tint * Style.GetColorAndOpacityTint());
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);

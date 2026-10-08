@@ -39,7 +39,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
                              {
                                  return bBackpackOpen ? EVisibility::Visible : EVisibility::Collapsed;
                              }) +
-                         SOverlay::Slot()[SNew(SBackgroundBlur).BlurStrength(8.0f)] + SOverlay::Slot()[MakeBackpack()]];
+                         SOverlay::Slot()[SNew(SBackgroundBlur).BlurStrength(16.0f)] + SOverlay::Slot()[MakeBackpack()]];
     RefreshItems();
     return Result;
 }
@@ -52,11 +52,14 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     {
         Canvas->AddSlot().Alignment(FVector2D::ZeroVector).Offset(FMargin(X, Y, W, H))[Widget];
     };
-    static const FSlateColorBrush Dim(FLinearColor(0.006f, 0.008f, 0.010f, 0.77f));
+    static const FSlateColorBrush Dim(FLinearColor(0.002f, 0.003f, 0.003f, 0.82f));
     Place(0.0f, 0.0f, 1920.0f, 1080.0f, SNew(SBorder).BorderImage(&Dim));
-    Place(80.0f, 38.0f, 360.0f, 76.0f,
-          SNew(STextBlock).Text(FText::FromString(TEXT("Bag"))).Font(ArtFont(60)).ColorAndOpacity(FLinearColor::White));
-    Place(80.0f, 145.0f, 830.0f, 55.0f,
+    Place(0.0f, 0.0f, 1920.0f, 1080.0f,
+          SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_Backdrop.T_E01_Backdrop")))
+              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.87f)));
+    Place(40.0f, 30.0f, 360.0f, 76.0f,
+          SNew(STextBlock).Text(FText::FromString(TEXT("Bag"))).Font(TitleFont(54)).ColorAndOpacity(FLinearColor(0.72f, 0.72f, 0.70f)));
+    Place(60.0f, 158.0f, 830.0f, 55.0f,
           SNew(STextBlock)
               .Text_Lambda(
                   [this]()
@@ -64,9 +67,9 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                       auto *Controller = GetItemController();
                       return Controller ? Controller->GetItemDisplayData(InspectedSlot).Name : FText::GetEmpty();
                   })
-              .Font(Font(24))
+              .Font(Font(26))
               .ColorAndOpacity(FLinearColor::White));
-    Place(95.0f, 215.0f, 795.0f, 270.0f,
+    Place(100.0f, 245.0f, 750.0f, 270.0f,
           SAssignNew(DetailImage, SBox)[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
               [this]()
               {
@@ -74,21 +77,24 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
               })]]);
     const auto TabButton = [this](const TCHAR *Text, bool bMisc)
     {
-        return SNew(SButton).ButtonStyle(Button()).OnClicked_Lambda(
+        return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
             [this, bMisc]()
             {
                 return ShowStorage(bMisc);
             })[SNew(STextBlock)
                    .Text(FText::FromString(Text))
-                   .Font(ArtFont(24))
+                   .Font(Font(19))
                    .ColorAndOpacity_Lambda(
                        [this, bMisc]()
                        {
-                           return bMiscPage == bMisc ? Accent : FLinearColor::White;
+                           return bMiscPage == bMisc ? FSlateColor(Accent) : FSlateColor::UseForeground();
                        })];
     };
-    Place(80.0f, 500.0f, 190.0f, 50.0f, TabButton(TEXT("EQUIPMENT"), false));
-    Place(285.0f, 500.0f, 190.0f, 50.0f, TabButton(TEXT("MISC"), true));
+    Place(60.0f, 550.0f, 156.0f, 40.0f, TabButton(TEXT("EQUIPMENT"), false));
+    Place(240.0f, 550.0f, 100.0f, 40.0f, TabButton(TEXT("MISC"), true));
+    Place(58.0f, 608.0f, 862.0f, 398.0f,
+          SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
+              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.82f)));
     static const FScrollBarStyle Scroll = []()
     {
         FScrollBarStyle Result;
@@ -102,36 +108,36 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     }();
     TSharedRef<SScrollBar> Bar =
         SNew(SScrollBar).Style(&Scroll).Orientation(Orient_Horizontal).AlwaysShowScrollbar(true);
-    Place(80.0f, 1018.0f, 835.0f, 7.0f, Bar);
+    Place(65.0f, 1018.0f, 845.0f, 3.0f, Bar);
     Place(
-        75.0f, 570.0f, 850.0f, 440.0f,
+        68.0f, 620.0f, 844.0f, 373.0f,
         SNew(SScrollBox).ExternalScrollbar(Bar).Orientation(Orient_Vertical).ScrollBarThickness(FVector2D(7.0f, 7.0f)) +
             SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
-    Place(1020.0f, 148.0f, 340.0f, 690.0f, SAssignNew(EquipmentSlots, SVerticalBox));
+    Place(1000.0f, 160.0f, 350.0f, 710.0f, SAssignNew(EquipmentSlots, SVerticalBox));
     const auto MakeNavigation = [this](const TCHAR *Text, bool bGear)
     {
-        return SNew(SButton).ButtonStyle(Button()).OnClicked_Lambda(
+        return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
             [this, bGear]()
             {
                 return ShowGear(bGear);
             })[SNew(STextBlock)
                    .Text(FText::FromString(Text))
-                   .Font(ArtFont(35))
+                   .Font(Font(23))
                    .ColorAndOpacity_Lambda(
                        [this, bGear]()
                        {
-                           return bGearPage == bGear ? Accent : FLinearColor::White;
+                           return bGearPage == bGear ? FSlateColor(Accent) : FSlateColor::UseForeground();
                        })];
     };
-    Place(1450.0f, 54.0f, 220.0f, 58.0f, MakeNavigation(TEXT("QUICKBAR"), false));
-    Place(1682.0f, 54.0f, 155.0f, 58.0f, MakeNavigation(TEXT("GEAR"), true));
-    Place(1420.0f, 145.0f, 435.0f, 735.0f,
+    Place(1485.0f, 41.0f, 175.0f, 50.0f, MakeNavigation(TEXT("QUICKBAR"), false));
+    Place(1700.0f, 41.0f, 120.0f, 50.0f, MakeNavigation(TEXT("GEAR"), true));
+    Place(1420.0f, 115.0f, 435.0f, 765.0f,
           SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
               [this]()
               {
                   return GetCharacterBrush();
               })]);
-    Place(1020.0f, 855.0f, 340.0f, 34.0f,
+    Place(1007.0f, 896.0f, 340.0f, 30.0f,
           SNew(STextBlock)
               .Text_Lambda(
                   [this]()
@@ -145,7 +151,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                                                      : ItemCharacter->GetCharacterConfig().MaximumHealth))
                                            : FText::GetEmpty();
                   })
-              .Font(Font(18))
+              .Font(Font(16))
               .ColorAndOpacity(FLinearColor::White));
     static const FProgressBarStyle Health = []()
     {
@@ -154,9 +160,10 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
             "/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Big.T_Scrollbar_Big")));
         Result.SetFillImage(*Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/"
                                         "T_Scrollbar_Handler.T_Scrollbar_Handler")));
+        Result.EnableFillAnimation = false;
         return Result;
     }();
-    Place(1020.0f, 900.0f, 340.0f, 9.0f,
+    Place(1007.0f, 938.0f, 340.0f, 3.0f,
           SNew(SProgressBar)
               .Style(&Health)
               .FillColorAndOpacity(FLinearColor::White)
@@ -165,14 +172,14 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                   {
                       return GetItemController() ? GetItemController()->GetHudHealthFraction() : 0.0f;
                   }));
-    Place(80.0f, 1032.0f, 820.0f, 28.0f, SAssignNew(StatusText, STextBlock).Font(Font(14)).ColorAndOpacity(Accent));
-    Place(1490.0f, 956.0f, 330.0f, 68.0f,
-          SNew(SButton).ButtonStyle(Button()).OnClicked_Lambda(
+    Place(60.0f, 1033.0f, 820.0f, 24.0f, SAssignNew(StatusText, STextBlock).Font(Font(14)).ColorAndOpacity(Accent));
+    Place(1510.0f, 931.0f, 280.0f, 82.0f,
+          SNew(SButton).ButtonStyle(ExitButton()).HAlign(HAlign_Center).VAlign(VAlign_Center).OnClicked_Lambda(
               [this]()
               {
                   GetItemController()->ToggleBackpack();
                   return FReply::Handled();
-              })[SNew(STextBlock).Text(FText::FromString(TEXT("EXIT"))).Font(ArtFont(32)).ColorAndOpacity(Accent)]);
+              })[SNew(STextBlock).Text(FText::FromString(TEXT("EXIT"))).Font(ArtFont(31)).ColorAndOpacity(FLinearColor(0.018f, 0.014f, 0.01f))]);
     return SNew(SScaleBox).Stretch(
         EStretch::ScaleToFit)[SNew(SBox).WidthOverride(1920.0f).HeightOverride(1080.0f)[Canvas]];
 }

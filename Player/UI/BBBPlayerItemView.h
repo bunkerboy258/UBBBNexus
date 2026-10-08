@@ -6,7 +6,7 @@
 class ABBBPlayerController;
 class APawn;
 class UFontFace;
-class UBBBPlayerItemPreview;
+class UBBBPlayerItemPortrait;
 class SImage;
 class SScrollBox;
 class SBox;
@@ -90,7 +90,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     FSlateBrush CharacterBrush;
     /** 只复制实际显示结果的本地预览 */
     UPROPERTY(Transient)
-    TObjectPtr<UBBBPlayerItemPreview> CharacterPreview;
+    TObjectPtr<UBBBPlayerItemPortrait> CharacterPreview;
     int32 InspectedSlot = INDEX_NONE;
     FGuid InspectedInstance;
     bool bMiscPage = false;

@@ -2,7 +2,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
-#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPreview.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "Engine/FontFace.h"
@@ -93,7 +93,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     InspectedInstance = Controller ? Controller->GetItemDisplayData(InspectedSlot).InstanceId : FGuid();
     bMiscPage = false;
     bGearPage = false;
-    CharacterPreview = NewObject<UBBBPlayerItemPreview>(this);
+    CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
     CharacterPreview->Open(Controller ? Controller->GetPawn() : nullptr);
     CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
     CharacterBrush.DrawAs = ESlateBrushDrawType::Image;
@@ -230,7 +230,7 @@ void UBBBPlayerItemView::RefreshItems()
         Grid->AddSlot(
             Position % Columns,
             Position /
-                Columns)[SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Position).Width(Width).Height(Width * 0.66f)];
+                Columns)[SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Position).Width(Width).Height(Width * 0.57f)];
     }
     BackpackSlots->AddSlot().AutoHeight()[Grid];
     TArray<FName> WearNames;
@@ -246,9 +246,9 @@ void UBBBPlayerItemView::RefreshItems()
                 : Position)[SNew(SBBBPlayerItemSlot)
                                 .View(this)
                                 .Slot(bGearPage ? Start + Position : Position)
-                                .PositionLabel(bGearPage ? FText::FromName(WearNames[Position]) : FText::GetEmpty())
-                                .Width(bGearPage ? 159.0f : 328.0f)
-                                .Height(bGearPage ? 140.0f : 112.0f)];
+                                .PositionLabel(bGearPage ? FText::FromString(WearNames[Position].ToString().ToUpper()) : FText::GetEmpty())
+                                .Width(bGearPage ? 162.0f : 340.0f)
+                                .Height(bGearPage ? 150.0f : 126.0f)];
     }
     EquipmentSlots->AddSlot().AutoHeight()[Right];
     int32 Revision = 0;

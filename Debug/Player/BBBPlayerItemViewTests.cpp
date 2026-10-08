@@ -4,10 +4,13 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "Engine/SceneCapture2D.h"
+#include "EngineUtils.h"
 #include "Misc/ScopeExit.h"
 
 /** 通过公开控制器接口验证界面请求 不访问物品系统或写入领域状态 */
@@ -71,7 +74,36 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     View->SetOwningPlayer(Controller);
     TestTrue(TEXT("初始化原生物品界面"), View->Initialize());
     const TSharedRef<SWidget> Widget = View->TakeWidget();
+    const int32 ContextsBeforeBag = GEngine->GetWorldContexts().Num();
+    const auto CaptureCount = [World]()
+    {
+        int32 Count = 0;
+        for (TActorIterator<ASceneCapture2D> Actor(World); Actor; ++Actor)
+        {
+            ++Count;
+        }
+        return Count;
+    };
+    TestEqual(TEXT("打开前没有人物捕获演员"), CaptureCount(), 0);
     View->SetBackpackOpen(true);
+    TestEqual(TEXT("人物捕获不建立额外世界上下文"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);
+    TestEqual(TEXT("捕获演员只生成在玩家世界"), CaptureCount(), 1);
+    UBBBPlayerItemPortrait *Portrait = NewObject<UBBBPlayerItemPortrait>(Controller);
+    TestTrue(TEXT("建立穿脱回归捕获"), Portrait->Open(Character));
+    Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet01"));
+    Character->Tick(1.0f / 60.0f);
+    const FGuid Helmet = Controller->GetItemInstanceId(2);
+    TestTrue(TEXT("头盔登记真实身份"), Helmet.IsValid());
+    Controller->SubmitItemMove(2, 55, Helmet);
+    Character->Tick(1.0f / 60.0f);
+    Portrait->Update(1.0f);
+    TestTrue(TEXT("穿戴后捕获真实位置"), Controller->GetItemInstanceId(55) == Helmet);
+    Controller->SubmitItemMove(55, 2, Helmet);
+    Character->Tick(1.0f / 60.0f);
+    Portrait->Update(1.0f);
+    TestTrue(TEXT("脱下清空网格后捕获安全"), Controller->GetItemInstanceId(2) == Helmet
+        && !Controller->GetItemInstanceId(55).IsValid());
+    Portrait->Close();
     TestTrue(TEXT("控制器提供物品展示数据"), Controller->GetItemDisplayData(0).bOccupied
         && !Controller->GetItemDisplayData(0).Name.IsEmpty());
     TestFalse(TEXT("普通槽位不能由界面直接选中"), View->SelectSlot(Controller->GetQuickAccessSlotCount()));
@@ -90,6 +122,8 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestFalse(TEXT("拒绝物品已换位的旧拖动"), View->MoveItem(0, 1, Character, First));
     TestFalse(TEXT("拒绝角色失效的旧拖动"), View->MoveItem(1, 0, nullptr, First));
     View->SetBackpackOpen(false);
+    TestEqual(TEXT("关闭后清除玩家世界内的捕获演员"), CaptureCount(), 0);
+    TestEqual(TEXT("关闭后世界上下文保持原值"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);
     TestFalse(TEXT("界面关闭后拒绝拖动"), View->MoveItem(1, 0, Character, First));
     TestTrue(TEXT("界面提交收起"), View->SelectSlot(INDEX_NONE));
     Character->Tick(1.0f / 60.0f);

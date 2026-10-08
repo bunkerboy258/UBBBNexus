@@ -1,9 +1,9 @@
-#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPreview.h"
-#include "PreviewScene.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "Components/DirectionalLightComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/SceneComponent.h"
 #include "Engine/SceneCapture2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/World.h"
@@ -12,7 +12,7 @@
 #include "Animation/AnimSequence.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
-bool UBBBPlayerItemPreview::Open(APawn *Pawn)
+bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
 {
     Close();
     if (!IsValid(Pawn))
@@ -20,17 +20,41 @@ bool UBBBPlayerItemPreview::Open(APawn *Pawn)
         return false;
     }
     Source = Pawn;
-    FPreviewScene::ConstructionValues Options;
-    Options.SetEditor(false).SetCreatePhysicsScene(false).SetForceMipsResident(false);
-    Scene = MakeUnique<FPreviewScene>(Options);
-    Scene->DirectionalLight->SetIntensity(3.0f);
-    Scene->DirectionalLight->SetWorldRotation(FRotator(-25.0f, 160.0f, 0.0f));
-    Display = Scene->GetWorld()->SpawnActor<AActor>();
-    Capture = Scene->GetWorld()->SpawnActor<ASceneCapture2D>();
+    UWorld *World = Pawn->GetWorld();
+    if (!World || World->IsNetMode(NM_DedicatedServer))
+    {
+        return false;
+    }
+    FActorSpawnParameters Spawn;
+    Spawn.ObjectFlags |= RF_Transient;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    Origin = Pawn->GetActorLocation() + FVector(0.0f, 0.0f, 10000.0f);
+    Display = World->SpawnActor<AActor>(AActor::StaticClass(), Origin, FRotator::ZeroRotator, Spawn);
+    Capture = World->SpawnActor<ASceneCapture2D>(ASceneCapture2D::StaticClass(), Origin, FRotator::ZeroRotator, Spawn);
     if (!Display || !Capture)
     {
         Close();
         return false;
+    }
+    Display->SetReplicates(false);
+    Capture->SetReplicates(false);
+    USceneComponent *Root = NewObject<USceneComponent>(Display);
+    Display->AddInstanceComponent(Root);
+    Display->SetRootComponent(Root);
+    Root->RegisterComponent();
+    Root->SetWorldLocation(Origin);
+    for (int32 Index = 0; Index < 2; ++Index)
+    {
+        UPointLightComponent *Light = NewObject<UPointLightComponent>(Display);
+        Display->AddInstanceComponent(Light);
+        Light->SetupAttachment(Root);
+        Light->SetLightingChannels(false, true, false);
+        Light->SetCastShadows(false);
+        Light->SetAttenuationRadius(650.0f);
+        Light->SetIntensity(Index == 0 ? 2800.0f : 1100.0f);
+        Light->SetLightColor(Index == 0 ? FLinearColor(1.0f, 0.91f, 0.78f) : FLinearColor(0.68f, 0.78f, 1.0f));
+        Light->SetRelativeLocation(Index == 0 ? FVector(190.0f, -155.0f, 240.0f) : FVector(100.0f, 170.0f, 130.0f));
+        Light->RegisterComponent();
     }
     const ABBBCharacter *Character = Cast<ABBBCharacter>(Pawn);
     UAnimSequence *Standing = LoadObject<UAnimSequence>(
@@ -45,6 +69,7 @@ bool UBBBPlayerItemPreview::Open(APawn *Pawn)
     Pose->SetSkeletalMesh(Character->GetMesh()->GetSkeletalMeshAsset());
     Pose->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     Pose->SetVisibility(false);
+    Pose->SetVisibleInSceneCaptureOnly(true);
     Pose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Pose->RegisterComponent();
     Pose->PlayAnimation(Standing, false);
@@ -69,20 +94,28 @@ bool UBBBPlayerItemPreview::Open(APawn *Pawn)
     Camera->TextureTarget = Texture;
     Camera->bCaptureEveryFrame = false;
     Camera->bCaptureOnMovement = false;
+    Camera->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+    Camera->ShowOnlyActors.Add(Display);
+    Camera->ShowFlags.SetAtmosphere(false);
+    Camera->ShowFlags.SetFog(false);
+    Camera->ShowFlags.SetSkyLighting(false);
+    Camera->ShowFlags.SetDynamicShadows(false);
+    Camera->PostProcessSettings.bOverride_DynamicGlobalIlluminationMethod = true;
+    Camera->PostProcessSettings.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::None;
     Camera->ProjectionType = ECameraProjectionMode::Orthographic;
     Camera->OrthoWidth = 125.0f;
     Camera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
     Camera->PostProcessSettings.bOverride_AutoExposureMethod = true;
     Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
-    Capture->SetActorLocation(FVector(300.0f, 0.0f, 90.0f));
+    Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 90.0f));
     Capture->SetActorRotation(FRotator(0.0f, 180.0f, 0.0f));
     Update(1.0f);
     return true;
 }
 
-void UBBBPlayerItemPreview::Update(float DeltaTime)
+void UBBBPlayerItemPortrait::Update(float DeltaTime)
 {
-    if (!Scene || !Source.IsValid() || !Capture)
+    if (!Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || Source->GetWorld() != Capture->GetWorld())
     {
         return;
     }
@@ -106,6 +139,8 @@ void UBBBPlayerItemPreview::Update(float DeltaTime)
             UPoseableMeshComponent *Part = NewObject<UPoseableMeshComponent>(Display);
             Display->AddInstanceComponent(Part);
             Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            Part->SetVisibleInSceneCaptureOnly(true);
+            Part->SetLightingChannels(false, true, false);
             Part->RegisterComponent();
             Components.Add(Part);
         }
@@ -114,6 +149,11 @@ void UBBBPlayerItemPreview::Update(float DeltaTime)
         if (Part->GetSkinnedAsset() != Original->GetSkeletalMeshAsset())
         {
             Part->SetSkinnedAssetAndUpdate(Original->GetSkeletalMeshAsset());
+        }
+        if (!Original->GetSkeletalMeshAsset())
+        {
+            Part->SetVisibility(false);
+            continue;
         }
         Part->SetVisibility(Original->IsVisible() && !Original->GetOwner()->IsHidden());
         for (int32 MaterialIndex = 0; MaterialIndex < Original->GetNumMaterials(); ++MaterialIndex)
@@ -132,13 +172,22 @@ void UBBBPlayerItemPreview::Update(float DeltaTime)
                        Character->GetMesh()->GetRelativeTransform();
         }
         Relative.AddToTranslation(FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
+        Relative.AddToTranslation(Origin);
         Part->SetWorldTransform(Relative);
     }
     Capture->GetCaptureComponent2D()->CaptureScene();
 }
 
-void UBBBPlayerItemPreview::Close()
+void UBBBPlayerItemPortrait::Close()
 {
+    if (IsValid(Capture))
+    {
+        Capture->Destroy();
+    }
+    if (IsValid(Display))
+    {
+        Display->Destroy();
+    }
     Components.Reset();
     Pose = nullptr;
     Capture = nullptr;
@@ -146,17 +195,13 @@ void UBBBPlayerItemPreview::Close()
     Texture = nullptr;
     Material = nullptr;
     Source.Reset();
-    Scene.Reset();
+    Elapsed = 0.0f;
 }
-UTextureRenderTarget2D *UBBBPlayerItemPreview::GetTexture() const
-{
-    return Texture;
-}
-UMaterialInstanceDynamic *UBBBPlayerItemPreview::GetMaterial() const
+UMaterialInstanceDynamic *UBBBPlayerItemPortrait::GetMaterial() const
 {
     return Material;
 }
-void UBBBPlayerItemPreview::BeginDestroy()
+void UBBBPlayerItemPortrait::BeginDestroy()
 {
     Close();
     Super::BeginDestroy();

@@ -1,8 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
-#include "BBBPlayerItemPreview.generated.h"
-class FPreviewScene;
+#include "BBBPlayerItemPortrait.generated.h"
+
 class APawn;
 class AActor;
 class ASceneCapture2D;
@@ -11,26 +11,23 @@ class UPoseableMeshComponent;
 class USkeletalMeshComponent;
 class UMaterialInstanceDynamic;
 
-/** 独立显示世界仅复制正式角色外观 不创建角色或真实物品 */
+/** 在所属玩家世界内捕获固定正面显示 只复制外观结果 */
 UCLASS()
-class ABBB_EVAC_API UBBBPlayerItemPreview final : public UObject
+class ABBB_EVAC_API UBBBPlayerItemPortrait final : public UObject
 {
     GENERATED_BODY()
-  public:
-    /** @param Pawn 正式人物 @return 是否完成显示世界创建 */
+public:
+    /** @param Pawn 所属玩家角色 @return 本地捕获是否建立 */
     bool Open(APawn *Pawn);
-    /** @param DeltaTime 帧时长 @return 无 同步实际部件并固定正面捕获 */
+    /** @param DeltaTime 帧时长 @return 无 同步穿戴与材质 */
     void Update(float DeltaTime);
-    /** @return 无 释放显示世界与捕获资源 */
+    /** @return 无 销毁所属世界内的临时显示演员 */
     void Close();
-    /** @return 人物捕获纹理 */
-    UTextureRenderTarget2D *GetTexture() const;
-    /** @return 带透明背景的人物显示材质 */
+    /** @return 透明人物捕获材质 */
     UMaterialInstanceDynamic *GetMaterial() const;
     virtual void BeginDestroy() override;
 
-  private:
-    TUniquePtr<FPreviewScene> Scene;
+private:
     TWeakObjectPtr<APawn> Source;
     UPROPERTY(Transient)
     TObjectPtr<AActor> Display;
@@ -44,5 +41,6 @@ class ABBB_EVAC_API UBBBPlayerItemPreview final : public UObject
     TArray<TObjectPtr<UPoseableMeshComponent>> Components;
     UPROPERTY(Transient)
     TObjectPtr<USkeletalMeshComponent> Pose;
+    FVector Origin = FVector::ZeroVector;
     float Elapsed = 0.0f;
 };
