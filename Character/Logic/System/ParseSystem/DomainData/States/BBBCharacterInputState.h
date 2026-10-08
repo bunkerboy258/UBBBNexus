@@ -50,6 +50,17 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndContactLocalControlPacket.h"
 
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueBeginLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCancelLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueRequestLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueRequestRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueEndLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueEndRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueReplyLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueReplyRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueSnapshotRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterRescueSnapshotAuthorityFactPacket.h"
+
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
@@ -139,5 +150,25 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBAimImpulseLocalControlPacket> AimImpulse;
 
     /** 还原额外瞄准冲击输入槽位 */
-    TBBBCharacterInputSlot<FBBBAimImpulseAuthorityFactPacket> AuthorityAimImpulse;
+    TBBBCharacterInputSlot<FBBBAimImpulseAuthorityFactPacket> AuthorityAimImpulse;    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueBeginLocalControlPacket> RescueBeginLocalControl;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueCancelLocalControlPacket> RescueCancelLocalControl;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueRequestLocalControlPacket> RescueRequestLocalControl;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueRequestRemoteMessagePacket> RescueRequestRemoteMessage;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueEndLocalControlPacket> RescueEndLocalControl;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueEndRemoteMessagePacket> RescueEndRemoteMessage;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueReplyLocalControlPacket> RescueReplyLocalControl;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueReplyRemoteMessagePacket> RescueReplyRemoteMessage;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueSnapshotRemoteMessagePacket> RescueSnapshotRemoteMessage;
+    /** 救援输入固定槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueSnapshotAuthorityFactPacket> RescueSnapshotAuthorityFact;
+
 };

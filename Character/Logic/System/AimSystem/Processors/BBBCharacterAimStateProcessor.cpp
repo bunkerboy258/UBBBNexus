@@ -8,5 +8,5 @@ void FBBBCharacterAimStateProcessor::Update(
     FBBBAimState &State,
     const FBBBCharacterLifeState &Life) const
 {
-    State.bIsAiming = Life.Phase == EBBBCharacterLifePhase::Alive && ControlData.bAim;
+    State.bIsAiming = Life.bActionsAllowed && ControlData.bAim;
 }

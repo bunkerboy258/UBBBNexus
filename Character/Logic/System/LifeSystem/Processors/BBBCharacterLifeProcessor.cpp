@@ -35,6 +35,8 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         State.Phase = Input.ResultPhase;
         State.Health = Input.ResultHealth;
         State.Revision = Input.ResultRevision;
+        State.DownedRevision = Input.ResultDownedRevision;
+        State.bRecoveryCrouched = Input.bResultRecoveryCrouched;
         State.bInitialized = true;
         Hit.Serial = Input.ResultHitSerial;
         Hit.Bone = Input.ResultBone;
@@ -80,10 +82,47 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         {
             State.Phase = EBBBCharacterLifePhase::Downed;
             State.Health = Context.Config.DownedHealth;
+            State.DownedRevision = State.Revision;
+            State.bRecoveryCrouched = false;
             continue;
         }
         State.Phase = EBBBCharacterLifePhase::Dead;
     }
+
+    auto &Rescue = Domain.RescueState;
+    if (!bMirror && Rescue.bReceiving && (Rescue.bCompletionPending || State.Phase != EBBBCharacterLifePhase::Downed))
+    {
+        const bool bSuccess = Rescue.bCompletionPending && State.Phase == EBBBCharacterLifePhase::Downed &&
+            State.DownedRevision == Rescue.DownedRevision && Domain.ReadRescueCandidateState().bCanRecover;
+        FName Reason = TEXT("PartnerUnavailable");
+        if (bSuccess)
+        {
+            State.Phase = EBBBCharacterLifePhase::Alive;
+            State.Health = FMath::Clamp(Context.Config.RescueHealth, 1.0f, Context.Config.MaximumHealth);
+            State.bRecoveryCrouched = Domain.ReadRescueCandidateState().bRecoverCrouched;
+            ++State.Revision;
+            Reason = TEXT("Completed");
+        }
+        auto &Results = Domain.RescueDeliveryState;
+        if (Rescue.Partner.IsValid())
+        {
+            Results.ReplyTargets.Add(Rescue.Partner);
+            Results.ReplyOperations.Add(Rescue.OperationId);
+            Results.ReplyRounds.Add(Rescue.DownedRevision);
+            Results.ReplyRevisions.Add(++Results.Serial);
+            Results.ReplyActive.Add(false);
+            Results.ReplyDurations.Add(Rescue.Duration);
+            Results.ReplyReasons.Add(Reason);
+        }
+        Rescue.bReceiving = false;
+        Rescue.bAccepted = false;
+        Rescue.bCompletionPending = false;
+        Rescue.Partner.Reset();
+        Rescue.Progress = 0.0f;
+        Rescue.EndReason = Reason;
+        ++Rescue.Revision;
+    }
+    State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving;
 
     if (!Delivery.Damages.IsEmpty())
     {

@@ -9,6 +9,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBRunNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAccelerationNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBTraversalNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueInboxState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueNetworkObservationState.h"
 #include "BBBCharacterNetworkDomainState.generated.h"
 
 class FBBBAimObservationProcessor;
@@ -23,11 +25,20 @@ struct FBBBCharacterNetworkDomainState final
 
 public:
     /** @return 生命结果发送基准 */
-    const FBBBCharacterLifeNetworkObservationState &ReadLifeNetworkObservationState() const { return LifeObservationState; }
+    const FBBBCharacterLifeNetworkObservationState &ReadLifeNetworkObservationState() const
+    {
+        return LifeObservationState;
+    }
     /** @return 独立伤害转送基准 */
-    const FBBBCharacterDamageNetworkObservationState &ReadDamageNetworkObservationState() const { return DamageObservationState; }
+    const FBBBCharacterDamageNetworkObservationState &ReadDamageNetworkObservationState() const
+    {
+        return DamageObservationState;
+    }
     /** @return 待投送的独立命中 */
-    const FBBBCharacterDamageInboxState &ReadDamageInboxState() const { return DamageInboxState; }
+    const FBBBCharacterDamageInboxState &ReadDamageInboxState() const
+    {
+        return DamageInboxState;
+    }
     /** @return 瞄准网络观察状态 */
     const FBBBAimNetworkObservationState &ReadAimNetworkObservationState() const
     {
@@ -58,11 +69,27 @@ public:
         return EquipmentObservationState;
     }
 
+    /** @return 待路由的救援消息 */
+    const FBBBCharacterRescueInboxState &ReadRescueInboxState() const
+    {
+        return RescueInboxState;
+    }
+    /** @return 救援发送基准 */
+    const FBBBCharacterRescueNetworkObservationState &ReadRescueNetworkObservationState() const
+    {
+        return RescueObservationState;
+    }
+
 private:
     friend class FBBBAccelerationObservationProcessor;
     /** 加速度当前快照的独立发送基准 */
     UPROPERTY(Transient)
     FBBBAccelerationNetworkObservationState AccelerationObservationState;
+    friend class FBBBCharacterRescueObservationProcessor;
+    /** 待路由的救援消息 */
+    FBBBCharacterRescueInboxState RescueInboxState;
+    /** 救援发送基准 */
+    FBBBCharacterRescueNetworkObservationState RescueObservationState;
     friend class FBBBCharacterLifeObservationProcessor;
     friend class FBBBCharacterDamageObservationProcessor;
     friend class FBBBCharacterParseSystem;

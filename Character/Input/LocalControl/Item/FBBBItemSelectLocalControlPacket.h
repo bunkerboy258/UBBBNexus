@@ -31,7 +31,7 @@ struct FBBBItemSelectLocalControlPacket final
     /** @param Context	本次输入上下文 @return 当前角色是否拥有真实物品控制权 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return Context.Life.Phase == EBBBCharacterLifePhase::Alive
+        return (Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin)
             && Context.Traversal.Action == EBBBTraversalAction::None && !Context.bIsMirror;
     }
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRescueMovementProcessor.h"
 
 #include "CoreMinimal.h"
 
@@ -57,5 +58,6 @@ private:
     FBBBCharacterRuntimeData *CharacterData = nullptr;
     FBBBCharacterLocomotionProcessor LocomotionProcessor;
     FBBBCharacterLifeMovementProcessor LifeMovementProcessor;
+    FBBBCharacterRescueMovementProcessor RescueMovementProcessor;
 
 };

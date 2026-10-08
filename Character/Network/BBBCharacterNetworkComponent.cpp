@@ -13,6 +13,15 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueRequestLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueEndLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueReplyLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueRequestRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueEndRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueReplyRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueSnapshotRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterRescueSnapshotAuthorityFactPacket.h"
+
 #include "GameFramework/GameStateBase.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
@@ -43,6 +52,8 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHealth, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifeRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitSerial, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedDownedRevision, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedRecoveryCrouched, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitBone, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitPosition, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitDirection, COND_SimulatedOnly);
@@ -56,6 +67,17 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalContact, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalEnd, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalStartTime, COND_SimulatedOnly);
+
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescuePartner, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueOperation, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueRound, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueRevision, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedRescueHelping, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedRescueReceiving, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedRescueAccepted, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueStartTime, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueDuration, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueReason, COND_SimulatedOnly);
 
     // 本机控制角色已经生成同一份事实 只让模拟代理执行接收投递
     DOREPLIFETIME_CONDITION(
@@ -300,11 +322,13 @@ void UBBBCharacterNetworkComponent::OnRep_Equipment()
 }
 
 void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, float Health,
-    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction)
+    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched)
 {
     ReplicatedLifePhase = Phase;
     ReplicatedHealth = Health;
     ReplicatedLifeRevision = Revision;
+    ReplicatedDownedRevision = DownedRevision;
+    bReplicatedRecoveryCrouched = bRecoveryCrouched;
     ReplicatedHitSerial = HitSerial;
     ReplicatedHitBone = Bone;
     ReplicatedHitPosition = Position;
@@ -313,12 +337,12 @@ void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, 
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLife_Implementation(EBBBCharacterLifePhase Phase, float Health,
-    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction)
+    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched)
 {
     if (Character)
     {
         Character->SubmitInput(FBBBCharacterLifeRemoteMessagePacket{
-            {Phase}, {Health}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}});
+            {Phase}, {Health}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}, {DownedRevision}, {bRecoveryCrouched}});
     }
 }
 
@@ -329,7 +353,7 @@ void UBBBCharacterNetworkComponent::OnRep_Life()
     {
         Character->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{
             {ReplicatedLifePhase}, {ReplicatedHealth}, {ReplicatedLifeRevision},
-            {ReplicatedHitSerial}, {ReplicatedHitBone}, {ReplicatedHitPosition}, {ReplicatedHitDirection}});
+            {ReplicatedHitSerial}, {ReplicatedHitBone}, {ReplicatedHitPosition}, {ReplicatedHitDirection}, {ReplicatedDownedRevision}, {bReplicatedRecoveryCrouched}});
     }
 }
 
@@ -351,5 +375,106 @@ void UBBBCharacterNetworkComponent::ClientDeliverDamage_Implementation(float Dam
     {
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
             {Damage}, {Bone}, {Position}, {Direction}, {nullptr}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ReplicateRescue(APawn *Partner, uint64 Operation, uint64 Round, uint64 Revision,
+    bool bHelping, bool bReceiving, bool bAccepted, float Elapsed, float Duration, FName Reason)
+{
+    if (!IsOwnerAuthority() || Revision <= ReplicatedRescueRevision)
+    {
+        return;
+    }
+    ReplicatedRescuePartner = Partner;
+    ReplicatedRescueOperation = Operation;
+    ReplicatedRescueRound = Round;
+    ReplicatedRescueRevision = Revision;
+    bReplicatedRescueHelping = bHelping;
+    bReplicatedRescueReceiving = bReceiving;
+    bReplicatedRescueAccepted = bAccepted;
+    ReplicatedRescueStartTime = GetWorld()->GetTimeSeconds() - Elapsed;
+    ReplicatedRescueDuration = Duration;
+    ReplicatedRescueReason = Reason;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitRescue_Implementation(APawn *Partner, uint64 Operation,
+    uint64 Round, uint64 Revision, bool bHelping, bool bReceiving, bool bAccepted, float Elapsed, float Duration, FName Reason)
+{
+    if (Character && IsOwnerAuthority())
+    {
+        Character->SubmitInput(FBBBCharacterRescueSnapshotRemoteMessagePacket{{Partner}, {Operation}, {Round},
+            {Revision}, {bHelping}, {bReceiving}, {bAccepted}, {Elapsed}, {Duration}, {Reason}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Rescue()
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    if (!Character || IsOwnerAuthority() || Character->IsLocallyControlled() || ReplicatedRescueRevision == 0)
+    {
+        return;
+    }
+    const AGameStateBase *GameState = GetWorld()->GetGameState();
+    const float ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+    const float Elapsed = FMath::Max(0.0f, ServerTime - ReplicatedRescueStartTime);
+    Character->SubmitInput(FBBBCharacterRescueSnapshotAuthorityFactPacket{{ReplicatedRescuePartner},
+        {ReplicatedRescueOperation}, {ReplicatedRescueRound}, {ReplicatedRescueRevision},
+        {bReplicatedRescueHelping}, {bReplicatedRescueReceiving}, {bReplicatedRescueAccepted}, {Elapsed},
+        {ReplicatedRescueDuration}, {ReplicatedRescueReason}});
+}
+
+void UBBBCharacterNetworkComponent::ServerRequestRescue_Implementation(ABBBCharacter *Target, uint64 Operation, uint64 Round)
+{
+    if (Character && IsOwnerAuthority() && IsValid(Target) && Target->GetWorld() == GetWorld())
+    {
+        Character->SubmitInput(FBBBCharacterRescueRequestRemoteMessagePacket{{Character}, {Operation}, {Round}, {Target}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ClientRequestRescue_Implementation(APawn *Source, uint64 Operation, uint64 Round)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBCharacterRescueRequestLocalControlPacket{{Source}, {Operation}, {Round}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerEndRescue_Implementation(ABBBCharacter *Target, uint64 Operation, uint64 Round)
+{
+    if (Character && IsOwnerAuthority() && IsValid(Target) && Target->GetWorld() == GetWorld())
+    {
+        Character->SubmitInput(FBBBCharacterRescueEndRemoteMessagePacket{{Character}, {Operation}, {Round}, {Target}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ClientEndRescue_Implementation(APawn *Source, uint64 Operation, uint64 Round)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBCharacterRescueEndLocalControlPacket{{Source}, {Operation}, {Round}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerReplyRescue_Implementation(ABBBCharacter *Target, uint64 Operation,
+    uint64 Round, uint64 Revision, bool bActive, float Duration, FName Reason)
+{
+    if (Character && IsOwnerAuthority() && IsValid(Target) && Target->GetWorld() == GetWorld())
+    {
+        Character->SubmitInput(FBBBCharacterRescueReplyRemoteMessagePacket{{Character}, {Operation}, {Round},
+            {Revision}, {bActive}, {Duration}, {Reason}, {Target}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ClientReplyRescue_Implementation(APawn *Source, uint64 Operation,
+    uint64 Round, uint64 Revision, bool bActive, float Duration, FName Reason)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBCharacterRescueReplyLocalControlPacket{{Source}, {Operation}, {Round},
+            {Revision}, {bActive}, {Duration}, {Reason}});
     }
 }

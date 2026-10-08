@@ -19,6 +19,15 @@ struct FBBBCharacterLifeState final
     /** 已成立结果的递增标识 */
     uint64 Revision = 0;
 
+    /** 当前倒地轮次 在该轮全部伤害期间保持不变 */
+    uint64 DownedRevision = 0;
+
+    /** 最近救援恢复时的碰撞姿态 只用于阶段交接 */
+    bool bRecoveryCrouched = false;
+
+    /** 生命领域批准的正常角色操作许可 */
+    bool bActionsAllowed = true;
+
     /** 当前生命结果是否已经建立 */
     bool bInitialized = false;
 };

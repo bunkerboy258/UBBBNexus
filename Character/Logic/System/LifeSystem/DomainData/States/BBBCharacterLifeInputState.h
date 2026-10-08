@@ -39,6 +39,11 @@ struct FBBBCharacterLifeInputState final
     /** 待还原结果标识 */
     uint64 ResultRevision = 0;
 
+    /** 待还原的倒地轮次 */
+    uint64 ResultDownedRevision = 0;
+    /** 待还原的恢复碰撞姿态 */
+    bool bResultRecoveryCrouched = false;
+
     /** 待还原命中编号 */
     uint64 ResultHitSerial = 0;
 

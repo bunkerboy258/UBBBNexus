@@ -8,6 +8,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "EnhancedInputComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueBeginLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCancelLocalControlPacket.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
@@ -43,6 +45,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         FBBBCharacterMovementLocalControlPacket ReleasedControl;
         ReleasedControl.FacingWorld = Previous->GetActorRotation();
         Previous->SubmitInput(ReleasedControl);
+        Previous->SubmitInput(FBBBCharacterRescueCancelLocalControlPacket{});
         SubmitRun(false);
         SubmitCrouch(false);
         Previous->RemoveTickPrerequisiteComponent(this);
@@ -90,6 +93,10 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
     bInputEnabled = bEnabled;
     if (!bEnabled)
     {
+        if (ABBBCharacter *Target = Character.Get())
+        {
+            Target->SubmitInput(FBBBCharacterRescueCancelLocalControlPacket{});
+        }
         SubmitRun(false);
         SubmitCrouch(false);
         MovementState = FBBBCharacterMovementLocalControlPacket();
@@ -263,6 +270,28 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
             {
                 SubmitReload();
             });
+    }
+    if (Config.RescueAction)
+    {
+        Input.BindActionValueLambda(Config.RescueAction, ETriggerEvent::Started,
+            [this](const FInputActionValue &Value)
+            {
+                if (bInputEnabled && Character.IsValid())
+                {
+                    Character->SubmitInput(FBBBCharacterRescueBeginLocalControlPacket{});
+                }
+            });
+        for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
+        {
+            Input.BindActionValueLambda(Config.RescueAction, Event,
+                [this](const FInputActionValue &Value)
+                {
+                    if (Character.IsValid())
+                    {
+                        Character->SubmitInput(FBBBCharacterRescueCancelLocalControlPacket{});
+                    }
+                });
+        }
     }
     for (int32 Slot = 0; Slot < Config.ItemSlotActions.Num(); ++Slot)
     {

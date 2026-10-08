@@ -66,6 +66,17 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentEndActionLocalControlPacket, Equi
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentBeginContactLocalControlPacket, EquipmentBeginContact)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentEndContactLocalControlPacket, EquipmentEndContact)
 
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueBeginLocalControlPacket, RescueBeginLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueCancelLocalControlPacket, RescueCancelLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueRequestLocalControlPacket, RescueRequestLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueRequestRemoteMessagePacket, RescueRequestRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueEndLocalControlPacket, RescueEndLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueEndRemoteMessagePacket, RescueEndRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueReplyLocalControlPacket, RescueReplyLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueReplyRemoteMessagePacket, RescueReplyRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueSnapshotRemoteMessagePacket, RescueSnapshotRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueSnapshotAuthorityFactPacket, RescueSnapshotAuthorityFact)
+
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */
@@ -105,6 +116,8 @@ namespace BBBCharacterInput
             Slot.Data.Bones.Append(Packet.Bones);
             Slot.Data.Positions.Append(Packet.Positions);
             Slot.Data.Directions.Append(Packet.Directions);
+            Slot.Data.DownedRevisions.Append(Packet.DownedRevisions);
+            Slot.Data.RecoveryCrouched.Append(Packet.RecoveryCrouched);
         }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentUseAuthorityFactPacket>
             || std::is_same_v<FPacket, FBBBCharacterEquipmentUseRemoteMessagePacket>)
@@ -181,6 +194,79 @@ namespace BBBCharacterInput
             Slot.Data.Recipients.Append(Packet.Recipients);
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueRequestLocalControlPacket>)
+        {
+            Slot.Data.RequestSources.Append(Packet.RequestSources);
+            Slot.Data.RequestOperations.Append(Packet.RequestOperations);
+            Slot.Data.RequestRounds.Append(Packet.RequestRounds);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueRequestRemoteMessagePacket>)
+        {
+            Slot.Data.RequestSources.Append(Packet.RequestSources);
+            Slot.Data.RequestOperations.Append(Packet.RequestOperations);
+            Slot.Data.RequestRounds.Append(Packet.RequestRounds);
+            Slot.Data.RequestTargets.Append(Packet.RequestTargets);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueEndLocalControlPacket>)
+        {
+            Slot.Data.CancelSources.Append(Packet.CancelSources);
+            Slot.Data.CancelOperations.Append(Packet.CancelOperations);
+            Slot.Data.CancelRounds.Append(Packet.CancelRounds);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueEndRemoteMessagePacket>)
+        {
+            Slot.Data.CancelSources.Append(Packet.CancelSources);
+            Slot.Data.CancelOperations.Append(Packet.CancelOperations);
+            Slot.Data.CancelRounds.Append(Packet.CancelRounds);
+            Slot.Data.CancelTargets.Append(Packet.CancelTargets);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueReplyLocalControlPacket>)
+        {
+            Slot.Data.ReplySources.Append(Packet.ReplySources);
+            Slot.Data.ReplyOperations.Append(Packet.ReplyOperations);
+            Slot.Data.ReplyRounds.Append(Packet.ReplyRounds);
+            Slot.Data.ReplyRevisions.Append(Packet.ReplyRevisions);
+            Slot.Data.ReplyActive.Append(Packet.ReplyActive);
+            Slot.Data.ReplyDurations.Append(Packet.ReplyDurations);
+            Slot.Data.ReplyReasons.Append(Packet.ReplyReasons);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueReplyRemoteMessagePacket>)
+        {
+            Slot.Data.ReplySources.Append(Packet.ReplySources);
+            Slot.Data.ReplyOperations.Append(Packet.ReplyOperations);
+            Slot.Data.ReplyRounds.Append(Packet.ReplyRounds);
+            Slot.Data.ReplyRevisions.Append(Packet.ReplyRevisions);
+            Slot.Data.ReplyActive.Append(Packet.ReplyActive);
+            Slot.Data.ReplyDurations.Append(Packet.ReplyDurations);
+            Slot.Data.ReplyReasons.Append(Packet.ReplyReasons);
+            Slot.Data.ReplyTargets.Append(Packet.ReplyTargets);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueSnapshotRemoteMessagePacket>)
+        {
+            Slot.Data.SnapshotPartners.Append(Packet.SnapshotPartners);
+            Slot.Data.SnapshotOperations.Append(Packet.SnapshotOperations);
+            Slot.Data.SnapshotRounds.Append(Packet.SnapshotRounds);
+            Slot.Data.SnapshotRevisions.Append(Packet.SnapshotRevisions);
+            Slot.Data.SnapshotHelping.Append(Packet.SnapshotHelping);
+            Slot.Data.SnapshotReceiving.Append(Packet.SnapshotReceiving);
+            Slot.Data.SnapshotAccepted.Append(Packet.SnapshotAccepted);
+            Slot.Data.SnapshotElapsed.Append(Packet.SnapshotElapsed);
+            Slot.Data.SnapshotDurations.Append(Packet.SnapshotDurations);
+            Slot.Data.SnapshotReasons.Append(Packet.SnapshotReasons);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRescueSnapshotAuthorityFactPacket>)
+        {
+            Slot.Data.SnapshotPartners.Append(Packet.SnapshotPartners);
+            Slot.Data.SnapshotOperations.Append(Packet.SnapshotOperations);
+            Slot.Data.SnapshotRounds.Append(Packet.SnapshotRounds);
+            Slot.Data.SnapshotRevisions.Append(Packet.SnapshotRevisions);
+            Slot.Data.SnapshotHelping.Append(Packet.SnapshotHelping);
+            Slot.Data.SnapshotReceiving.Append(Packet.SnapshotReceiving);
+            Slot.Data.SnapshotAccepted.Append(Packet.SnapshotAccepted);
+            Slot.Data.SnapshotElapsed.Append(Packet.SnapshotElapsed);
+            Slot.Data.SnapshotDurations.Append(Packet.SnapshotDurations);
+            Slot.Data.SnapshotReasons.Append(Packet.SnapshotReasons);
+        }
         if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>
@@ -201,7 +287,15 @@ namespace BBBCharacterInput
             && !std::is_same_v<FPacket, FBBBCharacterEquipmentBeginActionLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndActionLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBCharacterEquipmentBeginContactLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndContactLocalControlPacket>)
+            && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndContactLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueRequestLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueRequestRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueEndLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueEndRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueReplyLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueReplyRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotAuthorityFactPacket>)
         {
             Slot.Data = Forward<TPacket>(Packet);
         }

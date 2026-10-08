@@ -57,6 +57,30 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
             Character.CacheInitialMeshOffset(Offset, Mesh->GetRelativeRotation());
             Movement.SetMovementMode(MOVE_Walking);
         }
+        if (Phase == EBBBCharacterLifePhase::Alive)
+        {
+            const float OldHalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+            const bool bCrouched = Context.Life.bRecoveryCrouched;
+            const float HalfHeight = bCrouched ? Config.CrouchedHalfHeight : Config.CapsuleHalfHeight;
+            Capsule->SetCapsuleSize(Config.CapsuleRadius, HalfHeight, true);
+            Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            if (!Context.Execution.bIsMirror)
+            {
+                Character.AddActorWorldOffset(FVector(0, 0, (HalfHeight - OldHalfHeight) * Capsule->GetShapeScale()), false);
+            }
+            Character.bIsCrouched = bCrouched;
+            Movement.bWantsToCrouch = bCrouched;
+            const ACharacter *DefaultCharacter = Character.GetClass()->GetDefaultObject<ACharacter>();
+            FVector Offset = DefaultCharacter->GetMesh()->GetRelativeLocation();
+            Offset.Z += Config.CapsuleHalfHeight - HalfHeight;
+            Character.GetMesh()->SetRelativeLocation(Offset);
+            Character.CacheInitialMeshOffset(Offset, Character.GetMesh()->GetRelativeRotation());
+            Movement.MinAnalogWalkSpeed = Config.MinAnalogWalkSpeed;
+            Movement.MaxStepHeight = Config.MaxStepHeight;
+            FFindFloorResult Floor;
+            Movement.FindFloor(Character.GetActorLocation(), Floor, false);
+            Movement.SetMovementMode(Floor.IsWalkableFloor() ? MOVE_Walking : MOVE_Falling);
+        }
         if (Phase == EBBBCharacterLifePhase::Dead)
         {
             Movement.DisableMovement();
@@ -79,6 +103,11 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
     Movement.MaxStepHeight = FMath::Min(Config.MaxStepHeight, 15.0f);
     Movement.Velocity = Movement.Velocity.GetClampedToMaxSize2D(Movement.MaxWalkSpeed);
     if (Context.Execution.bIsMirror)
+    {
+        return;
+    }
+
+    if (Context.Data.Life.ReadRescueState().bReceiving)
     {
         return;
     }

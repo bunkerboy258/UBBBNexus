@@ -46,6 +46,7 @@ void FBBBCharacterNetworkSystem::Update()
     EquipmentObservationProcessor.Update(Context);
     DamageObservationProcessor.Update(Context);
     LifeObservationProcessor.Update(Context);
+    RescueObservationProcessor.Update(Context);
     if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
     {
         return;

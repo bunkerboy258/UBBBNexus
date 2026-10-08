@@ -33,7 +33,7 @@ struct FBBBItemMoveLocalControlPacket final
     /** @param Context	本次输入上下文 @return 当前角色是否拥有真实物品控制权 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror && Context.Life.Phase == EBBBCharacterLifePhase::Alive;
+        return !Context.bIsMirror && (Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin);
     }
 
     /** @param Context	本次输入上下文 @return 无 */

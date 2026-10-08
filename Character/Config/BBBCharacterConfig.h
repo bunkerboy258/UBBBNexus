@@ -26,6 +26,18 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "倒地生命", ClampMin = "1"))
     float DownedHealth = 300.0f;
 
+    /** 救援开始与维持的最大距离 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|救援", meta = (DisplayName = "救援距离", ClampMin = "1", ToolTip = "双方固定脚底基准的最大距离"))
+    float RescueDistance = 100.0f;
+
+    /** 被救者接受后完成救援需要的时间 单位秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|救援", meta = (DisplayName = "救援时长", ClampMin = "0.01", ToolTip = "由被救者控制端计时"))
+    float RescueDuration = 3.0f;
+
+    /** 救援成功后恢复的正常生命 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|救援", meta = (DisplayName = "救援恢复生命", ClampMin = "1", ToolTip = "不超过角色最大生命"))
+    float RescueHealth = 100.0f;
+
     /** 角色移动参数与碰撞配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "移动配置"))
     FBBBCharacterLocomotionConfig Locomotion;

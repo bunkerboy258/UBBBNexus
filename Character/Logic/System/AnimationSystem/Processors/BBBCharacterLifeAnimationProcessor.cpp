@@ -7,14 +7,16 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
 {
     auto &State = Context.RuntimeData.Animation.LifeAnimationState;
     const auto &Life = Context.RuntimeData.Life.ReadLifeState();
-    if (!Life.bInitialized || State.AppliedPhase == Life.Phase)
+    const bool bHelping = Context.RuntimeData.Life.ReadRescueState().bHelping;
+    if (!Life.bInitialized || (State.AppliedPhase == Life.Phase && State.bAppliedRescueHelping == bHelping))
     {
         return;
     }
 
     State.AppliedPhase = Life.Phase;
+    State.bAppliedRescueHelping = bHelping;
     State.DownedEntryStartTime = -1.0;
-    if (Life.Phase == EBBBCharacterLifePhase::Alive)
+    if (Life.Phase == EBBBCharacterLifePhase::Alive && !bHelping)
     {
         return;
     }

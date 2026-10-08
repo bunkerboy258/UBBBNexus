@@ -33,6 +33,14 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     {
         return;
     }
+    if (!ensureMsgf(FMath::IsFinite(Config.RescueDistance) && Config.RescueDistance > 0.0f
+        && FMath::IsFinite(Config.RescueDuration) && Config.RescueDuration > 0.0f
+        && FMath::IsFinite(Config.RescueHealth) && Config.RescueHealth > 0.0f
+        && Config.RescueHealth <= Config.MaximumHealth,
+        TEXT("角色救援距离 时长及恢复生命必须有效 %s"), *Character.GetName()))
+    {
+        return;
+    }
     if (!ensureMsgf(
         Config.Equipment.EquipmentCatalog.Get() != nullptr,
         TEXT("角色 %s 的配置资产缺少装备目录"),

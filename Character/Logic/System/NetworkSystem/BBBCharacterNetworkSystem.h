@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRescueObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentObservationProcessor.h"
 
 #include "CoreMinimal.h"
@@ -23,6 +24,7 @@ public:
 
 private:
     FBBBCharacterLifeObservationProcessor LifeObservationProcessor;
+    FBBBCharacterRescueObservationProcessor RescueObservationProcessor;
     FBBBCharacterDamageObservationProcessor DamageObservationProcessor;
     friend class FBBBCharacterInitializer;
 

@@ -16,6 +16,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     EBBBCharacterLifePhase LifePhase = EBBBCharacterLifePhase::Alive;
 
+    /** 本角色已成立的帮扶事实 */
+    UPROPERTY(Transient)
+    bool bRescueHelping = false;
+
     /** 本次倒地入场的经过秒数 负值表示无需播放入场 */
     UPROPERTY(Transient)
     float DownedEntryElapsed = -1.0f;

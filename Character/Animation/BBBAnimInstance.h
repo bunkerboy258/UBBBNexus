@@ -43,6 +43,10 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段"))
     EBBBCharacterLifePhase SourceLifePhase = EBBBCharacterLifePhase::Alive;
 
+    /** 本角色已成立的半蹲帮扶事实 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|救援", meta = (DisplayName = "正在半蹲帮扶"))
+    bool bSourceRescueHelping = false;
+
     /** 本次倒地入场的经过秒数 负值表示直接展示持续倒地姿态 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源倒地入场时间"))
     float SourceDownedEntryElapsed = -1.0f;

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterRescueInputState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterRescueState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueInboxState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/States/BBBAimState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/States/BBBCharacterLocomotionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/States/BBBCharacterControlState.h"
@@ -70,4 +73,10 @@ struct FBBBCharacterInputContext final
     /** 待投送的独立命中消息 */
     FBBBCharacterDamageInboxState &DamageInbox;
 
+    /** 救援待消费输入 */
+    FBBBCharacterRescueInputState &RescueInputs;
+    /** 救援操作许可的只读事实 */
+    const FBBBCharacterRescueState &Rescue;
+    /** 网络路由待投送数据 */
+    FBBBCharacterRescueInboxState &RescueInbox;
 };

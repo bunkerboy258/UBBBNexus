@@ -2,6 +2,11 @@
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterLifeProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterRescueCandidateProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterRescueHelperProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterRescueTargetProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterRescueMirrorProcessor.h"
+
 class ABBBCharacter;
 class UBBBCharacterConfig;
 struct FBBBCharacterRuntimeData;
@@ -40,4 +45,9 @@ class FBBBCharacterLifeSystem final
 
     /** 生命结算处理器 */
     FBBBCharacterLifeProcessor Processor;
+    FBBBCharacterRescueCandidateProcessor CandidateProcessor;
+    FBBBCharacterRescueHelperProcessor HelperProcessor;
+    FBBBCharacterRescueTargetProcessor TargetProcessor;
+    FBBBCharacterRescueMirrorProcessor MirrorProcessor;
+
 };

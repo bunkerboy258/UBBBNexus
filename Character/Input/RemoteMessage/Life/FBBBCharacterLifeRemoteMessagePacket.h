@@ -21,12 +21,18 @@ struct FBBBCharacterLifeRemoteMessagePacket final
     /** 最新命中世界方向 */
     TArray<FVector> Directions;
 
+    /** 结果对应的倒地轮次 */
+    TArray<uint64> DownedRevisions;
+    /** 恢复阶段采用的蹲姿 */
+    TArray<bool> RecoveryCrouched;
+
     /** @return 输入数据是否完整有效 */
     bool IsValid() const
     {
         if (Phases.IsEmpty() || Healths.Num() != Phases.Num() || Revisions.Num() != Phases.Num() ||
             HitSerials.Num() != Phases.Num() || Bones.Num() != Phases.Num() || Positions.Num() != Phases.Num() ||
-            Directions.Num() != Phases.Num())
+            Directions.Num() != Phases.Num() || DownedRevisions.Num() != Phases.Num() ||
+            RecoveryCrouched.Num() != Phases.Num())
         {
             return false;
         }
@@ -70,6 +76,8 @@ struct FBBBCharacterLifeRemoteMessagePacket final
             Input.ResultPhase = Phases[Index];
             Input.ResultHealth = Healths[Index];
             Input.ResultRevision = Revisions[Index];
+            Input.ResultDownedRevision = DownedRevisions[Index];
+            Input.bResultRecoveryCrouched = RecoveryCrouched[Index];
             Input.ResultHitSerial = HitSerials[Index];
             Input.ResultBone = Bones[Index];
             Input.ResultPosition = Positions[Index];

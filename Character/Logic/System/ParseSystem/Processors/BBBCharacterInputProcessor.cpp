@@ -8,6 +8,17 @@ void FBBBCharacterInputProcessor::Update(
 {
     Context.Control.bJump = false;
 
+    Process(InputState.RescueBeginLocalControl, Context);
+    Process(InputState.RescueCancelLocalControl, Context);
+    Process(InputState.RescueRequestLocalControl, Context);
+    Process(InputState.RescueRequestRemoteMessage, Context);
+    Process(InputState.RescueEndLocalControl, Context);
+    Process(InputState.RescueEndRemoteMessage, Context);
+    Process(InputState.RescueReplyLocalControl, Context);
+    Process(InputState.RescueReplyRemoteMessage, Context);
+    Process(InputState.RescueSnapshotRemoteMessage, Context);
+    Process(InputState.RescueSnapshotAuthorityFact, Context);
+
     Process(InputState.Damage, Context);
     Process(InputState.AuthorityLife, Context);
     Process(InputState.RemoteLife, Context);
@@ -28,6 +39,7 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.EquipmentEndAction, Context);
     Process(InputState.EquipmentBeginContact, Context);
     Process(InputState.EquipmentEndContact, Context);
+
 
 
     Process(InputState.Movement, Context);

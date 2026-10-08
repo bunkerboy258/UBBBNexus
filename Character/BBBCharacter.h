@@ -73,6 +73,58 @@ public:
         return RuntimeData.Life.ReadLifeState().Health;
     }
 
+    /** @return 本轮倒地标识 */
+    uint64 GetDownedRevision() const
+    {
+        return RuntimeData.Life.ReadLifeState().DownedRevision;
+    }
+    /** @return 当前是否正在帮扶 */
+    UFUNCTION(BlueprintPure, Category = "BBB|救援", meta = (DisplayName = "正在帮扶"))
+    bool IsRescueHelping() const
+    {
+        return RuntimeData.Life.ReadRescueState().bHelping;
+    }
+    /** @return 当前是否正在被救援 */
+    UFUNCTION(BlueprintPure, Category = "BBB|救援", meta = (DisplayName = "正在被救援"))
+    bool IsRescueReceiving() const
+    {
+        return RuntimeData.Life.ReadRescueState().bReceiving;
+    }
+    /** @return 当前救援关系中的另一角色 */
+    UFUNCTION(BlueprintPure, Category = "BBB|救援", meta = (DisplayName = "救援伙伴"))
+    APawn *GetRescuePartner() const
+    {
+        return RuntimeData.Life.ReadRescueState().Partner.Get();
+    }
+    /** @return 当前救援操作标识 */
+    uint64 GetRescueOperationId() const
+    {
+        return RuntimeData.Life.ReadRescueState().OperationId;
+    }
+    /** @return 最近的合格救援目标 */
+    UFUNCTION(BlueprintPure, Category = "BBB|救援", meta = (DisplayName = "救援目标"))
+    APawn *GetRescueTarget() const
+    {
+        return RuntimeData.Life.ReadRescueCandidateState().Target.Get();
+    }
+    /** @return 当前空间是否允许恢复 */
+    bool CanRecoverFromDowned() const
+    {
+        return RuntimeData.Life.ReadRescueCandidateState().bCanRecover;
+    }
+    /** @return 当前救援的表现进度 */
+    UFUNCTION(BlueprintPure, Category = "BBB|救援", meta = (DisplayName = "救援进度"))
+    float GetRescueProgress() const
+    {
+        return RuntimeData.Life.ReadRescueState().Progress;
+    }
+    /** @return 最近救援结束原因 */
+    UFUNCTION(BlueprintPure, Category = "BBB|救援", meta = (DisplayName = "救援结束原因"))
+    FName GetRescueEndReason() const
+    {
+        return RuntimeData.Life.ReadRescueState().EndReason;
+    }
+
     /** @return 当前持有装备已经成立的使用许可 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (DisplayName = "装备可使用"))
     bool IsEquipmentUsable() const

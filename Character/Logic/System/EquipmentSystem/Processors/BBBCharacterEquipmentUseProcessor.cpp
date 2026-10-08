@@ -24,7 +24,7 @@ void FBBBCharacterEquipmentUseProcessor::Update(FBBBCharacterEquipmentUpdateCont
     {
         const auto &Traversal = Context.RuntimeData.Traversal.ReadTraversalState();
         // 装备恢复跟随移动交接 不等待已退出攀爬的姿势尾段完全消失
-        bUsable = Context.RuntimeData.Life.ReadLifeState().Phase == EBBBCharacterLifePhase::Alive &&
+        bUsable = Context.RuntimeData.Life.ReadLifeState().bActionsAllowed &&
                   (Traversal.Action == EBBBTraversalAction::None || Traversal.bAnimationReleased);
         if (!bSameBinding || bInitialResult || State.bUsable != bUsable)
         {

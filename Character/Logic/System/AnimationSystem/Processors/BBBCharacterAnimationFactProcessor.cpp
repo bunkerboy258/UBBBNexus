@@ -37,6 +37,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
     FactState.LifePhase = RuntimeData.Life.ReadLifeState().Phase;
+    FactState.bRescueHelping = RuntimeData.Life.ReadRescueState().bHelping;
     const auto &LifeAnimation = RuntimeData.Animation.ReadLifeAnimationState();
     FactState.DownedEntryElapsed = FactState.LifePhase == EBBBCharacterLifePhase::Downed
         && LifeAnimation.DownedEntryStartTime >= 0.0

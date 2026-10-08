@@ -36,17 +36,79 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
 private:
+    friend class FBBBCharacterRescueObservationProcessor;
+    /** @return 无 分发当前救援结果 */
+    void ReplicateRescue(APawn *Partner, uint64 Operation, uint64 Round, uint64 Revision,
+        bool bHelping, bool bReceiving, bool bAccepted, float Elapsed, float Duration, FName Reason);
+    /** @return 无 接收控制端既成救援结果 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitRescue(APawn *Partner, uint64 Operation, uint64 Round, uint64 Revision,
+        bool bHelping, bool bReceiving, bool bAccepted, float Elapsed, float Duration, FName Reason);
+    /** @return 无 通过发送者连接投送救援请求 */
+    UFUNCTION(Server, Reliable)
+    void ServerRequestRescue(ABBBCharacter *Target, uint64 Operation, uint64 Round);
+    /** @return 无 向被救者控制端传递请求 */
+    UFUNCTION(Client, Reliable)
+    void ClientRequestRescue(APawn *Source, uint64 Operation, uint64 Round);
+    /** @return 无 通过发送者连接投送取消事实 */
+    UFUNCTION(Server, Reliable)
+    void ServerEndRescue(ABBBCharacter *Target, uint64 Operation, uint64 Round);
+    /** @return 无 向被救者控制端传递取消事实 */
+    UFUNCTION(Client, Reliable)
+    void ClientEndRescue(APawn *Source, uint64 Operation, uint64 Round);
+    /** @return 无 通过被救者连接投送操作结果 */
+    UFUNCTION(Server, Reliable)
+    void ServerReplyRescue(ABBBCharacter *Target, uint64 Operation, uint64 Round,
+        uint64 Revision, bool bActive, float Duration, FName Reason);
+    /** @return 无 向救援者控制端传递操作结果 */
+    UFUNCTION(Client, Reliable)
+    void ClientReplyRescue(APawn *Source, uint64 Operation, uint64 Round,
+        uint64 Revision, bool bActive, float Duration, FName Reason);
+    /** @return 无 将当前救援结果转换为输入 */
+    UFUNCTION()
+    void OnRep_Rescue();
+    /** 当前救援伙伴 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    TObjectPtr<APawn> ReplicatedRescuePartner;
+    /** 当前救援操作 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    uint64 ReplicatedRescueOperation = 0;
+    /** 当前救援倒地轮次 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    uint64 ReplicatedRescueRound = 0;
+    /** 当前救援版本 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    uint64 ReplicatedRescueRevision = 0;
+    /** 当前帮扶结果 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    bool bReplicatedRescueHelping = false;
+    /** 当前接受帮扶结果 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    bool bReplicatedRescueReceiving = false;
+    /** 当前请求已被接受 */
+    UPROPERTY(ReplicatedUsing = OnRep_Rescue)
+    bool bReplicatedRescueAccepted = false;
+    /** 当前进度的服务器时间基准 */
+    UPROPERTY(Replicated)
+    float ReplicatedRescueStartTime = 0.0f;
+    /** 当前救援时长 */
+    UPROPERTY(Replicated)
+    float ReplicatedRescueDuration = 3.0f;
+    /** 最近结束原因 */
+    UPROPERTY(Replicated)
+    FName ReplicatedRescueReason;
+
     friend class FBBBCharacterLifeObservationProcessor;
     friend class FBBBCharacterDamageObservationProcessor;
 
     /** 复制已经成立的生命结果 */
     void ReplicateLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
-        uint64 HitSerial, FName Bone, FVector Position, FVector Direction);
+        uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched);
 
     /** 控制者上报自己的既成生命结果 */
     UFUNCTION(Server, Reliable)
     void ServerSubmitLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
-        uint64 HitSerial, FName Bone, FVector Position, FVector Direction);
+        uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched);
 
     /** 通过发送者拥有的连接投送命中 */
     UFUNCTION(Server, Reliable)
@@ -70,6 +132,12 @@ private:
     /** 当前结果版本 */
     UPROPERTY(ReplicatedUsing = OnRep_Life)
     uint64 ReplicatedLifeRevision = 0;
+    /** 当前倒地轮次 */
+    UPROPERTY(Replicated)
+    uint64 ReplicatedDownedRevision = 0;
+    /** 最近恢复采用的蹲姿 */
+    UPROPERTY(Replicated)
+    bool bReplicatedRecoveryCrouched = false;
     /** 最新命中序号 */
     UPROPERTY(Replicated)
     uint64 ReplicatedHitSerial = 0;

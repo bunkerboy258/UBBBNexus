@@ -15,13 +15,13 @@ void FBBBCharacterLifeObservationProcessor::Update(FBBBCharacterNetworkUpdateCon
     if (Context.NetworkIdentityState.bHasAuthority)
     {
         Context.NetworkComponent.ReplicateLife(Life.Phase, Life.Health, Life.Revision, Hit.Serial, Hit.Bone,
-                                               Hit.Position, Hit.Direction);
+                                               Hit.Position, Hit.Direction, Life.DownedRevision, Life.bRecoveryCrouched);
         Observation.Revision = Life.Revision;
     }
     if (!Context.NetworkIdentityState.bHasAuthority && Context.NetworkIdentityState.bLocallyControlled)
     {
         Context.NetworkComponent.ServerSubmitLife(Life.Phase, Life.Health, Life.Revision, Hit.Serial, Hit.Bone,
-                                                  Hit.Position, Hit.Direction);
+                                                  Hit.Position, Hit.Direction, Life.DownedRevision, Life.bRecoveryCrouched);
         Observation.Revision = Life.Revision;
     }
 }

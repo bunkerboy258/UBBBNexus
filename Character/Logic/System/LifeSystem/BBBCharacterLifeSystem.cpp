@@ -18,5 +18,9 @@ void FBBBCharacterLifeSystem::Update()
         return;
     }
     FBBBCharacterLifeUpdateContext Context{*Character, *Data, *Config};
+    MirrorProcessor.Update(Context);
+    CandidateProcessor.Update(Context);
+    HelperProcessor.Update(Context);
+    TargetProcessor.Update(Context);
     Processor.Update(Context);
 }

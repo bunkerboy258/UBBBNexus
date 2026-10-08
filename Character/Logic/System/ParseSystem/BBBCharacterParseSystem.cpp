@@ -30,6 +30,9 @@ void FBBBCharacterParseSystem::Update() const
         Data->Life.LifeInputState,
         Data->Life.ReadLifeState(),
         Data->Equipment.EquipmentUseInputState,
-        Data->Network.DamageInboxState};
+        Data->Network.DamageInboxState,
+        Data->Life.RescueInputState,
+        Data->Life.ReadRescueState(),
+        Data->Network.RescueInboxState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

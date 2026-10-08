@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterNetworkIdentityState.h"
 #include "Curves/CurveFloat.h"
+#include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -114,7 +115,7 @@ float ResolveMaxSpeed(
 void FBBBCharacterLocomotionProcessor::Update(
     FBBBCharacterLocomotionUpdateContext &Context) const
 {
-    if (Context.Life.Phase != EBBBCharacterLifePhase::Alive)
+    if (!Context.Life.bActionsAllowed)
     {
         return;
     }

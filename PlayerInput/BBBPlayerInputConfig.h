@@ -39,6 +39,10 @@ struct FBBBPlayerInputConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "换弹输入动作"))
     TObjectPtr<UInputAction> ReloadAction;
 
+    /** 按住维持与松开取消的救援输入动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "救援输入动作"))
+    TObjectPtr<UInputAction> RescueAction;
+
     /** 按数组索引对应前序快捷槽位的输入动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "物品快捷槽位输入动作"))
     TArray<TObjectPtr<UInputAction>> ItemSlotActions;

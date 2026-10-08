@@ -22,6 +22,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFactState &FactState)
 {
     SourceLifePhase = FactState.LifePhase;
+    bSourceRescueHelping = FactState.bRescueHelping;
     SourceDownedEntryElapsed = FactState.DownedEntryElapsed;
     SourceTraversalAction = FactState.TraversalAction;
     bSourceTraversalControlReleased = FactState.bTraversalControlReleased;

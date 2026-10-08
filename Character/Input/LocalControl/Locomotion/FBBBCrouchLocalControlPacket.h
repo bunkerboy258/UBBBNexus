@@ -22,7 +22,7 @@ struct FBBBCrouchLocalControlPacket final
     /** @param Context	本次输入上下文 @return 是否允许应用 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !bCrouch || (Context.Life.Phase == EBBBCharacterLifePhase::Alive
+        return !bCrouch || ((Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin)
             && Context.Traversal.Action == EBBBTraversalAction::None);
     }
 

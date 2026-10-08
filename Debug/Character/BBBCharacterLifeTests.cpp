@@ -160,7 +160,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
                                                              {5},
                                                              {TEXT("spine_02")},
                                                              {Mirror->GetActorLocation()},
-                                                             {FVector::ForwardVector}});
+                                                             {FVector::ForwardVector}, {10}, {false}});
     Step();
     TestEqual(TEXT("首份当前快照还原倒地生命"), Mirror->GetHealth(), 200.0f);
     TestTrue(TEXT("首份当前快照不重演旧受击"),
@@ -171,7 +171,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
                                                              {4},
                                                              {TEXT("spine_02")},
                                                              {Mirror->GetActorLocation()},
-                                                             {FVector::ForwardVector}});
+                                                             {FVector::ForwardVector}, {9}, {false}});
     Step();
     TestEqual(TEXT("迟到结果不能覆盖较新生命"), Mirror->GetHealth(), 200.0f);
 
