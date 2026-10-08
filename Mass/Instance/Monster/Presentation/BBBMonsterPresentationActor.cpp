@@ -5,6 +5,7 @@
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "BBBMonsterSoundPresentationComponent.h"
 
 ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -23,6 +24,8 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     PhysicalAnimation = CreateDefaultSubobject<UPhysicalAnimationComponent>(TEXT("MonsterPhysicalAnimation"));
     PhysicalAnimation->PrimaryComponentTick.bStartWithTickEnabled = false;
     HitReaction = CreateDefaultSubobject<UBBBMonsterHitReactionComponent>(TEXT("MonsterHitReaction"));
+    SoundPresentation = CreateDefaultSubobject<UBBBMonsterSoundPresentationComponent>(TEXT("MonsterSoundPresentation"));
+    SoundPresentation->SetupAttachment(Root);
 }
 
 USkeletalMeshComponent* ABBBMonsterPresentationActor::GetMonsterMesh() const
@@ -33,4 +36,18 @@ USkeletalMeshComponent* ABBBMonsterPresentationActor::GetMonsterMesh() const
 UBBBMonsterPresentationComponent* ABBBMonsterPresentationActor::GetMonsterPresentation() const
 {
     return MonsterPresentation;
+}
+
+UBBBMonsterSoundPresentationComponent* ABBBMonsterPresentationActor::GetMonsterSoundPresentation() const
+{
+    return SoundPresentation;
+}
+
+void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
+{
+    Super::SetActorHiddenInGame(bNewHidden);
+    if (bNewHidden && SoundPresentation)
+    {
+        SoundPresentation->ResetPresentation();
+    }
 }

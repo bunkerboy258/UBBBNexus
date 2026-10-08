@@ -5,6 +5,7 @@
 
 class UMassEntityConfigAsset;
 class UBBBMonsterBloodPresentationDefinition;
+class UBBBMonsterSoundPresentationDefinition;
 
 /** 小怪模板与静态玩法参数 */
 UCLASS(BlueprintType)
@@ -100,6 +101,10 @@ public:
     /** 血效由实体配置持有 不依赖表现演员是否存在 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (DisplayName = "血效配置"))
     TObjectPtr<UBBBMonsterBloodPresentationDefinition> BloodPresentation;
+
+    /** 声音只读取 Mass 事实 不影响玩法参数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|声音", meta = (DisplayName = "声音表现配置"))
+    TObjectPtr<UBBBMonsterSoundPresentationDefinition> SoundPresentation;
 
     /** 随机待机时长的下界 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|巡逻", meta = (ClampMin = "0.1", DisplayName = "最短待机时间"))

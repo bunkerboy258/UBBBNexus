@@ -20,6 +20,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterSoundPresentationComponent.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -62,7 +63,9 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     const float Alpha = 1.0f - FMath::Exp(-DeltaTime / 0.1f);
 
     const float Now = World->GetTimeSeconds();
-    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now](FMassExecutionContext& ChunkContext)
+    const bool bStandalone = World->GetNetMode() == NM_Standalone;
+    const uint32 WorldIdentity = World->GetUniqueID();
+    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity](FMassExecutionContext& ChunkContext)
     {
         // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
@@ -169,6 +172,25 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 PresentationState.ActionId,
                 PresentationState.ActionProgress);
             Presentation->ApplyHitReaction(ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index]);
+            if (auto* SoundPresentation = MonsterActor->GetMonsterSoundPresentation())
+            {
+                // 单机没有网络身份 声音使用世界内完整代际句柄 不创建网络事实
+                const FMassEntityHandle Entity = ChunkContext.GetEntity(Index);
+                const FGuid SoundInstance = bStandalone
+                    ? FGuid(WorldIdentity, static_cast<uint32>(Entity.Index), static_cast<uint32>(Entity.SerialNumber), 1u)
+                    : ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].InstanceId;
+                if (!SoundInstance.IsValid())
+                {
+                    continue;
+                }
+
+                SoundPresentation->ApplyFacts(
+                    SoundInstance,
+                    Definition ? Definition->SoundPresentation.Get() : nullptr,
+                    PresentationState.State, PresentationState.ActionId, PresentationState.ActionProgress,
+                    ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
+                    Mobility.bCrawling, Velocities[Index].Value.Size2D(), Now, bNewActor);
+            }
         }
     });
 }

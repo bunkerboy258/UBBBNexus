@@ -7,6 +7,7 @@ class USkeletalMeshComponent;
 class UBBBMonsterPresentationComponent;
 class UBBBMonsterHitReactionComponent;
 class UPhysicalAnimationComponent;
+class UBBBMonsterSoundPresentationComponent;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
@@ -26,7 +27,21 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|小怪")
     UBBBMonsterPresentationComponent* GetMonsterPresentation() const;
 
+    /** @return 小怪声音桥接组件 */
+    UBBBMonsterSoundPresentationComponent* GetMonsterSoundPresentation() const;
+
+    /**
+     * 隐藏或回收表现演员时停止声音
+     * @param bNewHidden	当前隐藏结果
+     * @return 无返回值
+     */
+    virtual void SetActorHiddenInGame(bool bNewHidden) override;
+
 private:
+    /** 单体固定声线与声音播放桥接 */
+    UPROPERTY(VisibleAnywhere, Category = "小怪|声音", meta = (DisplayName = "声音表现组件"))
+    TObjectPtr<UBBBMonsterSoundPresentationComponent> SoundPresentation;
+
     /** 局部物理回弹表现 */
     UPROPERTY(VisibleAnywhere, Category = "小怪|受击", meta = (DisplayName = "局部受击组件"))
     TObjectPtr<UBBBMonsterHitReactionComponent> HitReaction;
