@@ -348,7 +348,13 @@ bool ABBBPlayerController::SubmitItemMove(const int32 Source, const int32 Target
 bool ABBBPlayerController::SubmitItemSelect(const int32 Slot)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && Slot >= INDEX_NONE && ItemCharacter->SubmitInput(FBBBItemSelectLocalControlPacket{{Slot}});
+    const bool bAccepted = ItemCharacter && Slot >= INDEX_NONE
+        && ItemCharacter->SubmitInput(FBBBItemSelectLocalControlPacket{{Slot}});
+    if (bAccepted && ItemView)
+    {
+        ItemView->NotifyQuickSelection();
+    }
+    return bAccepted;
 }
 
 void ABBBPlayerController::GetItemOperationResult(int32 &Revision, int32 &SucceededCount, int32 &RejectedCount) const

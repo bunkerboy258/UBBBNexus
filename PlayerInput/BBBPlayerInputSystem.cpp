@@ -1,9 +1,9 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
@@ -115,7 +115,10 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
     {
         return;
     }
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{Slot}});
+    if (ABBBPlayerController *Controller = Cast<ABBBPlayerController>(GetOwner()))
+    {
+        Controller->SubmitItemSelect(Slot);
+    }
 }
 
 void UBBBPlayerInputSystem::SubmitReload()

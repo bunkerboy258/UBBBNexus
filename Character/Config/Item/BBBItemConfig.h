@@ -15,5 +15,5 @@ struct FBBBCharacterItemConfig final
 
     /** 上层物品栏使用的前序槽位数量 不增加背包容量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "1", DisplayName = "前序快捷槽位数量"))
-    int32 QuickAccessSlotCount = 5;
+    int32 QuickAccessSlotCount = 3;
 };

@@ -94,6 +94,17 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestNull(TEXT("收起后实际空手"), Controller->GetActiveItem());
+    TestEqual(TEXT("快捷栏使用前三格"), Controller->GetQuickAccessSlotCount(), 3);
+    TestEqual(TEXT("背包共二十格"), Controller->GetBackpackItems().Num(), 20);
+    TestEqual(TEXT("满生命显示完整白线"), Controller->GetHudHealthFraction(), 1.0f);
+    TestFalse(TEXT("空手不显示瞄准界面"), Controller->ShouldShowAimHud());
+    const float MaximumHealth = Character->GetCharacterConfig().MaximumHealth;
+    Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
+        {MaximumHealth * 0.25f}, {NAME_None}, {Character->GetActorLocation()}, {FVector::ZeroVector}, {nullptr}});
+    Character->Tick(1.0f / 60.0f);
+    TestEqual(TEXT("白线读取真实生命损失"), Controller->GetHudHealthFraction(), 0.75f);
+    Controller->UnPossess();
+    TestEqual(TEXT("失去角色后生命接口归零"), Controller->GetHudHealthFraction(), 0.0f);
     return true;
 }
 

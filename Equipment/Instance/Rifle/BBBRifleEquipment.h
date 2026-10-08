@@ -39,6 +39,9 @@ public:
      */
     virtual bool TryGetMuzzleTransform(FTransform &OutTransform) const override;
 
+    /** @param Loaded	当前弹量 @param Capacity	弹匣容量 @param bContinuous	连续弹药弧 @return 是否具有弹匣显示 */
+    virtual bool ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const override;
+
     /** 步枪唯一聚合黑板 */
     FBBBRifleRuntimeData RuntimeData;
 

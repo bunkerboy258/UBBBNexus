@@ -63,6 +63,18 @@ public:
     /** @return 任一同级玩家页面是否打开 供游玩 HUD 控制可见性 */
     bool IsPlayerMenuOpen() const;
 
+    /** @return 当前角色生命比例 无有效角色时为零 */
+    UFUNCTION(BlueprintPure, Category = "BBB|界面")
+    float GetHudHealthFraction() const;
+
+    /** @return 当前角色是否正在瞄准并允许显示战斗准星 */
+    UFUNCTION(BlueprintPure, Category = "BBB|界面")
+    bool ShouldShowAimHud() const;
+
+    /** @param ScreenPosition	玩家视口相对像素位置 @return 是否存在可投影的枪口实际落点 */
+    UFUNCTION(BlueprintPure, Category = "BBB|界面")
+    bool GetActualAimScreenPosition(FVector2D &ScreenPosition) const;
+
     /** @return 当前实际手持的物品 挂接失败或空手时返回空引用 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     AActor *GetActiveItem() const;

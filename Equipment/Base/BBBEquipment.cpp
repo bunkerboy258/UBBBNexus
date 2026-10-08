@@ -164,3 +164,11 @@ bool ABBBEquipment::QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet)
 {
     return false;
 }
+
+bool ABBBEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const
+{
+    Loaded = 0;
+    Capacity = 0;
+    bContinuous = false;
+    return false;
+}

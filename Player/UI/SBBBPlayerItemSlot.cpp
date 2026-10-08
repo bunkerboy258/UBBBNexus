@@ -6,9 +6,11 @@
 #include "Engine/Texture2D.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
+#include "Brushes/SlateColorBrush.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/SOverlay.h"
+#include "Widgets/SToolTip.h"
 
 namespace
 {
@@ -17,7 +19,6 @@ namespace
     {
     public:
         DRAG_DROP_OPERATOR_TYPE(FBBBPlayerItemDrag, FDragDropOperation)
-
         TWeakObjectPtr<UBBBPlayerItemView> View;
         TWeakObjectPtr<APawn> Pawn;
         TWeakObjectPtr<AActor> Item;
@@ -39,14 +40,10 @@ namespace
 
         virtual TSharedPtr<SWidget> GetDefaultDecorator() const override
         {
-            return SNew(SBorder)
-                .BorderImage(BBBCustomizationStyle::GetCardBrush(true))
-                .Padding(16.0f)
-                [
-                    SNew(STextBlock).Text(Name)
-                    .Font(BBBCustomizationStyle::GetCustomizationFont(12))
-                    .ColorAndOpacity(BBBCustomizationStyle::Ink)
-                ];
+            static const FSlateColorBrush Background(FLinearColor(0.015f, 0.015f, 0.015f, 0.9f));
+            return SNew(SBorder).BorderImage(&Background).Padding(12.0f)
+                [SNew(STextBlock).Text(Name).Font(BBBCustomizationStyle::GetCustomizationFont(12))
+                    .ColorAndOpacity(FLinearColor::White)];
         }
     };
 }
@@ -59,79 +56,35 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
     const FBBBPlayerItemDisplayData Data = Controller ? Controller->GetItemDisplayData(Slot) : FBBBPlayerItemDisplayData();
     bOccupied = Data.bOccupied;
-    ItemName = !Data.Name.IsEmpty() ? Data.Name : FText::FromString(bOccupied ? TEXT("物品") : TEXT("空槽位"));
+    ItemName = Data.Name;
     IconTexture.Reset(Data.Icon);
     IconBrush.SetResourceObject(IconTexture.Get());
     IconBrush.ImageSize = IconTexture.IsValid()
-        ? FVector2D(IconTexture->GetSizeX(), IconTexture->GetSizeY()) : FVector2D(72.0f, 40.0f);
+        ? FVector2D(IconTexture->GetSizeX(), IconTexture->GetSizeY()) : FVector2D(128.0f, 64.0f);
     IconBrush.DrawAs = ESlateBrushDrawType::Image;
 
-    if (bCompact)
+    if (bOccupied && !bCompact)
     {
-        ChildSlot
-        [
-            SNew(SBox).WidthOverride(54.0f).HeightOverride(30.0f).HAlign(HAlign_Center).VAlign(VAlign_Center)
-            [
-                SNew(STextBlock).Text(FText::AsNumber(Slot + 1))
-                .Font(BBBCustomizationStyle::GetCustomizationFont(12))
-                .ColorAndOpacity_Lambda([this]()
-                {
-                    return IsSelected() ? FLinearColor::White
-                        : (bOccupied ? BBBCustomizationStyle::Ink : FLinearColor(0.30f, 0.32f, 0.33f));
-                })
-            ]
-        ];
-        return;
+        SetToolTip(SNew(SToolTip)
+            [SNew(STextBlock).Text(ItemName).Font(BBBCustomizationStyle::GetCustomizationFont(12))
+                .ColorAndOpacity(FLinearColor::White)]);
     }
-
-    TSharedRef<SWidget> Artwork = IconTexture.IsValid()
-        ? StaticCastSharedRef<SWidget>(SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
-            [SNew(SImage).Image(&IconBrush)])
-        : BBBCustomizationStyle::MakeIcon(bOccupied ? TEXT("Item") : TEXT("Empty"),
-            bOccupied ? 38.0f : 23.0f, bOccupied ? BBBCustomizationStyle::Ink : FLinearColor(0.15f, 0.17f, 0.18f));
     ChildSlot
     [
-        SNew(SBox).MinDesiredWidth(180.0f).HeightOverride(132.0f)
+        SNew(SBox).MinDesiredWidth(bCompact ? 124.0f : 94.0f).HeightOverride(bCompact ? 72.0f : 74.0f)
         [
             SNew(SOverlay)
-            + SOverlay::Slot().Padding(1.0f)
+            + SOverlay::Slot().Padding(12.0f, 18.0f, 12.0f, 12.0f)
             [
-                SNew(SImage).Image(View->GetCardSurfaceBrush())
-                .ColorAndOpacity(FLinearColor(0.70f, 0.67f, 0.60f, bOccupied ? 0.50f : 0.20f))
-                .Visibility(EVisibility::HitTestInvisible)
+                SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+                [SNew(SImage).Image(&IconBrush).ColorAndOpacity(FLinearColor::White)
+                    .Visibility(IconTexture.IsValid() ? EVisibility::HitTestInvisible : EVisibility::Hidden)]
             ]
-            + SOverlay::Slot().Padding(12.0f, 8.0f)
+            + SOverlay::Slot().HAlign(HAlign_Left).VAlign(VAlign_Top).Padding(8.0f, 5.0f)
             [
-                SNew(SVerticalBox)
-                + SVerticalBox::Slot().AutoHeight()
-                [
-                    SNew(SHorizontalBox)
-                    + SHorizontalBox::Slot().AutoWidth()
-                    [
-                        SNew(STextBlock).Text(FText::FromString(FString::Printf(TEXT("%02d"), Slot + 1)))
-                        .Font(BBBCustomizationStyle::GetCustomizationFont(10))
-                        .ColorAndOpacity(BBBCustomizationStyle::MutedInk)
-                    ]
-                    + SHorizontalBox::Slot().FillWidth(1.0f).HAlign(HAlign_Right)
-                    [
-                        SNew(STextBlock).Text_Lambda([this]() { return GetSlotStatus(); })
-                        .Font(BBBCustomizationStyle::GetCustomizationFont(10))
-                        .ColorAndOpacity(BBBCustomizationStyle::Accent)
-                    ]
-                ]
-                + SVerticalBox::Slot().FillHeight(1.0f).Padding(10.0f, 5.0f)
-                [Artwork]
-                + SVerticalBox::Slot().AutoHeight()
-                [
-                    SNew(SBox).HeightOverride(38.0f).VAlign(VAlign_Center)
-                    [
-                        SNew(STextBlock).Text(ItemName)
-                        .Font(BBBCustomizationStyle::GetCustomizationFont(11))
-                        .ColorAndOpacity(bOccupied ? BBBCustomizationStyle::Ink : BBBCustomizationStyle::MutedInk)
-                        .AutoWrapText(true).OverflowPolicy(ETextOverflowPolicy::Ellipsis)
-                        .Justification(ETextJustify::Center)
-                    ]
-                ]
+                SNew(STextBlock).Text(IsQuickSlot() ? FText::AsNumber(Slot + 1) : FText::GetEmpty())
+                .Font(BBBCustomizationStyle::GetCustomizationFont(10))
+                .ColorAndOpacity(FLinearColor(0.65f, 0.65f, 0.65f))
             ]
         ]
     ];
@@ -143,26 +96,18 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
 {
     const FVector2D Size = Geometry.GetLocalSize();
     const bool bSelected = IsSelected();
-    const FLinearColor Accent = bCompact ? FLinearColor(1.0f, 0.27f, 0.025f) : BBBCustomizationStyle::Accent;
-    const FLinearColor Edge = bSelected ? Accent : (IsHovered() && !bCompact
-        ? BBBCustomizationStyle::Ink : FLinearColor(0.20f, 0.22f, 0.22f, bOccupied ? 0.80f : 0.35f));
+    const float Opacity = Style.GetColorAndOpacityTint().A;
+    const FLinearColor Edge(1.0f, 1.0f, 1.0f, Opacity * (bSelected ? 0.95f : (IsHovered() ? 0.6f : 0.20f)));
     static const FSlateColorBrush Fill(FLinearColor::White);
     FSlateDrawElement::MakeBox(Elements, Layer, Geometry.ToPaintGeometry(), &Fill,
-        ESlateDrawEffect::None, bSelected ? FLinearColor(0.10f, 0.046f, 0.014f, 0.80f)
-            : FLinearColor(0.004f, 0.006f, 0.010f, bCompact ? 0.72f : 0.46f));
-    const float Cut = bCompact ? 4.0f : 9.0f;
-    TArray<FVector2D> Outline = {{0.5, 0.5}, {Size.X - Cut, 0.5}, {Size.X - 0.5, Cut},
-        {Size.X - 0.5, Size.Y - 0.5}, {Cut, Size.Y - 0.5}, {0.5, Size.Y - Cut}, {0.5, 0.5}};
+        ESlateDrawEffect::None, FLinearColor(0.015f, 0.015f, 0.015f, Opacity * (bCompact ? 0.55f : 0.30f)));
+    const TArray<FVector2D> Outline = {{0.5, 0.5}, {Size.X - 0.5, 0.5},
+        {Size.X - 0.5, Size.Y - 0.5}, {0.5, Size.Y - 0.5}, {0.5, 0.5}};
     FSlateDrawElement::MakeLines(Elements, Layer + 1, Geometry.ToPaintGeometry(), Outline,
-        ESlateDrawEffect::None, Edge, true, bSelected ? 1.5f : 0.7f);
-    if (bOccupied)
-    {
-        TArray<FVector2D> Marker = {{Cut + 1.0, Size.Y - 1.5}, {Size.X - 1.5, Size.Y - 1.5}};
-        FSlateDrawElement::MakeLines(Elements, Layer + 1, Geometry.ToPaintGeometry(), Marker,
-            ESlateDrawEffect::None, bSelected ? Accent : Edge, true, bSelected ? 2.5f : 1.0f);
-    }
+        ESlateDrawEffect::None, Edge, true, bSelected ? 1.5f : 0.75f);
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 2, Style, bParentEnabled);
 }
+
 bool SBBBPlayerItemSlot::IsQuickSlot() const
 {
     const ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
@@ -175,59 +120,11 @@ bool SBBBPlayerItemSlot::IsSelected() const
     return Controller && Slot == Controller->GetSelectedItemSlot();
 }
 
-FText SBBBPlayerItemSlot::GetSlotStatus() const
-{
-    const ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
-    const FBBBPlayerItemDisplayData Data = Controller ? Controller->GetItemDisplayData(Slot) : FBBBPlayerItemDisplayData();
-    if (Data.bActive)
-    {
-        return FText::FromString(TEXT("手持"));
-    }
-    if (Data.bSelected)
-    {
-        return FText::FromString(TEXT("已选择"));
-    }
-    return Data.bQuick ? FText::FromString(TEXT("快捷")) : FText::GetEmpty();
-}
-
-void SBBBPlayerItemSlot::OnMouseEnter(const FGeometry &Geometry, const FPointerEvent &Event)
-{
-    SCompoundWidget::OnMouseEnter(Geometry, Event);
-    if (View.IsValid())
-    {
-        View->InspectSlot(Slot);
-    }
-}
-
 FReply SBBBPlayerItemSlot::OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event)
 {
-    if (View.IsValid() && Event.GetEffectingButton() == EKeys::LeftMouseButton)
+    if (View.IsValid() && View->IsBackpackOpen() && bOccupied && Event.GetEffectingButton() == EKeys::LeftMouseButton)
     {
-        View->InspectSlot(Slot);
-        if (View->IsBackpackOpen() && bOccupied)
-        {
-            return FReply::Handled().DetectDrag(AsShared(), EKeys::LeftMouseButton);
-        }
-        return FReply::Handled();
-    }
-    return FReply::Unhandled();
-}
-
-FReply SBBBPlayerItemSlot::OnMouseButtonUp(const FGeometry &Geometry, const FPointerEvent &Event)
-{
-    if (!View.IsValid() || !IsQuickSlot())
-    {
-        return FReply::Unhandled();
-    }
-    if (Event.GetEffectingButton() == EKeys::LeftMouseButton)
-    {
-        View->SelectSlot(Slot);
-        return FReply::Handled();
-    }
-    if (Event.GetEffectingButton() == EKeys::RightMouseButton)
-    {
-        View->SelectSlot(INDEX_NONE);
-        return FReply::Handled();
+        return FReply::Handled().DetectDrag(AsShared(), EKeys::LeftMouseButton);
     }
     return FReply::Unhandled();
 }

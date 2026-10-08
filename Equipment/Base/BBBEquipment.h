@@ -76,6 +76,15 @@ public:
      */
     virtual bool TryGetMuzzleTransform(FTransform &OutTransform) const;
 
+    /**
+     * 读取供玩家界面展示的弹匣结果
+     * @param Loaded	当前弹量
+     * @param Capacity	弹匣容量
+     * @param bContinuous	是否使用连续弹药弧
+     * @return 装备是否提供弹匣显示
+     */
+    virtual bool ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const;
+
     /** @return 装备动画实例 */
     UBBBEquipmentAnimInstance *GetEquipmentAnimationInstance() const;
 

@@ -265,3 +265,11 @@ void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransfo
 {
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
+
+bool ABBBRifleEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const
+{
+    Loaded = GetLoadedAmmo();
+    Capacity = GetAmmoCapacity();
+    bContinuous = true;
+    return Capacity > 0;
+}
