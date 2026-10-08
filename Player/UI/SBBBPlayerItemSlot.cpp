@@ -71,7 +71,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     }
     ChildSlot
     [
-        SNew(SBox).MinDesiredWidth(bCompact ? 124.0f : 94.0f).HeightOverride(bCompact ? 72.0f : 74.0f)
+        SNew(SBox).WidthOverride(bCompact ? 124.0f : 94.0f).HeightOverride(bCompact ? 72.0f : 74.0f)
         [
             SNew(SOverlay)
             + SOverlay::Slot().Padding(12.0f, 18.0f, 12.0f, 12.0f)
