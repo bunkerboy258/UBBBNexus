@@ -52,31 +52,39 @@ public:
 
     /** 头部与躯干有效命中的最低速度比例 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "躯干受击速度比例"))
-    float BodyHitSpeedRatio = 0.5f;
+    float BodyHitSpeedRatio = 0.25f;
 
     /** 头部与躯干减速的平滑恢复秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "躯干减速恢复时间"))
-    float BodyHitSlowDuration = 0.45f;
+    float BodyHitSlowDuration = 0.6f;
 
     /** 手臂有效命中的最低速度比例 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "手臂受击速度比例"))
-    float ArmHitSpeedRatio = 0.7f;
+    float ArmHitSpeedRatio = 0.5f;
 
     /** 手臂减速的平滑恢复秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "手臂减速恢复时间"))
-    float ArmHitSlowDuration = 0.4f;
+    float ArmHitSlowDuration = 0.5f;
 
     /** 腿部有效命中的最低速度比例 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.1", ClampMax = "1.0", DisplayName = "腿部受击速度比例"))
-    float LegHitSpeedRatio = 0.3f;
+    float LegHitSpeedRatio = 0.15f;
 
     /** 腿部减速的平滑恢复秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.01", Units = "s", DisplayName = "腿部减速恢复时间"))
-    float LegHitSlowDuration = 0.6f;
+    float LegHitSlowDuration = 0.7f;
 
     /** 命中后保持最低速度的秒数 连射刷新保持阶段 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.0", Units = "s", DisplayName = "受击减速保持时间"))
-    float HitSlowHoldDuration = 0.18f;
+    float HitSlowHoldDuration = 0.3f;
+
+    /** 轻受击水平停顿秒数 不影响落地和重力 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.0", ClampMax = "0.2", Units = "s", DisplayName = "受击停顿时间"))
+    float HitStopDuration = 0.1f;
+
+    /** 站立失衡到恢复的动作秒数 动画按事实采样 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.5", ClampMax = "1.5", Units = "s", DisplayName = "踉跄时间"))
+    float StaggerDuration = 0.9f;
 
     /** 累计腿伤达到最大生命的此比例后持续爬行 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "0.01", ClampMax = "1.0", DisplayName = "爬行腿伤阈值比例"))

@@ -333,6 +333,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             if (bMayMove && !Grounds[Index].bGrounded)
             {
                 HorizontalDelta = FVector(Velocity.X, Velocity.Y, 0.0f) * DeltaSeconds;
+                if (Now < Injury.HitStopEndsAt)
+                {
+                    HorizontalDelta = FVector::ZeroVector;
+                }
             }
 
             const bool bPreviouslyGrounded = Grounds[Index].bGrounded;

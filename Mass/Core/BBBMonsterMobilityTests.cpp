@@ -14,6 +14,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 
 /** 验证累计腿伤 不叠乘减速 过期消息与不可逆爬行 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterMobilityTest, "UBBB.Mass.ZombieMobility",
@@ -35,7 +36,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     };
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto Archetype = Manager.CreateArchetype({FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
-        FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct()});
+        FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct()});
     const auto Entity = Manager.CreateEntity(Archetype);
     auto& Network = Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity);
     Network.Definition = NewObject<UBBBMonsterDefinition>(World);
@@ -57,10 +58,14 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     First.LastHitRegion = EBBBMonsterHitRegion::LeftLeg;
     Damage.Contributions.Add(1, First);
     Run();
-    TestEqual(TEXT("腿伤首次减速"), Mobility.SlowMinimumRatio, 0.3f);
-    TestEqual(TEXT("保持阶段最低速度不提前恢复"), Mobility.GetSpeedRatio(Mobility.SlowRecoveryStartedAt - 0.01f), 0.3f);
+    TestEqual(TEXT("腿伤首次减速"), Mobility.SlowMinimumRatio, 0.15f);
+    TestEqual(TEXT("保持阶段最低速度不提前恢复"), Mobility.GetSpeedRatio(Mobility.HitStopEndsAt), 0.15f);
+    TestEqual(TEXT("踉跄主段实际水平停顿"), Mobility.GetSpeedRatio(Mobility.HitStopEndsAt - 0.01f), 0.0f);
     TestTrue(TEXT("恢复中点平滑回升"), FMath::IsNearlyEqual(Mobility.GetSpeedRatio(
-        (Mobility.SlowRecoveryStartedAt + Mobility.SlowEndsAt) * 0.5f), 0.65f));
+        (Mobility.SlowRecoveryStartedAt + Mobility.SlowEndsAt) * 0.5f), 0.575f, KINDA_SMALL_NUMBER));
+    AddInfo(FString::Printf(TEXT("减速最低值=%.6f 停顿结束=%.6f 恢复开始=%.6f 恢复结束=%.6f 中点比例=%.6f"),
+        Mobility.SlowMinimumRatio, Mobility.HitStopEndsAt, Mobility.SlowRecoveryStartedAt, Mobility.SlowEndsAt,
+        Mobility.GetSpeedRatio((Mobility.SlowRecoveryStartedAt + Mobility.SlowEndsAt) * 0.5f)));
     TestEqual(TEXT("恢复结束重新达到正常速度"), Mobility.GetSpeedRatio(Mobility.SlowEndsAt), 1.0f);
     TestFalse(TEXT("未达到腿伤阈值"), Mobility.bCrawling);
     const float End = Mobility.SlowEndsAt;
@@ -74,7 +79,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     Damage.Contributions.Add(2, Second);
     Run();
     TestTrue(TEXT("合并不同玩家腿伤达到阈值"), Mobility.bCrawling);
-    TestEqual(TEXT("第二次命中不叠乘"), Mobility.SlowMinimumRatio, 0.3f);
+    TestEqual(TEXT("第二次命中不叠乘"), Mobility.SlowMinimumRatio, 0.15f);
     TestEqual(TEXT("生命按全部累计贡献计算"), Health.CurrentHealth, 70.0f);
     FBBBMonsterDamageLocalControlPacket Packet;
     Packet.Include(First);

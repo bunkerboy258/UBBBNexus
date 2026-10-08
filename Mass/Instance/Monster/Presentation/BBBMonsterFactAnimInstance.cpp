@@ -18,6 +18,9 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
         ensureMsgf(Presentation.IsValid(), TEXT("[UBBBM]Fact animation requires a monster presentation component"));
     }
     BehaviorFact = EBBBMonsterBehavior::Idle;
+    StaggeringFact = false;
+    StaggerProgressFact = 0.0f;
+    StaggerVariantFact = 1;
     CrawlingFact = false;
     CrawlProgressFact = 0.0f;
     MovementSpeedFact = 0.0f;
@@ -38,6 +41,10 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
 
     BehaviorFact = Source->BBBMonsterBehavior;
     CrawlingFact = Source->bCrawling;
+    StaggeringFact = Source->bStaggering && !CrawlingFact && BehaviorFact != EBBBMonsterBehavior::Attack && BehaviorFact != EBBBMonsterBehavior::Dead;
+    StaggerProgressFact = Source->StaggerProgress;
+    StaggerVariantFact = Source->StaggerRegion == EBBBMonsterHitRegion::Head ? 0
+        : Source->StaggerRegion == EBBBMonsterHitRegion::RightArm || Source->StaggerRegion == EBBBMonsterHitRegion::RightLeg ? 2 : 1;
     CrawlProgressFact = Source->CrawlProgress;
     MovementSpeedFact = Source->MovementSpeed;
     ActionProgressFact = Source->ActionProgress;

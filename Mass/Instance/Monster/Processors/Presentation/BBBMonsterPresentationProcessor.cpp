@@ -171,6 +171,9 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 PresentationState.StateEnteredTime,
                 PresentationState.ActionId,
                 PresentationState.ActionProgress);
+            const float StaggerProgress = Mobility.StaggerEndsAt > Mobility.StaggerStartedAt
+                ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
+            Presentation->ApplyStaggerState(Mobility.IsStaggering(Now), StaggerProgress, Mobility.StaggerRegion);
             Presentation->ApplyHitReaction(ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index]);
             if (auto* SoundPresentation = MonsterActor->GetMonsterSoundPresentation())
             {

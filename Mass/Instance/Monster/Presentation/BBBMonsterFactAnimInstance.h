@@ -27,6 +27,18 @@ public:
     //~ End UAnimInstance Interface
 
 private:
+    /** Mass 当前站立踉跄事实 不替代六种行为 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "踉跄事实"))
+    bool StaggeringFact = false;
+
+    /** 当前踉跄进度 只读取 Mass 时间 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "踉跄进度事实"))
+    float StaggerProgressFact = 0.0f;
+
+    /** 头部 左向 右向三种固定表现索引 连射不切换 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "踉跄方向事实"))
+    int32 StaggerVariantFact = 1;
+
     /** Mass 持续爬行事实 不在动画侧重新判定腿伤 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "爬行事实"))
     bool CrawlingFact = false;

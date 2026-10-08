@@ -19,7 +19,7 @@ public:
      * @param bAlive	当前存活事实
      * @return 无返回值
      */
-    void ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, bool bAlive);
+    void ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, bool bAlive, bool bAuthoredStagger);
 
     /**
      * 清除表现对象上一代实体的全部受力状态

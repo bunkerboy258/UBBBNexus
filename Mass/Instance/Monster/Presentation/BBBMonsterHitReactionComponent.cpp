@@ -22,8 +22,15 @@ UBBBMonsterHitReactionComponent::UBBBMonsterHitReactionComponent(const FObjectIn
     }
 }
 
-void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, const bool bAlive)
+void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, const bool bAlive, const bool bAuthoredStagger)
 {
+    if (bAlive && bAuthoredStagger)
+    {
+        ResetHitReactSystem();
+        ObservedHitSerial = Hit.Serial;
+        bPresentationAlive = true;
+        return;
+    }
     const bool bEnteredDeath = bPresentationAlive && !bAlive;
     bPresentationAlive = bAlive;
     if (bEnteredDeath)

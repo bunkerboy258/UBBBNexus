@@ -12,7 +12,8 @@ void UBBBMonsterPresentationComponent::ApplyHitReaction(const FBBBMonsterHitReac
     HitReaction = Hit;
     if (auto* Reaction = GetOwner()->FindComponentByClass<UBBBMonsterHitReactionComponent>())
     {
-        Reaction->ApplyHitFacts(Hit, BBBMonsterBehavior != EBBBMonsterBehavior::Dead);
+        Reaction->ApplyHitFacts(Hit, BBBMonsterBehavior != EBBBMonsterBehavior::Dead,
+            bStaggering && BBBMonsterBehavior != EBBBMonsterBehavior::Attack && BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !bCrawling);
     }
 }
 
@@ -25,6 +26,23 @@ void UBBBMonsterPresentationComponent::ApplyMobilityState(const bool bInCrawling
         FVector Offset = Mesh->GetRelativeLocation();
         Offset.Z = -InHalfHeight;
         Mesh->SetRelativeLocation(Offset);
+    }
+}
+
+void UBBBMonsterPresentationComponent::ApplyStaggerState(const bool bActive, const float Progress, const EBBBMonsterHitRegion Region)
+{
+    const bool bChanged = bStaggering != bActive;
+    bStaggering = bActive;
+    StaggerProgress = FMath::Clamp(Progress, 0.0f, 1.0f);
+    StaggerRegion = Region;
+    if (bChanged)
+    {
+        auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponentBudgeted>();
+        auto* Budget = Mesh ? IAnimationBudgetAllocator::Get(GetWorld()) : nullptr;
+        if (Budget)
+        {
+            Budget->ForceNextTickThisFrame(Mesh);
+        }
     }
 }
 

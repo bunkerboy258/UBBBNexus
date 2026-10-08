@@ -69,6 +69,16 @@ public:
      */
     void ApplyMobilityState(bool bInCrawling, float InProgress, float InHalfHeight);
 
+    /**
+     * 复制当前踉跄事实 不推进计时或决定移动
+     * @param bActive	Mass 当前站立踉跄是否成立
+     * @param Progress	Mass 当前动作归一化进度
+     * @param Region		本段动作固定使用的命中部位
+     * @return 无返回值
+     */
+    UFUNCTION()
+    void ApplyStaggerState(bool bActive, float Progress, EBBBMonsterHitRegion Region);
+
 private:
     /** Mass 最近命中只读快照 */
     FBBBMonsterHitReactionFragment HitReaction;
@@ -78,6 +88,16 @@ private:
 
     /** Mass 爬行姿态过渡的只读进度 */
     float CrawlProgress = 0.0f;
+
+    /** 当前踉跄只读快照 */
+    bool bStaggering = false;
+
+    /** 当前踉跄归一化进度 */
+    float StaggerProgress = 0.0f;
+
+    /** 当前踉跄的固定部位 */
+    EBBBMonsterHitRegion StaggerRegion = EBBBMonsterHitRegion::Torso;
+
     /** Mass 提供的本次非循环动作归一化时间 */
     float ActionProgress = 0.0f;
 

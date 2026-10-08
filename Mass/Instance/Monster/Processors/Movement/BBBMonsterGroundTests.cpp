@@ -150,6 +150,20 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
         TestTrue(TEXT("全部状态可落地而非悬空"), Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded &&
             FMath::IsNearlyEqual(Transform.GetLocation().Z, 90.5f, 0.1f) && EntityVelocity.Z == 0.0f);
     }
+    State.State = EBBBMonsterBehavior::Chase;
+    Transform.SetLocation(FVector(0.0f, 0.0f, 1000.0f));
+    EntityVelocity = FVector(500.0f, 0.0f, -100.0f);
+    Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded = false;
+    auto& Path = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
+    Path.bHasPath = true;
+    Path.PathPointIndex = 0;
+    Path.PathPoints = {FVector(2000.0f, 0.0f, 90.0f)};
+    Path.TailDistances = {0.0f};
+    Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity).HitStopEndsAt = World->GetTimeSeconds() + 1.0f;
+    UE::Mass::FProcessingContext StopContext(Manager, 0.1f);
+    UE::Mass::Executor::Run(*Processor, StopContext);
+    TestEqual(TEXT("空中受击只停止水平移动"), Transform.GetLocation().X, 0.0);
+    TestTrue(TEXT("受击停顿仍持续重力和落地求解"), Transform.GetLocation().Z < 1000.0f && EntityVelocity.Z < -100.0f);
     Manager.DestroyEntity(Entity);
 
     FBBBMonsterNetworkFragment Network;

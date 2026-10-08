@@ -271,6 +271,12 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("crawlStartedAt"), Mobility ? Mobility->CrawlStartedAt : 0.0f);
             Sample->SetNumberField(TEXT("slowMinimumRatio"), Mobility ? Mobility->SlowMinimumRatio : 1.0f);
             Sample->SetNumberField(TEXT("slowEndsAt"), Mobility ? Mobility->SlowEndsAt : 0.0f);
+            Sample->SetNumberField(TEXT("speedRatio"), Mobility ? Mobility->GetSpeedRatio(World->GetTimeSeconds()) : 1.0f);
+            Sample->SetBoolField(TEXT("staggering"), Mobility && Mobility->IsStaggering(World->GetTimeSeconds()));
+            Sample->SetNumberField(TEXT("staggerStartedAt"), Mobility ? Mobility->StaggerStartedAt : 0.0f);
+            Sample->SetNumberField(TEXT("staggerEndsAt"), Mobility ? Mobility->StaggerEndsAt : 0.0f);
+            Sample->SetNumberField(TEXT("staggerRegion"), Mobility ? static_cast<int32>(Mobility->StaggerRegion) : 0);
+            Sample->SetNumberField(TEXT("hitStopEndsAt"), Mobility ? Mobility->HitStopEndsAt : 0.0f);
             Sample->SetNumberField(TEXT("health"), Health ? Health->CurrentHealth : 0.0f);
             Sample->SetStringField(TEXT("actorPath"), ActorFragment && ActorFragment->Get() ? ActorFragment->Get()->GetPathName() : TEXT(""));
             const AActor* const DisplayActor = ActorFragment ? ActorFragment->Get() : nullptr;

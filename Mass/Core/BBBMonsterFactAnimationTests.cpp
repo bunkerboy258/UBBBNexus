@@ -2,6 +2,7 @@
 
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopeExit.h"
+#include "Animation/AnimNode_StateMachine.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterBudgetPresentationActor.h"
@@ -48,11 +49,21 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         World->DestroyWorld(false);
     };
 
-    const TArray<FString> Classes =
+    TArray<FString> Classes =
     {
         TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"),
         TEXT("/Game/_Project/System/Mass/Monster/Zombie/Female/BP_BBBZombieFemalePresentation.BP_BBBZombieFemalePresentation_C")
     };
+
+    const TArray<FString> Appearances = {TEXT("Connor"), TEXT("Jiho"), TEXT("Michael"), TEXT("Morita"), TEXT("Renzo"), TEXT("Sakurada"),
+        TEXT("Alice"), TEXT("Kiyo"), TEXT("Setsuko"), TEXT("Yuina")};
+    for (int32 Index = 0; Index < Appearances.Num(); ++Index)
+    {
+        const FString Gender = Index < 6 ? TEXT("Male") : TEXT("Female");
+        const FString& Name = Appearances[Index];
+        Classes.Add(TEXT("/Game/_Project/System/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Name +
+            TEXT("/BP_BBBZombie") + Name + TEXT("Presentation.BP_BBBZombie") + Name + TEXT("Presentation_C"));
+    }
 
     for (const FString& ClassPath : Classes)
     {
@@ -88,6 +99,8 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
 
         TestTrue(TEXT("事实属性禁止蓝图写入"), Speed->HasAllPropertyFlags(CPF_BlueprintReadOnly) && Progress->HasAllPropertyFlags(CPF_BlueprintReadOnly));
         TestTrue(TEXT("动画蓝图必须拥有正式状态机"), Animation->GetStateMachineIndex(TEXT("FactDrivenActions")) != INDEX_NONE);
+        const FAnimNode_StateMachine* Upright = Animation->GetStateMachineInstanceFromName(TEXT("FactDrivenActions"));
+        TestTrue(TEXT("正式站立状态机必须拥有独立踉跄"), Upright && Upright->GetStateIndex(TEXT("Stagger")) != INDEX_NONE);
         TestTrue(TEXT("动画蓝图必须拥有持续爬行姿势分支"), Animation->GetStateMachineIndex(TEXT("FactDrivenCrawl")) != INDEX_NONE);
         const FBoolProperty* Crawl = FindFProperty<FBoolProperty>(Animation->GetClass(), TEXT("CrawlingFact"));
         const FFloatProperty* CrawlProgress = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("CrawlProgressFact"));
@@ -104,13 +117,32 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         }
 
         UBBBMonsterPresentationComponent* const Presentation = Actor->GetMonsterPresentation();
+        const FBoolProperty* Stagger = FindFProperty<FBoolProperty>(Animation->GetClass(), TEXT("StaggeringFact"));
+        const FFloatProperty* StaggerProgress = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("StaggerProgressFact"));
+        const FIntProperty* StaggerVariant = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("StaggerVariantFact"));
+        if (!TestTrue(TEXT("踉跄事实必须只读并可反射"), Stagger && StaggerProgress && StaggerVariant &&
+            Stagger->HasAllPropertyFlags(CPF_BlueprintReadOnly) && StaggerProgress->HasAllPropertyFlags(CPF_BlueprintReadOnly)))
+        {
+            return false;
+        }
+        Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 0.0f, 0.0f, 0, 0.0f);
+        Presentation->ApplyStaggerState(true, 0.25f, EBBBMonsterHitRegion::RightArm);
+        Animation->NativeUpdateAnimation(0.016f);
+        TestTrue(TEXT("有效踉跄复制到动画"), Stagger->GetPropertyValue_InContainer(Animation));
+        TestEqual(TEXT("踉跄进度不会由动画帧时间生成"), StaggerProgress->GetPropertyValue_InContainer(Animation), 0.25f);
+        TestEqual(TEXT("右臂使用右向姿势"), StaggerVariant->GetPropertyValue_InContainer(Animation), 2);
+        Presentation->ApplyPresentationState(EBBBMonsterBehavior::Attack, 0.0f, 0.0f, 1, 0.0f);
+        Animation->NativeUpdateAnimation(0.016f);
+        TestFalse(TEXT("攻击不被站立踉跄替代"), Stagger->GetPropertyValue_InContainer(Animation));
         Presentation->ApplyMobilityState(true, 1.0f, 45.0f);
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 75.0f, 0.0f, 0, 0.0f);
         Animation->NativeUpdateAnimation(0.016f);
         TestTrue(TEXT("持续爬行快照准确复制"), Crawl->GetPropertyValue_InContainer(Animation));
+        TestFalse(TEXT("爬行不被站立踉跄替代"), Stagger->GetPropertyValue_InContainer(Animation));
         TestEqual(TEXT("倒地进度只读复制"), CrawlProgress->GetPropertyValue_InContainer(Animation), 1.0f);
         TestEqual(TEXT("表现脚底偏移随胶囊降低"), Actor->GetMonsterMesh()->GetRelativeLocation().Z, -45.0);
         Presentation->ApplyMobilityState(false, 0.0f, 90.0f);
+        Presentation->ApplyStaggerState(false, 1.0f, EBBBMonsterHitRegion::Torso);
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 180.0f, 1.0f, 7, 0.0f);
         Animation->NativeUpdateAnimation(0.01f);
         TestEqual(TEXT("实际速度原样复制"), Speed->GetPropertyValue_InContainer(Animation), 180.0f);
@@ -190,6 +222,10 @@ bool FBBBMonsterAppearanceVariantsTest::RunTest(const FString& Parameters)
         TestTrue(Name + TEXT(" 动画必须来自事实基类"), AnimationClass && AnimationClass->IsChildOf(UBBBMonsterFactAnimInstance::StaticClass()));
         TestTrue(Name + TEXT(" 定义必须指向本模板"), Definition->EntityConfig == Config);
         TestTrue(Name + TEXT(" 模板必须指向本定义"), MonsterTrait && MonsterTrait->Definition == Definition);
+        TestEqual(Name + TEXT(" 正式配置躯干减速"), Definition->BodyHitSpeedRatio, 0.25f);
+        TestEqual(Name + TEXT(" 正式配置手臂减速"), Definition->ArmHitSpeedRatio, 0.5f);
+        TestEqual(Name + TEXT(" 正式配置腿部减速"), Definition->LegHitSpeedRatio, 0.15f);
+        TestEqual(Name + TEXT(" 正式配置踉跄时长"), Definition->StaggerDuration, 0.9f);
         TestTrue(Name + TEXT(" 模板必须指向本载体"), VisualTrait && VisualTrait->HighResTemplateActor == ActorClass && VisualTrait->LowResTemplateActor == ActorClass);
         UniqueMeshes.Add(Mesh);
         UniqueConfigs.Add(Config);

@@ -13,6 +13,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 
 bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
     TArray<FBBBMonsterDamageContribution>& Result)
@@ -84,6 +85,7 @@ void UBBBMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -98,6 +100,7 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
         auto Health = Chunk.GetMutableFragmentView<FBBBMonsterHealthFragment>();
         auto Mobility = Chunk.GetMutableFragmentView<FBBBMonsterMobilityFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Behaviors = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             const float Previous = Health[Index].CurrentHealth;
@@ -123,6 +126,9 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 Motion.SlowMinimumRatio = 1.0f;
                 Motion.SlowRecoveryStartedAt = Now;
                 Motion.SlowEndsAt = Now;
+                Motion.HitStopEndsAt = Now;
+                Motion.StaggerEndsAt = Now;
+                Motion.StaggerStartedAt = Now;
                 continue;
             }
             if (!Settings)
@@ -133,6 +139,9 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             {
                 Motion.bCrawling = true;
                 Motion.CrawlStartedAt = Now;
+                Motion.StaggerStartedAt = Now;
+                Motion.StaggerEndsAt = Now;
+                Motion.HitStopEndsAt = Now;
                 UE_LOG(LogTemp, Log, TEXT("[BBBMonsterCrawl] Entity=%d LegDamage=%.2f Threshold=%.2f"),
                     Chunk.GetEntity(Index).Index, LegDamage, Health[Index].MaxHealth * Settings->CrawlLegDamageFraction);
             }
@@ -159,9 +168,30 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 continue;
             }
             const float HitTime = Now - static_cast<float>(FMath::Max(Age, 0.0));
-            Motion.SlowMinimumRatio = FMath::Min(Motion.GetSpeedRatio(Now), Ratio);
+            Motion.SlowMinimumRatio = FMath::Min(Motion.GetSpeedRatio(FMath::Max(Now, Motion.HitStopEndsAt)), Ratio);
             Motion.SlowRecoveryStartedAt = FMath::Max(Motion.SlowRecoveryStartedAt, HitTime + HoldDuration);
             Motion.SlowEndsAt = FMath::Max(Motion.SlowEndsAt, Motion.SlowRecoveryStartedAt + Duration);
+            if (Behaviors[Index].State == EBBBMonsterBehavior::Attack)
+            {
+                continue;
+            }
+            if (Motion.bCrawling)
+            {
+                Motion.HitStopEndsAt = FMath::Max(Motion.HitStopEndsAt, HitTime + Settings->HitStopDuration);
+                continue;
+            }
+            // 当前动作完成后保留短暂恢复窗口 不按每颗子弹重启姿势
+            if (Age < Settings->StaggerDuration && Now >= Motion.StaggerEndsAt + (Motion.StaggerEndsAt > 0.0f ? 0.2f : 0.0f))
+            {
+                Motion.StaggerStartedAt = HitTime;
+                Motion.StaggerEndsAt = HitTime + Settings->StaggerDuration;
+                Motion.StaggerRegion = Latest->LastHitRegion;
+                Motion.HitStopEndsAt = HitTime + FMath::Max(Settings->HitStopDuration, Settings->StaggerDuration * 0.7f);
+                Motion.SlowRecoveryStartedAt = FMath::Max(Motion.SlowRecoveryStartedAt, Motion.HitStopEndsAt);
+                Motion.SlowEndsAt = FMath::Max(Motion.SlowEndsAt, Motion.SlowRecoveryStartedAt + Duration);
+                UE_LOG(LogTemp, Verbose, TEXT("[BBBMonsterStagger] Entity=%d Region=%d Start=%.3f StopEnd=%.3f End=%.3f"),
+                    Chunk.GetEntity(Index).Index, static_cast<int32>(Motion.StaggerRegion), Motion.StaggerStartedAt, Motion.HitStopEndsAt, Motion.StaggerEndsAt);
+            }
         }
     });
 }

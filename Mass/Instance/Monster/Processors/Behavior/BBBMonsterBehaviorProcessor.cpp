@@ -219,7 +219,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             const bool bInRange = FVector::DistSquared(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(Combat.AttackRange);
 
-            if (Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime)
+            if (Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime && !Mobility[Index].IsStaggering(WorldTime))
             {
                 FTransform& Transform = Transforms[Index].GetMutableTransform();
                 const FVector Facing = (Target.TargetLocation - Transform.GetLocation()).GetSafeNormal2D();
