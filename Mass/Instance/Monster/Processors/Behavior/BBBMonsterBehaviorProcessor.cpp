@@ -34,7 +34,7 @@ UBBBMonsterBehaviorProcessor::UBBBMonsterBehaviorProcessor()
 
 void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
-    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
@@ -63,7 +63,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
     // 维护受伤硬直恢复和死亡实体延迟回收
     MonsterQuery.ForEachEntityChunk(Context, [WorldTime, bRemote](FMassExecutionContext& ChunkContext)
     {
-        const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
+        auto Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
@@ -157,6 +157,14 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 Combat.bAttackFinished = true;
             }
 
+            if (State.State == EBBBMonsterBehavior::Attack &&
+                (!Combat.AttackTarget.IsValid() || !Combat.AttackTarget->CanBeDamaged()))
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
+            }
+
             // 战斗处理器先完成唯一命中判定 下一帧才允许结束攻击 防止长帧漏判
             if (State.State == EBBBMonsterBehavior::Attack && !Combat.bAttackFinished)
             {
@@ -165,7 +173,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             const FBBBMonsterTargetFragment& Target = Targets[Index];
 
-            if (!Target.bHasTarget || !Target.TargetActor.IsValid())
+            if (!Target.bHasTarget || !Target.TargetActor.IsValid() || !Target.TargetActor->CanBeDamaged())
             {
                 if (State.bHadTarget)
                 {
@@ -213,6 +221,12 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             if (Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime)
             {
+                FTransform& Transform = Transforms[Index].GetMutableTransform();
+                const FVector Facing = (Target.TargetLocation - Transform.GetLocation()).GetSafeNormal2D();
+                if (!Facing.IsNearlyZero())
+                {
+                    Transform.SetRotation(Facing.Rotation().Quaternion());
+                }
                 EnterState(EBBBMonsterBehavior::Attack, true);
                 ++Combat.AttackId;
                 Combat.AttackTarget = Target.TargetActor;

@@ -13,6 +13,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
+#include "Components/PrimitiveComponent.h"
+#include "Engine/World.h"
 
 UBBBMonsterCombatProcessor::UBBBMonsterCombatProcessor()
     : MonsterQuery(*this)
@@ -49,7 +51,7 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
     // 使用同一时间值处理当前批次
     const float WorldTime = World->GetTimeSeconds();
 
-    MonsterQuery.ForEachEntityChunk(Context, [WorldTime](FMassExecutionContext& ChunkContext)
+    MonsterQuery.ForEachEntityChunk(Context, [WorldTime, World](FMassExecutionContext& ChunkContext)
     {
         // 只处理已经进入攻击状态且冷却完成的实体
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
@@ -88,7 +90,7 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
             AActor* PlayerPawn = Combat.AttackTarget.Get();
 
             // 没有玩家时不执行任何攻击判定
-            if (!IsValid(PlayerPawn))
+            if (!IsValid(PlayerPawn) || !PlayerPawn->CanBeDamaged())
             {
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Attack miss AttackId=%u Reason=InvalidTarget"), Combat.AttackId);
                 continue;
@@ -106,8 +108,43 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
             APawn* CauserPawn = Cast<APawn>(DamageCauser);
             AController* Instigator = CauserPawn != nullptr ? CauserPawn->GetController() : nullptr;
 
+            const FVector ToTarget = PlayerPawn->GetActorLocation() - MonsterLocation;
+            const FVector HorizontalDirection = ToTarget.GetSafeNormal2D();
+            const FVector Facing = Transforms[Index].GetTransform().GetRotation().GetForwardVector().GetSafeNormal2D();
+            if (!HorizontalDirection.IsNearlyZero() && FVector::DotProduct(Facing, HorizontalDirection) < 0.5f)
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Attack miss AttackId=%u Reason=OutsideSwing"), Combat.AttackId);
+                continue;
+            }
+
+            UPrimitiveComponent* TargetBody = Cast<UPrimitiveComponent>(PlayerPawn->GetRootComponent());
+            FVector Contact = PlayerPawn->GetActorLocation();
+            if (TargetBody)
+            {
+                FVector Closest;
+                if (TargetBody->GetClosestPointOnCollision(MonsterLocation, Closest) >= 0.0f)
+                {
+                    Contact = Closest;
+                }
+            }
+            FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMonsterAttack), false);
+            Params.AddIgnoredActor(PlayerPawn);
+            if (DamageCauser)
+            {
+                Params.AddIgnoredActor(DamageCauser);
+            }
+            FHitResult Obstruction;
+            if (World->LineTraceSingleByChannel(Obstruction, MonsterLocation, Contact, ECC_Pawn, Params))
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Attack miss AttackId=%u Reason=Obstructed"), Combat.AttackId);
+                continue;
+            }
+            const FVector Direction = ToTarget.GetSafeNormal();
+            FHitResult ContactHit(PlayerPawn, TargetBody, Contact, -Direction);
+
             // 伤害通过 UE 标准接口发送给玩家
-            const float AppliedDamage = UGameplayStatics::ApplyDamage(PlayerPawn, Combat.AttackDamage, Instigator, DamageCauser, nullptr);
+            const float AppliedDamage = UGameplayStatics::ApplyPointDamage(PlayerPawn, Combat.AttackDamage,
+                Direction, ContactHit, Instigator, DamageCauser, nullptr);
             UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Monster attack Target=%s AttackId=%u Requested=%.1f Applied=%.1f"),
                 *GetNameSafe(PlayerPawn), Combat.AttackId, Combat.AttackDamage, AppliedDamage);
         }

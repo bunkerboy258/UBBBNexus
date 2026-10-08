@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Context/BBBCharacterLifeUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Config/BBBCharacterConfig.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
 void FBBBCharacterLifeProcessor::Initialize(FBBBCharacterLifeUpdateContext &Context) const
 {
@@ -123,6 +124,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         ++Rescue.Revision;
     }
     State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving;
+    Context.Character.SetCanBeDamaged(State.bInitialized && State.Phase != EBBBCharacterLifePhase::Dead);
 
     if (!Delivery.Damages.IsEmpty())
     {

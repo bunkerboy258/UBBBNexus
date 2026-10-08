@@ -67,6 +67,10 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             float BestDistance = FMath::Square(SightRange);
             for (APawn* Candidate : Players)
             {
+                if (!IsValid(Candidate) || !Candidate->CanBeDamaged())
+                {
+                    continue;
+                }
                 const float Distance = FVector::DistSquared2D(MonsterLocation, Candidate->GetActorLocation());
                 if (Distance <= BestDistance)
                 {
