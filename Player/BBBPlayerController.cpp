@@ -201,9 +201,8 @@ void ABBBPlayerController::ToggleBackpack()
     bBackpackPreviousGameplayInput = PlayerInputSystem->IsInputEnabled();
     SetMouseMenuMode(true);
     ItemView->SetBackpackOpen(true);
-    FInputModeGameAndUI InputMode;
+    FInputModeUIOnly InputMode;
     InputMode.SetWidgetToFocus(ItemView->TakeWidget());
-    InputMode.SetHideCursorDuringCapture(false);
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
     SetInputMode(InputMode);
 }
