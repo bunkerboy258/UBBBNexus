@@ -260,7 +260,12 @@ ABBBCharacter *ABBBPlayerController::GetItemCharacter() const
 bool ABBBPlayerController::HasItemInventory() const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && !ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlots.IsEmpty();
+    if (!ItemCharacter)
+    {
+        return false;
+    }
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+    return Inventory.BackpackSlotCount > 0 && Inventory.Slots.Num() >= Inventory.BackpackSlotCount;
 }
 
 TArray<AActor *> ABBBPlayerController::GetBackpackItems() const
@@ -268,9 +273,13 @@ TArray<AActor *> ABBBPlayerController::GetBackpackItems() const
     TArray<AActor *> Items;
     if (const ABBBCharacter *ItemCharacter = GetItemCharacter())
     {
-        for (const auto &Item : ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlots)
+        const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+        const int32 SlotCount = FMath::Clamp(Inventory.BackpackSlotCount, 0, Inventory.Slots.Num());
+        Items.Reserve(SlotCount);
+        for (int32 Slot = 0; Slot < SlotCount; ++Slot)
         {
-            Items.Add(IsValid(Item.ItemActor.Get()) ? Item.ItemActor.Get() : nullptr);
+            const auto &Item = Inventory.Slots[Slot];
+            Items.Add(IsValid(Item.EquipmentInstance.Get()) ? Item.EquipmentInstance.Get() : nullptr);
         }
     }
     return Items;
@@ -283,13 +292,12 @@ UBBBEquipmentDefinition *ABBBPlayerController::GetItemDefinition(const int32 Slo
     {
         return nullptr;
     }
-    const auto &Slots = ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlots;
-    if (!Slots.IsValidIndex(Slot))
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+    if (Slot < 0 || Slot >= Inventory.BackpackSlotCount || !Inventory.Slots.IsValidIndex(Slot))
     {
         return nullptr;
     }
-    const ABBBEquipment *Equipment = Cast<ABBBEquipment>(Slots[Slot].ItemActor.Get());
-    return IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+    return Cast<UBBBEquipmentDefinition>(Inventory.Slots[Slot].Definition.Get());
 }
 
 int32 ABBBPlayerController::GetQuickAccessSlotCount() const
@@ -309,7 +317,7 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
     if (const UBBBEquipmentDefinition *Definition = GetItemDefinition(Slot))
     {
         Data.Name = Definition->DisplayName.IsEmpty()
-            ? FText::FromName(Definition->EquipmentId) : Definition->DisplayName;
+            ? FText::FromName(Definition->ItemId) : Definition->DisplayName;
         Data.Description = Definition->Description;
         Data.Icon = Definition->Icon;
     }
@@ -321,7 +329,7 @@ FText ABBBPlayerController::GetActiveItemName() const
     const ABBBEquipment *Equipment = Cast<ABBBEquipment>(GetActiveItem());
     const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
     return Definition ? (Definition->DisplayName.IsEmpty()
-        ? FText::FromName(Definition->EquipmentId) : Definition->DisplayName) : FText::GetEmpty();
+        ? FText::FromName(Definition->ItemId) : Definition->DisplayName) : FText::GetEmpty();
 }
 
 int32 ABBBPlayerController::GetSelectedItemSlot() const
