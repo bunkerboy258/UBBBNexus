@@ -96,7 +96,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .Padding(0.0f, 4.0f)[SNew(STextBlock)
                                                     .Text(Arguments._PositionLabel)
                                                     .Font(BBBItemUI::Font(14))
-                                                    .ColorAndOpacity(FLinearColor(0.68f, 0.68f, 0.64f))] +
+                                                    .ColorAndOpacity(BBBItemUI::MutedText)] +
                        SOverlay::Slot()
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
                            .VAlign(bCompact ? VAlign_Bottom : VAlign_Top)
@@ -106,8 +106,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                                                     .ColorAndOpacity_Lambda(
                                                         [this]()
                                                         {
-                                                            return IsSelected() ? BBBItemUI::Accent
-                                                                                : FLinearColor(0.8f, 0.8f, 0.8f);
+                                                            return IsSelected() ? FLinearColor::White : BBBItemUI::MutedText;
                                                         })] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Right)

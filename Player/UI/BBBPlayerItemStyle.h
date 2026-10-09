@@ -3,6 +3,7 @@
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
 #include "Fonts/CompositeFont.h"
+#include "Materials/MaterialInterface.h"
 #include "Styling/SlateTypes.h"
 #include "UObject/StrongObjectPtr.h"
 
@@ -10,7 +11,7 @@
 namespace BBBItemUI
 {
 inline const FLinearColor Accent(0.92f, 0.49f, 0.035f);
-inline const FLinearColor MutedText(0.66f, 0.66f, 0.64f);
+inline const FLinearColor MutedText(1.0f, 1.0f, 1.0f, 0.72f);
 /** @param Path 素材资产路径 @return 保持资源生命周期的画刷 */
 inline const FSlateBrush *Brush(const TCHAR *Path)
 {
@@ -74,22 +75,32 @@ inline TSharedPtr<const FCompositeFont> Typeface(const TCHAR *Path)
     return Fonts[Key];
 }
 
+/** @param Info 明确字形与字号 @return 使用 E01 旧化纹理的白色褪色字形 */
+inline FSlateFontInfo Faded(FSlateFontInfo Info)
+{
+    static TStrongObjectPtr<UMaterialInterface> Material(LoadObject<UMaterialInterface>(nullptr,
+        TEXT("/Game/_Project/UI/Bag/E01/M_E01_FadedWhiteFont.M_E01_FadedWhiteFont")));
+    checkf(Material.IsValid(), TEXT("E01 褪色字体材质缺失"));
+    Info.FontMaterial = Material.Get();
+    return Info;
+}
+
 /** @param Size 字号 @return 项目字体 避免原生控件默认字体 */
 inline FSlateFontInfo Font(int32 Size)
 {
-    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/Akrobat/Akrobat_Regular.Akrobat_Regular")), Size);
+    return Faded(FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size));
 }
 
 /** @param Size 字号 @return 原稿轻字重大标题 */
 inline FSlateFontInfo TitleFont(int32 Size)
 {
-    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/Akrobat/Akrobat_Light.Akrobat_Light")), Size);
+    return Faded(FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/Akrobat/Akrobat_Bold.Akrobat_Bold")), Size));
 }
 
 /** @param Size 字号 @return P08 使用的艺术字字体 */
 inline FSlateFontInfo ArtFont(int32 Size)
 {
-    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size);
+    return Faded(FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size));
 }
 
 /** @return 透明文字导航 保留素材包三角选中标识 */
@@ -101,7 +112,7 @@ inline const FButtonStyle *Navigation()
         Empty.DrawAs = ESlateBrushDrawType::NoDrawType;
         FButtonStyle Result;
         Result.SetNormal(Empty).SetHovered(Empty).SetPressed(Empty);
-        Result.SetNormalForeground(MutedText).SetHoveredForeground(FLinearColor::White).SetPressedForeground(Accent);
+        Result.SetNormalForeground(MutedText).SetHoveredForeground(FLinearColor::White).SetPressedForeground(FLinearColor::White);
         Result.SetNormalPadding(FMargin(0.0f)).SetPressedPadding(FMargin(0.0f));
         return Result;
     }();
@@ -114,12 +125,14 @@ inline const FButtonStyle *ExitButton()
     static const FButtonStyle Style = []()
     {
         const auto *Surface = Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_ExitSurface.T_E01_ExitSurface"));
+        FSlateBrush Normal = *Surface;
+        Normal.TintColor = FLinearColor(0.24f, 0.24f, 0.24f);
         FSlateBrush Hover = *Surface;
-        Hover.TintColor = FLinearColor(1.15f, 1.15f, 1.15f);
+        Hover.TintColor = FLinearColor(0.35f, 0.35f, 0.35f);
         FSlateBrush Pressed = *Surface;
-        Pressed.TintColor = FLinearColor(0.72f, 0.72f, 0.72f);
+        Pressed.TintColor = FLinearColor(0.16f, 0.16f, 0.16f);
         FButtonStyle Result;
-        Result.SetNormal(*Surface).SetHovered(Hover).SetPressed(Pressed);
+        Result.SetNormal(Normal).SetHovered(Hover).SetPressed(Pressed);
         Result.SetNormalPadding(FMargin(16.0f, 9.0f)).SetPressedPadding(FMargin(16.0f, 10.0f));
         return Result;
     }();
