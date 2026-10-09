@@ -151,6 +151,13 @@ void FBBBCharacterLocomotionProcessor::Update(
         && Traversal.bPlaybackRequested
         && !(Traversal.bEndRequested && Traversal.bAnimationReleased);
 
+    FFindFloorResult ExitFloor;
+    if (RuntimeData.bTraversalControlled && Traversal.bEndRequested)
+    {
+        Movement.ComputeFloorDist(Character.GetActorLocation(), 8.0f, 8.0f, ExitFloor,
+            Character.GetCapsuleComponent()->GetScaledCapsuleRadius());
+    }
+
     // 结束裁决与交权速度同帧成立 在关闭根运动前发布供各端还原
     if (RuntimeData.bTraversalControlled && Traversal.bEndRequested
         && !Context.Execution.bIsMirror && !RuntimeData.bTraversalExitPrepared)
@@ -161,6 +168,24 @@ void FBBBCharacterLocomotionProcessor::Update(
             Movement.MaxWalkSpeed);
         // 校正动画不决定接管后的方向 无输入立即消除尾速 有输入沿已解析的世界方向交接
         RuntimeData.TraversalExitVelocity = ControlData.MoveWorld.GetSafeNormal2D() * ExitSpeed;
+
+        // 空中交接保留升降趋势 不让二维移动意图抹掉正在发生的下落
+        if (!ExitFloor.IsWalkableFloor())
+        {
+            const float FeetZ = Character.GetActorLocation().Z
+                - Character.GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+            const float FallDistance = FMath::Max(FeetZ - Traversal.EndTarget.GetLocation().Z,
+                Character.GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+            const float Gravity = FMath::Abs(Movement.GetGravityZ());
+            float VerticalSpeed = Movement.Velocity.Z;
+            // 剩余落差对应的自由落体速度限制校正尖峰 胶囊高度避免近地交接再次趋零
+            if (Gravity > UE_KINDA_SMALL_NUMBER)
+            {
+                const float SpeedLimit = FMath::Sqrt(2.0f * Gravity * FallDistance);
+                VerticalSpeed = FMath::Clamp(VerticalSpeed, -SpeedLimit, SpeedLimit);
+            }
+            RuntimeData.TraversalExitVelocity.Z = VerticalSpeed;
+        }
         RuntimeData.bTraversalExitPrepared = true;
     }
 
@@ -168,10 +193,7 @@ void FBBBCharacterLocomotionProcessor::Update(
     if (RuntimeData.bTraversalControlled && !bWantsTraversalControl)
     {
         Movement.Velocity = RuntimeData.TraversalExitVelocity;
-        FFindFloorResult Floor;
-        Movement.ComputeFloorDist(Character.GetActorLocation(), 8.0f, 8.0f, Floor,
-            Character.GetCapsuleComponent()->GetScaledCapsuleRadius());
-        Movement.SetMovementMode(Floor.IsWalkableFloor() ? MOVE_Walking : MOVE_Falling);
+        Movement.SetMovementMode(ExitFloor.IsWalkableFloor() ? MOVE_Walking : MOVE_Falling);
         RuntimeData.bTraversalControlled = false;
         RuntimeData.TraversalEntrySpeed = 0.0f;
     }

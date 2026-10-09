@@ -101,20 +101,26 @@ bool FBBBCharacterAccelerationTest::RunTest(const FString &Parameters)
 
     // 结束结果与交权速度按同一动作合并 镜像不从校正尾速或移动输入重新推导
     Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{10}, {FVector(0, 200, 0)}});
-    Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{11}, {FVector(-150, 0, 0)}});
+    Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{11}, {FVector(-150, 0, -420)}});
     Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{9}, {FVector(300, 0, 0)}});
     Step();
     TestEqual(TEXT("同帧结束结果取最新动作"), Character->RuntimeData.Traversal.ReadTraversalState().ActionId, uint32(11));
-    TestEqual(TEXT("交权速度与最新动作严格对应"), Locomotion.TraversalExitVelocity, FVector(-150, 0, 0));
+    TestEqual(TEXT("交权速度与最新动作严格对应"), Locomotion.TraversalExitVelocity, FVector(-150, 0, -420));
     TestTrue(TEXT("镜像已经接收交权结果"), Locomotion.bTraversalExitPrepared);
     Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{10}, {FVector(0, 300, 0)}});
     Step();
-    TestEqual(TEXT("迟到结束不得覆盖交权方向"), Locomotion.TraversalExitVelocity, FVector(-150, 0, 0));
+    TestEqual(TEXT("迟到结束不得覆盖交权方向"), Locomotion.TraversalExitVelocity, FVector(-150, 0, -420));
     Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{12}, {FVector::ZeroVector}});
     Step();
     TestEqual(TEXT("无输入结束明确还原零尾速"), Locomotion.TraversalExitVelocity, FVector::ZeroVector);
     TestEqual(TEXT("交权事实不重演镜像加速度"),
         Character->GetCharacterMovement()->GetCurrentAcceleration(), FVector::ZeroVector);
+    // 上升与下降都由同一交权结果还原 远端不根据自身高度重新计算垂直速度
+    Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{13}, {FVector(200, 0, 180)}});
+    Step();
+    TestEqual(TEXT("权威交权结果保留完整空中速度"), Locomotion.TraversalExitVelocity, FVector(200, 0, 180));
+    TestTrue(TEXT("空中下降交权速度符合传输边界"),
+        FBBBTraversalEndRemoteMessagePacket{{14}, {FVector(200, 0, -420)}}.IsValid());
     TestFalse(TEXT("动作与交权速度数量错位被拒绝"), FBBBTraversalEndRemoteMessagePacket{{1}, {}}.IsValid());
     TestFalse(TEXT("未生成动作的交权结果被拒绝"), FBBBTraversalEndAuthorityFactPacket{{0}, {FVector::ZeroVector}}.IsValid());
     TestFalse(TEXT("异常交权速度被拒绝"), FBBBTraversalEndAuthorityFactPacket{{1}, {FVector(10001, 0, 0)}}.IsValid());
