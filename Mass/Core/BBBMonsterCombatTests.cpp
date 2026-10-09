@@ -198,8 +198,12 @@ bool FBBBMonsterCombatTest::RunTest(const FString& Parameters)
     Transform.SetRotation(FRotator(0.0f, 90.0f, 0.0f).Quaternion());
     Combat.NextAttackTime = World->GetTimeSeconds();
     Run(Behavior);
+    TestEqual(TEXT("未面向目标先继续追击"), State.State, EBBBMonsterBehavior::Chase);
+    TestTrue(TEXT("攻击裁决不得瞬间转身"), FMath::IsNearlyEqual(Transform.Rotator().Yaw, 90.0f));
+    Transform.SetRotation(FQuat::Identity);
+    Run(Behavior);
     TestEqual(TEXT("满足条件启动攻击"), State.State, EBBBMonsterBehavior::Attack);
-    TestTrue(TEXT("攻击开始时一次性面向目标"), Transform.GetRotation().GetForwardVector().X > 0.99f);
+    TestTrue(TEXT("已面向目标后才能开始攻击"), Transform.GetRotation().GetForwardVector().X > 0.99f);
 
     Combat.AttackDamage = 500.0f;
     BeginHit();

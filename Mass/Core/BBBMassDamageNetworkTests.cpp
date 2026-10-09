@@ -20,6 +20,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "GameFramework/GameStateBase.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 namespace
 {
@@ -73,7 +74,7 @@ namespace
                                 && Damage[Index].Contributions.IsEmpty())
                             {
                                 TestedMonster = Network[Index].InstanceId;
-                                ExpectedHealth = Health[Index].MaxHealth - 40.0f;
+                                ExpectedHealth = Health[Index].MaxHealth - 40.0f * Network[Index].Definition->LeftLegPart.MainTransfer;
                             }
                         }
                     });
@@ -125,8 +126,7 @@ namespace
                         TestedPlayers.AddUnique(Player->GetPlayerId());
                         FBBBMonsterDamageContribution Contribution;
                         Contribution.PlayerId = Player->GetPlayerId();
-                        Contribution.Damage = 20.0;
-                        Contribution.LegDamage = 20.0;
+                        Contribution.Parts.LeftLeg = 20.0;
                         Contribution.LastHitRegion = EBBBMonsterHitRegion::LeftLeg;
                         Contribution.LastHitTime = World->GetGameState()->GetServerWorldTimeSeconds();
                         Packet.Include(Contribution);
@@ -135,7 +135,7 @@ namespace
                     else if (Player->GetPlayerId() == TestedPlayers[0])
                     {
                         FBBBMonsterDamageContribution Contribution = Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).Contributions.FindChecked(Player->GetPlayerId());
-                        Contribution.Damage = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).MaxHealth + 20.0;
+                        Contribution.Parts.Torso = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).MaxHealth + 20.0;
                         Contribution.LastHitRegion = EBBBMonsterHitRegion::Torso;
                         Contribution.LastHitTime = World->GetGameState()->GetServerWorldTimeSeconds();
                         Packet.Include(Contribution);
@@ -154,13 +154,13 @@ namespace
                     const auto* A = TestedPlayers.Num() == 2 ? Damage.Contributions.Find(TestedPlayers[0]) : nullptr;
                     const auto* B = TestedPlayers.Num() == 2 ? Damage.Contributions.Find(TestedPlayers[1]) : nullptr;
                     const bool bDeath = Stage == TEXT("death");
-                    const bool bWorldValid = A && B && B->Damage == 20.0 && A->LegDamage == 20.0 && B->LegDamage == 20.0
+                    const bool bWorldValid = A && B && B->Parts.Sum() == 20.0 && A->Parts.LeftLeg == 20.0 && B->Parts.LeftLeg == 20.0
                         && Mobility.bCrawling && Network.bDamageSubmitted
                         && (bDeath ? Health.CurrentHealth == 0.0f && Behavior.State == EBBBMonsterBehavior::Dead
-                            : A->Damage == 20.0 && Health.CurrentHealth == ExpectedHealth);
+                            : A->Parts.Sum() == 20.0 && FMath::IsNearlyEqual(Health.CurrentHealth, ExpectedHealth));
                     bValid &= bWorldValid;
                     UE_LOG(LogTemp, Display, TEXT("[BBBMassDamageCheck] Stage=%s World=%s Mode=%d A=%.1f B=%.1f Health=%.1f Dead=%d Submitted=%d Result=%s"),
-                        *Stage, *World->GetPathName(), int32(World->GetNetMode()), A ? A->Damage : -1.0, B ? B->Damage : -1.0,
+                        *Stage, *World->GetPathName(), int32(World->GetNetMode()), A ? A->Parts.Sum() : -1.0, B ? B->Parts.Sum() : -1.0,
                         Health.CurrentHealth, Behavior.State == EBBBMonsterBehavior::Dead, Network.bDamageSubmitted,
                         bWorldValid ? TEXT("PASS") : TEXT("FAIL"));
                 }

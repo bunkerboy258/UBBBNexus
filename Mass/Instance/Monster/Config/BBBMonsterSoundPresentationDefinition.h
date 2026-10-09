@@ -30,6 +30,22 @@ public:
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "动作发声并发"))
     TObjectPtr<USoundConcurrency> ActionConcurrency;
 
+    /** 近距离脚步与地面摩擦的共享并发 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "接触发声并发"))
+    TObjectPtr<USoundConcurrency> ContactConcurrency;
+
+    /** 复用现有工程的非循环脚步 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "脚步素材"))
+    TArray<TObjectPtr<USoundBase>> Footsteps;
+
+    /** 近距离爬行摩擦素材 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "爬行摩擦素材"))
+    TArray<TObjectPtr<USoundBase>> CrawlFriction;
+
+    /** 落地接触素材 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "落地素材"))
+    TArray<TObjectPtr<USoundBase>> Landings;
+
     /** 超出听众范围仍消费事实 但不创建发声 */
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (ClampMin = "1.0", Units = "cm", DisplayName = "最大听觉距离"))
     float AudibleDistance = 2500.0f;

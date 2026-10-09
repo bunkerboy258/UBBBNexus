@@ -11,6 +11,7 @@
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
 #include "Components/PrimitiveComponent.h"
@@ -32,6 +33,7 @@ void UBBBMonsterCombatProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterCombatFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
@@ -58,6 +60,7 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
         const auto Actors = ChunkContext.GetFragmentView<FMassActorFragment>();
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
+        const auto Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>();
         auto Combats = ChunkContext.GetMutableFragmentView<FBBBMonsterCombatFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
@@ -69,7 +72,8 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
                 continue;
             }
 
-            if (!Grounds[Index].bGrounded)
+            if (!Grounds[Index].bGrounded || Mobility[Index].AttackRatio <= 0.0f
+                || Mobility[Index].IsStaggering(WorldTime) || WorldTime < Mobility[Index].HitStopEndsAt)
             {
                 Combat.AttackTarget.Reset();
                 Combat.bHitAttempted = true;
@@ -143,10 +147,11 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
             FHitResult ContactHit(PlayerPawn, TargetBody, Contact, -Direction);
 
             // 伤害通过 UE 标准接口发送给玩家
-            const float AppliedDamage = UGameplayStatics::ApplyPointDamage(PlayerPawn, Combat.AttackDamage,
+            const float RequestedDamage = Combat.AttackDamage * Mobility[Index].AttackRatio;
+            const float AppliedDamage = UGameplayStatics::ApplyPointDamage(PlayerPawn, RequestedDamage,
                 Direction, ContactHit, Instigator, DamageCauser, nullptr);
             UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Monster attack Target=%s AttackId=%u Requested=%.1f Applied=%.1f"),
-                *GetNameSafe(PlayerPawn), Combat.AttackId, Combat.AttackDamage, AppliedDamage);
+                *GetNameSafe(PlayerPawn), Combat.AttackId, RequestedDamage, AppliedDamage);
         }
     });
 }

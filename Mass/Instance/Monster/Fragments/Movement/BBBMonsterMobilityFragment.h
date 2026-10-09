@@ -22,6 +22,12 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
     /** 当前水平停顿的结束时间 不暂停重力 */
     float HitStopEndsAt = 0.0f;
 
+    /** 当前短时间火力压制强度 不保存命中队列 */
+    float Suppression = 0.0f;
+
+    /** 部位损毁后保留的攻击能力 双臂损毁为零 */
+    float AttackRatio = 1.0f;
+
     /** 当前踉跄的开始时间 不保存命中历史 */
     float StaggerStartedAt = 0.0f;
 

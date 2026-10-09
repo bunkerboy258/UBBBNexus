@@ -44,20 +44,20 @@ bool FBBBMonsterLocomotionTest::RunTest(const FString& Parameters)
     const FQuat InitialFacing = FRotator(0.0f, 45.0f, 0.0f).Quaternion();
     const float FrameSeconds = 1.0f / 60.0f;
     TestEqual(TEXT("无主动移动的碰撞修正不转身"), UBBBMonsterLocomotionProcessor::CalculateFacing(
-        InitialFacing, FVector::ZeroVector, FVector(-100.0f, 100.0f, 0.0f), FrameSeconds), InitialFacing);
+        InitialFacing, FVector::ZeroVector, FVector(-100.0f, 100.0f, 0.0f), FrameSeconds, 360.0f), InitialFacing);
     TestEqual(TEXT("低速接触位移保持朝向"), UBBBMonsterLocomotionProcessor::CalculateFacing(
-        InitialFacing, FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 9.0f, -200.0f), FrameSeconds), InitialFacing);
+        InitialFacing, FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 9.0f, -200.0f), FrameSeconds, 360.0f), InitialFacing);
     TestEqual(TEXT("反向碰撞修正不触发掉头"), UBBBMonsterLocomotionProcessor::CalculateFacing(
-        InitialFacing, FVector(1.0f, 0.0f, 0.0f), FVector(-100.0f, 0.0f, 0.0f), FrameSeconds), InitialFacing);
+        InitialFacing, FVector(1.0f, 0.0f, 0.0f), FVector(-100.0f, 0.0f, 0.0f), FrameSeconds, 360.0f), InitialFacing);
     TestEqual(TEXT("零步长不改变朝向"), UBBBMonsterLocomotionProcessor::CalculateFacing(
-        InitialFacing, FVector(1.0f, 0.0f, 0.0f), FVector(100.0f, 0.0f, 0.0f), 0.0f), InitialFacing);
+        InitialFacing, FVector(1.0f, 0.0f, 0.0f), FVector(100.0f, 0.0f, 0.0f), 0.0f, 360.0f), InitialFacing);
     TestEqual(TEXT("碰撞侧滑不带偏主动移动朝向"), UBBBMonsterLocomotionProcessor::CalculateFacing(
-        FQuat::Identity, FVector(5.0f, 0.0f, 0.0f), FVector(12.0f, 100.0f, 0.0f), FrameSeconds), FQuat::Identity);
+        FQuat::Identity, FVector(5.0f, 0.0f, 0.0f), FVector(12.0f, 100.0f, 0.0f), FrameSeconds, 360.0f), FQuat::Identity);
     const FQuat Turn = UBBBMonsterLocomotionProcessor::CalculateFacing(FQuat::Identity,
-        FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 300.0f, 0.0f), FrameSeconds);
+        FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 300.0f, 0.0f), FrameSeconds, 360.0f);
     TestTrue(TEXT("正常转身限制为每帧六度"), FMath::IsNearlyEqual(Turn.Rotator().Yaw, 6.0f, 0.001f));
     const FQuat Wrapped = UBBBMonsterLocomotionProcessor::CalculateFacing(FRotator(0.0f, 179.0f, 0.0f).Quaternion(),
-        FRotator(0.0f, -179.0f, 0.0f).Vector(), FRotator(0.0f, -179.0f, 0.0f).Vector() * 300.0f, FrameSeconds);
+        FRotator(0.0f, -179.0f, 0.0f).Vector(), FRotator(0.0f, -179.0f, 0.0f).Vector() * 300.0f, FrameSeconds, 360.0f);
     TestTrue(TEXT("跨越正负一百八十度选择最短转向"), FMath::IsNearlyEqual(Wrapped.Rotator().Yaw, -179.0f, 0.001f));
     for (const float Rate : {30.0f, 60.0f, 120.0f})
     {
@@ -67,7 +67,7 @@ bool FBBBMonsterLocomotionTest::RunTest(const FString& Parameters)
         {
             const float StepSeconds = FMath::Min(1.0f / Rate, 0.25f - Elapsed);
             Facing = UBBBMonsterLocomotionProcessor::CalculateFacing(Facing,
-                FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 300.0f, 0.0f), StepSeconds);
+                FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 300.0f, 0.0f), StepSeconds, 360.0f);
             Elapsed += StepSeconds;
         }
         TestTrue(TEXT("不同帧率四分之一秒完成九十度转身"), FMath::IsNearlyEqual(Facing.Rotator().Yaw, 90.0f, 0.001f));

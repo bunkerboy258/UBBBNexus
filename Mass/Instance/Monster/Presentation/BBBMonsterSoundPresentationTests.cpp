@@ -44,10 +44,14 @@ bool FBBBMonsterSoundFactsTest::RunTest(const FString& Parameters)
     Settings->Attenuation = NewObject<USoundAttenuation>(Settings);
     Settings->AmbientConcurrency = NewObject<USoundConcurrency>(Settings);
     Settings->ActionConcurrency = NewObject<USoundConcurrency>(Settings);
+    Settings->ContactConcurrency = NewObject<USoundConcurrency>(Settings);
     Settings->AmbientConcurrency->Concurrency.SetEnableMaxCountPlatformScaling(false);
     Settings->ActionConcurrency->Concurrency.SetEnableMaxCountPlatformScaling(false);
     USoundWave* Wave = NewObject<USoundWave>(Settings);
     Wave->Duration = 1.0f;
+    Settings->Footsteps.Add(Wave);
+    Settings->CrawlFriction.Add(Wave);
+    Settings->Landings.Add(Wave);
     FBBBMonsterSoundVoice Voice;
     Voice.Name = TEXT("TestVoice");
     for (auto* Pool : { &Voice.Idle, &Voice.Alert, &Voice.Chase, &Voice.Attack, &Voice.Hit, &Voice.Death, &Voice.Crawl })

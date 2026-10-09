@@ -18,6 +18,9 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
     /** 当前命中伤害 */
     float Damage = 0.0f;
 
+    /** 穿透衰减后的当前耐久伤害 */
+    float DurableDamage = 0.0f;
+
     /** 范围伤害半径 零表示点伤害 */
     float ExplosionRadiusCm = 0.0f;
 

@@ -56,7 +56,7 @@ private:
     TMap<FGuid, FMassEntityHandle> LocalEntities;
     TMap<FGuid, int32> ReplicationIndices;
     TSet<FGuid> Observed;
-    TMap<FGuid, double> SubmittedDamage;
+    TMap<FGuid, FBBBMonsterPartDamage> SubmittedDamage;
 
     /** 可靠字典早于出生属性到达时暂存当前结果 不保存消息历史 */
     TMap<FGuid, FBBBMonsterDamageRemoteMessagePacket> PendingDamageSnapshots;

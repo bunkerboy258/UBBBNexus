@@ -181,6 +181,7 @@ void FBBBSniperActionProcessor::SpawnProjectile(FBBBSniperUpdateContext& Context
     Packet.MeshRelativeTransform = Definition->MeshRelativeTransform;
     Packet.Lifetime = Definition->MaximumLifetimeSeconds;
     Packet.Damage = Definition->BaseDamage;
+    Packet.DurableDamage = Definition->DurableDamage;
     Packet.Radius = Definition->CollisionRadiusCm;
     Packet.Penetrations = Definition->MaximumPenetrations;
     Packet.PenetrationMultiplier = Definition->PenetrationDamageMultiplier;

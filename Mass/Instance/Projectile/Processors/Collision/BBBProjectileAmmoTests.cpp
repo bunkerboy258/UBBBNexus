@@ -21,6 +21,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 /** 验证散射弹丸 网格爆炸弹 重力 引信和本机伤害权限 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBProjectileAmmoTest, "UBBB.Mass.ProjectileAmmo",
@@ -53,6 +54,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     for (const auto Entity : {A, B, C})
     {
         Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).InstanceId = FGuid::NewGuid();
+        Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition = NewObject<UBBBMonsterDefinition>(World);
     }
 
     auto* Controller = World->SpawnActor<APlayerController>();
@@ -63,6 +65,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     Packet.Mesh = NewObject<UStaticMesh>(World);
     Packet.Speed = 1000.0f;
     Packet.Damage = 20.0f;
+    Packet.DurableDamage = 20.0f;
     Packet.Controller = Controller;
     Packet.bCanCauseDamage = true;
     TestTrue(TEXT("仅网格表现的弹丸出生有效"), Packet.IsValid());
@@ -95,7 +98,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
         double Total = 0.0;
         for (const auto& Value : Values)
         {
-            Total += Value.Damage;
+            Total += Value.Parts.Sum();
         }
         return Total;
     };
@@ -188,6 +191,76 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     TestTrue(TEXT("反弹速度离开碰撞表面"), Manager.GetFragmentDataChecked<FMassVelocityFragment>(Bounced).Value.X < 0.0);
     TestFalse(TEXT("引信未到期的反弹弹丸继续存活"), Manager.GetFragmentDataChecked<FBBBProjectileLifetimeFragment>(Bounced).bPendingDestroy);
     Manager.DestroyEntity(Bounced);
+
+    Reset();
+    Packet.ExplosionRadiusCm = 0.0f;
+    Packet.FuseSeconds = 0.0f;
+    Packet.bBounceOnImpact = false;
+    Packet.Penetrations = 1;
+    Packet.Radius = 0.0f;
+    Packet.PenetrationMultiplier = 0.65f;
+    Packet.CollisionChannel = ECC_Visibility;
+    Mass->BeginCollisionFrame();
+    Mass->AddCollisionBody({A, FVector(40, 0, 0), 5.0f});
+    Mass->AddCollisionBody({B, FVector(70, 0, 0), 5.0f});
+    Mass->AddCollisionBody({C, FVector(95, 0, 0), 5.0f});
+    const auto Penetrating = Spawn();
+    for (int32 Frame = 0; Frame < 2; ++Frame)
+    {
+        Run(UBBBProjectileMovementProcessor::StaticClass());
+        Run(UBBBProjectileCollisionProcessor::StaticClass());
+    }
+    TestEqual(TEXT("穿透前的首个目标只受一次完整伤害"), Damage(A), 20.0);
+    TestTrue(TEXT("穿透后普通和耐久伤害同时衰减"), FMath::IsNearlyEqual(Damage(B), 13.0, 0.001));
+    TestEqual(TEXT("穿透预算用尽不再伤及第三个目标"), Damage(C), 0.0);
+    TestTrue(TEXT("穿透次数用尽回收弹丸"), Manager.GetFragmentDataChecked<FBBBProjectileLifetimeFragment>(Penetrating).bPendingDestroy);
+    Manager.DestroyEntity(Penetrating);
+
+    Reset();
+    Packet.Damage = 40.0f;
+    Packet.DurableDamage = 8.0f;
+    Packet.Penetrations = 2;
+    Mass->BeginCollisionFrame();
+    Mass->AddCollisionBody({A, FVector(40, 0, 0), 5.0f, SurfaceType2, static_cast<uint8>(EBBBMonsterHitRegion::Head)});
+    Mass->AddCollisionBody({B, FVector(70, 0, 0), 5.0f, SurfaceType2, static_cast<uint8>(EBBBMonsterHitRegion::Torso)});
+    Mass->AddCollisionBody({C, FVector(95, 0, 0), 5.0f, SurfaceType2, static_cast<uint8>(EBBBMonsterHitRegion::LeftArm)});
+    const auto Durable = Spawn();
+    for (int32 Frame = 0; Frame < 2; ++Frame)
+    {
+        Run(UBBBProjectileMovementProcessor::StaticClass());
+        Run(UBBBProjectileCollisionProcessor::StaticClass());
+    }
+    TestTrue(TEXT("零耐久头部使用完整普通伤害"), FMath::IsNearlyEqual(Damage(A), 40.0, 0.001));
+    TestTrue(TEXT("躯干按耐久比例混合并应用一次穿透衰减"), FMath::IsNearlyEqual(Damage(B), 20.8, 0.001));
+    TestTrue(TEXT("手臂独立耐久混合并应用两次穿透衰减"), FMath::IsNearlyEqual(Damage(C), 10.14, 0.001));
+    Manager.DestroyEntity(Durable);
+    Packet.Damage = 20.0f;
+    Packet.DurableDamage = 20.0f;
+
+    Reset();
+    Mass->BeginCollisionFrame();
+    Mass->AddCollisionBody({A, FVector(40, 0, 0), 5.0f});
+    Mass->AddCollisionBody({B, FVector(80, 0, 0), 5.0f});
+    auto* PenetrationWall = World->SpawnActor<AActor>();
+    auto* PenetrationBox = NewObject<UBoxComponent>(PenetrationWall);
+    PenetrationWall->SetRootComponent(PenetrationBox);
+    PenetrationBox->SetBoxExtent(FVector(1, 30, 30));
+    PenetrationBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    PenetrationBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+    PenetrationBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+    PenetrationBox->RegisterComponent();
+    PenetrationWall->SetActorLocation(FVector(60, 0, 0));
+    Packet.Penetrations = 3;
+    const auto WallStopped = Spawn();
+    for (int32 Frame = 0; Frame < 2; ++Frame)
+    {
+        Run(UBBBProjectileMovementProcessor::StaticClass());
+        Run(UBBBProjectileCollisionProcessor::StaticClass());
+    }
+    TestEqual(TEXT("剩余穿透预算不能穿过墙体"), Damage(B), 0.0);
+    TestTrue(TEXT("墙体命中立即停止弹丸"), Manager.GetFragmentDataChecked<FBBBProjectileLifetimeFragment>(WallStopped).bPendingDestroy);
+    Manager.DestroyEntity(WallStopped);
+    PenetrationWall->Destroy();
 
     Packet.ExplosionRadiusCm = 0.0f;
     Packet.FuseSeconds = 0.0f;

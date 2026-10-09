@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
+#include "BBBMonsterSeveredPartDefinition.h"
+#include "BBBMonsterBodyPartDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBMonsterDefinition.generated.h"
 
 class UMassEntityConfigAsset;
@@ -15,6 +18,66 @@ class ABBB_EVAC_API UBBBMonsterDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    /** 当前外观的封闭断肢资源 */
+    UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "断肢资源"))
+    TArray<FBBBMonsterSeveredPartDefinition> SeveredParts;
+
+    /** @return 建立六个部位的默认静态规则 */
+    UBBBMonsterDefinition();
+
+    /** 躯干生命与耐久规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|部位", meta = (DisplayName = "躯干"))
+    FBBBMonsterBodyPartDefinition TorsoPart;
+
+    /** 头部生命与耐久规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|部位", meta = (DisplayName = "头部"))
+    FBBBMonsterBodyPartDefinition HeadPart;
+
+    /** 左臂生命与耐久规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|部位", meta = (DisplayName = "左臂"))
+    FBBBMonsterBodyPartDefinition LeftArmPart;
+
+    /** 右臂生命与耐久规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|部位", meta = (DisplayName = "右臂"))
+    FBBBMonsterBodyPartDefinition RightArmPart;
+
+    /** 左腿生命与耐久规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|部位", meta = (DisplayName = "左腿"))
+    FBBBMonsterBodyPartDefinition LeftLegPart;
+
+    /** 右腿生命与耐久规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|部位", meta = (DisplayName = "右腿"))
+    FBBBMonsterBodyPartDefinition RightLegPart;
+
+    /**
+     * @param Part	部位编号
+     * @return 对应部位静态规则
+     */
+    const FBBBMonsterBodyPartDefinition& GetBodyPart(EBBBMonsterHitRegion Part) const;
+
+    /** 重击触发失衡所需的单轮有效伤害比例 */
+    UPROPERTY(EditAnywhere, Category = "小怪|受击", meta = (ClampMin = "0.01", ClampMax = "1.0", DisplayName = "重击生命比例"))
+    float HeavyHitFraction = 0.22f;
+
+    /** 普通命中每秒压制消退的比例 */
+    UPROPERTY(EditAnywhere, Category = "小怪|受击", meta = (ClampMin = "0.01", DisplayName = "压制恢复速率"))
+    float SuppressionRecovery = 0.45f;
+
+    /** 单臂损毁后保留的攻击伤害比例 */
+    UPROPERTY(EditAnywhere, Category = "小怪|部位", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "单臂攻击比例"))
+    float OneArmAttackRatio = 0.55f;
+
+    /** 行走朝向每秒最大变化角度 */
+    UPROPERTY(EditAnywhere, Category = "小怪|移动", meta = (ClampMin = "1.0", DisplayName = "走尸转向速度"))
+    float WalkTurnRate = 140.0f;
+
+    /** 奔跑朝向每秒最大变化角度 */
+    UPROPERTY(EditAnywhere, Category = "小怪|移动", meta = (ClampMin = "1.0", DisplayName = "跑尸转向速度"))
+    float RunTurnRate = 260.0f;
+
+    /** 爬行朝向每秒最大变化角度 */
+    UPROPERTY(EditAnywhere, Category = "小怪|移动", meta = (ClampMin = "1.0", DisplayName = "爬行转向速度"))
+    float CrawlTurnRate = 90.0f;
     /** 还原出生时使用的实体模板 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (DisplayName = "实体配置"))
     TObjectPtr<UMassEntityConfigAsset> EntityConfig;
@@ -98,10 +161,6 @@ public:
     /** 站立失衡到恢复的动作秒数 动画按事实采样 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.5", ClampMax = "1.5", Units = "s", DisplayName = "踉跄时间"))
     float StaggerDuration = 0.9f;
-
-    /** 累计腿伤达到最大生命的此比例后持续爬行 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "0.01", ClampMax = "1.0", DisplayName = "爬行腿伤阈值比例"))
-    float CrawlLegDamageFraction = 0.3f;
 
     /** 爬行的水平移动速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "爬行速度"))

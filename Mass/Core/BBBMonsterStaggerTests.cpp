@@ -51,12 +51,11 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
         Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity).State = EBBBMonsterBehavior::Chase;
         return Entity;
     };
-    const auto Hit = [&Manager, World](const FMassEntityHandle Entity, const EBBBMonsterHitRegion Region, const double Damage, const double Age, const double LegDamage = 0.0)
+    const auto Hit = [&Manager, World](const FMassEntityHandle Entity, const EBBBMonsterHitRegion Region, const double Damage, const double Age)
     {
         FBBBMonsterDamageContribution Contribution;
         Contribution.PlayerId = 1;
-        Contribution.Damage = Damage;
-        Contribution.LegDamage = LegDamage;
+        Contribution.Parts.Add(Region, Damage);
         Contribution.LastHitRegion = Region;
         Contribution.LastHitTime = World->GetTimeSeconds() - Age;
         Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).Contributions.Add(1, Contribution);
@@ -65,7 +64,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     for (int32 Region = 0; Region < 6; ++Region)
     {
         const auto Entity = Create();
-        Hit(Entity, static_cast<EBBBMonsterHitRegion>(Region), 1.0, 0.0);
+        Hit(Entity, static_cast<EBBBMonsterHitRegion>(Region), 25.0, 0.0);
         Run();
         auto& Mobility = Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
         TestTrue(TEXT("六部位有效非致命命中都可踉跄"), Mobility.IsStaggering(Now));
@@ -75,7 +74,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
         const float End = Mobility.StaggerEndsAt;
         const float StopEnd = Mobility.HitStopEndsAt;
         const auto FirstRegion = Mobility.StaggerRegion;
-        Hit(Entity, EBBBMonsterHitRegion::Head, 2.0, 0.0);
+        Hit(Entity, static_cast<EBBBMonsterHitRegion>(Region), 26.0, 0.0);
         Run();
         TestEqual(TEXT("连射不重启动画"), Mobility.StaggerStartedAt, Start);
         TestEqual(TEXT("连射不无限延长踉跄"), Mobility.StaggerEndsAt, End);
@@ -98,8 +97,20 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("普通命中不重启攻击编号"), AttackState.ActionId, 7u);
     TestEqual(TEXT("攻击中不新增水平硬停顿"), AttackMobility.HitStopEndsAt, 0.0f);
 
+    Hit(Attacking, EBBBMonsterHitRegion::Torso, 35.0, 0.0);
+    Run();
+    TestTrue(TEXT("攻击时强命中提供踉跄事实供行为取消未命中攻击"), AttackMobility.IsStaggering(Now));
+
+    const auto Suppressed = Create();
+    for (int32 Shot = 1; Shot <= 4; ++Shot)
+    {
+        Hit(Suppressed, EBBBMonsterHitRegion::Torso, Shot * 10.0, 0.0);
+        Run();
+    }
+    TestTrue(TEXT("小伤害连射累计压力可以触发一次踉跄"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Suppressed).IsStaggering(Now));
+
     const auto Crawling = Create();
-    Hit(Crawling, EBBBMonsterHitRegion::LeftLeg, 35.0, 0.0, 35.0);
+    Hit(Crawling, EBBBMonsterHitRegion::LeftLeg, 35.0, 0.0);
     Run();
     const auto& CrawlMobility = Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Crawling);
     TestTrue(TEXT("有效腿伤仍按原阈值转入持续爬行"), CrawlMobility.bCrawling);

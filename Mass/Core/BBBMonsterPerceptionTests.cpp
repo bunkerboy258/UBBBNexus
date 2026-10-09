@@ -186,7 +186,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     Reset();
     FBBBMonsterDamageContribution Hit;
     Hit.PlayerId = 1;
-    Hit.Damage = 1.0;
+    Hit.Parts.Torso = 1.0;
     Hit.LastHitTime = World->GetTimeSeconds();
     Hit.LastSourcePosition = FVector(-600.0f, 200.0f, 90.0f);
     Hit.bHasSourcePosition = true;
@@ -200,7 +200,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     FBBBMonsterDamageLocalControlPacket SourcePacket;
     SourcePacket.Include(Hit);
     auto NewerHit = Hit;
-    NewerHit.Damage = 2.0;
+    NewerHit.Parts.Torso = 2.0;
     NewerHit.LastSourcePosition.X += 100.0f;
     SourcePacket.Include(NewerHit);
     SourcePacket.Include(Hit);

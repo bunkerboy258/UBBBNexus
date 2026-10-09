@@ -30,13 +30,6 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
         ObservedHitSerial = Hit.Serial;
         return;
     }
-    if (bAlive && bAuthoredStagger)
-    {
-        ResetHitReactSystem();
-        ObservedHitSerial = Hit.Serial;
-        bPresentationAlive = true;
-        return;
-    }
     bPresentationAlive = bAlive;
 
     if (Hit.Serial == 0 || Hit.Serial == ObservedHitSerial)
@@ -94,6 +87,10 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
             break;
     }
 
+    if (Mesh->IsBoneHiddenByName(BoneName))
+    {
+        return;
+    }
     if (!ensureMsgf(PhysicsAsset->FindBodyIndex(BoneName) != INDEX_NONE && AvailableProfiles.IsValidIndex(ProfileIndex),
         TEXT("[BBBHitReact]受击部位缺少物理刚体或配置 %s %s"), *GetOwner()->GetName(), *BoneName.ToString()))
     {
@@ -101,6 +98,9 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 
     const FVector Direction = Hit.Direction.GetSafeNormal();
+    const float AuthoredScale = bAuthoredStagger ? 0.65f : 1.0f;
+    LinearStrength *= 1.8f * AuthoredScale;
+    AngularStrength *= 1.4f * AuthoredScale;
     const FVector Lever = Hit.Position - Mesh->GetBoneLocation(BoneName);
     FVector AngularAxis = FVector::CrossProduct(Lever, Direction).GetSafeNormal();
     if (ProfileIndex <= 1)
@@ -112,14 +112,6 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
         AngularAxis = FVector::CrossProduct(Direction, FVector::UpVector).GetSafeNormal();
     }
 
-    // 连射刷新同一局部混合而不追加同骨骼状态 每次命中保留完整冲击
-    for (int32 Index = PhysicsBlends.Num() - 1; Index >= 0; --Index)
-    {
-        if (PhysicsBlends[Index].SimulatedBoneName == BoneName)
-        {
-            PhysicsBlends.RemoveAt(Index);
-        }
-    }
     FHitReactImpulseParams Impulse;
     Impulse.LinearImpulse.bApplyImpulse = true;
     Impulse.LinearImpulse.Impulse = LinearStrength;
@@ -132,6 +124,25 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     RequestAnimationUpdate();
     if (HitReact(Params, Impulse, World, 1.0f))
     {
+        // 连射刷新同一局部混合而不追加同骨骼状态 每次命中保留完整冲击
+        int32 KeepIndex = INDEX_NONE;
+        float MinimumAge = MAX_flt;
+        for (int32 Index = 0; Index < PhysicsBlends.Num(); ++Index)
+        {
+            const auto& Blend = PhysicsBlends[Index];
+            if (Blend.SimulatedBoneName == BoneName && Blend.PhysicsState.GetElapsedTime() <= MinimumAge)
+            {
+                MinimumAge = Blend.PhysicsState.GetElapsedTime();
+                KeepIndex = Index;
+            }
+        }
+        for (int32 Index = PhysicsBlends.Num() - 1; Index >= 0; --Index)
+        {
+            if (Index != KeepIndex && PhysicsBlends[Index].SimulatedBoneName == BoneName)
+            {
+                PhysicsBlends.RemoveAt(Index);
+            }
+        }
         bHasAppliedReaction = true;
         if (IsValid(PhysicalAnimation))
         {
@@ -174,7 +185,8 @@ void UBBBMonsterHitReactionComponent::TickComponent(const float DeltaTime, const
     {
         RequestAnimationUpdate();
     }
-    if (bWasReacting && PhysicsBlends.IsEmpty())
+    if (PhysicsBlends.IsEmpty() && (bWasReacting || bHasAppliedReaction || bCollisionEnabledChanged
+        || bPhysicalAnimationProfileChanged || bConstraintProfileChanged))
     {
         ResetHitReactSystem();
     }

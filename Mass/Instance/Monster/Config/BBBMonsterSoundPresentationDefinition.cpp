@@ -6,7 +6,7 @@
 
 bool UBBBMonsterSoundPresentationDefinition::IsValid() const
 {
-    if (Voices.IsEmpty() || !Attenuation || !AmbientConcurrency || !ActionConcurrency
+    if (Voices.IsEmpty() || !Attenuation || !AmbientConcurrency || !ActionConcurrency || !ContactConcurrency
         || !FMath::IsFinite(AudibleDistance) || AudibleDistance <= 0.0f
         || !FMath::IsFinite(IdleIntervalMin) || IdleIntervalMin <= 0.0f
         || !FMath::IsFinite(IdleIntervalMax) || IdleIntervalMax < IdleIntervalMin
@@ -23,6 +23,20 @@ bool UBBBMonsterSoundPresentationDefinition::IsValid() const
     }
 
     TSet<FName> Names;
+    for (const auto* Pool : {&Footsteps, &CrawlFriction, &Landings})
+    {
+        if (Pool->IsEmpty())
+        {
+            return false;
+        }
+        for (const USoundBase* Sound : *Pool)
+        {
+            if (!::IsValid(Sound) || Sound->IsLooping() || !FMath::IsFinite(Sound->GetDuration()) || Sound->GetDuration() <= 0.0f)
+            {
+                return false;
+            }
+        }
+    }
     for (const FBBBMonsterSoundVoice& Voice : Voices)
     {
         if (Voice.Name.IsNone() || Names.Contains(Voice.Name) || !FMath::IsFinite(Voice.Volume) || Voice.Volume <= 0.0f || Voice.Volume > 4.0f)
@@ -52,5 +66,6 @@ bool UBBBMonsterSoundPresentationDefinition::IsValid() const
         && AmbientConcurrency->Concurrency.MaxCount > 0 && !AmbientConcurrency->Concurrency.bLimitToOwner
         && AmbientConcurrency->Concurrency.GetMaxCount() == AmbientConcurrency->Concurrency.MaxCount
         && ActionConcurrency->Concurrency.MaxCount > 0 && !ActionConcurrency->Concurrency.bLimitToOwner
-        && ActionConcurrency->Concurrency.GetMaxCount() == ActionConcurrency->Concurrency.MaxCount;
+        && ActionConcurrency->Concurrency.GetMaxCount() == ActionConcurrency->Concurrency.MaxCount
+        && ContactConcurrency->Concurrency.MaxCount > 0 && !ContactConcurrency->Concurrency.bLimitToOwner;
 }

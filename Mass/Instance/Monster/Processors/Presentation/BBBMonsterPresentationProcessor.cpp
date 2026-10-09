@@ -24,6 +24,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterInitializationPendingTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterSeveringPresentationComponent.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -45,6 +47,8 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
@@ -122,6 +126,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             if (bNewActor)
             {
                 MonsterActor->GetMonsterPresentation()->ResetCorpsePresentation();
+                MonsterActor->GetMonsterSevering()->ResetPresentation();
                 MonsterActor->SetActorEnableCollision(true);
                 if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
                 {
@@ -185,6 +190,13 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
             const auto& Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>()[Index];
             const auto* Definition = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].Definition.Get();
+            MonsterActor->GetMonsterSevering()->UpdateDetachedParts();
+            if (Definition)
+            {
+                MonsterActor->GetMonsterSevering()->ApplyDestroyedParts(
+                    ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts,
+                    Definition->SeveredParts, ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index].Direction);
+            }
             Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);
             if (Definition)
             {
@@ -231,6 +243,9 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     Definition ? Definition->SoundPresentation.Get() : nullptr,
                     PresentationState.State, PresentationState.ActionId, PresentationState.ActionProgress,
                     ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
+                    Mobility.bCrawling, Velocities[Index].Value.Size2D(), Now, bNewActor);
+                SoundPresentation->ApplyContactFacts(*MonsterActor->GetMonsterContactAudio(),
+                    ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>()[Index].bGrounded,
                     Mobility.bCrawling, Velocities[Index].Value.Size2D(), Now, bNewActor);
             }
         }

@@ -12,6 +12,7 @@ struct FBBBProjectileSpawnLocalControlPacket;
 struct FBBBMonsterDamageLocalControlPacket;
 struct FBBBMonsterDamageRemoteMessagePacket;
 struct FBBBMonsterDamageContribution;
+struct FBBBMonsterBodyPartDefinition;
 struct FBBBMonsterStateAuthorityFactPacket;
 struct FBBBMonsterHitReactionLocalControlPacket;
 struct FBBBMonsterSoundLocalControlPacket;
@@ -73,6 +74,14 @@ public:
      * @return 是否取得有效目标的快照
      */
     bool QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result) const;
+
+    /**
+     * @param Entity	目标实体
+     * @param Part	部位编号
+     * @param Result	目标公开的静态参数副本
+     * @return 是否取得有效配置
+     */
+    bool QueryMonsterBodyPart(FMassEntityHandle Entity, uint8 Part, FBBBMonsterBodyPartDefinition& Result) const;
 
     /**
      * @param Entity	目标实体

@@ -294,7 +294,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             const FBBBMonsterDamageContribution* Latest = nullptr;
             for (const auto& Pair : Damage[Index].Contributions)
             {
-                if (Pair.Value.Damage > 0.0 && (!Latest || Pair.Value.LastHitTime > Latest->LastHitTime))
+                if (Pair.Value.Parts.Sum() > 0.0 && (!Latest || Pair.Value.LastHitTime > Latest->LastHitTime))
                 {
                     Latest = &Pair.Value;
                 }

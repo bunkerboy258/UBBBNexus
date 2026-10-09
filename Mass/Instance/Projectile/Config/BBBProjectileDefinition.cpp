@@ -30,6 +30,7 @@ bool UBBBProjectileDefinition::IsValid() const
         && CollisionRadiusCm >= 0.0f
         && FMath::IsFinite(BaseDamage)
         && BaseDamage >= 0.0f
+        && FMath::IsFinite(DurableDamage) && DurableDamage >= 0.0f
         && MaximumPenetrations >= 0
         && MaximumPenetrations <= 32
         && FMath::IsFinite(PenetrationDamageMultiplier)

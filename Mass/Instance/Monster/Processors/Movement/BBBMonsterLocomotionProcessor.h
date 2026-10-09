@@ -42,8 +42,18 @@ public:
      * @param DeltaSeconds		当前更新步长
      * @return 过滤低速修正并限制转身速度的水平朝向
      */
+    /** @param DegreesPerSecond\t当前姿态角速度上限 @return 有界朝向 */
     static FQuat CalculateFacing(const FQuat& CurrentRotation, const FVector& HorizontalDelta,
-        const FVector& Velocity, float DeltaSeconds);
+        const FVector& Velocity, float DeltaSeconds, float DegreesPerSecond);
+
+    /**
+     * @param Current	当前朝向
+     * @param Direction	水平目标方向
+     * @param DeltaSeconds	本轮步长
+     * @param DegreesPerSecond	当前姿态的角速度上限
+     * @return 有界的水平朝向
+     */
+    static FQuat TurnTowards(const FQuat& Current, const FVector& Direction, float DeltaSeconds, float DegreesPerSecond);
 
     /**
      * @param World		碰撞查询与重力来源

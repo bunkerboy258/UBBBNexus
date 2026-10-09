@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
+#include "Camera/PlayerCameraManager.h"
 
 UBBBMonsterSoundPresentationComponent::UBBBMonsterSoundPresentationComponent()
 {
@@ -36,6 +37,9 @@ void UBBBMonsterSoundPresentationComponent::ResetPresentation()
     NextAmbientAt = 0.0f;
     NextHitAt = 0.0f;
     PreviousSound = nullptr;
+    ContactTravel = 0.0f;
+    ContactTime = -1.0f;
+    bContactGrounded = true;
 }
 
 void UBBBMonsterSoundPresentationComponent::RequestVoice(const TArray<TObjectPtr<USoundBase>>& Pool, const FName Event, const bool bAction)
@@ -51,7 +55,7 @@ void UBBBMonsterSoundPresentationComponent::RequestVoice(const TArray<TObjectPtr
         : Event == TEXT("Hit") ? 4.0f
         : Event == TEXT("Attack") ? 3.0f
         : Event == TEXT("Alert") ? 2.0f : 1.0f;
-    if (IsPlaying() && Priority > RequestedPriority)
+    if (IsPlaying() && Priority >= RequestedPriority)
     {
         return;
     }
@@ -75,7 +79,10 @@ void UBBBMonsterSoundPresentationComponent::RequestVoice(const TArray<TObjectPtr
     ConcurrencySet.Reset();
     ConcurrencySet.Add(bAction ? BoundSettings->ActionConcurrency : BoundSettings->AmbientConcurrency);
     Priority = RequestedPriority;
-    SetVolumeMultiplier(BoundSettings->Voices[VoiceIndex].Volume);
+    const auto* Listener = UGameplayStatics::GetPlayerCameraManager(this, 0);
+    const float Distance = Listener ? FVector::Distance(Listener->GetCameraLocation(), GetComponentLocation()) : 0.0f;
+    const float AmbientScale = bAction ? 1.0f : FMath::Lerp(0.65f, 0.2f, FMath::Clamp(Distance / BoundSettings->AudibleDistance, 0.0f, 1.0f));
+    SetVolumeMultiplier(BoundSettings->Voices[VoiceIndex].Volume * AmbientScale);
     SetPitchMultiplier(EntityPitch);
     Play();
     if (IsPlaying())
@@ -85,6 +92,53 @@ void UBBBMonsterSoundPresentationComponent::RequestVoice(const TArray<TObjectPtr
 
     UE_LOG(LogTemp, Verbose, TEXT("[UBBBM][ZombieAudio]实例=%s 事件=%s 声线=%d 请求=%u 播放=%u"),
         *BoundInstance.ToString(), *Event.ToString(), VoiceIndex, RequestedVoiceCount, StartedVoiceCount);
+}
+
+void UBBBMonsterSoundPresentationComponent::ApplyContactFacts(UAudioComponent& Audio, const bool bGrounded,
+    const bool bCrawling, const float Speed, const float Now, const bool bNewActor)
+{
+    if (bNewActor || ContactTime < 0.0f)
+    {
+        Audio.Stop();
+        ContactTravel = Random.FRandRange(0.0f, 50.0f);
+        ContactTime = Now;
+        bContactGrounded = bGrounded;
+        return;
+    }
+    const float Delta = FMath::Clamp(Now - ContactTime, 0.0f, 0.1f);
+    ContactTime = Now;
+    const bool bLanded = bGrounded && !bContactGrounded;
+    bContactGrounded = bGrounded;
+    if (!BoundSettings || bDeathConsumed || GetOwner()->IsHidden() || !bGrounded)
+    {
+        ContactTravel = 0.0f;
+        Audio.Stop();
+        return;
+    }
+    const float Stride = bCrawling ? 55.0f : Speed > 180.0f ? 130.0f : 70.0f;
+    ContactTravel += Speed * Delta;
+    const bool bStep = Speed > 20.0f && ContactTravel >= Stride;
+    if (!bLanded && !bStep)
+    {
+        return;
+    }
+    ContactTravel = FMath::Fmod(ContactTravel, Stride);
+    if (Audio.IsPlaying() || !UGameplayStatics::AreAnyListenersWithinRange(this, GetComponentLocation(), 1000.0f))
+    {
+        return;
+    }
+    const auto& Pool = bLanded ? BoundSettings->Landings : bCrawling ? BoundSettings->CrawlFriction : BoundSettings->Footsteps;
+    if (!ensureMsgf(!Pool.IsEmpty(), TEXT("[BBBZombieAudio]地面接触素材未配置")))
+    {
+        return;
+    }
+    Audio.SetSound(Pool[Random.RandRange(0, Pool.Num() - 1)]);
+    Audio.SetAttenuationSettings(BoundSettings->Attenuation);
+    Audio.ConcurrencySet.Reset();
+    Audio.ConcurrencySet.Add(BoundSettings->ContactConcurrency);
+    Audio.SetVolumeMultiplier(bLanded ? 0.7f : bCrawling ? 0.3f : 0.4f);
+    Audio.SetPitchMultiplier(EntityPitch * (bCrawling ? 0.7f : 0.9f));
+    Audio.Play();
 }
 
 void UBBBMonsterSoundPresentationComponent::ApplyFacts(const FGuid& Instance, UBBBMonsterSoundPresentationDefinition* Settings,

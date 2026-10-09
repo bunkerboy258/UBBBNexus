@@ -146,6 +146,16 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
+            if (State.State == EBBBMonsterBehavior::Attack &&
+                (Mobility[Index].IsStaggering(WorldTime) || WorldTime < Mobility[Index].HitStopEndsAt))
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
+                EnterState(EBBBMonsterBehavior::Chase);
+                continue;
+            }
+
             if (Mobility[Index].bCrawling && Settings && WorldTime < Mobility[Index].CrawlStartedAt + Settings->CrawlTransitionDuration)
             {
                 Combat.AttackTarget.Reset();
@@ -214,11 +224,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             if (!State.bHadTarget)
             {
                 State.bHadTarget = true;
-                const FVector Facing = (Target.TargetLocation - Transforms[Index].GetTransform().GetLocation()).GetSafeNormal2D();
-                if (!Facing.IsNearlyZero())
-                {
-                    Transforms[Index].GetMutableTransform().SetRotation(Facing.Rotation().Quaternion());
-                }
                 EnterState(EBBBMonsterBehavior::Alert, true);
                 continue;
             }
@@ -228,16 +233,15 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             }
 
             const bool bInRange = FVector::DistSquared(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(Combat.AttackRange);
+            const FVector AttackDirection = (Target.TargetLocation - Transforms[Index].GetTransform().GetLocation()).GetSafeNormal2D();
+            const bool bFacingTarget = AttackDirection.IsNearlyZero() || FVector::DotProduct(
+                Transforms[Index].GetTransform().GetRotation().GetForwardVector().GetSafeNormal2D(), AttackDirection) >= 0.75f;
 
             if (Target.bTargetVisible && Target.TargetActor.IsValid() && Target.TargetActor->CanBeDamaged() &&
-                Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime && !Mobility[Index].IsStaggering(WorldTime))
+                Grounds[Index].bGrounded && bInRange && bFacingTarget && Mobility[Index].AttackRatio > 0.0f
+                && WorldTime >= Combat.NextAttackTime && WorldTime >= Mobility[Index].HitStopEndsAt
+                && !Mobility[Index].IsStaggering(WorldTime))
             {
-                FTransform& Transform = Transforms[Index].GetMutableTransform();
-                const FVector Facing = (Target.TargetLocation - Transform.GetLocation()).GetSafeNormal2D();
-                if (!Facing.IsNearlyZero())
-                {
-                    Transform.SetRotation(Facing.Rotation().Quaternion());
-                }
                 EnterState(EBBBMonsterBehavior::Attack, true);
                 ++Combat.AttackId;
                 Combat.AttackTarget = Target.TargetActor;

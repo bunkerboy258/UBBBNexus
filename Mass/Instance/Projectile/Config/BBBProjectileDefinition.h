@@ -77,6 +77,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸", meta = (ClampMin = "0.0", DisplayName = "基础伤害"))
     float BaseDamage = 20.0f;
 
+    /** 命中高耐久部位时参与混合的伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸", meta = (ClampMin = "0.0", DisplayName = "耐久伤害"))
+    float DurableDamage = 10.0f;
+
     /** 命中目标后可继续穿过的目标数量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸", meta = (ClampMin = "0", ClampMax = "32", DisplayName = "最大穿透次数"))
     int32 MaximumPenetrations = 0;

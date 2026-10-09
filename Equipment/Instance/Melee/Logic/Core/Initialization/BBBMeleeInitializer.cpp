@@ -16,7 +16,9 @@ bool FBBBMeleeInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) cons
     auto *Mesh = Equipment.GetEquipmentSkeletalMesh();
     if (!ensureMsgf(Definition && Definition->AttackMontage && Mesh
         && Definition->EquipmentType == EBBBEquipmentType::Melee
-        && Definition->Damage >= 0.0f && Definition->TraceRadius > 0.0f && Definition->AttackInterval > 0.0f
+        && FMath::IsFinite(Definition->Damage) && Definition->Damage >= 0.0f
+        && FMath::IsFinite(Definition->DurableDamage) && Definition->DurableDamage >= 0.0f
+        && Definition->TraceRadius > 0.0f && Definition->AttackInterval > 0.0f
         && Cast<UBBBMeleeAnimInstance>(Equipment.GetEquipmentAnimationInstance()), TEXT("近战装备缺少有效配置与动画实例")))
     {
         return false;

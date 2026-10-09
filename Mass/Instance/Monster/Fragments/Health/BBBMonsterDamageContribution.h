@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
+#include "BBBMonsterPartDamage.h"
 #include "BBBMonsterDamageContribution.generated.h"
 
 /** 一个玩家对一代小怪已经造成的累计伤害 不是单次命中事件 */
@@ -16,11 +17,7 @@ struct FBBBMonsterDamageContribution final
 
     /** 累计有效伤害 只增不减 */
     UPROPERTY()
-    double Damage = 0.0;
-
-    /** 本玩家对腿部造成的累计有效伤害 */
-    UPROPERTY()
-    double LegDamage = 0.0;
+    FBBBMonsterPartDamage Parts;
 
     /** 最近有效命中的服务器世界时间 不保存中间命中 */
     UPROPERTY()
@@ -40,16 +37,32 @@ struct FBBBMonsterDamageContribution final
 
     bool IsValid() const
     {
-        return PlayerId >= 0 && FMath::IsFinite(Damage) && Damage >= 0.0
-            && FMath::IsFinite(LegDamage) && LegDamage >= 0.0 && LegDamage <= Damage
+        return PlayerId >= 0 && Parts.IsValid()
             && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg
             && !LastSourcePosition.ContainsNaN();
     }
 
     bool operator==(const FBBBMonsterDamageContribution& Other) const
     {
-        return PlayerId == Other.PlayerId && Damage == Other.Damage && LegDamage == Other.LegDamage
+        return PlayerId == Other.PlayerId && Parts == Other.Parts
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
             && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition;
+    }
+
+    /**
+     * @param Other	同一玩家的当前结果
+     * @return 无
+     */
+    void Merge(const FBBBMonsterDamageContribution& Other)
+    {
+        FBBBMonsterPartDamage Combined = Parts;
+        Combined.MergeMax(Other.Parts);
+        if (PlayerId == INDEX_NONE || Other.LastHitTime > LastHitTime
+            || (Other.LastHitTime == LastHitTime && (Other.LastHitRegion > LastHitRegion
+                || (Other.LastHitRegion == LastHitRegion && Other.Parts.Exceeds(Parts)))))
+        {
+            *this = Other;
+        }
+        Parts = Combined;
     }
 };

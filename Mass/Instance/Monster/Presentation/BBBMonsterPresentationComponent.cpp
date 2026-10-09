@@ -75,6 +75,7 @@ bool UBBBMonsterPresentationComponent::BeginCorpsePresentation(const FVector& Ve
     }
     Mesh->bPauseAnims = true;
     Mesh->SetComponentTickEnabled(true);
+    Mesh->SetConstraintProfileForAll(TEXT("BBBCorpse"), false);
     Mesh->SetAllBodiesSimulatePhysics(true);
     Mesh->SetAllBodiesPhysicsBlendWeight(1.0f);
     Mesh->SetEnableGravity(true);
@@ -83,8 +84,8 @@ bool UBBBMonsterPresentationComponent::BeginCorpsePresentation(const FVector& Ve
         if (Body)
         {
             Body->SetEnableGravity(true);
-            Body->LinearDamping = 0.6f;
-            Body->AngularDamping = 0.8f;
+            Body->LinearDamping = 1.2f;
+            Body->AngularDamping = 2.2f;
             Body->UpdateDampingProperties();
         }
     }
@@ -174,6 +175,7 @@ void UBBBMonsterPresentationComponent::ResetCorpsePresentation()
     {
         Mesh->SetAllBodiesSimulatePhysics(false);
         Mesh->SetAllBodiesPhysicsBlendWeight(0.0f);
+        Mesh->SetConstraintProfileForAll(NAME_None);
         for (FBodyInstance* Body : Mesh->Bodies)
         {
             auto* Setup = Body ? Cast<USkeletalBodySetup>(Body->GetBodySetup()) : nullptr;

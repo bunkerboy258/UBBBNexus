@@ -7,6 +7,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/GameStateBase.h"
+#include "GameFramework/Pawn.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "NiagaraDataChannel.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
@@ -19,21 +20,27 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBodyPartDefinition.h"
 
 namespace
 {
     void AccumulateDamage(UWorld& World, UBBBMassSubsystem& Mass,
         TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket>& Results,
         const FBBBProjectileCollisionFragment& Data, FMassEntityHandle Target, uint8 Part,
-        const FVector& Position, const FVector& Direction, const FVector& Normal)
+        const FVector& Position, const FVector& Direction, const FVector& Normal,
+        const bool bPresentHit = true, const uint8 PresentationPart = MAX_uint8)
     {
-        FBBBMonsterHitReactionLocalControlPacket Hit;
-        Hit.Region = static_cast<EBBBMonsterHitRegion>(Part);
-        Hit.Position = Position;
-        Hit.Direction = Direction;
-        Hit.Normal = Normal;
-        Mass.SubmitInput(Target, MoveTemp(Hit));
-        if (!Data.bCanCauseDamage || Data.Damage <= 0.0f)
+        const auto HitRegion = static_cast<EBBBMonsterHitRegion>(PresentationPart == MAX_uint8 ? Part : PresentationPart);
+        if (bPresentHit)
+        {
+            FBBBMonsterHitReactionLocalControlPacket Hit;
+            Hit.Region = HitRegion;
+            Hit.Position = Position;
+            Hit.Direction = Direction;
+            Hit.Normal = Normal;
+            Mass.SubmitInput(Target, MoveTemp(Hit));
+        }
+        if (!Data.bCanCauseDamage || (Data.Damage <= 0.0f && Data.DurableDamage <= 0.0f))
         {
             return;
         }
@@ -61,14 +68,16 @@ namespace
             [Player](const auto& Value) { return Value.PlayerId == Player->GetPlayerId(); });
         FBBBMonsterDamageContribution Current = Contribution ? *Contribution : FBBBMonsterDamageContribution{};
         Current.PlayerId = Player->GetPlayerId();
-        Current.Damage += Data.Damage;
-        if (Part == static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg) || Part == static_cast<uint8>(EBBBMonsterHitRegion::RightLeg))
+        FBBBMonsterBodyPartDefinition Definition;
+        if (!Mass.QueryMonsterBodyPart(Target, Part, Definition))
         {
-            Current.LegDamage += Data.Damage;
+            return;
         }
+        const double Effective = Data.Damage * (1.0 - Definition.Durability) + Data.DurableDamage * Definition.Durability;
+        Current.Parts.Add(static_cast<EBBBMonsterHitRegion>(Part), Effective);
         const auto* GameState = World.GetGameState();
         Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
-        Current.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Part);
+        Current.LastHitRegion = HitRegion;
         Current.bHasSourcePosition = Controller->GetPawn() != nullptr;
         if (Current.bHasSourcePosition)
         {
@@ -123,7 +132,16 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             {
                 continue;
             }
-            AccumulateDamage(*World, *Mass, DamageResults, Data, Body.Entity, Body.Part, Position, Direction, -Direction);
+            for (uint8 Part = 0; Part <= static_cast<uint8>(EBBBMonsterHitRegion::RightLeg); ++Part)
+            {
+                const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
+                const float Share = Region == EBBBMonsterHitRegion::Torso ? 0.5f : 0.1f;
+                FBBBProjectileCollisionFragment Portion = Data;
+                Portion.Damage *= Share;
+                Portion.DurableDamage *= Share;
+                AccumulateDamage(*World, *Mass, DamageResults, Portion, Body.Entity, Part, Position, Direction, -Direction,
+                    Part == static_cast<uint8>(EBBBMonsterHitRegion::Torso), Body.Part);
+            }
         }
         if (Data.bCanCauseDamage && Data.Damage > 0.0f)
         {
@@ -249,7 +267,8 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                     Data.LastHitActor = Actor;
                 }
 
-                if (Data.RemainingPenetrations <= 0 || (!bUseEntity && !WorldHit.GetActor()))
+                const bool bPenetrable = bUseEntity || Cast<APawn>(WorldHit.GetActor()) != nullptr;
+                if (Data.RemainingPenetrations <= 0 || !bPenetrable)
                 {
                     Transforms[Index].GetMutableTransform().SetLocation(HitPosition);
                     Life[Index].bPendingDestroy = true;
@@ -258,6 +277,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
 
                 --Data.RemainingPenetrations;
                 Data.Damage *= Data.PenetrationDamageMultiplier;
+                Data.DurableDamage *= Data.PenetrationDamageMultiplier;
                 Start = HitPosition + Direction * FMath::Max(Data.CollisionRadiusCm + 1.0f, 1.0f);
             }
             if (!Life[Index].bPendingDestroy && Life[Index].FuseRemainingSeconds > 0.0f

@@ -70,6 +70,11 @@ bool UBBBMassSubsystem::QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonster
     return UBBBMonsterDamageProcessor::Query(*GetWorld(), Entity, Result);
 }
 
+bool UBBBMassSubsystem::QueryMonsterBodyPart(FMassEntityHandle Entity, uint8 Part, FBBBMonsterBodyPartDefinition& Result) const
+{
+    return UBBBMonsterDamageProcessor::QueryPart(*GetWorld(), Entity, Part, Result);
+}
+
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);

@@ -8,6 +8,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsConstraintTemplate.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
@@ -101,6 +103,28 @@ bool FBBBMonsterCorpseTest::RunTest(const FString& Parameters)
         }
         auto* Mesh = Actor->GetMonsterMesh();
         auto* Presentation = Actor->GetMonsterPresentation();
+        const UPhysicsAsset* PhysicsAsset = Mesh->GetPhysicsAsset();
+        if (!TestNotNull(TEXT("正式外观必须有尸体物理资产"), PhysicsAsset))
+        {
+            return false;
+        }
+        float TotalMass = 0.0f;
+        for (const USkeletalBodySetup* Body : PhysicsAsset->SkeletalBodySetups)
+        {
+            TotalMass += Body ? Body->DefaultInstance.GetMassOverride() : 0.0f;
+        }
+        TestTrue(TEXT("尸体质量按人体部位分配 总量七十五公斤"), FMath::IsNearlyEqual(TotalMass, 75.0f, 0.01f));
+        for (const UPhysicsConstraintTemplate* Constraint : PhysicsAsset->ConstraintSetup)
+        {
+            if (!TestTrue(TEXT("全部关节有独立尸体约束"), Constraint && Constraint->ContainsConstraintProfile(TEXT("BBBCorpse"))))
+            {
+                return false;
+            }
+            const auto& Profile = Constraint->GetConstraintProfilePropertiesOrDefault(TEXT("BBBCorpse"));
+            TestFalse(TEXT("尸体关节不能使用软弹簧摆动"), Profile.ConeLimit.bSoftConstraint || Profile.TwistLimit.bSoftConstraint);
+            TestTrue(TEXT("尸体不能拉长骨骼"), Profile.LinearLimit.XMotion == LCM_Locked && Profile.LinearLimit.YMotion == LCM_Locked && Profile.LinearLimit.ZMotion == LCM_Locked);
+            TestFalse(TEXT("尸体关节不能持续驱动活体姿势"), Profile.AngularDrive.SlerpDrive.bEnablePositionDrive || Profile.AngularDrive.SwingDrive.bEnablePositionDrive || Profile.AngularDrive.TwistDrive.bEnablePositionDrive);
+        }
         FBBBMonsterHitReactionFragment Hit;
         Hit.Serial = 1;
         Hit.Age = 0.0f;

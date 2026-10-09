@@ -1,11 +1,48 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
 
+UBBBMonsterDefinition::UBBBMonsterDefinition()
+{
+    TorsoPart = {1.0f, 0.25f, 1.0f, true};
+    HeadPart = {0.35f, 0.0f, 1.0f, true};
+    LeftArmPart = {0.4f, 0.5f, 0.25f, false};
+    RightArmPart = LeftArmPart;
+    LeftLegPart = {0.35f, 0.35f, 0.3f, false};
+    RightLegPart = LeftLegPart;
+}
+
+const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EBBBMonsterHitRegion Part) const
+{
+    switch (Part)
+    {
+        case EBBBMonsterHitRegion::Head:
+            return HeadPart;
+        case EBBBMonsterHitRegion::LeftArm:
+            return LeftArmPart;
+        case EBBBMonsterHitRegion::RightArm:
+            return RightArmPart;
+        case EBBBMonsterHitRegion::LeftLeg:
+            return LeftLegPart;
+        case EBBBMonsterHitRegion::RightLeg:
+            return RightLegPart;
+        default:
+            return TorsoPart;
+    }
+}
+
 bool UBBBMonsterDefinition::IsValid() const
 {
     return EntityConfig != nullptr
         && Variation != nullptr && Variation->IsValid()
         && FMath::IsFinite(MaxHealth) && MaxHealth > 0.0f
+        && TorsoPart.IsValid() && HeadPart.IsValid() && LeftArmPart.IsValid() && RightArmPart.IsValid()
+        && LeftLegPart.IsValid() && RightLegPart.IsValid()
+        && FMath::IsFinite(HeavyHitFraction) && HeavyHitFraction > 0.0f && HeavyHitFraction <= 1.0f
+        && FMath::IsFinite(SuppressionRecovery) && SuppressionRecovery > 0.0f
+        && FMath::IsFinite(OneArmAttackRatio) && OneArmAttackRatio >= 0.0f && OneArmAttackRatio <= 1.0f
+        && FMath::IsFinite(WalkTurnRate) && WalkTurnRate > 0.0f
+        && FMath::IsFinite(RunTurnRate) && RunTurnRate > 0.0f
+        && FMath::IsFinite(CrawlTurnRate) && CrawlTurnRate > 0.0f
         && FMath::IsFinite(CorpseLifetime) && CorpseLifetime >= 5.0f
         && FMath::IsFinite(DeathAnimationDuration) && DeathAnimationDuration > 0.0f && DeathAnimationDuration < CorpseLifetime
         && FMath::IsFinite(CorpseSimulationDuration) && CorpseSimulationDuration >= 0.5f && CorpseSimulationDuration < CorpseLifetime
@@ -24,7 +61,6 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(HitSlowHoldDuration) && HitSlowHoldDuration >= 0.0f
         && FMath::IsFinite(HitStopDuration) && HitStopDuration >= 0.0f && HitStopDuration <= 0.2f
         && FMath::IsFinite(StaggerDuration) && StaggerDuration >= 0.5f && StaggerDuration <= 1.5f
-        && FMath::IsFinite(CrawlLegDamageFraction) && CrawlLegDamageFraction > 0.0f && CrawlLegDamageFraction <= 1.0f
         && FMath::IsFinite(CrawlSpeed) && CrawlSpeed > 0.0f && CrawlSpeed <= WalkSpeed
         && FMath::IsFinite(CrawlCapsuleHalfHeight) && CrawlCapsuleHalfHeight >= CollisionRadius && CrawlCapsuleHalfHeight <= CapsuleHalfHeight
         && FMath::IsFinite(CrawlTransitionDuration) && CrawlTransitionDuration > 0.0f

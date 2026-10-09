@@ -43,6 +43,11 @@ protected:
     virtual void ResetHitReactSystem() override;
 
 private:
+#if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
+    /** 仅自动化验收构造局部受力边界 不增加运行时编辑入口 */
+    friend class FBBBMonsterHitReactionRefreshTest;
+#endif
+
     /** 已消费的本地表现编号 与血效消费记录相互独立 */
     UPROPERTY(Transient, VisibleInstanceOnly, Category = "小怪|受击", meta = (DisplayName = "已消费命中编号"))
     uint32 ObservedHitSerial = 0;

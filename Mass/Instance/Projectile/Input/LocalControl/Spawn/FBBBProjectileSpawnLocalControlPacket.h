@@ -37,6 +37,8 @@ struct FBBBProjectileSpawnLocalControlPacket final
     float Speed = 50000.0f;
     float Lifetime = 5.0f;
     float Damage = 20.0f;
+    /** 弹药的耐久伤害 */
+    float DurableDamage = 10.0f;
     float Radius = 2.0f;
     int32 Penetrations = 0;
     float PenetrationMultiplier = 0.65f;
@@ -68,6 +70,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && FMath::IsFinite(Speed) && Speed > 0.0f
             && FMath::IsFinite(Lifetime) && Lifetime > 0.0f
             && FMath::IsFinite(Damage) && Damage >= 0.0f
+            && FMath::IsFinite(DurableDamage) && DurableDamage >= 0.0f
             && FMath::IsFinite(Radius) && Radius >= 0.0f
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
@@ -112,6 +115,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Motion.PreviousLocation = MuzzleTransform.GetLocation();
         Motion.bInitialized = true;
         Collision.Damage = Damage;
+        Collision.DurableDamage = DurableDamage;
         Collision.ExplosionRadiusCm = ExplosionRadiusCm;
         Collision.bDetonateOnImpact = bDetonateOnImpact;
         Collision.bBounceOnImpact = bBounceOnImpact;

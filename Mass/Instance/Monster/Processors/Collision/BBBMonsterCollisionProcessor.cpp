@@ -78,8 +78,13 @@ void UBBBMonsterCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 const FVector Prone(Fallback.Z, Fallback.Y, -20.0f + Fallback.X);
                 return Transform.TransformPosition(FMath::Lerp(Fallback, Prone, CrawlProgress) * Scale);
             };
-            const auto Sphere = [Mass, &Body, Scale](const FVector& Center, const float Radius, const EBBBMonsterHitRegion Region)
+            const uint8 DestroyedParts = Health[Index].DestroyedParts;
+            const auto Sphere = [Mass, &Body, Scale, DestroyedParts](const FVector& Center, const float Radius, const EBBBMonsterHitRegion Region)
             {
+                if ((DestroyedParts & (1u << static_cast<uint8>(Region))) != 0)
+                {
+                    return;
+                }
                 Body.Center = Center;
                 Body.Radius = Radius * Scale;
                 Body.Part = static_cast<uint8>(Region);

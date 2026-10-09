@@ -38,6 +38,17 @@ public:
     /** @return 停止声音并清空上一代实体的全部播放状态 */
     void ResetPresentation();
 
+    /**
+     * @param Audio	独立接触声道
+     * @param bGrounded	Mass 当前地面支撑结果
+     * @param bCrawling	当前姿态
+     * @param Speed	真实水平速度
+     * @param Now	当前时间
+     * @param bNewActor	是否刚交接
+     * @return 无
+     */
+    void ApplyContactFacts(UAudioComponent& Audio, bool bGrounded, bool bCrawling, float Speed, float Now, bool bNewActor);
+
     /** @return 当前实体固定声线下标 */
     int32 GetVoiceIndex() const { return VoiceIndex; }
 
@@ -51,6 +62,15 @@ public:
     uint32 GetStartedVoiceCount() const { return StartedVoiceCount; }
 
 private:
+    /** 仅本地声音节奏的当前累计路程 */
+    float ContactTravel = 0.0f;
+
+    /** 当前接触采样时间 */
+    float ContactTime = -1.0f;
+
+    /** 上次支撑事实 用于单次落地声 */
+    bool bContactGrounded = true;
+
     /** 当前角色租约对应的实体身份 */
     FGuid BoundInstance;
 

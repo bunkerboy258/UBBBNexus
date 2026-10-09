@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBodyPartDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerState.h"
@@ -67,12 +68,14 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeUpdateContext &Context)
             });
             FBBBMonsterDamageContribution Value = Existing ? *Existing : FBBBMonsterDamageContribution{};
             Value.PlayerId = Player->GetPlayerId();
-            Value.Damage += Context.Definition.Damage;
             Value.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Part);
-            if (Value.LastHitRegion == EBBBMonsterHitRegion::LeftLeg || Value.LastHitRegion == EBBBMonsterHitRegion::RightLeg)
+            FBBBMonsterBodyPartDefinition PartDefinition;
+            if (!Mass->QueryMonsterBodyPart(Entity, Part, PartDefinition))
             {
-                Value.LegDamage += Context.Definition.Damage;
+                continue;
             }
+            Value.Parts.Add(Value.LastHitRegion, Context.Definition.Damage * (1.0 - PartDefinition.Durability)
+                + Context.Definition.DurableDamage * PartDefinition.Durability);
             const auto *GameState = Context.World.GetGameState();
             Value.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : Context.World.GetTimeSeconds();
             Packet.Include(Value);

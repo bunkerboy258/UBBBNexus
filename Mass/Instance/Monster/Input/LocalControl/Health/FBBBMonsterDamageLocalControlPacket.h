@@ -26,7 +26,7 @@ struct FBBBMonsterDamageLocalControlPacket final
         return Contributions.ContainsByPredicate([&State](const auto& Value)
         {
             const auto* Current = State.Contributions.Find(Value.PlayerId);
-            return Current == nullptr || Value.Damage > Current->Damage || Value.LegDamage > Current->LegDamage;
+            return Current == nullptr || Value.Parts.Exceeds(Current->Parts);
         });
     }
 
@@ -40,12 +40,7 @@ struct FBBBMonsterDamageLocalControlPacket final
             });
         if (Existing != nullptr)
         {
-            const double LegDamage = FMath::Max(Existing->LegDamage, Value.LegDamage);
-            if (Value.Damage > Existing->Damage)
-            {
-                *Existing = Value;
-            }
-            Existing->LegDamage = LegDamage;
+            Existing->Merge(Value);
         }
         else
         {
@@ -58,12 +53,7 @@ struct FBBBMonsterDamageLocalControlPacket final
         for (const auto& Value : Contributions)
         {
             auto& Current = State.Contributions.FindOrAdd(Value.PlayerId);
-            const double LegDamage = FMath::Max(Current.LegDamage, Value.LegDamage);
-            if (Current.PlayerId == INDEX_NONE || Value.Damage > Current.Damage)
-            {
-                Current = Value;
-            }
-            Current.LegDamage = LegDamage;
+            Current.Merge(Value);
         }
     }
 };

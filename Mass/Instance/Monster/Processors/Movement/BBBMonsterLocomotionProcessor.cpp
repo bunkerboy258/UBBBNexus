@@ -16,6 +16,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 
 UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
     : MonsterQuery(*this)
@@ -54,7 +55,7 @@ float UBBBMonsterLocomotionProcessor::CalculateSpeed(const FBBBMonsterMovementFr
 }
 
 FQuat UBBBMonsterLocomotionProcessor::CalculateFacing(const FQuat& CurrentRotation, const FVector& HorizontalDelta,
-    const FVector& Velocity, const float DeltaSeconds)
+    const FVector& Velocity, const float DeltaSeconds, const float DegreesPerSecond)
 {
     if (!ensureMsgf(!CurrentRotation.ContainsNaN() && !HorizontalDelta.ContainsNaN() && !Velocity.ContainsNaN() &&
         FMath::IsFinite(DeltaSeconds) && DeltaSeconds >= 0.0f, TEXT("[UBBBM]Facing requires finite current motion")))
@@ -70,11 +71,24 @@ FQuat UBBBMonsterLocomotionProcessor::CalculateFacing(const FQuat& CurrentRotati
         return CurrentRotation;
     }
 
-    constexpr float TurnDegreesPerSecond = 360.0f;
-    const float CurrentYaw = CurrentRotation.Rotator().Yaw;
-    const float TargetYaw = HorizontalDelta.Rotation().Yaw;
+    return TurnTowards(CurrentRotation, HorizontalDelta, DeltaSeconds, DegreesPerSecond);
+}
+
+FQuat UBBBMonsterLocomotionProcessor::TurnTowards(const FQuat& Current, const FVector& Direction, const float DeltaSeconds, const float DegreesPerSecond)
+{
+    if (!ensureMsgf(!Current.ContainsNaN() && !Direction.ContainsNaN() && FMath::IsFinite(DeltaSeconds)
+        && FMath::IsFinite(DegreesPerSecond) && DegreesPerSecond > 0.0f, TEXT("[UBBBM]Turn requires finite direction and rate")))
+    {
+        return Current;
+    }
+    if (Direction.IsNearlyZero() || DeltaSeconds <= 0.0f)
+    {
+        return Current;
+    }
+    const float CurrentYaw = Current.Rotator().Yaw;
+    const float TargetYaw = Direction.Rotation().Yaw;
     const float DeltaYaw = FMath::Clamp(FMath::FindDeltaAngleDegrees(CurrentYaw, TargetYaw),
-        -TurnDegreesPerSecond * DeltaSeconds, TurnDegreesPerSecond * DeltaSeconds);
+        -DegreesPerSecond * DeltaSeconds, DegreesPerSecond * DeltaSeconds);
     return FRotator(0.0f, CurrentYaw + DeltaYaw, 0.0f).Quaternion();
 }
 
@@ -251,6 +265,7 @@ void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -273,6 +288,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             FTransform& Transform = Transforms[Index].GetMutableTransform();
@@ -377,7 +393,22 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Ground Entity=%d Supported=%d Z=%.2f VerticalSpeed=%.2f"),
                     Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
-            Transform.SetRotation(CalculateFacing(Transform.GetRotation(), HorizontalDelta, Velocity, DeltaSeconds));
+            FVector FacingDirection = HorizontalDelta;
+            const auto& Target = Targets[Index];
+            const bool bFaceTarget = Target.bHasTarget && Settings && (States[Index].State == EBBBMonsterBehavior::Alert
+                || (bChase && FVector::DistSquared(Location, Target.TargetLocation) <= FMath::Square(Settings->AttackRange)));
+            if (bFaceTarget)
+            {
+                FacingDirection = (Target.TargetLocation - Location).GetSafeNormal2D();
+            }
+            if (States[Index].State != EBBBMonsterBehavior::Attack && States[Index].State != EBBBMonsterBehavior::Dead
+                && !Injury.IsStaggering(Now) && Settings && !FacingDirection.IsNearlyZero())
+            {
+                const float Rate = Injury.bCrawling ? Settings->CrawlTurnRate
+                    : Movement.Gait == EBBBMonsterGait::Walk ? Settings->WalkTurnRate : Settings->RunTurnRate;
+                Transform.SetRotation(bFaceTarget ? TurnTowards(Transform.GetRotation(), FacingDirection, DeltaSeconds, Rate)
+                    : CalculateFacing(Transform.GetRotation(), HorizontalDelta, Velocity, DeltaSeconds, Rate));
+            }
         }
     });
 }

@@ -26,6 +26,9 @@ public:
     /** 每轮攻击对单个目标造成的伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|近战|命中", meta = (ClampMin = "0.0", DisplayName = "攻击伤害"))
     float Damage = 25.0f;
+    /** 命中耐久部位时混合的伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|近战|命中", meta = (ClampMin = "0.0", DisplayName = "耐久伤害"))
+    float DurableDamage = 25.0f;
     /** 覆盖武器运动轨迹的球扫掠半径 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|近战|命中", meta = (ClampMin = "0.1", DisplayName = "扫掠半径"))
     float TraceRadius = 5.0f;

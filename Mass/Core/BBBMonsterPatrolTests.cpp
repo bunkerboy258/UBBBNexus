@@ -124,6 +124,11 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     Run();
     TestEqual(TEXT("发现目标先警觉"), State.State, EBBBMonsterBehavior::Alert);
     State.StateEndsAtTime = World->GetTimeSeconds();
+    Transform.SetRotation(FRotator(0.0f, 180.0f, 0.0f).Quaternion());
+    Run();
+    TestEqual(TEXT("背对目标不能直接触发攻击"), State.State, EBBBMonsterBehavior::Chase);
+    TestTrue(TEXT("攻击裁决不瞬间改变朝向"), FMath::IsNearlyEqual(FMath::Abs(Transform.Rotator().Yaw), 180.0f));
+    Transform.SetRotation(FQuat::Identity);
     Run();
     TestEqual(TEXT("满足攻击范围直接攻击"), State.State, EBBBMonsterBehavior::Attack);
     TestEqual(TEXT("一次攻击独立编号"), Combat.AttackId, 1u);
@@ -200,6 +205,31 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     Run();
     TestEqual(TEXT("空中处于攻击范围也不得攻击"), State.State, EBBBMonsterBehavior::Chase);
     TestEqual(TEXT("空中不新增攻击编号"), Combat.AttackId, 2u);
+
+    auto& Mobility = Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
+    State.State = EBBBMonsterBehavior::Attack;
+    Combat.AttackTarget = TargetActor;
+    Combat.bHitAttempted = false;
+    Combat.bAttackFinished = false;
+    Mobility.StaggerStartedAt = World->GetTimeSeconds();
+    Mobility.StaggerEndsAt = World->GetTimeSeconds() + 0.9f;
+    Run();
+    TestEqual(TEXT("强受击取消尚未解决的攻击并恢复追击状态"), State.State, EBBBMonsterBehavior::Chase);
+    TestTrue(TEXT("强受击封闭当前攻击的唯一命中窗口"), Combat.bHitAttempted && Combat.bAttackFinished && !Combat.AttackTarget.IsValid());
+    TestEqual(TEXT("取消攻击不创建新的攻击编号"), Combat.AttackId, 2u);
+
+    Mobility.bCrawling = true;
+    Mobility.CrawlStartedAt = World->GetTimeSeconds() - 10.0f;
+    Mobility.HitStopEndsAt = World->GetTimeSeconds() + 0.15f;
+    State.State = EBBBMonsterBehavior::Attack;
+    Combat.AttackTarget = TargetActor;
+    Combat.bHitAttempted = false;
+    Combat.bAttackFinished = false;
+    Run();
+    TestEqual(TEXT("爬行强受击停顿也取消攻击"), State.State, EBBBMonsterBehavior::Chase);
+    TestTrue(TEXT("爬行中断封闭尚未命中的攻击"), Combat.bHitAttempted && Combat.bAttackFinished && !Combat.AttackTarget.IsValid());
+    Run();
+    TestEqual(TEXT("受击停顿期间不得重新进入攻击"), State.State, EBBBMonsterBehavior::Chase);
 
     Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).bReceivedDamage = true;
     Run();

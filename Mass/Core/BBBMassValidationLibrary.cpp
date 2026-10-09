@@ -82,7 +82,7 @@ int32 UBBBMassValidationLibrary::DamagePopulation(UObject* WorldContext, const T
         const auto* Current = State->Contributions.Find(Player->GetPlayerId());
         FBBBMonsterDamageContribution Contribution = Current ? *Current : FBBBMonsterDamageContribution();
         Contribution.PlayerId = Player->GetPlayerId();
-        Contribution.Damage += Damage;
+        Contribution.Parts.Torso += Damage;
         Contribution.LastHitTime = World->GetTimeSeconds();
         FBBBMonsterDamageLocalControlPacket Packet;
         Packet.Include(Contribution);
@@ -129,6 +129,7 @@ bool UBBBMassValidationLibrary::SpawnInspectionProjectile(UObject* WorldContext,
     Packet.Speed = Definition->InitialSpeedCmPerSecond;
     Packet.Lifetime = Definition->MaximumLifetimeSeconds;
     Packet.Damage = Damage;
+    Packet.DurableDamage = Definition->BaseDamage > 0.0f ? Definition->DurableDamage * Damage / Definition->BaseDamage : 0.0f;
     Packet.Radius = Definition->CollisionRadiusCm;
     Packet.Penetrations = Definition->MaximumPenetrations;
     Packet.PenetrationMultiplier = Definition->PenetrationDamageMultiplier;
@@ -368,6 +369,10 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("staggerRegion"), Mobility ? static_cast<int32>(Mobility->StaggerRegion) : 0);
             Sample->SetNumberField(TEXT("hitStopEndsAt"), Mobility ? Mobility->HitStopEndsAt : 0.0f);
             Sample->SetNumberField(TEXT("health"), Health ? Health->CurrentHealth : 0.0f);
+            Sample->SetNumberField(TEXT("mainHealth"), Health ? Health->MainHealth : 0.0f);
+            Sample->SetNumberField(TEXT("destroyedParts"), Health ? Health->DestroyedParts : 0);
+            Sample->SetNumberField(TEXT("attackRatio"), Mobility ? Mobility->AttackRatio : 0.0f);
+            Sample->SetNumberField(TEXT("suppression"), Mobility ? Mobility->Suppression : 0.0f);
             Sample->SetStringField(TEXT("actorPath"), ActorFragment && ActorFragment->Get() ? ActorFragment->Get()->GetPathName() : TEXT(""));
             const AActor* const DisplayActor = ActorFragment ? ActorFragment->Get() : nullptr;
             const auto* Corpse = DisplayActor ? DisplayActor->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;

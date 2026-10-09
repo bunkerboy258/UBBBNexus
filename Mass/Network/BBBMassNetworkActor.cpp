@@ -101,8 +101,8 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
 
 bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution)
 {
-    const double* Submitted = SubmittedDamage.Find(InstanceId);
-    if (Contribution.Damage <= 0.0 || (Submitted != nullptr && *Submitted >= Contribution.Damage))
+    const auto* Submitted = SubmittedDamage.Find(InstanceId);
+    if (Contribution.Parts.Sum() <= 0.0 || (Submitted != nullptr && !Contribution.Parts.Exceeds(*Submitted)))
     {
         return true;
     }
@@ -115,7 +115,7 @@ bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBB
         return false;
     }
     Connection->ServerReportDamage(InstanceId, Contribution);
-    SubmittedDamage.Add(InstanceId, Contribution.Damage);
+    SubmittedDamage.Add(InstanceId, Contribution.Parts);
     return true;
 }
 

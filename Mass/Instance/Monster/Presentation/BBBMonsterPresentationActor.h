@@ -8,6 +8,8 @@ class UBBBMonsterPresentationComponent;
 class UBBBMonsterHitReactionComponent;
 class UPhysicalAnimationComponent;
 class UBBBMonsterSoundPresentationComponent;
+class UAudioComponent;
+class UBBBMonsterSeveringPresentationComponent;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
@@ -16,6 +18,9 @@ class ABBB_EVAC_API ABBBMonsterPresentationActor : public AActor
     GENERATED_BODY()
 
 public:
+    /** @return 只还原 Mass 部位损毁的表现组件 */
+    UBBBMonsterSeveringPresentationComponent* GetMonsterSevering() const;
+
     /** 创建不参与玩法碰撞的表现对象 */
     ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
@@ -30,6 +35,9 @@ public:
     /** @return 小怪声音桥接组件 */
     UBBBMonsterSoundPresentationComponent* GetMonsterSoundPresentation() const;
 
+    /** @return 不打断声线的地面接触声道 */
+    UAudioComponent* GetMonsterContactAudio() const;
+
     /**
      * 隐藏或回收表现演员时停止声音
      * @param bNewHidden	当前隐藏结果
@@ -38,6 +46,14 @@ public:
     virtual void SetActorHiddenInGame(bool bNewHidden) override;
 
 private:
+    /** 本地断肢与封口表现 */
+    UPROPERTY(VisibleAnywhere, Category = "小怪|断肢", meta = (DisplayName = "断肢表现组件"))
+    TObjectPtr<UBBBMonsterSeveringPresentationComponent> Severing;
+
+    /** 无独立更新的接触声音组件 */
+    UPROPERTY(VisibleAnywhere, Category = "小怪|声音", meta = (DisplayName = "地面接触声道"))
+    TObjectPtr<UAudioComponent> ContactAudio;
+
     /** 单体固定声线与声音播放桥接 */
     UPROPERTY(VisibleAnywhere, Category = "小怪|声音", meta = (DisplayName = "声音表现组件"))
     TObjectPtr<UBBBMonsterSoundPresentationComponent> SoundPresentation;

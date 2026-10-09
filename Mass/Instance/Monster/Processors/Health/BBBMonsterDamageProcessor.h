@@ -5,6 +5,7 @@
 #include "BBBMonsterDamageProcessor.generated.h"
 
 struct FBBBMonsterDamageContribution;
+struct FBBBMonsterBodyPartDefinition;
 
 /** 根据累计贡献计算本机生命结果 */
 UCLASS()
@@ -24,6 +25,15 @@ public:
      * @return 是否取得有效目标的快照
      */
     static bool Query(UWorld& World, FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result);
+
+    /**
+     * @param World	目标世界
+     * @param Entity	目标实体
+     * @param Part	部位编号
+     * @param Result	部位静态参数的值副本
+     * @return 是否取得有效配置
+     */
+    static bool QueryPart(UWorld& World, FMassEntityHandle Entity, uint8 Part, FBBBMonsterBodyPartDefinition& Result);
 
 protected:
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
