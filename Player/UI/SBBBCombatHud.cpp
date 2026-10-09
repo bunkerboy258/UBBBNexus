@@ -1,6 +1,5 @@
 #include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
-#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
@@ -112,44 +111,21 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         return Layer + 3;
     }
     Loaded = FMath::Clamp(Loaded, 0, Capacity);
-    const float AmmoLeft = Size.X - 184.0f * Scale;
-    const float AmmoRight = Size.X - 44.0f * Scale;
-    const float AmmoTop = Size.Y - 62.0f * Scale;
-    const float RailY = Size.Y - 19.0f * Scale;
-    const float Fraction = static_cast<float>(Loaded) / Capacity;
-    const FLinearColor Track(1.0f, 1.0f, 1.0f, 0.24f);
-    const FLinearColor AmmoColor = Loaded > 0 && Loaded <= FMath::Max(1, Capacity / 4)
-        ? BBBItemUI::Accent : White;
-
-    Line({FVector2D(AmmoLeft - 11.0f * Scale, AmmoTop + 4.0f * Scale),
-        FVector2D(AmmoLeft - 11.0f * Scale, AmmoTop + 30.0f * Scale)}, 2.0f, BBBItemUI::Accent);
-    FSlateDrawElement::MakeText(Elements, Layer + 3,
-        Geometry.ToPaintGeometry(FVector2f(70.0f * Scale, 35.0f * Scale),
-            FSlateLayoutTransform(FVector2f(AmmoLeft, AmmoTop))),
-        FString::FromInt(Loaded), BBBItemUI::Font(FMath::RoundToInt(27.0f * Scale)),
-        ESlateDrawEffect::None, AmmoColor);
-    FSlateDrawElement::MakeText(Elements, Layer + 3,
-        Geometry.ToPaintGeometry(FVector2f(70.0f * Scale, 23.0f * Scale),
-            FSlateLayoutTransform(FVector2f(AmmoLeft + 69.0f * Scale, AmmoTop + 10.0f * Scale))),
-        FString::Printf(TEXT("/ %d"), Capacity), BBBItemUI::Font(FMath::RoundToInt(15.0f * Scale)),
-        ESlateDrawEffect::None, FLinearColor(1.0f, 1.0f, 1.0f, 0.70f));
-
-    Line({FVector2D(AmmoLeft, RailY), FVector2D(AmmoRight, RailY)}, 1.0f, Track);
+    const float AmmoRadius = 50.0f;
+    const float AmmoFrom = 20.0f;
+    const float AmmoSweep = 60.0f;
+    const FLinearColor Track(1.0f, 1.0f, 1.0f, 0.20f);
     if (bContinuous)
     {
-        if (Loaded > 0)
-        {
-            Line({FVector2D(AmmoLeft, RailY), FVector2D(FMath::Lerp(AmmoLeft, AmmoRight, Fraction), RailY)},
-                2.0f, AmmoColor);
-        }
+        Arc(Center, AmmoRadius, AmmoFrom, AmmoFrom + AmmoSweep, 2.0f, Track);
+        Arc(Center, AmmoRadius, AmmoFrom, AmmoFrom + AmmoSweep * Loaded / Capacity, 2.0f, White);
         return Layer + 3;
     }
-    const float Step = (AmmoRight - AmmoLeft) / Capacity;
+    const float Step = AmmoSweep / Capacity;
     for (int32 Index = 0; Index < Capacity; ++Index)
     {
-        const float TickX = AmmoLeft + Step * (Index + 0.5f);
-        Line({FVector2D(TickX, RailY - 3.0f * Scale), FVector2D(TickX, RailY + 3.0f * Scale)},
-            1.0f, Index < Loaded ? AmmoColor : Track);
+        const float Begin = AmmoFrom + Step * Index;
+        Arc(Center, AmmoRadius, Begin, Begin + Step * 0.70f, 3.0f, Index < Loaded ? White : Track);
     }
     return Layer + 3;
 }
