@@ -22,4 +22,7 @@ struct FBBBMassCollisionBody final
 
     /** 碰撞体所属实例解释的部位编号 Core 不解释部位语义 */
     uint8 Part = 0;
+
+    /** 复合目标的保守粗筛球 命中候选必须查询所属实例的精细部位 */
+    bool bCompound = false;
 };

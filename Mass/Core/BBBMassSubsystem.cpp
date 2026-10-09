@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 
 namespace
 {
@@ -136,6 +137,7 @@ bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, 
     const int32 Steps = FMath::Max(1, FMath::CeilToInt(Delta.GetAbsMax() / CollisionCellSize));
     const int32 Expansion = FMath::Max(1, FMath::CeilToInt(Radius / CollisionCellSize));
     TSet<FIntVector> Visited;
+    TSet<FMassEntityHandle> CompoundCandidates;
     for (int32 Step = 0; Step <= Steps; ++Step)
     {
         const FIntVector Cell = CollisionCell(Start + Delta * (static_cast<double>(Step) / Steps));
@@ -175,19 +177,37 @@ bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, 
                             continue;
                         }
 
-                        const double Time = C <= 0.0 ? 0.0 : (-B - FMath::Sqrt(Discriminant)) / LengthSquared;
+                        double Time = C <= 0.0 ? 0.0 : (-B - FMath::Sqrt(Discriminant)) / LengthSquared;
+                        FBBBMassCollisionBody Detailed;
+                        const FBBBMassCollisionBody* Contact = &Body;
+                        if (Body.bCompound)
+                        {
+                            if (Time < 0.0 || Time > HitTime || CompoundCandidates.Contains(Body.Entity))
+                            {
+                                continue;
+                            }
+                            CompoundCandidates.Add(Body.Entity);
+                            float DetailedTime = 1.0f;
+                            if (!UBBBMonsterCollisionProcessor::TraceCompound(*GetWorld(), Body.Entity, Start, End,
+                                Radius, Detailed, DetailedTime))
+                            {
+                                continue;
+                            }
+                            Contact = &Detailed;
+                            Time = DetailedTime;
+                        }
                         if (Time >= 0.0 && Time <= HitTime)
                         {
                             HitTime = Time;
                             HitEntity = Body.Entity;
-                            HitNormal = (Start + Delta * Time - Body.Center).GetSafeNormal();
+                            HitNormal = (Start + Delta * Time - Contact->Center).GetSafeNormal();
                             if (HitNormal.IsNearlyZero())
                             {
                                 HitNormal = -Delta.GetSafeNormal();
                             }
-                            HitPosition = Body.Center + HitNormal * Body.Radius;
-                            HitSurface = Body.Surface;
-                            HitPart = Body.Part;
+                            HitPosition = Contact->Center + HitNormal * Contact->Radius;
+                            HitSurface = Contact->Surface;
+                            HitPart = Contact->Part;
                         }
                     }
                 }
@@ -210,6 +230,7 @@ void UBBBMassSubsystem::OverlapEntities(const FVector& Center, const float Radiu
     const FIntVector Min = CollisionCell(Center - FVector(Radius));
     const FIntVector Max = CollisionCell(Center + FVector(Radius));
     TMap<FMassEntityHandle, int32> Indices;
+    TSet<FMassEntityHandle> CompoundCandidates;
     for (int32 X = Min.X; X <= Max.X; ++X)
     {
         for (int32 Y = Min.Y; Y <= Max.Y; ++Y)
@@ -224,16 +245,33 @@ void UBBBMassSubsystem::OverlapEntities(const FVector& Center, const float Radiu
 
                 for (const FBBBMassCollisionBody& Body : *Bodies)
                 {
-                    const double Distance = FMath::Max(0.0, FVector::Distance(Center, Body.Center) - Body.Radius);
+                    double Distance = FMath::Max(0.0, FVector::Distance(Center, Body.Center) - Body.Radius);
                     if (Distance > Radius)
                     {
                         continue;
                     }
 
+                    FBBBMassCollisionBody Detailed;
+                    const FBBBMassCollisionBody* Contact = &Body;
+                    if (Body.bCompound)
+                    {
+                        if (CompoundCandidates.Contains(Body.Entity))
+                        {
+                            continue;
+                        }
+                        CompoundCandidates.Add(Body.Entity);
+                        if (!UBBBMonsterCollisionProcessor::OverlapCompound(*GetWorld(), Body.Entity, Center, Radius, Detailed))
+                        {
+                            continue;
+                        }
+                        Contact = &Detailed;
+                        Distance = FMath::Max(0.0, FVector::Distance(Center, Contact->Center) - Contact->Radius);
+                    }
+
                     const int32* Index = Indices.Find(Body.Entity);
                     if (Index == nullptr)
                     {
-                        Indices.Add(Body.Entity, Results.Add(Body));
+                        Indices.Add(Body.Entity, Results.Add(*Contact));
                         continue;
                     }
 
@@ -241,7 +279,7 @@ void UBBBMassSubsystem::OverlapEntities(const FVector& Center, const float Radiu
                     const double PreviousDistance = FMath::Max(0.0, FVector::Distance(Center, Previous.Center) - Previous.Radius);
                     if (Distance < PreviousDistance)
                     {
-                        Results[*Index] = Body;
+                        Results[*Index] = *Contact;
                     }
                 }
             }

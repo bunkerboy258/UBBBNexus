@@ -168,6 +168,14 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         Location += Penetration.Normal * (Penetration.PenetrationDepth + Skin);
     }
 
+    // 静止活体仍逐帧检测真实支撑 无水平运动时不重复执行移动扫掠和落地吸附
+    if (Ground.bGrounded && Velocity.Z <= 0.0f && HorizontalDelta.IsNearlyZero() &&
+        FindSupport(Location, SupportDistance, Ground.SupportNormal))
+    {
+        Velocity = FVector::ZeroVector;
+        return;
+    }
+
     const int32 Steps = FMath::Max(1, FMath::CeilToInt(DeltaSeconds / (1.0f / 60.0f)));
     const float StepSeconds = DeltaSeconds / Steps;
     const FVector HorizontalStep = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f) / Steps;

@@ -75,12 +75,22 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
         Solve(1.0f / 60.0f);
     }
     TestTrue(TEXT("站立三秒无高度漂移"), Location.Equals(Landed, 0.01f));
+    Velocity = FVector(300.0f, 100.0f, 0.0f);
+    Solve(0.1f);
+    TestTrue(TEXT("静止有支撑时清除上帧水平速度而不漂移"), Velocity.IsNearlyZero() && Location.Equals(Landed, 0.01f));
     Solve(0.0f);
     TestTrue(TEXT("零时长不移动"), Location.Equals(Landed, 0.01f));
     Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Solve(0.1f);
     TestTrue(TEXT("移除支撑立即下落"), !Ground.bGrounded && Location.Z < Landed.Z && Velocity.Z < 0.0f);
     Floor->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    Floor->SetWorldLocation(FVector(0.0f, 0.0f, -52.0f));
+    Location = Landed;
+    Velocity = FVector::ZeroVector;
+    Ground.bGrounded = true;
+    Solve(0.1f);
+    TestTrue(TEXT("静止路径仍跟随支撑向下移动"), Ground.bGrounded && FMath::IsNearlyEqual(Location.Z, Landed.Z - 2.0f, 0.1f));
+    Floor->SetWorldLocation(FVector(0.0f, 0.0f, -50.0f));
     Location = FVector(0.0f, 0.0f, 90.5f);
     Velocity = FVector::ZeroVector;
     Ground.bGrounded = true;

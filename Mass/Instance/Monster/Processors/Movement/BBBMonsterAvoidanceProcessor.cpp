@@ -109,13 +109,14 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                     {
                         FVector AwayFromNeighbor = Location - NeighborLocation;
                         AwayFromNeighbor.Z = 0.0f;
-                        const float Distance = AwayFromNeighbor.Size();
+                        const double DistanceSquared = AwayFromNeighbor.SizeSquared();
 
-                        if (Distance <= KINDA_SMALL_NUMBER || Distance >= PersonalSpace)
+                        if (DistanceSquared <= FMath::Square(KINDA_SMALL_NUMBER) || DistanceSquared >= FMath::Square(PersonalSpace))
                         {
                             continue;
                         }
 
+                        const double Distance = FMath::Sqrt(DistanceSquared);
                         Separation += AwayFromNeighbor / Distance * (1.0f - Distance / PersonalSpace);
                     }
                 }
