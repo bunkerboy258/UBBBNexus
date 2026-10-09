@@ -108,6 +108,14 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
     TestTrue(TEXT("新一代实体发布后正常命中"), Trace(FVector(-100, 0, 90), FVector(100, 0, 90)) && HitEntity == Replacement);
     Mass->OverlapEntities(FVector(150, 0, 90), 130.0f, Results);
     TestEqual(TEXT("多目标范围查询在跨桶后仍按实体去重"), Results.Num(), 2);
+    const auto Upstairs = Create(FVector(0, 0, 1000));
+    Publish();
+    TestTrue(TEXT("二维粗筛仍准确命中同平面上层实体"), Trace(FVector(-100, 0, 1000), FVector(100, 0, 1000)) && HitEntity == Upstairs);
+    TestTrue(TEXT("二维粗筛不得把上层实体计入地面命中"), Trace(FVector(-100, 0, 90), FVector(100, 0, 90)) && HitEntity == Replacement);
+    TestTrue(TEXT("垂直射线按三维真实接触先命中上层头部"), Trace(FVector(0, 0, 1150), FVector(0, 0, 0)) && HitEntity == Upstairs);
+    TestEqual(TEXT("垂直命中仍返回准确头部"), Part, static_cast<uint8>(EBBBMonsterHitRegion::Head));
+    Mass->OverlapEntities(FVector(0, 0, 90), 80.0f, Results);
+    TestEqual(TEXT("同平面不同高度的实体不扩大爆炸范围"), Results.Num(), 1);
     return true;
 }
 

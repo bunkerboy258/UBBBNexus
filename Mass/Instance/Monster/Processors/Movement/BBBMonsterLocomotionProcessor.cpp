@@ -158,14 +158,18 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     };
 
     // 出生或外部支撑移动造成的浅层重叠只在此处消解 不另建位置写入者
-    for (int32 Attempt = 0; Attempt < 4; ++Attempt)
+    if (!Ground.bGrounded || Velocity.Z > 0.0f || !HorizontalDelta.IsNearlyZero() ||
+        World.OverlapBlockingTestByChannel(Location, FQuat::Identity, ECC_Pawn, Capsule, Params))
     {
-        FHitResult Penetration;
-        if (!Sweep(Location, Location, Penetration) || !Penetration.bStartPenetrating)
+        for (int32 Attempt = 0; Attempt < 4; ++Attempt)
         {
-            break;
+            FHitResult Penetration;
+            if (!Sweep(Location, Location, Penetration) || !Penetration.bStartPenetrating)
+            {
+                break;
+            }
+            Location += Penetration.Normal * (Penetration.PenetrationDepth + Skin);
         }
-        Location += Penetration.Normal * (Penetration.PenetrationDepth + Skin);
     }
 
     // 静止活体仍逐帧检测真实支撑 无水平运动时不重复执行移动扫掠和落地吸附

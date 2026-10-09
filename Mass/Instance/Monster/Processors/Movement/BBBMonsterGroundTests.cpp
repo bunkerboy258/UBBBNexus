@@ -90,7 +90,18 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
     Ground.bGrounded = true;
     Solve(0.1f);
     TestTrue(TEXT("静止路径仍跟随支撑向下移动"), Ground.bGrounded && FMath::IsNearlyEqual(Location.Z, Landed.Z - 2.0f, 0.1f));
+    Floor->SetWorldLocation(FVector(0.0f, 0.0f, -48.0f));
+    Solve(0.1f);
+    TestTrue(TEXT("静止快速重叠检测仍消解上升地面穿入"), Ground.bGrounded && FMath::IsNearlyEqual(Location.Z, Landed.Z + 2.0f, 0.1f));
     Floor->SetWorldLocation(FVector(0.0f, 0.0f, -50.0f));
+    Location = FVector(0.0f, 0.0f, 90.5f);
+    Velocity = FVector::ZeroVector;
+    Ground.bGrounded = true;
+
+    UBoxComponent* IntrudingWall = MakeBox(FVector(40.0f, 0.0f, 100.0f), FVector(10.0f, 100.0f, 100.0f));
+    Solve(0.1f);
+    TestTrue(TEXT("静止快速重叠检测仍消解外部墙体挤压"), Ground.bGrounded && Location.X < -10.0f);
+    IntrudingWall->DestroyComponent();
     Location = FVector(0.0f, 0.0f, 90.5f);
     Velocity = FVector::ZeroVector;
     Ground.bGrounded = true;

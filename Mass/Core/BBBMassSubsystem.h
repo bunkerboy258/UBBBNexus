@@ -103,5 +103,5 @@ private:
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSoundLocalControlPacket& Packet);
 
     /** 每帧重建的空间桶 不持有实体玩法状态 */
-    TMap<FIntVector, TArray<FBBBMassCollisionBody>> CollisionCells;
+    TMap<FIntPoint, TArray<FBBBMassCollisionBody>> CollisionCells;
 };
