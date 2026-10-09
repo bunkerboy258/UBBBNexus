@@ -345,7 +345,7 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     const FMassArchetypeHandle Type = Manager.CreateArchetype({
         FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FMassActorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
-        FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
+        FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDeathFragment::StaticStruct(),
         FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct(),
         FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterVariationFragment::StaticStruct()
     });

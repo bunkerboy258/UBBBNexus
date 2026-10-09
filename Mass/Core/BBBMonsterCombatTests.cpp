@@ -16,6 +16,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Combat/BBBMonsterCombatProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Perception/BBBMonsterPerceptionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
+#include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterCombatFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
@@ -85,7 +86,7 @@ bool FBBBMonsterCombatTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("正式玩家初始生命"), Player->GetHealth(), 500.0f);
 
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
-    const FMassArchetypeHandle Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(),
+    const FMassArchetypeHandle Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterCombatFragment::StaticStruct(),
         FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
         FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterPerceptionFragment::StaticStruct(),

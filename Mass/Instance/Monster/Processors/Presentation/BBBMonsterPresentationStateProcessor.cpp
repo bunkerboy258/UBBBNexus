@@ -127,7 +127,7 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
 
             if (States[Index].State == EBBBMonsterBehavior::Dead)
             {
-                PresentationState.ActionProgress = Elapsed / Healths[Index].DeathLifetime;
+                PresentationState.ActionProgress = Elapsed / Definition->DeathAnimationDuration;
             }
 
             PresentationState.ActionProgress = FMath::Clamp(PresentationState.ActionProgress, 0.0f, 1.0f);

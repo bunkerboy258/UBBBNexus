@@ -332,15 +332,29 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             }
 
             Path.NextPathRefreshTime = WorldTime + 0.25f;
-            FNavLocation Projected;
-            const bool bProjected = NavigationSystem->ProjectPointToNavigation(Goal, Projected, FVector(100.0f, 100.0f, 250.0f));
             const ANavigationData* RouteData = NavigationSystem->GetDefaultNavDataInstance();
             if (!RouteData)
             {
                 Path.bHasPath = false;
                 continue;
             }
-            FPathFindingQuery Query(nullptr, *RouteData, Location, bProjected ? Projected.Location : Goal, RouteData->GetDefaultQueryFilter());
+            const float HalfHeight = Grounds[Index].CapsuleHalfHeight > 0.0f ? Grounds[Index].CapsuleHalfHeight : Movements[Index].CapsuleHalfHeight;
+            const FVector FootOffset(0.0f, 0.0f, HalfHeight);
+            FNavLocation ProjectedStart;
+            if (!NavigationSystem->ProjectPointToNavigation(Location - FootOffset, ProjectedStart,
+                FVector(Movements[Index].CapsuleRadius, Movements[Index].CapsuleRadius, Settings->MaxStepHeight + 25.0f), RouteData))
+            {
+                Path.bHasPath = false;
+                ++Path.FailureCount;
+                continue;
+            }
+            FNavLocation Projected;
+            const bool bGoalOnNavigation = bEncircle && WorldTime >= Path.DetourEndsAt;
+            const FVector GoalFoot = bGoalOnNavigation ? Goal : Goal - FVector(0.0f, 0.0f, bChase ? Settings->CapsuleHalfHeight : HalfHeight);
+            const bool bProjected = NavigationSystem->ProjectPointToNavigation(GoalFoot, Projected,
+                FVector(100.0f, 100.0f, 250.0f), RouteData);
+            FPathFindingQuery Query(nullptr, *RouteData, ProjectedStart.Location,
+                bProjected ? Projected.Location : GoalFoot, RouteData->GetDefaultQueryFilter());
             Query.SetAllowPartialPaths(bChase);
             Query.SetRequireNavigableEndLocation(!bChase);
             const FPathFindingResult Result = NavigationSystem->FindPathSync(Query);

@@ -14,6 +14,7 @@
 #include "GameFramework/Actor.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
+#include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
@@ -35,6 +36,7 @@ UBBBMonsterBehaviorProcessor::UBBBMonsterBehaviorProcessor()
 void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
@@ -65,6 +67,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
     {
         auto Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
+        const auto Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();
         const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
         const auto Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>();
@@ -121,7 +124,8 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 if (DeathEvents[Index].DestroyAtTime <= 0.0f)
                 {
                     EnterState(EBBBMonsterBehavior::Dead);
-                    DeathEvents[Index].DestroyAtTime = WorldTime + Health.DeathLifetime;
+                    DeathEvents[Index].InitialVelocity = Velocities[Index].Value.GetClampedToMaxSize(650.0f);
+                    DeathEvents[Index].DestroyAtTime = WorldTime + Health.CorpseLifetime;
                     UE_LOG(LogTemp, Log, TEXT("[UBBBM]Monster dead Entity=%d DestroyAt=%.3f"), ChunkContext.GetEntity(Index).Index, DeathEvents[Index].DestroyAtTime);
                 }
 

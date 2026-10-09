@@ -92,6 +92,54 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("可跨越三十厘米台阶"), Location.X > 180.0f && Location.Z > 119.0f && Ground.bGrounded);
     UE_LOG(LogTemp, Display, TEXT("[BBBMonsterGroundCheck] Step X=%.3f Z=%.3f Grounded=%d NormalZ=%.3f"), Location.X, Location.Z, Ground.bGrounded, Ground.SupportNormal.Z);
     Step->DestroyComponent();
+    for (const float Height : {5.0f, 15.0f, 30.0f})
+    {
+        for (const float Lateral : {0.0f, 2.0f})
+        {
+            auto* SmallStep = MakeBox(FVector(200.0f, 0.0f, Height * 0.5f), FVector(100.0f, 300.0f, Height * 0.5f));
+            Location = FVector(0.0f, 0.0f, 90.5f);
+            Velocity = FVector::ZeroVector;
+            Ground = {};
+            for (int32 Frame = 0; Frame < 60; ++Frame)
+            {
+                Solve(1.0f / 30.0f, FVector(4.0f, Lateral, 0.0f));
+            }
+            TestTrue(FString::Printf(TEXT("台阶%.0f厘米斜向%.0f可跨越"), Height, Lateral),
+                Location.X > 220.0f && Ground.bGrounded && FMath::IsNearlyEqual(Location.Z, 90.5f + Height, 1.0f));
+            SmallStep->DestroyComponent();
+        }
+    }
+    Movement.CapsuleHalfHeight = 45.0f;
+    Movement.MaxStepHeight = 10.0f;
+    for (const float Height : {5.0f, 15.0f})
+    {
+        auto* CrawlStep = MakeBox(FVector(200.0f, 0.0f, Height * 0.5f), FVector(100.0f, 300.0f, Height * 0.5f));
+        Location = FVector(0.0f, 0.0f, 45.5f);
+        Velocity = FVector::ZeroVector;
+        Ground = {};
+        for (int32 Frame = 0; Frame < 60; ++Frame)
+        {
+            Solve(1.0f / 30.0f, FVector(4.0f, 0.0f, 0.0f));
+        }
+        AddInfo(FString::Printf(TEXT("[BBBCrawlStep] Height=%.1f Position=%s Grounded=%d Normal=%s"),
+            Height, *Location.ToString(), Ground.bGrounded, *Ground.SupportNormal.ToString()));
+        TestTrue(FString::Printf(TEXT("爬行台阶%.0f厘米遵守十厘米上限"), Height),
+            Height <= 10.0f ? Location.X > 220.0f && Ground.bGrounded : Location.X < 100.0f && Ground.bGrounded);
+        CrawlStep->DestroyComponent();
+    }
+    Movement = {};
+    UBoxComponent* Ceiling = MakeBox(FVector(200.0f, 0.0f, 190.0f), FVector(100.0f, 300.0f, 5.0f));
+    UBoxComponent* CeilingStep = MakeBox(FVector(200.0f, 0.0f, 15.0f), FVector(100.0f, 300.0f, 15.0f));
+    Location = FVector(0.0f, 0.0f, 90.5f);
+    Velocity = FVector::ZeroVector;
+    Ground = {};
+    for (int32 Frame = 0; Frame < 60; ++Frame)
+    {
+        Solve(1.0f / 30.0f, FVector(4.0f, 0.0f, 0.0f));
+    }
+    TestTrue(TEXT("低顶空间不能穿顶登上台阶"), Location.X < 100.0f && Ground.bGrounded);
+    Ceiling->DestroyComponent();
+    CeilingStep->DestroyComponent();
     UBoxComponent* Wall = MakeBox(FVector(200.0f, 0.0f, 150.0f), FVector(50.0f, 200.0f, 150.0f));
     Location = FVector(0.0f, 0.0f, 90.5f);
     Velocity = FVector::ZeroVector;

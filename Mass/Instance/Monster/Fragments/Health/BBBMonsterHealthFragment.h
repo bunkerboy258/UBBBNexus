@@ -21,5 +21,5 @@ struct ABBB_EVAC_API FBBBMonsterHealthFragment final : public FMassFragment
 
     /** 死亡表现保留到实体回收的时长 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (ClampMin = "0.01", DisplayName = "死亡后存活时间"))
-    float DeathLifetime = 3.0f;
+    float CorpseLifetime = 20.0f;
 };

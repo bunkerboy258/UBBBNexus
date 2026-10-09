@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
+#include "MassMovementFragments.h"
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -58,7 +59,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     Floor->SetActorLocation(FVector(0.0f, 0.0f, -50.0f));
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const FMassArchetypeHandle Type = Manager.CreateArchetype({
-        FTransformFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
+        FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
         FBBBMonsterMovementFragment::StaticStruct(), FBBBMonsterNavigationFragment::StaticStruct(),
         FBBBMonsterCombatFragment::StaticStruct(), FBBBMonsterTargetFragment::StaticStruct(),
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),

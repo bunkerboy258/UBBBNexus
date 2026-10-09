@@ -50,9 +50,6 @@ private:
     /** 本轮已经施加物理反应 结束时必须完成清理 */
     bool bHasAppliedReaction = false;
 
-    /** 致死命中的局部冲击完成时间 只影响死亡姿态衔接 */
-    float DeathReactionEndsAt = -1.0f;
-
     /** 最近接收的存活事实 */
     bool bPresentationAlive = true;
 

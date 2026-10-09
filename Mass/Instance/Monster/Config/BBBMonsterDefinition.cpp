@@ -6,7 +6,9 @@ bool UBBBMonsterDefinition::IsValid() const
     return EntityConfig != nullptr
         && Variation != nullptr && Variation->IsValid()
         && FMath::IsFinite(MaxHealth) && MaxHealth > 0.0f
-        && FMath::IsFinite(DeathLifetime) && DeathLifetime > 0.0f
+        && FMath::IsFinite(CorpseLifetime) && CorpseLifetime >= 5.0f
+        && FMath::IsFinite(DeathAnimationDuration) && DeathAnimationDuration > 0.0f && DeathAnimationDuration < CorpseLifetime
+        && FMath::IsFinite(CorpseSimulationDuration) && CorpseSimulationDuration >= 0.5f && CorpseSimulationDuration < CorpseLifetime
         && FMath::IsFinite(WalkSpeed) && WalkSpeed > 0.0f
         && FMath::IsFinite(RunSpeed) && RunSpeed > WalkSpeed
         && FMath::IsFinite(SprintSpeed) && SprintSpeed > RunSpeed

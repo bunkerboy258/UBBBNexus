@@ -23,6 +23,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterSoundPresentationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterInitializationPendingTag.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -43,6 +44,7 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
@@ -69,7 +71,24 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     const float Now = World->GetTimeSeconds();
     const bool bStandalone = World->GetNetMode() == NM_Standalone;
     const uint32 WorldIdentity = World->GetUniqueID();
-    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity](FMassExecutionContext& ChunkContext)
+    int32 ActiveCorpses = 0;
+    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses](FMassExecutionContext& Chunk)
+    {
+        const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
+        const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
+        {
+            auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
+            auto* Presentation = Actor ? Actor->GetMonsterPresentation() : nullptr;
+            const auto* Definition = Network[Index].Definition.Get();
+            if (Presentation && Definition && Presentation->IsCorpseSimulating())
+            {
+                Presentation->UpdateCorpsePresentation(Now, Definition->CorpseSimulationDuration);
+                ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
+            }
+        }
+    });
+    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity, &ActiveCorpses](FMassExecutionContext& ChunkContext)
     {
         // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
@@ -102,6 +121,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const bool bNewActor = Smoothing.LastActor.Get() != MonsterActor;
             if (bNewActor)
             {
+                MonsterActor->GetMonsterPresentation()->ResetCorpsePresentation();
                 MonsterActor->SetActorEnableCollision(true);
                 if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
                 {
@@ -144,12 +164,15 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             Smoothing.LastActor = MonsterActor;
 
             // 同步实体位置和朝向到骨骼表现 Actor
-            MonsterActor->SetActorLocationAndRotation(
-                Smoothing.DisplayTransform.GetLocation(),
-                Smoothing.DisplayTransform.GetRotation(),
-                false,
-                nullptr,
-                ETeleportType::TeleportPhysics);
+            if (!MonsterActor->GetMonsterPresentation()->IsCorpseActive())
+            {
+                MonsterActor->SetActorLocationAndRotation(
+                    Smoothing.DisplayTransform.GetLocation(),
+                    Smoothing.DisplayTransform.GetRotation(),
+                    false,
+                    nullptr,
+                    ETeleportType::TeleportPhysics);
+            }
 
             // 取得表现组件同步状态和移动速度
             UBBBMonsterPresentationComponent* Presentation = MonsterActor->GetMonsterPresentation();
@@ -180,6 +203,17 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
             Presentation->ApplyStaggerState(Mobility.IsStaggering(Now), StaggerProgress, Mobility.StaggerRegion);
             Presentation->ApplyHitReaction(ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index]);
+            if (Definition && PresentationState.State == EBBBMonsterBehavior::Dead && !Presentation->IsCorpseActive())
+            {
+                const float Age = Now - PresentationState.StateEnteredTime;
+                const bool bSimulate = ActiveCorpses < 32 && Age < Definition->DeathAnimationDuration;
+                if ((bSimulate || Age >= Definition->DeathAnimationDuration) &&
+                    Presentation->BeginCorpsePresentation(ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity,
+                        ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index], Now, bSimulate))
+                {
+                    ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
+                }
+            }
             if (auto* SoundPresentation = MonsterActor->GetMonsterSoundPresentation())
             {
                 // 单机没有网络身份 声音使用世界内完整代际句柄 不创建网络事实

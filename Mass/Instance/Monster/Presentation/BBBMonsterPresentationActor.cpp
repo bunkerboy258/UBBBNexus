@@ -50,4 +50,8 @@ void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
     {
         SoundPresentation->ResetPresentation();
     }
+    if (bNewHidden && MonsterPresentation)
+    {
+        MonsterPresentation->ResetCorpsePresentation();
+    }
 }

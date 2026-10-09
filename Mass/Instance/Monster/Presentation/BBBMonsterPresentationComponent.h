@@ -88,7 +88,58 @@ public:
      */
     void ApplyVariationFacts(const FBBBMonsterVariationFragment& Variation, float InLoopPhase);
 
+    /**
+     * 从当前骨骼姿势启用本地死亡物理 不贡献玩法事实
+     * @param Velocity		死亡时的移动惯性
+     * @param Hit		最近命中表现
+     * @param Now		当前世界时间
+     * @param bSimulate		本轮是否获得活动物理预算
+     * @return 是否成功创建物理表现
+     */
+    bool BeginCorpsePresentation(const FVector& Velocity, const FBBBMonsterHitReactionFragment& Hit, float Now, bool bSimulate = true);
+
+    /**
+     * 从 Mass 批量调度检查物理落地与休眠 不创建组件 Tick
+     * @param Now		当前世界时间
+     * @param MaximumDuration	最长活动物理时长
+     * @return 无
+     */
+    void UpdateCorpsePresentation(float Now, float MaximumDuration);
+
+    /** @return 是否已消费当前代实体的死亡表现 */
+    bool IsCorpseActive() const { return bCorpseActive; }
+
+    /** @return 当前是否占用活动布娃娃预算 */
+    bool IsCorpseSimulating() const { return bCorpseActive && !bCorpseFrozen; }
+
+    /** @return 当前物理开始时间 */
+    float GetCorpseStartedAt() const { return CorpseStartedAt; }
+
+    /** @return 停止持续物理并保留当前骨骼姿势 无返回值 */
+    void FreezeCorpsePresentation();
+
+    /** @return 复用表现对象前清除尸体状态 无返回值 */
+    void ResetCorpsePresentation();
+
 private:
+    /** 等待动画图消费当前事实的引擎帧 不记录玩法历史 */
+    uint64 CorpsePoseRequestFrame = MAX_uint64;
+
+    /** 当前代实体的本地死亡物理已经初始化 */
+    bool bCorpseActive = false;
+
+    /** 已保留最终姿势 不再模拟刚体 */
+    bool bCorpseFrozen = false;
+
+    /** 本地物理开始时间 不维护玩法死亡计时 */
+    float CorpseStartedAt = -1.0f;
+
+    /** 死亡前网格挂接变换 仅用于池化复用 */
+    FTransform LivingMeshRelativeTransform = FTransform::Identity;
+
+    /** 冻结前连续低速时长 */
+    float CorpseStableSince = -1.0f;
+
     /** 已绑定实体的固定出生种子 */
     uint32 VariationSeed = 0;
 

@@ -65,6 +65,11 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     Geometry(FVector(0.0f, 0.0f, -50.0f), FVector(80.0f, 80.0f, 1.0f));
     Geometry(FVector(0.0f, 0.0f, 150.0f), FVector(0.4f, 12.0f, 3.0f));
     Geometry(FVector(1800.0f, 1800.0f, 200.0f), FVector(8.0f, 8.0f, 4.0f));
+    for (int32 Index = 0; Index < 3; ++Index)
+    {
+        const float Height = Index == 0 ? 5.0f : Index == 1 ? 15.0f : 30.0f;
+        Geometry(FVector(300.0f, -1400.0f - Index * 800.0f, Height * 0.5f), FVector(10.0f, 4.0f, Height / 100.0f));
+    }
     auto* Bounds = World->SpawnActor<ANavMeshBoundsVolume>();
     auto* BoundsBox = NewObject<UBoxComponent>(Bounds);
     BoundsBox->SetupAttachment(Bounds->GetRootComponent());
@@ -124,6 +129,39 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Target.TargetLocation = FVector(1800.0f, 0.0f, 90.0f);
         return Entity;
     };
+    TArray<FMassEntityHandle> StepWalkers;
+    for (int32 Index = 0; Index < 3; ++Index)
+    {
+        const float Height = Index == 0 ? 5.0f : Index == 1 ? 15.0f : 30.0f;
+        const float Y = -1400.0f - Index * 800.0f;
+        const auto Walker = Create(FVector(-600.0f, Y, 90.5f));
+        Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Walker).TargetLocation = FVector(650.0f, Y, 90.5f + Height);
+        StepWalkers.Add(Walker);
+    }
+    Run(Navigation);
+    for (const auto Walker : StepWalkers)
+    {
+        const auto& Route = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Walker);
+        TestTrue(TEXT("小台阶生成直接完整路线 不绕开平台"), Route.bHasPath && !Route.bPartialPath &&
+            Route.TailDistances.Num() > 0 && Route.TailDistances[0] < 1450.0f);
+    }
+    for (int32 Frame = 0; Frame < 420; ++Frame)
+    {
+        World->TimeSeconds += 1.0 / 30.0;
+        Run(Navigation);
+        Run(Avoidance);
+        Run(Movement);
+    }
+    for (int32 Index = 0; Index < StepWalkers.Num(); ++Index)
+    {
+        const auto Walker = StepWalkers[Index];
+        const FVector Position = Manager.GetFragmentDataChecked<FTransformFragment>(Walker).GetTransform().GetLocation();
+        const float Height = Index == 0 ? 5.0f : Index == 1 ? 15.0f : 30.0f;
+        TestTrue(FString::Printf(TEXT("真实导航与物理联合跨越%.0f厘米台阶"), Height), Position.X > 500.0f &&
+            FMath::IsNearlyEqual(Position.Y, -1400.0f - Index * 800.0f, 40.0f) && FMath::IsNearlyEqual(Position.Z, 90.5f + Height, 2.0f));
+        Manager.DestroyEntity(Walker);
+    }
+    World->TimeSeconds = 0.0;
     const auto Entity = Create(FVector(-1800.0f, 0.0f, 90.0f));
     Run(Navigation);
     auto& Path = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);

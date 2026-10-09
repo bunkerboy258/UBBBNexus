@@ -41,6 +41,55 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationStateFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "GameFramework/PlayerState.h"
+
+namespace
+{
+    UWorld* ValidationWorld(UObject* Context);
+}
+
+int32 UBBBMassValidationLibrary::DamagePopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities, const float Damage)
+{
+    UWorld* World = ValidationWorld(WorldContext);
+    if (!World || Entities.IsEmpty() || Entities.Num() > 1000 || !FMath::IsFinite(Damage) || Damage <= 0.0f || Damage > 10000.0f)
+    {
+        return 0;
+    }
+    auto* Mass = World->GetSubsystem<UBBBMassSubsystem>();
+    auto* Controller = World->GetFirstPlayerController();
+    auto* Player = Controller ? Controller->GetPlayerState<APlayerState>() : nullptr;
+    auto* EntitySubsystem = World->GetSubsystem<UMassEntitySubsystem>();
+    if (!Mass || !Player || Player->GetPlayerId() < 0 || !EntitySubsystem)
+    {
+        return 0;
+    }
+    auto& Manager = EntitySubsystem->GetMutableEntityManager();
+    int32 Submitted = 0;
+    for (const FMassEntityHandle Entity : Entities)
+    {
+        if (!Manager.IsEntityValid(Entity))
+        {
+            continue;
+        }
+        const auto* State = Manager.GetFragmentDataPtr<FBBBMonsterDamageFragment>(Entity);
+        if (!State)
+        {
+            continue;
+        }
+        const auto* Current = State->Contributions.Find(Player->GetPlayerId());
+        FBBBMonsterDamageContribution Contribution = Current ? *Current : FBBBMonsterDamageContribution();
+        Contribution.PlayerId = Player->GetPlayerId();
+        Contribution.Damage += Damage;
+        Contribution.LastHitTime = World->GetTimeSeconds();
+        FBBBMonsterDamageLocalControlPacket Packet;
+        Packet.Include(Contribution);
+        Submitted += Mass->SubmitInput(Entity, MoveTemp(Packet)) ? 1 : 0;
+    }
+    return Submitted;
+}
 
 namespace
 {
@@ -321,6 +370,14 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("health"), Health ? Health->CurrentHealth : 0.0f);
             Sample->SetStringField(TEXT("actorPath"), ActorFragment && ActorFragment->Get() ? ActorFragment->Get()->GetPathName() : TEXT(""));
             const AActor* const DisplayActor = ActorFragment ? ActorFragment->Get() : nullptr;
+            const auto* Corpse = DisplayActor ? DisplayActor->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;
+            const auto* CorpseMesh = DisplayActor ? DisplayActor->FindComponentByClass<USkeletalMeshComponent>() : nullptr;
+            const auto* Death = Manager.GetFragmentDataPtr<FBBBMonsterDeathFragment>(Entity);
+            Sample->SetBoolField(TEXT("corpseActive"), Corpse && Corpse->IsCorpseActive());
+            Sample->SetBoolField(TEXT("corpseSimulating"), Corpse && Corpse->IsCorpseSimulating());
+            Sample->SetNumberField(TEXT("corpseDestroyAt"), Death ? Death->DestroyAtTime : -1.0f);
+            Sample->SetNumberField(TEXT("corpsePelvisZ"), CorpseMesh ? CorpseMesh->GetSocketLocation(TEXT("pelvis")).Z : 0.0f);
+            Sample->SetBoolField(TEXT("corpseMeshTick"), CorpseMesh && CorpseMesh->IsComponentTickEnabled());
             Sample->SetNumberField(TEXT("actorYawDegrees"), DisplayActor ? DisplayActor->GetActorRotation().Yaw : 0.0);
             Sample->SetNumberField(TEXT("actorPositionErrorCm"), DisplayActor && Transform ?
                 FVector::Distance(DisplayActor->GetActorLocation(), Transform->GetTransform().GetLocation()) : 0.0);

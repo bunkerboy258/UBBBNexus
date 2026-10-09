@@ -24,6 +24,12 @@ UBBBMonsterHitReactionComponent::UBBBMonsterHitReactionComponent(const FObjectIn
 
 void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, const bool bAlive, const bool bAuthoredStagger)
 {
+    if (!bAlive)
+    {
+        bPresentationAlive = false;
+        ObservedHitSerial = Hit.Serial;
+        return;
+    }
     if (bAlive && bAuthoredStagger)
     {
         ResetHitReactSystem();
@@ -31,23 +37,7 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
         bPresentationAlive = true;
         return;
     }
-    const bool bEnteredDeath = bPresentationAlive && !bAlive;
     bPresentationAlive = bAlive;
-    if (bEnteredDeath)
-    {
-        DeathReactionEndsAt = GetWorld()->GetTimeSeconds() + 0.45f;
-    }
-    if (!bAlive && GetWorld()->GetTimeSeconds() >= DeathReactionEndsAt)
-    {
-        ResetHitReactSystem();
-        ObservedHitSerial = Hit.Serial;
-        return;
-    }
-
-    if (!bAlive && !bEnteredDeath)
-    {
-        return;
-    }
 
     if (Hit.Serial == 0 || Hit.Serial == ObservedHitSerial)
     {
@@ -155,7 +145,7 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
 
 bool UBBBMonsterHitReactionComponent::CanHitReact_Implementation() const
 {
-    return (bPresentationAlive || (GetWorld() && GetWorld()->GetTimeSeconds() < DeathReactionEndsAt))
+    return bPresentationAlive
         && IsValid(GetOwner()) && !GetOwner()->IsHidden() && IsValid(Mesh)
         && Mesh->IsVisible() && Mesh->GetPredictedLODLevel() <= 2;
 }
@@ -233,7 +223,6 @@ void UBBBMonsterHitReactionComponent::ResetPresentation()
     ResetHitReactSystem();
     ObservedHitSerial = 0;
     bPresentationAlive = true;
-    DeathReactionEndsAt = -1.0f;
 }
 
 uint32 UBBBMonsterHitReactionComponent::GetObservedHitSerial() const

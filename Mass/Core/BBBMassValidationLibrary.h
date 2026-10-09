@@ -57,6 +57,16 @@ public:
     static FString InspectPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities);
 
     /**
+     * 对明确测试句柄贡献本地玩家累计伤害 由正式解析和生命处理器执行
+     * @param WorldContext		当前 PIE 世界
+     * @param Entities		本工具生成的完整实体句柄
+     * @param Damage		本次新增伤害
+     * @return 成功投递的测试实体数量
+     */
+    UFUNCTION(BlueprintCallable, Category = "BBB|验证")
+    static int32 DamagePopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities, float Damage);
+
+    /**
      * 仅回收本轮有效测试句柄 不销毁其它实体
      * @param WorldContext		当前 PIE 世界
      * @param Entities		本轮完整代际句柄

@@ -108,7 +108,7 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     {
         return Hit.IsValidBlockingHit() && Hit.ImpactNormal.Z >= Movement.WalkableFloorZ;
     };
-    const auto FindSupport = [&World, &SupportCapsule, &Params, &Walkable, SupportShrink](FVector& Center, const float Distance, FVector& Normal)
+    const auto FindSupport = [&World, &Movement, &SupportCapsule, &Params, &Walkable, SupportShrink](FVector& Center, const float Distance, FVector& Normal, float* SurfaceHeight = nullptr)
     {
         FHitResult Floor;
         // 支撑查询略缩胶囊 避免贴墙的零时刻侧面命中遮住脚下地面
@@ -116,8 +116,28 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
             Center - FVector::UpVector * (Distance + SupportShrink), FQuat::Identity, ECC_Pawn, SupportCapsule, Params) &&
             Walkable(Floor) && Floor.Normal.Z > KINDA_SMALL_NUMBER)
         {
+            FHitResult CenterFloor;
+            if (Floor.ImpactNormal.Z > 0.99f &&
+                Floor.ImpactPoint.Z > Center.Z - Movement.CapsuleHalfHeight + Movement.MaxStepHeight + Skin &&
+                World.LineTraceSingleByChannel(CenterFloor, Center,
+                Center - FVector::UpVector * (Movement.CapsuleHalfHeight + Distance + Movement.MaxStepHeight), ECC_Pawn, Params) &&
+                Walkable(CenterFloor) && CenterFloor.ImpactNormal.Z > 0.99f &&
+                Floor.ImpactPoint.Z > CenterFloor.ImpactPoint.Z + Movement.MaxStepHeight + Skin)
+            {
+                Center.Z = CenterFloor.ImpactPoint.Z + Movement.CapsuleHalfHeight + Skin;
+                Normal = CenterFloor.ImpactNormal;
+                if (SurfaceHeight)
+                {
+                    *SurfaceHeight = Floor.ImpactPoint.Z;
+                }
+                return true;
+            }
             Center.Z = Floor.Location.Z + Skin + SupportShrink / Floor.Normal.Z;
             Normal = Floor.ImpactNormal;
+            if (SurfaceHeight)
+            {
+                *SurfaceHeight = Floor.ImpactPoint.Z;
+            }
             return true;
         }
         return false;
@@ -171,11 +191,13 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
             const FVector Raised = Start + FVector::UpVector * Movement.MaxStepHeight;
             FVector Candidate = Raised + HorizontalStep;
             FVector CandidateNormal = FVector::UpVector;
+            float CandidateSurfaceHeight = 0.0f;
             FHitResult UpHit;
             FHitResult ForwardHit;
             if (!Sweep(Start, Raised, UpHit) && !Sweep(Raised, Candidate, ForwardHit) &&
-                FindSupport(Candidate, Movement.MaxStepHeight + SupportDistance, CandidateNormal) &&
-                Candidate.Z <= Start.Z + Movement.MaxStepHeight + Skin)
+                FindSupport(Candidate, Movement.MaxStepHeight + SupportDistance, CandidateNormal, &CandidateSurfaceHeight) &&
+                Candidate.Z <= Start.Z + Movement.MaxStepHeight + Skin &&
+                CandidateSurfaceHeight <= Start.Z - Movement.CapsuleHalfHeight + Movement.MaxStepHeight + Skin)
             {
                 Location = Candidate;
                 Ground.SupportNormal = CandidateNormal;
@@ -185,7 +207,11 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         if (bBlocked && !bStepped && !Hit.bStartPenetrating)
         {
             Location += Hit.Normal * Skin;
-            const FVector Remainder = FVector::VectorPlaneProject(Delta * (1.0f - Hit.Time), Hit.Normal);
+            FVector Remainder = FVector::VectorPlaneProject(Delta * (1.0f - Hit.Time), Hit.Normal);
+            if (!Walkable(Hit) || (bWasGrounded && Hit.ImpactPoint.Z > Start.Z - Movement.CapsuleHalfHeight + Movement.MaxStepHeight + Skin))
+            {
+                Remainder.Z = FMath::Min(Remainder.Z, 0.0);
+            }
             FHitResult SlideHit;
             const bool bSlideBlocked = Sweep(Location, Location + Remainder, SlideHit);
             Location += Remainder * (bSlideBlocked ? SlideHit.Time : 1.0f);

@@ -28,8 +28,16 @@ public:
     float MaxHealth = 100.0f;
 
     /** 死亡表现保留秒数 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "死亡后存活时间"))
-    float DeathLifetime = 3.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "5.0", DisplayName = "尸体保留时长"))
+    float CorpseLifetime = 20.0f;
+
+    /** 未进入物理时死亡动作的独立播放时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.1", DisplayName = "死亡动作时长"))
+    float DeathAnimationDuration = 1.7f;
+
+    /** 尸体落地后持续物理的最长时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.5", DisplayName = "尸体活动物理时长"))
+    float CorpseSimulationDuration = 4.0f;
 
     /** 巡逻与近距离接近速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "走路速度"))
