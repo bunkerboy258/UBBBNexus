@@ -15,66 +15,129 @@ class ABBB_EVAC_API UBBBRifleAnimInstance final : public UBBBEquipmentAnimInstan
 
 public:
     /** @return 本武器专属的角色后坐力序列快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    UAnimSequence *GetRecoilAnimation() const
+    UAnimSequence *GetRecoilAnimation() const override
     {
         return RecoilAnimation;
     }
 
     /** @return 本次武器快照的世界时间 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    float GetSnapshotTimeSeconds() const
+    float GetSnapshotTimeSeconds() const override
     {
         return SnapshotTimeSeconds;
     }
 
     /** @return 当前武器已经成立的开火序号 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    int32 GetFireSequence() const
+    int32 GetFireSequence() const override
     {
         return FireSequence;
     }
 
     /** @return 腰射相机后坐力配置快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    FBBBPlayerCameraRecoilSettings GetHipFireCameraSettings() const
+    FBBBPlayerCameraRecoilSettings GetHipFireCameraSettings() const override
     {
         return HipFireCameraSettings;
     }
 
     /** @return 瞄准相机后坐力配置快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    FBBBPlayerCameraRecoilSettings GetAimFireCameraSettings() const
+    FBBBPlayerCameraRecoilSettings GetAimFireCameraSettings() const override
     {
         return AimFireCameraSettings;
     }
 
     /** @return 空中相机冲量倍率快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    float GetAirborneCameraImpulseScale() const
+    float GetAirborneCameraImpulseScale() const override
     {
         return AirborneCameraImpulseScale;
     }
 
     /** @return 空中相机回零速度倍率快照 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    float GetAirborneCameraRecoveryScale() const
+    float GetAirborneCameraRecoveryScale() const override
     {
         return AirborneCameraRecoveryScale;
     }
 
     /** @return 步枪是否正在换弹 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    bool IsReloading() const
+    bool IsReloading() const override
     {
         return bIsReloading;
     }
 
     /** @return 最近一次开火至当前快照的间隔 */
-    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
-    float GetTimeSinceLastFireSeconds() const
+    float GetTimeSinceLastFireSeconds() const override
     {
         return TimeSinceLastFireSeconds;
+    }
+
+    /** @return 腰射瞄准跟随速度快照 */
+    float GetHipFireAimFollowSpeed() const override
+    {
+        return HipFireAimFollowSpeed;
+    }
+
+    /** @return 瞄准射击跟随速度快照 */
+    float GetAimFireAimFollowSpeed() const override
+    {
+        return AimFireAimFollowSpeed;
+    }
+
+    /** @return 腰射后向后坐力权重快照 */
+    float GetHipFireBackwardRecoilAlpha() const override
+    {
+        return HipFireBackwardRecoilAlpha;
+    }
+
+    /** @return 瞄准射击后向后坐力权重快照 */
+    float GetAimFireBackwardRecoilAlpha() const override
+    {
+        return AimFireBackwardRecoilAlpha;
+    }
+
+    /** @return 腰射摇摆幅度快照 */
+    FVector2D GetHipFireSwayAmplitudeDegrees() const override
+    {
+        return HipFireSwayAmplitudeDegrees;
+    }
+
+    /** @return 瞄准摇摆幅度快照 */
+    FVector2D GetAimFireSwayAmplitudeDegrees() const override
+    {
+        return AimFireSwayAmplitudeDegrees;
+    }
+
+    /** @return 腰射摇摆频率快照 */
+    FVector2D GetHipFireSwayFrequency() const override
+    {
+        return HipFireSwayFrequency;
+    }
+
+    /** @return 瞄准摇摆频率快照 */
+    FVector2D GetAimFireSwayFrequency() const override
+    {
+        return AimFireSwayFrequency;
+    }
+
+    /** @return 空中瞄准跟随倍率快照 */
+    float GetAirborneAimFollowScale() const override
+    {
+        return AirborneAimFollowScale;
+    }
+
+    /** @return 空中后向后坐力倍率快照 */
+    float GetAirborneBackwardRecoilScale() const override
+    {
+        return AirborneBackwardRecoilScale;
+    }
+
+    /** @return 空中摇摆幅度倍率快照 */
+    float GetAirborneSwayAmplitudeScale() const override
+    {
+        return AirborneSwayAmplitudeScale;
+    }
+
+    /** @return 空中摇摆频率倍率快照 */
+    float GetAirborneSwayFrequencyScale() const override
+    {
+        return AirborneSwayFrequencyScale;
     }
 
 protected:
