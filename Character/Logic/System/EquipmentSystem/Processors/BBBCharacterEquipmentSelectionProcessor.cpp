@@ -10,7 +10,7 @@ void FBBBCharacterEquipmentSelectionProcessor::Update(FBBBCharacterEquipmentUpda
     if (!Context.bIsMirror)
     {
         Context.DesiredEquipment = Cast<ABBBEquipment>(
-            Context.RuntimeData.Item.ReadItemBarState().DesiredMainHandItem.Get());
+            Context.RuntimeData.Item.ReadCharacterItemBarState().DesiredMainHandItem.Get());
         Context.bHasSelectionResult = true;
         return;
     }

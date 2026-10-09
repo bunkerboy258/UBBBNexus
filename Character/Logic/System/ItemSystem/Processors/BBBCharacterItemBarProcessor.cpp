@@ -6,7 +6,7 @@
 
 void FBBBCharacterItemBarProcessor::Update(FBBBCharacterItemUpdateContext &Context) const
 {
-    const auto &Inventory = Context.RuntimeData.Item.ReadItemInventoryState();
+    const auto &Inventory = Context.RuntimeData.Item.ReadCharacterItemInventoryState();
     auto &Bar = Context.RuntimeData.Item.ItemBarState;
     auto &Operations = Context.RuntimeData.Item.ItemOperationState;
     Bar.QuickAccessSlotCount = FMath::Clamp(Context.Config.QuickAccessSlotCount, 1, Inventory.BackpackSlotCount);

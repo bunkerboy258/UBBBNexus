@@ -60,8 +60,8 @@ bool FBBBCharacterItemRegionsTest::RunTest(const FString &Parameters)
         Items.Update();
     };
     Step();
-    const auto &Inventory = Character->RuntimeData.Item.ReadItemInventoryState();
-    const auto &Operations = Character->RuntimeData.Item.ReadItemOperationState();
+    const auto &Inventory = Character->RuntimeData.Item.ReadCharacterItemInventoryState();
+    const auto &Operations = Character->RuntimeData.Item.ReadCharacterItemOperationState();
     TestEqual(TEXT("五快捷 二十装备 三十杂物 八穿戴"), Inventory.Slots.Num(), 63);
     for (int32 Index = 0; Index < 26; ++Index)
     {

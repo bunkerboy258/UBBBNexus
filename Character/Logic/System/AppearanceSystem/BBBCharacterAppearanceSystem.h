@@ -1,6 +1,8 @@
 #pragma once
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceInputProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceSelectionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceResourceProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceMaterialProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceDisplayProcessor.h"
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
@@ -28,5 +30,7 @@ private:
     const FBBBCharacterAppearanceConfig *Config = nullptr;
     FBBBCharacterAppearanceInputProcessor InputProcessor;
     FBBBCharacterAppearanceSelectionProcessor SelectionProcessor;
+    FBBBCharacterAppearanceResourceProcessor ResourceProcessor;
+    FBBBCharacterAppearanceMaterialProcessor MaterialProcessor;
     FBBBCharacterAppearanceDisplayProcessor DisplayProcessor;
 };

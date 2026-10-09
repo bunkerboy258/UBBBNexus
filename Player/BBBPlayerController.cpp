@@ -262,21 +262,21 @@ bool ABBBPlayerController::HasItemInventory() const
     {
         return false;
     }
-    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
     return Inventory.BackpackSlotCount > 0 && Inventory.Slots.Num() >= Inventory.BackpackSlotCount;
 }
 
 int32 ABBBPlayerController::GetItemSlotCount() const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().Slots.Num() : 0;
+    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Slots.Num() : 0;
 }
 
 void ABBBPlayerController::GetEquipmentStorageRange(int32 &Start, int32 &Count) const
 {
     Start = GetQuickAccessSlotCount();
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    Count = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().EquipmentStorageSlotCount : 0;
+    Count = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().EquipmentStorageSlotCount : 0;
 }
 
 void ABBBPlayerController::GetMiscStorageRange(int32 &Start, int32 &Count) const
@@ -284,14 +284,14 @@ void ABBBPlayerController::GetMiscStorageRange(int32 &Start, int32 &Count) const
     GetEquipmentStorageRange(Start, Count);
     Start += Count;
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    Count = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlotCount - Start : 0;
+    Count = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().BackpackSlotCount - Start : 0;
 }
 
 void ABBBPlayerController::GetWearSlotRange(int32 &Start, TArray<FName> &Names) const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    Start = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().BackpackSlotCount : 0;
-    Names = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().WearSlots : TArray<FName>();
+    Start = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().BackpackSlotCount : 0;
+    Names = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().WearSlots : TArray<FName>();
 }
 
 UBBBItemDefinition *ABBBPlayerController::GetItemDefinition(const int32 Slot) const
@@ -301,7 +301,7 @@ UBBBItemDefinition *ABBBPlayerController::GetItemDefinition(const int32 Slot) co
     {
         return nullptr;
     }
-    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
     return Inventory.Slots.IsValidIndex(Slot) ? Inventory.Slots[Slot].Definition.Get() : nullptr;
 }
 
@@ -312,14 +312,14 @@ FGuid ABBBPlayerController::GetItemInstanceId(const int32 Slot) const
     {
         return FGuid();
     }
-    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
     return Inventory.Slots.IsValidIndex(Slot) ? Inventory.Slots[Slot].InstanceId : FGuid();
 }
 
 int32 ABBBPlayerController::GetQuickAccessSlotCount() const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().QuickAccessSlotCount : 0;
+    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().QuickAccessSlotCount : 0;
 }
 
 FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 Slot) const
@@ -330,7 +330,7 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
     {
         return Data;
     }
-    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadItemInventoryState();
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
     if (!Inventory.Slots.IsValidIndex(Slot))
     {
         return Data;
@@ -377,7 +377,7 @@ FText ABBBPlayerController::GetActiveItemName() const
 int32 ABBBPlayerController::GetSelectedItemSlot() const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().SelectedSlot : INDEX_NONE;
+    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().SelectedSlot : INDEX_NONE;
 }
 
 bool ABBBPlayerController::SubmitItemAdd(const FName EquipmentId)
@@ -413,7 +413,7 @@ void ABBBPlayerController::GetItemOperationResult(int32 &Revision, int32 &Succee
     RejectedCount = 0;
     if (const ABBBCharacter *ItemCharacter = GetItemCharacter())
     {
-        const auto &Result = ItemCharacter->RuntimeData.Item.ReadItemOperationState();
+        const auto &Result = ItemCharacter->RuntimeData.Item.ReadCharacterItemOperationState();
         Revision = Result.Revision;
         SucceededCount = Result.SucceededCount;
         RejectedCount = Result.RejectedCount;
@@ -428,9 +428,9 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
         return;
     }
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemInventoryState().Revision : 0;
-    const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemBarState().Revision : 0;
-    const int32 OperationRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadItemOperationState().Revision : 0;
+    const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Revision : 0;
+    const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().Revision : 0;
+    const int32 OperationRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemOperationState().Revision : 0;
     AActor *Active = ItemCharacter ? ItemCharacter->GetActiveEquipment() : nullptr;
     if (ObservedItemCharacter.Get() != ItemCharacter && IsBackpackOpen())
     {

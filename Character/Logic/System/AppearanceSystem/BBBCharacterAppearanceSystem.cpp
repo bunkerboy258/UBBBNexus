@@ -20,6 +20,8 @@ void FBBBCharacterAppearanceSystem::Update()
         Character->GetCharacterConfig().Item.Catalog, Data->External.ReadNetworkIdentityState().bIsMirror};
     InputProcessor.Update(Context);
     SelectionProcessor.Update(Context);
+    ResourceProcessor.Update(Context);
+    MaterialProcessor.Update(Context);
     DisplayProcessor.Update(Context);
 }
 

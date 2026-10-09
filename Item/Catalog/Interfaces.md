@@ -2,7 +2,7 @@
 
 ## 物品只读结果
 
-从 `Character.RuntimeData.Item.ReadItemInventoryState()` 读取:
+从 `Character.RuntimeData.Item.ReadCharacterItemInventoryState()` 读取:
 
 - `Slots` 是唯一真实物品数组。
 - `[0 BackpackSlotCount)` 是背包 前序快捷区域仍由 ItemBarState 定义。
@@ -13,8 +13,8 @@
 - 同一实例只存在一个格子 穿戴后释放原背包格子。
 - 不能用 Actor 有效性判断物品占用 不能以型号替代单件身份。
 
-从 `ReadItemBarState()` 读取选中快捷格子与目标主手装备。
-从 `ReadItemOperationState()` 读取完成版本与成功失败数量。
+从 `ReadCharacterItemBarState()` 读取选中快捷格子与目标主手装备。
+从 `ReadCharacterItemOperationState()` 读取完成版本与成功失败数量。
 实际主手装备继续由 `Character.GetActiveEquipment()` 读取。
 
 ## 物品输入
@@ -33,9 +33,9 @@
 
 ## 外观只读与输入
 
-从 `RuntimeData.Appearance.ReadAppearanceSelectionState().Snapshot` 读取完整既成事实。
-从 `ReadAppearanceDisplayState()` 读取加载与蓝图应用结果。
-从 `ReadAppearanceStyleState()` 读取按实例关联的染色迷彩和基础选择。
+从 `RuntimeData.Appearance.ReadCharacterAppearanceSelectionState().Snapshot` 读取完整既成事实。
+从 `ReadCharacterAppearanceDisplayState()` 读取资源准备与机械应用状态。
+从 `ReadCharacterAppearanceStyleState()` 读取按实例关联的染色迷彩和基础选择。
 
 独立本机输入均位于 Character/Input/LocalControl/Appearance/:
 
@@ -47,25 +47,29 @@
 
 ## 蓝图显示边界
 
-ABBBCharacter 的 `ApplyAppearanceDisplay(Parts)` 是 BlueprintImplementableEvent。
-每个显示部件包含 Slot Mesh Materials Attachments 与回退标识。
-蓝图只清理旧显示 设置模型材质及挂接附件 不重新判断穿戴或搭配。
+ABBBCharacter 的 `ApplyAppearanceDisplay(Parts)` 是 BlueprintNativeEvent 默认由原生代码完成机械应用。
+每个显示部件包含 Slot Mesh Materials Attachments 与回退标识 附件按挂点携带 Mesh 和完整 Materials。
+蓝图覆盖只能清理旧显示 设置模型材质及挂接附件 并返回是否完整应用成功 不重新判断穿戴或搭配。
+应用前核对全部配置组件和附件挂点 缺失或重复映射拒绝目标显示。
+PreparedRevision 表示已经准备的目标版本 AppliedRevision 只在完整目标应用成功后前进。
+bApplied 表示当前目标成功 bFallbackApplied 表示失败后已对可用组件应用基础回退。
+Parts 是准备中的目标结果 FallbackParts 是基础回退结果 两者不能仅凭数组存在判断当前显示成功。
+资源或机械应用失败不改变物品位置 同一版本按一秒间隔重试 重复失败不反复输出日志。
+未变化的动态材质实例复用 主体和附件均更新染色 迷彩 污渍与磨损。
 国旗材质与裤腿选择已经由 C++ 生成。
 UI 人物预览可机械复制正式人物的显示结果 不创建另一份真实物品容器。
 
-## 迁移要求
+## 身份与持久化边界
 
-旧 GetBackpackItems 的 Actor 数组不能继续表示通用物品。
-旧 GetItemDefinition 应改为通用 UBBBItemDefinition。
-Player 控制器 UI 旧外观会话和 Client 外观存档消费方由 UI 任务迁移。
-删除 UBBBAppearanceComponent 后不得保留转发或兼容组件。
-完整外观存档不能直接恢复正式穿戴部件 本轮没有背包持久化。
+通用物品读取 UBBBItemDefinition 单件身份使用 InstanceId 不以 Actor 数组表示物品容器。
+外观存档只保存本领域风格 不直接恢复正式穿戴物品 本轮没有背包持久化。
+全部消费方使用当前直接接口 不保留旧组件 转发接口 属性跳转或兼容读取。
 
-## 既有装备资产的型号迁移
+## 既有装备型号
 
-统一定义中的 `ItemId` 沿用下表型号。现有装备定义的旧 `EquipmentId` 字段删除后 资产必须按表明确写入新字段并保存 不使用属性跳转或兼容读取。
+统一定义中的 `ItemId` 使用下表型号。
 
-| 现有定义 | 新 ItemId |
+| 定义 | ItemId |
 | --- | --- |
 | Equipment/Rifle/Rifle_01/DA_ModernWeapons_Rifle_01 | ModernWeapons_Rifle_01 |
 | Equipment/Rifle/Rifle_02/DA_ModernWeapons_Rifle_02 | ModernWeapons_Rifle_02 |

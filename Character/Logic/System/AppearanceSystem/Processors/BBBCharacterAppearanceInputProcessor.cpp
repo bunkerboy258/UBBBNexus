@@ -27,7 +27,7 @@ void FBBBCharacterAppearanceInputProcessor::Update(FBBBCharacterAppearanceUpdate
         Input.PendingSelections.Reset();
         return;
     }
-    const auto &Inventory = Context.Data.Item.ReadItemInventoryState();
+    const auto &Inventory = Context.Data.Item.ReadCharacterItemInventoryState();
     for (int32 Index = Style.Styles.Num() - 1; Index >= 0; --Index)
     {
         const FGuid Id = Style.Styles[Index].InstanceId;

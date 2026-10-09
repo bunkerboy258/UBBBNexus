@@ -13,22 +13,22 @@ struct FBBBCharacterAppearanceDomainState final
     GENERATED_BODY()
 public:
     /** @return 最终外观事实 */
-    const FBBBCharacterAppearanceSelectionState &ReadAppearanceSelectionState() const
+    const FBBBCharacterAppearanceSelectionState &ReadCharacterAppearanceSelectionState() const
     {
         return SelectionState;
     }
     /** @return 实例参数与基础选择 */
-    const FBBBCharacterAppearanceStyleState &ReadAppearanceStyleState() const
+    const FBBBCharacterAppearanceStyleState &ReadCharacterAppearanceStyleState() const
     {
         return StyleState;
     }
     /** @return 待消费输入 */
-    const FBBBCharacterAppearanceInputState &ReadAppearanceInputState() const
+    const FBBBCharacterAppearanceInputState &ReadCharacterAppearanceInputState() const
     {
         return InputState;
     }
     /** @return 本地显示结果 */
-    const FBBBCharacterAppearanceDisplayState &ReadAppearanceDisplayState() const
+    const FBBBCharacterAppearanceDisplayState &ReadCharacterAppearanceDisplayState() const
     {
         return DisplayState;
     }
@@ -36,6 +36,8 @@ private:
     friend class FBBBCharacterParseSystem;
     friend class FBBBCharacterAppearanceInputProcessor;
     friend class FBBBCharacterAppearanceSelectionProcessor;
+    friend class FBBBCharacterAppearanceResourceProcessor;
+    friend class FBBBCharacterAppearanceMaterialProcessor;
     friend class FBBBCharacterAppearanceDisplayProcessor;
     /** 既成事实 */
     UPROPERTY()

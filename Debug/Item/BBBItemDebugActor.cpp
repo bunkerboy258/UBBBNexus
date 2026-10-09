@@ -76,7 +76,7 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
         SetActorTickEnabled(false);
         return;
     }
-    if (Character->RuntimeData.Item.ReadItemInventoryState().Slots.IsEmpty()
+    if (Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots.IsEmpty()
         || !Character->GetMesh()
         || !Cast<UBBBAnimInstance>(Character->GetMesh()->GetAnimInstance()))
     {

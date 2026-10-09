@@ -14,19 +14,19 @@ struct FBBBCharacterItemDomainState final
 
 public:
     /** @return 真实背包只读状态 */
-    const FBBBCharacterItemInventoryState &ReadItemInventoryState() const
+    const FBBBCharacterItemInventoryState &ReadCharacterItemInventoryState() const
     {
         return ItemInventoryState;
     }
 
     /** @return 快捷选择与目标主手物品只读状态 */
-    const FBBBCharacterItemBarState &ReadItemBarState() const
+    const FBBBCharacterItemBarState &ReadCharacterItemBarState() const
     {
         return ItemBarState;
     }
 
     /** @return 待消费操作及完成结果只读状态 */
-    const FBBBCharacterItemOperationState &ReadItemOperationState() const
+    const FBBBCharacterItemOperationState &ReadCharacterItemOperationState() const
     {
         return ItemOperationState;
     }

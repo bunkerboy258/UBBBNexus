@@ -5,7 +5,7 @@
 
 void FBBBCharacterAppearanceObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Context) const
 {
-    const auto &Snapshot = Context.Data.Appearance.ReadAppearanceSelectionState().Snapshot;
+    const auto &Snapshot = Context.Data.Appearance.ReadCharacterAppearanceSelectionState().Snapshot;
     auto &Observed = Context.Data.Network.AppearanceObservationState;
     if (!Snapshot.IsValid() || Snapshot.Revision == Observed.Revision)
     {

@@ -10,8 +10,8 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
     {
         return;
     }
-    const auto &Inventory = Context.Data.Item.ReadItemInventoryState();
-    const auto &Style = Context.Data.Appearance.ReadAppearanceStyleState();
+    const auto &Inventory = Context.Data.Item.ReadCharacterItemInventoryState();
+    const auto &Style = Context.Data.Appearance.ReadCharacterAppearanceStyleState();
     auto &Selection = Context.Data.Appearance.SelectionState.Snapshot;
     TArray<FBBBCharacterAppearancePart> Parts;
     TArray<FName> BaseSlots;
