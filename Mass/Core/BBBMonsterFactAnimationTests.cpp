@@ -18,6 +18,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 /** 验证男女僵尸的新基类只复制事实 不选择动画或推进玩法时间 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterFactAnimationTest, "UBBB.Mass.ZombieAnimationFacts",
@@ -117,6 +119,32 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         }
 
         UBBBMonsterPresentationComponent* const Presentation = Actor->GetMonsterPresentation();
+        FBBBMonsterVariationFragment Variation;
+        Variation.Seed = 12345;
+        Variation.LocomotionStyle = 2;
+        Variation.SpeedScale = 1.1f;
+        Variation.Infection = 192;
+        Presentation->ApplyVariationFacts(Variation, 0.73f);
+        const FInt64Property* Seed = FindFProperty<FInt64Property>(Animation->GetClass(), TEXT("VariationSeedFact"));
+        const FIntProperty* Style = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("LocomotionStyleFact"));
+        const FFloatProperty* Phase = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("LoopPhaseFact"));
+        const FFloatProperty* AnimationSpeed = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("AnimationSpeedFact"));
+        if (!TestTrue(TEXT("四个出生表现事实必须只读可反射"), Seed && Style && Phase && AnimationSpeed))
+        {
+            return false;
+        }
+        TestNull(TEXT("不保留临时演员编号兼容属性"), FindFProperty<FProperty>(Animation->GetClass(), TEXT("PresentationIdFact")));
+        TestTrue(TEXT("感染写入图元数据而非动态材质"), Actor->GetMonsterMesh()->GetCustomPrimitiveData().Data.IsValidIndex(0)
+            && FMath::IsNearlyEqual(Actor->GetMonsterMesh()->GetCustomPrimitiveData().Data[0], 192.0f / 255.0f));
+        for (int32 Slot = 0; Slot < Actor->GetMonsterMesh()->GetNumMaterials(); ++Slot)
+        {
+            UMaterialInterface* const Material = Actor->GetMonsterMesh()->GetMaterial(Slot);
+            if (!TestNotNull(TEXT("感染网格材质槽必须有效"), Material))
+            {
+                return false;
+            }
+            TestFalse(TEXT("感染表现不得创建逐实例动态材质"), Material->IsA<UMaterialInstanceDynamic>());
+        }
         const FBoolProperty* Stagger = FindFProperty<FBoolProperty>(Animation->GetClass(), TEXT("StaggeringFact"));
         const FFloatProperty* StaggerProgress = FindFProperty<FFloatProperty>(Animation->GetClass(), TEXT("StaggerProgressFact"));
         const FIntProperty* StaggerVariant = FindFProperty<FIntProperty>(Animation->GetClass(), TEXT("StaggerVariantFact"));
@@ -146,6 +174,14 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 180.0f, 1.0f, 7, 0.0f);
         Animation->NativeUpdateAnimation(0.01f);
         TestEqual(TEXT("实际速度原样复制"), Speed->GetPropertyValue_InContainer(Animation), 180.0f);
+        TestEqual(TEXT("风格只读取固定出生属性"), Style->GetPropertyValue_InContainer(Animation), 2);
+        TestEqual(TEXT("稳定身份种子不读取演员临时编号"), Seed->GetPropertyValue_InContainer(Animation), static_cast<int64>(12345));
+        TestEqual(TEXT("循环相位来自实体而非动画帧时间"), Phase->GetPropertyValue_InContainer(Animation), 0.73f);
+        TestTrue(TEXT("实际移动速度归一化至样本速度"), FMath::IsNearlyEqual(AnimationSpeed->GetPropertyValue_InContainer(Animation), 180.0f / 1.1f));
+        Variation.Seed = 45678;
+        Variation.Infection = 64;
+        Presentation->ApplyVariationFacts(Variation, 0.31f);
+        TestTrue(TEXT("载体复用新身份时感染参数必须覆盖"), FMath::IsNearlyEqual(Actor->GetMonsterMesh()->GetCustomPrimitiveData().Data[0], 64.0f / 255.0f));
         TestEqual(TEXT("进入时间原样复制"), Entered->GetPropertyValue_InContainer(Animation), 1.0f);
         TestEqual(TEXT("动作编号原样复制"), ActionId->GetPropertyValue_InContainer(Animation), static_cast<int64>(7));
 

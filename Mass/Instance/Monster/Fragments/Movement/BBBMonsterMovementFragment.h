@@ -45,4 +45,7 @@ struct ABBB_EVAC_API FBBBMonsterMovementFragment final : public FMassFragment
     /** 当前追击档位 仅由移动处理器维护 */
     EBBBMonsterGait Gait = EBBBMonsterGait::Walk;
 
+    /** 出生时确定的最高运动能力 */
+    EBBBMonsterGait MaxGait = EBBBMonsterGait::Sprint;
+
 };

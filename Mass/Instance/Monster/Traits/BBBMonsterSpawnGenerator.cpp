@@ -30,11 +30,46 @@ void UBBBMonsterSpawnGenerator::Generate(
 
     // 按实体类型构建生成结果
     TArray<FMassEntitySpawnDataGeneratorResult> Results;
-    BuildResultsFromEntityTypes(Count, EntityTypes, Results);
+    FRandomStream RandomStream(UE::Mass::Utils::OverrideRandomSeedForTesting(GetRandomSelectionSeed()));
+    TArray<float, TInlineAllocator<16>> Weights;
+    TArray<int32, TInlineAllocator<16>> Counts;
+    Counts.SetNumZeroed(EntityTypes.Num());
+    float TotalWeight = 0.0f;
+    for (const FMassSpawnedEntityType& Type : EntityTypes)
+    {
+        const float Weight = FMath::IsFinite(Type.Proportion) && Type.Proportion > 0.0f && Type.GetEntityConfig() ? Type.Proportion : 0.0f;
+        TotalWeight += Weight;
+        Weights.Add(TotalWeight);
+    }
+    if (!ensureMsgf(TotalWeight > 0.0f && FMath::IsFinite(TotalWeight), TEXT("[BBBMonsterVariation]No valid weighted appearance templates")))
+    {
+        FinishedGeneratingSpawnPointsDelegate.Execute(Results);
+        return;
+    }
+    for (int32 Index = 0; Index < Count; ++Index)
+    {
+        const float Selection = RandomStream.FRand() * TotalWeight;
+        for (int32 Type = 0; Type < Weights.Num(); ++Type)
+        {
+            if (Selection < Weights[Type])
+            {
+                ++Counts[Type];
+                break;
+            }
+        }
+    }
+    for (int32 Type = 0; Type < Counts.Num(); ++Type)
+    {
+        if (Counts[Type] > 0)
+        {
+            auto& Result = Results.AddDefaulted_GetRef();
+            Result.EntityConfigIndex = Type;
+            Result.NumEntities = Counts[Type];
+        }
+    }
 
     // 以 MassSpawner 位置作为随机出生区域中心
     const FVector SpawnCenter = SpawnOwner->GetActorLocation();
-    FRandomStream RandomStream(UE::Mass::Utils::OverrideRandomSeedForTesting(GetRandomSelectionSeed()));
 
     for (FMassEntitySpawnDataGeneratorResult& Result : Results)
     {

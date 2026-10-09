@@ -3,6 +3,7 @@
 #include "Misc/AutomationTest.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
 #include "MassEntityConfigAsset.h"
 
 /** 验证同一只僵尸的三档速度 加减速与停靠边界 */
@@ -74,6 +75,7 @@ bool FBBBMonsterLocomotionTest::RunTest(const FString& Parameters)
 
     UBBBMonsterDefinition* Definition = NewObject<UBBBMonsterDefinition>();
     Definition->EntityConfig = NewObject<UMassEntityConfigAsset>();
+    Definition->Variation = NewObject<UBBBMonsterVariationDefinition>();
     TestTrue(TEXT("新配置默认有效"), Definition->IsValid());
     Definition->RunSpeed = Definition->WalkSpeed;
     TestFalse(TEXT("错乱档位必须拒绝"), Definition->IsValid());

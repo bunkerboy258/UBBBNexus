@@ -6,6 +6,7 @@
 class UMassEntityConfigAsset;
 class UBBBMonsterBloodPresentationDefinition;
 class UBBBMonsterSoundPresentationDefinition;
+class UBBBMonsterVariationDefinition;
 
 /** 小怪模板与静态玩法参数 */
 UCLASS(BlueprintType)
@@ -17,6 +18,10 @@ public:
     /** 还原出生时使用的实体模板 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (DisplayName = "实体配置"))
     TObjectPtr<UMassEntityConfigAsset> EntityConfig;
+
+    /** 全部外观共享的出生个体化规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (DisplayName = "出生差异配置"))
+    TObjectPtr<UBBBMonsterVariationDefinition> Variation;
 
     /** 最大生命值 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "最大生命值"))

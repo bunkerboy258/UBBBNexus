@@ -30,11 +30,11 @@ UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
 
 EBBBMonsterGait UBBBMonsterLocomotionProcessor::SelectGait(const FBBBMonsterMovementFragment& Movement, const float RemainingDistance, const bool bPatrol)
 {
-    if (bPatrol)
+    if (bPatrol || Movement.MaxGait == EBBBMonsterGait::Walk)
     {
         return EBBBMonsterGait::Walk;
     }
-    if (Movement.Gait == EBBBMonsterGait::Sprint || RemainingDistance >= Movement.SprintDistance)
+    if (Movement.MaxGait == EBBBMonsterGait::Sprint && (Movement.Gait == EBBBMonsterGait::Sprint || RemainingDistance >= Movement.SprintDistance))
     {
         return EBBBMonsterGait::Sprint;
     }

@@ -3,6 +3,7 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "MassCommonTypes.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterInitializationPendingTag.h"
 
 UBBBMonsterVisualizationProcessor::UBBBMonsterVisualizationProcessor()
 {
@@ -19,4 +20,5 @@ void UBBBMonsterVisualizationProcessor::ConfigureQueries(const TSharedRef<FMassE
 
     // 让可视化查询只处理小怪实体
     EntityQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
+    EntityQuery.AddTagRequirement<FBBBMonsterInitializationPendingTag>(EMassFragmentPresence::None);
 }

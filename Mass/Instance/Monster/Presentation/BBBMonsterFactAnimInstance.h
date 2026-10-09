@@ -59,9 +59,21 @@ private:
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "命中间隔事实"))
     float HitAgeFact = 10.0f;
 
-    /** 本地表现对象身份 仅供蓝图错开姿势 不作为网络实体身份 */
-    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "表现标识事实"))
-    int64 PresentationIdFact = 0;
+    /** 稳定实体出生随机依据 不随表现对象重建变化 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "出生种子事实"))
+    int64 VariationSeedFact = 0;
+
+    /** 当前移动风格的唯一分支索引 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "移动风格事实"))
+    int32 LocomotionStyleFact = 0;
+
+    /** 按出生比例校准的动画速度 不影响实际移动 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "动画速度事实"))
+    float AnimationSpeedFact = 0.0f;
+
+    /** Mass 当前循环相位 跳帧只采样当前姿势 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "循环相位事实"))
+    float LoopPhaseFact = 0.0f;
 
     /** Mass 当前行为 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "行为事实"))

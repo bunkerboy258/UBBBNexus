@@ -6,6 +6,8 @@
 
 #include "BBBMonsterPresentationComponent.generated.h"
 
+struct FBBBMonsterVariationFragment;
+
 
 /** 向小怪动画蓝图提供只读 Mass 表现状态 */
 UCLASS(ClassGroup = "Monster", BlueprintType, meta = (BlueprintSpawnableComponent))
@@ -79,7 +81,26 @@ public:
     UFUNCTION()
     void ApplyStaggerState(bool bActive, float Progress, EBBBMonsterHitRegion Region);
 
+    /**
+     * @param Variation	实体固定出生属性
+     * @param InLoopPhase	Mass 当前循环相位
+     * @return 无
+     */
+    void ApplyVariationFacts(const FBBBMonsterVariationFragment& Variation, float InLoopPhase);
+
 private:
+    /** 已绑定实体的固定出生种子 */
+    uint32 VariationSeed = 0;
+
+    /** 固定移动风格 */
+    int32 LocomotionStyle = 0;
+
+    /** 实际速度到基础动画速度的换算比例 */
+    float AnimationSpeedScale = 1.0f;
+
+    /** 只读当前循环相位 */
+    float LoopPhase = 0.0f;
+
     /** Mass 最近命中只读快照 */
     FBBBMonsterHitReactionFragment HitReaction;
 

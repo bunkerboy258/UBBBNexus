@@ -6,6 +6,7 @@
 namespace BBBMassProcessingGroups
 {
     inline const FName Parse = TEXT("BBBMassParse");
+    inline const FName Initialization = TEXT("BBBMassInitialization");
     inline const FName Decision = TEXT("BBBMassDecision");
     inline const FName Movement = TEXT("BBBMassMovement");
     inline const FName Collision = TEXT("BBBMassCollision");

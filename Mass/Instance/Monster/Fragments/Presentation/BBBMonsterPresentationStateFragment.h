@@ -26,4 +26,10 @@ struct ABBB_EVAC_API FBBBMonsterPresentationStateFragment final : public FMassFr
 
     /** 非循环动作的归一化动画位置 */
     float ActionProgress = 0.0f;
+
+    /** 当前循环相位 不保留动作历史 */
+    float LoopPhase = 0.0f;
+
+    /** 已应用到当前循环的出生身份种子 */
+    uint32 LoopSeed = 0;
 };

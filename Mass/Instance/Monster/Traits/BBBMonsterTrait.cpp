@@ -24,6 +24,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterInitializationPendingTag.h"
 
 void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildContext, const UWorld& World) const
 {
@@ -39,6 +41,8 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     }
 
     BuildContext.AddTag<FBBBMonsterTag>();
+    BuildContext.AddTag<FBBBMonsterInitializationPendingTag>();
+    BuildContext.AddFragment<FBBBMonsterVariationFragment>();
     BuildContext.AddTag<FMassCustomMovementTag>();
     BuildContext.AddFragment<FTransformFragment>();
     BuildContext.AddFragment<FMassVelocityFragment>();

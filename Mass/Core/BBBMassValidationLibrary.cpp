@@ -38,6 +38,9 @@
 #include "MassExecutionContext.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationStateFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 
 namespace
 {
@@ -241,6 +244,20 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("serial"), Entity.SerialNumber);
             Sample->SetNumberField(TEXT("behavior"), static_cast<int32>(Behavior->State));
             Sample->SetNumberField(TEXT("gait"), static_cast<int32>(Movement->Gait));
+            const auto* Variation = Manager.GetFragmentDataPtr<FBBBMonsterVariationFragment>(Entity);
+            const auto* Snapshot = Manager.GetFragmentDataPtr<FBBBMonsterPresentationStateFragment>(Entity);
+            const auto* Network = Manager.GetFragmentDataPtr<FBBBMonsterNetworkFragment>(Entity);
+            Sample->SetStringField(TEXT("instanceId"), Network ? Network->InstanceId.ToString() : TEXT(""));
+            Sample->SetNumberField(TEXT("variationSeed"), Variation ? Variation->Seed : 0);
+            Sample->SetNumberField(TEXT("infection"), Variation ? Variation->Infection : 0);
+            Sample->SetNumberField(TEXT("locomotionStyle"), Variation ? Variation->LocomotionStyle : 0);
+            Sample->SetNumberField(TEXT("speedScale"), Variation ? Variation->SpeedScale : 0);
+            Sample->SetNumberField(TEXT("phaseOffset"), Variation ? Variation->PhaseOffset : 0);
+            Sample->SetNumberField(TEXT("loopPhase"), Snapshot ? Snapshot->LoopPhase : 0);
+            Sample->SetNumberField(TEXT("maxGait"), static_cast<int32>(Movement->MaxGait));
+            Sample->SetNumberField(TEXT("walkSpeed"), Movement->WalkSpeed);
+            Sample->SetNumberField(TEXT("runSpeed"), Movement->RunSpeed);
+            Sample->SetNumberField(TEXT("sprintSpeed"), Movement->SprintSpeed);
             Sample->SetNumberField(TEXT("actionId"), Behavior->ActionId);
             Sample->SetNumberField(TEXT("enteredAt"), Behavior->StateEnteredTime);
             Sample->SetNumberField(TEXT("endsAt"), Behavior->StateEndsAtTime);

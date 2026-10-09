@@ -10,7 +10,6 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     Super::NativeInitializeAnimation();
 
     AActor* const Owner = GetOwningActor();
-    PresentationIdFact = Owner ? Owner->GetUniqueID() : 0;
     Presentation = Owner ? Owner->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;
     UWorld* const World = GetWorld();
     if (World && World->IsGameWorld())
@@ -47,6 +46,10 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
         : Source->StaggerRegion == EBBBMonsterHitRegion::RightArm || Source->StaggerRegion == EBBBMonsterHitRegion::RightLeg ? 2 : 1;
     CrawlProgressFact = Source->CrawlProgress;
     MovementSpeedFact = Source->MovementSpeed;
+    VariationSeedFact = Source->VariationSeed;
+    LocomotionStyleFact = Source->LocomotionStyle;
+    AnimationSpeedFact = Source->MovementSpeed / FMath::Max(Source->AnimationSpeedScale, 0.01f);
+    LoopPhaseFact = Source->LoopPhase;
     ActionProgressFact = Source->ActionProgress;
     ActionIdFact = Source->LastActionId;
     StateEnteredTimeFact = Source->StateEnteredTime;

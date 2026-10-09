@@ -104,7 +104,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
 
             if (!Network[Index].InstanceId.IsValid())
             {
-                Network[Index].InstanceId = FGuid::NewGuid();
+                continue;
             }
             FBBBMonsterReplicationItem Item;
             Item.InstanceId = Network[Index].InstanceId;

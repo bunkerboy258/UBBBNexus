@@ -6,6 +6,23 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 #include "IAnimationBudgetAllocator.h"
 #include "SkeletalMeshComponentBudgeted.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
+
+void UBBBMonsterPresentationComponent::ApplyVariationFacts(const FBBBMonsterVariationFragment& Variation, const float InLoopPhase)
+{
+    LoopPhase = InLoopPhase;
+    if (VariationSeed == Variation.Seed)
+    {
+        return;
+    }
+    VariationSeed = Variation.Seed;
+    LocomotionStyle = Variation.LocomotionStyle;
+    AnimationSpeedScale = Variation.SpeedScale;
+    if (auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+    {
+        Mesh->SetCustomPrimitiveDataFloat(0, static_cast<float>(Variation.Infection) / 255.0f);
+    }
+}
 
 void UBBBMonsterPresentationComponent::ApplyHitReaction(const FBBBMonsterHitReactionFragment& Hit)
 {
