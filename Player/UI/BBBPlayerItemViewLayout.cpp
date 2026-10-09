@@ -57,11 +57,11 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     Place(StorageLeft, 20.0f, 480.0f, 160.0f,
           SNew(STextBlock).Text(FText::FromString(TEXT("Bag"))).Font(TitleFont(76))
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.90f)));
-    Place(StorageLeft, 170.0f, 862.0f, 365.0f,
+    Place(StorageLeft, 150.0f, 862.0f, 365.0f,
           SAssignNew(DetailImage, SBox)
               [SNew(SOverlay) +
                SOverlay::Slot()
-                   [SNew(SScaleBox).Stretch(EStretch::ScaleToFit).VAlign(VAlign_Bottom)
+                   [SNew(SScaleBox).Stretch(EStretch::ScaleToFit).VAlign(VAlign_Center)
                        [SNew(SImage).Image_Lambda(
                            [this]()
                            {
@@ -75,7 +75,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                                 auto *Controller = GetItemController();
                                 return Controller ? Controller->GetItemDisplayData(InspectedSlot).Name : FText::GetEmpty();
                             })
-                        .Font(TitleFont(38))
+                        .Font(ArtFont(52))
                         .Justification(ETextJustify::Right)
                         .WrapTextAt(620.0f)
                         .ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.85f))

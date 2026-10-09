@@ -3,7 +3,6 @@
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
 #include "Fonts/CompositeFont.h"
-#include "Materials/MaterialInterface.h"
 #include "Styling/SlateTypes.h"
 #include "UObject/StrongObjectPtr.h"
 
@@ -75,32 +74,22 @@ inline TSharedPtr<const FCompositeFont> Typeface(const TCHAR *Path)
     return Fonts[Key];
 }
 
-/** @param Info 明确字形与字号 @return 使用 E01 旧化纹理的白色褪色字形 */
-inline FSlateFontInfo Faded(FSlateFontInfo Info)
-{
-    static TStrongObjectPtr<UMaterialInterface> Material(LoadObject<UMaterialInterface>(nullptr,
-        TEXT("/Game/_Project/UI/Bag/E01/M_E01_FadedWhiteFont.M_E01_FadedWhiteFont")));
-    checkf(Material.IsValid(), TEXT("E01 褪色字体材质缺失"));
-    Info.FontMaterial = Material.Get();
-    return Info;
-}
-
 /** @param Size 字号 @return 项目字体 避免原生控件默认字体 */
 inline FSlateFontInfo Font(int32 Size)
 {
-    return Faded(FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size));
+    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size);
 }
 
 /** @param Size 字号 @return 原稿轻字重大标题 */
 inline FSlateFontInfo TitleFont(int32 Size)
 {
-    return Faded(FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/Akrobat/Akrobat_Bold.Akrobat_Bold")), Size));
+    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/Akrobat/Akrobat_Bold.Akrobat_Bold")), Size);
 }
 
 /** @param Size 字号 @return P08 使用的艺术字字体 */
 inline FSlateFontInfo ArtFont(int32 Size)
 {
-    return Faded(FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size));
+    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size);
 }
 
 /** @return 透明文字导航 保留素材包三角选中标识 */
