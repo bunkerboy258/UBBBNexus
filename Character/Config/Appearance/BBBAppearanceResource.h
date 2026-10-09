@@ -16,6 +16,9 @@ struct FBBBAppearanceResource
     /** 显示模型 空引用表示空部件 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "模型"))
     TSoftObjectPtr<USkeletalMesh> Mesh;
+    /** 保持模型形状时跟随的骨骼 空名称表示使用角色蒙皮姿势 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "刚性跟随骨骼"))
+    FName RigidAttachBone;
     /** 当前裤腿样式 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "裤腿样式"))
     FName LegStyle;

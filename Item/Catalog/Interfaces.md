@@ -45,11 +45,12 @@
 - FBBBCharacterAppearanceDirtLocalControlPacket 与 FBBBCharacterAppearanceWeatheringLocalControlPacket: Values 范围为 0 到 1。
 - 国旗通过 Flag 物品格子选择 不提供绕过持有关系的贴片选择入口。
 
-## 蓝图显示边界
+## 外观显示边界
 
-ABBBCharacter 的 `ApplyAppearanceDisplay(Parts)` 是 BlueprintNativeEvent 默认由原生代码完成机械应用。
-每个显示部件包含 Slot Mesh Materials Attachments 与回退标识 附件按挂点携带 Mesh 和完整 Materials。
-蓝图覆盖只能清理旧显示 设置模型材质及挂接附件 并返回是否完整应用成功 不重新判断穿戴或搭配。
+AppearanceSystem 通过 C++ 显示处理器完成全部机械应用 不提供角色蓝图覆写入口。
+每个显示部件包含 Slot Mesh AttachBone RelativeTransform Materials Attachments 与回退标识 附件按挂点携带 Mesh 和完整 Materials。
+资源中的 RigidAttachBone 指定保持形状的跟随骨骼 空名称表示角色蒙皮姿势 刚性挂接偏移由资源处理器根据模型参考姿势计算。
+正常显示 基础回退与清空共用同一机械应用路径 人物蓝图只提供组件和静态配置。
 应用前核对全部配置组件和附件挂点 缺失或重复映射拒绝目标显示。
 PreparedRevision 表示已经准备的目标版本 AppliedRevision 只在完整目标应用成功后前进。
 bApplied 表示当前目标成功 bFallbackApplied 表示失败后已对可用组件应用基础回退。

@@ -1,6 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "MotionWarpingComponent.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceDisplayProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
@@ -171,9 +170,4 @@ EBBBCharacterMontageSlot ABBBCharacter::ClassifyMontageSlot(FName SlotName)
 bool ABBBCharacter::SubmitInput(const FBBBFullBodyMontageLocalControlPacket &Packet)
 {
     return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Packet);
-}
-
-bool ABBBCharacter::ApplyAppearanceDisplay_Implementation(const TArray<FBBBCharacterAppearanceDisplayPart> &Parts)
-{
-    return FBBBCharacterAppearanceDisplayProcessor::ApplyDisplay(*this, Parts, GetCharacterConfig().Appearance);
 }

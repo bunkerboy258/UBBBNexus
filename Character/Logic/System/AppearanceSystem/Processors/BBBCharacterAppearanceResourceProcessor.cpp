@@ -9,6 +9,8 @@ namespace
     bool PreparePart(FBBBCharacterAppearanceDisplayPart &Output, const FBBBAppearanceResource *Resource,
         const bool bAlternate, const bool bPatchEnabled)
     {
+        Output.AttachBone = NAME_None;
+        Output.RelativeTransform = FTransform::Identity;
         if (!Resource)
         {
             Output.Mesh = nullptr;
@@ -24,6 +26,22 @@ namespace
         }
         Output.Mesh = Mesh;
         bool bReady = Reference.IsNull() || Mesh;
+        if (Mesh && !Resource->RigidAttachBone.IsNone())
+        {
+            const auto &Skeleton = Mesh->GetRefSkeleton();
+            int32 Index = Skeleton.FindBoneIndex(Resource->RigidAttachBone);
+            if (Index == INDEX_NONE)
+            {
+                return false;
+            }
+            FTransform ReferencePose = FTransform::Identity;
+            for (; Index != INDEX_NONE; Index = Skeleton.GetParentIndex(Index))
+            {
+                ReferencePose *= Skeleton.GetRefBonePose()[Index];
+            }
+            Output.AttachBone = Resource->RigidAttachBone;
+            Output.RelativeTransform = ReferencePose.Inverse();
+        }
         if (!bPatchEnabled && !Resource->PatchMaterialSlot.IsNone())
         {
             bReady &= Resource->HiddenPatchMaterial.LoadSynchronous() != nullptr;
@@ -104,6 +122,8 @@ void FBBBCharacterAppearanceResourceProcessor::Update(FBBBCharacterAppearanceUpd
         if (!Part.bVisible)
         {
             Output.Mesh = nullptr;
+            Output.AttachBone = NAME_None;
+            Output.RelativeTransform = FTransform::Identity;
             Output.Materials.Reset();
             Output.Attachments.Reset();
             Context.Resources.Add(nullptr);

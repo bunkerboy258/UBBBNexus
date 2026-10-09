@@ -36,7 +36,9 @@ namespace
             if (Name)
             {
                 const auto *Component = FindComponent(Components, *Name);
-                if (!Component || Component == Character.GetMesh() || Targets.Contains(*Name))
+                if (!Component || !Character.GetMesh() || Component == Character.GetMesh()
+                    || Targets.Contains(*Name) || Character.GetMesh()->IsAttachedTo(Component)
+                    || (!Part.AttachBone.IsNone() && !Character.GetMesh()->DoesSocketExist(Part.AttachBone)))
                 {
                     return false;
                 }
@@ -58,9 +60,27 @@ namespace
         return true;
     }
 
-    void SetMesh(USkeletalMeshComponent &Component, USkeletalMesh *Mesh,
-        const TArray<TObjectPtr<UMaterialInterface>> &Materials)
+    bool ApplyMesh(USkeletalMeshComponent &Component, USkeletalMeshComponent *Body, USkeletalMesh *Mesh,
+        const TArray<TObjectPtr<UMaterialInterface>> &Materials, const FName Socket,
+        const FTransform &RelativeTransform, const bool bRigid)
     {
+        if (!Body || &Component == Body || Body->IsAttachedTo(&Component)
+            || (!Socket.IsNone() && !Body->DoesSocketExist(Socket)))
+        {
+            return false;
+        }
+        Component.SetLeaderPoseComponent(nullptr);
+        if (!Component.AttachToComponent(Body, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket))
+        {
+            return false;
+        }
+        Component.SetRelativeTransform(RelativeTransform);
+        Component.SetForceRefPose(bRigid);
+        if (bRigid)
+        {
+            Component.SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            Component.SetAnimation(nullptr);
+        }
         if (Component.GetSkeletalMeshAsset() != Mesh)
         {
             Component.SetSkeletalMesh(Mesh);
@@ -72,6 +92,8 @@ namespace
         {
             Component.SetMaterial(Index, Materials[Index]);
         }
+        Component.SetLeaderPoseComponent(Mesh && !bRigid ? Body : nullptr);
+        return true;
     }
 
     bool ApplyNative(ABBBCharacter &Character, const TArray<FBBBCharacterAppearanceDisplayPart> &Parts,
@@ -91,9 +113,15 @@ namespace
             {
                 if (Component != Character.GetMesh() && !Updated.Contains(*Name))
                 {
-                    SetMesh(*Component, Part.Mesh, Part.Materials);
-                    Component->SetLeaderPoseComponent(Character.GetMesh());
-                    Updated.Add(*Name);
+                    if (ApplyMesh(*Component, Character.GetMesh(), Part.Mesh, Part.Materials,
+                        Part.AttachBone, Part.RelativeTransform, !Part.AttachBone.IsNone()))
+                    {
+                        Updated.Add(*Name);
+                    }
+                    if (!bAvailableOnly && !Updated.Contains(*Name))
+                    {
+                        return false;
+                    }
                 }
             }
             for (const auto &Attachment : Part.Attachments)
@@ -105,9 +133,8 @@ namespace
                 {
                     continue;
                 }
-                Component->SetLeaderPoseComponent(nullptr);
-                if (!Component->AttachToComponent(Character.GetMesh(),
-                    FAttachmentTransformRules::SnapToTargetNotIncludingScale, Attachment.Key))
+                if (!ApplyMesh(*Component, Character.GetMesh(), Attachment.Value.Mesh,
+                    Attachment.Value.Materials, Attachment.Key, FTransform::Identity, true))
                 {
                     if (!bAvailableOnly)
                     {
@@ -115,8 +142,6 @@ namespace
                     }
                     continue;
                 }
-                Component->SetRelativeTransform(FTransform::Identity);
-                SetMesh(*Component, Attachment.Value.Mesh, Attachment.Value.Materials);
                 Updated.Add(Attachment.Key);
             }
         }
@@ -128,7 +153,8 @@ namespace
                 {
                     if (Component != Character.GetMesh())
                     {
-                        SetMesh(*Component, nullptr, {});
+                        ApplyMesh(*Component, Character.GetMesh(), nullptr, {}, NAME_None,
+                            FTransform::Identity, false);
                     }
                 }
             }
@@ -155,11 +181,8 @@ void FBBBCharacterAppearanceDisplayProcessor::Update(FBBBCharacterAppearanceUpda
         Display.bApplied = true;
         return;
     }
-    TArray<USkeletalMeshComponent *> Components;
-    Context.Character.GetComponents(Components);
     Display.bApplied = Context.bResourcesReady
-        && CanApply(Context.Character, Display.Parts, Context.Config, Components)
-        && Context.Character.ApplyAppearanceDisplay(Display.Parts);
+        && ApplyNative(Context.Character, Display.Parts, Context.Config, false);
     if (Display.bApplied)
     {
         Display.AppliedRevision = Snapshot.Revision;
@@ -187,10 +210,4 @@ void FBBBCharacterAppearanceDisplayProcessor::Shutdown(FBBBCharacterAppearanceUp
     Display.RetryAfterTime = 0.0f;
     Display.bApplied = false;
     Display.bFallbackApplied = false;
-}
-
-bool FBBBCharacterAppearanceDisplayProcessor::ApplyDisplay(ABBBCharacter &Character,
-    const TArray<FBBBCharacterAppearanceDisplayPart> &Parts, const FBBBCharacterAppearanceConfig &Config)
-{
-    return ApplyNative(Character, Parts, Config, false);
 }
