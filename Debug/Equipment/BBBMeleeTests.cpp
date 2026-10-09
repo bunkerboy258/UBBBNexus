@@ -41,7 +41,7 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
     };
     auto *Character = World->SpawnActor<ABBBCharacter>();
     const auto *Definition = LoadObject<UBBBMeleeDefinition>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Equipment/Melee/Bat_01/DA_Bat_01.DA_Bat_01"));
+        TEXT("/Game/_Project/Characters/BBBC_UA/Equipment/Melee/Bat_01/Config/DA_Bat_01.DA_Bat_01"));
     UClass *EquipmentClass = LoadClass<ABBBMeleeEquipment>(nullptr,
         TEXT("/Game/_Project/Characters/BBBC_UA/Equipment/Melee/Bat_01/BP_Bat_01.BP_Bat_01_C"));
     if (!TestNotNull(TEXT("首个近战装备配置"), Definition) || !TestNotNull(TEXT("实际近战装备蓝图"), EquipmentClass))
