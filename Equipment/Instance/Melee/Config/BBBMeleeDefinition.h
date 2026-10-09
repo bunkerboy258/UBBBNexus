@@ -14,7 +14,7 @@ public:
         EquipmentType = EBBBEquipmentType::Melee;
     }
 
-    /** 角色播放的单次攻击蒙太奇 使用 FullBody 槽位 */
+    /** 角色播放的单次攻击蒙太奇 使用 UpperBody 槽位 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|近战|动画", meta = (DisplayName = "攻击蒙太奇"))
     TObjectPtr<UAnimMontage> AttackMontage = nullptr;
     /** 从武器握持端开始的伤害扫掠插槽 */

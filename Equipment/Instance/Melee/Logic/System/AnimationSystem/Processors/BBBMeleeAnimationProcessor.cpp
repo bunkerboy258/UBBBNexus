@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Logic/System/AnimationSystem/Processors/BBBMeleeAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Animation/BBBMeleeAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyMontageLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
@@ -28,11 +28,11 @@ void FBBBMeleeAnimationProcessor::Update(FBBBMeleeUpdateContext &Context)
     {
         if (!Context.bCausal)
         {
-            Context.Character.SubmitInput(FBBBFullBodyMontageAuthorityFactPacket{Context.Definition.AttackMontage});
+            Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{Context.Definition.AttackMontage});
         }
         if (Context.bCausal)
         {
-            Context.Character.SubmitInput(FBBBFullBodyMontageLocalControlPacket{Context.Definition.AttackMontage});
+            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Context.Definition.AttackMontage});
         }
     }
     if (!Action.bAttacking && State.bAttacking)
@@ -52,11 +52,11 @@ void FBBBMeleeAnimationProcessor::Stop(FBBBMeleeUpdateContext &Context)
     const bool bOwnMontage = MainAnimation && MainAnimation->Montage_IsActive(Context.Definition.AttackMontage);
     if (bOwnMontage && !Context.bCausal)
     {
-        Context.Character.SubmitInput(FBBBFullBodyMontageAuthorityFactPacket{nullptr});
+        Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{nullptr});
     }
     if (bOwnMontage && Context.bCausal)
     {
-        Context.Character.SubmitInput(FBBBFullBodyMontageLocalControlPacket{nullptr});
+        Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{nullptr});
     }
     auto &State = Context.Data.Animation.AnimationState;
     State.bAttacking = false;

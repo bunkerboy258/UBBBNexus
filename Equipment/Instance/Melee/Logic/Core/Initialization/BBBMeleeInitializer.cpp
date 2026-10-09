@@ -27,7 +27,7 @@ bool FBBBMeleeInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) cons
         return false;
     }
     if (!ensureMsgf(Definition->AttackMontage->SlotAnimTracks.Num() == 1,
-        TEXT("近战攻击只能包含一个 FullBody 轨道")))
+        TEXT("近战攻击只能包含一个 UpperBody 轨道")))
     {
         return false;
     }
@@ -44,8 +44,8 @@ bool FBBBMeleeInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) cons
     }
     for (const auto &Track : Definition->AttackMontage->SlotAnimTracks)
     {
-        if (!ensureMsgf(ABBBCharacter::ClassifyMontageSlot(Track.SlotName) == EBBBCharacterMontageSlot::FullBody,
-            TEXT("近战攻击必须配置角色 FullBody 蒙太奇")))
+        if (!ensureMsgf(ABBBCharacter::ClassifyMontageSlot(Track.SlotName) == EBBBCharacterMontageSlot::UpperBody,
+            TEXT("近战攻击必须配置角色 UpperBody 蒙太奇")))
         {
             return false;
         }
