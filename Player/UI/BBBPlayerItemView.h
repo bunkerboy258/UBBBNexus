@@ -36,6 +36,14 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
      * @return 输入是否接受
      */
     bool MoveItem(int32 Source, int32 Target, const APawn *SourcePawn, FGuid InstanceId);
+    /**
+     * 双击请求穿戴或移入快捷一号位并选中
+     * @param Source\t双击来源槽位
+     * @param SourcePawn\t双击时的玩家角色
+     * @param InstanceId\t双击时的真实物品身份
+     * @return 请求是否接受
+     */
+    bool EquipItem(int32 Source, const APawn *SourcePawn, FGuid InstanceId);
     /** @return 当前界面所属玩家控制器 */
     ABBBPlayerController *GetItemController() const;
     /** @return 无 在数字键输入后短暂展示三个快捷格 */

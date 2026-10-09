@@ -350,6 +350,18 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
         Data.DisplayImage = Definition->DisplayImage;
         Data.DisplayMaterial = Definition->DisplayMaterial;
         Data.PropertyIcon = Definition->PropertyIcon;
+        if (Definition->ItemType == EBBBItemType::Equipment)
+        {
+            Data.EquipSlot = 0;
+        }
+        if (Definition->ItemType != EBBBItemType::Equipment && !Definition->WearSlot.IsNone())
+        {
+            const int32 Position = Inventory.WearSlots.IndexOfByKey(Definition->WearSlot);
+            if (Position != INDEX_NONE)
+            {
+                Data.EquipSlot = Inventory.BackpackSlotCount + Position;
+            }
+        }
     }
     return Data;
 }

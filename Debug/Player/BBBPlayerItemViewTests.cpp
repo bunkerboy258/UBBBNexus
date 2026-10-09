@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
+#include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
@@ -92,16 +93,31 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("建立穿脱回归捕获"), Portrait->Open(Character));
     Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet01"));
     Character->Tick(1.0f / 60.0f);
-    const FGuid Helmet = Controller->GetItemInstanceId(2);
+    const FGuid Helmet = Controller->GetItemInstanceId(5);
     TestTrue(TEXT("头盔登记真实身份"), Helmet.IsValid());
-    Controller->SubmitItemMove(2, 55, Helmet);
+    Controller->SubmitItemMove(5, 0, Helmet);
+    Character->Tick(1.0f / 60.0f);
+    TestEqual(TEXT("头盔与快捷武器交换被拒绝"), Controller->GetItemInstanceId(5), Helmet);
+    TestEqual(TEXT("非法交换保留快捷武器"), Controller->GetItemInstanceId(0), First);
+    TestEqual(TEXT("头盔双击目标为对应穿戴位置"), Controller->GetItemDisplayData(5).EquipSlot, 55);
+    TestTrue(TEXT("双击穿戴请求接受"), View->EquipItem(5, Character, Helmet));
     Character->Tick(1.0f / 60.0f);
     Portrait->Update(1.0f);
     TestTrue(TEXT("穿戴后捕获真实位置"), Controller->GetItemInstanceId(55) == Helmet);
-    Controller->SubmitItemMove(55, 2, Helmet);
+    Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet00"));
+    Character->Tick(1.0f / 60.0f);
+    const FGuid ReplacementHelmet = Controller->GetItemInstanceId(5);
+    TestTrue(TEXT("双击替换头盔请求接受"), View->EquipItem(5, Character, ReplacementHelmet));
+    Character->Tick(1.0f / 60.0f);
+    TestEqual(TEXT("新头盔进入穿戴位"), Controller->GetItemInstanceId(55), ReplacementHelmet);
+    TestEqual(TEXT("旧头盔回到替换来源格"), Controller->GetItemInstanceId(5), Helmet);
+    Controller->SubmitItemMove(55, 5, ReplacementHelmet);
     Character->Tick(1.0f / 60.0f);
     Portrait->Update(1.0f);
-    TestTrue(TEXT("脱下清空网格后捕获安全"), Controller->GetItemInstanceId(2) == Helmet
+    Controller->SubmitItemMove(55, 6, Helmet);
+    Character->Tick(1.0f / 60.0f);
+    Portrait->Update(1.0f);
+    TestTrue(TEXT("脱下清空网格后捕获安全"), Controller->GetItemInstanceId(6) == Helmet
         && !Controller->GetItemInstanceId(55).IsValid());
     Portrait->Close();
     TestTrue(TEXT("控制器提供物品展示数据"), Controller->GetItemDisplayData(0).bOccupied
@@ -121,10 +137,24 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
 
     TestFalse(TEXT("拒绝物品已换位的旧拖动"), View->MoveItem(0, 1, Character, First));
     TestFalse(TEXT("拒绝角色失效的旧拖动"), View->MoveItem(1, 0, nullptr, First));
+    TestTrue(TEXT("武器移到普通格请求接受"), View->MoveItem(1, 7, Character, First));
+    Character->Tick(1.0f / 60.0f);
+    TestFalse(TEXT("双击拒绝过期物品身份"), View->EquipItem(7, Character, Second));
+    const TSharedRef<SBBBPlayerItemSlot> WeaponSlot = SNew(SBBBPlayerItemSlot).View(View).Slot(7);
+    const FPointerEvent DoubleClick(0, FVector2D::ZeroVector, FVector2D::ZeroVector,
+        TSet<FKey>{EKeys::LeftMouseButton}, EKeys::LeftMouseButton, 0.0f, FModifierKeysState());
+    TestTrue(TEXT("鼠标双击武器事件接受"), WeaponSlot->OnMouseButtonDoubleClick(FGeometry(), DoubleClick).IsEventHandled());
+    TestEqual(TEXT("双击仍等待角色消费输入"), Controller->GetItemInstanceId(7), First);
+    Character->Tick(1.0f / 60.0f);
+    TestEqual(TEXT("双击武器进入快捷一号位"), Controller->GetItemInstanceId(0), First);
+    TestEqual(TEXT("原一号位武器回到双击来源格"), Controller->GetItemInstanceId(7), Second);
+    TestEqual(TEXT("双击武器选择快捷一号位"), Controller->GetSelectedItemSlot(), 0);
+    TestTrue(TEXT("双击后新武器实际手持"), Controller->GetItemDisplayData(0).bActive);
     View->SetBackpackOpen(false);
     TestEqual(TEXT("关闭后清除玩家世界内的捕获演员"), CaptureCount(), 0);
     TestEqual(TEXT("关闭后世界上下文保持原值"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);
     TestFalse(TEXT("界面关闭后拒绝拖动"), View->MoveItem(1, 0, Character, First));
+    TestFalse(TEXT("界面关闭后拒绝双击装备"), View->EquipItem(7, Character, Second));
     TestTrue(TEXT("界面提交收起"), View->SelectSlot(INDEX_NONE));
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);

@@ -28,6 +28,7 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     void Construct(const FArguments &Arguments);
 
     virtual FReply OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event) override;
+    virtual FReply OnMouseButtonDoubleClick(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnDragDetected(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnDragOver(const FGeometry &Geometry, const FDragDropEvent &Event) override;
     virtual FReply OnDrop(const FGeometry &Geometry, const FDragDropEvent &Event) override;

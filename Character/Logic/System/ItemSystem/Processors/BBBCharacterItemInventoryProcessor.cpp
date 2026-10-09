@@ -54,6 +54,10 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
         {
             return true;
         }
+        if (Slot < Inventory.QuickAccessSlotCount)
+        {
+            return Item.Definition->ItemType == EBBBItemType::Equipment;
+        }
         if (Slot < Inventory.BackpackSlotCount)
         {
             const bool bMiscRegion = Slot >= Inventory.QuickAccessSlotCount + Inventory.EquipmentStorageSlotCount;

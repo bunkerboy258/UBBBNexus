@@ -162,6 +162,16 @@ FReply SBBBPlayerItemSlot::OnMouseButtonDown(const FGeometry &Geometry, const FP
     return FReply::Unhandled();
 }
 
+FReply SBBBPlayerItemSlot::OnMouseButtonDoubleClick(const FGeometry &Geometry, const FPointerEvent &Event)
+{
+    if (View.IsValid() && View->IsBackpackOpen() && bOccupied && Event.GetEffectingButton() == EKeys::LeftMouseButton)
+    {
+        View->EquipItem(Slot, View->GetItemController()->GetPawn(), InstanceId);
+        return FReply::Handled();
+    }
+    return FReply::Unhandled();
+}
+
 FReply SBBBPlayerItemSlot::OnDragDetected(const FGeometry &Geometry, const FPointerEvent &Event)
 {
     ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;

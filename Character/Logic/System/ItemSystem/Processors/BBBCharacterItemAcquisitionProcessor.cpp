@@ -19,6 +19,7 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
         {
             const bool bMiscRegion = Slot >= Inventory.QuickAccessSlotCount + Inventory.EquipmentStorageSlotCount;
             if (Entry && !Inventory.Slots[Slot].Definition
+                && (Slot >= Inventory.QuickAccessSlotCount || Entry->Definition->ItemType == EBBBItemType::Equipment)
                 && bMiscRegion == (Entry->Definition->ItemType == EBBBItemType::Misc))
             {
                 EmptySlot = Slot;

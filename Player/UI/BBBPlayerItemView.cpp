@@ -277,6 +277,29 @@ bool UBBBPlayerItemView::MoveItem(int32 Source, int32 Target, const APawn *Sourc
            Controller->SubmitItemMove(Source, Target, InstanceId);
 }
 
+bool UBBBPlayerItemView::EquipItem(int32 Source, const APawn *SourcePawn, FGuid InstanceId)
+{
+    ABBBPlayerController *Controller = GetItemController();
+    if (!bBackpackOpen || !Controller || Controller->GetPawn() != SourcePawn || !InstanceId.IsValid())
+    {
+        return false;
+    }
+    const FBBBPlayerItemDisplayData Data = Controller->GetItemDisplayData(Source);
+    if (!Data.bOccupied || Data.InstanceId != InstanceId || Data.EquipSlot == INDEX_NONE)
+    {
+        return false;
+    }
+    if (Source != Data.EquipSlot && !MoveItem(Source, Data.EquipSlot, SourcePawn, InstanceId))
+    {
+        return false;
+    }
+    if (Data.EquipSlot == 0)
+    {
+        return SelectSlot(0);
+    }
+    return true;
+}
+
 FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, const FKeyEvent &Event)
 {
     if (bBackpackOpen)

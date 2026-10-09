@@ -68,9 +68,13 @@ bool FBBBCharacterItemRegionsTest::RunTest(const FString &Parameters)
         Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("Helmet")}});
     }
     Step();
-    TestEqual(TEXT("装备区域独立容量"), Operations.SucceededCount, 25);
-    TestEqual(TEXT("不能借用空杂物区域"), Operations.RejectedCount, 1);
-    TestNull(TEXT("穿戴品不创建装备演员"), Inventory.Slots[0].EquipmentInstance.Get());
+    TestEqual(TEXT("穿戴品只使用二十个普通装备格"), Operations.SucceededCount, 20);
+    TestEqual(TEXT("穿戴品满包不能借用快捷或杂物格"), Operations.RejectedCount, 6);
+    for (int32 Index = 0; Index < Inventory.QuickAccessSlotCount; ++Index)
+    {
+        TestNull(TEXT("获得穿戴品不占用快捷栏"), Inventory.Slots[Index].Definition.Get());
+    }
+    TestNull(TEXT("穿戴品不创建装备演员"), Inventory.Slots[5].EquipmentInstance.Get());
     for (int32 Index = 0; Index < 31; ++Index)
     {
         Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("Flag")}});
@@ -78,29 +82,33 @@ bool FBBBCharacterItemRegionsTest::RunTest(const FString &Parameters)
     Step();
     TestEqual(TEXT("杂物独立容量"), Operations.SucceededCount, 30);
     TestEqual(TEXT("杂物满包拒绝"), Operations.RejectedCount, 1);
-    const FGuid Helmet = Inventory.Slots[0].InstanceId;
+    const FGuid Helmet = Inventory.Slots[5].InstanceId;
     const FGuid Flag = Inventory.Slots[25].InstanceId;
     const auto Move = [&](int32 From, int32 To, FGuid Identity)
     {
         Character->SubmitInput(FBBBItemMoveLocalControlPacket{{From}, {To}, {Identity}});
         Step();
     };
-    Move(0, 25, Helmet);
+    Move(5, 0, Helmet);
+    TestEqual(TEXT("穿戴品移入快捷栏拒绝"), Operations.RejectedCount, 1);
+    TestEqual(TEXT("拒绝后穿戴品保持来源身份"), Inventory.Slots[5].InstanceId, Helmet);
+    TestNull(TEXT("拒绝后快捷栏仍为空"), Inventory.Slots[0].Definition.Get());
+    Move(5, 25, Helmet);
     TestEqual(TEXT("类别互换原子拒绝"), Operations.RejectedCount, 1);
-    TestEqual(TEXT("失败保持装备身份"), Inventory.Slots[0].InstanceId, Helmet);
+    TestEqual(TEXT("失败保持装备身份"), Inventory.Slots[5].InstanceId, Helmet);
     TestEqual(TEXT("失败保持杂物身份"), Inventory.Slots[25].InstanceId, Flag);
-    Move(0, 56, Helmet);
+    Move(5, 56, Helmet);
     TestEqual(TEXT("头盔不能放入上衣位置"), Operations.RejectedCount, 1);
-    Move(0, 55, Helmet);
+    Move(5, 55, Helmet);
     TestEqual(TEXT("穿戴只移动原实例"), Inventory.Slots[55].InstanceId, Helmet);
-    TestNull(TEXT("穿戴释放原背包位置"), Inventory.Slots[0].Definition.Get());
+    TestNull(TEXT("穿戴释放原背包位置"), Inventory.Slots[5].Definition.Get());
     Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("Helmet")}});
     Step();
     Move(55, INDEX_NONE, Helmet);
     TestEqual(TEXT("满包脱下拒绝"), Operations.RejectedCount, 1);
     TestEqual(TEXT("满包脱下不丢失物品"), Inventory.Slots[55].InstanceId, Helmet);
-    Move(55, 0, Helmet);
-    TestEqual(TEXT("满包合法交换允许"), Inventory.Slots[0].InstanceId, Helmet);
+    Move(55, 5, Helmet);
+    TestEqual(TEXT("满包合法交换允许"), Inventory.Slots[5].InstanceId, Helmet);
     TestTrue(TEXT("穿戴位置保留被交换头盔"), Inventory.Slots[55].InstanceId.IsValid());
     Move(25, 62, Flag);
     TestEqual(TEXT("国旗占据真实穿戴位置"), Inventory.Slots[62].InstanceId, Flag);
@@ -116,7 +124,7 @@ bool FBBBCharacterItemRegionsTest::RunTest(const FString &Parameters)
             Identities.Add(Item.InstanceId);
         }
     }
-    TestEqual(TEXT("全部已获得物品仍唯一存在"), Identities.Num(), 56);
+    TestEqual(TEXT("全部已获得物品仍唯一存在"), Identities.Num(), 51);
     Items.Shutdown();
     return true;
 }
