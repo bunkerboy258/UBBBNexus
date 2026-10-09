@@ -257,7 +257,7 @@ void UBBBPlayerItemView::RefreshItems()
     Controller->GetItemOperationResult(Revision, Succeeded, Rejected);
     if (StatusText && Revision != ObservedOperationRevision)
     {
-        StatusText->SetText(Rejected ? FText::FromString(TEXT("此位置不能放置该物品")) : FText::GetEmpty());
+        StatusText->SetText(Rejected ? FText::FromString(TEXT("ITEM CANNOT BE PLACED HERE")) : FText::GetEmpty());
     }
     ObservedOperationRevision = Revision;
 }
