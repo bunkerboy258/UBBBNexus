@@ -78,16 +78,6 @@ private:
         return State.Equip;
     }
 
-    static TBBBRifleInputSlot<FBBBRifleUnequipLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRifleUnequipLocalControlPacket &)
-    {
-        return State.Unequip;
-    }
-
-    static TBBBRifleInputSlot<FBBBRifleUnequipAuthorityFactPacket> &Select(FBBBRifleInputState &State, const FBBBRifleUnequipAuthorityFactPacket &)
-    {
-        return State.AuthorityUnequip;
-    }
-
     static TBBBRifleInputSlot<FBBBRifleEquipAuthorityFactPacket> &Select(FBBBRifleInputState &State, const FBBBRifleEquipAuthorityFactPacket &)
     {
         return State.AuthorityEquip;

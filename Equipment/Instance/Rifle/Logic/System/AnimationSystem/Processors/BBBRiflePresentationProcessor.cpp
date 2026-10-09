@@ -19,7 +19,7 @@
 void FBBBRiflePresentationProcessor::SubmitCharacterMontage(
     const FBBBRifleUpdateContext &Context, UAnimMontage *Montage, const bool bClear)
 {
-    if (!Montage || (!bClear && !Context.Equipment.IsEquipped()))
+    if (!Montage || !Context.Equipment.IsEquipped())
     {
         return;
     }

@@ -16,7 +16,7 @@ void FBBBMeleeShutdown::ShutdownInstance(ABBBEquipment &BaseEquipment) const
     auto *Definition = Cast<UBBBMeleeDefinition>(Equipment.GetDefinition());
     auto *Mesh = Equipment.GetEquipmentSkeletalMesh();
     auto *World = Equipment.GetWorld();
-    if (Character && Definition && Mesh && World && Equipment.RuntimeData.Animation.ReadMeleeAnimationState().bAttacking)
+    if (Character && Definition && Mesh && World)
     {
         FBBBMeleeUpdateContext Context{Equipment, *Character, *Mesh, *Definition, Equipment.RuntimeData, *World, !Equipment.IsMirror()};
         FBBBMeleeAnimationProcessor::Stop(Context);

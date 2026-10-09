@@ -41,7 +41,6 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &Action = Context.RuntimeData.Action.ActionState;
     Input.bEquipRequested = false;
-    Input.bUnequipRequested = false;
     Input.bActionPermissionReceived = false;
     Input.bBlockFireRequested = false;
     Input.bAllowFireRequested = false;
@@ -53,7 +52,6 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
     if (Context.bCausal)
     {
         Process(Queue.Equip, Input);
-        Process(Queue.Unequip, Input);
         Process(Queue.Fire, Input);
         Process(Queue.Reload, Input);
         Process(Queue.BlockFire, Input);
@@ -65,7 +63,6 @@ void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
         return;
     }
 
-    Process(Queue.AuthorityUnequip, Input);
     Process(Queue.AuthorityEquip, Input);
     Process(Queue.RemoteFire, Action);
     Process(Queue.RemoteReloadStart, Action);
@@ -81,10 +78,6 @@ void FBBBRifleParseProcessor::Clear(FBBBRifleRuntimeData &Data)
 {
     Data.Parse.InputState.Equip.bActive = false;
     Data.Parse.InputState.Equip.Packet = {};
-    Data.Parse.InputState.Unequip.bActive = false;
-    Data.Parse.InputState.Unequip.Packet = {};
-    Data.Parse.InputState.AuthorityUnequip.bActive = false;
-    Data.Parse.InputState.AuthorityUnequip.Packet = {};
     Data.Parse.InputState.AuthorityEquip.bActive = false;
     Data.Parse.InputState.AuthorityEquip.Packet = {};
     Data.Parse.InputState.Fire.bActive = false;

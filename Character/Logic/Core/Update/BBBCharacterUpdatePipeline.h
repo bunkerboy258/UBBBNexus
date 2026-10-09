@@ -50,26 +50,16 @@ private:
      * 时间与身份快照、输入解析完成后，明确分为 Mirror 与 Causal 路径。
      * Mirror：装备关系、外观、生命、攀爬、装备使用、移动、物理表现。
      * Causal：物品、装备关系、外观、生命、瞄准、攀爬、装备使用、移动、物理表现。
-     * 两条路径都在装备关系与外观更新后维护装备切换 Tick 依赖，最后进行网络观察。
      *
      * @param DeltaSeconds 当前帧间隔
      */
     void Update(float DeltaSeconds);
-
-    /** 装备切换帧中新装备等待旧装备完成 Tick，依赖在下一帧移除 */
-    void UpdateEquipmentSwitchTickDependency(ABBBEquipment *PreviousEquipment);
 
     /** 调度移动完成后的动画事实更新 */
     void LateUpdate() const;
 
     /** 管线所属角色 */
     ABBBCharacter *Character = nullptr;
-
-    /** 切换帧中等待旧装备清理的装备 */
-    TWeakObjectPtr<ABBBEquipment> CleanupWaiter;
-
-    /** 切换帧中执行清理的旧装备 */
-    TWeakObjectPtr<ABBBEquipment> CleanupSource;
 
     /** CMC 后执行的引擎 Tick 适配器 */
     FBBBCharacterLateUpdate LateUpdateTick;

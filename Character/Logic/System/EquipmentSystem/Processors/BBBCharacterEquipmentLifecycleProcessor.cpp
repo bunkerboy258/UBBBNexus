@@ -6,8 +6,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -43,16 +41,11 @@ void FBBBCharacterEquipmentLifecycleProcessor::Update(FBBBCharacterEquipmentUpda
     {
         if (Context.bIsMirror)
         {
-            Previous->SubmitInput(FBBBEquipmentUnequipAuthorityFactPacket{});
+            Destroy(&Context.CharacterMesh, *Previous);
         }
         if (!Context.bIsMirror)
         {
-            Previous->SubmitInput(FBBBEquipmentUnequipLocalControlPacket{});
-        }
-        Detach(&Context.CharacterMesh, *Previous);
-        if (Context.bIsMirror)
-        {
-            Destroy(&Context.CharacterMesh, *Previous);
+            Detach(&Context.CharacterMesh, *Previous);
         }
     }
     Selection.ActiveMainHandInstance = nullptr;
@@ -92,16 +85,11 @@ void FBBBCharacterEquipmentLifecycleProcessor::Shutdown(FBBBCharacterEquipmentUp
     {
         if (Context.bIsMirror)
         {
-            Active->SubmitInput(FBBBEquipmentUnequipAuthorityFactPacket{});
+            Destroy(&Context.CharacterMesh, *Active);
         }
         if (!Context.bIsMirror)
         {
-            Active->SubmitInput(FBBBEquipmentUnequipLocalControlPacket{});
-        }
-        Detach(&Context.CharacterMesh, *Active);
-        if (Context.bIsMirror)
-        {
-            Destroy(&Context.CharacterMesh, *Active);
+            Detach(&Context.CharacterMesh, *Active);
         }
     }
     Selection.ActiveMainHandInstance = nullptr;

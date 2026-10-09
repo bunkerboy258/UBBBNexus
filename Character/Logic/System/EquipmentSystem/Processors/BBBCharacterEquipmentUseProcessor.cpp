@@ -3,9 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 
 void FBBBCharacterEquipmentUseProcessor::Update(FBBBCharacterEquipmentUpdateContext &Context) const
 {
@@ -53,19 +51,6 @@ void FBBBCharacterEquipmentUseProcessor::Update(FBBBCharacterEquipmentUpdateCont
     {
         bUsable = false;
     }
-    if (IsValid(Equipment) && !bUsable && bPreviouslyUsable)
-    {
-        // 清理仍交给装备自身 本帧保持更新直到装备消费解除使用请求
-        Equipment->SetActorTickEnabled(true);
-        if (Context.bIsMirror)
-        {
-            Equipment->SubmitInput(FBBBEquipmentUnequipAuthorityFactPacket{});
-        }
-        if (!Context.bIsMirror)
-        {
-            Equipment->SubmitInput(FBBBEquipmentUnequipLocalControlPacket{});
-        }
-    }
     State.Generation = Binding.ActiveGeneration;
     State.bUsable = bUsable;
     if (bHasResult)
@@ -92,10 +77,6 @@ void FBBBCharacterEquipmentUseProcessor::Update(FBBBCharacterEquipmentUpdateCont
                 Equipment->SubmitInput(FBBBEquipmentEquipLocalControlPacket{});
             }
         }
-    }
-    if (!bUsable && !bPreviouslyUsable)
-    {
-        Equipment->SetActorTickEnabled(false);
     }
     Equipment->SetActorHiddenInGame(!bUsable);
 }

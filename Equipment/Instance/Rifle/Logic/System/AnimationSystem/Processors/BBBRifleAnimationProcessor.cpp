@@ -11,8 +11,6 @@
 
 void FBBBRifleAnimationProcessor::Stop(FBBBRifleUpdateContext &Context)
 {
-    FBBBRiflePresentationProcessor::SubmitCharacterMontage(Context, Context.Definition.CharacterEquipMontage, true);
-    FBBBRiflePresentationProcessor::SubmitCharacterMontage(Context, Context.Definition.CharacterReloadMontage, true);
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
         Animation->Montage_Stop(0.1f);

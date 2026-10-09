@@ -42,7 +42,6 @@ void FBBBMeleeParseProcessor::Update(FBBBMeleeUpdateContext &Context)
     auto &Action = Context.Data.Action.ActionState;
     Input.bPrimary = false;
     Input.bEquip = false;
-    Input.bUnequip = false;
     Input.bActionPermissionReceived = false;
     Input.BeginActions.Reset();
     Input.EndActions.Reset();
@@ -52,7 +51,6 @@ void FBBBMeleeParseProcessor::Update(FBBBMeleeUpdateContext &Context)
     if (Context.bCausal)
     {
         Process(Queue.Equip, Input);
-        Process(Queue.Unequip, Input);
         Process(Queue.Attack, Input);
         Process(Queue.ActionPermission, Input);
         Process(Queue.BeginAction, Input);
@@ -64,7 +62,6 @@ void FBBBMeleeParseProcessor::Update(FBBBMeleeUpdateContext &Context)
     }
 
     Process(Queue.AuthorityEquip, Input);
-    Process(Queue.AuthorityUnequip, Input);
     Process(Queue.RemoteAttackStart, Action);
     Process(Queue.RemoteAttackEnd, Action);
     Process(Queue.AuthorityAttackStart, Action);
@@ -79,10 +76,6 @@ void FBBBMeleeParseProcessor::Clear(FBBBMeleeRuntimeData &Data)
     Data.Parse.InputState.Equip.Packet = {};
     Data.Parse.InputState.AuthorityEquip.bActive = false;
     Data.Parse.InputState.AuthorityEquip.Packet = {};
-    Data.Parse.InputState.Unequip.bActive = false;
-    Data.Parse.InputState.Unequip.Packet = {};
-    Data.Parse.InputState.AuthorityUnequip.bActive = false;
-    Data.Parse.InputState.AuthorityUnequip.Packet = {};
     Data.Parse.InputState.Attack.bActive = false;
     Data.Parse.InputState.Attack.Packet = {};
     Data.Parse.InputState.ActionPermission.bActive = false;

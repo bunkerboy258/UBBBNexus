@@ -89,16 +89,6 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBMeleeInputSlot<FBBBMeleeUnequipLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeUnequipLocalControlPacket &)
-    {
-        return State.Unequip;
-    }
-
-    static TBBBMeleeInputSlot<FBBBMeleeUnequipAuthorityFactPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeUnequipAuthorityFactPacket &)
-    {
-        return State.AuthorityUnequip;
-    }
-
     static TBBBMeleeInputSlot<FBBBMeleeAttackLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeAttackLocalControlPacket &)
     {
         return State.Attack;

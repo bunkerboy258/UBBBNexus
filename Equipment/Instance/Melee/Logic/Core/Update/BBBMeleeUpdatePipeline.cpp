@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Logic/Core/Update/BBBMeleeUpdatePipeline.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Logic/Core/Shutdown/BBBMeleeShutdown.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
@@ -23,16 +22,6 @@ void FBBBMeleeUpdatePipeline::UpdateInstance(ABBBEquipment &BaseEquipment) const
     }
     FBBBMeleeUpdateContext Context{Equipment, *Character, *Mesh, *Definition, Equipment.RuntimeData, *World, !Equipment.IsMirror()};
     FBBBMeleeParseSystem::Update(Context);
-    if (Equipment.RuntimeData.Action.ReadMeleeActionInputState().bUnequip)
-    {
-        FBBBMeleeShutdown{}.Shutdown(Equipment);
-        return;
-    }
-
-    if (!Equipment.IsEquipped())
-    {
-        return;
-    }
     FBBBMeleeActionSystem::Update(Context);
     FBBBMeleeAnimationSystem::Update(Context);
     FBBBMeleeNetworkSystem::Update(Context, Character->HasNetworkAuthority());

@@ -4,8 +4,6 @@
 #include "BBBMeleeEquipment.generated.h"
 struct FBBBMeleeEquipLocalControlPacket;
 struct FBBBMeleeEquipAuthorityFactPacket;
-struct FBBBMeleeUnequipLocalControlPacket;
-struct FBBBMeleeUnequipAuthorityFactPacket;
 struct FBBBMeleeAttackLocalControlPacket;
 struct FBBBMeleeActionPermissionLocalControlPacket;
 struct FBBBMeleeBeginActionLocalControlPacket;
@@ -57,8 +55,6 @@ private:
 
     virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet) override;
@@ -67,8 +63,6 @@ private:
     virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket Packet) override;
     bool QueueInput(FBBBMeleeEquipLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeEquipAuthorityFactPacket Packet);
-    bool QueueInput(FBBBMeleeUnequipLocalControlPacket Packet);
-    bool QueueInput(FBBBMeleeUnequipAuthorityFactPacket Packet);
     bool QueueInput(FBBBMeleeAttackLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeActionPermissionLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeBeginActionLocalControlPacket Packet);

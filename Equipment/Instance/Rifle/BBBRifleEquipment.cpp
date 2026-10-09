@@ -6,8 +6,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Network/BBBRifleNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
@@ -66,16 +64,6 @@ bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet
     return QueueInput(FBBBRifleEquipAuthorityFactPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet)
-{
-    return QueueInput(FBBBRifleUnequipLocalControlPacket{});
-}
-
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet)
-{
-    return QueueInput(FBBBRifleUnequipAuthorityFactPacket{});
-}
-
 bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
 {
     return QueueInput(FBBBRifleFireLocalControlPacket{});
@@ -94,26 +82,6 @@ bool ABBBRifleEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Pac
 bool ABBBRifleEquipment::QueueInput(FBBBRifleEquipLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBRifleEquipment::QueueInput(FBBBRifleUnequipLocalControlPacket Packet)
-{
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBRifleEquipment::QueueInput(FBBBRifleUnequipAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
     {
         return false;
     }

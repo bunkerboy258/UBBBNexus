@@ -1,7 +1,5 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
@@ -151,16 +149,6 @@ void ABBBEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 bool ABBBEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
-{
-    return false;
-}
-
-bool ABBBEquipment::QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet)
-{
-    return false;
-}
-
-bool ABBBEquipment::QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet)
 {
     return false;
 }

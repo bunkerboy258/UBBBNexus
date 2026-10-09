@@ -18,8 +18,17 @@ void FBBBEquipmentUpdatePipeline::ConfigureTick(ABBBEquipment &Equipment)
 
 void FBBBEquipmentUpdatePipeline::Update(ABBBEquipment &Equipment) const
 {
-    if (Equipment.IsInitialized())
+    if (!Equipment.IsInitialized())
     {
-        UpdateInstance(Equipment);
+        return;
     }
+
+    // 已卸下或暂停使用的装备只收束自身 不再消费玩法输入
+    if (!Equipment.IsEquipped())
+    {
+        Equipment.ShutdownRuntimeData();
+        return;
+    }
+
+    UpdateInstance(Equipment);
 }

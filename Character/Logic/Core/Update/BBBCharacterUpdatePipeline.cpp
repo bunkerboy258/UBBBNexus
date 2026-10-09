@@ -50,13 +50,6 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
         return;
     }
 
-    if (CleanupWaiter.IsValid() && CleanupSource.IsValid())
-    {
-        CleanupWaiter->PrimaryActorTick.RemovePrerequisite(CleanupSource.Get(), CleanupSource->PrimaryActorTick);
-    }
-    CleanupWaiter.Reset();
-    CleanupSource.Reset();
-
     // 注销时按反向顺序移除依赖与 Tick 注册
     InCharacter.PhysicalAnimation->RemoveTickPrerequisiteComponent(InCharacter.HitReaction);
     InCharacter.HitReaction->RemoveTickPrerequisiteComponent(CharacterMesh);
@@ -82,14 +75,6 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         return;
     }
 
-    // 移除上一帧装备切换产生的临时 Tick 依赖
-    if (CleanupWaiter.IsValid() && CleanupSource.IsValid())
-    {
-        CleanupWaiter->PrimaryActorTick.RemovePrerequisite(CleanupSource.Get(), CleanupSource->PrimaryActorTick);
-    }
-    CleanupWaiter.Reset();
-    CleanupSource.Reset();
-
     // 帧上下文：所有领域系统读取同一份时间与网络身份快照
     FBBBCharacterWorldState &WorldState = Character->RuntimeData.External.WorldState;
     WorldState.FrameDeltaSeconds = DeltaSeconds;
@@ -107,10 +92,8 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     if (NetworkIdentityState.bIsMirror)
     {
         // Mirror：消费远端结果并维护本地表现，不执行物品与瞄准决策
-        ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
         Character->EquipmentSystem.Update();
         Character->AppearanceSystem.Update();
-        UpdateEquipmentSwitchTickDependency(PreviousEquipment);
 
         Character->LifeSystem.Update();
         Character->TraversalSystem.Update();
@@ -123,10 +106,8 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         // Causal：本机控制角色生成物品、瞄准及其它玩法结果
         Character->ItemSystem.Update();
 
-        ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
         Character->EquipmentSystem.Update();
         Character->AppearanceSystem.Update();
-        UpdateEquipmentSwitchTickDependency(PreviousEquipment);
 
         Character->LifeSystem.Update();
         Character->AimSystem.Update();
@@ -140,23 +121,6 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
 
     // 两条路径都在领域更新完成后进行网络观察
     Character->NetworkSystem.Update();
-}
-
-//------------------------------------------------------------------------------
-
-void FBBBCharacterUpdatePipeline::UpdateEquipmentSwitchTickDependency(ABBBEquipment *PreviousEquipment)
-{
-    // 装备切换帧：新装备等待旧装备完成本帧 Tick
-    ABBBEquipment *CurrentEquipment = Character->GetActiveEquipment();
-    if (IsValid(PreviousEquipment) &&
-        IsValid(CurrentEquipment) &&
-        PreviousEquipment != CurrentEquipment &&
-        PreviousEquipment->IsActorTickEnabled())
-    {
-        CurrentEquipment->PrimaryActorTick.AddPrerequisite(PreviousEquipment, PreviousEquipment->PrimaryActorTick);
-        CleanupWaiter = CurrentEquipment;
-        CleanupSource = PreviousEquipment;
-    }
 }
 
 //------------------------------------------------------------------------------

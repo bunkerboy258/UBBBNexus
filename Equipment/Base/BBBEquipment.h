@@ -10,10 +10,9 @@ class UBBBEquipmentDefinition;
 class UArrowComponent;
 class USkeletalMeshComponent;
 class FBBBEquipmentInitializer;
+class FBBBEquipmentUpdatePipeline;
 class UBBBEquipmentNetworkComponent;
 struct FBBBEquipmentSecondaryLocalControlPacket;
-struct FBBBEquipmentUnequipLocalControlPacket;
-struct FBBBEquipmentUnequipAuthorityFactPacket;
 struct FBBBEquipmentEquipLocalControlPacket;
 struct FBBBEquipmentEquipAuthorityFactPacket;
 struct FBBBEquipmentPrimaryLocalControlPacket;
@@ -113,6 +112,7 @@ public:
 
 private:
     friend class FBBBEquipmentInitializer;
+    friend class FBBBEquipmentUpdatePipeline;
 
 protected:
     /** 初始化具体装备状态 @return 是否初始化成功 */
@@ -123,12 +123,6 @@ protected:
 
     /** @param Packet 通用次行为请求 @return 是否接受 */
     virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet);
-
-    /** @param Packet 本机解除持有请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet);
-
-    /** @param Packet 镜像解除持有请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet);
 
     /** 由具体装备根创建自己的协议组件 */
     UPROPERTY(VisibleAnywhere, Category = "BBB|装备", meta = (DisplayName = "装备协议组件"))

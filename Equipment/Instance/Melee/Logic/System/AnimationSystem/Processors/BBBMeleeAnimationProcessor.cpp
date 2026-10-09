@@ -37,6 +37,16 @@ void FBBBMeleeAnimationProcessor::Update(FBBBMeleeUpdateContext &Context)
     }
     if (!Action.bAttacking && State.bAttacking)
     {
+        UAnimInstance *MainAnimation = Context.Character.GetMesh()->GetAnimInstance();
+        const bool bOwnMontage = MainAnimation && MainAnimation->Montage_IsActive(Context.Definition.AttackMontage);
+        if (bOwnMontage && !Context.bCausal)
+        {
+            Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{nullptr});
+        }
+        if (bOwnMontage && Context.bCausal)
+        {
+            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{nullptr});
+        }
         Stop(Context);
     }
     Animation->PublishAnimationFacts(FBBBEquipmentAnimationFacts{});
@@ -48,16 +58,6 @@ void FBBBMeleeAnimationProcessor::Update(FBBBMeleeUpdateContext &Context)
 }
 void FBBBMeleeAnimationProcessor::Stop(FBBBMeleeUpdateContext &Context)
 {
-    UAnimInstance *MainAnimation = Context.Character.GetMesh()->GetAnimInstance();
-    const bool bOwnMontage = MainAnimation && MainAnimation->Montage_IsActive(Context.Definition.AttackMontage);
-    if (bOwnMontage && !Context.bCausal)
-    {
-        Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{nullptr});
-    }
-    if (bOwnMontage && Context.bCausal)
-    {
-        Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{nullptr});
-    }
     auto &State = Context.Data.Animation.AnimationState;
     State.bAttacking = false;
     if (auto *Animation = Cast<UBBBMeleeAnimInstance>(Context.Equipment.GetEquipmentAnimationInstance()))

@@ -6,8 +6,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Network/BBBMeleeNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentUnequipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentUnequipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginActionLocalControlPacket.h"
@@ -45,16 +43,6 @@ bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
 bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
 {
     return QueueInput(FBBBMeleeEquipAuthorityFactPacket{});
-}
-
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet)
-{
-    return QueueInput(FBBBMeleeUnequipLocalControlPacket{});
-}
-
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet)
-{
-    return QueueInput(FBBBMeleeUnequipAuthorityFactPacket{});
 }
 
 bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
@@ -98,26 +86,6 @@ bool ABBBMeleeEquipment::QueueInput(FBBBMeleeEquipLocalControlPacket Packet)
 }
 
 bool ABBBMeleeEquipment::QueueInput(FBBBMeleeEquipAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBMeleeParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBMeleeEquipment::QueueInput(FBBBMeleeUnequipLocalControlPacket Packet)
-{
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBMeleeParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBMeleeEquipment::QueueInput(FBBBMeleeUnequipAuthorityFactPacket Packet)
 {
     if (!IsEquipped() || !IsMirror())
     {

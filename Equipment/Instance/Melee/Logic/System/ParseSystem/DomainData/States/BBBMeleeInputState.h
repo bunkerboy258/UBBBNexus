@@ -4,8 +4,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Logic/System/ParseSystem/DomainData/Definitions/BBBMeleeInputSlot.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/LocalControl/Equipment/FBBBMeleeEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/AuthorityFact/Equipment/FBBBMeleeEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/LocalControl/Equipment/FBBBMeleeUnequipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/AuthorityFact/Equipment/FBBBMeleeUnequipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/LocalControl/Action/FBBBMeleeAttackLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/LocalControl/Equipment/FBBBMeleeActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Melee/Input/LocalControl/Action/FBBBMeleeBeginActionLocalControlPacket.h"
@@ -25,12 +23,6 @@ struct FBBBMeleeInputState final
 
     /** AuthorityEquip固定槽位 */
     TBBBMeleeInputSlot<FBBBMeleeEquipAuthorityFactPacket> AuthorityEquip;
-
-    /** Unequip固定槽位 */
-    TBBBMeleeInputSlot<FBBBMeleeUnequipLocalControlPacket> Unequip;
-
-    /** AuthorityUnequip固定槽位 */
-    TBBBMeleeInputSlot<FBBBMeleeUnequipAuthorityFactPacket> AuthorityUnequip;
 
     /** Attack固定槽位 */
     TBBBMeleeInputSlot<FBBBMeleeAttackLocalControlPacket> Attack;

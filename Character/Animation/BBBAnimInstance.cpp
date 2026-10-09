@@ -138,6 +138,12 @@ bool UBBBAnimInstance::RegisterMontageContribution(
         return true;
     }
 
+    // 固定槽位只保留本次贡献 替换时由表现层淡出旧动画
+    if (Contribution->Get() && Contribution->Get() != Montage)
+    {
+        Montage_Stop(0.1f, Contribution->Get());
+    }
+
     *Contribution = Montage;
     if (Montage_IsPlaying(Montage))
     {

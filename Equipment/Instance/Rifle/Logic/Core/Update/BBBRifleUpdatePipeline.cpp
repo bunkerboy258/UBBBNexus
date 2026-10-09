@@ -11,7 +11,6 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/BBBRifleActionSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/AnimationSystem/BBBRifleAnimationSystem.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/NetworkSystem/BBBRifleNetworkSystem.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Shutdown/BBBRifleShutdown.h"
 
 void FBBBRifleUpdatePipeline::UpdateInstance(ABBBEquipment &BaseEquipment) const
 {
@@ -35,16 +34,6 @@ void FBBBRifleUpdatePipeline::UpdateInstance(ABBBEquipment &BaseEquipment) const
         *World, !Equipment.IsMirror()};
 
     FBBBRifleParseSystem::Update(Context);
-    if (Equipment.RuntimeData.Action.ReadRifleActionInputState().bUnequipRequested)
-    {
-        FBBBRifleShutdown{}.Shutdown(Equipment);
-        return;
-    }
-
-    if (!Equipment.IsEquipped())
-    {
-        return;
-    }
     FBBBRifleActionSystem::Update(Context);
     FBBBRifleAnimationSystem::Update(Context);
     FBBBRifleNetworkSystem::Update(Context, Character->HasNetworkAuthority());

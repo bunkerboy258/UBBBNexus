@@ -19,9 +19,6 @@ struct FBBBMeleeActionInputState final
     TArray<int32> BeginContacts;
     /** 关窗标识 */
     TArray<int32> EndContacts;
-    /** 本帧请求解除持有并清理 */
-    bool bUnequip = false;
-
     /** 本帧收到持有表现请求 */
     bool bEquip = false;
 

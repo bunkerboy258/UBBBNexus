@@ -32,9 +32,6 @@ struct FBBBRifleActionInputState final
     /** 本帧是否收到结束换弹通知 */
     bool bInterruptReloadRequested = false;
 
-    /** 本帧请求解除持有并清理 */
-    bool bUnequipRequested = false;
-
 private:
     friend struct FBBBRifleActionDomainState;
 

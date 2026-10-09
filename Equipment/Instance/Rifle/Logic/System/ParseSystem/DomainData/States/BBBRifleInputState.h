@@ -3,8 +3,6 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ParseSystem/DomainData/Definitions/BBBRifleInputSlot.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleEquipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleUnequipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Equipment/FBBBRifleUnequipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/AuthorityFact/Equipment/FBBBRifleEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Fire/FBBBRifleFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleReloadLocalControlPacket.h"
@@ -25,12 +23,6 @@ struct FBBBRifleInputState final
 {
     /** Equip固定槽位 */
     TBBBRifleInputSlot<FBBBRifleEquipLocalControlPacket> Equip;
-
-    /** Unequip固定槽位 */
-    TBBBRifleInputSlot<FBBBRifleUnequipLocalControlPacket> Unequip;
-
-    /** AuthorityUnequip固定槽位 */
-    TBBBRifleInputSlot<FBBBRifleUnequipAuthorityFactPacket> AuthorityUnequip;
 
     /** AuthorityEquip固定槽位 */
     TBBBRifleInputSlot<FBBBRifleEquipAuthorityFactPacket> AuthorityEquip;

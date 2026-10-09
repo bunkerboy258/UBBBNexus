@@ -6,8 +6,6 @@
 
 
 struct FBBBRifleEquipLocalControlPacket;
-struct FBBBRifleUnequipLocalControlPacket;
-struct FBBBRifleUnequipAuthorityFactPacket;
 struct FBBBRifleEquipAuthorityFactPacket;
 struct FBBBRifleFireLocalControlPacket;
 struct FBBBRifleReloadLocalControlPacket;
@@ -100,14 +98,10 @@ private:
 
     virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentUnequipLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentUnequipAuthorityFactPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet) override;
     virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet) override;
     bool QueueInput(FBBBRifleEquipLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleUnequipLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleUnequipAuthorityFactPacket Packet);
     bool QueueInput(FBBBRifleEquipAuthorityFactPacket Packet);
     bool QueueInput(FBBBRifleFireLocalControlPacket Packet);
     bool QueueInput(FBBBRifleReloadLocalControlPacket Packet);
