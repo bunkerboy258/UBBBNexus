@@ -36,6 +36,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "MassEntityQuery.h"
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionFragment.h"
 
 namespace
 {
@@ -257,6 +259,28 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("supportNormalZ"), Ground ? Ground->SupportNormal.Z : 0.0);
             Sample->SetBoolField(TEXT("hasPath"), Navigation->bHasPath);
             Sample->SetBoolField(TEXT("reached"), Navigation->bReachedDestination);
+            Sample->SetBoolField(TEXT("partialPath"), Navigation->bPartialPath);
+            Sample->SetNumberField(TEXT("navigationFailures"), Navigation->FailureCount);
+            Sample->SetNumberField(TEXT("excludedUntil"), Navigation->ExcludedUntil);
+            Sample->SetNumberField(TEXT("approachSlot"), Navigation->ApproachSlot);
+            Sample->SetBoolField(TEXT("waitingForSpace"), Navigation->bWaitingForSpace);
+            const auto* Target = Manager.GetFragmentDataPtr<FBBBMonsterTargetFragment>(Entity);
+            const auto* Perception = Manager.GetFragmentDataPtr<FBBBMonsterPerceptionFragment>(Entity);
+            Sample->SetBoolField(TEXT("hasTarget"), Target && Target->bHasTarget);
+            Sample->SetBoolField(TEXT("targetVisible"), Target && Target->bTargetVisible);
+            Sample->SetStringField(TEXT("targetActor"), Target ? GetPathNameSafe(Target->TargetActor.Get()) : TEXT(""));
+            Sample->SetStringField(TEXT("targetLocation"), Target ? Target->TargetLocation.ToString() : TEXT(""));
+            Sample->SetNumberField(TEXT("targetRevision"), Target ? Target->Revision : 0);
+            Sample->SetNumberField(TEXT("visualContacts"), Perception ? Perception->Contacts.Num() : 0);
+            float Awareness = 0.0f;
+            if (Perception)
+            {
+                for (const auto& Contact : Perception->Contacts)
+                {
+                    Awareness = FMath::Max(Awareness, Contact.Awareness);
+                }
+            }
+            Sample->SetNumberField(TEXT("awareness"), Awareness);
             Sample->SetNumberField(TEXT("pathPoints"), Navigation->PathPoints.Num());
             Sample->SetNumberField(TEXT("pathPointIndex"), Navigation->PathPointIndex);
             TArray<TSharedPtr<FJsonValue>> PathCoordinates;

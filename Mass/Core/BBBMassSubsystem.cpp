@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 
 namespace
@@ -82,6 +83,15 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterHi
 void UBBBMassSubsystem::BeginCollisionFrame()
 {
     CollisionCells.Reset();
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSoundLocalControlPacket& Packet)
+{
+    if (GetWorld()->GetNetMode() == NM_Client)
+    {
+        return false;
+    }
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
 void UBBBMassSubsystem::AddCollisionBody(const FBBBMassCollisionBody& Body)

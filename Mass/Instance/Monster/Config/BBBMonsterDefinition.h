@@ -138,6 +138,70 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "视野范围"))
     float SightRange = 3500.0f;
 
+    /** 初次发现的前方视野总夹角 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "1.0", ClampMax = "180.0", DisplayName = "视觉夹角"))
+    float SightAngle = 120.0f;
+
+    /** 近距离完整暴露的发现秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "最快视觉确认时间"))
+    float SightConfirmMin = 0.3f;
+
+    /** 远距离或部分暴露的发现秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "最慢视觉确认时间"))
+    float SightConfirmMax = 1.2f;
+
+    /** 未确认警觉完全消退所需秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "警觉消退时间"))
+    float AwarenessDecayDuration = 1.5f;
+
+    /** 无新视觉确认时的追踪上限秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "失去感知追踪时间"))
+    float TargetMemoryDuration = 6.0f;
+
+    /** 最后确认位置超过此距离停止追踪 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "1.0", DisplayName = "最大追踪距离"))
+    float TargetLeashDistance = 5000.0f;
+
+    /** 新目标相对于当前目标必须达到的距离比例 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", ClampMax = "0.99", DisplayName = "切换目标距离比例"))
+    float TargetSwitchRatio = 0.8f;
+
+    /** 新目标还必须具有的绝对距离优势 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.0", DisplayName = "切换目标距离优势"))
+    float TargetSwitchAdvantage = 100.0f;
+
+    /** 新候选持续占优后才切换 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.0", DisplayName = "切换目标确认时间"))
+    float TargetSwitchDuration = 0.3f;
+
+    /** 自己视觉确认后向同伴示警的距离 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.0", DisplayName = "同伴示警范围"))
+    float AllyAlertRange = 1200.0f;
+
+    /** 两次同伴示警之间的最短秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "同伴示警间隔"))
+    float AllyAlertCooldown = 3.0f;
+
+    /** 到达最后线索位置后的停留秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "调查结束警觉时间"))
+    float InvestigationAlertDuration = 1.5f;
+
+    /** 实际无进展持续此秒数后重算路径 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (ClampMin = "0.1", DisplayName = "卡住检测时间"))
+    float NavigationStuckDuration = 1.5f;
+
+    /** 路径或脱困连续失败次数上限 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (ClampMin = "1", ClampMax = "10", DisplayName = "寻路失败上限"))
+    int32 NavigationFailureLimit = 3;
+
+    /** 排除失败目标当前位置的秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (ClampMin = "0.1", DisplayName = "不可达重试间隔"))
+    float NavigationRetryDuration = 4.0f;
+
+    /** 仅在目标附近安排有限包围位置 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (ClampMin = "1.0", DisplayName = "包围接近启用距离"))
+    float EncircleRange = 650.0f;
+
     /** 逻辑球形碰撞半径 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪", meta = (ClampMin = "0.0", DisplayName = "碰撞半径"))
     float CollisionRadius = 45.0f;

@@ -21,4 +21,13 @@ struct ABBB_EVAC_API FBBBMonsterTargetFragment final : public FMassFragment
 
     /** 感知确认的实际目标对象 */
     TWeakObjectPtr<AActor> TargetActor;
+
+    /** 当前目标由本机前方视觉确认 此值为假时不能启动新攻击 */
+    bool bTargetVisible = false;
+
+    /** 追踪位置或目标身份发生改变时递增 */
+    uint32 Revision = 0;
+
+    /** 当前线索成立的时间 */
+    float EvidenceTime = -FLT_MAX;
 };

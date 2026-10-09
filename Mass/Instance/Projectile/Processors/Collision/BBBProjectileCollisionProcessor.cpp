@@ -159,6 +159,11 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                                 const auto* GameState = World->GetGameState();
                                 Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World->GetTimeSeconds();
                                 Current.LastHitRegion = static_cast<EBBBMonsterHitRegion>(HitPart);
+                                Current.bHasSourcePosition = Controller->GetPawn() != nullptr;
+                                if (Current.bHasSourcePosition)
+                                {
+                                    Current.LastSourcePosition = Controller->GetPawn()->GetActorLocation();
+                                }
                                 Result->Include(Current);
                             }
                         }

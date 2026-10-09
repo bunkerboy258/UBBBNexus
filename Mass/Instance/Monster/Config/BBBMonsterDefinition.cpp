@@ -31,6 +31,22 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(PatrolDurationMax) && PatrolDurationMax >= PatrolDurationMin
         && FMath::IsFinite(AlertDuration) && AlertDuration > 0.0f
         && FMath::IsFinite(SightRange) && SightRange >= 0.0f
+        && FMath::IsFinite(SightAngle) && SightAngle > 0.0f && SightAngle <= 180.0f
+        && FMath::IsFinite(SightConfirmMin) && SightConfirmMin > 0.0f
+        && FMath::IsFinite(SightConfirmMax) && SightConfirmMax >= SightConfirmMin
+        && FMath::IsFinite(AwarenessDecayDuration) && AwarenessDecayDuration > 0.0f
+        && FMath::IsFinite(TargetMemoryDuration) && TargetMemoryDuration > 0.0f
+        && FMath::IsFinite(TargetLeashDistance) && TargetLeashDistance >= SightRange
+        && FMath::IsFinite(TargetSwitchRatio) && TargetSwitchRatio > 0.0f && TargetSwitchRatio < 1.0f
+        && FMath::IsFinite(TargetSwitchAdvantage) && TargetSwitchAdvantage >= 0.0f
+        && FMath::IsFinite(TargetSwitchDuration) && TargetSwitchDuration >= 0.0f
+        && FMath::IsFinite(AllyAlertRange) && AllyAlertRange >= 0.0f
+        && FMath::IsFinite(AllyAlertCooldown) && AllyAlertCooldown > 0.0f
+        && FMath::IsFinite(InvestigationAlertDuration) && InvestigationAlertDuration > 0.0f
+        && FMath::IsFinite(NavigationStuckDuration) && NavigationStuckDuration > 0.0f
+        && FMath::IsFinite(NavigationRetryDuration) && NavigationRetryDuration > 0.0f
+        && FMath::IsFinite(EncircleRange) && EncircleRange > 0.0f
+        && NavigationFailureLimit >= 1 && NavigationFailureLimit <= 10
         && FMath::IsFinite(CollisionRadius) && CollisionRadius > 0.0f
         && FMath::IsFinite(CapsuleHalfHeight) && CapsuleHalfHeight >= CollisionRadius
         && FMath::IsFinite(MaxStepHeight) && MaxStepHeight >= 0.0f && MaxStepHeight < CapsuleHalfHeight

@@ -26,4 +26,7 @@ protected:
 private:
     /** 查询全部小怪实体的 Mass 查询器 */
     FMassEntityQuery MonsterQuery;
+
+    /** 射线预算不足时从上轮结束位置继续检查 防止固定顺序饥饿 */
+    int32 NextSenseEntityIndex = 0;
 };

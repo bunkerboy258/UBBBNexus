@@ -82,7 +82,8 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             FBBBMonsterDamageFragment& DamageEvent = DamageEvents[Index];
             const FBBBMonsterHealthFragment& Health = Healths[Index];
 
-            const auto EnterState = [&State, WorldTime](const EBBBMonsterBehavior NewState, const bool bRestart = false)
+            const auto* Settings = Network[Index].Definition.Get();
+            const auto EnterState = [&State, Settings, &Targets, Index, WorldTime](const EBBBMonsterBehavior NewState, const bool bRestart = false)
             {
                 if (State.State != NewState || bRestart)
                 {
@@ -100,7 +101,8 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                     }
                     if (NewState == EBBBMonsterBehavior::Alert)
                     {
-                        State.StateEndsAtTime = WorldTime + State.AlertDuration;
+                        const float Duration = Settings && !Targets[Index].bHasTarget ? Settings->InvestigationAlertDuration : State.AlertDuration;
+                        State.StateEndsAtTime = WorldTime + Duration;
                     }
                 }
             };
@@ -140,7 +142,6 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
-            const auto* Settings = Network[Index].Definition.Get();
             if (Mobility[Index].bCrawling && Settings && WorldTime < Mobility[Index].CrawlStartedAt + Settings->CrawlTransitionDuration)
             {
                 Combat.AttackTarget.Reset();
@@ -173,7 +174,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             const FBBBMonsterTargetFragment& Target = Targets[Index];
 
-            if (!Target.bHasTarget || !Target.TargetActor.IsValid() || !Target.TargetActor->CanBeDamaged())
+            if (!Target.bHasTarget)
             {
                 if (State.bHadTarget)
                 {
@@ -209,6 +210,11 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             if (!State.bHadTarget)
             {
                 State.bHadTarget = true;
+                const FVector Facing = (Target.TargetLocation - Transforms[Index].GetTransform().GetLocation()).GetSafeNormal2D();
+                if (!Facing.IsNearlyZero())
+                {
+                    Transforms[Index].GetMutableTransform().SetRotation(Facing.Rotation().Quaternion());
+                }
                 EnterState(EBBBMonsterBehavior::Alert, true);
                 continue;
             }
@@ -219,7 +225,8 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             const bool bInRange = FVector::DistSquared(Transforms[Index].GetTransform().GetLocation(), Target.TargetLocation) <= FMath::Square(Combat.AttackRange);
 
-            if (Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime && !Mobility[Index].IsStaggering(WorldTime))
+            if (Target.bTargetVisible && Target.TargetActor.IsValid() && Target.TargetActor->CanBeDamaged() &&
+                Grounds[Index].bGrounded && bInRange && WorldTime >= Combat.NextAttackTime && !Mobility[Index].IsStaggering(WorldTime))
             {
                 FTransform& Transform = Transforms[Index].GetMutableTransform();
                 const FVector Facing = (Target.TargetLocation - Transform.GetLocation()).GetSafeNormal2D();

@@ -22,12 +22,14 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterStimulusFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 /** 验证真实角色接收僵尸近战的几何边界和生命转换 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterCombatTest, "UBBB.Mass.ZombieCombat",
@@ -89,8 +91,12 @@ bool FBBBMonsterCombatTest::RunTest(const FString& Parameters)
         FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterPerceptionFragment::StaticStruct(),
         FBBBMonsterTargetFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
         FBBBMonsterDamageFragment::StaticStruct(), FBBBMonsterDeathFragment::StaticStruct(),
-        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()});
+        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()});
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
+    auto* PerceptionSettings = NewObject<UBBBMonsterDefinition>(World);
+    PerceptionSettings->SightConfirmMin = 0.01f;
+    PerceptionSettings->SightConfirmMax = 0.01f;
+    Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition = PerceptionSettings;
     FTransform& Transform = Manager.GetFragmentDataChecked<FTransformFragment>(Entity).GetMutableTransform();
     Transform.SetLocation(FVector(0.0f, 0.0f, 90.0f));
     auto& State = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity);
@@ -185,6 +191,7 @@ bool FBBBMonsterCombatTest::RunTest(const FString& Parameters)
     State.StateEndsAtTime = 0.0f;
     State.bHadTarget = true;
     Target.bHasTarget = true;
+    Target.bTargetVisible = true;
     Target.TargetActor = Player;
     Target.TargetLocation = Player->GetActorLocation();
     Transform.SetRotation(FRotator(0.0f, 90.0f, 0.0f).Quaternion());

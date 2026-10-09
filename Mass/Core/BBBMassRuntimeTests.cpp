@@ -54,6 +54,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 
 /** 隔离世界验证覆盖输入 枪口运动 逻辑碰撞与伤害权限 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMassRuntimeTest, "UBBB.Mass.Runtime",
@@ -84,7 +85,8 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
         FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
-        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct()
+        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct(),
+        FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct()
     });
     const FMassEntityHandle Monster = Manager.CreateEntity(MonsterType);
     const FGuid InstanceId = FGuid::NewGuid();

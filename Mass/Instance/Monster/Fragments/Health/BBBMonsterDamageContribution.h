@@ -30,16 +30,26 @@ struct FBBBMonsterDamageContribution final
     UPROPERTY()
     EBBBMonsterHitRegion LastHitRegion = EBBBMonsterHitRegion::Torso;
 
+    /** 最近有效命中成立时的来源位置 不更新为射手后续位置 */
+    UPROPERTY()
+    FVector LastSourcePosition = FVector::ZeroVector;
+
+    /** 最近命中是否提供有效来源位置 */
+    UPROPERTY()
+    bool bHasSourcePosition = false;
+
     bool IsValid() const
     {
         return PlayerId >= 0 && FMath::IsFinite(Damage) && Damage >= 0.0
             && FMath::IsFinite(LegDamage) && LegDamage >= 0.0 && LegDamage <= Damage
-            && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg;
+            && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg
+            && !LastSourcePosition.ContainsNaN();
     }
 
     bool operator==(const FBBBMonsterDamageContribution& Other) const
     {
         return PlayerId == Other.PlayerId && Damage == Other.Damage && LegDamage == Other.LegDamage
-            && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion;
+            && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
+            && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition;
     }
 };

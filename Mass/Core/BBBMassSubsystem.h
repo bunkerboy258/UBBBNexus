@@ -14,6 +14,7 @@ struct FBBBMonsterDamageRemoteMessagePacket;
 struct FBBBMonsterDamageContribution;
 struct FBBBMonsterStateAuthorityFactPacket;
 struct FBBBMonsterHitReactionLocalControlPacket;
+struct FBBBMonsterSoundLocalControlPacket;
 
 /** 世界级实体生命周期与输入路由 */
 UCLASS()
@@ -82,6 +83,7 @@ private:
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageRemoteMessagePacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterHitReactionLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSoundLocalControlPacket& Packet);
 
     /** 每帧重建的空间桶 不持有实体玩法状态 */
     TMap<FIntVector, TArray<FBBBMassCollisionBody>> CollisionCells;

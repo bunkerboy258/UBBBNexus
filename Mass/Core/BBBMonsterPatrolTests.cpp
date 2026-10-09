@@ -113,6 +113,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     }
     FBBBMonsterTargetFragment& Target = Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Entity);
     Target.bHasTarget = true;
+    Target.bTargetVisible = true;
     Target.TargetActor = TargetActor;
     Target.TargetLocation = TargetActor->GetActorLocation();
     FTransform& Transform = Manager.GetFragmentDataChecked<FTransformFragment>(Entity).GetMutableTransform();

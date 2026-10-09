@@ -7,6 +7,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
+#include "Engine/World.h"
 UBBBMonsterParseProcessor::UBBBMonsterParseProcessor()
     : EntityQuery(*this)
 {
@@ -29,11 +31,16 @@ void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     EntityQuery.AddRequirement<FBBBMonsterHitReactionInputFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterPerceptionInputFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterStimulusFragment>(EMassFragmentAccess::ReadWrite);
 }
 
 void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
-    EntityQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& Chunk)
+    const UWorld* World = Context.GetWorld();
+    const float Now = World ? World->GetTimeSeconds() : 0.0f;
+    const bool bHost = World && World->GetNetMode() != NM_Client;
+    EntityQuery.ForEachEntityChunk(Context, [Now, bHost](FMassExecutionContext& Chunk)
     {
         auto HealthInputs = Chunk.GetMutableFragmentView<FBBBMonsterHealthInputFragment>();
         auto NetworkInputs = Chunk.GetMutableFragmentView<FBBBMonsterNetworkInputFragment>();
@@ -45,8 +52,21 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
         auto HitInputs = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionInputFragment>();
         auto Hits = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
+        auto PerceptionInputs = Chunk.GetMutableFragmentView<FBBBMonsterPerceptionInputFragment>();
+        auto Stimuli = Chunk.GetMutableFragmentView<FBBBMonsterStimulusFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
+            auto& Sound = PerceptionInputs[Index].Sound;
+            if (Sound.bActive)
+            {
+                Sound.bActive = false;
+                if (bHost && Sound.Packet.IsValid() && Sound.Packet.CanApply(Stimuli[Index]) &&
+                    Sound.Packet.Time <= Now && Sound.Packet.Time + Sound.Packet.Duration > Now && Health[Index].CurrentHealth > 0.0f)
+                {
+                    Sound.Packet.Apply(Stimuli[Index]);
+                }
+            }
+
             auto& Hit = HitInputs[Index].Hit;
             if (Hit.bActive)
             {

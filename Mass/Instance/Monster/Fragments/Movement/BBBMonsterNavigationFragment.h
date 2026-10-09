@@ -35,6 +35,42 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 
     /** 当前巡逻目的地是否已到达 */
     bool bReachedDestination = false;
+
+    /** 当前路径是否只到达可达边界 */
+    bool bPartialPath = false;
+
+    /** 路径使用的目标版本 */
+    uint32 TargetRevision = MAX_uint32;
+
+    /** 寻路失败或无进展的连续次数 */
+    int32 FailureCount = 0;
+
+    /** 此位置暂时不可达的结束时刻 */
+    float ExcludedUntil = 0.0f;
+
+    /** 暂时不可达的位置 */
+    FVector ExcludedPosition = FVector::ZeroVector;
+
+    /** 上次有实际移动进展的位置 */
+    FVector ProgressPosition = FVector::ZeroVector;
+
+    /** 上次有实际移动进展的世界时间 */
+    float ProgressTime = -1.0f;
+
+    /** 本次局部绕行结束时刻 */
+    float DetourEndsAt = 0.0f;
+
+    /** 本次局部绕行的位置 */
+    FVector DetourPosition = FVector::ZeroVector;
+
+    /** 当前稳定的包围接近位置编号 */
+    int32 ApproachSlot = INDEX_NONE;
+
+    /** 包围位置所属的玩家 不读取隐藏玩家位置 */
+    TWeakObjectPtr<AActor> ApproachActor;
+
+    /** 因所有近战接近位置拥堵而合理等待 */
+    bool bWaitingForSpace = false;
 };
 
 /** 完整导航路径使用原生构造 拷贝与析构 */

@@ -23,6 +23,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 
 void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildContext, const UWorld& World) const
 {
@@ -58,6 +59,8 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Behavior.AlertDuration = Settings->AlertDuration;
     BuildContext.AddFragment<FBBBMonsterNavigationFragment>();
     BuildContext.AddFragment<FBBBMonsterTargetFragment>();
+    BuildContext.AddFragment<FBBBMonsterPerceptionInputFragment>();
+    BuildContext.AddFragment<FBBBMonsterStimulusFragment>();
     BuildContext.AddFragment<FBBBMonsterPresentationStateFragment>();
     BuildContext.AddFragment<FBBBMonsterPresentationSmoothingFragment>();
 
