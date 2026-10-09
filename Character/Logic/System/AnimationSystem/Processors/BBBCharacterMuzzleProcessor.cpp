@@ -3,7 +3,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterMuzzleProcessor::Update(FBBBCharacterAnimationUpdateContext &Context) const
@@ -15,12 +14,6 @@ void FBBBCharacterMuzzleProcessor::Update(FBBBCharacterAnimationUpdateContext &C
     const ABBBEquipment *Equipment =
         Context.RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
     if (!IsValid(Equipment))
-    {
-        return;
-    }
-
-    const UBBBEquipmentDefinition *Definition = Equipment->GetDefinition();
-    if (!IsValid(Definition) || Definition->EquipmentType != EBBBEquipmentType::Rifle)
     {
         return;
     }
