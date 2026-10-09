@@ -1,4 +1,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentAllowFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentLoadAmmoLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Initialization/BBBRifleInitializer.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Update/BBBRifleUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/Core/Shutdown/BBBRifleShutdown.h"
@@ -232,6 +236,26 @@ bool ABBBRifleEquipment::QueueInput(FBBBRifleReloadEndAuthorityFactPacket Packet
 void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform)
 {
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+{
+    return QueueInput(FBBBRifleBlockFireLocalControlPacket{});
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+{
+    return QueueInput(FBBBRifleAllowFireLocalControlPacket{});
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet)
+{
+    return QueueInput(FBBBRifleLoadMagazineLocalControlPacket{});
+}
+
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet)
+{
+    return QueueInput(FBBBRifleInterruptReloadLocalControlPacket{});
 }
 
 bool ABBBRifleEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const

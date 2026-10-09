@@ -1,4 +1,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentAllowFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentLoadAmmoLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
@@ -149,6 +153,26 @@ void ABBBEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 bool ABBBEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet)
+{
+    return false;
+}
+
+bool ABBBEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet)
 {
     return false;
 }

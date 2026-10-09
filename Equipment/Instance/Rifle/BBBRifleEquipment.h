@@ -90,6 +90,10 @@ protected:
 
 private:
     using ABBBEquipment::QueueInput;
+    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet) override;
     friend class FBBBRifleActionProcessor;
 
     virtual void Tick(float DeltaSeconds) override;

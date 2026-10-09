@@ -10,6 +10,10 @@ class UBBBEquipmentDefinition;
 class UArrowComponent;
 class USkeletalMeshComponent;
 class FBBBEquipmentInitializer;
+struct FBBBEquipmentBlockFireLocalControlPacket;
+struct FBBBEquipmentAllowFireLocalControlPacket;
+struct FBBBEquipmentLoadAmmoLocalControlPacket;
+struct FBBBEquipmentInterruptReloadLocalControlPacket;
 class FBBBEquipmentUpdatePipeline;
 class UBBBEquipmentNetworkComponent;
 struct FBBBEquipmentSecondaryLocalControlPacket;
@@ -115,6 +119,18 @@ private:
     friend class FBBBEquipmentUpdatePipeline;
 
 protected:
+    /** @param Packet 由具体装备解释的阻止开火请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet);
+
+    /** @param Packet 由具体装备解释的允许开火请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet);
+
+    /** @param Packet 由具体装备解释的装入弹药请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet);
+
+    /** @param Packet 由具体装备解释的中断换弹请求 @return 是否接受 */
+    virtual bool QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet);
+
     /** 初始化具体装备状态 @return 是否初始化成功 */
     virtual bool InitializeRuntimeData() PURE_VIRTUAL(ABBBEquipment::InitializeRuntimeData, return false;);
 
