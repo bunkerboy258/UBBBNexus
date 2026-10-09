@@ -101,17 +101,51 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     NetworkIdentityState.bLocallyControlled = Character->IsLocallyControlled();
     NetworkIdentityState.bIsMirror = !NetworkIdentityState.bLocallyControlled;
 
-    // 输入与物品：先解析请求，再更新物品、装备关系和外观
+    // 两条路径都先解析输入，再根据本帧身份执行对应更新
     Character->ParseSystem.Update();
-    if (!NetworkIdentityState.bIsMirror)
+
+    if (NetworkIdentityState.bIsMirror)
     {
+        // Mirror：消费远端结果并维护本地表现，不执行物品与瞄准决策
+        ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
+        Character->EquipmentSystem.Update();
+        Character->AppearanceSystem.Update();
+        UpdateEquipmentSwitchTickDependency(PreviousEquipment);
+
+        Character->LifeSystem.Update();
+        Character->TraversalSystem.Update();
+        Character->EquipmentSystem.UpdateUsage();
+        Character->LocomotionSystem.Update();
+        Character->PhysicalPresentationSystem.Update();
+    }
+    else
+    {
+        // Causal：本机控制角色生成物品、瞄准及其它玩法结果
         Character->ItemSystem.Update();
+
+        ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
+        Character->EquipmentSystem.Update();
+        Character->AppearanceSystem.Update();
+        UpdateEquipmentSwitchTickDependency(PreviousEquipment);
+
+        Character->LifeSystem.Update();
+        Character->AimSystem.Update();
+
+        // 攀爬生成交接结果，装备使用许可随后更新，移动系统独占 CMC 写入
+        Character->TraversalSystem.Update();
+        Character->EquipmentSystem.UpdateUsage();
+        Character->LocomotionSystem.Update();
+        Character->PhysicalPresentationSystem.Update();
     }
 
-    ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
-    Character->EquipmentSystem.Update();
-    Character->AppearanceSystem.Update();
+    // 两条路径都在领域更新完成后进行网络观察
+    Character->NetworkSystem.Update();
+}
 
+//------------------------------------------------------------------------------
+
+void FBBBCharacterUpdatePipeline::UpdateEquipmentSwitchTickDependency(ABBBEquipment *PreviousEquipment)
+{
     // 装备切换帧：新装备等待旧装备完成本帧 Tick
     ABBBEquipment *CurrentEquipment = Character->GetActiveEquipment();
     if (IsValid(PreviousEquipment) &&
@@ -123,27 +157,6 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         CleanupWaiter = CurrentEquipment;
         CleanupSource = PreviousEquipment;
     }
-
-    // 生命与瞄准：只有本机控制角色根据输入产生新的瞄准事实
-    Character->LifeSystem.Update();
-
-    if (!NetworkIdentityState.bIsMirror)
-    {
-        Character->AimSystem.Update();
-    }
-
-    // 攀爬只生成交接结果 移动系统独占 CMC 写入
-    Character->TraversalSystem.Update();
-
-    // 操作许可位于攀爬决策后与 CMC 前 不重复装备关系维护
-    Character->EquipmentSystem.UpdateUsage();
-
-    // 更新移动与物理表现
-    Character->LocomotionSystem.Update();
-    Character->PhysicalPresentationSystem.Update();
-
-    // 网络只观察已经成立的状态与事实
-    Character->NetworkSystem.Update();
 }
 
 //------------------------------------------------------------------------------
