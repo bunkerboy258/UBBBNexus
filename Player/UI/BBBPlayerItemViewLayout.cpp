@@ -54,25 +54,33 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     };
     static const FSlateColorBrush Dim(FLinearColor(0.002f, 0.003f, 0.003f, 0.82f));
     constexpr float StorageLeft = 58.0f;
-    Place(StorageLeft, 30.0f, 360.0f, 110.0f,
-          SNew(STextBlock).Text(FText::FromString(TEXT("Bag"))).Font(TitleFont(54))
+    Place(StorageLeft, 20.0f, 480.0f, 160.0f,
+          SNew(STextBlock).Text(FText::FromString(TEXT("Bag"))).Font(TitleFont(76))
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.90f)));
-    Place(60.0f, 158.0f, 830.0f, 55.0f,
-          SNew(STextBlock)
-              .Text_Lambda(
-                  [this]()
-                  {
-                      auto *Controller = GetItemController();
-                      return Controller ? Controller->GetItemDisplayData(InspectedSlot).Name : FText::GetEmpty();
-                  })
-              .Font(TitleFont(34))
-              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.82f)));
-    Place(100.0f, 245.0f, 750.0f, 270.0f,
-          SAssignNew(DetailImage, SBox)[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
-              [this]()
-              {
-                  return GetDetailBrush();
-              })]]);
+    Place(StorageLeft, 170.0f, 862.0f, 365.0f,
+          SAssignNew(DetailImage, SBox)
+              [SNew(SOverlay) +
+               SOverlay::Slot()
+                   [SNew(SScaleBox).Stretch(EStretch::ScaleToFit).VAlign(VAlign_Bottom)
+                       [SNew(SImage).Image_Lambda(
+                           [this]()
+                           {
+                               return GetDetailBrush();
+                           })]] +
+               SOverlay::Slot().HAlign(HAlign_Right).VAlign(VAlign_Bottom).Padding(0.0f, 0.0f, 16.0f, 14.0f)
+                   [SNew(STextBlock)
+                        .Text_Lambda(
+                            [this]()
+                            {
+                                auto *Controller = GetItemController();
+                                return Controller ? Controller->GetItemDisplayData(InspectedSlot).Name : FText::GetEmpty();
+                            })
+                        .Font(TitleFont(38))
+                        .Justification(ETextJustify::Right)
+                        .WrapTextAt(620.0f)
+                        .ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.85f))
+                        .ShadowOffset(FVector2D(2.0f, 2.0f))
+                        .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.92f))]]);
     const auto TabButton = [this](const TCHAR *Text, bool bMisc)
     {
         return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
