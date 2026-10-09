@@ -193,6 +193,57 @@ bool UBBBMassSubsystem::TraceEntities(const FVector& Start, const FVector& End, 
     return HitEntity.IsSet();
 }
 
+void UBBBMassSubsystem::OverlapEntities(const FVector& Center, const float Radius,
+    TArray<FBBBMassCollisionBody>& Results) const
+{
+    Results.Reset();
+    if (Center.ContainsNaN() || !FMath::IsFinite(Radius) || Radius <= 0.0f)
+    {
+        return;
+    }
+
+    const FIntVector Min = CollisionCell(Center - FVector(Radius));
+    const FIntVector Max = CollisionCell(Center + FVector(Radius));
+    TMap<FMassEntityHandle, int32> Indices;
+    for (int32 X = Min.X; X <= Max.X; ++X)
+    {
+        for (int32 Y = Min.Y; Y <= Max.Y; ++Y)
+        {
+            for (int32 Z = Min.Z; Z <= Max.Z; ++Z)
+            {
+                const auto* Bodies = CollisionCells.Find(FIntVector(X, Y, Z));
+                if (Bodies == nullptr)
+                {
+                    continue;
+                }
+
+                for (const FBBBMassCollisionBody& Body : *Bodies)
+                {
+                    const double Distance = FMath::Max(0.0, FVector::Distance(Center, Body.Center) - Body.Radius);
+                    if (Distance > Radius)
+                    {
+                        continue;
+                    }
+
+                    const int32* Index = Indices.Find(Body.Entity);
+                    if (Index == nullptr)
+                    {
+                        Indices.Add(Body.Entity, Results.Add(Body));
+                        continue;
+                    }
+
+                    const auto& Previous = Results[*Index];
+                    const double PreviousDistance = FMath::Max(0.0, FVector::Distance(Center, Previous.Center) - Previous.Radius);
+                    if (Distance < PreviousDistance)
+                    {
+                        Results[*Index] = Body;
+                    }
+                }
+            }
+        }
+    }
+}
+
 FMassEntityHandle UBBBMassSubsystem::CreateEntity(const UMassEntityConfigAsset& Config)
 {
     UMassSpawnerSubsystem* Spawner = GetWorld()->GetSubsystem<UMassSpawnerSubsystem>();

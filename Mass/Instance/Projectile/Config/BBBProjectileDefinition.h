@@ -8,6 +8,7 @@
 class UMassEntityConfigAsset;
 class UNiagaraDataChannelAsset;
 class UNiagaraSystem;
+class UStaticMesh;
 
 /** 描述一类本地实体弹丸的弹道 伤害与实体模板 */
 UCLASS(BlueprintType)
@@ -16,6 +17,46 @@ class ABBB_EVAC_API UBBBProjectileDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    /** 每发生成的独立弹丸数量 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|发射", meta = (ClampMin = "1", ClampMax = "64", DisplayName = "每发弹丸数"))
+    int32 ProjectilesPerShot = 1;
+
+    /** 相对枪口正前方的散射锥半角 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|发射", meta = (ClampMin = "0.0", ClampMax = "90.0", DisplayName = "散射半角"))
+    float SpreadHalfAngleDegrees = 0.0f;
+
+    /** 世界重力倍率 零表示直线飞行 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|运动", meta = (ClampMin = "0.0", DisplayName = "重力倍率"))
+    float GravityScale = 0.0f;
+
+    /** 范围伤害半径 零表示点伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|爆炸", meta = (ClampMin = "0.0", ForceUnits = "cm", DisplayName = "爆炸半径 厘米"))
+    float ExplosionRadiusCm = 0.0f;
+
+    /** 正数表示出生后延时引爆 零表示没有引信 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|爆炸", meta = (ClampMin = "0.0", ForceUnits = "s", DisplayName = "引信时间 秒"))
+    float FuseSeconds = 0.0f;
+
+    /** 范围伤害弹丸接触目标时立即引爆 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|爆炸", meta = (DisplayName = "接触引爆"))
+    bool bDetonateOnImpact = true;
+
+    /** 未引爆的弹丸接触后反弹 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|运动", meta = (DisplayName = "碰撞反弹"))
+    bool bBounceOnImpact = false;
+
+    /** 反弹后保留的速度比例 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|运动", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "反弹速度倍率"))
+    float BounceRestitution = 0.4f;
+
+    /** 批量实例显示的弹体网格 为空时仅显示曳光 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|表现", meta = (DisplayName = "弹体网格"))
+    TObjectPtr<UStaticMesh> Mesh = nullptr;
+
+    /** 网格相对飞行方向的旋转 位移和缩放 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|表现", meta = (DisplayName = "网格相对变换"))
+    FTransform MeshRelativeTransform = FTransform::Identity;
+
     /** 弹丸使用的Mass实体模板与表现配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸", meta = (DisplayName = "实体配置"))
     TObjectPtr<UMassEntityConfigAsset> EntityConfig = nullptr;

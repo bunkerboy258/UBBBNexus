@@ -19,4 +19,10 @@ struct ABBB_EVAC_API FBBBProjectileMotionFragment final : public FMassFragment
 
     /** 是否已经消费出生输入 */
     bool bInitialized = false;
+
+    /** 当前弹丸使用的世界重力倍率 */
+    float GravityScale = 0.0f;
+
+    /** 碰撞后停止运动 引信仍继续计时 */
+    bool bResting = false;
 };

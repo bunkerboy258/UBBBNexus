@@ -169,6 +169,14 @@ void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
     FBBBProjectileSpawnLocalControlPacket Packet;
     Packet.MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
     Packet.Speed = Definition->InitialSpeedCmPerSecond;
+    Packet.GravityScale = Definition->GravityScale;
+    Packet.ExplosionRadiusCm = Definition->ExplosionRadiusCm;
+    Packet.FuseSeconds = Definition->FuseSeconds;
+    Packet.bDetonateOnImpact = Definition->bDetonateOnImpact;
+    Packet.bBounceOnImpact = Definition->bBounceOnImpact;
+    Packet.BounceRestitution = Definition->BounceRestitution;
+    Packet.Mesh = Definition->Mesh.Get();
+    Packet.MeshRelativeTransform = Definition->MeshRelativeTransform;
     Packet.Lifetime = Definition->MaximumLifetimeSeconds;
     Packet.Damage = Definition->BaseDamage;
     Packet.Radius = Definition->CollisionRadiusCm;
@@ -186,7 +194,11 @@ void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
     Packet.TracerColor = Definition->TracerColor;
     Packet.bCanCauseDamage = Context.bCausal;
 
-    const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);
-    ensureMsgf(Entity.IsSet() && Mass->SubmitInput(Entity, MoveTemp(Packet)),
-        TEXT("步枪 Mass 子弹出生失败 %s"), *Context.Equipment.GetName());
+    for (int32 Index = 0; Index < Definition->ProjectilesPerShot; ++Index)
+    {
+        Packet.LocalDirection = FMath::VRandCone(FVector::ForwardVector, FMath::DegreesToRadians(Definition->SpreadHalfAngleDegrees));
+        const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);
+        ensureMsgf(Entity.IsSet() && Mass->SubmitInput(Entity, Packet),
+            TEXT("步枪 Mass 子弹出生失败 %s"), *Context.Equipment.GetName());
+    }
 }

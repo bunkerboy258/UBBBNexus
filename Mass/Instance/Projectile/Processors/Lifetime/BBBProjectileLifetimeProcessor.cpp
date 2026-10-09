@@ -30,6 +30,10 @@ void UBBBProjectileLifetimeProcessor::Execute(FMassEntityManager&, FMassExecutio
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             Lives[Index].RemainingSeconds -= Delta;
+            if (Lives[Index].FuseRemainingSeconds > 0.0f)
+            {
+                Lives[Index].FuseRemainingSeconds = FMath::Max(0.0f, Lives[Index].FuseRemainingSeconds - Delta);
+            }
             if (Lives[Index].bPendingDestroy || Lives[Index].RemainingSeconds <= 0.0f)
             {
                 Chunk.Defer().DestroyEntity(Chunk.GetEntity(Index));

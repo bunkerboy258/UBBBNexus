@@ -20,6 +20,64 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
 
+namespace
+{
+    void AccumulateDamage(UWorld& World, UBBBMassSubsystem& Mass,
+        TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket>& Results,
+        const FBBBProjectileCollisionFragment& Data, FMassEntityHandle Target, uint8 Part,
+        const FVector& Position, const FVector& Direction, const FVector& Normal)
+    {
+        FBBBMonsterHitReactionLocalControlPacket Hit;
+        Hit.Region = static_cast<EBBBMonsterHitRegion>(Part);
+        Hit.Position = Position;
+        Hit.Direction = Direction;
+        Hit.Normal = Normal;
+        Mass.SubmitInput(Target, MoveTemp(Hit));
+        if (!Data.bCanCauseDamage || Data.Damage <= 0.0f)
+        {
+            return;
+        }
+
+        const AController* Controller = Data.EventInstigator.Get();
+        const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
+        if (!ensureMsgf(Player != nullptr && Player->GetPlayerId() >= 0,
+            TEXT("有效子弹伤害需要稳定的 PlayerState 玩家身份")))
+        {
+            return;
+        }
+
+        auto* Result = Results.Find(Target);
+        if (Result == nullptr)
+        {
+            FBBBMonsterDamageLocalControlPacket Snapshot;
+            if (!Mass.QueryDamage(Target, Snapshot.Contributions))
+            {
+                return;
+            }
+            Result = &Results.Add(Target, MoveTemp(Snapshot));
+        }
+
+        auto* Contribution = Result->Contributions.FindByPredicate(
+            [Player](const auto& Value) { return Value.PlayerId == Player->GetPlayerId(); });
+        FBBBMonsterDamageContribution Current = Contribution ? *Contribution : FBBBMonsterDamageContribution{};
+        Current.PlayerId = Player->GetPlayerId();
+        Current.Damage += Data.Damage;
+        if (Part == static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg) || Part == static_cast<uint8>(EBBBMonsterHitRegion::RightLeg))
+        {
+            Current.LegDamage += Data.Damage;
+        }
+        const auto* GameState = World.GetGameState();
+        Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
+        Current.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Part);
+        Current.bHasSourcePosition = Controller->GetPawn() != nullptr;
+        if (Current.bHasSourcePosition)
+        {
+            Current.LastSourcePosition = Controller->GetPawn()->GetActorLocation();
+        }
+        Result->Include(Current);
+    }
+}
+
 UBBBProjectileCollisionProcessor::UBBBProjectileCollisionProcessor()
     : EntityQuery(*this)
 {
@@ -34,8 +92,8 @@ UBBBProjectileCollisionProcessor::UBBBProjectileCollisionProcessor()
 void UBBBProjectileCollisionProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>&)
 {
     EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
-    EntityQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
-    EntityQuery.AddRequirement<FBBBProjectileMotionFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBProjectileMotionFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBProjectileCollisionFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBProjectileLifetimeFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBProjectilePresentationFragment>(EMassFragmentAccess::ReadOnly);
@@ -49,11 +107,38 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket> DamageResults;
     TArray<FBBBProjectileImpact> Impacts;
     TWeakObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;
-    EntityQuery.ForEachEntityChunk(Context, [World, Mass, &DamageResults, &Impacts, &ImpactChannel](FMassExecutionContext& Chunk)
+    const float Delta = Context.GetDeltaTimeSeconds();
+    const auto Detonate = [World, Mass, &DamageResults](const FBBBProjectileCollisionFragment& Data, const FVector& Center)
+    {
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMassExplosion), false);
+        Params.AddIgnoredActor(Data.DamageCauser.Get());
+        Params.AddIgnoredActor(Data.InstigatorPawn.Get());
+        TArray<FBBBMassCollisionBody> Targets;
+        Mass->OverlapEntities(Center, Data.ExplosionRadiusCm, Targets);
+        for (const auto& Body : Targets)
+        {
+            const FVector Direction = (Body.Center - Center).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
+            const FVector Position = Body.Center - Direction * Body.Radius;
+            if (World->LineTraceTestByChannel(Center, Position, ECC_Visibility, Params))
+            {
+                continue;
+            }
+            AccumulateDamage(*World, *Mass, DamageResults, Data, Body.Entity, Body.Part, Position, Direction, -Direction);
+        }
+        if (Data.bCanCauseDamage && Data.Damage > 0.0f)
+        {
+            TArray<AActor*> IgnoredActors;
+            IgnoredActors.Add(Data.DamageCauser.Get());
+            IgnoredActors.Add(Data.InstigatorPawn.Get());
+            UGameplayStatics::ApplyRadialDamage(World, Data.Damage, Center, Data.ExplosionRadiusCm, nullptr,
+                IgnoredActors, Data.DamageCauser.Get(), Data.EventInstigator.Get(), true, ECC_Visibility);
+        }
+    };
+    EntityQuery.ForEachEntityChunk(Context, [World, Mass, Delta, &Detonate, &DamageResults, &Impacts, &ImpactChannel](FMassExecutionContext& Chunk)
     {
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
-        const auto Motion = Chunk.GetFragmentView<FBBBProjectileMotionFragment>();
-        const auto Velocity = Chunk.GetFragmentView<FMassVelocityFragment>();
+        auto Motion = Chunk.GetMutableFragmentView<FBBBProjectileMotionFragment>();
+        auto Velocity = Chunk.GetMutableFragmentView<FMassVelocityFragment>();
         auto Collision = Chunk.GetMutableFragmentView<FBBBProjectileCollisionFragment>();
         auto Life = Chunk.GetMutableFragmentView<FBBBProjectileLifetimeFragment>();
         const auto Presentation = Chunk.GetFragmentView<FBBBProjectilePresentationFragment>();
@@ -113,61 +198,39 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                     Impact.Normal = WorldHit.ImpactNormal;
                     Impact.Surface = UPhysicalMaterial::DetermineSurfaceType(WorldHit.PhysMaterial.Get());
                 }
-                if (ensureMsgf(!ImpactChannel.IsValid() || ImpactChannel == Presentation[Index].ImpactChannel,
+                if (Presentation[Index].ImpactChannel.IsValid()
+                    && ensureMsgf(!ImpactChannel.IsValid() || ImpactChannel == Presentation[Index].ImpactChannel,
                     TEXT("同一世界的子弹命中必须使用同一个批量通道")))
                 {
                     ImpactChannel = Presentation[Index].ImpactChannel;
                     Impacts.Add(Impact);
                 }
-                if (bUseEntity)
+                if (Data.ExplosionRadiusCm > 0.0f)
                 {
-                    FBBBMonsterHitReactionLocalControlPacket Hit;
-                    Hit.Region = static_cast<EBBBMonsterHitRegion>(HitPart);
-                    Hit.Position = Impact.Position;
-                    Hit.Direction = Direction;
-                    Hit.Normal = Impact.Normal;
-                    Mass->SubmitInput(Target, MoveTemp(Hit));
-
-                    if (Data.bCanCauseDamage && Data.Damage > 0.0f)
+                    Transforms[Index].GetMutableTransform().SetLocation(HitPosition + Impact.Normal * 0.1f);
+                    if (Data.bDetonateOnImpact)
                     {
-                        const AController* Controller = Data.EventInstigator.Get();
-                        const APlayerState* Player = Controller != nullptr
-                            ? Controller->GetPlayerState<APlayerState>() : nullptr;
-                        if (ensureMsgf(Player != nullptr && Player->GetPlayerId() >= 0,
-                            TEXT("有效子弹伤害需要稳定的 PlayerState 玩家身份")))
+                        Detonate(Data, Transforms[Index].GetTransform().GetLocation());
+                        Life[Index].bPendingDestroy = true;
+                        break;
+                    }
+
+                    if (Data.bBounceOnImpact)
+                    {
+                        Velocity[Index].Value = (Velocity[Index].Value - 2.0 * FVector::DotProduct(Velocity[Index].Value, Impact.Normal) * Impact.Normal) * Data.BounceRestitution;
+                        if (Velocity[Index].Value.SizeSquared() >= 2500.0)
                         {
-                            auto* Result = DamageResults.Find(Target);
-                            if (Result == nullptr)
-                            {
-                                FBBBMonsterDamageLocalControlPacket Snapshot;
-                                if (Mass->QueryDamage(Target, Snapshot.Contributions))
-                                {
-                                    Result = &DamageResults.Add(Target, MoveTemp(Snapshot));
-                                }
-                            }
-                            if (Result != nullptr)
-                            {
-                                auto* Contribution = Result->Contributions.FindByPredicate(
-                                    [Player](const auto& Value) { return Value.PlayerId == Player->GetPlayerId(); });
-                                FBBBMonsterDamageContribution Current = Contribution ? *Contribution : FBBBMonsterDamageContribution{};
-                                Current.PlayerId = Player->GetPlayerId();
-                                Current.Damage += Data.Damage;
-                                if (HitPart == static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg) || HitPart == static_cast<uint8>(EBBBMonsterHitRegion::RightLeg))
-                                {
-                                    Current.LegDamage += Data.Damage;
-                                }
-                                const auto* GameState = World->GetGameState();
-                                Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World->GetTimeSeconds();
-                                Current.LastHitRegion = static_cast<EBBBMonsterHitRegion>(HitPart);
-                                Current.bHasSourcePosition = Controller->GetPawn() != nullptr;
-                                if (Current.bHasSourcePosition)
-                                {
-                                    Current.LastSourcePosition = Controller->GetPawn()->GetActorLocation();
-                                }
-                                Result->Include(Current);
-                            }
+                            Transforms[Index].GetMutableTransform().SetRotation(Velocity[Index].Value.ToOrientationQuat());
+                            break;
                         }
                     }
+                    Velocity[Index].Value = FVector::ZeroVector;
+                    Motion[Index].bResting = true;
+                    break;
+                }
+                if (bUseEntity)
+                {
+                    AccumulateDamage(*World, *Mass, DamageResults, Data, Target, HitPart, Impact.Position, Direction, Impact.Normal);
 
                     IgnoredEntities.Add(Target);
                     Data.LastHitEntity = Target;
@@ -196,6 +259,12 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 --Data.RemainingPenetrations;
                 Data.Damage *= Data.PenetrationDamageMultiplier;
                 Start = HitPosition + Direction * FMath::Max(Data.CollisionRadiusCm + 1.0f, 1.0f);
+            }
+            if (!Life[Index].bPendingDestroy && Life[Index].FuseRemainingSeconds > 0.0f
+                && Life[Index].FuseRemainingSeconds <= Delta)
+            {
+                Detonate(Data, Transforms[Index].GetTransform().GetLocation());
+                Life[Index].bPendingDestroy = true;
             }
         }
     });

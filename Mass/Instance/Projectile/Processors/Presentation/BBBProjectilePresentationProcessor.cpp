@@ -7,6 +7,8 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Components/InstancedStaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Misc/App.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
@@ -46,8 +48,9 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
     TArray<FTransformFragment> Transforms;
     TArray<FBBBProjectileMotionFragment> Motion;
     TArray<FBBBProjectilePresentationFragment> Presentation;
+    TMap<UStaticMesh*, TArray<FTransform>> MeshTransforms;
 
-    EntityQuery.ForEachEntityChunk(Context, [this, World, &Transforms, &Motion, &Presentation](FMassExecutionContext& Chunk)
+    EntityQuery.ForEachEntityChunk(Context, [this, World, &Transforms, &Motion, &Presentation, &MeshTransforms](FMassExecutionContext& Chunk)
     {
         const auto ChunkTransforms = Chunk.GetFragmentView<FTransformFragment>();
         const auto ChunkMotion = Chunk.GetFragmentView<FBBBProjectileMotionFragment>();
@@ -59,7 +62,17 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
             auto& Visual = ChunkPresentation[Index];
             const bool bEnding = ChunkLife[Index].bPendingDestroy
                 || ChunkLife[Index].RemainingSeconds <= Chunk.GetDeltaTimeSeconds();
-            if (!ChunkMotion[Index].bInitialized || !Visual.Channel.IsValid() || !Visual.System.IsValid())
+            if (!ChunkMotion[Index].bInitialized)
+            {
+                continue;
+            }
+
+            if (!bEnding && Visual.Mesh.IsValid())
+            {
+                MeshTransforms.FindOrAdd(Visual.Mesh.Get()).Add(Visual.MeshRelativeTransform * ChunkTransforms[Index].GetTransform());
+            }
+
+            if (!Visual.Channel.IsValid() || !Visual.System.IsValid())
             {
                 continue;
             }
@@ -137,6 +150,33 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
             }
         }
     });
+
+    for (auto It = MeshComponents.CreateIterator(); It; ++It)
+    {
+        if (!MeshTransforms.Contains(It.Key().Get()))
+        {
+            It.Value()->DestroyComponent();
+            It.RemoveCurrent();
+        }
+    }
+    for (const auto& Batch : MeshTransforms)
+    {
+        auto& Component = MeshComponents.FindOrAdd(Batch.Key);
+        if (Component == nullptr)
+        {
+            Component = NewObject<UInstancedStaticMeshComponent>(World);
+            Component->SetStaticMesh(Batch.Key);
+            Component->SetMobility(EComponentMobility::Movable);
+            Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            Component->SetGenerateOverlapEvents(false);
+            Component->SetCanEverAffectNavigation(false);
+            Component->SetCastShadow(false);
+            Component->PrimaryComponentTick.bCanEverTick = false;
+            Component->RegisterComponentWithWorld(World);
+        }
+        Component->ClearInstances();
+        Component->AddInstances(Batch.Value, false, true, false);
+    }
 
     if (!Presentation.IsEmpty())
     {

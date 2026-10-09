@@ -7,6 +7,8 @@
 class UNiagaraComponent;
 class UNiagaraDataChannelAsset;
 class UNiagaraSystem;
+class UStaticMesh;
+class UInstancedStaticMeshComponent;
 
 /** 按通道批量发布子弹光效事实 */
 UCLASS()
@@ -23,6 +25,10 @@ protected:
     virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
 
 private:
+    /** 每种弹体网格共用一个批量组件 */
+    UPROPERTY(Transient)
+    TMap<TObjectPtr<UStaticMesh>, TObjectPtr<UInstancedStaticMeshComponent>> MeshComponents;
+
     FMassEntityQuery EntityQuery;
 
     /** 当前世界唯一的共享子弹光效组件 */

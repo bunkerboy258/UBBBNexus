@@ -2,6 +2,7 @@
 
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
+#include "Engine/StaticMesh.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileCollisionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Lifetime/BBBProjectileLifetimeFragment.h"
@@ -15,6 +16,24 @@ struct FBBBProjectileSpawnLocalControlPacket final
     using FInputFragment = FBBBProjectileSpawnInputFragment;
 
     FTransform MuzzleTransform = FTransform::Identity;
+    /** 枪口局部空间的初始方向 */
+    FVector LocalDirection = FVector::ForwardVector;
+    /** 世界重力倍率 */
+    float GravityScale = 0.0f;
+    /** 范围伤害半径 */
+    float ExplosionRadiusCm = 0.0f;
+    /** 延时引信 零表示没有引信 */
+    float FuseSeconds = 0.0f;
+    /** 接触目标时引爆 */
+    bool bDetonateOnImpact = true;
+    /** 未引爆时接触反弹 */
+    bool bBounceOnImpact = false;
+    /** 反弹速度倍率 */
+    float BounceRestitution = 0.4f;
+    /** 批量弹体网格 */
+    TWeakObjectPtr<UStaticMesh> Mesh;
+    /** 弹体网格局部变换 */
+    FTransform MeshRelativeTransform = FTransform::Identity;
     float Speed = 50000.0f;
     float Lifetime = 5.0f;
     float Damage = 20.0f;
@@ -38,6 +57,14 @@ struct FBBBProjectileSpawnLocalControlPacket final
     bool IsValid() const
     {
         return !MuzzleTransform.ContainsNaN()
+            && !LocalDirection.ContainsNaN() && !LocalDirection.IsNearlyZero()
+            && FMath::IsFinite(GravityScale) && GravityScale >= 0.0f
+            && FMath::IsFinite(ExplosionRadiusCm) && ExplosionRadiusCm >= 0.0f
+            && FMath::IsFinite(FuseSeconds) && FuseSeconds >= 0.0f && FuseSeconds <= Lifetime
+            && (FuseSeconds == 0.0f || ExplosionRadiusCm > 0.0f)
+            && (ExplosionRadiusCm == 0.0f || (Penetrations == 0 && (bDetonateOnImpact || FuseSeconds > 0.0f)))
+            && FMath::IsFinite(BounceRestitution) && BounceRestitution >= 0.0f && BounceRestitution <= 1.0f
+            && !MeshRelativeTransform.ContainsNaN()
             && FMath::IsFinite(Speed) && Speed > 0.0f
             && FMath::IsFinite(Lifetime) && Lifetime > 0.0f
             && FMath::IsFinite(Damage) && Damage >= 0.0f
@@ -45,8 +72,8 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
             && PenetrationMultiplier >= 0.0f && PenetrationMultiplier <= 1.0f
-            && Channel.IsValid() && System.IsValid()
-            && ImpactChannel.IsValid()
+            && (Mesh.IsValid() || (Channel.IsValid() && System.IsValid()))
+            && (Channel.IsValid() == System.IsValid())
             && FMath::IsFinite(TracerLengthCm) && TracerLengthCm > 0.0f
             && FMath::IsFinite(TracerWidthCm) && TracerWidthCm > 0.0f
             && FMath::IsFinite(TracerColor.R)
@@ -76,11 +103,19 @@ struct FBBBProjectileSpawnLocalControlPacket final
     {
         Transform.GetMutableTransform() = MuzzleTransform;
         Transform.GetMutableTransform().SetScale3D(FVector::OneVector);
-        Velocity.Value = MuzzleTransform.GetUnitAxis(EAxis::X) * Speed;
+        const FVector Direction = MuzzleTransform.TransformVectorNoScale(LocalDirection).GetSafeNormal();
+        Velocity.Value = Direction * Speed;
+        Transform.GetMutableTransform().SetRotation(Direction.ToOrientationQuat());
+        Motion.GravityScale = GravityScale;
+        Motion.bResting = false;
         Motion.SpawnLocation = MuzzleTransform.GetLocation();
         Motion.PreviousLocation = MuzzleTransform.GetLocation();
         Motion.bInitialized = true;
         Collision.Damage = Damage;
+        Collision.ExplosionRadiusCm = ExplosionRadiusCm;
+        Collision.bDetonateOnImpact = bDetonateOnImpact;
+        Collision.bBounceOnImpact = bBounceOnImpact;
+        Collision.BounceRestitution = BounceRestitution;
         Collision.CollisionRadiusCm = Radius;
         Collision.RemainingPenetrations = Penetrations;
         Collision.PenetrationDamageMultiplier = PenetrationMultiplier;
@@ -90,6 +125,9 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Collision.EventInstigator = Controller;
         Collision.bCanCauseDamage = bCanCauseDamage;
         Life.RemainingSeconds = Lifetime;
+        Life.FuseRemainingSeconds = FuseSeconds;
+        Presentation.Mesh = Mesh;
+        Presentation.MeshRelativeTransform = MeshRelativeTransform;
         Presentation.Channel = Channel;
         Presentation.System = System;
         Presentation.ImpactChannel = ImpactChannel;

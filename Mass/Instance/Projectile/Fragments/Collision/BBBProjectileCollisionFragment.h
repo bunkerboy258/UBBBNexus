@@ -18,6 +18,18 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
     /** 当前命中伤害 */
     float Damage = 0.0f;
 
+    /** 范围伤害半径 零表示点伤害 */
+    float ExplosionRadiusCm = 0.0f;
+
+    /** 接触目标时是否引爆 */
+    bool bDetonateOnImpact = true;
+
+    /** 接触后是否反弹 */
+    bool bBounceOnImpact = false;
+
+    /** 反弹速度倍率 */
+    float BounceRestitution = 0.4f;
+
     /** 每次穿透后应用的伤害倍率 */
     float PenetrationDamageMultiplier = 1.0f;
 

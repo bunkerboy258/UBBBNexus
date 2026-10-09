@@ -16,4 +16,7 @@ struct ABBB_EVAC_API FBBBProjectileLifetimeFragment final : public FMassFragment
 
     /** 碰撞或寿命结束后请求回收 */
     bool bPendingDestroy = false;
+
+    /** 剩余引信时间 零表示没有延时引爆 */
+    float FuseRemainingSeconds = 0.0f;
 };

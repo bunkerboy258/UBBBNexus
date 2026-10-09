@@ -59,6 +59,14 @@ public:
         FVector& HitPosition, FVector& HitNormal, EPhysicalSurface& HitSurface, uint8& HitPart) const;
 
     /**
+     * @param Center	查询中心
+     * @param Radius	查询半径
+     * @param Results	每个实体距离中心最近的相交碰撞体
+     * @return 无
+     */
+    void OverlapEntities(const FVector& Center, float Radius, TArray<FBBBMassCollisionBody>& Results) const;
+
+    /**
      * 查询包含尚未消费输入的累计贡献快照 不暴露目标 Fragment
      * @param Entity	目标小怪实体
      * @param Result	已应用与待解析的累计贡献 当前结果按玩家身份排序

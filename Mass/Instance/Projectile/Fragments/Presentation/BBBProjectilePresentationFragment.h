@@ -5,12 +5,20 @@
 
 class UNiagaraDataChannelAsset;
 class UNiagaraSystem;
+class UStaticMesh;
 
 /** 子弹批量表现通道 */
 USTRUCT()
 struct ABBB_EVAC_API FBBBProjectilePresentationFragment final : public FMassFragment
 {
     GENERATED_BODY()
+
+    /** 批量显示的弹体网格 */
+    UPROPERTY()
+    TWeakObjectPtr<UStaticMesh> Mesh;
+
+    /** 弹体网格的局部变换 */
+    FTransform MeshRelativeTransform = FTransform::Identity;
 
     /** 批量光效通道 */
     UPROPERTY()
