@@ -82,6 +82,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         return;
     }
 
+    // 移除上一帧装备切换产生的临时 Tick 依赖
     if (CleanupWaiter.IsValid() && CleanupSource.IsValid())
     {
         CleanupWaiter->PrimaryActorTick.RemovePrerequisite(CleanupSource.Get(), CleanupSource->PrimaryActorTick);
@@ -89,7 +90,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     CleanupWaiter.Reset();
     CleanupSource.Reset();
 
-    // 所有领域系统读取同一份本帧世界时间快照
+    // 帧上下文：所有领域系统读取同一份时间与网络身份快照
     FBBBCharacterWorldState &WorldState = Character->RuntimeData.External.WorldState;
     WorldState.FrameDeltaSeconds = DeltaSeconds;
     WorldState.WorldTimeSeconds = World->GetTimeSeconds();
@@ -100,16 +101,22 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     NetworkIdentityState.bLocallyControlled = Character->IsLocallyControlled();
     NetworkIdentityState.bIsMirror = !NetworkIdentityState.bLocallyControlled;
 
+    // 输入与物品：先解析请求，再更新物品、装备关系和外观
     Character->ParseSystem.Update();
     if (!NetworkIdentityState.bIsMirror)
     {
         Character->ItemSystem.Update();
     }
+
     ABBBEquipment *PreviousEquipment = Character->GetActiveEquipment();
     Character->EquipmentSystem.Update();
     Character->AppearanceSystem.Update();
+
+    // 装备切换帧：新装备等待旧装备完成本帧 Tick
     ABBBEquipment *CurrentEquipment = Character->GetActiveEquipment();
-    if (IsValid(PreviousEquipment) && IsValid(CurrentEquipment) && PreviousEquipment != CurrentEquipment &&
+    if (IsValid(PreviousEquipment) &&
+        IsValid(CurrentEquipment) &&
+        PreviousEquipment != CurrentEquipment &&
         PreviousEquipment->IsActorTickEnabled())
     {
         CurrentEquipment->PrimaryActorTick.AddPrerequisite(PreviousEquipment, PreviousEquipment->PrimaryActorTick);
@@ -117,19 +124,21 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         CleanupSource = PreviousEquipment;
     }
 
+    // 生命与瞄准：只有本机控制角色根据输入产生新的瞄准事实
     Character->LifeSystem.Update();
 
     if (!NetworkIdentityState.bIsMirror)
     {
-        // 只有本机控制角色可以根据控制输入产生新的瞄准与移动事实.
         Character->AimSystem.Update();
-
     }
 
     // 攀爬只生成交接结果 移动系统独占 CMC 写入
     Character->TraversalSystem.Update();
+
     // 操作许可位于攀爬决策后与 CMC 前 不重复装备关系维护
     Character->EquipmentSystem.UpdateUsage();
+
+    // 更新移动与物理表现
     Character->LocomotionSystem.Update();
     Character->PhysicalPresentationSystem.Update();
 
