@@ -8,6 +8,7 @@
 #include "BBBRifleDefinition.generated.h"
 
 class UAnimMontage;
+class UAnimSequence;
 class UBBBProjectileDefinition;
 
 /** 步枪实例的静态资源与数值配置 */
@@ -42,6 +43,10 @@ public:
     /** 角色换弹时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|动画", meta = (DisplayName = "角色换弹蒙太奇"))
     TObjectPtr<UAnimMontage> CharacterReloadMontage = nullptr;
+
+    /** 本武器独立持有的角色局部空间加法后坐力序列 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|动画", meta = (DisplayName = "角色后坐力动画", ToolTip = "开火后按距上次开火时间求值 只控制后向震动 权重由持枪表现配置决定"))
+    TObjectPtr<UAnimSequence> CharacterRecoilAnimation = nullptr;
 
     /** 步枪换弹时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|步枪|动画", meta = (DisplayName = "装备换弹蒙太奇"))

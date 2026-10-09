@@ -18,6 +18,7 @@ void UBBBRifleAnimInstance::PublishRifleSnapshot(
     TimeSinceLastFireSeconds = InTimeSinceLastFireSeconds;
     FireSequence = InFireSequence;
     SnapshotTimeSeconds = InSnapshotTimeSeconds;
+    RecoilAnimation = Definition.CharacterRecoilAnimation;
     HipFireAimFollowSpeed = Definition.HipFireSettings.AimFollowSpeed;
     AimFireAimFollowSpeed = Definition.AimFireSettings.AimFollowSpeed;
     HipFireBackwardRecoilAlpha = Definition.HipFireSettings.BackwardRecoilAlpha;

@@ -5,6 +5,7 @@
 #include "BBBRifleAnimInstance.generated.h"
 
 class UBBBRifleDefinition;
+class UAnimSequence;
 
 /** 步枪动画图只读的动作结果 */
 UCLASS(BlueprintType)
@@ -13,6 +14,13 @@ class ABBB_EVAC_API UBBBRifleAnimInstance final : public UBBBEquipmentAnimInstan
     GENERATED_BODY()
 
 public:
+    /** @return 本武器专属的角色后坐力序列快照 */
+    UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
+    UAnimSequence *GetRecoilAnimation() const
+    {
+        return RecoilAnimation;
+    }
+
     /** @return 本次武器快照的世界时间 */
     UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
     float GetSnapshotTimeSeconds() const
@@ -88,6 +96,10 @@ protected:
 
 private:
     friend class FBBBRifleAnimationProcessor;
+
+    /** 由动画系统发布的专属后坐力序列引用 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimSequence> RecoilAnimation = nullptr;
 
     /**
      * 发布由动画系统整理的步枪事实
