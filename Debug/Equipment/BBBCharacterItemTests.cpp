@@ -160,7 +160,7 @@ bool FBBBCharacterItemSystemTest::RunTest(const FString &Parameters)
     ThirdDefinition->MarkAsGarbage();
     System.Update();
     UClass *EquipmentClass = LoadClass<ABBBEquipment>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Equipment/Rifle/Rifle_01/BP_ModernWeapons_Rifle_01.BP_ModernWeapons_Rifle_01_C"));
+        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Rifle/Rifle_01/BP_ModernWeapons_Rifle_01.BP_ModernWeapons_Rifle_01_C"));
     if (!TestNotNull(TEXT("现有步枪资产类"), EquipmentClass))
     {
         System.Shutdown();
