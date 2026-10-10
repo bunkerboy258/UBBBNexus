@@ -30,7 +30,7 @@ public:
 
     /** 左手握持目标所使用的装备插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|左轮|装备", meta = (DisplayName = "左手插槽名"))
-    FName LeftHandSocketName = TEXT("LeftHand");
+    FName LeftHandSocketName = NAME_None;
 
     /** 左手握持目标在右手骨骼空间中的额外偏移 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|左轮|装备", meta = (DisplayName = "左手 IK 偏移"))

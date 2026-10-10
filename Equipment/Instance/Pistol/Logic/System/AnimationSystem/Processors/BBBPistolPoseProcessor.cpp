@@ -20,6 +20,11 @@ void FBBBPistolPoseProcessor::Update(FBBBPistolUpdateContext &Context)
     }
 
     const FName SocketName = Context.Definition.LeftHandSocketName;
+    if (SocketName.IsNone())
+    {
+        return;
+    }
+
     FTransform HandWorld;
     if (!ensureMsgf(
         Context.Character.TryGetRightHandWorldTransform(HandWorld),
@@ -30,7 +35,7 @@ void FBBBPistolPoseProcessor::Update(FBBBPistolUpdateContext &Context)
     }
 
     if (!ensureMsgf(
-        !SocketName.IsNone() && Context.WeaponMesh.DoesSocketExist(SocketName),
+        Context.WeaponMesh.DoesSocketExist(SocketName),
         TEXT("手枪配置 %s 的左手握持 Socket %s 不存在于网格 %s"),
         *Context.Definition.GetName(),
         *SocketName.ToString(),
