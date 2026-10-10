@@ -40,14 +40,15 @@ void FBBBMinigunActionProcessor::Stop(FBBBMinigunRuntimeData &Data)
     Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
+    Data.Action.ActionState.bIsSpinning = false;
+    Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
+    Data.Action.ActionState.SpinRevision = 0;
 }
 
 void FBBBMinigunActionProcessor::Update(FBBBMinigunUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
-    const bool bPrimaryPressed = Input.bPrimaryRequested && !State.bPrimaryHeld;
-    State.bPrimaryHeld = Input.bPrimaryRequested;
     State.bEquippedThisFrame = Input.bEquipRequested;
     if (Context.bCausal)
     {
@@ -74,7 +75,7 @@ void FBBBMinigunActionProcessor::Update(FBBBMinigunUpdateContext &Context)
     }
     if (!State.bOwnerActionsAllowed)
     {
-        State.bIsReloading = false;
+        Stop(Context.RuntimeData);
         State.bEquippedThisFrame = false;
         Clear(Input);
         return;
@@ -115,6 +116,20 @@ void FBBBMinigunActionProcessor::Update(FBBBMinigunUpdateContext &Context)
         }
     }
 
+    const bool bDriveMotor = Input.bPrimaryRequested && !State.bFireBlocked && !State.bIsReloading
+        && State.LoadedAmmo > 0;
+    if (bDriveMotor && !State.bIsSpinning)
+    {
+        State.NextFireTimeSeconds = Context.World.GetTimeSeconds() + FMath::Max(0.0f, Context.Definition.SpinUpSeconds);
+        UE_LOG(LogTemp, Log, TEXT("[BBBMinigun] Motor started Equipment=%s SpinUp=%.3f"),
+            *Context.Equipment.GetName(), Context.Definition.SpinUpSeconds);
+    }
+    if (!bDriveMotor && State.bIsSpinning)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[BBBMinigun] Motor stopped Equipment=%s"), *Context.Equipment.GetName());
+    }
+    State.bIsSpinning = bDriveMotor;
+
     if (Input.bPrimaryRequested)
     {
         UE_LOG(LogTemp, VeryVerbose,
@@ -123,28 +138,36 @@ void FBBBMinigunActionProcessor::Update(FBBBMinigunUpdateContext &Context)
             Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
     }
 
-    if (Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed) && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0
-        && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
+    if (State.bIsSpinning && Context.World.GetTimeSeconds() >= State.NextFireTimeSeconds)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
             TEXT("转管机枪缺少枪口 Socket")))
         {
             const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
-            const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
-            --State.LoadedAmmo;
-            ++State.FireSequence;
-            State.LastFireTimeSeconds = CurrentTimeSeconds;
+            const float FireInterval = FMath::Max(0.01f, Context.Definition.FireInterval);
+            for (int32 ShotIndex = 0; ShotIndex < 8 && State.LoadedAmmo > 0 && CurrentTimeSeconds >= State.NextFireTimeSeconds; ++ShotIndex)
+            {
+                const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
+                --State.LoadedAmmo;
+                ++State.FireSequence;
+                State.LastFireTimeSeconds = CurrentTimeSeconds;
+                State.NextFireTimeSeconds += FireInterval;
 
-            UE_LOG(LogTemp, VeryVerbose,
-                TEXT("[BBBMinigun] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
-                *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
-                Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
+                UE_LOG(LogTemp, VeryVerbose,
+                    TEXT("[BBBMinigun] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
+                    *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
+                    Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
 
-            // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
-            const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
-            SpawnProjectile(Context);
+                // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
+                const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
+                SpawnProjectile(Context);
 
-            Context.Equipment.EmitShot(MuzzleTransform);
+                Context.Equipment.EmitShot(MuzzleTransform);
+            }
+            if (CurrentTimeSeconds >= State.NextFireTimeSeconds)
+            {
+                State.NextFireTimeSeconds = CurrentTimeSeconds + FireInterval;
+            }
         }
     }
 

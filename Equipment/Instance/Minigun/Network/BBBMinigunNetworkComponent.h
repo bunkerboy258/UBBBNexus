@@ -15,6 +15,9 @@ public:
 private:
     friend class FBBBMinigunNetworkProcessor;
 
+    /** @param bSpinning 电机驱动当前结果 @return 是否接受发送 */
+    bool PublishSpin(bool bSpinning);
+
     /** @param Sequence	动作序号 @return 是否接受发送 */
     bool PublishFire(int32 Sequence);
 

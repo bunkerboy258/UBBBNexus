@@ -145,11 +145,6 @@ bool UBBBAnimInstance::RegisterMontageContribution(
     }
 
     *Contribution = Montage;
-    if (Montage_IsPlaying(Montage))
-    {
-        return true;
-    }
-
     if (Montage_Play(Montage, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, false) > 0.0f)
     {
         return true;

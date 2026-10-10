@@ -23,6 +23,9 @@ struct FBBBShotgunActionState final
     /** 最近一次确认开火的世界时间 */
     float LastFireTimeSeconds = -1000.0f;
 
+    /** 下一次连续开火的计划世界时间 不积攒停火期间的发射次数 */
+    float NextFireTimeSeconds = 0.0f;
+
     /** 动画通知控制的开火限制 不替代弹药与射速检查 */
     bool bFireBlocked = false;
 
@@ -31,6 +34,9 @@ struct FBBBShotgunActionState final
 
     /** 当前是否处于换弹流程 */
     bool bIsReloading = false;
+
+    /** 装填中收到的有效开火边沿 等待本轮收手结束后执行一次 */
+    bool bFireAfterReload = false;
 
     /** 本帧是否由装入新弹匣自然完成换弹 */
     bool bReloadCompletedThisFrame = false;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/RemoteMessage/Fire/FBBBMinigunSpinRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/AuthorityFact/Fire/FBBBMinigunSpinAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Logic/System/ParseSystem/DomainData/Definitions/BBBMinigunInputSlot.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/AuthorityFact/Equipment/FBBBMinigunEquipAuthorityFactPacket.h"
@@ -21,6 +23,12 @@
 /** 转管机枪等待更新时消费的固定输入槽 */
 struct FBBBMinigunInputState final
 {
+    /** 收到的电机事件消息固定槽位 */
+    TBBBMinigunInputSlot<FBBBMinigunSpinRemoteMessagePacket> RemoteSpin;
+
+    /** 收到的电机权威结果固定槽位 */
+    TBBBMinigunInputSlot<FBBBMinigunSpinAuthorityFactPacket> AuthoritySpin;
+
     /** Equip固定槽位 */
     TBBBMinigunInputSlot<FBBBMinigunEquipLocalControlPacket> Equip;
 

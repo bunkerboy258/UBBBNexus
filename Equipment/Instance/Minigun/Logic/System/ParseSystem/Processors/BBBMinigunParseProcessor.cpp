@@ -64,6 +64,8 @@ void FBBBMinigunParseProcessor::Update(FBBBMinigunUpdateContext &Context)
     }
 
     Process(Queue.AuthorityEquip, Input);
+    Process(Queue.RemoteSpin, Action);
+    Process(Queue.AuthoritySpin, Action);
     Process(Queue.RemoteFire, Action);
     Process(Queue.RemoteReloadStart, Action);
     Process(Queue.RemoteReloadEnd, Action);
@@ -76,6 +78,10 @@ void FBBBMinigunParseProcessor::Update(FBBBMinigunUpdateContext &Context)
 
 void FBBBMinigunParseProcessor::Clear(FBBBMinigunRuntimeData &Data)
 {
+    Data.Parse.InputState.RemoteSpin.bActive = false;
+    Data.Parse.InputState.RemoteSpin.Packet = {};
+    Data.Parse.InputState.AuthoritySpin.bActive = false;
+    Data.Parse.InputState.AuthoritySpin.Packet = {};
     Data.Parse.InputState.Equip.bActive = false;
     Data.Parse.InputState.Equip.Packet = {};
     Data.Parse.InputState.AuthorityEquip.bActive = false;

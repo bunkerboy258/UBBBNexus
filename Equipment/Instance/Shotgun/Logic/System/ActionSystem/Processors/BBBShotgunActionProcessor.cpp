@@ -25,6 +25,7 @@ namespace
         Input.bReloadRequested = false;
         Input.bLoadAmmoRequested = false;
         Input.bInterruptReloadRequested = false;
+        Input.bReloadCycleEnded = false;
     }
 }
 
@@ -40,6 +41,8 @@ void FBBBShotgunActionProcessor::Stop(FBBBShotgunRuntimeData &Data)
     Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
+    Data.Action.ActionState.bFireAfterReload = false;
+    Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
 }
 
 void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
@@ -74,7 +77,7 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
     }
     if (!State.bOwnerActionsAllowed)
     {
-        State.bIsReloading = false;
+        Stop(Context.RuntimeData);
         State.bEquippedThisFrame = false;
         Clear(Input);
         return;
@@ -94,8 +97,11 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
     {
         State.LoadedAmmo = FMath::Min(State.AmmoCapacity,
             State.LoadedAmmo + (Context.Definition.bReloadOneRoundAtATime ? 1 : State.AmmoCapacity));
-        State.bReloadCompletedThisFrame = State.LoadedAmmo >= State.AmmoCapacity;
-        State.bIsReloading = !State.bReloadCompletedThisFrame;
+        if (!Context.Definition.bReloadOneRoundAtATime)
+        {
+            State.bReloadCompletedThisFrame = State.LoadedAmmo >= State.AmmoCapacity;
+            State.bIsReloading = !State.bReloadCompletedThisFrame;
+        }
         UE_LOG(LogTemp, Log, TEXT("[BBBShotgun] Ammo loaded Equipment=%s Loaded=%d Capacity=%d Completed=%d"),
             *Context.Equipment.GetName(), State.LoadedAmmo, State.AmmoCapacity, State.bReloadCompletedThisFrame);
     }
@@ -106,12 +112,31 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
         Stop(Context.RuntimeData);
     }
 
+    if (Context.Definition.bReloadOneRoundAtATime && State.bIsReloading && bPrimaryPressed && State.LoadedAmmo > 0)
+    {
+        State.bFireAfterReload = true;
+    }
+
+    if (Input.bReloadCycleEnded && Context.Definition.bReloadOneRoundAtATime && State.bIsReloading)
+    {
+        if (State.LoadedAmmo >= State.AmmoCapacity || State.bFireAfterReload)
+        {
+            State.bIsReloading = false;
+            State.bReloadCompletedThisFrame = true;
+        }
+        if (State.bIsReloading)
+        {
+            ++State.ReloadSequence;
+        }
+    }
+
     if (Input.bReloadRequested && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)
     {
         if (ensureMsgf(Context.Definition.CharacterReloadMontage && Context.Definition.EquipmentReloadMontage,
             TEXT("霰弹枪换弹缺少角色或装备蒙太奇")))
         {
             State.bIsReloading = true;
+            State.bFireAfterReload = false;
             ++State.ReloadSequence;
         }
     }
@@ -124,28 +149,51 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
             Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
     }
 
-    if (Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed) && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0
-        && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
+    const bool bFireRequested = (Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed))
+        || State.bFireAfterReload;
+    const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
+    const float FireInterval = FMath::Max(0.01f, Context.Definition.FireInterval);
+    const bool bCanFire = bFireRequested && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0;
+    if (!bCanFire)
+    {
+        State.NextFireTimeSeconds = 0.0f;
+    }
+
+    if (bCanFire && State.NextFireTimeSeconds <= 0.0f)
+    {
+        State.NextFireTimeSeconds = FMath::Max(CurrentTimeSeconds, State.LastFireTimeSeconds + FireInterval);
+    }
+
+    if (bCanFire && CurrentTimeSeconds >= State.NextFireTimeSeconds)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
             TEXT("霰弹枪缺少枪口 Socket")))
         {
-            const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
-            const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
-            --State.LoadedAmmo;
-            ++State.FireSequence;
-            State.LastFireTimeSeconds = CurrentTimeSeconds;
+            const int32 MaximumShots = Context.Definition.bAutomaticFire && Input.bPrimaryRequested ? 8 : 1;
+            for (int32 ShotIndex = 0; ShotIndex < MaximumShots && State.LoadedAmmo > 0 && CurrentTimeSeconds >= State.NextFireTimeSeconds; ++ShotIndex)
+            {
+                const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
+                --State.LoadedAmmo;
+                State.bFireAfterReload = false;
+                ++State.FireSequence;
+                State.LastFireTimeSeconds = CurrentTimeSeconds;
+                State.NextFireTimeSeconds += FireInterval;
 
-            UE_LOG(LogTemp, VeryVerbose,
-                TEXT("[BBBShotgun] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
-                *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
-                Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
+                UE_LOG(LogTemp, VeryVerbose,
+                    TEXT("[BBBShotgun] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
+                    *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
+                    Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
 
-            // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
-            const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
-            SpawnProjectile(Context);
+                // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
+                const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
+                SpawnProjectile(Context);
 
-            Context.Equipment.EmitShot(MuzzleTransform);
+                Context.Equipment.EmitShot(MuzzleTransform);
+            }
+            if (CurrentTimeSeconds >= State.NextFireTimeSeconds)
+            {
+                State.NextFireTimeSeconds = CurrentTimeSeconds + FireInterval;
+            }
         }
     }
 

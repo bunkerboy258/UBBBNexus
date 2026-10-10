@@ -163,6 +163,16 @@ bool ABBBShotgunEquipment::QueueInput(FBBBShotgunInterruptReloadLocalControlPack
     return FBBBShotgunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
+bool ABBBShotgunEquipment::QueueInput(FBBBShotgunReloadCycleEndLocalControlPacket Packet)
+{
+    if (!IsEquipped() || IsMirror())
+    {
+        return false;
+    }
+
+    return FBBBShotgunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
 bool ABBBShotgunEquipment::QueueInput(FBBBShotgunActionPermissionLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())

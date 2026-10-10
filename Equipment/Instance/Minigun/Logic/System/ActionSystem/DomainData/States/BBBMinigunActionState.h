@@ -5,8 +5,14 @@
 /** 转管机枪动作产生并跨帧保留的事实 */
 struct FBBBMinigunActionState final
 {
-    /** 上一帧是否存在开火请求 用于固定半自动方式的按下边沿 */
-    bool bPrimaryHeld = false;
+    /** 电机当前是否收到驱动事实 松开扳机或限制操作时立即为假 */
+    bool bIsSpinning = false;
+
+    /** 电机本次驱动后最早可发射下一发的世界时间 单位秒 */
+    float NextFireTimeSeconds = 0.0f;
+
+    /** 电机状态已接收的消息顺序 独立于开火和换弹结果 */
+    uint64 SpinRevision = 0;
 
     /** 弹匣容量 */
     int32 AmmoCapacity = 0;

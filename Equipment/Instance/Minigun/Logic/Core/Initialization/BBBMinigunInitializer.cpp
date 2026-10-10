@@ -14,6 +14,14 @@ bool FBBBMinigunInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) co
         return false;
     }
 
+    if (!ensureMsgf(FMath::IsFinite(MinigunDefinition->SpinUpSeconds) && MinigunDefinition->SpinUpSeconds >= 0.0f
+        && FMath::IsFinite(MinigunDefinition->SpinDownSeconds) && MinigunDefinition->SpinDownSeconds > 0.0f
+        && FMath::IsFinite(MinigunDefinition->BarrelRotationSpeedDegrees) && MinigunDefinition->BarrelRotationSpeedDegrees >= 0.0f,
+        TEXT("转管机枪电机参数无效 %s"), *MinigunDefinition->GetPathName()))
+    {
+        return false;
+    }
+
     UE_LOG(LogTemp, Log, TEXT("[BBBMinigun] Initialized Equipment=%s Definition=%s FireInterval=%.3f"),
         *Equipment.GetName(), *MinigunDefinition->GetPathName(), MinigunDefinition->FireInterval);
 

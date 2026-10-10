@@ -3,6 +3,8 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/BBBMinigunEquipment.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/RemoteMessage/Fire/FBBBMinigunSpinRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/AuthorityFact/Fire/FBBBMinigunSpinAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/RemoteMessage/Fire/FBBBMinigunFireRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/RemoteMessage/Reload/FBBBMinigunReloadStartRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Minigun/Input/RemoteMessage/Reload/FBBBMinigunReloadEndRemoteMessagePacket.h"
@@ -21,6 +23,15 @@ bool UBBBMinigunNetworkComponent::PublishFire(int32 Sequence)
     FMemoryWriter Writer(Data);
     Writer << Sequence;
     return PublishMessage(0, MoveTemp(Data));
+}
+
+bool UBBBMinigunNetworkComponent::PublishSpin(const bool bSpinning)
+{
+    TArray<uint8> Data;
+    FMemoryWriter Writer(Data);
+    uint8 Spinning = bSpinning ? 1 : 0;
+    Writer << Spinning;
+    return PublishMessage(3, MoveTemp(Data));
 }
 
 bool UBBBMinigunNetworkComponent::PublishReloadStart(int32 Sequence)
@@ -45,10 +56,24 @@ bool UBBBMinigunNetworkComponent::ReceiveMessage(
     const uint8 Kind, const TArray<uint8> &Data, const uint64 Revision, const bool bRemoteMessage)
 {
     auto *Equipment = Cast<ABBBMinigunEquipment>(GetOwner());
-    const int32 ExpectedSize = sizeof(int32) + (Kind == 2 ? sizeof(uint8) : 0);
-    if (!Equipment || Kind >= 3 || Data.Num() != ExpectedSize)
+    const int32 ExpectedSize = Kind == 3 ? sizeof(uint8) : sizeof(int32) + (Kind == 2 ? sizeof(uint8) : 0);
+    if (!Equipment || Kind >= 4 || Data.Num() != ExpectedSize)
     {
         return false;
+    }
+
+    if (Kind == 3)
+    {
+        const uint8 Spinning = Data[0];
+        if (Spinning > 1)
+        {
+            return false;
+        }
+        if (bRemoteMessage)
+        {
+            return Equipment->SubmitInput(FBBBMinigunSpinRemoteMessagePacket{{Spinning}, {Revision}});
+        }
+        return Equipment->SubmitInput(FBBBMinigunSpinAuthorityFactPacket{{Spinning}, {Revision}});
     }
 
     int32 Sequence = 0;

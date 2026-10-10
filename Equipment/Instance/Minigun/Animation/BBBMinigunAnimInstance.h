@@ -141,6 +141,22 @@ public:
     }
 
 protected:
+    /** 电机驱动事实 动画图自行平滑旋转 不作为玩法裁决 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "电机正在驱动"))
+    bool bIsSpinning = false;
+
+    /** 预旋转配置快照 单位秒 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "预旋转时间 秒"))
+    float SpinUpSeconds = 0.18f;
+
+    /** 停转配置快照 单位秒 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "停转时间 秒"))
+    float SpinDownSeconds = 0.25f;
+
+    /** 全速枪管角速度快照 单位度每秒 */
+    UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "枪管旋转速度 度每秒"))
+    float BarrelRotationSpeedDegrees = 2400.0f;
+
     /** 当前弹量 */
     UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "已装填弹药"))
     int32 LoadedAmmo = 0;
@@ -176,6 +192,7 @@ private:
         int32 InLoadedAmmo,
         int32 InAmmoCapacity,
         bool bInReloading,
+        bool bInSpinning,
         float InTimeSinceLastFireSeconds,
         int32 InFireSequence,
         float InSnapshotTimeSeconds,

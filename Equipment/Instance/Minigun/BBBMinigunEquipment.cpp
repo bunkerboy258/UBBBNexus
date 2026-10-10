@@ -183,6 +183,24 @@ bool ABBBMinigunEquipment::QueueInput(FBBBMinigunFireRemoteMessagePacket Packet)
     return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
+bool ABBBMinigunEquipment::QueueInput(FBBBMinigunSpinRemoteMessagePacket Packet)
+{
+    if (!IsEquipped() || !IsMirror())
+    {
+        return false;
+    }
+    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+bool ABBBMinigunEquipment::QueueInput(FBBBMinigunSpinAuthorityFactPacket Packet)
+{
+    if (!IsEquipped() || !IsMirror())
+    {
+        return false;
+    }
+    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
 bool ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadStartRemoteMessagePacket Packet)
 {
     if (!IsEquipped() || !IsMirror())

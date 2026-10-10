@@ -32,6 +32,9 @@ struct FBBBShotgunActionInputState final
     /** 本帧是否收到结束换弹通知 */
     bool bInterruptReloadRequested = false;
 
+    /** 本帧的一发装填及收手动作已自然结束 */
+    bool bReloadCycleEnded = false;
+
 private:
     friend struct FBBBShotgunActionDomainState;
 

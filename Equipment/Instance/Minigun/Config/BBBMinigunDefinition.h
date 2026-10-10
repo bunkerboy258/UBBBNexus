@@ -24,9 +24,17 @@ public:
         EquipmentType = EBBBEquipmentType::Minigun;
     }
 
-    /** 固定开火方式 为真时持续请求可连续射击 为假时每次按下只射击一次 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|转管机枪|开火", meta = (DisplayName = "自动射击", ToolTip = "型号固定配置 不提供玩家射击模式切换"))
-    bool bAutomaticFire = true;
+    /** 首次射击前电机预旋转所需时间 单位秒 松开扳机后重新计时 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|转管机枪|电机", meta = (ClampMin = "0.0", DisplayName = "预旋转时间 秒", ToolTip = "本机开火规则使用 不计入每发射击间隔 不产生过热机制"))
+    float SpinUpSeconds = 0.18f;
+
+    /** 释放扳机后枪管表现从全速平滑停下的时间 单位秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|转管机枪|电机", meta = (ClampMin = "0.01", DisplayName = "停转时间 秒", ToolTip = "仅供动画蓝图表现 不延迟停止发射"))
+    float SpinDownSeconds = 0.25f;
+
+    /** 枪管机构全速旋转的角速度 单位度每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|转管机枪|电机", meta = (ClampMin = "0.0", DisplayName = "枪管旋转速度 度每秒", ToolTip = "动画蓝图沿本型号枪管旋转轴应用 不影响子弹方向或射速"))
+    float BarrelRotationSpeedDegrees = 2400.0f;
 
     /** 左手握持目标所使用的装备插槽 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|转管机枪|装备", meta = (DisplayName = "左手插槽名"))

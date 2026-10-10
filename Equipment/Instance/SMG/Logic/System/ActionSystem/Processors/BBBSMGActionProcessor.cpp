@@ -40,6 +40,7 @@ void FBBBSMGActionProcessor::Stop(FBBBSMGRuntimeData &Data)
     Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
+    Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
 }
 
 void FBBBSMGActionProcessor::Update(FBBBSMGUpdateContext &Context)
@@ -74,6 +75,7 @@ void FBBBSMGActionProcessor::Update(FBBBSMGUpdateContext &Context)
     }
     if (!State.bOwnerActionsAllowed)
     {
+        State.NextFireTimeSeconds = 0.0f;
         State.bIsReloading = false;
         State.bEquippedThisFrame = false;
         Clear(Input);
@@ -123,28 +125,49 @@ void FBBBSMGActionProcessor::Update(FBBBSMGUpdateContext &Context)
             Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
     }
 
-    if (Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed) && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0
-        && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
+    const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
+    const float FireInterval = FMath::Max(0.01f, Context.Definition.FireInterval);
+    const bool bCanFire = Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed)
+        && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0;
+    if (!bCanFire)
+    {
+        State.NextFireTimeSeconds = 0.0f;
+    }
+
+    if (bCanFire && State.NextFireTimeSeconds <= 0.0f)
+    {
+        State.NextFireTimeSeconds = FMath::Max(CurrentTimeSeconds, State.LastFireTimeSeconds + FireInterval);
+    }
+
+    if (bCanFire && CurrentTimeSeconds >= State.NextFireTimeSeconds)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
             TEXT("冲锋枪缺少枪口 Socket")))
         {
-            const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
-            const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
-            --State.LoadedAmmo;
-            ++State.FireSequence;
-            State.LastFireTimeSeconds = CurrentTimeSeconds;
+            const int32 MaximumShots = Context.Definition.bAutomaticFire ? 8 : 1;
+            for (int32 ShotIndex = 0; ShotIndex < MaximumShots && State.LoadedAmmo > 0 && CurrentTimeSeconds >= State.NextFireTimeSeconds; ++ShotIndex)
+            {
+                const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
+                --State.LoadedAmmo;
+                ++State.FireSequence;
+                State.LastFireTimeSeconds = CurrentTimeSeconds;
+                State.NextFireTimeSeconds += FireInterval;
 
-            UE_LOG(LogTemp, VeryVerbose,
-                TEXT("[BBBSMG] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
-                *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
-                Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
+                UE_LOG(LogTemp, VeryVerbose,
+                    TEXT("[BBBSMG] Shot Equipment=%s Definition=%s Sequence=%d ConfiguredInterval=%.3f ActualInterval=%.3f WorldTime=%.3f"),
+                    *Context.Equipment.GetName(), *Context.Definition.GetPathName(), State.FireSequence,
+                    Context.Definition.FireInterval, ActualFireInterval, CurrentTimeSeconds);
 
-            // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
-            const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
-            SpawnProjectile(Context);
+                // 仅本机已成立的开火进入发射扩展 镜像分支在前面返回
+                const FTransform MuzzleTransform = Context.WeaponMesh.GetSocketTransform(Context.Definition.MuzzleSocketName);
+                SpawnProjectile(Context);
 
-            Context.Equipment.EmitShot(MuzzleTransform);
+                Context.Equipment.EmitShot(MuzzleTransform);
+            }
+            if (CurrentTimeSeconds >= State.NextFireTimeSeconds)
+            {
+                State.NextFireTimeSeconds = CurrentTimeSeconds + FireInterval;
+            }
         }
     }
 

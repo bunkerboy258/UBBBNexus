@@ -13,6 +13,7 @@ struct FBBBShotgunBlockFireLocalControlPacket;
 struct FBBBShotgunAllowFireLocalControlPacket;
 struct FBBBShotgunLoadAmmoLocalControlPacket;
 struct FBBBShotgunInterruptReloadLocalControlPacket;
+struct FBBBShotgunReloadCycleEndLocalControlPacket;
 struct FBBBShotgunActionPermissionLocalControlPacket;
 struct FBBBShotgunFireRemoteMessagePacket;
 struct FBBBShotgunReloadStartRemoteMessagePacket;
@@ -113,6 +114,7 @@ private:
     bool QueueInput(FBBBShotgunAllowFireLocalControlPacket Packet);
     bool QueueInput(FBBBShotgunLoadAmmoLocalControlPacket Packet);
     bool QueueInput(FBBBShotgunInterruptReloadLocalControlPacket Packet);
+    bool QueueInput(FBBBShotgunReloadCycleEndLocalControlPacket Packet);
     bool QueueInput(FBBBShotgunActionPermissionLocalControlPacket Packet);
     bool QueueInput(FBBBShotgunFireRemoteMessagePacket Packet);
     bool QueueInput(FBBBShotgunReloadStartRemoteMessagePacket Packet);

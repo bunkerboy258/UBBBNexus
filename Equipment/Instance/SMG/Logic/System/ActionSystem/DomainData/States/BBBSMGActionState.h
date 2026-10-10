@@ -23,6 +23,9 @@ struct FBBBSMGActionState final
     /** 最近一次确认开火的世界时间 */
     float LastFireTimeSeconds = -1000.0f;
 
+    /** 连续射击的下一发计划世界时间 零表示没有活动射击节拍 */
+    float NextFireTimeSeconds = 0.0f;
+
     /** 动画通知控制的开火限制 不替代弹药与射速检查 */
     bool bFireBlocked = false;
 

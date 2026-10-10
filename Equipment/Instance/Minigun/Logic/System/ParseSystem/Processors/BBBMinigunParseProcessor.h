@@ -21,6 +21,12 @@ public:
     static bool Submit(FBBBMinigunRuntimeData &Data, TPacket Packet)
     {
         auto &Slot = Select(Data.Parse.InputState, Packet);
+        if constexpr (std::is_same_v<TPacket, FBBBMinigunSpinRemoteMessagePacket>
+            || std::is_same_v<TPacket, FBBBMinigunSpinAuthorityFactPacket>)
+        {
+            Slot.Packet.Spinning.Append(Packet.Spinning);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
         if constexpr (std::is_same_v<TPacket, FBBBMinigunActionPermissionLocalControlPacket>)
         {
             Slot.Packet.Permissions.Append(Packet.Permissions);
@@ -59,6 +65,8 @@ public:
         }
 
         if constexpr (!(std::is_same_v<TPacket, FBBBMinigunActionPermissionLocalControlPacket>
+            || std::is_same_v<TPacket, FBBBMinigunSpinRemoteMessagePacket>
+            || std::is_same_v<TPacket, FBBBMinigunSpinAuthorityFactPacket>
             || std::is_same_v<TPacket, FBBBMinigunFireRemoteMessagePacket>
             || std::is_same_v<TPacket, FBBBMinigunReloadStartRemoteMessagePacket>
             || std::is_same_v<TPacket, FBBBMinigunReloadEndRemoteMessagePacket>
@@ -73,6 +81,16 @@ public:
     }
 
 private:
+    static TBBBMinigunInputSlot<FBBBMinigunSpinRemoteMessagePacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunSpinRemoteMessagePacket &)
+    {
+        return State.RemoteSpin;
+    }
+
+    static TBBBMinigunInputSlot<FBBBMinigunSpinAuthorityFactPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunSpinAuthorityFactPacket &)
+    {
+        return State.AuthoritySpin;
+    }
+
     static TBBBMinigunInputSlot<FBBBMinigunEquipLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunEquipLocalControlPacket &)
     {
         return State.Equip;

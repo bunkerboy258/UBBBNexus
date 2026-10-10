@@ -48,6 +48,7 @@ void FBBBShotgunParseProcessor::Update(FBBBShotgunUpdateContext &Context)
     Input.bReloadRequested = false;
     Input.bLoadAmmoRequested = false;
     Input.bInterruptReloadRequested = false;
+    Input.bReloadCycleEnded = false;
 
     if (Context.bCausal)
     {
@@ -58,6 +59,7 @@ void FBBBShotgunParseProcessor::Update(FBBBShotgunUpdateContext &Context)
         Process(Queue.AllowFire, Input);
         Process(Queue.LoadAmmo, Input);
         Process(Queue.InterruptReload, Input);
+        Process(Queue.ReloadCycleEnd, Input);
         Process(Queue.ActionPermission, Input);
         Clear(Context.RuntimeData);
         return;
@@ -92,6 +94,8 @@ void FBBBShotgunParseProcessor::Clear(FBBBShotgunRuntimeData &Data)
     Data.Parse.InputState.LoadAmmo.Packet = {};
     Data.Parse.InputState.InterruptReload.bActive = false;
     Data.Parse.InputState.InterruptReload.Packet = {};
+    Data.Parse.InputState.ReloadCycleEnd.bActive = false;
+    Data.Parse.InputState.ReloadCycleEnd.Packet = {};
     Data.Parse.InputState.ActionPermission.bActive = false;
     Data.Parse.InputState.ActionPermission.Packet = {};
     Data.Parse.InputState.RemoteFire.bActive = false;

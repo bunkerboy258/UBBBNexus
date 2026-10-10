@@ -17,6 +17,10 @@ void FBBBMinigunAnimationProcessor::Stop(FBBBMinigunUpdateContext &Context)
     }
 
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
+    if (UBBBMinigunAnimInstance *Animation = Cast<UBBBMinigunAnimInstance>(Context.Equipment.GetEquipmentAnimationInstance()))
+    {
+        Animation->bIsSpinning = false;
+    }
 }
 
 void FBBBMinigunAnimationProcessor::Update(FBBBMinigunUpdateContext &Context)
@@ -70,6 +74,7 @@ void FBBBMinigunAnimationProcessor::Update(FBBBMinigunUpdateContext &Context)
         Action.LoadedAmmo,
         Action.AmmoCapacity,
         Action.bIsReloading,
+        Action.bIsSpinning,
         FMath::Max(0.0, Context.World.GetTimeSeconds() - Action.LastFireTimeSeconds),
         Action.FireSequence,
         Context.World.GetTimeSeconds(),

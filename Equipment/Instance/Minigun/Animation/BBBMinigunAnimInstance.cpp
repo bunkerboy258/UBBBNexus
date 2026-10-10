@@ -5,6 +5,7 @@ void UBBBMinigunAnimInstance::PublishMinigunSnapshot(
     const int32 InLoadedAmmo,
     const int32 InAmmoCapacity,
     const bool bInReloading,
+    const bool bInSpinning,
     const float InTimeSinceLastFireSeconds,
     const int32 InFireSequence,
     const float InSnapshotTimeSeconds,
@@ -15,6 +16,10 @@ void UBBBMinigunAnimInstance::PublishMinigunSnapshot(
     LoadedAmmo = InLoadedAmmo;
     AmmoCapacity = InAmmoCapacity;
     this->bIsReloading = bInReloading;
+    bIsSpinning = bInSpinning;
+    SpinUpSeconds = Definition.SpinUpSeconds;
+    SpinDownSeconds = Definition.SpinDownSeconds;
+    BarrelRotationSpeedDegrees = Definition.BarrelRotationSpeedDegrees;
     TimeSinceLastFireSeconds = InTimeSinceLastFireSeconds;
     FireSequence = InFireSequence;
     SnapshotTimeSeconds = InSnapshotTimeSeconds;

@@ -73,6 +73,11 @@ public:
     }
 
 private:
+    static TBBBShotgunInputSlot<FBBBShotgunReloadCycleEndLocalControlPacket> &Select(FBBBShotgunInputState &State, const FBBBShotgunReloadCycleEndLocalControlPacket &)
+    {
+        return State.ReloadCycleEnd;
+    }
+
     static TBBBShotgunInputSlot<FBBBShotgunEquipLocalControlPacket> &Select(FBBBShotgunInputState &State, const FBBBShotgunEquipLocalControlPacket &)
     {
         return State.Equip;

@@ -15,6 +15,8 @@ struct FBBBMinigunLoadMagazineLocalControlPacket;
 struct FBBBMinigunInterruptReloadLocalControlPacket;
 struct FBBBMinigunActionPermissionLocalControlPacket;
 struct FBBBMinigunFireRemoteMessagePacket;
+struct FBBBMinigunSpinRemoteMessagePacket;
+struct FBBBMinigunSpinAuthorityFactPacket;
 struct FBBBMinigunReloadStartRemoteMessagePacket;
 struct FBBBMinigunReloadEndRemoteMessagePacket;
 struct FBBBMinigunFireAuthorityFactPacket;
@@ -115,6 +117,8 @@ private:
     bool QueueInput(FBBBMinigunInterruptReloadLocalControlPacket Packet);
     bool QueueInput(FBBBMinigunActionPermissionLocalControlPacket Packet);
     bool QueueInput(FBBBMinigunFireRemoteMessagePacket Packet);
+    bool QueueInput(FBBBMinigunSpinRemoteMessagePacket Packet);
+    bool QueueInput(FBBBMinigunSpinAuthorityFactPacket Packet);
     bool QueueInput(FBBBMinigunReloadStartRemoteMessagePacket Packet);
     bool QueueInput(FBBBMinigunReloadEndRemoteMessagePacket Packet);
     bool QueueInput(FBBBMinigunFireAuthorityFactPacket Packet);

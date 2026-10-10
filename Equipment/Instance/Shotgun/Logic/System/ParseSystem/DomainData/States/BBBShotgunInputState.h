@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Fire/FBBBShotgunAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunInterruptReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunReloadCycleEndLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Equipment/FBBBShotgunActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/RemoteMessage/Fire/FBBBShotgunFireRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/RemoteMessage/Reload/FBBBShotgunReloadStartRemoteMessagePacket.h"
@@ -44,6 +45,9 @@ struct FBBBShotgunInputState final
 
     /** InterruptReload固定槽位 */
     TBBBShotgunInputSlot<FBBBShotgunInterruptReloadLocalControlPacket> InterruptReload;
+
+    /** 一发装填动作自然结束的固定覆盖槽 */
+    TBBBShotgunInputSlot<FBBBShotgunReloadCycleEndLocalControlPacket> ReloadCycleEnd;
 
     /** ActionPermission固定槽位 */
     TBBBShotgunInputSlot<FBBBShotgunActionPermissionLocalControlPacket> ActionPermission;

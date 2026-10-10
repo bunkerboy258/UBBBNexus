@@ -22,6 +22,15 @@ void FBBBMinigunNetworkProcessor::Update(FBBBMinigunUpdateContext &Context)
         Sent.bPublished = false;
     }
 
+    if (!Sent.bPublished || Sent.bSpinning != Action.bIsSpinning)
+    {
+        if (!Network->PublishSpin(Action.bIsSpinning))
+        {
+            return;
+        }
+        Sent.bSpinning = Action.bIsSpinning;
+    }
+
     if (!Sent.bPublished || Sent.FireSequence != Action.FireSequence)
     {
         if (!Network->PublishFire(Action.FireSequence))
