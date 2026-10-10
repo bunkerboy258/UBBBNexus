@@ -13,6 +13,7 @@
 #include "Sound/SoundConcurrency.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "UObject/UnrealType.h"
 
 /** 声音只消费当前事实 验证去重 清理和配置防呆 */
@@ -38,6 +39,7 @@ bool FBBBMonsterSoundFactsTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     UBBBMonsterSoundPresentationDefinition* Settings = NewObject<UBBBMonsterSoundPresentationDefinition>();
@@ -52,6 +54,7 @@ bool FBBBMonsterSoundFactsTest::RunTest(const FString& Parameters)
     Settings->Footsteps.Add(Wave);
     Settings->CrawlFriction.Add(Wave);
     Settings->Landings.Add(Wave);
+    Settings->Severings.Add(Wave);
     FBBBMonsterSoundVoice Voice;
     Voice.Name = TEXT("TestVoice");
     for (auto* Pool : { &Voice.Idle, &Voice.Alert, &Voice.Chase, &Voice.Attack, &Voice.Hit, &Voice.Death, &Voice.Crawl })

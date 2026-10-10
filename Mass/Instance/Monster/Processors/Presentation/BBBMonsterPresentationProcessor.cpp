@@ -26,6 +26,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterSeveringPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -73,6 +74,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     const float Alpha = 1.0f - FMath::Exp(-DeltaTime / 0.1f);
 
     const float Now = World->GetTimeSeconds();
+    World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->AdvancePresentation(Now);
     const bool bStandalone = World->GetNetMode() == NM_Standalone;
     const uint32 WorldIdentity = World->GetUniqueID();
     int32 ActiveCorpses = 0;
@@ -190,12 +192,12 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
             const auto& Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>()[Index];
             const auto* Definition = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].Definition.Get();
-            MonsterActor->GetMonsterSevering()->UpdateDetachedParts();
             if (Definition)
             {
-                MonsterActor->GetMonsterSevering()->ApplyDestroyedParts(
-                    ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts,
-                    Definition->SeveredParts, ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index].Direction);
+                MonsterActor->GetMonsterSevering()->ApplyWoundFacts(
+                    ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index], *Definition,
+                    ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
+                    ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed, bNewActor);
             }
             Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);
             if (Definition)
@@ -224,6 +226,14 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                         ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index], Now, bSimulate))
                 {
                     ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
+                    const uint8 LostParts = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts;
+                    for (const auto& Part : Definition->SeveredParts)
+                    {
+                        if ((LostParts & (1u << static_cast<uint8>(Part.Region))) != 0)
+                        {
+                            MonsterActor->GetMonsterMesh()->SetAllBodiesBelowPhysicsDisabled(Part.Bone, true);
+                        }
+                    }
                 }
             }
             if (auto* SoundPresentation = MonsterActor->GetMonsterSoundPresentation())

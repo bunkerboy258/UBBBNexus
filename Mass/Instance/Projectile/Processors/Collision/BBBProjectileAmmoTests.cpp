@@ -6,6 +6,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -37,6 +38,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     auto* Mass = World->GetSubsystem<UBBBMassSubsystem>();

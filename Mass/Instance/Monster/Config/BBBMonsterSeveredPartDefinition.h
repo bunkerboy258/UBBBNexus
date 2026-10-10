@@ -5,6 +5,7 @@
 #include "BBBMonsterSeveredPartDefinition.generated.h"
 
 class UStaticMesh;
+class USkeletalMesh;
 
 /** 已封口的断肢和身体断口静态资源 不持有损毁事实 */
 USTRUCT(BlueprintType)
@@ -27,4 +28,8 @@ struct FBBBMonsterSeveredPartDefinition final
     /** 同坐标系下独立的身体断口封盖 */
     UPROPERTY(EditAnywhere, Category = "小怪|断肢", meta = (DisplayName = "身体封口"))
     TObjectPtr<UStaticMesh> CapMesh;
+
+    /** 仅含当前部件三角面的蒙皮资源 用于近距离一次性姿态捕获 */
+    UPROPERTY(EditAnywhere, Category = "小怪|断肢", meta = (DisplayName = "姿态部件"))
+    TObjectPtr<USkeletalMesh> PoseMesh;
 };

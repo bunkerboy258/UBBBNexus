@@ -6,6 +6,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "MassEntitySubsystem.h"
 #include "MassCommonFragments.h"
 #include "MassExecutor.h"
@@ -33,6 +34,7 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     auto* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();

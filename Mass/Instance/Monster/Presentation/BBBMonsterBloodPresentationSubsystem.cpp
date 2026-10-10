@@ -79,7 +79,7 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
                 const FVector Spray = (Outward * 0.75f + Tangent * 0.25f + FVector::UpVector * 0.25f).GetSafeNormal();
                 Writer->WriteVector(TEXT("Normal"), Index, Outward);
                 Writer->WriteVector(TEXT("Direction"), Index, Spray);
-                Writer->WriteInt(TEXT("Surface"), Index, 2);
+                Writer->WriteInt(TEXT("Surface"), Index, Impact.bSevering ? 3 : 2);
             }
         }
     }
@@ -102,7 +102,7 @@ void UBBBMonsterBloodPresentationSubsystem::EmitDroplets(const UBBBMonsterBloodP
     const FVector Tangent = FVector::CrossProduct(Spray, FMath::Abs(Spray.Z) > 0.95f ? FVector::ForwardVector : FVector::UpVector).GetSafeNormal();
     const FVector Bitangent = FVector::CrossProduct(Spray, Tangent);
     FRandomStream Random(Impact.Seed ^ GetTypeHash(Impact.Position));
-    const int32 Count = Random.RandRange(2, 3);
+    const int32 Count = Impact.bSevering ? 6 : Random.RandRange(2, 3);
     for (int32 Index = 0; Index < Count && Droplets.Num() < FMath::Clamp(Settings.MaximumFlights, 3, 128); ++Index)
     {
         const float Angle = Random.FRandRange(0.0f, 2.0f * PI);
@@ -113,6 +113,11 @@ void UBBBMonsterBloodPresentationSubsystem::EmitDroplets(const UBBBMonsterBloodP
         Droplet.Velocity = Spray * Random.FRandRange(520.0f, 800.0f) + Spread * Random.FRandRange(80.0f, 220.0f);
         Droplet.Seed = Random.GetUnsignedInt();
         Droplet.bFine = Index > 0;
+        if (Impact.bSevering && Index >= 3)
+        {
+            Droplet.Velocity = FVector(0.0f, 0.0f, -80.0f) + Spread * 45.0f;
+            Droplet.Age = -0.12f * static_cast<float>(Index - 2);
+        }
         Droplets.Add(Droplet);
     }
 }
@@ -146,6 +151,10 @@ void UBBBMonsterBloodPresentationSubsystem::AdvancePresentation(float DeltaSecon
         if (!Droplet.Settings.IsValid() || Droplet.Age > 2.0f || TraceBudget <= 0)
         {
             Droplets.RemoveAtSwap(Index);
+            continue;
+        }
+        if (Droplet.Age < 0.0f)
+        {
             continue;
         }
 

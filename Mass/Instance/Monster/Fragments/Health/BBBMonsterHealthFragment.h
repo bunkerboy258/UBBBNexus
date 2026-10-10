@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "MassEntityTypes.h"
+#include "BBBMonsterPartDamage.h"
 
 #include "BBBMonsterHealthFragment.generated.h"
 
@@ -20,6 +21,9 @@ struct ABBB_EVAC_API FBBBMonsterHealthFragment final : public FMassFragment
 
     /** 六部位损毁位图 只由当前累计贡献推导 */
     uint8 DestroyedParts = 0;
+
+    /** 由当前贡献与部位生命上限推导的归一化受损缓存 不同步且不独立写入 */
+    FBBBMonsterPartDamage PartDamageRatios;
 
     /** 上次已解析的累计部位伤害总量 用于本轮变化检测 */
     double ResolvedDamage = 0.0;

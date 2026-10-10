@@ -4,6 +4,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
@@ -33,6 +34,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto Archetype = Manager.CreateArchetype({FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),

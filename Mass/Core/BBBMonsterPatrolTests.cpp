@@ -5,6 +5,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "MassEntitySubsystem.h"
@@ -48,6 +49,7 @@ bool FBBBMonsterPatrolTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     AActor* Floor = World->SpawnActor<AActor>();
     UBoxComponent* FloorBody = NewObject<UBoxComponent>(Floor);

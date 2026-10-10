@@ -4,6 +4,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
@@ -52,6 +53,7 @@ bool FBBBMonsterPartDamageTest::RunTest(const FString&)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto Type = Manager.CreateArchetype({FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
@@ -85,6 +87,8 @@ bool FBBBMonsterPartDamageTest::RunTest(const FString&)
     const auto& HeadHealth = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Head);
     TestEqual(TEXT("头部致死不要求整体生命归零"), HeadHealth.CurrentHealth, 0.0f);
     TestEqual(TEXT("头部致死时整体生命仍有六十五"), HeadHealth.MainHealth, 65.0f);
+    TestEqual(TEXT("头部创口比例由当前贡献推导并封顶"), HeadHealth.PartDamageRatios.Head, 1.0);
+    TestEqual(TEXT("未受损躯干部位不产生第二份伤害"), HeadHealth.PartDamageRatios.Torso, 0.0);
     const auto Limbs = Create();
     Apply(Limbs, 1, EBBBMonsterHitRegion::LeftArm, 40.0);
     Apply(Limbs, 1, EBBBMonsterHitRegion::RightLeg, 35.0);
@@ -108,9 +112,14 @@ bool FBBBMonsterPartDamageTest::RunTest(const FString&)
     Resolve();
     TestEqual(TEXT("十六个玩家身份保持独立贡献"), Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Crowd).Contributions.Num(), 16);
     TestEqual(TEXT("十六份当前结果收敛为三十二伤害"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Crowd).MainHealth, 68.0f);
+    TestTrue(TEXT("伤口比例合计所有玩家而不保存逐枪记录"), FMath::IsNearlyEqual(
+        Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Crowd).PartDamageRatios.Torso, 0.32));
     const auto Light = Create();
     Apply(Light, 1, EBBBMonsterHitRegion::Torso, 5.0);
     Resolve();
+    TestEqual(TEXT("轻伤比例就是当前伤害贡献"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Light).PartDamageRatios.Torso, 0.05);
+    Resolve();
+    TestEqual(TEXT("重复解析当前结果不累加伤口"), Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Light).PartDamageRatios.Torso, 0.05);
     TestFalse(TEXT("普通命中只减速 不强制每次踉跄"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Light).IsStaggering(World->GetTimeSeconds()));
     const auto Turn = UBBBMonsterLocomotionProcessor::TurnTowards(FQuat::Identity, -FVector::ForwardVector, 0.1f, 90.0f);
     TestTrue(TEXT("爬行九十度每秒 一帧不会瞬间转身"), FMath::IsNearlyEqual(FMath::Abs(Turn.Rotator().Yaw), 9.0f));

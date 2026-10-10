@@ -149,11 +149,13 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             double MainDamage = 0.0;
             uint8 Destroyed = 0;
             bool bFatal = false;
+            FBBBMonsterPartDamage Ratios;
             for (uint8 Part = 0; Part <= static_cast<uint8>(EBBBMonsterHitRegion::RightLeg); ++Part)
             {
                 const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
                 const auto& Definition = Settings->GetBodyPart(Region);
                 const double Amount = Totals.Get(Region);
+                Ratios.Add(Region, FMath::Clamp(Amount / (Health[Index].MaxHealth * Definition.HealthFraction), 0.0, 1.0));
                 MainDamage += Amount * Definition.MainTransfer;
                 if (Amount + UE_SMALL_NUMBER >= Health[Index].MaxHealth * Definition.HealthFraction)
                 {
@@ -165,6 +167,7 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             Health[Index].MainHealth = static_cast<float>(FMath::Max(0.0, Health[Index].MaxHealth - MainDamage));
             Health[Index].CurrentHealth = bFatal ? 0.0f : Health[Index].MainHealth;
             Health[Index].DestroyedParts = Destroyed;
+            Health[Index].PartDamageRatios = Ratios;
             Health[Index].ResolvedDamage = Totals.Sum();
             Damage[Index].bReceivedDamage = Added > 0.0;
             Motion.Suppression = FMath::Max(0.0f, Motion.Suppression - Delta * Settings->SuppressionRecovery);

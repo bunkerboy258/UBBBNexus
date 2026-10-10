@@ -5,6 +5,7 @@
 #include "UObject/Script.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -46,6 +47,7 @@ namespace
             }
             GEngine->DestroyWorldContext(World);
             World->DestroyWorld(false);
+            World->GetOutermost()->SetDirtyFlag(false);
             return true;
         }
 
@@ -81,6 +83,7 @@ bool FBBBMonsterCorpseTest::RunTest(const FString& Parameters)
         {
             GEngine->DestroyWorldContext(World);
             World->DestroyWorld(false);
+            World->GetOutermost()->SetDirtyFlag(false);
         }
     };
     TArray<ABBBMonsterPresentationActor*> HeldActors;

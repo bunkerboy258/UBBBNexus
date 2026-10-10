@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Engine/Engine.h"
 #include "UObject/UnrealType.h"
 #include "Engine/SkeletalMesh.h"
@@ -49,6 +50,7 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     TArray<FString> Classes =

@@ -7,6 +7,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "MassCommonFragments.h"
@@ -79,6 +80,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         World->WorldType = EWorldType::Game;
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
@@ -323,6 +325,7 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
         World->WorldType = EWorldType::Game;
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     // 使用引擎的 PIE 初始网络模式测试真实客机分支 不建立测试网络连接
@@ -502,6 +505,7 @@ bool FBBBProjectilePresentationTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     auto* Channel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
         TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectile.NDC_BBBProjectile"));

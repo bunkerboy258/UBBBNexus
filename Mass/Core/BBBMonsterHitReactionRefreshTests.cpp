@@ -4,6 +4,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "HitReactProfile.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
@@ -27,6 +28,7 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
         TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/Variants/Michael/BP_BBBZombieMichaelPresentation.BP_BBBZombieMichaelPresentation_C"));

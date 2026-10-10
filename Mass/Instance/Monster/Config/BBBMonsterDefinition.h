@@ -10,6 +10,8 @@ class UMassEntityConfigAsset;
 class UBBBMonsterBloodPresentationDefinition;
 class UBBBMonsterSoundPresentationDefinition;
 class UBBBMonsterVariationDefinition;
+class USkeletalMesh;
+class UMaterialInterface;
 
 /** 小怪模板与静态玩法参数 */
 UCLASS(BlueprintType)
@@ -21,6 +23,14 @@ public:
     /** 当前外观的封闭断肢资源 */
     UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "断肢资源"))
     TArray<FBBBMonsterSeveredPartDefinition> SeveredParts;
+
+    /** 与正式外观同骨架的断口与浅层胸腹伤口 共享主骨架姿势 */
+    UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "蒙皮伤口网格"))
+    TObjectPtr<USkeletalMesh> WoundGeometry;
+
+    /** 按身体材质槽对应的共享受损材质 未受损时保留普通不透明材质 */
+    UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "受损身体材质"))
+    TArray<TObjectPtr<UMaterialInterface>> WoundMaterials;
 
     /** @return 建立六个部位的默认静态规则 */
     UBBBMonsterDefinition();

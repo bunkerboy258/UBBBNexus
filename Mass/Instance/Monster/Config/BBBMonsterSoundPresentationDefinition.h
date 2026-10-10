@@ -46,6 +46,10 @@ public:
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "落地素材"))
     TArray<TObjectPtr<USoundBase>> Landings;
 
+    /** 本轮部位损毁只播放一次的短促撕裂与骨裂 共享动作声音并发 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "断肢素材"))
+    TArray<TObjectPtr<USoundBase>> Severings;
+
     /** 超出听众范围仍消费事实 但不创建发声 */
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (ClampMin = "1.0", Units = "cm", DisplayName = "最大听觉距离"))
     float AudibleDistance = 2500.0f;

@@ -8,6 +8,7 @@
 #include "Serialization/MemoryReader.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "EngineUtils.h"
 #include "MassSpawner.h"
 #include "MassEntityConfigAsset.h"
@@ -58,6 +59,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     World->InitializeActorsForPlay(FURL());
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();

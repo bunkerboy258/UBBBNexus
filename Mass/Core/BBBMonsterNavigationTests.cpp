@@ -5,6 +5,7 @@
 #include "HAL/PlatformTime.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Engine/StaticMesh.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -47,6 +48,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     auto* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
     const auto Geometry = [World, Cube](const FVector& Position, const FVector& Scale)

@@ -4,6 +4,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "TimerManager.h"
 #include "Components/BoxComponent.h"
 #include "Components/DecalComponent.h"
@@ -30,6 +31,7 @@ bool FBBBMonsterBloodResidueTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     auto* Settings = NewObject<UBBBMonsterBloodPresentationDefinition>(World);

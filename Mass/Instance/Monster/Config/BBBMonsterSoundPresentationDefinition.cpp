@@ -23,7 +23,7 @@ bool UBBBMonsterSoundPresentationDefinition::IsValid() const
     }
 
     TSet<FName> Names;
-    for (const auto* Pool : {&Footsteps, &CrawlFriction, &Landings})
+    for (const auto* Pool : {&Footsteps, &CrawlFriction, &Landings, &Severings})
     {
         if (Pool->IsEmpty())
         {

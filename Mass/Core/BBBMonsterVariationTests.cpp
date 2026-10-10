@@ -5,6 +5,7 @@
 #include "HAL/PlatformTime.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
@@ -112,6 +113,7 @@ bool FBBBMonsterVariationTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     AActor* SpawnOwner = World->SpawnActor<AActor>();
     auto* Generator = NewObject<UBBBMonsterSpawnGenerator>(SpawnOwner);

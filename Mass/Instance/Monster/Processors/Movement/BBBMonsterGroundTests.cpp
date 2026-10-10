@@ -7,6 +7,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
 #include "MassCommonFragments.h"
@@ -41,6 +42,7 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
     {
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
     const auto MakeBox = [World](const FVector& Position, const FVector& Extent, const FRotator& Rotation = FRotator::ZeroRotator)
     {

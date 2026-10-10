@@ -4,6 +4,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/BoxComponent.h"
@@ -52,6 +53,7 @@ bool FBBBMonsterCombatTest::RunTest(const FString& Parameters)
         World->EndPlay(EEndPlayReason::Quit);
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     UClass* CharacterClass = LoadClass<ABBBCharacter>(nullptr,
