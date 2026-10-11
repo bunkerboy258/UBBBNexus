@@ -2,6 +2,7 @@
 
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
@@ -98,8 +99,18 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     const bool bAiming = CameraSystem.Character->RuntimeData.Parse.ReadControlState().bAim;
     CameraSystem.Boom->TargetArmLength = FMath::FInterpTo(
         CameraSystem.Boom->TargetArmLength,
-        bAiming ? CameraSystem.AimBoomLength : CameraSystem.DefaultBoomLength,
+        bAiming ? CameraSystem.AimArmLength : CameraSystem.HipArmLength,
         DeltaSeconds,
         CameraSystem.AimBoomInterpSpeed);
+    CameraSystem.Boom->SocketOffset.Y = FMath::FInterpTo(
+        CameraSystem.Boom->SocketOffset.Y,
+        bAiming ? CameraSystem.AimShoulderOffset : CameraSystem.HipShoulderOffset,
+        DeltaSeconds,
+        CameraSystem.AimBoomInterpSpeed);
+    CameraSystem.Camera->SetFieldOfView(FMath::FInterpTo(
+        CameraSystem.Camera->FieldOfView,
+        bAiming ? CameraSystem.AimFieldOfView : CameraSystem.HipFieldOfView,
+        DeltaSeconds,
+        CameraSystem.AimBoomInterpSpeed));
     CameraSystem.SetActorLocationAndRotation(CameraSystem.Character->GetActorLocation(), Rotation);
 }

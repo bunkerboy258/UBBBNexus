@@ -53,14 +53,27 @@ private:
     TObjectPtr<USpringArmComponent> Boom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|相机", meta = (AllowPrivateAccess = "true", DisplayName = "相机"))
     TObjectPtr<UCameraComponent> Camera;
-    /** 瞄准时的相机臂长度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (ClampMin = "0.0", DisplayName = "瞄准相机臂长度"))
-    float AimBoomLength = 180.0f;
+    /** 常态相机臂长度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "1.0", DisplayName = "常态相机臂长度"))
+    float HipArmLength = 410.0f;
+    /** 瞄准相机臂长度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "1.0", DisplayName = "瞄准相机臂长度"))
+    float AimArmLength = 225.0f;
+    /** 常态镜头水平视角 单位度 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "30.0", ClampMax = "120.0", DisplayName = "常态水平视角"))
+    float HipFieldOfView = 80.0f;
+    /** 瞄准镜头水平视角 单位度 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "30.0", ClampMax = "120.0", DisplayName = "瞄准水平视角"))
+    float AimFieldOfView = 66.0f;
+    /** 常态镜头向右偏移 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.0", DisplayName = "常态肩位偏移"))
+    float HipShoulderOffset = 65.0f;
+    /** 瞄准镜头向右偏移 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.0", DisplayName = "瞄准肩位偏移"))
+    float AimShoulderOffset = 58.0f;
     /** 瞄准距离切换速度 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (ClampMin = "0.1", DisplayName = "瞄准相机臂插值速度"))
     float AimBoomInterpSpeed = 12.0f;
-    /** 初始化时读取组件配置 仅用于退出瞄准后恢复常态距离 */
-    float DefaultBoomLength = 0.0f;
     TWeakObjectPtr<ABBBCharacter> Character;
     TWeakObjectPtr<APlayerController> Controller;
     /** 当前等待消费的最后一次相机冲击 */

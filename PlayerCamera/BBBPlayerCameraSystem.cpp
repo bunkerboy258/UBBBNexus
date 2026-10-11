@@ -35,12 +35,22 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
             && Boom->PrimaryComponentTick.TickGroup == TG_PostPhysics
             && Boom->PrimaryComponentTick.EndTickGroup == TG_PostPhysics,
         TEXT("[BBBCamera]相机与臂端必须在 PostPhysics 完成更新 否则相机缓存将落后一帧"));
-    // 组件默认值由相机蓝图提供 运行期间只改变当前臂长
-    DefaultBoomLength = Boom->TargetArmLength;
-    ensureMsgf(FMath::IsFinite(DefaultBoomLength) && DefaultBoomLength > 0.0f
-        && FMath::IsFinite(AimBoomLength) && AimBoomLength >= 0.0f
+    ensureMsgf(FMath::IsFinite(HipArmLength) && HipArmLength > 0.0f
+        && FMath::IsFinite(AimArmLength) && AimArmLength > 0.0f && AimArmLength < HipArmLength
+        && FMath::IsFinite(HipFieldOfView) && HipFieldOfView >= 30.0f && HipFieldOfView <= 120.0f
+        && FMath::IsFinite(AimFieldOfView) && AimFieldOfView >= 30.0f && AimFieldOfView < HipFieldOfView
+        && FMath::IsFinite(HipShoulderOffset) && HipShoulderOffset >= 0.0f
+        && FMath::IsFinite(AimShoulderOffset) && AimShoulderOffset >= 0.0f
         && FMath::IsFinite(AimBoomInterpSpeed) && AimBoomInterpSpeed > 0.0f,
-        TEXT("[BBBCamera]相机蓝图距离或插值速度无效"));
+        TEXT("[BBBCamera]相机构图配置无效"));
+    Boom->TargetArmLength = HipArmLength;
+    Boom->TargetOffset.Y = 0.0f;
+    Boom->SocketOffset.Y = HipShoulderOffset;
+    Boom->bDoCollisionTest = true;
+    FVector CameraRelativeLocation = Camera->GetRelativeLocation();
+    CameraRelativeLocation.Y = 0.0f;
+    Camera->SetRelativeLocation(CameraRelativeLocation);
+    Camera->SetFieldOfView(HipFieldOfView);
     SetActorLocationAndRotation(InCharacter.GetActorLocation(), InController.GetControlRotation());
 }
 
