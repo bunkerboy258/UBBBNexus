@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
+#include "PhysicsEngine/BodySetup.h"
 #include "AssetCompilingManager.h"
 #include "Rendering/SkeletalMeshModel.h"
 #include "MeshDescription.h"
@@ -29,6 +30,148 @@
 
 namespace
 {
+    /** 在隔离物理世界中验证正式男女部件的抛飞 重力和稳定落地 */
+    class FBBBMonsterGibFlightCommand final : public IAutomationLatentCommand
+    {
+    public:
+        /**
+         * @param InTest	当前断肢测试
+         * @param InWorld	本测试独占的物理世界
+         * @return 创建真实物理跨帧检查
+         */
+        FBBBMonsterGibFlightCommand(FAutomationTestBase* InTest, UWorld* InWorld)
+            : Test(InTest), World(InWorld)
+        {
+            for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
+            {
+                if (It->GetWorld() == World && It->IsSimulatingPhysics())
+                {
+                    Pieces.Add(*It);
+                    Starts.Add(It->GetComponentLocation());
+                    Test->TestTrue(TEXT("正式部件开启重力"), It->IsGravityEnabled());
+                    Test->TestTrue(TEXT("正式部件继承实际移动速度"), It->GetPhysicsLinearVelocity().Y > 120.0f);
+                    Test->TestTrue(TEXT("垂直受击仍有旋转速度"), It->GetPhysicsAngularVelocityInDegrees().Size() > 100.0f);
+                }
+            }
+            Test->TestEqual(TEXT("男女五部位真实物理覆盖"), Pieces.Num(), 10);
+        }
+
+        /** @return 完成真实飞行与落地检查后释放隔离世界 */
+        virtual bool Update() override
+        {
+            FEditorScriptExecutionGuard ScriptGuard;
+            World->Tick(LEVELTICK_All, 1.0f / 60.0f);
+            auto* Pool = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>();
+            for (auto* Piece : Pieces)
+            {
+                Piece->SetLastRenderTime(World->GetTimeSeconds());
+            }
+            Pool->AdvancePresentation(World->GetTimeSeconds());
+            ++Frames;
+            if (Frames == 30)
+            {
+                for (int32 Index = 0; Index < Pieces.Num(); ++Index)
+                {
+                    Test->TestTrue(TEXT("正式碎肢真实离开断开位置"),
+                        FVector::Dist(Pieces[Index]->GetComponentLocation(), Starts[Index]) > 30.0f);
+                }
+            }
+            if (Frames < 720 && Pool->GetSettledCount() < 10)
+            {
+                return false;
+            }
+            Test->TestEqual(TEXT("男女全部部件经真实碰撞稳定落地"), Pool->GetSettledCount(), 10);
+            Test->TestEqual(TEXT("男女全部部件收到真实地面碰撞回调"), Pool->GetLandedCount(), 10);
+            Test->TestEqual(TEXT("稳定后不继续消耗模拟预算"), Pool->GetSimulatingCount(), 0);
+            for (auto* Piece : Pieces)
+            {
+                Test->TestTrue(TEXT("地面残留不穿透支撑平面"), Piece->Bounds.Origin.Z > -5.0f);
+                Test->TestTrue(TEXT("部件从高处受重力落下"), Piece->Bounds.Origin.Z < 100.0f);
+            }
+            World->EndPlay(EEndPlayReason::Quit);
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(false);
+            World->GetOutermost()->SetDirtyFlag(false);
+            return true;
+        }
+
+    private:
+        FAutomationTestBase* Test;
+        UWorld* World;
+        TArray<UStaticMeshComponent*> Pieces;
+        TArray<FVector> Starts;
+        int32 Frames = 0;
+    };
+
+    /** 验证稳定支撑与离屏回收 不以模拟时长强行冻结运动部件 */
+    class FBBBMonsterGibSettlementCommand final : public IAutomationLatentCommand
+    {
+    public:
+        /**
+         * @param InTest	当前断肢测试
+         * @param InWorld	本测试独占的隔离世界
+         * @param InActor	本测试碎肢来源
+         * @param InDefinition	本测试正式部件配置
+         * @return 创建跨帧落定检查
+         */
+        FBBBMonsterGibSettlementCommand(FAutomationTestBase* InTest, UWorld* InWorld,
+            ABBBMonsterPresentationActor* InActor, UBBBMonsterDefinition* InDefinition)
+            : Test(InTest), World(InWorld), Actor(InActor), Definition(InDefinition)
+        {
+        }
+
+        /** @return 完成验证并释放本测试世界时返回真 */
+        virtual bool Update() override
+        {
+            FEditorScriptExecutionGuard ScriptGuard;
+            auto* Pool = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>();
+            if (Stage == 0)
+            {
+                for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
+                {
+                    if (It->GetWorld() == World && It->IsSimulatingPhysics())
+                    {
+                        It->SetPhysicsLinearVelocity(FVector::ZeroVector);
+                        It->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+                    }
+                }
+                Pool->AdvancePresentation(6.1f);
+                ++Stage;
+                return false;
+            }
+            if (Stage == 1)
+            {
+                Pool->AdvancePresentation(6.7f);
+                Test->TestEqual(TEXT("稳定地面支撑才允许落定"), Pool->GetSettledCount(), 31);
+                Test->TestEqual(TEXT("没有地面支撑的部件保持物理模拟"), Pool->GetSimulatingCount(), 1);
+                ++Stage;
+                return false;
+            }
+            Pool->AdvancePresentation(8.1f);
+            Test->TestEqual(TEXT("离屏超时部件释放而不是悬空冻结"), Pool->GetSimulatingCount(), 0);
+            Test->TestEqual(TEXT("落定残留不会随离屏飞行清理消失"), Pool->GetSettledCount(), 31);
+            const auto& Part = Definition->SeveredParts[0];
+            auto* Mesh = Actor->GetMonsterMesh();
+            Mesh->SetLastRenderTime(World->GetTimeSeconds());
+            Test->TestTrue(TEXT("已释放槽位可立即复用"), Pool->Emit(*Mesh, *Part.DetachedMesh,
+                *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
+            Test->TestEqual(TEXT("再次生成不扩大池容量"), Pool->GetAllocatedCount(), 32);
+            Actor->Destroy();
+            Test->TestEqual(TEXT("来源销毁不清除落地残留"), Pool->GetSettledCount(), 31);
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(false);
+            World->GetOutermost()->SetDirtyFlag(false);
+            return true;
+        }
+
+    private:
+        FAutomationTestBase* Test;
+        UWorld* World;
+        ABBBMonsterPresentationActor* Actor;
+        UBBBMonsterDefinition* Definition;
+        int32 Stage = 0;
+    };
+
     /**
      * @param Mesh	正式脱落部件
      * @return 是否存在完整几何且所有边均被封闭
@@ -206,20 +349,20 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
         FBBBMonsterHealthFragment Health;
         FBBBMonsterHitReactionFragment Hit;
         const TArray<UMaterialInterface*> Intact = Mesh->GetMaterials();
-        Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+        Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
         TArray<USkeletalMeshComponent*> IntactComponents;
         Actor->GetComponents(IntactComponents);
         TestEqual(TEXT("完好外观不分配额外蒙皮载体"), IntactComponents.Num(), 1);
         Health.PartDamageRatios.Add(EBBBMonsterHitRegion::Torso, 1.0);
         Health.DestroyedParts = 1u << static_cast<uint8>(EBBBMonsterHitRegion::Torso);
-        Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+        Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
         IntactComponents.Reset();
         Actor->GetComponents(IntactComponents);
         TestEqual(TEXT("致死躯干伤口只改变表面 不分配蒙皮断口"), IntactComponents.Num(), 1);
         Severing->ResetPresentation();
         Health = FBBBMonsterHealthFragment();
         Health.PartDamageRatios.Add(EBBBMonsterHitRegion::LeftArm, 0.3);
-        Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+        Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
         IntactComponents.Reset();
         Actor->GetComponents(IntactComponents);
         TestEqual(TEXT("四肢浅伤只改变共享表面 不分配全身伤口载体"), IntactComponents.Num(), 1);
@@ -233,7 +376,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
             Health.PartDamageRatios.Add(EBBBMonsterHitRegion::Torso, 0.3);
             Health.PartDamageRatios.Add(EBBBMonsterHitRegion::LeftArm, 1.0);
             Health.DestroyedParts = 1u << static_cast<uint8>(EBBBMonsterHitRegion::LeftArm);
-            Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+            Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
             IntactComponents.Reset();
             Actor->GetComponents(IntactComponents);
             TestEqual(TEXT("首次远距创口和断肢不分配蒙皮伤口"), IntactComponents.Num(), 1);
@@ -241,7 +384,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
                 Mesh->GetCustomPrimitiveData().Data[static_cast<int32>(EBBBMonsterHitRegion::LeftArm) + 1], 1.0f);
             Mesh->SetForcedLOD(1);
             Mesh->UpdateLODStatus();
-            Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, false);
+            Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, false);
             IntactComponents.Reset();
             Actor->GetComponents(IntactComponents);
             TestEqual(TEXT("返回近距只分配一个当前伤口载体"), IntactComponents.Num(), 2);
@@ -263,7 +406,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
             }
             Mesh->SetForcedLOD(3);
             Mesh->UpdateLODStatus();
-            Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, false);
+            Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, false);
             for (auto* Component : IntactComponents)
             {
                 if (Component != Mesh)
@@ -273,7 +416,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
             }
             Mesh->SetForcedLOD(1);
             Mesh->UpdateLODStatus();
-            Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, false);
+            Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, false);
             for (auto* Component : IntactComponents)
             {
                 if (Component != Mesh)
@@ -291,7 +434,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
         {
             Health.PartDamageRatios = FBBBMonsterPartDamage();
             Health.PartDamageRatios.Add(EBBBMonsterHitRegion::Torso, DamageRatios[StageIndex]);
-            Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+            Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
             const auto& Data = Mesh->GetCustomPrimitiveData().Data;
             const float ActualStage = Data.IsValidIndex(1) ? Data[1] : 0.0f;
             TestEqual(TEXT("伤口阶段严格由当前累计部位伤害推导"), ActualStage, ExpectedStages[StageIndex]);
@@ -307,6 +450,13 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
             }
             TestTrue(TEXT("部件不是空几何"), !Part.DetachedMesh->GetBoundingBox().GetSize().IsNearlyZero());
             TestFalse(TEXT("部件包围盒没有无效数值"), Part.DetachedMesh->GetBounds().ContainsNaN());
+            const auto* Body = Part.DetachedMesh->GetBodySetup();
+            if (!TestNotNull(TEXT("正式部件具有刚体形状配置"), Body))
+            {
+                return false;
+            }
+            TestTrue(TEXT("正式部件使用可模拟的简单碰撞形状"), Body->AggGeom.GetElementCount() > 0);
+            TestTrue(TEXT("正式部件不使用无法动态模拟的逐三角形替代"), Body->CollisionTraceFlag != CTF_UseComplexAsSimple);
             TestTrue(Names[Index] + TEXT(" ") + Part.Bone.ToString() + TEXT("脱落部件没有未封口几何边"), HasClosedPartGeometry(*Part.DetachedMesh));
             TestTrue(TEXT("封口不是空几何"), !Part.CapMesh->GetBoundingBox().GetSize().IsNearlyZero());
             TestFalse(TEXT("封口包围盒没有无效数值"), Part.CapMesh->GetBounds().ContainsNaN());
@@ -331,19 +481,19 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
             Mask |= 1u << static_cast<uint8>(Part.Region);
             Health.DestroyedParts = Mask;
             Health.PartDamageRatios.Add(Part.Region, 1.0);
-            Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+            Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
             TestEqual(TEXT("损毁按材质事实裁剪而不压缩骨骼"), Mesh->GetCustomPrimitiveData().Data[static_cast<int32>(Part.Region) + 1], 1.0f);
             TestFalse(TEXT("完整骨架可继续用于蒙皮和布娃娃"), Mesh->IsBoneHiddenByName(Part.Bone));
         }
         TArray<USkeletalMeshComponent*> Wounds;
         Actor->GetComponents(Wounds);
         TestEqual(TEXT("五个断口共用一个蒙皮载体"), Wounds.Num(), 2);
-        Severing->ApplyWoundFacts(Health, *Definition, Hit, 17u, true);
+        Severing->ApplyWoundFacts(Health, *Definition, Hit, FVector::ZeroVector, 17u, true);
         Wounds.Reset();
         Actor->GetComponents(Wounds);
         TestEqual(TEXT("同一快照不增加载体"), Wounds.Num(), 2);
         Severing->ResetPresentation();
-        Severing->ApplyWoundFacts(FBBBMonsterHealthFragment(), *Definition, Hit, 29u, true);
+        Severing->ApplyWoundFacts(FBBBMonsterHealthFragment(), *Definition, Hit, FVector::ZeroVector, 29u, true);
         Wounds.Reset();
         Actor->GetComponents(Wounds);
         TestEqual(TEXT("新一代完好实例复用唯一伤口载体"), Wounds.Num(), 2);
@@ -426,7 +576,7 @@ bool FBBBMonsterGibPoolTest::RunTest(const FString&)
     }
     TestFalse(TEXT("普通隔离控制器不是本机观察者"), Controller->IsLocalController());
     TestFalse(TEXT("没有本机观察者不分配世界部件"), Pool->Emit(*Mesh, *Part.DetachedMesh,
-        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, nullptr));
+        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
     TestEqual(TEXT("没有本机观察者不扩大池容量"), Pool->GetAllocatedCount(), 0);
     Controller->SetAsLocalPlayerController();
     World->AddController(Controller);
@@ -439,11 +589,11 @@ bool FBBBMonsterGibPoolTest::RunTest(const FString&)
     for (int32 Index = 0; Index < 32; ++Index)
     {
         TestTrue(TEXT("模拟预算内可分配世界部件"), Pool->Emit(*Mesh, *Part.DetachedMesh,
-            *Part.PoseMesh, Part.Bone, FVector::ForwardVector, nullptr));
+            *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
     }
     TestEqual(TEXT("模拟碎片严格限制三十二个"), Pool->GetSimulatingCount(), 32);
     TestFalse(TEXT("超过模拟预算不额外分配组件"), Pool->Emit(*Mesh, *Part.DetachedMesh,
-        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, nullptr));
+        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
     TestEqual(TEXT("预算溢出不扩大池容量"), Pool->GetAllocatedCount(), 32);
     int32 CapturedPieces = 0;
     for (TObjectIterator<UPoseableMeshComponent> It; It; ++It)
@@ -462,10 +612,83 @@ bool FBBBMonsterGibPoolTest::RunTest(const FString&)
     TestEqual(TEXT("寿命结束停止全部模拟"), Pool->GetSimulatingCount(), 0);
     TestEqual(TEXT("寿命结束不留下可见静止碎片"), Pool->GetSettledCount(), 0);
     TestTrue(TEXT("寿命结束后复用既有槽位"), Pool->Emit(*Mesh, *Part.DetachedMesh,
-        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, nullptr));
+        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
     TestEqual(TEXT("复用不追加槽位"), Pool->GetAllocatedCount(), 32);
     Actor->Destroy();
     TestEqual(TEXT("来源销毁不销毁世界碎片"), Pool->GetSimulatingCount(), 1);
+    return true;
+}
+
+/** 验证正式男女五种碎肢的真实物理飞行与落地 */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterGibFlightTest, "UBBB.Mass.ZombieGibFlight",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBMonsterGibFlightTest::RunTest(const FString&)
+{
+    FEditorScriptExecutionGuard ScriptGuard;
+    const auto Initialization = UWorld::InitializationValues().AllowAudioPlayback(false)
+        .CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false).ShouldSimulatePhysics(true);
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true,
+        ERHIFeatureLevel::Num, &Initialization);
+    if (!TestNotNull(TEXT("碎肢真实物理世界"), World))
+    {
+        return false;
+    }
+    GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+    bool bWorldTransferred = false;
+    ON_SCOPE_EXIT
+    {
+        if (!bWorldTransferred)
+        {
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(false);
+            World->GetOutermost()->SetDirtyFlag(false);
+        }
+    };
+    auto* Controller = World->SpawnActor<APlayerController>();
+    Controller->SetAsLocalPlayerController();
+    World->AddController(Controller);
+    auto* FloorActor = World->SpawnActor<AActor>();
+    auto* Floor = NewObject<UBoxComponent>(FloorActor);
+    FloorActor->SetRootComponent(Floor);
+    Floor->SetBoxExtent(FVector(8000.0f, 8000.0f, 10.0f));
+    Floor->SetCollisionProfileName(TEXT("BlockAll"));
+    Floor->RegisterComponent();
+    FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -10.0f));
+    World->InitializeActorsForPlay(FURL());
+    World->SetBegunPlay(true);
+    auto* Pool = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>();
+    const TCHAR* Names[] = {TEXT("Connor"), TEXT("Alice")};
+    for (int32 Index = 0; Index < 2; ++Index)
+    {
+        const FString Root = FString::Printf(TEXT("/Game/_Project/System/Mass/Monster/Zombie/%s/Variants/%s/"),
+            Index == 0 ? TEXT("Male") : TEXT("Female"), Names[Index]);
+        UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
+            *(Root + FString::Printf(TEXT("BP_BBBZombie%sPresentation.BP_BBBZombie%sPresentation_C"), Names[Index], Names[Index])));
+        auto* Definition = LoadObject<UBBBMonsterDefinition>(nullptr,
+            *(Root + FString::Printf(TEXT("DA_BBBZombie%sDefinition.DA_BBBZombie%sDefinition"), Names[Index], Names[Index])));
+        if (!TestNotNull(TEXT("真实飞行正式载体"), Class) || !TestNotNull(TEXT("真实飞行正式配置"), Definition))
+        {
+            return false;
+        }
+        FAssetCompilingManager::Get().FinishAllCompilation();
+        auto* Actor = World->SpawnActor<ABBBMonsterPresentationActor>(Class,
+            FVector(Index == 0 ? -250.0f : 250.0f, 0.0f, 400.0f), FRotator::ZeroRotator);
+        auto* Mesh = Actor->GetMonsterMesh();
+        Actor->SetActorHiddenInGame(false);
+        Mesh->SetHiddenInGame(false);
+        Mesh->SetForcedLOD(1);
+        Mesh->UpdateLODStatus();
+        Mesh->SetLastRenderTime(World->GetTimeSeconds());
+        for (const auto& Part : Definition->SeveredParts)
+        {
+            TestTrue(TEXT("正式部件成功开始真实飞行"), Pool->Emit(*Mesh, *Part.DetachedMesh,
+                *Part.PoseMesh, Part.Bone, FVector::UpVector, FVector(0.0f, 180.0f, 0.0f), 17u + Index, nullptr));
+        }
+        Actor->Destroy();
+    }
+    bWorldTransferred = true;
+    ADD_LATENT_AUTOMATION_COMMAND(FBBBMonsterGibFlightCommand(this, World));
     return true;
 }
 
@@ -484,11 +707,15 @@ bool FBBBMonsterGibLandingTest::RunTest(const FString&)
         return false;
     }
     GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+    bool bWorldTransferred = false;
     ON_SCOPE_EXIT
     {
-        GEngine->DestroyWorldContext(World);
-        World->DestroyWorld(false);
-        World->GetOutermost()->SetDirtyFlag(false);
+        if (!bWorldTransferred)
+        {
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(false);
+            World->GetOutermost()->SetDirtyFlag(false);
+        }
     };
     const FString Root = TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/Variants/Connor/");
     UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
@@ -539,14 +766,15 @@ bool FBBBMonsterGibLandingTest::RunTest(const FString&)
     for (int32 Index = 0; Index < 32; ++Index)
     {
         TestTrue(TEXT("地面验收生成预算内碎片"), Pool->Emit(*Mesh, *Part.DetachedMesh,
-            *Part.PoseMesh, Part.Bone, FVector::ForwardVector, nullptr));
+            *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
     }
     bool bMoved = false;
     UStaticMeshComponent* UnsupportedPiece = nullptr;
     for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
     {
-        if (It->GetOuter() == World && It->GetStaticMesh() == Part.DetachedMesh)
+        if (It->GetWorld() == World && It->GetStaticMesh() == Part.DetachedMesh)
         {
+            FloorActor->SetActorLocation(It->Bounds.Origin - FVector::UpVector * (It->Bounds.BoxExtent.Z + 5.0f));
             It->SetWorldLocation(It->GetComponentLocation() + FVector(10000.0f, 0.0f, 0.0f), false, nullptr, ETeleportType::TeleportPhysics);
             UnsupportedPiece = *It;
             bMoved = true;
@@ -569,14 +797,11 @@ bool FBBBMonsterGibLandingTest::RunTest(const FString&)
             Pool->GetSimulatingCount(), UnsupportedPiece->IsSimulatingPhysics() ? 1 : 0);
     }
     Pool->AdvancePresentation(World->GetTimeSeconds() + 6.0f);
-    TestEqual(TEXT("落定与无支撑回收后无模拟碎片"), Pool->GetSimulatingCount(), 0);
-    TestEqual(TEXT("只保留三十一个有支撑碎片"), Pool->GetSettledCount(), 31);
+    TestEqual(TEXT("超过五秒的运动部件不能被强行冻结"), Pool->GetSimulatingCount(), 32);
+    TestEqual(TEXT("运动部件不能计作落地残留"), Pool->GetSettledCount(), 0);
     TestEqual(TEXT("地面约束不销毁池槽位"), Pool->GetAllocatedCount(), 32);
-    TestTrue(TEXT("无支撑释放槽位可立即复用"), Pool->Emit(*Mesh, *Part.DetachedMesh,
-        *Part.PoseMesh, Part.Bone, FVector::ForwardVector, nullptr));
-    TestEqual(TEXT("再次生成不扩大池容量"), Pool->GetAllocatedCount(), 32);
-    Actor->Destroy();
-    TestEqual(TEXT("来源销毁不清除落地残留"), Pool->GetSettledCount(), 31);
+    bWorldTransferred = true;
+    ADD_LATENT_AUTOMATION_COMMAND(FBBBMonsterGibSettlementCommand(this, World, Actor, Definition));
     return true;
 }
 

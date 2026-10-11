@@ -9,6 +9,10 @@ class USkeletalMeshComponent;
 class USkeletalMesh;
 class UStaticMesh;
 class UBBBMonsterSoundPresentationDefinition;
+class UPrimitiveComponent;
+class UPhysicalMaterial;
+class AActor;
+struct FHitResult;
 
 /** 世界共享的断肢表现池 不持有伤害事实且不创建独立更新 */
 UCLASS()
@@ -23,11 +27,13 @@ public:
      * @param PosePart	对应外观的精简蒙皮部件
      * @param Bone	断开骨骼
      * @param Direction	当前有效受击方向
+     * @param Velocity	断开时的 Mass 移动速度
+     * @param Seed	本次断开表现的稳定种子
      * @param Sounds	当前外观落地声配置 槽位释放后不保留
      * @return 是否分配到表现预算
      */
     bool Emit(USkeletalMeshComponent& Source, UStaticMesh& Part, USkeletalMesh& PosePart, FName Bone,
-        const FVector& Direction, UBBBMonsterSoundPresentationDefinition* Sounds);
+        const FVector& Direction, const FVector& Velocity, uint32 Seed, UBBBMonsterSoundPresentationDefinition* Sounds);
 
     /**
      * @param Now	当前世界时间
@@ -40,6 +46,9 @@ public:
 
     /** @return 当前静止残留数量 */
     int32 GetSettledCount() const;
+
+    /** @return 活动槽位中已发生真实地面接触的数量 */
+    int32 GetLandedCount() const;
 
     /** @return 已分配且可复用的组件槽位总数 */
     int32 GetAllocatedCount() const { return Pieces.Num(); }
@@ -60,6 +69,13 @@ private:
     UPROPERTY(Transient)
     TArray<TObjectPtr<UBBBMonsterSoundPresentationDefinition>> SoundConfigs;
 
+    /** 碎肢共享的地面摩擦与轻微回弹材质 */
+    UPROPERTY(Transient)
+    TObjectPtr<UPhysicalMaterial> ContactMaterial;
+
+    /** 每个活动槽位是否已经发生首次地面接触 */
+    TArray<bool> LandingPlayed;
+
     /** 当前组件的分配时间 负数表示空闲槽位 */
     TArray<float> BornAt;
 
@@ -77,4 +93,16 @@ private:
 
     /** @return 按不可见 距离和年龄选择可回收的静止槽位 没有则负一 */
     int32 FindSettledRecycleSlot() const;
+
+    /**
+     * @param HitComponent	发生真实物理接触的池内刚体
+     * @param OtherActor	接触的环境载体
+     * @param OtherComponent	接触的环境组件
+     * @param NormalImpulse	本次碰撞冲量
+     * @param Hit	当前物理接触位置与法线
+     * @return 仅在首次有效落地播放声音 无返回值
+     */
+    UFUNCTION()
+    void OnPieceHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent,
+        FVector NormalImpulse, const FHitResult& Hit);
 };

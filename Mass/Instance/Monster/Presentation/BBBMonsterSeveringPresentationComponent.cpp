@@ -18,7 +18,8 @@ UBBBMonsterSeveringPresentationComponent::UBBBMonsterSeveringPresentationCompone
 }
 
 void UBBBMonsterSeveringPresentationComponent::ApplyWoundFacts(const FBBBMonsterHealthFragment& Health,
-    const UBBBMonsterDefinition& Definition, const FBBBMonsterHitReactionFragment& Hit, const uint32 Seed, const bool bNewActor)
+    const UBBBMonsterDefinition& Definition, const FBBBMonsterHitReactionFragment& Hit, const FVector& Velocity,
+    const uint32 Seed, const bool bNewActor)
 {
     auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
     if (!Mesh)
@@ -132,7 +133,8 @@ void UBBBMonsterSeveringPresentationComponent::ApplyWoundFacts(const FBBBMonster
         if (!bNewActor && Hit.Age <= 0.25f)
         {
             GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->Emit(
-                *Mesh, *Part.DetachedMesh, *Part.PoseMesh, Part.Bone, Hit.Direction, Definition.SoundPresentation);
+                *Mesh, *Part.DetachedMesh, *Part.PoseMesh, Part.Bone, Hit.Direction, Velocity,
+                Seed ^ Hit.Serial, Definition.SoundPresentation);
             FBBBMonsterBloodImpact Burst;
             Burst.Position = Mesh->GetSocketLocation(Part.Bone);
             Burst.Direction = Hit.Direction;

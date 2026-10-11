@@ -197,6 +197,8 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 MonsterActor->GetMonsterSevering()->ApplyWoundFacts(
                     ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index], *Definition,
                     ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
+                    PresentationState.State == EBBBMonsterBehavior::Dead
+                        ? ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity : Velocities[Index].Value,
                     ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed, bNewActor);
             }
             Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);

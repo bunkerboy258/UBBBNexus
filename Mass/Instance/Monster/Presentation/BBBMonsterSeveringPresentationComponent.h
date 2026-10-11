@@ -25,12 +25,13 @@ public:
      * @param Health	当前贡献推导的六部位受损程度与损毁结果
      * @param Definition	当前外观的共享伤口资源
      * @param Hit	最近有效命中 过期时不生成一次性表现
+     * @param Velocity	本次断开时的实际移动速度
      * @param Seed	本代稳定出生种子
      * @param bNewActor	是否刚还原当前快照 新载体不重播断肢过程
      * @return 无返回值
      */
     void ApplyWoundFacts(const FBBBMonsterHealthFragment& Health, const UBBBMonsterDefinition& Definition,
-        const FBBBMonsterHitReactionFragment& Hit, uint32 Seed, bool bNewActor);
+        const FBBBMonsterHitReactionFragment& Hit, const FVector& Velocity, uint32 Seed, bool bNewActor);
 
     /** @return 池化复用前清除封口和隐藏骨骼 无返回值 */
     void ResetPresentation();
