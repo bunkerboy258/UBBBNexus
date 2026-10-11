@@ -25,6 +25,10 @@ struct FBBBRifleHandlingSettings
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "方向后坐力", meta = (ClampMin = "0.01", DisplayName = "枪口冲击回零速度", ToolTip = "由角色维护 数值越大开火产生的额外角度越快恢复 不影响镜头"))
     float AimImpulseRecoverySpeed = 14.0f;
 
+    /** 最近一次枪口冲击后等待回正的时间 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "方向后坐力", meta = (ClampMin = "0.0", DisplayName = "枪口回正延迟 秒", ToolTip = "每次冲击刷新等待时间 连续冲击期间不回零 0 表示立即回正 不影响镜头"))
+    float AimImpulseRecoveryDelaySeconds = 0.0f;
+
     /** 向后受力动画的混合强度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "向后后坐力", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "向后震动 Alpha", ToolTip = "缩放角色向后受力动画 1 为参考动画完整幅度 每次开火从头播放"))
     float BackwardRecoilAlpha = 0.45f;

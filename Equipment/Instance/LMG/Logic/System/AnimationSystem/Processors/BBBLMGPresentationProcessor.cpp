@@ -122,11 +122,13 @@ void FBBBLMGPresentationProcessor::PlayFire(const FBBBLMGUpdateContext &Context)
     {
         Context.Character.SubmitInput(FBBBAimImpulseAuthorityFactPacket{
             HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
-            Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed});
+            Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed,
+            Hip.AimImpulseRecoveryDelaySeconds, Aim.AimImpulseRecoveryDelaySeconds});
         return;
     }
 
     Context.Character.SubmitInput(FBBBAimImpulseLocalControlPacket{
         HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
-        Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed});
+        Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed,
+        Hip.AimImpulseRecoveryDelaySeconds, Aim.AimImpulseRecoveryDelaySeconds});
 }

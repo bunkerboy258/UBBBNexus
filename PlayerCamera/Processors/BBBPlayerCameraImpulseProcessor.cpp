@@ -31,6 +31,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         if (CameraSystem.RecoilSource.Get() != Source)
         {
             CameraSystem.RecoilSource = Source;
+            CameraSystem.RecoveryDelayRemainingSeconds = 0.0f;
             CameraSystem.LastFireSequence = FireSequence;
         }
 
@@ -39,6 +40,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         {
             CameraSystem.LastFireSequence = FireSequence;
             FBBBPlayerCameraInput Shot;
+            CameraSystem.RecoveryDelayRemainingSeconds = Settings.RecoveryDelaySeconds;
             Shot.Impulse = Settings.ImpulseDegrees + FVector(
                 FMath::FRandRange(-Settings.RandomDegrees.X, Settings.RandomDegrees.X),
                 FMath::FRandRange(-Settings.RandomDegrees.Y, Settings.RandomDegrees.Y),
@@ -50,6 +52,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     if (!bHasSource || !Source)
     {
         CameraSystem.RecoilSource.Reset();
+        CameraSystem.RecoveryDelayRemainingSeconds = 0.0f;
         CameraSystem.LastFireSequence = 0;
         if (CameraSystem.Pending.IsSet() || CameraSystem.RecoilOffset.IsNearlyZero(0.001))
         {
@@ -62,6 +65,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     const float RecoverySpeed = CameraSystem.ActiveRecoilSettings.RecoverySpeed;
     if (!ensureMsgf(
         FMath::IsFinite(RecoverySpeed) && RecoverySpeed > 0.0f
+            && FMath::IsFinite(CameraSystem.RecoveryDelayRemainingSeconds) && CameraSystem.RecoveryDelayRemainingSeconds >= 0.0f
             && !Limit.ContainsNaN() && Limit.X > 0.0f && Limit.Y > 0.0f && Limit.Z > 0.0f,
         TEXT("相机冲击恢复速度或角度限制无效")))
     {
@@ -69,7 +73,10 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         return;
     }
 
-    CameraSystem.RecoilOffset *= FMath::Exp(-RecoverySpeed * FMath::Max(DeltaSeconds, 0.0f));
+    const float FrameSeconds = FMath::Max(DeltaSeconds, 0.0f);
+    const float RecoverySeconds = FMath::Max(FrameSeconds - CameraSystem.RecoveryDelayRemainingSeconds, 0.0f);
+    CameraSystem.RecoveryDelayRemainingSeconds = FMath::Max(CameraSystem.RecoveryDelayRemainingSeconds - FrameSeconds, 0.0f);
+    CameraSystem.RecoilOffset *= FMath::Exp(-RecoverySpeed * RecoverySeconds);
     if (CameraSystem.Pending.IsSet())
     {
         CameraSystem.RecoilOffset += CameraSystem.Pending->Impulse;

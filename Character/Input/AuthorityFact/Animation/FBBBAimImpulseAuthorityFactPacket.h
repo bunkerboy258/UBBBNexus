@@ -21,13 +21,21 @@ struct FBBBAimImpulseAuthorityFactPacket final
     /** 瞄准冲击回零速度 */
     float AimingRecoverySpeed = 14.0f;
 
+    /** 腰射冲击后等待回正的秒数 */
+    float RecoveryDelaySeconds = 0.0f;
+
+    /** 瞄准冲击后等待回正的秒数 */
+    float AimingRecoveryDelaySeconds = 0.0f;
+
     /** @return 输入角度是否有限 */
     bool IsValid() const
     {
         return !ImpulseDegrees.ContainsNaN() && !AimingImpulseDegrees.ContainsNaN()
             && FMath::IsFinite(AirborneScale) && AirborneScale >= 0.0f
             && FMath::IsFinite(RecoverySpeed) && RecoverySpeed > 0.0f
-            && FMath::IsFinite(AimingRecoverySpeed) && AimingRecoverySpeed > 0.0f;
+            && FMath::IsFinite(AimingRecoverySpeed) && AimingRecoverySpeed > 0.0f
+            && FMath::IsFinite(RecoveryDelaySeconds) && RecoveryDelaySeconds >= 0.0f
+            && FMath::IsFinite(AimingRecoveryDelaySeconds) && AimingRecoveryDelaySeconds >= 0.0f;
     }
 
     /**
@@ -49,10 +57,12 @@ struct FBBBAimImpulseAuthorityFactPacket final
     {
         FVector2D Impulse = ImpulseDegrees;
         Context.AimImpulse.RecoverySpeed = RecoverySpeed;
+        Context.AimImpulse.RecoveryDelayRemainingSeconds = RecoveryDelaySeconds;
         if (Context.Aim.bIsAiming)
         {
             Impulse = AimingImpulseDegrees;
             Context.AimImpulse.RecoverySpeed = AimingRecoverySpeed;
+            Context.AimImpulse.RecoveryDelayRemainingSeconds = AimingRecoveryDelaySeconds;
         }
 
         if (Context.AnimationFacts.MovementMode == MOVE_Falling)

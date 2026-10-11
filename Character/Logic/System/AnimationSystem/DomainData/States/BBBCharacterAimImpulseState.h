@@ -14,6 +14,9 @@ struct FBBBCharacterAimImpulseState final
     /** 最近一次输入采用的角色方向冲击恢复速度 */
     float RecoverySpeed = 14.0f;
 
+    /** 当前冲击开始回正前剩余的秒数 */
+    float RecoveryDelayRemainingSeconds = 0.0f;
+
 private:
     friend struct FBBBCharacterAnimationDomainState;
 
