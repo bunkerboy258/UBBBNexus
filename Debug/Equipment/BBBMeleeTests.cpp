@@ -19,6 +19,7 @@
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "UObject/UnrealType.h"
+#include "UObject/Package.h"
 
 /** 隔离物理世界验证通知窗口与攻击生命周期 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMeleeWindowTest, "BBB.Equipment.Melee.WindowLifecycle",
@@ -41,7 +42,7 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
     };
     auto *Character = World->SpawnActor<ABBBCharacter>();
     const auto *Definition = LoadObject<UBBBMeleeDefinition>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Melee/Bat_01/Config/DA_Bat_01.DA_Bat_01"));
+        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Melee/Bat_01/DA_Bat_01.DA_Bat_01"));
     UClass *EquipmentClass = LoadClass<ABBBMeleeEquipment>(nullptr,
         TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Melee/Bat_01/BP_Bat_01.BP_Bat_01_C"));
     if (!TestNotNull(TEXT("首个近战装备配置"), Definition) || !TestNotNull(TEXT("实际近战装备蓝图"), EquipmentClass))
