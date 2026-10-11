@@ -13,6 +13,8 @@
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 
 UBBBPlayerInputSystem::UBBBPlayerInputSystem()
 {
@@ -114,7 +116,7 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
     {
         return;
     }
-    if (Slot < 0 || Slot >= Character->RuntimeData.Item.ReadItemBarState().QuickAccessSlotCount)
+    if (Slot < 0 || Slot >= Character->RuntimeData.Item.ReadCharacterItemBarState().QuickAccessSlotCount)
     {
         return;
     }
@@ -307,6 +309,53 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
     }
 }
 
+FVector UBBBPlayerInputSystem::ResolveAimTargetWorld(const FVector& ViewLocation, const FVector& ViewDirection) const
+{
+    const FVector Direction = ViewDirection.GetSafeNormal();
+    const float Distance = FMath::Max(AimTargetDistance, 1.0f);
+    const FVector End = ViewLocation + Direction * Distance;
+    UWorld* World = GetWorld();
+    if (!World || Direction.IsNearlyZero())
+    {
+        return End;
+    }
+
+    FVector Start = ViewLocation;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBPlayerAimTarget), true);
+    Params.AddIgnoredActor(GetOwner());
+    Params.AddIgnoredActor(Camera);
+    if (ABBBCharacter* Target = Character.Get())
+    {
+        Params.AddIgnoredActor(Target);
+        Params.AddIgnoredActor(Target->GetActiveEquipment());
+        // 第三人称相机后退段不生成角色身后的瞄准目标
+        const double ForwardDistance = FMath::Clamp(
+            FVector::DotProduct(Target->GetActorLocation() - ViewLocation, Direction), 0.0, Distance - 1.0);
+        Start += Direction * ForwardDistance;
+    }
+
+    FHitResult WorldHit;
+    const bool bWorldHit = World->LineTraceSingleByChannel(WorldHit, Start, End, ECC_Visibility, Params);
+    FVector AimTarget = bWorldHit ? WorldHit.ImpactPoint : End;
+    if (UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>())
+    {
+        FMassEntityHandle HitEntity;
+        float HitTime = 1.0f;
+        FVector HitPosition;
+        FVector HitNormal;
+        EPhysicalSurface HitSurface;
+        uint8 HitPart = 0;
+        // 场景遮挡已裁短查询范围 不扫描墙后的实体
+        if (Mass->TraceEntities(Start, AimTarget, 0.0f, {}, HitEntity, HitTime, HitPosition, HitNormal, HitSurface, HitPart))
+        {
+            AimTarget = HitPosition;
+        }
+    }
+
+    // 只向角色提交当前目标 枪口姿态负责收敛 子弹仍从实际枪口正前方发射
+    return AimTarget;
+}
+
 void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTick TickType,
     FActorComponentTickFunction *ThisTickFunction)
 {
@@ -334,7 +383,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     FVector ViewLocation;
     FRotator ViewRotation;
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
-    AimState.AimTargetWorld = ViewLocation + Facing.Vector() * FMath::Max(AimTargetDistance, 1.0f);
+    AimState.AimTargetWorld = ResolveAimTargetWorld(ViewLocation, Facing.Vector());
     Character->SubmitInput(MovementState);
     Character->SubmitInput(AimState);
 

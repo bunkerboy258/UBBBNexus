@@ -86,7 +86,14 @@ namespace
         Sphere(BonePoint(TEXT("pelvis"), FVector(0, 0, -25)), 23.0f, EBBBMonsterHitRegion::Torso);
         Sphere(BonePoint(TEXT("spine_01"), FVector(0, 0, 0)), 25.0f, EBBBMonsterHitRegion::Torso);
         Sphere(BonePoint(TEXT("spine_03"), FVector(0, 0, 30)), 24.0f, EBBBMonsterHitRegion::Torso);
-        Sphere(BonePoint(TEXT("head"), FVector(0, 0, 70)), 14.0f, EBBBMonsterHitRegion::Head);
+        // 头骨原点位于颈部附近 两个同半径球沿头骨轴覆盖十种外观的头部高度
+        const FVector HeadBase = BonePoint(TEXT("head"), FVector(0, 0, 70));
+        const FVector HeadAxis = Mesh && Mesh->GetBoneIndex(TEXT("head")) != INDEX_NONE
+            ? Transform.TransformVector(Mesh->GetRelativeTransform().TransformVector(
+                Mesh->GetSocketTransform(TEXT("head"), RTS_Component).TransformVector(FVector::UpVector)))
+            : Transform.TransformVector(FMath::Lerp(FVector::UpVector, FVector::ForwardVector, CrawlProgress)) * Scale;
+        Sphere(HeadBase + HeadAxis * 6.0f, 14.0f, EBBBMonsterHitRegion::Head);
+        Sphere(HeadBase + HeadAxis * 12.0f, 14.0f, EBBBMonsterHitRegion::Head);
         Limb(TEXT("upperarm_l"), TEXT("lowerarm_l"), FVector(0, -30, 30), FVector(0, -48, 10), 10.0f, EBBBMonsterHitRegion::LeftArm);
         Limb(TEXT("lowerarm_l"), TEXT("hand_l"), FVector(0, -48, 10), FVector(0, -55, -5), 9.0f, EBBBMonsterHitRegion::LeftArm);
         Limb(TEXT("upperarm_r"), TEXT("lowerarm_r"), FVector(0, 30, 30), FVector(0, 48, 10), 10.0f, EBBBMonsterHitRegion::RightArm);

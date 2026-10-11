@@ -38,6 +38,14 @@ public:
      */
     void SetInputEnabled(bool bEnabled);
 
+    /**
+     * 选择准星射线最近的场景或实体接触点 仅用于角色的实体瞄准姿态
+     * @param ViewLocation	摄像机世界位置
+     * @param ViewDirection	准星世界方向
+     * @return 当前瞄准点 未命中时返回射线终点
+     */
+    FVector ResolveAimTargetWorld(const FVector& ViewLocation, const FVector& ViewDirection) const;
+
     /** @return 玩家玩法输入是否启用 */
     bool IsInputEnabled() const
     {

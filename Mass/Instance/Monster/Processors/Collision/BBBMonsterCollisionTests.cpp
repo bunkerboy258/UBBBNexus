@@ -9,6 +9,10 @@
 #include "UObject/Package.h"
 #include "MassEntitySubsystem.h"
 #include "MassCommonFragments.h"
+#include "MassActorSubsystem.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
+#include "Engine/StaticMesh.h"
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
@@ -19,6 +23,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 
 /** 验证粗筛仅选择候选 精确查询始终读取当前实体的六部位 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterCollisionTest, "UBBB.Mass.Monster.Collision",
@@ -118,6 +123,63 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
     TestEqual(TEXT("垂直命中仍返回准确头部"), Part, static_cast<uint8>(EBBBMonsterHitRegion::Head));
     Mass->OverlapEntities(FVector(0, 0, 90), 80.0f, Results);
     TestEqual(TEXT("同平面不同高度的实体不扩大爆炸范围"), Results.Num(), 1);
+
+    const FString Names[] = {TEXT("Michael"), TEXT("Morita"), TEXT("Connor"), TEXT("Jiho"),
+        TEXT("Renzo"), TEXT("Sakurada"), TEXT("Alice"), TEXT("Kiyo"), TEXT("Setsuko"), TEXT("Yuina")};
+    auto* Actor = World->SpawnActor<ABBBMonsterPresentationActor>();
+    if (!TestNotNull(TEXT("头部轮廓回归使用真实表现网格"), Actor))
+    {
+        return false;
+    }
+    Manager.AddFragmentToEntity(Replacement, FMassActorFragment::StaticStruct());
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Replacement).SetNoHandleMapUpdate(Replacement, Actor, true);
+    auto* Mesh = Actor->GetMonsterMesh();
+    for (int32 Index = 0; Index < UE_ARRAY_COUNT(Names); ++Index)
+    {
+        const FString Path = FString::Printf(TEXT("/Game/_Project/System/Mass/Monster/Zombie/%s/Variants/%s/SKM_BBBZombie%s"),
+            Index < 6 ? TEXT("Male") : TEXT("Female"), *Names[Index], *Names[Index]);
+        auto* Asset = LoadObject<USkeletalMesh>(nullptr, *Path);
+        if (!TestNotNull(*Names[Index], Asset))
+        {
+            continue;
+        }
+        const FString PartPath = FString::Printf(TEXT("/Game/_Project/System/Mass/Monster/Zombie/Shared/Severing/%s/SM_SKM_BBBZombie%s_head_Part"),
+            *Names[Index], *Names[Index]);
+        const auto* HeadPart = LoadObject<UStaticMesh>(nullptr, *PartPath);
+        if (!TestNotNull(TEXT("使用正式头部几何范围而非碰撞球心自证"), HeadPart))
+        {
+            continue;
+        }
+        const FBox Bounds = HeadPart->GetBoundingBox();
+        const FVector SkullCenter = Bounds.GetCenter();
+        const FVector Crown(SkullCenter.X, SkullCenter.Y, Bounds.Max.Z - 1.0);
+        Mesh->SetSkeletalMesh(Asset);
+        Mesh->SetRelativeLocation(FVector(0, 0, -90));
+        Mesh->SetRelativeRotation(FRotator(0, -90, 0));
+        for (const FRotator Rotation : {FRotator::ZeroRotator, FRotator(0, 125, 0), FRotator(75, 30, 0)})
+        {
+            Actor->SetActorLocationAndRotation(FVector(45, 20, 90), Rotation);
+            Mesh->RefreshBoneTransforms();
+            auto& Logical = Manager.GetFragmentDataChecked<FTransformFragment>(Replacement).GetMutableTransform();
+            Logical.SetRotation(Rotation.Quaternion());
+            const FTransform Head = Mesh->GetSocketTransform(TEXT("head"), RTS_Component) * Mesh->GetRelativeTransform() * Logical;
+            const FVector Along = Head.TransformVectorNoScale(FVector(1, 0, 0));
+            for (const FVector& SkullPoint : {SkullCenter, Crown})
+            {
+                const FVector Center = Head.TransformPosition(SkullPoint);
+                TestTrue(*FString::Printf(TEXT("%s 转向及卧倒头部轮廓可命中"), *Names[Index]),
+                    Trace(Center - Along * 70.0f, Center + Along * 70.0f) && HitEntity == Replacement);
+                TestEqual(TEXT("头部姿态命中不受表现位置追靠影响"), Part, static_cast<uint8>(EBBBMonsterHitRegion::Head));
+            }
+            const FVector Outside = Head.TransformPosition(FVector(0, 0, 30));
+            FBBBMassCollisionBody HeadBody;
+            TestFalse(TEXT("头顶外侧不因扩大头球误命中"), UBBBMonsterCollisionProcessor::TraceCompound(*World,
+                Replacement, Outside - Along * 70.0f, Outside + Along * 70.0f, 0.0f, HeadBody, HitTime)
+                && HeadBody.Part == static_cast<uint8>(EBBBMonsterHitRegion::Head));
+        }
+    }
+    Manager.GetFragmentDataChecked<FMassActorFragment>(Replacement).ResetNoHandleMapUpdate();
+    Actor->Destroy();
     return true;
 }
 
