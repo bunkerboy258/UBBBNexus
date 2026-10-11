@@ -248,7 +248,7 @@ void UBBBPlayerItemView::RefreshItems()
                                 .Slot(bGearPage ? Start + Position : Position)
                                 .PositionLabel(bGearPage ? FText::FromString(WearNames[Position].ToString().ToUpper()) : FText::GetEmpty())
                                 .Width(bGearPage ? 162.0f : 340.0f)
-                                .Height(bGearPage ? 150.0f : 126.0f)];
+                                .Height(126.0f)];
     }
     EquipmentSlots->AddSlot().AutoHeight()[Right];
     int32 Revision = 0;

@@ -15,7 +15,8 @@ struct FBBBCharacterItemConfig final
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "穿戴物品位置"))
     TArray<FName> WearSlots = {
         TEXT("Helmet"), TEXT("Body"), TEXT("Vest"), TEXT("Boots"),
-        TEXT("Backpack"), TEXT("Gloves"), TEXT("Attachments"), TEXT("Flag")};
+        TEXT("Backpack"), TEXT("Gloves"), TEXT("Attachments"), TEXT("Flag"),
+        TEXT("Legs"), TEXT("Belt")};
 
     /** 快捷格子之后存放武器与穿戴品的普通格子数量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0", DisplayName = "普通装备格子数量"))

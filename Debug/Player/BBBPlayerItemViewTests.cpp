@@ -60,7 +60,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_02"));
     Character->Tick(1.0f / 60.0f);
-    if (!TestTrue(TEXT("角色生命周期初始化真实背包"), Controller->GetItemSlotCount() == 63
+    if (!TestTrue(TEXT("角色生命周期初始化真实背包"), Controller->GetItemSlotCount() == 65
         && Controller->GetItemDisplayData(0).bOccupied && Controller->GetItemDisplayData(1).bOccupied))
     {
         return false;

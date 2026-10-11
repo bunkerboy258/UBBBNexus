@@ -62,7 +62,7 @@ bool FBBBCharacterItemRegionsTest::RunTest(const FString &Parameters)
     Step();
     const auto &Inventory = Character->RuntimeData.Item.ReadCharacterItemInventoryState();
     const auto &Operations = Character->RuntimeData.Item.ReadCharacterItemOperationState();
-    TestEqual(TEXT("五快捷 二十装备 三十杂物 八穿戴"), Inventory.Slots.Num(), 63);
+    TestEqual(TEXT("五快捷 二十装备 三十杂物 十穿戴"), Inventory.Slots.Num(), 65);
     for (int32 Index = 0; Index < 26; ++Index)
     {
         Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("Helmet")}});
