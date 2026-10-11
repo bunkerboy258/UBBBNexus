@@ -122,13 +122,11 @@ void FBBBSniperPresentationProcessor::PlayFire(const FBBBSniperUpdateContext &Co
     {
         Context.Character.SubmitInput(FBBBAimImpulseAuthorityFactPacket{
             HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
-            Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed,
-            Hip.AimImpulseRecoveryDelaySeconds, Aim.AimImpulseRecoveryDelaySeconds});
+            Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed});
         return;
     }
 
     Context.Character.SubmitInput(FBBBAimImpulseLocalControlPacket{
         HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
-        Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed,
-        Hip.AimImpulseRecoveryDelaySeconds, Aim.AimImpulseRecoveryDelaySeconds});
+        Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed});
 }

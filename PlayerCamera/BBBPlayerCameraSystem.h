@@ -82,9 +82,6 @@ private:
     /** 当前相机三轴冲击偏移 */
     FVector RecoilOffset = FVector::ZeroVector;
 
-    /** 镜头冲击开始回正前剩余的秒数 */
-    float RecoveryDelayRemainingSeconds = 0.0f;
-
     /** 未读取到武器贡献时采用的相机基础参数 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|冲量", meta = (DisplayName = "默认相机后坐力", ToolTip = "无外部配置时使用的镜头冲击与恢复设置"))
     FBBBPlayerCameraRecoilSettings DefaultRecoilSettings;

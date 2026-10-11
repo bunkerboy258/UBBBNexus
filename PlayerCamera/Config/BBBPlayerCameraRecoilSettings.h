@@ -21,10 +21,6 @@ struct FBBBPlayerCameraRecoilSettings
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "相机后坐力", meta = (ClampMin = "0.01", DisplayName = "镜头回零速度", ToolTip = "由相机维护 数值越大镜头冲击越快恢复 与枪口目标跟随速度无关"))
     float RecoverySpeed = 10.0f;
 
-    /** 最近一次镜头冲击后等待回正的时间 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "相机后坐力", meta = (ClampMin = "0.0", DisplayName = "镜头回正延迟 秒", ToolTip = "每次开火刷新等待时间 连续开火期间不回零 0 表示立即回正 不改变枪口回正"))
-    float RecoveryDelaySeconds = 0.0f;
-
     /** 三轴累计冲击允许的最大绝对角度 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "相机后坐力", meta = (DisplayName = "镜头偏移上限", ToolTip = "X 上下 Y 左右 Z 倾斜 单位为度 每个分量必须大于零"))
     FVector LimitDegrees = FVector(5.0f, 3.0f, 2.0f);
