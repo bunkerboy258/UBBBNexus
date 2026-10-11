@@ -611,6 +611,9 @@ bool FBBBMonsterGibPoolTest::RunTest(const FString&)
     Pool->AdvancePresentation(World->GetTimeSeconds() + 35.1f);
     TestEqual(TEXT("寿命结束停止全部模拟"), Pool->GetSimulatingCount(), 0);
     TestEqual(TEXT("寿命结束不留下可见静止碎片"), Pool->GetSettledCount(), 0);
+    Mesh->SetForcedLOD(3);
+    Mesh->UpdateLODStatus();
+    TestEqual(TEXT("正式近距LOD2仍可生成碎肢"), Mesh->GetPredictedLODLevel(), 2);
     TestTrue(TEXT("寿命结束后复用既有槽位"), Pool->Emit(*Mesh, *Part.DetachedMesh,
         *Part.PoseMesh, Part.Bone, FVector::ForwardVector, FVector::ZeroVector, 17u, nullptr));
     TestEqual(TEXT("复用不追加槽位"), Pool->GetAllocatedCount(), 32);
@@ -677,8 +680,9 @@ bool FBBBMonsterGibFlightTest::RunTest(const FString&)
         auto* Mesh = Actor->GetMonsterMesh();
         Actor->SetActorHiddenInGame(false);
         Mesh->SetHiddenInGame(false);
-        Mesh->SetForcedLOD(1);
+        Mesh->SetForcedLOD(Index == 0 ? 3 : 1);
         Mesh->UpdateLODStatus();
+        TestEqual(TEXT("男女飞行覆盖正式LOD2与LOD0"), Mesh->GetPredictedLODLevel(), Index == 0 ? 2 : 0);
         Mesh->SetLastRenderTime(World->GetTimeSeconds());
         for (const auto& Part : Definition->SeveredParts)
         {

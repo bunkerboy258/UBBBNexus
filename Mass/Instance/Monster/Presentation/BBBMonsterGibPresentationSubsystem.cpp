@@ -107,7 +107,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
     UWorld* World = GetWorld();
     if (!World || Direction.ContainsNaN() || Velocity.ContainsNaN() || Part.IsCompiling()
         || World->GetNetMode() == NM_DedicatedServer || !Source.WasRecentlyRendered(0.2f)
-        || Source.GetPredictedLODLevel() > 1 || Source.bHiddenInGame || (Source.GetOwner() && Source.GetOwner()->IsHidden()))
+        || Source.GetPredictedLODLevel() > 2 || Source.bHiddenInGame || (Source.GetOwner() && Source.GetOwner()->IsHidden()))
     {
         return false;
     }
