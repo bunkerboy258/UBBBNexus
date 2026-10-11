@@ -40,10 +40,9 @@ void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
 
     const FTransform SocketTransform = MeshComp->GetSocketTransform(SocketName);
     const FTransform Transform = RelativeTransform * SocketTransform;
-    // 从持有角色读取移动速度 避免附着武器网格的缓存速度滞后于角色移动
+    // 只读取直接目标装备发布的移动速度 避免跨对象访问持有角色
     const AActor *Equipment = MeshComp->GetOwner();
-    const AActor *Holder = Equipment ? Equipment->GetOwner() : nullptr;
-    const FVector InheritedVelocity = IsValid(Holder) ? Holder->GetVelocity() : FVector::ZeroVector;
+    const FVector InheritedVelocity = IsValid(Equipment) ? Equipment->GetVelocity() : FVector::ZeroVector;
     const FVector WorldLinearVelocity = SocketTransform.TransformVectorNoScale(LinearVelocity) + InheritedVelocity;
     FActorSpawnParameters Parameters;
     Parameters.ObjectFlags |= RF_Transient;

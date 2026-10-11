@@ -60,6 +60,9 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
 
     
 public:
+    /** @return 角色当前移动的世界空间速度 单位为厘米每秒 */
+    FVector GetMovementVelocity() const;
+
     /** @return 当前角色已经成立的生命阶段 */
     UFUNCTION(BlueprintPure, Category = "BBB|生命", meta = (DisplayName = "当前生命阶段"))
     EBBBCharacterLifePhase GetLifePhase() const

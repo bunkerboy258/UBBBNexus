@@ -36,6 +36,9 @@ class ABBB_EVAC_API ABBBEquipment : public AActor
 public:
     ABBBEquipment();
 
+    /** @return 装备继承的世界空间移动速度 单位为厘米每秒 */
+    virtual FVector GetVelocity() const override;
+
     /** 装备开始运行时初始化自身 @return 无 */
     virtual void BeginPlay() override;
 

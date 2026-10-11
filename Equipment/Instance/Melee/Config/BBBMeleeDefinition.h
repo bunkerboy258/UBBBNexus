@@ -14,6 +14,10 @@ public:
         EquipmentType = EBBBEquipmentType::Melee;
     }
 
+    /** 角色装备本件近战武器时播放的蒙太奇 使用 UpperBody 槽位覆盖上一件装备的动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|近战|动画", meta = (DisplayName = "装备蒙太奇", ToolTip = "装备本件近战武器时贡献给角色的 UpperBody 动作 用于覆盖上一件装备的换弹等动作"))
+    TObjectPtr<UAnimMontage> CharacterEquipMontage = nullptr;
+
     /** 角色播放的单次攻击蒙太奇 使用 UpperBody 槽位 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|近战|动画", meta = (DisplayName = "攻击蒙太奇"))
     TObjectPtr<UAnimMontage> AttackMontage = nullptr;

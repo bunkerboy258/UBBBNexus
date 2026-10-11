@@ -19,6 +19,20 @@ void FBBBMeleeAnimationProcessor::Update(FBBBMeleeUpdateContext &Context)
     {
         return;
     }
+
+    const auto &Input = Context.Data.Action.ReadMeleeActionInputState();
+    if (Input.bEquip && Context.Definition.CharacterEquipMontage)
+    {
+        if (Context.bCausal)
+        {
+            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Context.Definition.CharacterEquipMontage});
+        }
+        if (!Context.bCausal)
+        {
+            Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{Context.Definition.CharacterEquipMontage});
+        }
+    }
+
     if (!State.bInitialized && !Context.bCausal)
     {
         State.AttackSequence = Action.AttackSequence;

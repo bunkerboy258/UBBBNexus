@@ -35,6 +35,17 @@ ABBBEquipment::ABBBEquipment()
     EquipmentSkeletalMesh->SetGenerateOverlapEvents(false);
 }
 
+FVector ABBBEquipment::GetVelocity() const
+{
+    const ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
+    if (IsValid(Character))
+    {
+        return Character->GetMovementVelocity();
+    }
+
+    return Super::GetVelocity();
+}
+
 void ABBBEquipment::BeginPlay()
 {
     Super::BeginPlay();

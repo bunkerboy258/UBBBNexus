@@ -123,6 +123,11 @@ UBBBEquipmentNetworkComponent *ABBBCharacter::GetEquipmentNetworkComponent() con
     return EquipmentNetworkComponent;
 }
 
+FVector ABBBCharacter::GetMovementVelocity() const
+{
+    return GetVelocity();
+}
+
 bool ABBBCharacter::TryGetRightHandWorldTransform(FTransform &OutTransform) const
 {
     const USkeletalMeshComponent *CharacterMesh = GetMesh();
