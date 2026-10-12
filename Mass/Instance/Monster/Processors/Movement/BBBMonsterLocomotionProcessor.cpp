@@ -346,7 +346,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
-            const bool bMayMove = !bChangingPosture && (bPatrol || bChase) && Path.bHasPath &&
+            const bool bMayMove = !bChangingPosture && !Injury.IsStaggering(Now) && (bPatrol || bChase) && Path.bHasPath &&
                 Path.PathPoints.IsValidIndex(Path.PathPointIndex) && Path.TailDistances.IsValidIndex(Path.PathPointIndex);
             if (!bMayMove)
             {

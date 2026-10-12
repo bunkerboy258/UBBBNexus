@@ -5,6 +5,9 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "UObject/Package.h"
+#include "Serialization/MemoryWriter.h"
+#include "Serialization/MemoryReader.h"
+#include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
@@ -53,13 +56,20 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
         Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity).State = EBBBMonsterBehavior::Chase;
         return Entity;
     };
-    const auto Hit = [&Manager, World](const FMassEntityHandle Entity, const EBBBMonsterHitRegion Region, const double Damage, const double Age)
+    const auto Hit = [&Manager, World, Settings](const FMassEntityHandle Entity, const EBBBMonsterHitRegion Region, const double Damage, const double Age, const bool bTrigger = true)
     {
         FBBBMonsterDamageContribution Contribution;
         Contribution.PlayerId = 1;
         Contribution.Parts.Add(Region, Damage);
         Contribution.LastHitRegion = Region;
         Contribution.LastHitTime = World->GetTimeSeconds() - Age;
+        if (bTrigger)
+        {
+            Contribution.Stagger.ActiveAttackId = FGuid::NewGuid();
+            Contribution.Stagger.StartedAt = Contribution.LastHitTime;
+            Contribution.Stagger.EndsAt = Contribution.LastHitTime + Settings->GetBodyPart(Region).StaggerDuration;
+            Contribution.Stagger.ActiveRegion = Region;
+        }
         Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).Contributions.Add(1, Contribution);
     };
     const float Now = World->GetTimeSeconds();
@@ -71,7 +81,8 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
         auto& Mobility = Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
         TestTrue(TEXT("六部位有效非致命命中都可踉跄"), Mobility.IsStaggering(Now));
         TestEqual(TEXT("主段水平速度为零"), Mobility.GetSpeedRatio(Now + 0.1f), 0.0f);
-        TestTrue(TEXT("停顿和踉跄有明确截止时间"), Mobility.HitStopEndsAt < Mobility.StaggerEndsAt);
+        TestEqual(TEXT("完整动作全程停止主动水平移动"), Mobility.HitStopEndsAt, Mobility.StaggerEndsAt);
+        TestTrue(TEXT("完整原片不再压到零点九秒"), Mobility.StaggerEndsAt - Mobility.StaggerStartedAt > 2.3f);
         const float Start = Mobility.StaggerStartedAt;
         const float End = Mobility.StaggerEndsAt;
         const float StopEnd = Mobility.HitStopEndsAt;
@@ -82,8 +93,8 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
         TestEqual(TEXT("连射不无限延长踉跄"), Mobility.StaggerEndsAt, End);
         TestEqual(TEXT("连射不延长零速度阶段"), Mobility.HitStopEndsAt, StopEnd);
         TestEqual(TEXT("连射不切换正在播放的方向"), Mobility.StaggerRegion, FirstRegion);
-        TestTrue(TEXT("停顿结束保留可见减速"), Mobility.GetSpeedRatio(StopEnd) > 0.0f && Mobility.GetSpeedRatio(StopEnd) <= 0.5f);
-        TestEqual(TEXT("恢复最终回到正常速度"), Mobility.GetSpeedRatio(Mobility.SlowEndsAt), 1.0f);
+        TestEqual(TEXT("原片结束前仍然停步"), Mobility.GetSpeedRatio(StopEnd - 0.001f), 0.0f);
+        TestEqual(TEXT("恢复最终回到正常速度"), Mobility.GetSpeedRatio(FMath::Max(Mobility.SlowEndsAt, Mobility.StaggerEndsAt)), 1.0f);
         const float SlowEnd = Mobility.SlowEndsAt;
         Run();
         TestEqual(TEXT("重复累计字典不刷新减速"), Mobility.SlowEndsAt, SlowEnd);
@@ -92,7 +103,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     auto& AttackState = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Attacking);
     AttackState.State = EBBBMonsterBehavior::Attack;
     AttackState.ActionId = 7;
-    Hit(Attacking, EBBBMonsterHitRegion::Torso, 5.0, 0.0);
+    Hit(Attacking, EBBBMonsterHitRegion::Torso, 5.0, 0.0, false);
     Run();
     const auto& AttackMobility = Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Attacking);
     TestFalse(TEXT("普通命中不抢占攻击"), AttackMobility.IsStaggering(Now));
@@ -106,10 +117,25 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     const auto Suppressed = Create();
     for (int32 Shot = 1; Shot <= 4; ++Shot)
     {
-        Hit(Suppressed, EBBBMonsterHitRegion::Torso, Shot * 10.0, 0.0);
+        Hit(Suppressed, EBBBMonsterHitRegion::Torso, Shot * 10.0, 0.0, false);
         Run();
     }
-    TestTrue(TEXT("小伤害连射累计压力可以触发一次踉跄"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Suppressed).IsStaggering(Now));
+    TestFalse(TEXT("累计伤害不能绕过子弹踉跄判定"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Suppressed).IsStaggering(Now));
+    const auto HeavyWithoutTrigger = Create();
+    Hit(HeavyWithoutTrigger, EBBBMonsterHitRegion::Torso, 60.0, 0.0, false);
+    Run();
+    TestFalse(TEXT("大伤害没有踉跄结果时也不触发旧重击机制"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(HeavyWithoutTrigger).IsStaggering(Now));
+    const auto SmallWithTrigger = Create();
+    Hit(SmallWithTrigger, EBBBMonsterHitRegion::Torso, 1.0, 0.0);
+    Run();
+    TestTrue(TEXT("小伤害可以独立触发完整踉跄"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(SmallWithTrigger).IsStaggering(Now));
+    TestTrue(TEXT("头部概率倍率大于手臂"), Settings->HeadPart.StaggerMultiplier > Settings->LeftArmPart.StaggerMultiplier);
+    TestTrue(TEXT("腿部概率倍率大于躯干"), Settings->LeftLegPart.StaggerMultiplier > Settings->TorsoPart.StaggerMultiplier);
+    const auto Restored = Create();
+    Hit(Restored, EBBBMonsterHitRegion::RightLeg, 1.0, 0.5);
+    Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Restored).ResolvedDamage = 1.0;
+    Run();
+    TestTrue(TEXT("当前结果恢复不依赖重复结算伤害"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Restored).IsStaggering(Now));
 
     const auto Crawling = Create();
     Hit(Crawling, EBBBMonsterHitRegion::LeftLeg, 35.0, 0.0);
@@ -135,6 +161,64 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     const auto Mirror = Create();
     Run();
     TestFalse(TEXT("没有有效伤害的镜像输入不生成踉跄"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Mirror).IsStaggering(Now));
+    FBBBMonsterDamageContribution Current;
+    Current.PlayerId = 1;
+    Current.Parts.Torso = 10.0;
+    Current.Stagger.AttackId = FGuid::NewGuid();
+    Current.Stagger.AttackTime = 1.0;
+    Current.Stagger.ActiveAttackId = Current.Stagger.AttackId;
+    Current.Stagger.StartedAt = 1.0;
+    Current.Stagger.EndsAt = 1.0 + Settings->TorsoPart.StaggerDuration;
+    FBBBMonsterDamageContribution NewHit;
+    NewHit.PlayerId = 1;
+    NewHit.Parts.LeftArm = 5.0;
+    NewHit.LastHitTime = 2.0;
+    NewHit.Stagger.AttackId = FGuid::NewGuid();
+    NewHit.Stagger.AttackTime = 2.0;
+    const auto ActiveId = Current.Stagger.ActiveAttackId;
+    Current.Merge(NewHit);
+    TestTrue(TEXT("交叉部位伤害仍按分量合并"), Current.Parts.Torso == 10.0 && Current.Parts.LeftArm == 5.0);
+    TestEqual(TEXT("后续未触发命中不覆盖当前有效踉跄"), Current.Stagger.ActiveAttackId, ActiveId);
+    const auto Snapshot = Current;
+    Current.Merge(Snapshot);
+    TestTrue(TEXT("重复当前结果合并幂等"), Current == Snapshot);
+    TestTrue(TEXT("当前踉跄贡献快照合法"), Current.IsValid());
+    TArray<uint8> Bytes;
+    FMemoryWriter Writer(Bytes);
+    FObjectAndNameAsStringProxyArchive Saving(Writer, false);
+    FBBBMonsterDamageContribution::StaticStruct()->SerializeItem(Saving, &Current, nullptr);
+    FMemoryReader Reader(Bytes);
+    FObjectAndNameAsStringProxyArchive Loading(Reader, false);
+    FBBBMonsterDamageContribution Received;
+    FBBBMonsterDamageContribution::StaticStruct()->SerializeItem(Loading, &Received, nullptr);
+    TestEqual(TEXT("当前踉跄身份进入反射传输"), Received.Stagger.ActiveAttackId, ActiveId);
+    TestEqual(TEXT("当前踉跄结束时间进入反射传输"), Received.Stagger.EndsAt, Current.Stagger.EndsAt);
+    TestFalse(TEXT("随机候选和命中汇总不进入网络快照"), Received.Stagger.AttackId.IsValid());
+    TestTrue(TEXT("远端当前快照有效且不携带随机样本"), Received.IsValid() && Received.Stagger.Impacts.Sum() == 0.0);
+    const auto LocalAttackId = Current.Stagger.AttackId;
+    Current.Merge(Received);
+    TestEqual(TEXT("房主镜像返回不清掉本机同发去重缓存"), Current.Stagger.AttackId, LocalAttackId);
+    FBBBMonsterStaggerContribution Candidate;
+    Candidate.AttackId = FGuid::NewGuid();
+    Candidate.HitTime = 5.0;
+    Candidate.Duration = 3.0f;
+    Candidate.Roll = 0.5f;
+    Candidate.Chance = 0.0f;
+    TestFalse(TEXT("零踉跄值绝不触发"), Candidate.Resolve(0.0));
+    Candidate.AttackId = FGuid::NewGuid();
+    Candidate.bEvaluated = false;
+    Candidate.Chance = 1.0f;
+    TestTrue(TEXT("足够踉跄值可以必定触发"), Candidate.Resolve(0.0));
+    for (int32 Pellet = 0; Pellet < 64; ++Pellet)
+    {
+        TestFalse(TEXT("同发全部霰弹不重复判定"), Candidate.Resolve(0.0));
+    }
+    Candidate.bEvaluated = false;
+    TestFalse(TEXT("恢复保护期间的新命中不排队"), Candidate.Resolve(5.35));
+    TestFalse(TEXT("被保护窗口拒绝的攻击不能晚些时候补播"), Candidate.Resolve(0.0));
+    Candidate.bEvaluated = false;
+    Candidate.HitTime = 5.35;
+    TestTrue(TEXT("恢复保护完成后的新攻击正常判定"), Candidate.Resolve(5.35));
     return true;
 }
 

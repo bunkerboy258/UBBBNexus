@@ -21,6 +21,15 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
     /** 穿透衰减后的当前耐久伤害 */
     float DurableDamage = 0.0f;
 
+    /** 同次开火的弹丸共用身份 不保存已结束的开火记录 */
+    FGuid AttackId;
+
+    /** 本次开火的单调排序时间 用于丢弃过期攻击候选 */
+    double AttackTime = 0.0;
+
+    /** 不随穿透伤害变化的基础踉跄值 */
+    float StaggerValue = 0.0f;
+
     /** 范围伤害半径 零表示点伤害 */
     float ExplosionRadiusCm = 0.0f;
 

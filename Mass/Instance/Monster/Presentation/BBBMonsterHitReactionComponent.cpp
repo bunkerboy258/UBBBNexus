@@ -22,7 +22,7 @@ UBBBMonsterHitReactionComponent::UBBBMonsterHitReactionComponent(const FObjectIn
     }
 }
 
-void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, const bool bAlive, const bool bAuthoredStagger)
+void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, const bool bAlive)
 {
     if (!bAlive)
     {
@@ -98,9 +98,8 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 
     const FVector Direction = Hit.Direction.GetSafeNormal();
-    const float AuthoredScale = bAuthoredStagger ? 0.65f : 1.0f;
-    LinearStrength *= 1.8f * AuthoredScale;
-    AngularStrength *= 1.4f * AuthoredScale;
+    LinearStrength *= 1.8f;
+    AngularStrength *= 1.4f;
     const FVector Lever = Hit.Position - Mesh->GetBoneLocation(BoneName);
     FVector AngularAxis = FVector::CrossProduct(Lever, Direction).GetSafeNormal();
     if (ProfileIndex <= 1)

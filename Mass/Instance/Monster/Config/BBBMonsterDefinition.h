@@ -65,14 +65,6 @@ public:
      */
     const FBBBMonsterBodyPartDefinition& GetBodyPart(EBBBMonsterHitRegion Part) const;
 
-    /** 重击触发失衡所需的单轮有效伤害比例 */
-    UPROPERTY(EditAnywhere, Category = "小怪|受击", meta = (ClampMin = "0.01", ClampMax = "1.0", DisplayName = "重击生命比例"))
-    float HeavyHitFraction = 0.22f;
-
-    /** 普通命中每秒压制消退的比例 */
-    UPROPERTY(EditAnywhere, Category = "小怪|受击", meta = (ClampMin = "0.01", DisplayName = "压制恢复速率"))
-    float SuppressionRecovery = 0.45f;
-
     /** 单臂损毁后保留的攻击伤害比例 */
     UPROPERTY(EditAnywhere, Category = "小怪|部位", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "单臂攻击比例"))
     float OneArmAttackRatio = 0.55f;
@@ -179,10 +171,6 @@ public:
     /** 轻受击水平停顿秒数 不影响落地和重力 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.0", ClampMax = "0.2", Units = "s", DisplayName = "受击停顿时间"))
     float HitStopDuration = 0.1f;
-
-    /** 站立失衡到恢复的动作秒数 动画按事实采样 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|受击", meta = (ClampMin = "0.5", ClampMax = "1.5", Units = "s", DisplayName = "踉跄时间"))
-    float StaggerDuration = 0.9f;
 
     /** 爬行的水平移动速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|爬行", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "爬行速度"))

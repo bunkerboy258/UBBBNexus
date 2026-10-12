@@ -26,6 +26,7 @@ namespace
 {
     void AccumulateDamage(UWorld& World, UBBBMassSubsystem& Mass,
         TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket>& Results,
+        TMap<FMassEntityHandle, TMap<TPair<int32, FGuid>, FBBBMonsterStaggerContribution>>& AttackResults,
         const FBBBProjectileCollisionFragment& Data, FMassEntityHandle Target, uint8 Part,
         const FVector& Position, const FVector& Direction, const FVector& Normal,
         const bool bPresentHit = true, const uint8 PresentationPart = MAX_uint8)
@@ -78,6 +79,33 @@ namespace
         const auto* GameState = World.GetGameState();
         Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
         Current.LastHitRegion = HitRegion;
+        if (Data.AttackId.IsValid() && Effective > 0.0)
+        {
+            const auto& Previous = Current.Stagger;
+            if ((Previous.AttackId != Data.AttackId || !Previous.bEvaluated) && Data.AttackTime >= Previous.AttackTime)
+            {
+                auto& Candidate = AttackResults.FindOrAdd(Target).FindOrAdd(TPair<int32, FGuid>(Current.PlayerId, Data.AttackId));
+                if (!Candidate.AttackId.IsValid())
+                {
+                    Candidate.AttackId = Data.AttackId;
+                    Candidate.AttackTime = Data.AttackTime;
+                    Candidate.HitTime = Current.LastHitTime;
+                    const uint32 Seed = HashCombineFast(GetTypeHash(Data.AttackId),
+                        HashCombineFast(GetTypeHash(Target.Index), GetTypeHash(Target.SerialNumber)));
+                    Candidate.Roll = static_cast<float>(Seed >> 8) / 16777216.0f;
+                }
+                const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
+                Candidate.Impacts.Add(Region, Effective * Definition.StaggerMultiplier);
+                const float Impact = static_cast<float>(Candidate.Impacts.Get(Region));
+                if (Impact > Candidate.Impact || (Impact == Candidate.Impact && Region > Candidate.Region))
+                {
+                    Candidate.Impact = Impact;
+                    Candidate.Chance = FMath::Clamp(Data.StaggerValue * Definition.StaggerMultiplier, 0.0f, 1.0f);
+                    Candidate.Duration = Definition.StaggerDuration;
+                    Candidate.Region = Region;
+                }
+            }
+        }
         Current.bHasSourcePosition = Controller->GetPawn() != nullptr;
         if (Current.bHasSourcePosition)
         {
@@ -114,10 +142,12 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     // 只汇总本轮结果 每目标最后提交一个完整累计快照
     TMap<FMassEntityHandle, FBBBMonsterDamageLocalControlPacket> DamageResults;
+    /** 仅本轮的按攻击分组汇总 消费后销毁 不跨帧保存队列 */
+    TMap<FMassEntityHandle, TMap<TPair<int32, FGuid>, FBBBMonsterStaggerContribution>> AttackResults;
     TArray<FBBBProjectileImpact> Impacts;
     TWeakObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;
     const float Delta = Context.GetDeltaTimeSeconds();
-    const auto Detonate = [World, Mass, &DamageResults](const FBBBProjectileCollisionFragment& Data, const FVector& Center)
+    const auto Detonate = [World, Mass, &DamageResults, &AttackResults](const FBBBProjectileCollisionFragment& Data, const FVector& Center)
     {
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMassExplosion), false);
         Params.AddIgnoredActor(Data.DamageCauser.Get());
@@ -139,7 +169,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 FBBBProjectileCollisionFragment Portion = Data;
                 Portion.Damage *= Share;
                 Portion.DurableDamage *= Share;
-                AccumulateDamage(*World, *Mass, DamageResults, Portion, Body.Entity, Part, Position, Direction, -Direction,
+                AccumulateDamage(*World, *Mass, DamageResults, AttackResults, Portion, Body.Entity, Part, Position, Direction, -Direction,
                     Part == static_cast<uint8>(EBBBMonsterHitRegion::Torso), Body.Part);
             }
         }
@@ -152,7 +182,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 IgnoredActors, Data.DamageCauser.Get(), Data.EventInstigator.Get(), true, ECC_Visibility);
         }
     };
-    EntityQuery.ForEachEntityChunk(Context, [World, Mass, Delta, &Detonate, &DamageResults, &Impacts, &ImpactChannel](FMassExecutionContext& Chunk)
+    EntityQuery.ForEachEntityChunk(Context, [World, Mass, Delta, &Detonate, &DamageResults, &AttackResults, &Impacts, &ImpactChannel](FMassExecutionContext& Chunk)
     {
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Motion = Chunk.GetMutableFragmentView<FBBBProjectileMotionFragment>();
@@ -248,7 +278,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 }
                 if (bUseEntity)
                 {
-                    AccumulateDamage(*World, *Mass, DamageResults, Data, Target, HitPart, Impact.Position, Direction, Impact.Normal);
+                    AccumulateDamage(*World, *Mass, DamageResults, AttackResults, Data, Target, HitPart, Impact.Position, Direction, Impact.Normal);
 
                     IgnoredEntities.Add(Target);
                     Data.LastHitEntity = Target;
@@ -290,6 +320,48 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     });
     for (auto& Result : DamageResults)
     {
+        double AvailableAt = 0.0;
+        for (const auto& Value : Result.Value.Contributions)
+        {
+            if (Value.Stagger.ActiveAttackId.IsValid())
+            {
+                AvailableAt = FMath::Max(AvailableAt,
+                    Value.Stagger.EndsAt + FBBBMonsterStaggerContribution::RecoveryDuration);
+            }
+        }
+        auto* Attacks = AttackResults.Find(Result.Key);
+        if (Attacks != nullptr)
+        {
+            TArray<TPair<int32, FGuid>> Keys;
+            Attacks->GetKeys(Keys);
+            Keys.Sort([Attacks](const auto& A, const auto& B)
+            {
+                const auto& Left = Attacks->FindChecked(A);
+                const auto& Right = Attacks->FindChecked(B);
+                return Left.AttackTime < Right.AttackTime
+                    || (Left.AttackTime == Right.AttackTime && Left.AttackId < Right.AttackId);
+            });
+            for (const auto& Key : Keys)
+            {
+                auto& Candidate = Attacks->FindChecked(Key);
+                if (Candidate.Resolve(AvailableAt))
+                {
+                    Candidate.ActiveAttackId = Candidate.AttackId;
+                    Candidate.StartedAt = Candidate.HitTime;
+                    Candidate.EndsAt = Candidate.HitTime + Candidate.Duration;
+                    Candidate.ActiveRegion = Candidate.Region;
+                    AvailableAt = Candidate.EndsAt + FBBBMonsterStaggerContribution::RecoveryDuration;
+                }
+                auto* Owner = Result.Value.Contributions.FindByPredicate([Key](const auto& Value)
+                {
+                    return Value.PlayerId == Key.Key;
+                });
+                if (ensureMsgf(Owner != nullptr, TEXT("[BBBProjectile]踉跄候选缺少当前伤害来源")))
+                {
+                    Owner->Stagger.Merge(Candidate);
+                }
+            }
+        }
         Mass->SubmitInput(Result.Key, MoveTemp(Result.Value));
     }
     if (ImpactChannel.IsValid())

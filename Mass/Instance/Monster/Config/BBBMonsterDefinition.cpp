@@ -9,6 +9,15 @@ UBBBMonsterDefinition::UBBBMonsterDefinition()
     RightArmPart = LeftArmPart;
     LeftLegPart = {0.35f, 0.35f, 0.3f, false};
     RightLegPart = LeftLegPart;
+    HeadPart.StaggerMultiplier = 1.5f;
+    LeftArmPart.StaggerMultiplier = 0.75f;
+    RightArmPart.StaggerMultiplier = 0.75f;
+    LeftLegPart.StaggerMultiplier = 1.25f;
+    RightLegPart.StaggerMultiplier = 1.25f;
+    LeftArmPart.StaggerDuration = 3.0f;
+    RightArmPart.StaggerDuration = 3.0f;
+    LeftLegPart.StaggerDuration = 3.0f;
+    RightLegPart.StaggerDuration = 3.0f;
 }
 
 const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EBBBMonsterHitRegion Part) const
@@ -37,8 +46,6 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(MaxHealth) && MaxHealth > 0.0f
         && TorsoPart.IsValid() && HeadPart.IsValid() && LeftArmPart.IsValid() && RightArmPart.IsValid()
         && LeftLegPart.IsValid() && RightLegPart.IsValid()
-        && FMath::IsFinite(HeavyHitFraction) && HeavyHitFraction > 0.0f && HeavyHitFraction <= 1.0f
-        && FMath::IsFinite(SuppressionRecovery) && SuppressionRecovery > 0.0f
         && FMath::IsFinite(OneArmAttackRatio) && OneArmAttackRatio >= 0.0f && OneArmAttackRatio <= 1.0f
         && FMath::IsFinite(WalkTurnRate) && WalkTurnRate > 0.0f
         && FMath::IsFinite(RunTurnRate) && RunTurnRate > 0.0f
@@ -63,7 +70,6 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(LegHitSlowDuration) && LegHitSlowDuration > 0.0f
         && FMath::IsFinite(HitSlowHoldDuration) && HitSlowHoldDuration >= 0.0f
         && FMath::IsFinite(HitStopDuration) && HitStopDuration >= 0.0f && HitStopDuration <= 0.2f
-        && FMath::IsFinite(StaggerDuration) && StaggerDuration >= 0.5f && StaggerDuration <= 1.5f
         && FMath::IsFinite(CrawlSpeed) && CrawlSpeed > 0.0f && CrawlSpeed <= WalkSpeed
         && FMath::IsFinite(CrawlCapsuleHalfHeight) && CrawlCapsuleHalfHeight >= CollisionRadius && CrawlCapsuleHalfHeight <= CapsuleHalfHeight
         && FMath::IsFinite(CrawlTransitionDuration) && CrawlTransitionDuration > 0.0f

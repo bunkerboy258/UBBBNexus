@@ -68,6 +68,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     Packet.Speed = 1000.0f;
     Packet.Damage = 20.0f;
     Packet.DurableDamage = 20.0f;
+    Packet.StaggerValue = 1.0f;
     Packet.Controller = Controller;
     Packet.bCanCauseDamage = true;
     TestTrue(TEXT("仅网格表现的弹丸出生有效"), Packet.IsValid());
@@ -150,6 +151,19 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     TestEqual(TEXT("同轮两次爆炸完整合并累计贡献"), Damage(B), 40.0);
     Manager.DestroyEntity(First);
     Manager.DestroyEntity(Second);
+
+    TArray<FBBBMonsterDamageContribution> ShotgunValues;
+    Mass->QueryDamage(B, ShotgunValues);
+    const auto* ShotgunContribution = ShotgunValues.FindByPredicate([](const auto& Value)
+    {
+        return Value.PlayerId == 7;
+    });
+    if (TestNotNull(TEXT("同发多弹丸保留唯一来源快照"), ShotgunContribution))
+    {
+        TestEqual(TEXT("同发弹丸共用开火身份"), ShotgunContribution->Stagger.ActiveAttackId, Packet.AttackId);
+        TestTrue(TEXT("同发只判定一次踉跄"), ShotgunContribution->Stagger.bEvaluated);
+        TestEqual(TEXT("踉跄概率不按弹丸数量叠加"), ShotgunContribution->Stagger.Chance, 1.0f);
+    }
 
     Reset();
     auto* Wall = World->SpawnActor<AActor>();

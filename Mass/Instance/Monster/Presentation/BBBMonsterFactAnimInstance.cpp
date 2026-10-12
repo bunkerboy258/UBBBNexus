@@ -19,7 +19,7 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     BehaviorFact = EBBBMonsterBehavior::Idle;
     StaggeringFact = false;
     StaggerProgressFact = 0.0f;
-    StaggerVariantFact = 1;
+    StaggerVariantFact = 0;
     CrawlingFact = false;
     CrawlProgressFact = 0.0f;
     MovementSpeedFact = 0.0f;
@@ -40,10 +40,26 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
 
     BehaviorFact = Source->BBBMonsterBehavior;
     CrawlingFact = Source->bCrawling;
-    StaggeringFact = Source->bStaggering && !CrawlingFact && BehaviorFact != EBBBMonsterBehavior::Attack && BehaviorFact != EBBBMonsterBehavior::Dead;
+    StaggeringFact = Source->bStaggering && !CrawlingFact && BehaviorFact != EBBBMonsterBehavior::Dead;
     StaggerProgressFact = Source->StaggerProgress;
-    StaggerVariantFact = Source->StaggerRegion == EBBBMonsterHitRegion::Head ? 0
-        : Source->StaggerRegion == EBBBMonsterHitRegion::RightArm || Source->StaggerRegion == EBBBMonsterHitRegion::RightLeg ? 2 : 1;
+    StaggerVariantFact = 0;
+    switch (Source->StaggerRegion)
+    {
+        case EBBBMonsterHitRegion::LeftArm:
+            StaggerVariantFact = 1;
+            break;
+        case EBBBMonsterHitRegion::RightArm:
+            StaggerVariantFact = 2;
+            break;
+        case EBBBMonsterHitRegion::LeftLeg:
+            StaggerVariantFact = 3;
+            break;
+        case EBBBMonsterHitRegion::RightLeg:
+            StaggerVariantFact = 4;
+            break;
+        default:
+            break;
+    }
     CrawlProgressFact = Source->CrawlProgress;
     MovementSpeedFact = Source->MovementSpeed;
     VariationSeedFact = Source->VariationSeed;

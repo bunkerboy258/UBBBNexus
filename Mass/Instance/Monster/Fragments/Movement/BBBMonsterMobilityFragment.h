@@ -22,9 +22,6 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
     /** 当前水平停顿的结束时间 不暂停重力 */
     float HitStopEndsAt = 0.0f;
 
-    /** 当前短时间火力压制强度 不保存命中队列 */
-    float Suppression = 0.0f;
-
     /** 部位损毁后保留的攻击能力 双臂损毁为零 */
     float AttackRatio = 1.0f;
 
@@ -36,6 +33,9 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
 
     /** 当前踉跄使用的首个命中部位 后续命中不切换姿势 */
     EBBBMonsterHitRegion StaggerRegion = EBBBMonsterHitRegion::Torso;
+
+    /** 当前已还原的踉跄身份 重复快照不重新开始动作 */
+    FGuid StaggerAttackId;
 
     /**
      * @param Now	本机世界秒数

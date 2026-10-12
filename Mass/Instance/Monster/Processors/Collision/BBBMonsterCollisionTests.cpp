@@ -136,14 +136,14 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
     auto* Mesh = Actor->GetMonsterMesh();
     for (int32 Index = 0; Index < UE_ARRAY_COUNT(Names); ++Index)
     {
-        const FString Path = FString::Printf(TEXT("/Game/_Project/System/Mass/Monster/Zombie/%s/Variants/%s/SKM_BBBZombie%s"),
+        const FString Path = FString::Printf(TEXT("/Game/_Project/Mass/Monster/Zombie/%s/Variants/%s/SKM_BBBZombie%s"),
             Index < 6 ? TEXT("Male") : TEXT("Female"), *Names[Index], *Names[Index]);
         auto* Asset = LoadObject<USkeletalMesh>(nullptr, *Path);
         if (!TestNotNull(*Names[Index], Asset))
         {
             continue;
         }
-        const FString PartPath = FString::Printf(TEXT("/Game/_Project/System/Mass/Monster/Zombie/Shared/Severing/%s/SM_SKM_BBBZombie%s_head_Part"),
+        const FString PartPath = FString::Printf(TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/Severing/%s/SM_SKM_BBBZombie%s_head_Part"),
             *Names[Index], *Names[Index]);
         const auto* HeadPart = LoadObject<UStaticMesh>(nullptr, *PartPath);
         if (!TestNotNull(TEXT("使用正式头部几何范围而非碰撞球心自证"), HeadPart))

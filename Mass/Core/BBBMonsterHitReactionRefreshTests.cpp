@@ -64,13 +64,13 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
     Hit.Age = 0.0f;
     Hit.Direction = FVector::ForwardVector;
     Hit.Position = Reaction->Mesh->GetSocketLocation(TEXT("spine_01"));
-    Reaction->ApplyHitFacts(Hit, true, false);
+    Reaction->ApplyHitFacts(Hit, true);
     TestEqual(TEXT("被冷却拒绝的命中仍消费编号"), Reaction->GetObservedHitSerial(), 1u);
     TestEqual(TEXT("拒绝连射不能清空当前骨骼受力"), Reaction->GetPhysicsBlends().Num(), 1);
     TestTrue(TEXT("拒绝连射不重启当前混合年龄"), FMath::IsNearlyEqual(Reaction->GetPhysicsBlends()[0].PhysicsState.GetElapsedTime(), 0.1f));
     Profile->Cooldown = 0.0f;
     Hit.Serial = 2;
-    Reaction->ApplyHitFacts(Hit, true, true);
+    Reaction->ApplyHitFacts(Hit, true);
     TestTrue(TEXT("踉跄姿态仍允许叠加物理冲击"), Reaction->bHasAppliedReaction);
     TestEqual(TEXT("已接受连射只保留一个同骨骼混合"), Reaction->GetPhysicsBlends().Num(), 1);
     TestTrue(TEXT("接受连射刷新当前物理混合"), FMath::IsNearlyZero(Reaction->GetPhysicsBlends()[0].PhysicsState.GetElapsedTime()));

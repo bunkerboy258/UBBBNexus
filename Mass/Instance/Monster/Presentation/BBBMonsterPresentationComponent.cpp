@@ -37,7 +37,7 @@ bool UBBBMonsterPresentationComponent::BeginCorpsePresentation(const FVector& Ve
     if (auto* Reaction = GetOwner()->FindComponentByClass<UBBBMonsterHitReactionComponent>())
     {
         Reaction->ResetPresentation();
-        Reaction->ApplyHitFacts(Hit, false, false);
+        Reaction->ApplyHitFacts(Hit, false);
         Reaction->SetComponentTickEnabled(false);
     }
     LivingMeshRelativeTransform = Mesh->GetRelativeTransform();
@@ -230,8 +230,7 @@ void UBBBMonsterPresentationComponent::ApplyHitReaction(const FBBBMonsterHitReac
     HitReaction = Hit;
     if (auto* Reaction = GetOwner()->FindComponentByClass<UBBBMonsterHitReactionComponent>())
     {
-        Reaction->ApplyHitFacts(Hit, BBBMonsterBehavior != EBBBMonsterBehavior::Dead,
-            bStaggering && BBBMonsterBehavior != EBBBMonsterBehavior::Attack && BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !bCrawling);
+        Reaction->ApplyHitFacts(Hit, BBBMonsterBehavior != EBBBMonsterBehavior::Dead);
     }
 }
 

@@ -55,8 +55,8 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
 
     TArray<FString> Classes =
     {
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"),
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Female/BP_BBBZombieFemalePresentation.BP_BBBZombieFemalePresentation_C")
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"),
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Female/BP_BBBZombieFemalePresentation.BP_BBBZombieFemalePresentation_C")
     };
 
     const TArray<FString> Appearances = {TEXT("Connor"), TEXT("Jiho"), TEXT("Michael"), TEXT("Morita"), TEXT("Renzo"), TEXT("Sakurada"),
@@ -65,7 +65,7 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
     {
         const FString Gender = Index < 6 ? TEXT("Male") : TEXT("Female");
         const FString& Name = Appearances[Index];
-        Classes.Add(TEXT("/Game/_Project/System/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Name +
+        Classes.Add(TEXT("/Game/_Project/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Name +
             TEXT("/BP_BBBZombie") + Name + TEXT("Presentation.BP_BBBZombie") + Name + TEXT("Presentation_C"));
     }
 
@@ -161,9 +161,16 @@ bool FBBBMonsterFactAnimationTest::RunTest(const FString& Parameters)
         TestTrue(TEXT("有效踉跄复制到动画"), Stagger->GetPropertyValue_InContainer(Animation));
         TestEqual(TEXT("踉跄进度不会由动画帧时间生成"), StaggerProgress->GetPropertyValue_InContainer(Animation), 0.25f);
         TestEqual(TEXT("右臂使用右向姿势"), StaggerVariant->GetPropertyValue_InContainer(Animation), 2);
+        for (int32 Region = 0; Region < 6; ++Region)
+        {
+            Presentation->ApplyStaggerState(true, 0.5f, static_cast<EBBBMonsterHitRegion>(Region));
+            Animation->NativeUpdateAnimation(0.016f);
+            const int32 Expected = Region <= 1 ? 0 : Region - 1;
+            TestEqual(TEXT("六部位直接选择五条原地反应"), StaggerVariant->GetPropertyValue_InContainer(Animation), Expected);
+        }
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Attack, 0.0f, 0.0f, 1, 0.0f);
         Animation->NativeUpdateAnimation(0.016f);
-        TestFalse(TEXT("攻击不被站立踉跄替代"), Stagger->GetPropertyValue_InContainer(Animation));
+        TestTrue(TEXT("攻击尚未还原取消时仍可显示已成立的踉跄"), Stagger->GetPropertyValue_InContainer(Animation));
         Presentation->ApplyMobilityState(true, 1.0f, 45.0f);
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Chase, 75.0f, 0.0f, 0, 0.0f);
         Animation->NativeUpdateAnimation(0.016f);
@@ -238,7 +245,7 @@ bool FBBBMonsterAppearanceVariantsTest::RunTest(const FString& Parameters)
     {
         const FString& Name = Names[Index];
         const FString Gender = Index < 6 ? TEXT("Male") : TEXT("Female");
-        const FString Directory = TEXT("/Game/_Project/System/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Name + TEXT("/");
+        const FString Directory = TEXT("/Game/_Project/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Name + TEXT("/");
         UClass* const ActorClass = LoadClass<ABBBMonsterBudgetPresentationActor>(nullptr, *(Directory + TEXT("BP_BBBZombie") + Name + TEXT("Presentation.BP_BBBZombie") + Name + TEXT("Presentation_C")));
         USkeletalMesh* const Mesh = LoadObject<USkeletalMesh>(nullptr, *(Directory + TEXT("SKM_BBBZombie") + Name));
         UBBBMonsterDefinition* const Definition = LoadObject<UBBBMonsterDefinition>(nullptr, *(Directory + TEXT("DA_BBBZombie") + Name + TEXT("Definition")));
@@ -263,7 +270,10 @@ bool FBBBMonsterAppearanceVariantsTest::RunTest(const FString& Parameters)
         TestEqual(Name + TEXT(" 正式配置躯干减速"), Definition->BodyHitSpeedRatio, 0.25f);
         TestEqual(Name + TEXT(" 正式配置手臂减速"), Definition->ArmHitSpeedRatio, 0.5f);
         TestEqual(Name + TEXT(" 正式配置腿部减速"), Definition->LegHitSpeedRatio, 0.15f);
-        TestEqual(Name + TEXT(" 正式配置踉跄时长"), Definition->StaggerDuration, 0.9f);
+        TestTrue(Name + TEXT(" 头部完整原片时长"), FMath::IsNearlyEqual(Definition->HeadPart.StaggerDuration, 2.3333333f));
+        TestEqual(Name + TEXT(" 躯干共用头部完整动作"), Definition->TorsoPart.StaggerDuration, Definition->HeadPart.StaggerDuration);
+        TestEqual(Name + TEXT(" 手臂完整原片时长"), Definition->LeftArmPart.StaggerDuration, 3.0f);
+        TestEqual(Name + TEXT(" 腿部完整原片时长"), Definition->RightLegPart.StaggerDuration, 3.0f);
         TestTrue(Name + TEXT(" 模板必须指向本载体"), VisualTrait && VisualTrait->HighResTemplateActor == ActorClass && VisualTrait->LowResTemplateActor == ActorClass);
         UniqueMeshes.Add(Mesh);
         UniqueConfigs.Add(Config);

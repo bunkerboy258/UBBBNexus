@@ -3,6 +3,7 @@
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "Engine/StaticMesh.h"
+#include "HAL/PlatformTime.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileCollisionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Lifetime/BBBProjectileLifetimeFragment.h"
@@ -39,6 +40,12 @@ struct FBBBProjectileSpawnLocalControlPacket final
     float Damage = 20.0f;
     /** 弹药的耐久伤害 */
     float DurableDamage = 10.0f;
+    /** 同次开火的全部弹丸共用一次身份 */
+    FGuid AttackId = FGuid::NewGuid();
+    /** 开火排序使用本机单调秒数 同帧多次开火也保持顺序 */
+    double AttackTime = FPlatformTime::Seconds();
+    /** 独立于伤害的踉跄触发能力 */
+    float StaggerValue = 0.0f;
     float Radius = 2.0f;
     int32 Penetrations = 0;
     float PenetrationMultiplier = 0.65f;
@@ -71,6 +78,8 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && FMath::IsFinite(Lifetime) && Lifetime > 0.0f
             && FMath::IsFinite(Damage) && Damage >= 0.0f
             && FMath::IsFinite(DurableDamage) && DurableDamage >= 0.0f
+            && AttackId.IsValid() && FMath::IsFinite(AttackTime) && AttackTime >= 0.0
+            && FMath::IsFinite(StaggerValue) && StaggerValue >= 0.0f && StaggerValue <= 1.0f
             && FMath::IsFinite(Radius) && Radius >= 0.0f
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
@@ -116,6 +125,9 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Motion.bInitialized = true;
         Collision.Damage = Damage;
         Collision.DurableDamage = DurableDamage;
+        Collision.AttackId = AttackId;
+        Collision.AttackTime = AttackTime;
+        Collision.StaggerValue = StaggerValue;
         Collision.ExplosionRadiusCm = ExplosionRadiusCm;
         Collision.bDetonateOnImpact = bDetonateOnImpact;
         Collision.bBounceOnImpact = bBounceOnImpact;

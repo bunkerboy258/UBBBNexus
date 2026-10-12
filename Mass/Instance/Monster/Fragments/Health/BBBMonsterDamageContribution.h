@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBMonsterPartDamage.h"
+#include "BBBMonsterStaggerContribution.h"
 #include "BBBMonsterDamageContribution.generated.h"
 
 /** 一个玩家对一代小怪已经造成的累计伤害 不是单次命中事件 */
@@ -35,18 +36,23 @@ struct FBBBMonsterDamageContribution final
     UPROPERTY()
     bool bHasSourcePosition = false;
 
+    /** 子弹来源已成立的当前踉跄结果 镜像不重新抽概率 */
+    UPROPERTY()
+    FBBBMonsterStaggerContribution Stagger;
+
     bool IsValid() const
     {
         return PlayerId >= 0 && Parts.IsValid()
             && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg
-            && !LastSourcePosition.ContainsNaN();
+            && !LastSourcePosition.ContainsNaN() && Stagger.IsValid();
     }
 
     bool operator==(const FBBBMonsterDamageContribution& Other) const
     {
         return PlayerId == Other.PlayerId && Parts == Other.Parts
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
-            && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition;
+            && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition
+            && Stagger == Other.Stagger;
     }
 
     /**
@@ -57,6 +63,8 @@ struct FBBBMonsterDamageContribution final
     {
         FBBBMonsterPartDamage Combined = Parts;
         Combined.MergeMax(Other.Parts);
+        FBBBMonsterStaggerContribution CombinedStagger = Stagger;
+        CombinedStagger.Merge(Other.Stagger);
         if (PlayerId == INDEX_NONE || Other.LastHitTime > LastHitTime
             || (Other.LastHitTime == LastHitTime && (Other.LastHitRegion > LastHitRegion
                 || (Other.LastHitRegion == LastHitRegion && Other.Parts.Exceeds(Parts)))))
@@ -64,5 +72,6 @@ struct FBBBMonsterDamageContribution final
             *this = Other;
         }
         Parts = Combined;
+        Stagger = CombinedStagger;
     }
 };

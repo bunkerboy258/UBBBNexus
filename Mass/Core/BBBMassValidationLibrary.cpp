@@ -6,6 +6,7 @@
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "MassEntityConfigAsset.h"
+#include "GameFramework/GameStateBase.h"
 #include "MassEntitySubsystem.h"
 #include "MassEntityTemplate.h"
 #include "MassSpawnerSubsystem.h"
@@ -130,6 +131,7 @@ bool UBBBMassValidationLibrary::SpawnInspectionProjectile(UObject* WorldContext,
     Packet.Lifetime = Definition->MaximumLifetimeSeconds;
     Packet.Damage = Damage;
     Packet.DurableDamage = Definition->BaseDamage > 0.0f ? Definition->DurableDamage * Damage / Definition->BaseDamage : 0.0f;
+    Packet.StaggerValue = Definition->StaggerValue;
     Packet.Radius = Definition->CollisionRadiusCm;
     Packet.Penetrations = Definition->MaximumPenetrations;
     Packet.PenetrationMultiplier = Definition->PenetrationDamageMultiplier;
@@ -372,7 +374,6 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("mainHealth"), Health ? Health->MainHealth : 0.0f);
             Sample->SetNumberField(TEXT("destroyedParts"), Health ? Health->DestroyedParts : 0);
             Sample->SetNumberField(TEXT("attackRatio"), Mobility ? Mobility->AttackRatio : 0.0f);
-            Sample->SetNumberField(TEXT("suppression"), Mobility ? Mobility->Suppression : 0.0f);
             Sample->SetStringField(TEXT("actorPath"), ActorFragment && ActorFragment->Get() ? ActorFragment->Get()->GetPathName() : TEXT(""));
             const AActor* const DisplayActor = ActorFragment ? ActorFragment->Get() : nullptr;
             const auto* Corpse = DisplayActor ? DisplayActor->FindComponentByClass<UBBBMonsterPresentationComponent>() : nullptr;

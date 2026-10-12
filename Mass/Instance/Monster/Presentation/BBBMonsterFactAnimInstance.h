@@ -37,7 +37,7 @@ private:
 
     /** 头部 左向 右向三种固定表现索引 连射不切换 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "踉跄方向事实"))
-    int32 StaggerVariantFact = 1;
+    int32 StaggerVariantFact = 0;
 
     /** Mass 持续爬行事实 不在动画侧重新判定腿伤 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "爬行事实"))

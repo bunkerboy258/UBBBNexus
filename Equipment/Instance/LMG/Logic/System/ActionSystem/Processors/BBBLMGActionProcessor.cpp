@@ -205,6 +205,7 @@ void FBBBLMGActionProcessor::SpawnProjectile(FBBBLMGUpdateContext& Context)
     Packet.Lifetime = Definition->MaximumLifetimeSeconds;
     Packet.Damage = Definition->BaseDamage;
     Packet.DurableDamage = Definition->DurableDamage;
+    Packet.StaggerValue = Definition->StaggerValue;
     Packet.Radius = Definition->CollisionRadiusCm;
     Packet.Penetrations = Definition->MaximumPenetrations;
     Packet.PenetrationMultiplier = Definition->PenetrationDamageMultiplier;

@@ -154,7 +154,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterSoundAssetsTest, "UBBB.Mass.ZombieAu
 bool FBBBMonsterSoundAssetsTest::RunTest(const FString& Parameters)
 {
     UBBBMonsterSoundPresentationDefinition* Settings = LoadObject<UBBBMonsterSoundPresentationDefinition>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Shared/Audio/DA_BBBZombieSoundPresentation.DA_BBBZombieSoundPresentation"));
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/Audio/DA_BBBZombieSoundPresentation.DA_BBBZombieSoundPresentation"));
     if (!TestNotNull(TEXT("持久声音配置"), Settings))
     {
         return false;
@@ -186,7 +186,7 @@ bool FBBBMonsterSoundAssetsTest::RunTest(const FString& Parameters)
     };
     for (const FString& Relative : Definitions)
     {
-        const FString Path = TEXT("/Game/_Project/System/Mass/Monster/Zombie/") + Relative;
+        const FString Path = TEXT("/Game/_Project/Mass/Monster/Zombie/") + Relative;
         UBBBMonsterDefinition* Definition = LoadObject<UBBBMonsterDefinition>(nullptr, *Path);
         if (TestNotNull(Relative, Definition))
         {
