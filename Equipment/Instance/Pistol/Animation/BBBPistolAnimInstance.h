@@ -140,6 +140,42 @@ public:
         return AirborneSwayFrequencyScale;
     }
 
+    /** @return 下蹲目标跟随倍率的只读快照 */
+    float GetCrouchedAimFollowScale() const override
+    {
+        return CrouchedAimFollowScale;
+    }
+
+    /** @return 下蹲后向震动倍率的只读快照 */
+    float GetCrouchedBackwardRecoilScale() const override
+    {
+        return CrouchedBackwardRecoilScale;
+    }
+
+    /** @return 下蹲摇摆幅度倍率的只读快照 */
+    float GetCrouchedSwayAmplitudeScale() const override
+    {
+        return CrouchedSwayAmplitudeScale;
+    }
+
+    /** @return 下蹲摇摆频率倍率的只读快照 */
+    float GetCrouchedSwayFrequencyScale() const override
+    {
+        return CrouchedSwayFrequencyScale;
+    }
+
+    /** @return 下蹲镜头冲击倍率的只读快照 */
+    float GetCrouchedCameraImpulseScale() const override
+    {
+        return CrouchedCameraImpulseScale;
+    }
+
+    /** @return 下蹲镜头回零速度倍率的只读快照 */
+    float GetCrouchedCameraRecoveryScale() const override
+    {
+        return CrouchedCameraRecoveryScale;
+    }
+
 protected:
     /** 当前弹量 */
     UPROPERTY(BlueprintReadOnly, Transient, meta = (DisplayName = "已装填弹药"))
@@ -250,4 +286,22 @@ private:
 
     /** 空中镜头回零倍率 */
     float AirborneCameraRecoveryScale = 1.0f;
+
+    /** 下蹲目标跟随倍率 由动画系统发布 */
+    float CrouchedAimFollowScale = 1.0f;
+
+    /** 下蹲后向震动倍率 由动画系统发布 */
+    float CrouchedBackwardRecoilScale = 1.0f;
+
+    /** 下蹲摇摆幅度倍率 由动画系统发布 */
+    float CrouchedSwayAmplitudeScale = 1.0f;
+
+    /** 下蹲摇摆频率倍率 由动画系统发布 */
+    float CrouchedSwayFrequencyScale = 1.0f;
+
+    /** 下蹲镜头冲击倍率 由动画系统发布 */
+    float CrouchedCameraImpulseScale = 1.0f;
+
+    /** 下蹲镜头回零速度倍率 由动画系统发布 */
+    float CrouchedCameraRecoveryScale = 1.0f;
 };

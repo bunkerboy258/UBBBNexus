@@ -21,13 +21,21 @@ struct FBBBAimImpulseLocalControlPacket final
     /** 瞄准冲击回零速度 */
     float AimingRecoverySpeed = 14.0f;
 
+    /** 实际下蹲时乘到方向冲击的倍率 无单位 */
+    float CrouchedScale = 1.0f;
+
+    /** 开火时实际下蹲采用的回零速度倍率 无单位 */
+    float CrouchedRecoveryScale = 1.0f;
+
     /** @return 输入角度是否有限 */
     bool IsValid() const
     {
         return !ImpulseDegrees.ContainsNaN() && !AimingImpulseDegrees.ContainsNaN()
             && FMath::IsFinite(AirborneScale) && AirborneScale >= 0.0f
             && FMath::IsFinite(RecoverySpeed) && RecoverySpeed > 0.0f
-            && FMath::IsFinite(AimingRecoverySpeed) && AimingRecoverySpeed > 0.0f;
+            && FMath::IsFinite(AimingRecoverySpeed) && AimingRecoverySpeed > 0.0f
+            && FMath::IsFinite(CrouchedScale) && CrouchedScale >= 0.0f
+            && FMath::IsFinite(CrouchedRecoveryScale) && CrouchedRecoveryScale > 0.0f;
     }
 
     /**
@@ -58,6 +66,12 @@ struct FBBBAimImpulseLocalControlPacket final
         if (Context.AnimationFacts.MovementMode == MOVE_Falling)
         {
             Impulse *= AirborneScale;
+        }
+
+        if (Context.AnimationFacts.bIsCrouching)
+        {
+            Impulse *= CrouchedScale;
+            Context.AimImpulse.RecoverySpeed *= CrouchedRecoveryScale;
         }
 
         Context.AimImpulse.PendingDegrees += Impulse;

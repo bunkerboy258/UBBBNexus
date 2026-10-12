@@ -204,6 +204,48 @@ public:
         return 1.0f;
     }
 
+    /** @return 下蹲目标跟随倍率 无贡献时为 1 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲目标跟随倍率"))
+    virtual float GetCrouchedAimFollowScale() const
+    {
+        return 1.0f;
+    }
+
+    /** @return 下蹲后向震动倍率 无贡献时为 1 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲后向震动倍率"))
+    virtual float GetCrouchedBackwardRecoilScale() const
+    {
+        return 1.0f;
+    }
+
+    /** @return 下蹲摇摆幅度倍率 无贡献时为 1 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲摇摆幅度倍率"))
+    virtual float GetCrouchedSwayAmplitudeScale() const
+    {
+        return 1.0f;
+    }
+
+    /** @return 下蹲摇摆频率倍率 无贡献时为 1 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲摇摆频率倍率"))
+    virtual float GetCrouchedSwayFrequencyScale() const
+    {
+        return 1.0f;
+    }
+
+    /** @return 下蹲镜头冲击倍率 无贡献时为 1 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲镜头冲击倍率"))
+    virtual float GetCrouchedCameraImpulseScale() const
+    {
+        return 1.0f;
+    }
+
+    /** @return 下蹲镜头回零速度倍率 无贡献时为 1 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲镜头回零速度倍率"))
+    virtual float GetCrouchedCameraRecoveryScale() const
+    {
+        return 1.0f;
+    }
+
 private:
     friend class FBBBRifleAnimationProcessor;
     friend class FBBBMeleeAnimationProcessor;

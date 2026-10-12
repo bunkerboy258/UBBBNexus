@@ -40,4 +40,10 @@ void UBBBMinigunAnimInstance::PublishMinigunSnapshot(
     AimFireCameraSettings = Definition.AimFireCameraSettings;
     AirborneCameraImpulseScale = Definition.AirborneCameraImpulseScale;
     AirborneCameraRecoveryScale = Definition.AirborneCameraRecoveryScale;
+    CrouchedAimFollowScale = Definition.CrouchedModifiers.AimFollowScale;
+    CrouchedBackwardRecoilScale = Definition.CrouchedModifiers.BackwardRecoilScale;
+    CrouchedSwayAmplitudeScale = Definition.CrouchedModifiers.SwayAmplitudeScale;
+    CrouchedSwayFrequencyScale = Definition.CrouchedModifiers.SwayFrequencyScale;
+    CrouchedCameraImpulseScale = Definition.CrouchedModifiers.CameraImpulseScale;
+    CrouchedCameraRecoveryScale = Definition.CrouchedModifiers.CameraRecoveryScale;
 }
