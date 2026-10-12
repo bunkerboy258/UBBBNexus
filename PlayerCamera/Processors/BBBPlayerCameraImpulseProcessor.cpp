@@ -24,6 +24,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
 
     UAnimInstance *Source = nullptr;
     int32 FireSequence = 0;
+    float RetainedPitch = 0.0f;
     FBBBPlayerCameraRecoilSettings Settings = CameraSystem.DefaultRecoilSettings;
     UBBBAnimInstance *CharacterAnimation = Cast<UBBBAnimInstance>(CameraSystem.Character->GetMesh()->GetAnimInstance());
     const bool bHasSource = CameraSystem.ReadRecoilSource(CharacterAnimation, Source, FireSequence, Settings);
@@ -45,6 +46,10 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
                 FMath::FRandRange(-Settings.RandomDegrees.Y, Settings.RandomDegrees.Y),
                 FMath::FRandRange(-Settings.RandomDegrees.Z, Settings.RandomDegrees.Z));
             CameraSystem.Submit(Shot);
+            if (!Shot.Impulse.ContainsNaN())
+            {
+                RetainedPitch = Shot.Impulse.X * Settings.PitchRetention;
+            }
         }
     }
 
@@ -61,10 +66,12 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     const FVector Previous = CameraSystem.RecoilOffset;
     const FVector Limit = CameraSystem.ActiveRecoilSettings.LimitDegrees;
     const float RecoverySpeed = CameraSystem.ActiveRecoilSettings.RecoverySpeed;
+    const float PitchRetention = CameraSystem.ActiveRecoilSettings.PitchRetention;
     if (!ensureMsgf(
         FMath::IsFinite(RecoverySpeed) && RecoverySpeed > 0.0f
+            && FMath::IsFinite(PitchRetention) && PitchRetention >= 0.0f && PitchRetention <= 1.0f
             && !Limit.ContainsNaN() && Limit.X > 0.0f && Limit.Y > 0.0f && Limit.Z > 0.0f,
-        TEXT("相机冲击恢复速度或角度限制无效")))
+        TEXT("相机冲击恢复速度 保留比例或角度限制无效")))
     {
         CameraSystem.Pending.Reset();
         return;
@@ -74,13 +81,14 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     if (CameraSystem.Pending.IsSet())
     {
         CameraSystem.RecoilOffset += CameraSystem.Pending->Impulse;
+        CameraSystem.RecoilOffset.X -= RetainedPitch;
         CameraSystem.Pending.Reset();
     }
 
     CameraSystem.RecoilOffset.X = FMath::Clamp(CameraSystem.RecoilOffset.X, -Limit.X, Limit.X);
     CameraSystem.RecoilOffset.Y = FMath::Clamp(CameraSystem.RecoilOffset.Y, -Limit.Y, Limit.Y);
     CameraSystem.RecoilOffset.Z = FMath::Clamp(CameraSystem.RecoilOffset.Z, -Limit.Z, Limit.Z);
-    const FVector Delta = CameraSystem.RecoilOffset - Previous;
+    const FVector Delta = CameraSystem.RecoilOffset - Previous + FVector(RetainedPitch, 0.0f, 0.0f);
     FRotator Rotation = CameraSystem.Controller->GetControlRotation();
     const float DesiredPitch = FRotator::NormalizeAxis(Rotation.Pitch) + Delta.X;
     Rotation.Pitch = FMath::Clamp(DesiredPitch, -89.0f, 89.0f);
