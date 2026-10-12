@@ -473,6 +473,21 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
                 {
                     TestTrue(TEXT("姿态部件每段都有真实材质槽"), Section.MaterialIndex < Part.PoseMesh->GetMaterials().Num());
                 }
+                const auto* Description = Part.PoseMesh->GetMeshDescription(0);
+                if (!TestNotNull(TEXT("姿态部件保留源多边形分组"), Description))
+                {
+                    return false;
+                }
+                const auto GroupNames = FStaticMeshConstAttributes(*Description).GetPolygonGroupMaterialSlotNames();
+                for (const auto Group : Description->PolygonGroups().GetElementIDs())
+                {
+                    if (!TestTrue(TEXT("压缩分组具有对应材质槽"), Part.PoseMesh->GetMaterials().IsValidIndex(Group.GetValue())))
+                    {
+                        return false;
+                    }
+                    TestEqual(TEXT("断肢表面材质按源名称对应 不复用全身位置索引"),
+                        Part.PoseMesh->GetMaterials()[Group.GetValue()].ImportedMaterialSlotName, GroupNames[Group]);
+                }
                 TestEqual(TEXT("一次姿态复制保留完整骨骼对应"), Part.PoseMesh->GetRefSkeleton().GetNum(),
                     Mesh->GetSkeletalMeshAsset()->GetRefSkeleton().GetNum());
                 TestEqual(TEXT("姿态部件保持断开骨骼索引"), Part.PoseMesh->GetRefSkeleton().FindBoneIndex(Part.Bone),
