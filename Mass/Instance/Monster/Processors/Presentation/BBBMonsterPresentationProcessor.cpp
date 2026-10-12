@@ -231,7 +231,9 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     const uint8 LostParts = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts;
                     for (const auto& Part : Definition->SeveredParts)
                     {
-                        if ((LostParts & (1u << static_cast<uint8>(Part.Region))) != 0)
+                        if (MonsterActor->GetMonsterMesh()->IsPhysicsStateCreated()
+                            && MonsterActor->GetMonsterMesh()->bHasValidBodies
+                            && (LostParts & (1u << static_cast<uint8>(Part.Region))) != 0)
                         {
                             MonsterActor->GetMonsterMesh()->SetAllBodiesBelowPhysicsDisabled(Part.Bone, true);
                         }

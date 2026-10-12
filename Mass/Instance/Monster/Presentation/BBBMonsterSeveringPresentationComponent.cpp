@@ -145,7 +145,10 @@ void UBBBMonsterSeveringPresentationComponent::ApplyWoundFacts(const FBBBMonster
             Bursts.Add(Burst);
             bPlaySever = true;
         }
-        Mesh->SetAllBodiesBelowPhysicsDisabled(Part.Bone, true);
+        if (Mesh->IsPhysicsStateCreated() && Mesh->bHasValidBodies)
+        {
+            Mesh->SetAllBodiesBelowPhysicsDisabled(Part.Bone, true);
+        }
         AppliedParts |= Bit;
     }
     if (!Bursts.IsEmpty() && Definition.BloodPresentation)
@@ -194,7 +197,7 @@ void UBBBMonsterSeveringPresentationComponent::ResetPresentation()
         const FName Bones[] = {TEXT("head"), TEXT("upperarm_l"), TEXT("upperarm_r"), TEXT("thigh_l"), TEXT("thigh_r")};
         for (uint8 Index = 0; Index < UE_ARRAY_COUNT(Bones); ++Index)
         {
-            if ((AppliedParts & (1u << (Index + 1))) != 0)
+            if (Mesh->IsPhysicsStateCreated() && Mesh->bHasValidBodies && (AppliedParts & (1u << (Index + 1))) != 0)
             {
                 Mesh->SetAllBodiesBelowPhysicsDisabled(Bones[Index], false);
             }

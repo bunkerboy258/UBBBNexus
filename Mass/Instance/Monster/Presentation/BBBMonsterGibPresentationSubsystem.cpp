@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "StaticMeshResources.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -112,6 +113,13 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         return false;
     }
     const FTransform BoneWorld = Source.GetSocketTransform(Bone);
+    if (BoneWorld.ContainsNaN() || Source.GetComponentTransform().ContainsNaN()
+        || !Part.GetRenderData() || Part.GetRenderData()->Bounds.ContainsNaN() || PosePart.GetBounds().ContainsNaN())
+    {
+        UE_LOG(LogTemp, Error, TEXT("[BBBZombieGib]拒绝无效几何或变换 Part=%s Pose=%s Bone=%s Transform=%s"),
+            *Part.GetPathName(), *PosePart.GetPathName(), *Bone.ToString(), *BoneWorld.ToString());
+        return false;
+    }
     const float DistanceSquared = ViewDistanceSquared(*World, BoneWorld.GetLocation());
     if (DistanceSquared > FMath::Square(2500.0f) || GetSimulatingCount() >= MaximumSimulating)
     {
@@ -203,6 +211,12 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
             const int32 Parent = Skeleton.GetParentIndex(Index);
             Pose->BoneSpaceTransforms[Index] = Parent == INDEX_NONE ? Captured[Index]
                 : Captured[Index].GetRelativeTransform(Captured[Parent]);
+            if (Pose->BoneSpaceTransforms[Index].ContainsNaN())
+            {
+                UE_LOG(LogTemp, Error, TEXT("[BBBZombieGib]拒绝非有限姿态 Part=%s BoneIndex=%d"), *PosePart.GetPathName(), Index);
+                ReleaseSlot(Slot);
+                return false;
+            }
         }
         Pose->MarkRefreshTransformDirty();
         Pose->RefreshBoneTransforms();
