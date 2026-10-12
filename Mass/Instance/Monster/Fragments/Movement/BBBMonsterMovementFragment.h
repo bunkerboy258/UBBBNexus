@@ -15,6 +15,15 @@ struct ABBB_EVAC_API FBBBMonsterMovementFragment final : public FMassFragment
     /** 巡逻与近距离接近速度 */
     float WalkSpeed = 100.0f;
 
+    /** 走尸追击行走速度 包含固定出生速度偏差 */
+    float WalkerChaseWalkSpeed = 180.0f;
+
+    /** 本代走尸固定的接近目标转跑距离 */
+    float WalkerRunDistance = 700.0f;
+
+    /** 本次追击已经转跑 仅由移动处理器维护 */
+    bool bWalkerRunning = false;
+
     /** 中距离追击速度 */
     float RunSpeed = 300.0f;
 

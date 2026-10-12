@@ -47,6 +47,9 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(DeathAnimationDuration) && DeathAnimationDuration > 0.0f && DeathAnimationDuration < CorpseLifetime
         && FMath::IsFinite(CorpseSimulationDuration) && CorpseSimulationDuration >= 0.5f && CorpseSimulationDuration < CorpseLifetime
         && FMath::IsFinite(WalkSpeed) && WalkSpeed > 0.0f
+        && FMath::IsFinite(WalkerChaseWalkSpeed) && WalkerChaseWalkSpeed > 0.0f && WalkerChaseWalkSpeed < RunSpeed
+        && FMath::IsFinite(WalkerRunDistanceMin) && WalkerRunDistanceMin > 0.0f
+        && FMath::IsFinite(WalkerRunDistanceMax) && WalkerRunDistanceMax >= WalkerRunDistanceMin
         && FMath::IsFinite(RunSpeed) && RunSpeed > WalkSpeed
         && FMath::IsFinite(SprintSpeed) && SprintSpeed > RunSpeed
         && FMath::IsFinite(Acceleration) && Acceleration > 0.0f

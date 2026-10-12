@@ -77,6 +77,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Health.CorpseLifetime = Settings->CorpseLifetime;
     auto& Movement = BuildContext.AddFragment_GetRef<FBBBMonsterMovementFragment>();
     Movement.WalkSpeed = Settings->WalkSpeed;
+    Movement.WalkerChaseWalkSpeed = Settings->WalkerChaseWalkSpeed;
     Movement.RunSpeed = Settings->RunSpeed;
     Movement.SprintSpeed = Settings->SprintSpeed;
     Movement.Acceleration = Settings->Acceleration;

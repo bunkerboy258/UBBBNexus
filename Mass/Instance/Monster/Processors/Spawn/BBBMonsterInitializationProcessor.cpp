@@ -61,6 +61,9 @@ bool UBBBMonsterInitializationProcessor::InitializeBirth(const FGuid& Identity, 
     Variation.PhaseOffset = BirthSample(Variation.Seed, 0x9b05688cu);
     Variation.LocomotionStyle = static_cast<uint8>(BirthSample(Variation.Seed, 0x3c6ef372u) * 3.0f);
     Movement.WalkSpeed = Definition.WalkSpeed * Variation.SpeedScale;
+    Movement.WalkerChaseWalkSpeed = Definition.WalkerChaseWalkSpeed * Variation.SpeedScale;
+    Movement.WalkerRunDistance = FMath::Lerp(Definition.WalkerRunDistanceMin, Definition.WalkerRunDistanceMax,
+        BirthSample(Variation.Seed, 0x428a2f98u));
     Movement.RunSpeed = Definition.RunSpeed * Variation.SpeedScale;
     Movement.SprintSpeed = Definition.SprintSpeed * Variation.SpeedScale;
     Movement.Acceleration = Definition.Acceleration * (1.0f + (BirthSample(Variation.Seed, 0xbb67ae85u) * 2.0f - 1.0f) * Settings->AccelerationVariation);

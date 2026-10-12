@@ -116,6 +116,18 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "走路速度"))
     float WalkSpeed = 100.0f;
 
+    /** 走尸追击尚未转跑时的行走速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "走尸追击行走速度"))
+    float WalkerChaseWalkSpeed = 180.0f;
+
+    /** 每只走尸出生时抽取转跑距离的下界 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", Units = "cm", DisplayName = "走尸转跑距离下界"))
+    float WalkerRunDistanceMin = 500.0f;
+
+    /** 每只走尸出生时抽取转跑距离的上界 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", Units = "cm", DisplayName = "走尸转跑距离上界"))
+    float WalkerRunDistanceMax = 900.0f;
+
     /** 中距离追击速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "跑步速度"))
     float RunSpeed = 300.0f;

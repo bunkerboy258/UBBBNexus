@@ -31,9 +31,13 @@ UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
 
 EBBBMonsterGait UBBBMonsterLocomotionProcessor::SelectGait(const FBBBMonsterMovementFragment& Movement, const float RemainingDistance, const bool bPatrol)
 {
-    if (bPatrol || Movement.MaxGait == EBBBMonsterGait::Walk)
+    if (bPatrol)
     {
         return EBBBMonsterGait::Walk;
+    }
+    if (Movement.MaxGait == EBBBMonsterGait::Walk)
+    {
+        return Movement.bWalkerRunning ? EBBBMonsterGait::Run : EBBBMonsterGait::Walk;
     }
     if (Movement.MaxGait == EBBBMonsterGait::Sprint && (Movement.Gait == EBBBMonsterGait::Sprint || RemainingDistance >= Movement.SprintDistance))
     {
@@ -317,6 +321,16 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const auto& Injury = Mobility[Index];
             const auto* Settings = Network[Index].Definition.Get();
             const float Now = World->GetTimeSeconds();
+            const auto& Target = Targets[Index];
+            if (!bChase || !Target.bHasTarget || Injury.bCrawling)
+            {
+                Movement.bWalkerRunning = false;
+            }
+            if (bChase && Target.bHasTarget && !Injury.bCrawling && Movement.MaxGait == EBBBMonsterGait::Walk &&
+                FVector::DistSquared2D(Location, Target.TargetLocation) <= FMath::Square(Movement.WalkerRunDistance))
+            {
+                Movement.bWalkerRunning = true;
+            }
             FBBBMonsterMovementFragment Geometry = Movement;
             bool bChangingPosture = false;
             if (Injury.bCrawling && Settings)
@@ -344,7 +358,9 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 const float PointDistance = ToPoint.Size2D();
                 const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - (bPatrol ? 15.0f : 0.0f), 0.0f);
                 Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
-                const float UprightSpeed = Movement.Gait == EBBBMonsterGait::Walk ? Movement.WalkSpeed :
+                const float WalkingSpeed = bChase && Movement.MaxGait == EBBBMonsterGait::Walk
+                    ? Movement.WalkerChaseWalkSpeed : Movement.WalkSpeed;
+                const float UprightSpeed = Movement.Gait == EBBBMonsterGait::Walk ? WalkingSpeed :
                     Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
                 const float SpeedRatio = Injury.GetSpeedRatio(Now);
                 const float TargetSpeed = (Injury.bCrawling && Settings ? Settings->CrawlSpeed : UprightSpeed) * SpeedRatio;
@@ -406,7 +422,6 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                     Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
             FVector FacingDirection = HorizontalDelta;
-            const auto& Target = Targets[Index];
             const bool bFaceTarget = Target.bHasTarget && Settings && (States[Index].State == EBBBMonsterBehavior::Alert
                 || (bChase && FVector::DistSquared(Location, Target.TargetLocation) <= FMath::Square(Settings->AttackRange)));
             if (bFaceTarget)
