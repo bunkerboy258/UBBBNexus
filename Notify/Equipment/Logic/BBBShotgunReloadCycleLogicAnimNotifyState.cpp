@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Logic/BBBShotgunReloadCycleLogicAnimNotifyState.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunReloadCycleEndLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunInterruptReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunReloadCycleEndLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunInterruptReloadLocalControlPacket.h"
 #include "Animation/AnimNotifyLibrary.h"
 #include "Components/SkeletalMeshComponent.h"
 

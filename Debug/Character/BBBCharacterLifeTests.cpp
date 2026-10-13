@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemSelectLocalControlPacket.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
@@ -88,11 +88,11 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("初始最大生命"), Character->GetHealth(), 500.0f);
     TestTrue(TEXT("出生为正常状态"), Character->GetLifePhase() == EBBBCharacterLifePhase::Alive);
 
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("ModernWeapons_Rifle_01")}});
+    Character->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{TEXT("ModernWeapons_Rifle_01")}, {1}});
     Step();
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{0}});
+    Character->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{0}});
     Step();
-    ABBBEquipment *SelectedEquipment = Character->GetActiveEquipment();
+    ABBBEquipment *SelectedEquipment = Character->GetHeldEquipment();
     TestNotNull(TEXT("真实装备已被选择"), SelectedEquipment);
 
     APlayerController *TeammateController = World->SpawnActor<APlayerController>();
@@ -123,9 +123,9 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     Step();
     TestTrue(TEXT("致倒地命中不溢出"), Character->GetLifePhase() == EBBBCharacterLifePhase::Downed);
     TestEqual(TEXT("同帧后续独立命中仍扣倒地生命"), Character->GetHealth(), 250.0f);
-    TestFalse(TEXT("倒地收起装备"), Character->IsEquipmentUsable());
-    TestTrue(TEXT("倒地保留原装备实例和绑定"), Character->GetActiveEquipment() == SelectedEquipment);
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{INDEX_NONE}});
+    TestFalse(TEXT("倒地收起装备"), Character->IsItemUsable());
+    TestTrue(TEXT("倒地保留原装备实例和绑定"), Character->GetHeldEquipment() == SelectedEquipment);
+    Character->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{INDEX_NONE}});
     const float Yaw = Character->GetActorRotation().Yaw;
     FBBBCharacterMovementLocalControlPacket Move;
     Move.MoveWorld = FVector(1, 1, 0);
@@ -146,7 +146,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
               40.0f);
     TestEqual(TEXT("低顶倒地保持正确网格底部偏移"), static_cast<float>(Character->GetMesh()->GetRelativeLocation().Z),
               -40.0f);
-    TestTrue(TEXT("倒地拒绝选择变化并保留原选择"), Character->GetActiveEquipment() == SelectedEquipment);
+    TestTrue(TEXT("倒地拒绝选择变化并保留原选择"), Character->GetHeldEquipment() == SelectedEquipment);
 
     ABBBCharacter *Mirror =
         World->SpawnActor<ABBBCharacter>(CharacterClass, FVector(500.0f, 0.0f, 100.0f), FRotator::ZeroRotator);

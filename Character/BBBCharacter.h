@@ -6,7 +6,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/BBBCharacterInputSubmit.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/BBBCharacterAimSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/BBBCharacterAnimationSystem.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/BBBCharacterEquipmentSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/BBBCharacterInteractionSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/BBBCharacterLocomotionSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/BBBCharacterNetworkSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/BBBCharacterParseSystem.h"
@@ -23,6 +23,8 @@ class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class UBBBEquipmentNetworkComponent;
+class UBBBConsumableNetworkComponent;
+class UBBBItemDefinition;
 class ABBBPlayerCameraSystem;
 class ABBBEquipment;
 class UMotionWarpingComponent;
@@ -131,15 +133,15 @@ public:
 
     /** @return 当前持有装备已经成立的使用许可 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (DisplayName = "装备可使用"))
-    bool IsEquipmentUsable() const
+    bool IsItemUsable() const
     {
-        return RuntimeData.Equipment.ReadEquipmentUseState().bUsable;
+        return RuntimeData.Interaction.ReadInteractionUseState().bUsable;
     }
 
     /** @return 当前装备使用许可的修订号 */
-    uint64 GetEquipmentUseRevision() const
+    uint64 GetItemUseRevision() const
     {
-        return RuntimeData.Equipment.ReadEquipmentUseState().Revision;
+        return RuntimeData.Interaction.ReadInteractionUseState().Revision;
     }
     
     /**
@@ -214,9 +216,27 @@ public:
 
     /** @return 当前激活主手装备 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备")
-    ABBBEquipment *GetActiveEquipment() const
+    ABBBEquipment *GetHeldEquipment() const;
+
+    /** @return 当前实际持有物品 */
+    UFUNCTION(BlueprintPure, Category = "BBB|交互", meta = (DisplayName = "当前主手物品"))
+    AActor *GetHeldItem() const
     {
-        return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
+        return RuntimeData.Interaction.ReadInteractionSelectionState().ActiveMainHandInstance;
+    }
+
+    /** @return 实际持有物品的外侧定义 */
+    UBBBItemDefinition *GetHeldItemDefinition() const;
+    /** @return 实际持有真实物品的稳定身份 镜像为空 */
+    FGuid GetHeldItemIdentity() const;
+    /** @return 当前持有物品的基本使用序号 */
+    int32 GetHeldUseSerial() const;
+    /** @return 实际持有真实物品的数量 镜像为零 */
+    int32 GetHeldItemQuantity() const;
+    /** @return 消耗品领域自己的网络载体 */
+    UBBBConsumableNetworkComponent *GetConsumableNetworkComponent() const
+    {
+        return ConsumableNetworkComponent;
     }
 
     /** @return 角色是否只执行网络镜像还原 */
@@ -226,9 +246,9 @@ public:
     bool HasNetworkAuthority() const;
 
     /** @return 当前实际持有实例标识 */
-    uint64 GetEquipmentGeneration() const
+    uint64 GetItemGeneration() const
     {
-        return RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveGeneration;
+        return RuntimeData.Interaction.ReadInteractionSelectionState().ActiveGeneration;
     }
 
     /** @return 装备独立网络组件 */
@@ -266,6 +286,10 @@ protected:
     /** 装备独立网络传输组件 */
     UPROPERTY(VisibleAnywhere, Category = "ABBB|网络", meta = (DisplayName = "装备网络组件"))
     TObjectPtr<UBBBEquipmentNetworkComponent> EquipmentNetworkComponent;
+
+    /** 消耗品消息的独立领域载体 */
+    UPROPERTY(VisibleAnywhere, Category = "BBB|交互", meta = (DisplayName = "消耗品协议"))
+    TObjectPtr<UBBBConsumableNetworkComponent> ConsumableNetworkComponent;
     /*分类命名为ABBB是为了快点找到(bushi*/
 
 private:
@@ -295,7 +319,7 @@ private:
 
     FBBBCharacterAppearanceSystem AppearanceSystem;
 
-    FBBBCharacterEquipmentSystem EquipmentSystem;
+    FBBBCharacterInteractionSystem InteractionSystem;
 
     FBBBCharacterParseSystem ParseSystem;
     

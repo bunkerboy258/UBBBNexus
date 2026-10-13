@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/Processors/BBBCharacterItemLifecycleProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/Processors/BBBCharacterItemAcquisitionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/Processors/BBBCharacterItemInventoryProcessor.h"
@@ -51,4 +52,5 @@ private:
 
     /** 上层快捷选择处理器 */
     FBBBCharacterItemBarProcessor BarProcessor;
+    FBBBCharacterItemLifecycleProcessor LifecycleProcessor;
 };

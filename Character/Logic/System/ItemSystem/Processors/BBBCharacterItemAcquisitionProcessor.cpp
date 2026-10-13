@@ -1,8 +1,12 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/Processors/BBBCharacterItemAcquisitionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/Context/BBBCharacterItemUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Catalog/BBBConsumableCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Misc/Catalog/BBBMiscCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -10,83 +14,139 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
 {
     auto &Inventory = Context.RuntimeData.Item.ItemInventoryState;
     auto &Operations = Context.RuntimeData.Item.ItemOperationState;
-    const UBBBItemCatalog *Catalog = Context.Config.Catalog;
-    for (const FName ItemId : Operations.PendingItemIds)
+    for (int32 Request = 0; Request < Operations.PendingItemIds.Num(); ++Request)
     {
-        const FBBBItemCatalogEntry *Entry = Catalog ? Catalog->FindItem(ItemId) : nullptr;
-        int32 EmptySlot = INDEX_NONE;
-        for (int32 Slot = 0; Slot < Inventory.BackpackSlotCount; ++Slot)
+        const FName Id = Operations.PendingItemIds[Request];
+        UBBBItemDefinition *Definition = nullptr;
+        TSubclassOf<AActor> ActorClass;
+        int32 Candidates = 0;
+        const auto Accept = [&Definition, &Candidates](const UBBBItemDefinition *Candidate)
         {
-            const bool bMiscRegion = Slot >= Inventory.QuickAccessSlotCount + Inventory.EquipmentStorageSlotCount;
-            if (Entry && !Inventory.Slots[Slot].Definition
-                && (Slot >= Inventory.QuickAccessSlotCount || Entry->Definition->ItemType == EBBBItemType::Equipment)
-                && bMiscRegion == (Entry->Definition->ItemType == EBBBItemType::Misc))
+            if (Candidate)
             {
-                EmptySlot = Slot;
-                break;
+                Definition = const_cast<UBBBItemDefinition *>(Candidate);
+                ++Candidates;
             }
+        };
+        const auto *Equipment = Context.Config.EquipmentCatalog ? Context.Config.EquipmentCatalog->FindItem(Id) : nullptr;
+        const auto *Wearable = Context.Config.WearableCatalog ? Context.Config.WearableCatalog->FindItem(Id) : nullptr;
+        const auto *Consumable = Context.Config.ConsumableCatalog ? Context.Config.ConsumableCatalog->FindItem(Id) : nullptr;
+        Accept(Equipment ? Equipment->Definition.Get() : nullptr);
+        Accept(Wearable ? Wearable->Definition.Get() : nullptr);
+        Accept(Consumable ? Consumable->Definition.Get() : nullptr);
+        Accept(Context.Config.MiscCatalog ? Context.Config.MiscCatalog->FindItem(Id) : nullptr);
+        if (Equipment)
+        {
+            ActorClass = Equipment->ActorClass;
+        }
+        if (Consumable)
+        {
+            ActorClass = Consumable->ActorClass;
         }
         ++Operations.Revision;
-        if (EmptySlot == INDEX_NONE || !Entry)
+        if (Candidates != 1 || !Definition || Definition->MaxStack < 1)
         {
             ++Operations.RejectedCount;
             continue;
         }
-        ABBBEquipment *Created = nullptr;
-        if (Entry->Definition->ItemType == EBBBItemType::Equipment)
+        int32 Start = 0;
+        int32 Count = Inventory.EquipmentSlotCount;
+        if (Definition->ItemType == EBBBItemType::Wearable)
         {
-            UWorld *World = Context.Character.GetWorld();
-            if (World)
+            Start = Inventory.EquipmentSlotCount;
+            Count = Inventory.WearableSlotCount;
+        }
+        if (Definition->ItemType == EBBBItemType::Consumable)
+        {
+            Start = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount;
+            Count = Inventory.ConsumableSlotCount;
+        }
+        if (Definition->ItemType == EBBBItemType::Misc)
+        {
+            Start = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount + Inventory.ConsumableSlotCount;
+            Count = Inventory.MiscSlotCount;
+        }
+        int32 Remaining = Operations.PendingQuantities[Request];
+        TArray<int32> Slots;
+        TArray<int32> Added;
+        for (int32 Pass = 0; Pass < 2; ++Pass)
+        {
+            for (int32 Slot = Start; Slot < Start + Count && Remaining > 0; ++Slot)
             {
-                Created = World->SpawnActorDeferred<ABBBEquipment>(Entry->EquipmentClass, FTransform::Identity,
-                    &Context.Character, &Context.Character, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-            }
-            if (Created)
-            {
-                Created->SetActorHiddenInGame(true);
-                UGameplayStatics::FinishSpawningActor(Created, FTransform::Identity);
-            }
-            if (!IsValid(Created) || !Created->IsInitialized())
-            {
-                if (IsValid(Created))
+                const auto &Item = Inventory.Slots[Slot];
+                const bool bExisting = Item.Definition == Definition && Item.Quantity > 0;
+                if ((Pass == 0 && !bExisting) || (Pass == 1 && Item.Definition))
                 {
-                    Created->Destroy();
+                    continue;
                 }
-                ++Operations.RejectedCount;
+                const int32 Amount = FMath::Min(Remaining, Definition->MaxStack - (bExisting ? Item.Quantity : 0));
+                if (Amount > 0)
+                {
+                    Slots.Add(Slot);
+                    Added.Add(Amount);
+                    Remaining -= Amount;
+                }
+            }
+        }
+        if (Remaining > 0)
+        {
+            ++Operations.RejectedCount;
+            continue;
+        }
+        TArray<AActor *> Created;
+        Created.SetNumZeroed(Slots.Num());
+        bool bPrepared = true;
+        for (int32 Index = 0; Index < Slots.Num(); ++Index)
+        {
+            if (Inventory.Slots[Slots[Index]].Definition || !ActorClass)
+            {
                 continue;
             }
-            Created->SetActorTickEnabled(false);
+            UWorld *World = Context.Character.GetWorld();
+            AActor *Actor = World ? World->SpawnActorDeferred<AActor>(ActorClass, FTransform::Identity,
+                &Context.Character, &Context.Character, ESpawnActorCollisionHandlingMethod::AlwaysSpawn) : nullptr;
+            Created[Index] = Actor;
+            if (Actor)
+            {
+                Actor->SetActorHiddenInGame(true);
+                UGameplayStatics::FinishSpawningActor(Actor, FTransform::Identity);
+                Actor->SetActorTickEnabled(false);
+            }
+            const auto *EquipmentActor = Cast<ABBBEquipment>(Actor);
+            const auto *ConsumableActor = Cast<ABBBConsumable>(Actor);
+            bPrepared = IsValid(Actor) && ((EquipmentActor && EquipmentActor->IsInitialized())
+                || (ConsumableActor && ConsumableActor->IsInitialized()));
+            if (!bPrepared)
+            {
+                break;
+            }
         }
-        FBBBCharacterItem &Item = Inventory.Slots[EmptySlot];
-        Item.InstanceId = FGuid::NewGuid();
-        Item.Definition = Entry->Definition;
-        Item.EquipmentInstance = Created;
+        if (!bPrepared)
+        {
+            for (AActor *Actor : Created)
+            {
+                if (IsValid(Actor))
+                {
+                    Actor->Destroy();
+                }
+            }
+            ++Operations.RejectedCount;
+            continue;
+        }
+        for (int32 Index = 0; Index < Slots.Num(); ++Index)
+        {
+            auto &Item = Inventory.Slots[Slots[Index]];
+            if (!Item.Definition)
+            {
+                Item.InstanceId = FGuid::NewGuid();
+                Item.Definition = Definition;
+                Item.HeldInstance = Created[Index];
+            }
+            Item.Quantity += Added[Index];
+        }
         ++Inventory.Revision;
         ++Operations.SucceededCount;
     }
     Operations.PendingItemIds.Reset();
-}
-
-void FBBBCharacterItemAcquisitionProcessor::Shutdown(FBBBCharacterItemUpdateContext &Context)
-{
-    auto &Inventory = Context.RuntimeData.Item.ItemInventoryState;
-    for (FBBBCharacterItem &Item : Inventory.Slots)
-    {
-        if (IsValid(Item.EquipmentInstance))
-        {
-            Item.EquipmentInstance->Destroy();
-        }
-    }
-    auto &Operations = Context.RuntimeData.Item.ItemOperationState;
-    Operations.PendingItemIds.Reset();
-    Operations.PendingMoveSources.Reset();
-    Operations.PendingMoveTargets.Reset();
-    Operations.PendingMoveInstances.Reset();
-    Operations.PendingSelectedSlots.Reset();
-    Inventory.Slots.Reset();
-    Inventory.WearSlots.Reset();
-    Inventory.BackpackSlotCount = 0;
-    Inventory.QuickAccessSlotCount = 0;
-    Inventory.EquipmentStorageSlotCount = 0;
-    ++Inventory.Revision;
+    Operations.PendingQuantities.Reset();
 }

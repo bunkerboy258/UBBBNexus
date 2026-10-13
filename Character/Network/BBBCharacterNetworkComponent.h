@@ -163,34 +163,34 @@ private:
     /** 最新命中方向 */
     UPROPERTY(Replicated)
     FVector ReplicatedHitDirection = FVector::ForwardVector;
-    friend class FBBBEquipmentObservationProcessor;
+    friend class FBBBCharacterInteractionObservationProcessor;
 
     /** @param EquipmentId	实际装备标识 @param Generation	持有实例标识 @return 无 */
-    void ReplicateEquipment(FName EquipmentId, uint64 Generation, bool bUsable, uint64 UseRevision);
+    void ReplicateInteraction(FName EquipmentId, uint64 Generation, bool bUsable, uint64 UseRevision);
 
     /** @param EquipmentId	已经成立的装备标识 @param Generation	持有实例标识 @return 无 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitEquipment(FName EquipmentId, uint64 Generation, bool bUsable, uint64 UseRevision);
+    void ServerSubmitInteraction(FName EquipmentId, uint64 Generation, bool bUsable, uint64 UseRevision);
 
     /** @return 无 将当前持有关系提交为角色输入 */
     UFUNCTION()
-    void OnRep_Equipment();
+    void OnRep_Interaction();
 
     /** 当前实际装备标识 */
-    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
-    FName ReplicatedEquipmentId;
+    UPROPERTY(ReplicatedUsing = OnRep_Interaction)
+    FName ReplicatedInteractionId;
 
     /** 当前实际持有实例标识 */
-    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
-    uint64 ReplicatedEquipmentGeneration = 0;
+    UPROPERTY(ReplicatedUsing = OnRep_Interaction)
+    uint64 ReplicatedInteractionGeneration = 0;
 
     /** 当前装备的独立使用许可 */
-    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
-    bool bReplicatedEquipmentUsable = false;
+    UPROPERTY(ReplicatedUsing = OnRep_Interaction)
+    bool bReplicatedInteractionUsable = false;
 
     /** 当前装备独立使用结果版本 */
-    UPROPERTY(ReplicatedUsing = OnRep_Equipment)
-    uint64 ReplicatedEquipmentUseRevision = 0;
+    UPROPERTY(ReplicatedUsing = OnRep_Interaction)
+    uint64 ReplicatedInteractionUseRevision = 0;
 
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;

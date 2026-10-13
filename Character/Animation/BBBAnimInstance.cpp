@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -49,6 +49,9 @@ void UBBBAnimInstance::PublishAnimationFacts(
     GroundDistance = FactState.GroundDistance;
     bSourceAiming = FactState.bIsAiming;
     SourceEquipmentType = FactState.EquipmentType;
+    SourceItemType = FactState.ItemType;
+    bSourceUsingItem = FactState.bUsingItem;
+    SourceItemUseSerial = FactState.ItemUseSerial;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
     SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
     bSourceHasMuzzle = FactState.bHasMuzzle;

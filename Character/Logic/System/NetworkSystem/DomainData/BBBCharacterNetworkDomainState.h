@@ -1,5 +1,5 @@
 #pragma once
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBEquipmentNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterInteractionNetworkObservationState.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterLifeNetworkObservationState.h"
@@ -65,9 +65,9 @@ public:
     }
 
     /** @return 实际持有关系的网络发送基准 */
-    const FBBBEquipmentNetworkObservationState &ReadEquipmentNetworkObservationState() const
+    const FBBBCharacterInteractionNetworkObservationState &ReadCharacterInteractionNetworkObservationState() const
     {
-        return EquipmentObservationState;
+        return InteractionObservationState;
     }
 
     /** @return 待路由的救援消息 */
@@ -109,8 +109,8 @@ private:
     FBBBCharacterDamageNetworkObservationState DamageObservationState;
     /** 待投送的独立命中 */
     FBBBCharacterDamageInboxState DamageInboxState;
-    friend class FBBBEquipmentObservationProcessor;
-    FBBBEquipmentNetworkObservationState EquipmentObservationState;
+    friend class FBBBCharacterInteractionObservationProcessor;
+    FBBBCharacterInteractionNetworkObservationState InteractionObservationState;
 
     friend class FBBBTraversalObservationProcessor;
     /** 翻越独立离散同步生命周期 */

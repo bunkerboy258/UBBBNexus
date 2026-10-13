@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/Context/BBBCharacterItemUpdateContext.h"
-#include "BBBWork/UBBBNexus/Character/Config/Item/BBBItemConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
@@ -22,6 +22,7 @@ void FBBBCharacterItemSystem::Update()
     InventoryProcessor.Update(Context);
     AcquisitionProcessor.Update(Context);
     BarProcessor.Update(Context);
+    LifecycleProcessor.Update(Context);
 }
 
 void FBBBCharacterItemSystem::Shutdown()
@@ -31,6 +32,6 @@ void FBBBCharacterItemSystem::Shutdown()
         return;
     }
     FBBBCharacterItemUpdateContext Context{*Character, *RuntimeData, *ItemConfig};
-    AcquisitionProcessor.Shutdown(Context);
+    LifecycleProcessor.Shutdown(Context);
     BarProcessor.Shutdown(Context);
 }

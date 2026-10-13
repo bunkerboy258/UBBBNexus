@@ -1,5 +1,6 @@
 
 #pragma once
+#include "BBBWork/UBBBNexus/Item/BBBItemType.h"
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "BBBPlayerController.generated.h"
@@ -88,9 +89,13 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     int32 GetItemSlotCount() const;
     /** @return 普通装备区域起点与数量 */
-    void GetEquipmentStorageRange(int32 &Start, int32 &Count) const;
+    void GetStorageRange(EBBBItemType Type, int32 &Start, int32 &Count) const;
     /** @return 杂物区域起点与数量 */
-    void GetMiscStorageRange(int32 &Start, int32 &Count) const;
+    void GetConsumableQuickRange(int32 &Start, int32 &Count) const;
+    /** @return 当前选中的消耗品快捷索引 */
+    int32 GetSelectedConsumableSlot() const;
+    /** @return TAB 是否显示消耗品快捷栏 */
+    bool IsConsumableBarHeld() const;
     /** @return 穿戴位置起点与用途名称 */
     void GetWearSlotRange(int32 &Start, TArray<FName> &Names) const;
 
@@ -116,9 +121,17 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     int32 GetSelectedItemSlot() const;
 
-    /** @param EquipmentId	待获得装备定义 @return 输入是否接受 最终结果由操作完成状态提供 */
+    /** @param ItemId	待获得物品型号 @param Quantity	整次获得数量 @return 输入是否接受 最终结果由操作完成状态提供 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")
-    bool SubmitItemAdd(FName EquipmentId);
+    bool SubmitItemAdd(FName ItemId, int32 Quantity = 1);
+
+    /** @return 是否提交临时使用请求 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|物品")
+    bool SubmitQuickUse();
+
+    /** @return 是否提交当前物品主行为 */
+    UFUNCTION(BlueprintCallable, Category = "BBB|交互")
+    bool SubmitPrimaryUse();
 
     /** @param Source	起始槽位 @param Target	目标槽位 @return 输入是否接受 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")
@@ -154,6 +167,10 @@ protected:
     //更新int32MappingContextPriority供后续步骤读取
     int32 MappingContextPriority = 0;
 private:
+    /** G 按键的输入适配 */
+    void QuickUse();
+    /** TAB 的输入显示状态 不属于物品玩法事实 */
+    bool bConsumableBarHeld = false;
     /** 本地玩家唯一物品界面 */
     UPROPERTY(Transient)
     TObjectPtr<UBBBPlayerItemView> ItemView;

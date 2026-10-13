@@ -1,8 +1,9 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterMuzzleProcessor.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterMuzzleProcessor::Update(FBBBCharacterAnimationUpdateContext &Context) const
@@ -12,7 +13,7 @@ void FBBBCharacterMuzzleProcessor::Update(FBBBCharacterAnimationUpdateContext &C
     State.bHasMuzzle = false;
 
     const ABBBEquipment *Equipment =
-        Context.RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance;
+        Context.Character.GetHeldEquipment();
     if (!IsValid(Equipment))
     {
         return;

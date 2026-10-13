@@ -16,13 +16,15 @@ struct FBBBProjectileSpawnLocalControlPacket final
 {
     using FInputFragment = FBBBProjectileSpawnInputFragment;
 
-    FTransform MuzzleTransform = FTransform::Identity;
+    FTransform LaunchTransform = FTransform::Identity;
     /** 枪口局部空间的初始方向 */
     FVector LocalDirection = FVector::ForwardVector;
     /** 世界重力倍率 */
     float GravityScale = 0.0f;
     /** 范围伤害半径 */
     float ExplosionRadiusCm = 0.0f;
+    /** 爆炸是否影响发射者 */
+    bool bDamageInstigator = false;
     /** 延时引信 零表示没有引信 */
     float FuseSeconds = 0.0f;
     /** 接触目标时引爆 */
@@ -65,7 +67,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
     /** @return 出生数据是否有效 */
     bool IsValid() const
     {
-        return !MuzzleTransform.ContainsNaN()
+        return !LaunchTransform.ContainsNaN()
             && !LocalDirection.ContainsNaN() && !LocalDirection.IsNearlyZero()
             && FMath::IsFinite(GravityScale) && GravityScale >= 0.0f
             && FMath::IsFinite(ExplosionRadiusCm) && ExplosionRadiusCm >= 0.0f
@@ -113,15 +115,15 @@ struct FBBBProjectileSpawnLocalControlPacket final
         FBBBProjectileMotionFragment& Motion, FBBBProjectileCollisionFragment& Collision,
         FBBBProjectileLifetimeFragment& Life, FBBBProjectilePresentationFragment& Presentation) const
     {
-        Transform.GetMutableTransform() = MuzzleTransform;
+        Transform.GetMutableTransform() = LaunchTransform;
         Transform.GetMutableTransform().SetScale3D(FVector::OneVector);
-        const FVector Direction = MuzzleTransform.TransformVectorNoScale(LocalDirection).GetSafeNormal();
+        const FVector Direction = LaunchTransform.TransformVectorNoScale(LocalDirection).GetSafeNormal();
         Velocity.Value = Direction * Speed;
         Transform.GetMutableTransform().SetRotation(Direction.ToOrientationQuat());
         Motion.GravityScale = GravityScale;
         Motion.bResting = false;
-        Motion.SpawnLocation = MuzzleTransform.GetLocation();
-        Motion.PreviousLocation = MuzzleTransform.GetLocation();
+        Motion.SpawnLocation = LaunchTransform.GetLocation();
+        Motion.PreviousLocation = LaunchTransform.GetLocation();
         Motion.bInitialized = true;
         Collision.Damage = Damage;
         Collision.DurableDamage = DurableDamage;
@@ -129,6 +131,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Collision.AttackTime = AttackTime;
         Collision.StaggerValue = StaggerValue;
         Collision.ExplosionRadiusCm = ExplosionRadiusCm;
+        Collision.bDamageInstigator = bDamageInstigator;
         Collision.bDetonateOnImpact = bDetonateOnImpact;
         Collision.bBounceOnImpact = bBounceOnImpact;
         Collision.BounceRestitution = BounceRestitution;

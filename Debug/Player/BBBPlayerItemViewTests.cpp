@@ -60,7 +60,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_02"));
     Character->Tick(1.0f / 60.0f);
-    if (!TestTrue(TEXT("角色生命周期初始化真实背包"), Controller->GetItemSlotCount() == 65
+    if (!TestTrue(TEXT("角色生命周期初始化真实背包"), Controller->GetItemSlotCount() == 110
         && Controller->GetItemDisplayData(0).bOccupied && Controller->GetItemDisplayData(1).bOccupied))
     {
         return false;
@@ -93,32 +93,32 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("建立穿脱回归捕获"), Portrait->Open(Character));
     Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet01"));
     Character->Tick(1.0f / 60.0f);
-    const FGuid Helmet = Controller->GetItemInstanceId(5);
+    const FGuid Helmet = Controller->GetItemInstanceId(20);
     TestTrue(TEXT("头盔登记真实身份"), Helmet.IsValid());
-    Controller->SubmitItemMove(5, 0, Helmet);
+    Controller->SubmitItemMove(20, 0, Helmet);
     Character->Tick(1.0f / 60.0f);
-    TestEqual(TEXT("头盔与快捷武器交换被拒绝"), Controller->GetItemInstanceId(5), Helmet);
+    TestEqual(TEXT("头盔与快捷武器交换被拒绝"), Controller->GetItemInstanceId(20), Helmet);
     TestEqual(TEXT("非法交换保留快捷武器"), Controller->GetItemInstanceId(0), First);
-    TestEqual(TEXT("头盔双击目标为对应穿戴位置"), Controller->GetItemDisplayData(5).EquipSlot, 55);
-    TestTrue(TEXT("双击穿戴请求接受"), View->EquipItem(5, Character, Helmet));
+    TestEqual(TEXT("头盔双击目标为对应穿戴位置"), Controller->GetItemDisplayData(20).EquipSlot, 100);
+    TestTrue(TEXT("双击穿戴请求接受"), View->EquipItem(20, Character, Helmet));
     Character->Tick(1.0f / 60.0f);
     Portrait->Update(1.0f);
-    TestTrue(TEXT("穿戴后捕获真实位置"), Controller->GetItemInstanceId(55) == Helmet);
+    TestTrue(TEXT("穿戴后捕获真实位置"), Controller->GetItemInstanceId(100) == Helmet);
     Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet00"));
     Character->Tick(1.0f / 60.0f);
-    const FGuid ReplacementHelmet = Controller->GetItemInstanceId(5);
-    TestTrue(TEXT("双击替换头盔请求接受"), View->EquipItem(5, Character, ReplacementHelmet));
+    const FGuid ReplacementHelmet = Controller->GetItemInstanceId(20);
+    TestTrue(TEXT("双击替换头盔请求接受"), View->EquipItem(20, Character, ReplacementHelmet));
     Character->Tick(1.0f / 60.0f);
-    TestEqual(TEXT("新头盔进入穿戴位"), Controller->GetItemInstanceId(55), ReplacementHelmet);
-    TestEqual(TEXT("旧头盔回到替换来源格"), Controller->GetItemInstanceId(5), Helmet);
-    Controller->SubmitItemMove(55, 5, ReplacementHelmet);
-    Character->Tick(1.0f / 60.0f);
-    Portrait->Update(1.0f);
-    Controller->SubmitItemMove(55, 6, Helmet);
+    TestEqual(TEXT("新头盔进入穿戴位"), Controller->GetItemInstanceId(100), ReplacementHelmet);
+    TestEqual(TEXT("旧头盔回到替换来源格"), Controller->GetItemInstanceId(20), Helmet);
+    Controller->SubmitItemMove(100, 20, ReplacementHelmet);
     Character->Tick(1.0f / 60.0f);
     Portrait->Update(1.0f);
-    TestTrue(TEXT("脱下清空网格后捕获安全"), Controller->GetItemInstanceId(6) == Helmet
-        && !Controller->GetItemInstanceId(55).IsValid());
+    Controller->SubmitItemMove(100, 21, Helmet);
+    Character->Tick(1.0f / 60.0f);
+    Portrait->Update(1.0f);
+    TestTrue(TEXT("脱下清空网格后捕获安全"), Controller->GetItemInstanceId(21) == Helmet
+        && !Controller->GetItemInstanceId(100).IsValid());
     Portrait->Close();
     TestTrue(TEXT("控制器提供物品展示数据"), Controller->GetItemDisplayData(0).bOccupied
         && !Controller->GetItemDisplayData(0).Name.IsEmpty());
@@ -160,7 +160,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestNull(TEXT("收起后实际空手"), Controller->GetActiveItem());
     TestEqual(TEXT("快捷栏使用前五格"), Controller->GetQuickAccessSlotCount(), 5);
-    TestEqual(TEXT("背包与穿戴共六十三格"), Controller->GetItemSlotCount(), 63);
+    TestEqual(TEXT("四类背包和身体穿戴共一百一十格"), Controller->GetItemSlotCount(), 110);
     TestEqual(TEXT("满生命显示完整白线"), Controller->GetHudHealthFraction(), 1.0f);
     TestFalse(TEXT("空手不显示瞄准界面"), Controller->ShouldShowAimHud());
     const float MaximumHealth = Character->GetCharacterConfig().MaximumHealth;

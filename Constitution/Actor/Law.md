@@ -33,7 +33,8 @@ BBBActor实例目录/
 - `bool SubmitInput(TPacket &&Packet)`
 - 装备等有多态需求的BBBActor 可以在模板入口后按输入包类型 使用虚函数分发给具体实例 但禁止增加其它对外输入入口
 - 换而言之 `SubmitInput` 是外部影响该 Actor 的唯一入口
-- BBBActor 必须拥有 ParseSystem AnimationSystem NetworkSystem 和至少一种其它类型的 System
+- BBBActor 必须拥有 ParseSystem NetworkSystem 和至少一种业务 System 需要自身动画实例的 Actor 同时拥有 AnimationSystem
+- 消耗品不拥有自身动画实例 不创建 Animation/ 与 AnimationSystem 角色使用表现由角色动画层承载
 - 可以根据实现的玩法不同 创建不同的System 但是都必须拥有一致的物理文件 内部架构一致的代码设计
 
 ## 生命周期管理

@@ -48,7 +48,7 @@ void FBBBCharacterAnimationSystem::Update()
         RuntimeData->Animation.AnimationFactState,
         RuntimeData->Animation.AnimationLayerState,
         RuntimeData->Animation.AnimationMontageState,
-        RuntimeData->Equipment.ReadEquipmentSelectionState(),
+        RuntimeData->Interaction.ReadInteractionSelectionState(),
         RuntimeData->External.ReadWorldState(),
         *AnimationConfig};
 

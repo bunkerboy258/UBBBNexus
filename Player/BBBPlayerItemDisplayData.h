@@ -15,6 +15,10 @@ struct FBBBPlayerItemDisplayData
     UMaterialInterface *DisplayMaterial = nullptr;
     UTexture2D *PropertyIcon = nullptr;
     FGuid InstanceId;
+    /** 当前堆叠的数量 */
+    int32 Quantity = 0;
+    /** 所属快捷栏内的显示索引 */
+    int32 QuickIndex = INDEX_NONE;
     /** 双击时对应的快捷一号位或穿戴位置 无效值表示不可装备 */
     int32 EquipSlot = INDEX_NONE;
     bool bOccupied = false;

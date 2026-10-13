@@ -91,7 +91,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
         }
     }
     InspectedInstance = Controller ? Controller->GetItemDisplayData(InspectedSlot).InstanceId : FGuid();
-    bMiscPage = false;
+    StoragePage = EBBBItemType::Equipment;
     bGearPage = false;
     CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
     CharacterPreview->Open(Controller ? Controller->GetPawn() : nullptr);
@@ -114,6 +114,7 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
 void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
 {
     bQuickBarHeld = bHeld;
+    RefreshItems();
 }
 void UBBBPlayerItemView::NotifyQuickSelection()
 {
@@ -145,9 +146,9 @@ void UBBBPlayerItemView::InspectSlot(int32 SlotIndex)
     RefreshDetail();
 }
 
-FReply UBBBPlayerItemView::ShowStorage(bool bMisc)
+FReply UBBBPlayerItemView::ShowStorage(EBBBItemType Type)
 {
-    bMiscPage = bMisc;
+    StoragePage = Type;
     RefreshItems();
     return FReply::Handled();
 }
@@ -205,26 +206,37 @@ void UBBBPlayerItemView::RefreshItems()
     }
     RefreshDetail();
     QuickBar->ClearChildren();
+    if (ConsumableBar)
+    {
+        ConsumableBar->ClearChildren();
+        int32 Start = 0;
+        int32 Count = 0;
+        Controller->GetConsumableQuickRange(Start, Count);
+        for (int32 Index = 0; Index < Count; ++Index)
+        {
+            ConsumableBar->AddSlot().AutoWidth().Padding(4.0f)
+                [SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Index).Compact(true).Width(78.0f).Height(58.0f)];
+        }
+    }
     BackpackSlots->ClearChildren();
     EquipmentSlots->ClearChildren();
-    for (int32 SlotIndex = 0; SlotIndex < Controller->GetQuickAccessSlotCount(); ++SlotIndex)
+    int32 QuickStart = 0;
+    int32 QuickCount = Controller->GetQuickAccessSlotCount();
+    if (bQuickBarHeld)
     {
-        QuickBar->AddSlot().FillWidth(1.0f).Padding(
-            12.0f)[SNew(SBBBPlayerItemSlot).View(this).Slot(SlotIndex).Compact(true).Width(160.0f).Height(90.0f)];
+        Controller->GetConsumableQuickRange(QuickStart, QuickCount);
+    }
+    for (int32 Index = 0; Index < QuickCount; ++Index)
+    {
+        QuickBar->AddSlot().FillWidth(1.0f).Padding(12.0f)
+            [SNew(SBBBPlayerItemSlot).View(this).Slot(QuickStart + Index).Compact(true).Width(160.0f).Height(90.0f)];
     }
     int32 Start = 0;
     int32 Count = 0;
-    if (bMiscPage)
-    {
-        Controller->GetMiscStorageRange(Start, Count);
-    }
-    if (!bMiscPage)
-    {
-        Controller->GetEquipmentStorageRange(Start, Count);
-    }
+    Controller->GetStorageRange(StoragePage, Start, Count);
     TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
-    const int32 Columns = bMiscPage ? 6 : 5;
-    const float Width = bMiscPage ? 126.0f : 154.0f;
+    const int32 Columns = 5;
+    const float Width = 154.0f;
     for (int32 Position = 0; Position < Count; ++Position)
     {
         Grid->AddSlot(
@@ -236,7 +248,16 @@ void UBBBPlayerItemView::RefreshItems()
     TArray<FName> WearNames;
     Controller->GetWearSlotRange(Start, WearNames);
     TSharedRef<SUniformGridPanel> Right = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
-    const int32 RightCount = bGearPage ? WearNames.Num() : Controller->GetQuickAccessSlotCount();
+    int32 RightStart = 0;
+    int32 RightCount = Controller->GetQuickAccessSlotCount();
+    if (StoragePage == EBBBItemType::Consumable && !bGearPage)
+    {
+        Controller->GetConsumableQuickRange(RightStart, RightCount);
+    }
+    if (bGearPage)
+    {
+        RightCount = WearNames.Num();
+    }
     for (int32 Position = 0; Position < RightCount; ++Position)
     {
         Right->AddSlot(
@@ -245,7 +266,7 @@ void UBBBPlayerItemView::RefreshItems()
                 ? Position / 2
                 : Position)[SNew(SBBBPlayerItemSlot)
                                 .View(this)
-                                .Slot(bGearPage ? Start + Position : Position)
+                                .Slot(bGearPage ? Start + Position : RightStart + Position)
                                 .PositionLabel(bGearPage ? FText::FromString(WearNames[Position].ToString().ToUpper()) : FText::GetEmpty())
                                 .Width(bGearPage ? 162.0f : 340.0f)
                                 .Height(126.0f)];
@@ -293,9 +314,12 @@ bool UBBBPlayerItemView::EquipItem(int32 Source, const APawn *SourcePawn, FGuid 
     {
         return false;
     }
-    if (Data.EquipSlot == 0)
+    int32 ConsumableStart = 0;
+    int32 ConsumableCount = 0;
+    Controller->GetConsumableQuickRange(ConsumableStart, ConsumableCount);
+    if (Data.EquipSlot == 0 || Data.EquipSlot == ConsumableStart)
     {
-        return SelectSlot(0);
+        return SelectSlot(Data.EquipSlot);
     }
     return true;
 }
@@ -311,7 +335,13 @@ FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, con
             {
                 if (!Event.IsRepeat())
                 {
-                    SelectSlot(SlotIndex);
+                    int32 Start = 0;
+                    int32 Count = 0;
+                    if (StoragePage == EBBBItemType::Consumable)
+                    {
+                        GetItemController()->GetConsumableQuickRange(Start, Count);
+                    }
+                    SelectSlot(Start + SlotIndex);
                 }
                 return FReply::Handled();
             }

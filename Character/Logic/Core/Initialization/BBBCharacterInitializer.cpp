@@ -1,5 +1,5 @@
-
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
+
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
@@ -42,7 +42,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         return;
     }
     if (!ensureMsgf(
-        Config.Item.Catalog.Get() != nullptr,
+        Config.Item.EquipmentCatalog.Get() != nullptr && Config.Item.WearableCatalog.Get() != nullptr
+        && Config.Item.ConsumableCatalog.Get() != nullptr && Config.Item.MiscCatalog.Get() != nullptr,
         TEXT("角色 %s 的配置资产缺少装备目录"),
         *Character.GetPathName()))
     {
@@ -93,11 +94,11 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.PhysicalPresentationSystem.Initialize(Character, Character.RuntimeData,
         *Character.GetMesh(), *Character.HitReaction, *Character.PhysicalAnimation);
 
-    Character.EquipmentSystem.Initialize(
+    Character.InteractionSystem.Initialize(
         *Character.GetMesh(),
         Character.RuntimeData,
         Character,
-        Config.Equipment);
+        Config.Interaction);
     
     Character.NetworkSystem.Initialize(
         Character.RuntimeData,

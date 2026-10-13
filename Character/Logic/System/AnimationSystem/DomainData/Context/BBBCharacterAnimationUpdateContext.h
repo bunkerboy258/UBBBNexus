@@ -7,7 +7,7 @@ struct FBBBCharacterAnimationConfig;
 struct FBBBCharacterAnimationFactState;
 struct FBBBCharacterAnimationLayerState;
 struct FBBBCharacterAnimationMontageState;
-struct FBBBCharacterEquipmentSelectionState;
+struct FBBBCharacterInteractionSelectionState;
 struct FBBBCharacterRuntimeData;
 struct FBBBCharacterWorldState;
 
@@ -36,7 +36,7 @@ struct FBBBCharacterAnimationUpdateContext final
     FBBBCharacterAnimationMontageState &AnimationMontageState;
 
     /** 角色装备选择状态 */
-    const FBBBCharacterEquipmentSelectionState &EquipmentSelectionState;
+    const FBBBCharacterInteractionSelectionState &InteractionSelectionState;
 
     /** 当前帧世界快照 */
     const FBBBCharacterWorldState &WorldState;

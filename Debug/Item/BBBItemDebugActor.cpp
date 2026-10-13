@@ -2,9 +2,12 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Character/Config/Item/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
+#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Catalog/BBBConsumableCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Misc/Catalog/BBBMiscCatalog.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -82,25 +85,39 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     {
         return;
     }
-    const UBBBItemCatalog *Catalog = Character->GetCharacterConfig().Item.Catalog;
-    if (!IsValid(Catalog) || ItemDefinitions.IsEmpty())
+    const auto &Config = Character->GetCharacterConfig().Item;
+    if (ItemDefinitions.IsEmpty())
     {
         UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品目录或待注入物品列表无效 不提交入包输入"), *GetPathName());
         SetActorTickEnabled(false);
         return;
     }
-    FBBBItemAddLocalControlPacket Packet;
+    FBBBCharacterItemAddLocalControlPacket Packet;
     Packet.ItemIds.Reserve(ItemDefinitions.Num());
     for (const UBBBItemDefinition *Definition : ItemDefinitions)
     {
-        const FBBBItemCatalogEntry *Entry = IsValid(Definition) ? Catalog->FindItem(Definition->ItemId) : nullptr;
-        if (!Entry || Entry->Definition != Definition)
+        int32 Registered = 0;
+        if (const auto *Entry = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 所选物品未登记在角色目录或定义不一致 不提交入包输入"), *GetPathName());
+            Registered += Entry->Definition == Definition ? 1 : 0;
+        }
+        if (const auto *Entry = Config.WearableCatalog ? Config.WearableCatalog->FindItem(Definition->ItemId) : nullptr)
+        {
+            Registered += Entry->Definition == Definition ? 1 : 0;
+        }
+        if (const auto *Entry = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Definition->ItemId) : nullptr)
+        {
+            Registered += Entry->Definition == Definition ? 1 : 0;
+        }
+        Registered += Config.MiscCatalog && Config.MiscCatalog->FindItem(Definition->ItemId) == Definition ? 1 : 0;
+        if (Registered != 1)
+        {
+            UE_LOG(LogBBBItemDebug, Error, TEXT("物品必须唯一登记 %s"), *Definition->ItemId.ToString());
             SetActorTickEnabled(false);
             return;
         }
         Packet.ItemIds.Add(Definition->ItemId);
+        Packet.Quantities.Add(Definition->ItemType == EBBBItemType::Consumable ? Definition->MaxStack : 1);
     }
     const FString ItemNames = FString::JoinBy(Packet.ItemIds, TEXT(" "), [](const FName Id)
     {

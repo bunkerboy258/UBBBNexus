@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/BBBItemType.h"
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "BBBPlayerItemView.generated.h"
@@ -81,7 +82,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     /** @return 角色实时预览画刷 */
     const FSlateBrush *GetCharacterBrush() const;
     /** @param bMisc 是否展示杂物 @return 已处理 */
-    FReply ShowStorage(bool bMisc);
+    FReply ShowStorage(EBBBItemType Type);
     /** @param bGear 是否展示穿戴 @return 已处理 */
     FReply ShowGear(bool bGear);
 
@@ -91,6 +92,8 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
 
     /** 两处格子均只引用同一个背包索引 */
     TSharedPtr<SHorizontalBox> QuickBar;
+    /** 消耗品快捷栏同样只引用真实物品位置 */
+    TSharedPtr<SHorizontalBox> ConsumableBar;
     TSharedPtr<SVerticalBox> BackpackSlots;
     TSharedPtr<SVerticalBox> EquipmentSlots;
     TSharedPtr<SBox> DetailImage;
@@ -101,7 +104,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     TObjectPtr<UBBBPlayerItemPortrait> CharacterPreview;
     int32 InspectedSlot = INDEX_NONE;
     FGuid InspectedInstance;
-    bool bMiscPage = false;
+    EBBBItemType StoragePage = EBBBItemType::Equipment;
     bool bGearPage = false;
     bool bQuickBarHeld = false;
     TSharedPtr<STextBlock> StatusText;

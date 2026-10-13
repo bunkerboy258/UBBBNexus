@@ -2,7 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/Context/BBBCharacterAppearanceUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBCharacterAppearanceConfig.h"
-#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
 
 void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUpdateContext &Context) const
 {
@@ -39,7 +39,7 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
             continue;
         }
         const FName WearSlot = Inventory.WearSlots[Index - Inventory.BackpackSlotCount];
-        const FBBBItemCatalogEntry *Entry = Context.Catalog ? Context.Catalog->FindItem(Item.Definition->ItemId) : nullptr;
+        const FBBBWearableCatalogEntry *Entry = Context.Catalog ? Context.Catalog->FindItem(Item.Definition->ItemId) : nullptr;
         const FName Slot = WearSlot == TEXT("Gloves") ? FName(TEXT("Arms")) : WearSlot;
         FBBBCharacterAppearancePart *Part = Parts.FindByPredicate(
             [Slot](const FBBBCharacterAppearancePart &Value)
@@ -62,7 +62,7 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
     {
         if (!Part.ItemId.IsNone())
         {
-            const FBBBItemCatalogEntry *Entry = Context.Catalog ? Context.Catalog->FindItem(Part.ItemId) : nullptr;
+            const FBBBWearableCatalogEntry *Entry = Context.Catalog ? Context.Catalog->FindItem(Part.ItemId) : nullptr;
             return Entry && Entry->Appearance.Part == Part.Slot ? &Entry->Appearance : nullptr;
         }
         return Context.Config.BaseResources.Find(Part.BaseResourceId);

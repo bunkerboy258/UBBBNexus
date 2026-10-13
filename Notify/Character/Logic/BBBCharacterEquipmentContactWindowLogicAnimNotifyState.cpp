@@ -1,7 +1,8 @@
 #include "BBBWork/UBBBNexus/Notify/Character/Logic/BBBCharacterEquipmentContactWindowLogicAnimNotifyState.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginContactLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionEndContactLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimNotifyQueue.h"
 void UBBBCharacterEquipmentContactWindowLogicAnimNotifyState::NotifyBegin(USkeletalMeshComponent *MeshComp, UAnimSequenceBase *,
@@ -12,14 +13,14 @@ void UBBBCharacterEquipmentContactWindowLogicAnimNotifyState::NotifyBegin(USkele
     {
         return;
     }
-    ABBBEquipment *Equipment = Character->GetActiveEquipment();
+    ABBBEquipment *Equipment = Character->GetHeldEquipment();
     const int32 Token = Reference.GetNotifyInstanceID();
     if (!Equipment || !ensureMsgf(Token >= 0, TEXT("装备动画通知缺少播放实例标识")))
     {
         return;
     }
     Recipients.FindOrAdd(MeshComp).Add(Token, Equipment);
-    Character->SubmitInput(FBBBCharacterEquipmentBeginContactLocalControlPacket{{Equipment}, {Token}});
+    Character->SubmitInput(FBBBCharacterInteractionBeginContactLocalControlPacket{{Equipment}, {Token}});
 }
 void UBBBCharacterEquipmentContactWindowLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponent *MeshComp, UAnimSequenceBase *,
     const FAnimNotifyEventReference &Reference)
@@ -42,6 +43,6 @@ void UBBBCharacterEquipmentContactWindowLogicAnimNotifyState::NotifyEnd(USkeleta
     }
     if (Character && !Character->IsNetworkMirror() && Equipment.IsValid())
     {
-        Character->SubmitInput(FBBBCharacterEquipmentEndContactLocalControlPacket{{Equipment}, {Token}});
+        Character->SubmitInput(FBBBCharacterInteractionEndContactLocalControlPacket{{Equipment}, {Token}});
     }
 }

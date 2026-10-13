@@ -8,7 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterRescueSnapshotAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemSelectLocalControlPacket.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -118,10 +118,10 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
         Step();
     };
     Step();
-    Helper->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("ModernWeapons_Rifle_01")}});
-    Helper->SubmitInput(FBBBItemSelectLocalControlPacket{{0}});
+    Helper->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{TEXT("ModernWeapons_Rifle_01")}, {1}});
+    Helper->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{0}});
     Step();
-    ABBBEquipment *Equipment = Helper->GetActiveEquipment();
+    ABBBEquipment *Equipment = Helper->GetHeldEquipment();
     TestNotNull(TEXT("救援者原装备"), Equipment);
     Damage(Target, 500);
     Step();
@@ -149,13 +149,13 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
             HelperAnimation->GetCurrentStateName(Machine) == TEXT("Rescue"));
     }
 
-    TestFalse(TEXT("帮扶期间装备收起"), Helper->IsEquipmentUsable());
-    TestTrue(TEXT("装备实例未重建"), Helper->GetActiveEquipment() == Equipment);
+    TestFalse(TEXT("帮扶期间装备收起"), Helper->IsItemUsable());
+    TestTrue(TEXT("装备实例未重建"), Helper->GetHeldEquipment() == Equipment);
     Helper->SubmitInput(FBBBJumpLocalControlPacket{});
-    Helper->SubmitInput(FBBBItemSelectLocalControlPacket{{INDEX_NONE}});
+    Helper->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{INDEX_NONE}});
     Target->SubmitInput(FBBBCharacterMovementLocalControlPacket{FVector::ForwardVector, FRotator::ZeroRotator});
     Step();
-    TestTrue(TEXT("帮扶期间拒绝物品选择"), Helper->GetActiveEquipment() == Equipment);
+    TestTrue(TEXT("帮扶期间拒绝物品选择"), Helper->GetHeldEquipment() == Equipment);
     TestFalse(TEXT("帮扶期间拒绝跳跃"), Helper->bPressedJump);
     TestTrue(TEXT("被救者移动输入不取消"), Target->IsRescueReceiving());
     TestTrue(TEXT("被救者暂停爬行"), Target->GetVelocity().IsNearlyZero());
@@ -163,7 +163,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Step();
     Step();
     TestFalse(TEXT("松键释放被救者"), Target->IsRescueReceiving());
-    TestTrue(TEXT("取消恢复原装备"), Helper->IsEquipmentUsable() && Helper->GetActiveEquipment() == Equipment);
+    TestTrue(TEXT("取消恢复原装备"), Helper->IsItemUsable() && Helper->GetHeldEquipment() == Equipment);
     Target->SubmitInput(FBBBCharacterMovementLocalControlPacket{});
     Begin();
     Damage(Helper, 10);

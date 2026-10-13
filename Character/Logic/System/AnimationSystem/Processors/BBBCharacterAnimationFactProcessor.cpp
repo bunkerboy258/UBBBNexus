@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Config/Aim/BBBAimConfig.h"
@@ -6,8 +7,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -43,9 +44,14 @@ void FBBBCharacterAnimationFactProcessor::Update(
         && LifeAnimation.DownedEntryStartTime >= 0.0
         ? static_cast<float>(FMath::Max(Context.WorldState.WorldTimeSeconds - LifeAnimation.DownedEntryStartTime, 0.0))
         : -1.0f;
-    const ABBBEquipment *Equipment = Character.GetActiveEquipment();
+    const UBBBItemDefinition *ItemDefinition = Character.GetHeldItemDefinition();
+    FactState.ItemType = ItemDefinition ? ItemDefinition->ItemType : EBBBItemType::Misc;
+    const auto *Consumable = Cast<ABBBConsumable>(Character.GetHeldItem());
+    FactState.bUsingItem = Consumable && Consumable->IsUsing();
+    FactState.ItemUseSerial = Consumable ? Consumable->GetUseSerial() : 0;
+    const ABBBEquipment *Equipment = Character.GetHeldEquipment();
     const UBBBEquipmentDefinition *Definition = IsValid(Equipment)
-        && RuntimeData.Equipment.ReadEquipmentUseState().bUsable ? Equipment->GetDefinition() : nullptr;
+        && RuntimeData.Interaction.ReadInteractionUseState().bUsable ? Equipment->GetDefinition() : nullptr;
     FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
 

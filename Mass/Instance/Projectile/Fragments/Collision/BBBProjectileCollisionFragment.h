@@ -32,6 +32,8 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
 
     /** 范围伤害半径 零表示点伤害 */
     float ExplosionRadiusCm = 0.0f;
+    /** 爆炸是否影响发射者 */
+    bool bDamageInstigator = false;
 
     /** 接触目标时是否引爆 */
     bool bDetonateOnImpact = true;

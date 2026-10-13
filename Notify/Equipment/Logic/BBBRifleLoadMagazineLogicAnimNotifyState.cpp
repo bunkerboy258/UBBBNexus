@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Logic/BBBRifleLoadMagazineLogicAnimNotifyState.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadMagazineLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBRifleLoadMagazineLogicAnimNotifyState::NotifyBegin(

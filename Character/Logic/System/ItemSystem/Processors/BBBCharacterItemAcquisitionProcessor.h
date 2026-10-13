@@ -18,6 +18,5 @@ public:
      * @param Context	本次清理上下文
      * @return 无
      */
-    static void Shutdown(FBBBCharacterItemUpdateContext &Context);
 
 };

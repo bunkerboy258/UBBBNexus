@@ -38,12 +38,12 @@ void FBBBCharacterNetworkSystem::Update()
         *NetworkComponent,
         RuntimeData->Network.TraversalObservationState,
         RuntimeData->Traversal.ReadTraversalState(),
-        RuntimeData->Network.EquipmentObservationState,
-        RuntimeData->Equipment.ReadEquipmentSelectionState(),
-        RuntimeData->Equipment.ReadEquipmentUseState(),
+        RuntimeData->Network.InteractionObservationState,
+        RuntimeData->Interaction.ReadInteractionSelectionState(),
+        RuntimeData->Interaction.ReadInteractionUseState(),
         *RuntimeData};
 
-    EquipmentObservationProcessor.Update(Context);
+    InteractionObservationProcessor.Update(Context);
     AppearanceObservationProcessor.Update(Context);
     DamageObservationProcessor.Update(Context);
     LifeObservationProcessor.Update(Context);

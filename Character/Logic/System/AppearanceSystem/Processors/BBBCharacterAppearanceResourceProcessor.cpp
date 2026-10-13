@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceResourceProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/Context/BBBCharacterAppearanceUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
 #include "Engine/SkeletalMesh.h"
 
 namespace

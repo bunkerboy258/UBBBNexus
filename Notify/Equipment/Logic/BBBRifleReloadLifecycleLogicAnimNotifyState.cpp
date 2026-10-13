@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Logic/BBBRifleReloadLifecycleLogicAnimNotifyState.h"
 
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleInterruptReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleInterruptReloadLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBRifleReloadLifecycleLogicAnimNotifyState::NotifyEnd(

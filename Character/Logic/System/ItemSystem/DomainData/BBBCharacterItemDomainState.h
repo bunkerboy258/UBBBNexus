@@ -36,6 +36,7 @@ private:
     friend class FBBBCharacterParseSystem;
     friend class FBBBCharacterItemAcquisitionProcessor;
     friend class FBBBCharacterItemInventoryProcessor;
+    friend class FBBBCharacterItemLifecycleProcessor;
     friend class FBBBCharacterItemBarProcessor;
     friend class FBBBCharacterItemSystemTest;
 

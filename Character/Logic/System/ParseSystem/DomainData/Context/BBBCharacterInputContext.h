@@ -13,12 +13,13 @@
 
 struct FBBBCharacterAnimationMontageState;
 struct FBBBCharacterTraversalState;
-struct FBBBCharacterEquipmentSelectionState;
-struct FBBBCharacterEquipmentAnimationInputState;
+struct FBBBCharacterInteractionSelectionState;
+struct FBBBCharacterInteractionInputState;
 struct FBBBCharacterItemOperationState;
 struct FBBBCharacterAimImpulseState;
 struct FBBBCharacterLifeInputState;
-struct FBBBCharacterEquipmentUseInputState;
+struct FBBBCharacterInteractionUseInputState;
+struct FBBBCharacterInteractionUseState;
 struct FBBBCharacterDamageInboxState;
 struct FBBBCharacterAppearanceInputState;
 
@@ -42,7 +43,7 @@ struct FBBBCharacterInputContext final
     FBBBCharacterControlState &Control;
 
     /** 装备选择状态 */
-    FBBBCharacterEquipmentSelectionState &EquipmentSelection;
+    FBBBCharacterInteractionSelectionState &InteractionSelection;
 
     /** 装备容器只读状态 */
     FBBBCharacterItemOperationState &ItemOperations;
@@ -62,7 +63,7 @@ struct FBBBCharacterInputContext final
     FBBBCharacterTraversalState &Traversal;
 
     /** 待转交给装备的动画通知 */
-    FBBBCharacterEquipmentAnimationInputState &EquipmentAnimationInputs;
+    FBBBCharacterInteractionInputState &InteractionInputs;
 
     /** 本帧依次处理的独立伤害输入 */
     FBBBCharacterLifeInputState &LifeInputs;
@@ -70,7 +71,7 @@ struct FBBBCharacterInputContext final
     /** 当前生命阶段 仅用于输入许可 */
     const FBBBCharacterLifeState &Life;
     /** 待还原的装备独立使用结果 */
-    FBBBCharacterEquipmentUseInputState &EquipmentUseInputs;
+    FBBBCharacterInteractionUseInputState &InteractionUseInputs;
     /** 待投送的独立命中消息 */
     FBBBCharacterDamageInboxState &DamageInbox;
 
@@ -82,4 +83,6 @@ struct FBBBCharacterInputContext final
     FBBBCharacterRescueInboxState &RescueInbox;
     /** 待消费的外观输入 */
     FBBBCharacterAppearanceInputState &AppearanceInputs;
+    /** 本帧输入许可的只读交互结果 */
+    const FBBBCharacterInteractionUseState &InteractionUse;
 };

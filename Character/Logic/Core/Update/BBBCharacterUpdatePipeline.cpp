@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -92,12 +92,12 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     if (NetworkIdentityState.bIsMirror)
     {
         // Mirror：消费远端结果并维护本地表现，不执行物品与瞄准决策
-        Character->EquipmentSystem.Update();
+        Character->InteractionSystem.Update();
         Character->AppearanceSystem.Update();
 
         Character->LifeSystem.Update();
         Character->TraversalSystem.Update();
-        Character->EquipmentSystem.UpdateUsage();
+        Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
         Character->PhysicalPresentationSystem.Update();
     }
@@ -106,7 +106,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         // Causal：本机控制角色生成物品、瞄准及其它玩法结果
         Character->ItemSystem.Update();
 
-        Character->EquipmentSystem.Update();
+        Character->InteractionSystem.Update();
         Character->AppearanceSystem.Update();
 
         Character->LifeSystem.Update();
@@ -114,7 +114,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
 
         // 攀爬生成交接结果，装备使用许可随后更新，移动系统独占 CMC 写入
         Character->TraversalSystem.Update();
-        Character->EquipmentSystem.UpdateUsage();
+        Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
         Character->PhysicalPresentationSystem.Update();
     }
@@ -137,22 +137,30 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
 
 }
 
-void FBBBCharacterUpdatePipeline::RegisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment)
+void FBBBCharacterUpdatePipeline::RegisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item)
 {
-    Equipment.PrimaryActorTick.AddPrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
-    Equipment.PrimaryActorTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
-    if (auto *EquipmentMesh = Equipment.GetEquipmentSkeletalMesh())
+    Item.PrimaryActorTick.AddPrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
+    Item.PrimaryActorTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+    if (auto *Equipment = Cast<ABBBEquipment>(&Item))
     {
-        EquipmentMesh->PrimaryComponentTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+        auto *EquipmentMesh = Equipment->GetEquipmentSkeletalMesh();
+        if (EquipmentMesh)
+        {
+            EquipmentMesh->PrimaryComponentTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+        }
     }
 }
 
-void FBBBCharacterUpdatePipeline::UnregisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment)
+void FBBBCharacterUpdatePipeline::UnregisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item)
 {
-    Equipment.PrimaryActorTick.RemovePrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
-    Equipment.PrimaryActorTick.RemovePrerequisite(&Mesh, Mesh.PrimaryComponentTick);
-    if (auto *EquipmentMesh = Equipment.GetEquipmentSkeletalMesh())
+    Item.PrimaryActorTick.RemovePrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
+    Item.PrimaryActorTick.RemovePrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+    if (auto *Equipment = Cast<ABBBEquipment>(&Item))
     {
-        EquipmentMesh->PrimaryComponentTick.RemovePrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+        auto *EquipmentMesh = Equipment->GetEquipmentSkeletalMesh();
+        if (EquipmentMesh)
+        {
+            EquipmentMesh->PrimaryComponentTick.RemovePrerequisite(&Mesh, Mesh.PrimaryComponentTick);
+        }
     }
 }

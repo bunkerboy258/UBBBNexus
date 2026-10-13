@@ -1,0 +1,30 @@
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionActionPermissionProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Context/BBBCharacterInteractionUpdateContext.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePermissionLocalControlPacket.h"
+
+void FBBBCharacterInteractionActionPermissionProcessor::Update(FBBBCharacterInteractionUpdateContext &Context) const
+{
+    auto &Use = Context.RuntimeData.Interaction.InteractionUseState;
+    AActor *Item = Context.RuntimeData.Interaction.ReadInteractionSelectionState().ActiveMainHandInstance;
+    auto *Equipment = Cast<ABBBEquipment>(Item);
+    auto *Consumable = Cast<ABBBConsumable>(Item);
+    Use.UseSerial = Consumable ? Consumable->GetUseSerial() : 0;
+    Use.bBusy = Consumable && Consumable->IsUsing();
+    Use.bSwitchAllowed = !Use.bBusy && (!Equipment || Equipment->CanSwitch());
+    if (Context.bIsMirror)
+    {
+        return;
+    }
+    if (Equipment)
+    {
+        Equipment->SubmitInput(FBBBEquipmentActionPermissionLocalControlPacket{{Use.bUsable}});
+    }
+    if (Consumable)
+    {
+        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket{{Use.bUsable}});
+    }
+}

@@ -22,7 +22,7 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
         return;
     }
 
-    if (!Context.RuntimeData.Equipment.ReadEquipmentSelectionState().ActiveMainHandInstance)
+    if (!Context.RuntimeData.Interaction.ReadInteractionSelectionState().ActiveMainHandInstance)
     {
         State.PendingDegrees = FVector2D::ZeroVector;
         State.OffsetDegrees = FVector2D::ZeroVector;

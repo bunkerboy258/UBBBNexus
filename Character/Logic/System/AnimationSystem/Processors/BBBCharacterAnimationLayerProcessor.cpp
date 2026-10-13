@@ -1,27 +1,29 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 
 #include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/States/BBBCharacterEquipmentSelectionState.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionSelectionState.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 
 void FBBBCharacterAnimationLayerProcessor::Update(
     FBBBCharacterAnimationUpdateContext &Context) const
 {
-    const FBBBCharacterEquipmentSelectionState &EquipmentState = Context.EquipmentSelectionState;
+    const FBBBCharacterInteractionSelectionState &EquipmentState = Context.InteractionSelectionState;
     const FBBBCharacterAnimationConfig &AnimationConfig = Context.AnimationConfig;
     FBBBCharacterAnimationLayerState &LayerState = Context.AnimationLayerState;
     USkeletalMeshComponent &CharacterMesh = Context.CharacterMesh;
     // 默认使用角色动画层并允许当前装备覆盖
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
-    ABBBEquipment *ActiveInstance = EquipmentState.ActiveMainHandInstance;
+    AActor *HeldItem = EquipmentState.ActiveMainHandInstance;
+    ABBBEquipment *ActiveInstance = Cast<ABBBEquipment>(HeldItem);
     // 暂时收起只解除握持数据 动画层继续使用原装备以保留移动状态
     UBBBEquipmentAnimInstance *DesiredWeaponAnimation = IsValid(ActiveInstance)
-        && Context.RuntimeData.Equipment.ReadEquipmentUseState().bUsable
+        && Context.RuntimeData.Interaction.ReadInteractionUseState().bUsable
         ? ActiveInstance->GetEquipmentAnimationInstance()
         : nullptr;
     if (Context.AnimationInstance.TryGetWeaponAnimInstance() != DesiredWeaponAnimation)
@@ -36,6 +38,14 @@ void FBBBCharacterAnimationLayerProcessor::Update(
         if (EquipmentLayerClass)
         {
             DesiredLayerClass = EquipmentLayerClass;
+        }
+    }
+
+    if (const auto *Consumable = Cast<ABBBConsumable>(HeldItem))
+    {
+        if (Consumable->GetCharacterAnimationLayerClass())
+        {
+            DesiredLayerClass = Consumable->GetCharacterAnimationLayerClass();
         }
     }
 

@@ -34,6 +34,11 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
                                           {
                                               return FLinearColor(1.0f, 1.0f, 1.0f, GetQuickSelectionOpacity());
                                           })[SNew(SBox).WidthOverride(900.0f)[SAssignNew(QuickBar, SHorizontalBox)]]] +
+        SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(0.0f, 0.0f, 0.0f, 24.0f)
+            [SNew(SVerticalBox)
+                + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+                    [SNew(STextBlock).Text(FText::FromString(TEXT("G 使用  TAB+数字切换"))).Font(BBBItemUI::Font(14))]
+                + SVerticalBox::Slot().AutoHeight()[SAssignNew(ConsumableBar, SHorizontalBox)]] +
         SOverlay::Slot()[SNew(SOverlay).Visibility_Lambda(
                              [this]()
                              {
@@ -81,29 +86,31 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                         .ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.85f))
                         .ShadowOffset(FVector2D(2.0f, 2.0f))
                         .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.92f))]]);
-    const auto TabButton = [this](const TCHAR *Text, bool bMisc)
+    const auto TabButton = [this](const TCHAR *Text, EBBBItemType Type)
     {
         return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
-            [this, bMisc]()
+            [this, Type]()
             {
-                return ShowStorage(bMisc);
+                return ShowStorage(Type);
             })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
                    .Text(FText::FromString(Text))
                    .Font(Font(22))
                    .ColorAndOpacity_Lambda(
-                       [this, bMisc]()
+                       [this, Type]()
                        {
-                           return bMiscPage == bMisc ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
+                           return StoragePage == Type ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
                        })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Left).Padding(16.0f, 0.0f, 0.0f, 0.0f)
                 [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
                     [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
-                        .Visibility_Lambda([this, bMisc]()
+                        .Visibility_Lambda([this, Type]()
                         {
-                            return bMiscPage == bMisc ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+                            return StoragePage == Type ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(60.0f, 550.0f, 156.0f, 40.0f, TabButton(TEXT("EQUIPMENT"), false));
-    Place(240.0f, 550.0f, 100.0f, 40.0f, TabButton(TEXT("MISC"), true));
+    Place(60.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("装备"), EBBBItemType::Equipment));
+    Place(220.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("穿戴物"), EBBBItemType::Wearable));
+    Place(380.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("消耗品"), EBBBItemType::Consumable));
+    Place(540.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("杂物"), EBBBItemType::Misc));
     Place(StorageLeft, 608.0f, 862.0f, 398.0f,
           SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));

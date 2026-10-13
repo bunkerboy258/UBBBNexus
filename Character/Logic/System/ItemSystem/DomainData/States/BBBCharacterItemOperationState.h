@@ -1,37 +1,39 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "BBBCharacterItemOperationState.generated.h"
 
-/** 输入解析发布的待消费操作及最近一次完成结果 */
+/** 角色物品输入及完成结果 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterItemOperationState final
 {
     GENERATED_BODY()
-
-    /** 待创建并入包的装备定义 */
+    /** 待获得的型号 */
     TArray<FName> PendingItemIds;
-
-    /** 待移动操作的起始槽位 与目标数组一一对应 */
+    /** 与型号对应的整次获取数量 */
+    TArray<int32> PendingQuantities;
+    /** 待移动的源位置 */
     TArray<int32> PendingMoveSources;
-
-    /** 待移动操作的目标槽位 */
+    /** 待移动的目标位置 */
     TArray<int32> PendingMoveTargets;
-    /** 与移动请求对应的预期源实例 */
+    /** 防止排队后作用于另一件物品的源身份 */
     TArray<FGuid> PendingMoveInstances;
-
-    /** 待应用的快捷槽位选择 */
+    /** 待选择的真实快捷位置 */
     TArray<int32> PendingSelectedSlots;
-
-    /** 每完成一项操作递增 输入接受不等于操作完成 */
-    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "操作结果版本"))
+    /** 待扣减的真实物品身份 */
+    TArray<FGuid> PendingConsumeInstances;
+    /** 与扣减身份对应的数量 */
+    TArray<int32> PendingConsumeQuantities;
+    /** 已完成使用动作的实例 */
+    TArray<FGuid> PendingFinishedInstances;
+    /** 本帧临时使用当前消耗品的请求 */
+    bool bQuickUse = false;
+    /** 操作完成版本 */
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "操作版本"))
     int32 Revision = 0;
-
-    /** 本帧成功操作数量 下一批操作完成时更新 */
-    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "成功操作数量"))
+    /** 最近一次批次的成功数量 */
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "成功数量"))
     int32 SucceededCount = 0;
-
-    /** 本帧失败操作数量 下一批操作完成时更新 */
-    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "失败操作数量"))
+    /** 最近一次批次的拒绝数量 */
+    UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "拒绝数量"))
     int32 RejectedCount = 0;
 };

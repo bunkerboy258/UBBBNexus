@@ -22,17 +22,17 @@ BBB_CHARACTER_INPUT_SLOT(FBBBAimStateAuthorityFactPacket, AimState)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeAuthorityFactPacket, AuthorityLife)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeRemoteMessagePacket, RemoteLife)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageDeliveryRemoteMessagePacket, DamageDelivery)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentUseAuthorityFactPacket, AuthorityFactEquipmentUse)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentUseRemoteMessagePacket, RemoteMessageEquipmentUse)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionUseAuthorityFactPacket, AuthorityFactInteractionUse)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionUseRemoteMessagePacket, RemoteMessageInteractionUse)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageLocalControlPacket, Damage)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
 BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationRemoteMessagePacket, RemoteAcceleration)
 BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationAuthorityFactPacket, AuthorityAcceleration)
-BBB_CHARACTER_INPUT_SLOT(FBBBItemAddLocalControlPacket, ItemAdd)
-BBB_CHARACTER_INPUT_SLOT(FBBBItemMoveLocalControlPacket, ItemMove)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionAuthorityFactPacket, AuthorityEquipmentSelectionState)
-BBB_CHARACTER_INPUT_SLOT(FBBBEquipmentSelectionRemoteMessagePacket, RemoteEquipmentSelectionState)
-BBB_CHARACTER_INPUT_SLOT(FBBBItemSelectLocalControlPacket, ItemSelect)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemAddLocalControlPacket, ItemAdd)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemMoveLocalControlPacket, ItemMove)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSelectionAuthorityFactPacket, AuthorityInteractionSelectionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSelectionRemoteMessagePacket, RemoteInteractionSelectionState)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemSelectLocalControlPacket, ItemSelect)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMovementLocalControlPacket, Movement)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunLocalControlPacket, Run)
 BBB_CHARACTER_INPUT_SLOT(FBBBCrouchLocalControlPacket, Crouch)
@@ -61,10 +61,10 @@ BBB_CHARACTER_INPUT_SLOT(FBBBTraversalStartAuthorityFactPacket, TraversalStartAu
 
 BBB_CHARACTER_INPUT_SLOT(FBBBTraversalEndAuthorityFactPacket, TraversalEndAuthorityFact)
 
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentBeginActionLocalControlPacket, EquipmentBeginAction)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentEndActionLocalControlPacket, EquipmentEndAction)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentBeginContactLocalControlPacket, EquipmentBeginContact)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentEndContactLocalControlPacket, EquipmentEndContact)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionBeginActionLocalControlPacket, EquipmentBeginAction)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionEndActionLocalControlPacket, EquipmentEndAction)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionBeginContactLocalControlPacket, EquipmentBeginContact)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionEndContactLocalControlPacket, EquipmentEndContact)
 
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueBeginLocalControlPacket, RescueBeginLocalControl)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRescueCancelLocalControlPacket, RescueCancelLocalControl)
@@ -84,6 +84,13 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceDirtLocalControlPacket, Appearan
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceWeatheringLocalControlPacket, AppearanceWeatheringLocalControl)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceRemoteMessagePacket, AppearanceRemoteMessage)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAppearanceAuthorityFactPacket, AppearanceAuthorityFact)
+
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemConsumeLocalControlPacket, ItemConsume)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemQuickUseLocalControlPacket, ItemQuickUse)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionPrimaryLocalControlPacket, InteractionPrimary)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSecondaryLocalControlPacket, InteractionSecondary)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionReleaseLocalControlPacket, InteractionRelease)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionFinishLocalControlPacket, InteractionFinish)
 
 #undef BBB_CHARACTER_INPUT_SLOT
 
@@ -127,8 +134,8 @@ namespace BBBCharacterInput
             Slot.Data.DownedRevisions.Append(Packet.DownedRevisions);
             Slot.Data.RecoveryCrouched.Append(Packet.RecoveryCrouched);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentUseAuthorityFactPacket>
-            || std::is_same_v<FPacket, FBBBCharacterEquipmentUseRemoteMessagePacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionUseAuthorityFactPacket>
+            || std::is_same_v<FPacket, FBBBCharacterInteractionUseRemoteMessagePacket>)
         {
             Slot.Data.Generations.Append(Packet.Generations);
             Slot.Data.Revisions.Append(Packet.Revisions);
@@ -163,43 +170,44 @@ namespace BBBCharacterInput
             Slot.Data.ActionIds.Append(Packet.ActionIds);
             Slot.Data.ExitVelocities.Append(Packet.ExitVelocities);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
-            || std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionSelectionAuthorityFactPacket>
+            || std::is_same_v<FPacket, FBBBCharacterInteractionSelectionRemoteMessagePacket>)
         {
-            Slot.Data.EquipmentIds.Append(Packet.EquipmentIds);
+            Slot.Data.ItemIds.Append(Packet.ItemIds);
             Slot.Data.Generations.Append(Packet.Generations);
         }
 
-        if constexpr (std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterItemAddLocalControlPacket>)
         {
             Slot.Data.ItemIds.Append(Packet.ItemIds);
+            Slot.Data.Quantities.Append(Packet.Quantities);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket>)
         {
             Slot.Data.Sources.Append(Packet.Sources);
             Slot.Data.Targets.Append(Packet.Targets);
             Slot.Data.Instances.Append(Packet.Instances);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterItemSelectLocalControlPacket>)
         {
             Slot.Data.Slots.Append(Packet.Slots);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentBeginActionLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionBeginActionLocalControlPacket>)
         {
             Slot.Data.Recipients.Append(Packet.Recipients);
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentEndActionLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionEndActionLocalControlPacket>)
         {
             Slot.Data.Recipients.Append(Packet.Recipients);
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentBeginContactLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionBeginContactLocalControlPacket>)
         {
             Slot.Data.Recipients.Append(Packet.Recipients);
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentEndContactLocalControlPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionEndContactLocalControlPacket>)
         {
             Slot.Data.Recipients.Append(Packet.Recipients);
             Slot.Data.Tokens.Append(Packet.Tokens);
@@ -310,27 +318,46 @@ namespace BBBCharacterInput
         {
             Slot.Data.Snapshots.Append(Packet.Snapshots);
         }
-        if constexpr (!std::is_same_v<FPacket, FBBBEquipmentSelectionAuthorityFactPacket>
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterItemConsumeLocalControlPacket>)
+        {
+            Slot.Data.Instances.Append(Packet.Instances);
+            Slot.Data.Quantities.Append(Packet.Quantities);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionReleaseLocalControlPacket>
+            || std::is_same_v<FPacket, FBBBCharacterInteractionFinishLocalControlPacket>)
+        {
+            Slot.Data.Recipients.Append(Packet.Recipients);
+            Slot.Data.Generations.Append(Packet.Generations);
+            Slot.Data.Tokens.Append(Packet.Tokens);
+            if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionFinishLocalControlPacket>)
+            {
+                Slot.Data.Instances.Append(Packet.Instances);
+            }
+        }
+        if constexpr (!std::is_same_v<FPacket, FBBBCharacterItemConsumeLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionReleaseLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionFinishLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentUseAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentUseRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionUseAuthorityFactPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionUseRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBEquipmentSelectionRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBItemAddLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBItemMoveLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBItemSelectLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentBeginActionLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndActionLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentBeginContactLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterEquipmentEndContactLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionRemoteMessagePacket>
+            && !std::is_same_v<FPacket, FBBBCharacterItemAddLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterItemSelectLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionBeginActionLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionEndActionLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionBeginContactLocalControlPacket>
+            && !std::is_same_v<FPacket, FBBBCharacterInteractionEndContactLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBCharacterRescueRequestLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBCharacterRescueRequestRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterRescueEndLocalControlPacket>

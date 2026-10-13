@@ -3,7 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterLateUpdate.h"
 
 class ABBBCharacter;
-class ABBBEquipment;
+class AActor;
 class USkeletalMeshComponent;
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -13,10 +13,10 @@ class FBBBCharacterUpdatePipeline final
 {
 public:
     /** @param Mesh	持有角色网格 @param Equipment	装备实例 @return 无 */
-    static void RegisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment);
+    static void RegisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item);
 
     /** @param Mesh	持有角色网格 @param Equipment	装备实例 @return 无 */
-    static void UnregisterEquipmentTicks(USkeletalMeshComponent &Mesh, ABBBEquipment &Equipment);
+    static void UnregisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item);
 
 private:
     friend class ABBBCharacter;

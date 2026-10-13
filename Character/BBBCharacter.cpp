@@ -1,6 +1,11 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Network/BBBConsumableNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "MotionWarpingComponent.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
@@ -18,6 +23,7 @@ ABBBCharacter::ABBBCharacter()
     PhysicalAnimation = CreateDefaultSubobject<UBBBCharacterPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
     MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
     EquipmentNetworkComponent = CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
+    ConsumableNetworkComponent = CreateDefaultSubobject<UBBBConsumableNetworkComponent>(TEXT("ConsumableNetwork"));
 
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
@@ -175,4 +181,54 @@ EBBBCharacterMontageSlot ABBBCharacter::ClassifyMontageSlot(FName SlotName)
 bool ABBBCharacter::SubmitInput(const FBBBFullBodyMontageLocalControlPacket &Packet)
 {
     return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Packet);
+}
+
+ABBBEquipment *ABBBCharacter::GetHeldEquipment() const
+{
+    return Cast<ABBBEquipment>(GetHeldItem());
+}
+
+UBBBItemDefinition *ABBBCharacter::GetHeldItemDefinition() const
+{
+    if (const auto *Equipment = GetHeldEquipment())
+    {
+        return Equipment->GetDefinition();
+    }
+    if (const auto *Consumable = Cast<ABBBConsumable>(GetHeldItem()))
+    {
+        return Consumable->GetDefinition();
+    }
+    return nullptr;
+}
+
+FGuid ABBBCharacter::GetHeldItemIdentity() const
+{
+    const auto &Inventory = RuntimeData.Item.ReadCharacterItemInventoryState();
+    for (const auto &Item : Inventory.Slots)
+    {
+        if (Item.HeldInstance && Item.HeldInstance == GetHeldItem())
+        {
+            return Item.InstanceId;
+        }
+    }
+    return {};
+}
+
+int32 ABBBCharacter::GetHeldItemQuantity() const
+{
+    const auto &Inventory = RuntimeData.Item.ReadCharacterItemInventoryState();
+    for (const auto &Item : Inventory.Slots)
+    {
+        if (Item.HeldInstance && Item.HeldInstance == GetHeldItem())
+        {
+            return Item.Quantity;
+        }
+    }
+    return 0;
+}
+
+int32 ABBBCharacter::GetHeldUseSerial() const
+{
+    const auto *Consumable = Cast<ABBBConsumable>(GetHeldItem());
+    return Consumable ? Consumable->GetUseSerial() : 0;
 }

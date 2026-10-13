@@ -9,8 +9,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterInteractionSelectionRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterInteractionSelectionAuthorityFactPacket.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Appearance/FBBBCharacterAppearanceRemoteMessagePacket.h"
@@ -29,8 +29,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterLifeRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterDamageDeliveryRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBCharacterEquipmentUseAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBCharacterEquipmentUseRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterInteractionUseAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterInteractionUseRemoteMessagePacket.h"
 
 UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
 {
@@ -60,10 +60,10 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitBone, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitPosition, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitDirection, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentId, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentGeneration, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedEquipmentUsable, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedEquipmentUseRevision, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionId, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionGeneration, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedInteractionUsable, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionUseRevision, COND_SimulatedOnly);
 
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalAction, COND_SimulatedOnly);
@@ -289,40 +289,40 @@ void UBBBCharacterNetworkComponent::OnRep_Traversal()
         {ReplicatedTraversalId}, {ReplicatedTraversalAction}, {ReplicatedTraversalContact}, {ReplicatedTraversalEnd}, {Position}});
 }
 
-void UBBBCharacterNetworkComponent::ReplicateEquipment(const FName EquipmentId, const uint64 Generation,
+void UBBBCharacterNetworkComponent::ReplicateInteraction(const FName EquipmentId, const uint64 Generation,
     const bool bUsable, const uint64 UseRevision)
 {
-    if (!IsOwnerAuthority() || Generation == 0 || Generation < ReplicatedEquipmentGeneration)
+    if (!IsOwnerAuthority() || Generation == 0 || Generation < ReplicatedInteractionGeneration)
     {
         return;
     }
 
-    ReplicatedEquipmentId = EquipmentId;
-    ReplicatedEquipmentGeneration = Generation;
-    bReplicatedEquipmentUsable = bUsable;
-    ReplicatedEquipmentUseRevision = UseRevision;
+    ReplicatedInteractionId = EquipmentId;
+    ReplicatedInteractionGeneration = Generation;
+    bReplicatedInteractionUsable = bUsable;
+    ReplicatedInteractionUseRevision = UseRevision;
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitEquipment_Implementation(const FName EquipmentId, const uint64 Generation,
+void UBBBCharacterNetworkComponent::ServerSubmitInteraction_Implementation(const FName EquipmentId, const uint64 Generation,
     const bool bUsable, const uint64 UseRevision)
 {
-    if (Character && IsOwnerAuthority() && Generation > 0 && UseRevision > ReplicatedEquipmentUseRevision)
+    if (Character && IsOwnerAuthority() && Generation > 0 && UseRevision > ReplicatedInteractionUseRevision)
     {
-        Character->SubmitInput(FBBBEquipmentSelectionRemoteMessagePacket{{EquipmentId}, {Generation}});
-        Character->SubmitInput(FBBBCharacterEquipmentUseRemoteMessagePacket{{Generation}, {UseRevision}, {bUsable}});
+        Character->SubmitInput(FBBBCharacterInteractionSelectionRemoteMessagePacket{{EquipmentId}, {Generation}});
+        Character->SubmitInput(FBBBCharacterInteractionUseRemoteMessagePacket{{Generation}, {UseRevision}, {bUsable}});
     }
 }
 
-void UBBBCharacterNetworkComponent::OnRep_Equipment()
+void UBBBCharacterNetworkComponent::OnRep_Interaction()
 {
-    if (Character && Character->IsNetworkMirror() && ReplicatedEquipmentGeneration > 0)
+    if (Character && Character->IsNetworkMirror() && ReplicatedInteractionGeneration > 0)
     {
-        Character->SubmitInput(FBBBEquipmentSelectionAuthorityFactPacket{{ReplicatedEquipmentId}, {ReplicatedEquipmentGeneration}});
-        if (ReplicatedEquipmentUseRevision > 0)
+        Character->SubmitInput(FBBBCharacterInteractionSelectionAuthorityFactPacket{{ReplicatedInteractionId}, {ReplicatedInteractionGeneration}});
+        if (ReplicatedInteractionUseRevision > 0)
         {
-            Character->SubmitInput(FBBBCharacterEquipmentUseAuthorityFactPacket{
-                {ReplicatedEquipmentGeneration}, {ReplicatedEquipmentUseRevision}, {bReplicatedEquipmentUsable}});
+            Character->SubmitInput(FBBBCharacterInteractionUseAuthorityFactPacket{
+                {ReplicatedInteractionGeneration}, {ReplicatedInteractionUseRevision}, {bReplicatedInteractionUsable}});
         }
     }
 }

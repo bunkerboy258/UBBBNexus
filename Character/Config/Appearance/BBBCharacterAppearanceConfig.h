@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBAppearanceResource.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Config/BBBAppearanceResource.h"
 #include "BBBCharacterAppearanceConfig.generated.h"
 
 /** 角色外观的基础静态配置 */

@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Logic/BBBEquipmentReloadLifecycleLogicAnimNotifyState.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBEquipmentReloadLifecycleLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponent *MeshComp, UAnimSequenceBase *,

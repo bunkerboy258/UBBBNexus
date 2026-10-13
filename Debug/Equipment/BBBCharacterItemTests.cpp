@@ -1,30 +1,29 @@
 #include "Misc/AutomationTest.h"
-
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
-
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/BBBCharacterParseSystem.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Catalog/BBBItemCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Misc/Catalog/BBBMiscCatalog.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Misc/ScopeExit.h"
 #include "UObject/UnrealType.h"
 
-/** 隔离世界验证统一背包与上层选择的独立责任 */
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
+
+/** 验证单一物品身份 独立武器状态与整次数量获取 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBCharacterItemSystemTest, "BBB.Character.ItemSystem",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
 bool FBBBCharacterItemSystemTest::RunTest(const FString &Parameters)
 {
-    const auto Initialization = UWorld::InitializationValues()
-        .AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false)
-        .CreateAISystem(false).ShouldSimulatePhysics(false);
-    UWorld *World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr,
-        true, ERHIFeatureLevel::Num, &Initialization);
+
+    const auto Options = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
+        .CreateNavigation(false).CreateAISystem(false).ShouldSimulatePhysics(false);
+    UWorld *World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Options);
     if (!TestNotNull(TEXT("隔离世界"), World))
     {
         return false;
@@ -36,178 +35,89 @@ bool FBBBCharacterItemSystemTest::RunTest(const FString &Parameters)
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
     };
-
     ABBBCharacter *Character = World->SpawnActor<ABBBCharacter>();
-    ABBBRifleEquipment *First = World->SpawnActor<ABBBRifleEquipment>();
-    ABBBRifleEquipment *Second = World->SpawnActor<ABBBRifleEquipment>();
-    if (!TestNotNull(TEXT("测试角色"), Character) || !TestNotNull(TEXT("第一把步枪"), First)
-        || !TestNotNull(TEXT("第二把步枪"), Second))
-    {
-        return false;
-    }
-
     UBBBCharacterConfig *Config = NewObject<UBBBCharacterConfig>(Character);
-    Config->Item.EquipmentStorageSlotCount = 1;
-    Config->Item.MiscStorageSlotCount = 0;
-    Config->Item.WearSlots.Reset();
-    Config->Item.QuickAccessSlotCount = 2;
-    Config->Item.Catalog = NewObject<UBBBItemCatalog>(Config);
-    FObjectProperty *Property = FindFProperty<FObjectProperty>(ABBBCharacter::StaticClass(), TEXT("CharacterConfigAsset"));
-    Property->SetObjectPropertyValue_InContainer(Character, Config);
+    FindFProperty<FObjectProperty>(ABBBCharacter::StaticClass(), TEXT("CharacterConfigAsset"))
+        ->SetObjectPropertyValue_InContainer(Character, Config);
     Character->RuntimeData.External.NetworkIdentityState.bIsMirror = false;
-    FBBBCharacterItemSystem System;
-    System.Initialize(*Character, Character->RuntimeData, Config->Item);
+    FBBBCharacterItemSystem Items;
+    Items.Initialize(*Character, Character->RuntimeData, Config->Item);
     FBBBCharacterParseSystem Parse;
     Parse.Initialize(Character->RuntimeData);
-    System.Update();
+    const auto Step = [&]()
+    {
+        Parse.Update();
+        Items.Update();
+    };
 
-    auto &Items = Character->RuntimeData.Item;
-    TestEqual(TEXT("背包容量包含快捷区域"), Items.ReadCharacterItemInventoryState().Slots.Num(), 3);
-    TestEqual(TEXT("前序快捷区域数量"), Items.ReadCharacterItemBarState().QuickAccessSlotCount, 2);
-    TestEqual(TEXT("初始化保持空手"), Items.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
+    Config->Item.MiscSlotCount = 2;
+    Config->Item.MiscCatalog = NewObject<UBBBMiscCatalog>(Config);
+    auto *Definition = NewObject<UBBBItemDefinition>(Config);
+    Definition->ItemId = TEXT("TestStack");
+    Definition->ItemType = EBBBItemType::Misc;
+    Definition->MaxStack = 4;
+    Config->Item.MiscCatalog->Items.Add(Definition);
+    Step();
+    auto &Domain = Character->RuntimeData.Item;
+    const auto &Inventory = Domain.ReadCharacterItemInventoryState();
+    const auto &Operations = Domain.ReadCharacterItemOperationState();
+    const int32 MiscStart = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount + Inventory.ConsumableSlotCount;
+    Character->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{TEXT("TestStack")}, {7}});
+    Step();
+    TestEqual(TEXT("整次获取创建四和三两个堆叠"), Inventory.Slots[MiscStart].Quantity, 4);
+    TestEqual(TEXT("第二个堆叠数量"), Inventory.Slots[MiscStart + 1].Quantity, 3);
+    const FGuid FirstStack = Inventory.Slots[MiscStart].InstanceId;
+    const FGuid SecondStack = Inventory.Slots[MiscStart + 1].InstanceId;
+    Character->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{TEXT("TestStack")}, {2}});
+    Step();
+    TestEqual(TEXT("空间不足整次拒绝"), Operations.RejectedCount, 1);
+    TestEqual(TEXT("拒绝不先填一份"), Inventory.Slots[MiscStart + 1].Quantity, 3);
+    TestEqual(TEXT("拒绝不更换实例"), Inventory.Slots[MiscStart].InstanceId, FirstStack);
+    Character->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{MiscStart}, {MiscStart + 1}, {FirstStack}});
+    Step();
+    TestEqual(TEXT("同型号只补满目标"), Inventory.Slots[MiscStart + 1].Quantity, 4);
+    TestEqual(TEXT("合并余量留在源"), Inventory.Slots[MiscStart].Quantity, 3);
+    TestEqual(TEXT("源余量保留身份"), Inventory.Slots[MiscStart].InstanceId, FirstStack);
+    TestEqual(TEXT("目标保留身份"), Inventory.Slots[MiscStart + 1].InstanceId, SecondStack);
+    Character->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{MiscStart}, {0}, {FirstStack}});
+    Step();
+    TestEqual(TEXT("杂物不能成为主手装备"), Operations.RejectedCount, 1);
 
-    UBBBRifleDefinition *FirstDefinition = NewObject<UBBBRifleDefinition>();
+    auto *First = World->SpawnActor<ABBBRifleEquipment>();
+    auto *Second = World->SpawnActor<ABBBRifleEquipment>();
+    auto *FirstDefinition = NewObject<UBBBRifleDefinition>(Config);
+    auto *SecondDefinition = NewObject<UBBBRifleDefinition>(Config);
+    FirstDefinition->ItemId = TEXT("FirstRifle");
+    SecondDefinition->ItemId = TEXT("SecondRifle");
     FirstDefinition->AmmoCapacity = 10;
-    UBBBRifleDefinition *SecondDefinition = NewObject<UBBBRifleDefinition>();
     SecondDefinition->AmmoCapacity = 30;
-    FirstDefinition->ItemId = TEXT("TestFirst");
-    SecondDefinition->ItemId = TEXT("TestSecond");
-    Items.ItemInventoryState.Slots[0].InstanceId = FGuid::NewGuid();
-    Items.ItemInventoryState.Slots[0].Definition = FirstDefinition;
-    Items.ItemInventoryState.Slots[0].EquipmentInstance = First;
-    Items.ItemInventoryState.Slots[1].InstanceId = FGuid::NewGuid();
-    Items.ItemInventoryState.Slots[1].Definition = SecondDefinition;
-    Items.ItemInventoryState.Slots[1].EquipmentInstance = Second;
     FBBBRifleActionProcessor::Initialize(First->RuntimeData, *FirstDefinition);
     FBBBRifleActionProcessor::Initialize(Second->RuntimeData, *SecondDefinition);
-
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{0}});
-    Parse.Update();
-    System.Update();
-    TestTrue(TEXT("选中槽位生成第一把枪目标"), Items.ReadCharacterItemBarState().DesiredMainHandItem == First);
-    const int32 SelectionRevision = Items.ReadCharacterItemBarState().Revision;
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{0}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("重复选择不收枪也不生成新选择版本"), Items.ReadCharacterItemBarState().Revision, SelectionRevision);
-
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{0}, {1}, {Items.ReadCharacterItemInventoryState().Slots[0].InstanceId}});
-    Parse.Update();
-    System.Update();
-    TestTrue(TEXT("交换选中槽位后目标切换为第二把枪"), Items.ReadCharacterItemBarState().DesiredMainHandItem == Second);
-    TestTrue(TEXT("第一把枪保留在同一份背包"), Items.ReadCharacterItemInventoryState().Slots[1].EquipmentInstance == First);
-    TestEqual(TEXT("第一把枪保留自身弹量"), First->GetLoadedAmmo(), 10);
-    TestEqual(TEXT("第二把枪保留自身弹量"), Second->GetLoadedAmmo(), 30);
-
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{0}, {2}, {Items.ReadCharacterItemInventoryState().Slots[0].InstanceId}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("选中槽位变空取消选择"), Items.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
-    TestNull(TEXT("选中槽位变空生成空手目标"), Items.ReadCharacterItemBarState().DesiredMainHandItem.Get());
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{2}, {0}, {Items.ReadCharacterItemInventoryState().Slots[2].InstanceId}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("物品回到原格不恢复选择"), Items.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
-
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{2}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("后序槽位不能直接装备"), Items.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
-    TestEqual(TEXT("越界快捷选择返回操作失败"), Items.ReadCharacterItemOperationState().RejectedCount, 1);
-
-    const int32 BeforeMoves = Items.ReadCharacterItemOperationState().Revision;
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{0}, {2}, {Items.ReadCharacterItemInventoryState().Slots[0].InstanceId}});
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{1}, {0}, {Items.ReadCharacterItemInventoryState().Slots[1].InstanceId}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("同帧两次移动都完成"), Items.ReadCharacterItemOperationState().Revision, BeforeMoves + 2);
-    TestTrue(TEXT("同帧操作保留提交顺序"), Items.ReadCharacterItemInventoryState().Slots[0].EquipmentInstance == First);
-    TestTrue(TEXT("另一件物品仍在背包后序格"), Items.ReadCharacterItemInventoryState().Slots[2].EquipmentInstance == Second);
-    System.Update();
-    TestEqual(TEXT("已消费输入不会下一帧重放"), Items.ReadCharacterItemOperationState().Revision, BeforeMoves + 2);
-
-    AActor *Third = World->SpawnActor<AActor>();
-    UBBBItemDefinition *ThirdDefinition = NewObject<UBBBItemDefinition>(Character);
-    ThirdDefinition->ItemType = EBBBItemType::Misc;
-    ThirdDefinition->ItemId = TEXT("TestFlag");
-    ThirdDefinition->WearSlot = TEXT("Flag");
-    Items.ItemInventoryState.Slots[1].InstanceId = FGuid::NewGuid();
-    Items.ItemInventoryState.Slots[1].Definition = ThirdDefinition;
-    const int32 BeforeAdds = Items.ReadCharacterItemOperationState().Revision;
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("MissingEquipment")}});
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("MissingEquipment")}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("同帧入包请求全部消费"), Items.ReadCharacterItemOperationState().Revision, BeforeAdds + 2);
-    TestEqual(TEXT("满包拒绝新增"), Items.ReadCharacterItemOperationState().RejectedCount, 2);
-    TestTrue(TEXT("满包拒绝不替换现有物品"), Items.ReadCharacterItemInventoryState().Slots[0].EquipmentInstance == First);
-
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{99}, {0}, {FGuid::NewGuid()}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("非法移动失败"), Items.ReadCharacterItemOperationState().RejectedCount, 1);
-    TestTrue(TEXT("非法移动不破坏已有物品"), Items.ReadCharacterItemInventoryState().Slots[0].EquipmentInstance == First);
-
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{0}});
-    Parse.Update();
-    System.Update();
-    First->Destroy();
-    System.Update();
-    TestNull(TEXT("失效物品引用被清除"), Items.ReadCharacterItemInventoryState().Slots[0].EquipmentInstance.Get());
-    TestEqual(TEXT("物品失效取消选择"), Items.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
-
-    Third->Destroy();
-    ThirdDefinition->MarkAsGarbage();
-    System.Update();
-    UClass *EquipmentClass = LoadClass<ABBBEquipment>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Rifle/Rifle_01/BP_ModernWeapons_Rifle_01.BP_ModernWeapons_Rifle_01_C"));
-    if (!TestNotNull(TEXT("现有步枪资产类"), EquipmentClass))
-    {
-        System.Shutdown();
-        return false;
-    }
-    FBBBItemCatalogEntry &Entry = Config->Item.Catalog->Items.AddDefaulted_GetRef();
-    Entry.Definition = EquipmentClass->GetDefaultObject<ABBBEquipment>()->GetDefinition();
-    Entry.EquipmentClass = EquipmentClass;
-    const FName EquipmentId = EquipmentClass->GetDefaultObject<ABBBEquipment>()->GetEquipmentId();
-    World->InitializeActorsForPlay(FURL());
-    World->SetBegunPlay(true);
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
-    Parse.Update();
-    System.Update();
-    ABBBEquipment *AddedFirst = Cast<ABBBEquipment>(Items.ReadCharacterItemInventoryState().Slots[0].EquipmentInstance.Get());
-    ABBBEquipment *AddedSecond = Cast<ABBBEquipment>(Items.ReadCharacterItemInventoryState().Slots[1].EquipmentInstance.Get());
-    TestEqual(TEXT("两次获得真实装备均成功"), Items.ReadCharacterItemOperationState().SucceededCount, 2);
-    TestTrue(TEXT("同型号物品创建独立实例并完成初始化"), IsValid(AddedFirst) && IsValid(AddedSecond)
-        && AddedFirst != AddedSecond && AddedFirst->IsInitialized() && AddedSecond->IsInitialized());
-    TestEqual(TEXT("获得装备不自动选择快捷槽位"), Items.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
-    TestNull(TEXT("获得装备保持空手目标"), Items.ReadCharacterItemBarState().DesiredMainHandItem.Get());
-    if (IsValid(AddedFirst))
-    {
-        TestTrue(TEXT("入包物品保持隐藏"), AddedFirst->IsHidden());
-        TestFalse(TEXT("入包物品不启用玩法更新"), AddedFirst->IsActorTickEnabled());
-    }
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
-    Parse.Update();
-    System.Update();
-    TestEqual(TEXT("有效装备请求也受满包限制"), Items.ReadCharacterItemOperationState().RejectedCount, 1);
-
+    Domain.ItemInventoryState.Slots[0] = {FGuid::NewGuid(), FirstDefinition, First, 1};
+    Domain.ItemInventoryState.Slots[1] = {FGuid::NewGuid(), SecondDefinition, Second, 1};
+    Character->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{0}});
+    Step();
+    TestTrue(TEXT("主手目标只引用原实例"), Domain.ReadCharacterItemBarState().DesiredMainHandItem == First);
+    Character->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{0}, {1}, {Inventory.Slots[0].InstanceId}});
+    Step();
+    TestTrue(TEXT("交换后目标跟随原格子"), Domain.ReadCharacterItemBarState().DesiredMainHandItem == Second);
+    TestEqual(TEXT("第一把武器保存弹量"), First->GetLoadedAmmo(), 10);
+    TestEqual(TEXT("第二把武器保存弹量"), Second->GetLoadedAmmo(), 30);
+    Character->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{0}, {5}, {Inventory.Slots[0].InstanceId}});
+    Step();
+    TestEqual(TEXT("空装备格取消原选择"), Domain.ReadCharacterItemBarState().SelectedSlot, INDEX_NONE);
+    TestNull(TEXT("原格变空保持空手"), Domain.ReadCharacterItemBarState().DesiredMainHandItem.Get());
+    const int32 Revision = Operations.Revision;
+    Step();
+    TestEqual(TEXT("已消费操作不重放"), Operations.Revision, Revision);
     Character->RuntimeData.External.NetworkIdentityState.bIsMirror = true;
-    Character->SubmitInput(FBBBItemAddLocalControlPacket{{TEXT("MissingEquipment")}});
-    Character->SubmitInput(FBBBItemMoveLocalControlPacket{{2}, {0}, {Items.ReadCharacterItemInventoryState().Slots[2].InstanceId}});
-    Character->SubmitInput(FBBBItemSelectLocalControlPacket{{0}});
+    Character->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{TEXT("TestStack")}, {1}});
     Parse.Update();
-    TestTrue(TEXT("镜像拒绝真实背包获得输入"), Items.ReadCharacterItemOperationState().PendingItemIds.IsEmpty());
-    TestTrue(TEXT("镜像拒绝真实背包移动输入"), Items.ReadCharacterItemOperationState().PendingMoveSources.IsEmpty());
-    TestTrue(TEXT("镜像拒绝快捷选择输入"), Items.ReadCharacterItemOperationState().PendingSelectedSlots.IsEmpty());
-
-    System.Shutdown();
-    TestTrue(TEXT("角色关闭清空背包"), Items.ReadCharacterItemInventoryState().Slots.IsEmpty());
-    TestFalse(TEXT("角色关闭销毁背包中保留的装备"), IsValid(Second));
-    TestFalse(TEXT("角色关闭销毁实际入包创建的第一件装备"), IsValid(AddedFirst));
-    TestFalse(TEXT("角色关闭销毁实际入包创建的第二件装备"), IsValid(AddedSecond));
+    TestTrue(TEXT("镜像不维护真实数量"), Operations.PendingItemIds.IsEmpty());
+    Items.Shutdown();
+    TestTrue(TEXT("关闭清理唯一物品数组"), Inventory.Slots.IsEmpty());
+    TestFalse(TEXT("关闭销毁第一把真实装备"), IsValid(First));
+    TestFalse(TEXT("关闭销毁第二把真实装备"), IsValid(Second));
     return true;
 }
-
 #endif

@@ -101,13 +101,16 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
                            .VAlign(bCompact ? VAlign_Bottom : VAlign_Top)
                            .Padding(8.0f, 5.0f)[SNew(STextBlock)
-                                                    .Text(IsQuickSlot() ? FText::AsNumber(Slot + 1) : FText::GetEmpty())
+                                                    .Text(IsQuickSlot() ? FText::AsNumber(Data.QuickIndex + 1) : FText::GetEmpty())
                                                     .Font(BBBItemUI::Font(bCompact ? 16 : 14))
                                                     .ColorAndOpacity_Lambda(
                                                         [this]()
                                                         {
                                                             return IsSelected() ? FLinearColor::White : BBBItemUI::MutedText;
                                                         })] +
+                       SOverlay::Slot().HAlign(HAlign_Right).VAlign(VAlign_Top).Padding(8.0f)
+                           [SNew(STextBlock).Text(Data.Quantity > 1 ? FText::AsNumber(Data.Quantity) : FText::GetEmpty())
+                               .Font(BBBItemUI::Font(18)).ColorAndOpacity(FLinearColor::White)] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Right)
                            .VAlign(VAlign_Bottom)
@@ -143,13 +146,24 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
 bool SBBBPlayerItemSlot::IsQuickSlot() const
 {
     const ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
-    return Controller && Slot >= 0 && Slot < Controller->GetQuickAccessSlotCount();
+    return Controller && Controller->GetItemDisplayData(Slot).bQuick;
 }
 
 bool SBBBPlayerItemSlot::IsSelected() const
 {
     const ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
-    return Controller && Slot == Controller->GetSelectedItemSlot();
+    if (!Controller)
+    {
+        return false;
+    }
+    int32 Start = 0;
+    int32 Count = 0;
+    Controller->GetConsumableQuickRange(Start, Count);
+    if (Slot >= Start && Slot < Start + Count)
+    {
+        return Slot - Start == Controller->GetSelectedConsumableSlot();
+    }
+    return Slot == Controller->GetSelectedItemSlot();
 }
 
 FReply SBBBPlayerItemSlot::OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event)

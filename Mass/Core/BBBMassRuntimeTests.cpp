@@ -188,7 +188,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
             const FMassEntityHandle Projectile = Manager.CreateEntity(ProjectileType);
             Projectiles.Add(Projectile);
             FBBBProjectileSpawnLocalControlPacket Spawn;
-            Spawn.MuzzleTransform = FTransform(FRotator(0.0f, 90.0f, 0.0f), FVector::ZeroVector);
+            Spawn.LaunchTransform = FTransform(FRotator(0.0f, 90.0f, 0.0f), FVector::ZeroVector);
             Spawn.Speed = 1000.0f;
             Spawn.Damage = Amount;
             Spawn.DurableDamage = Amount;

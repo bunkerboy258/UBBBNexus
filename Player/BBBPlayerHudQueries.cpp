@@ -1,6 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "Engine/World.h"
 
 float ABBBPlayerController::GetHudHealthFraction() const
@@ -21,14 +21,14 @@ bool ABBBPlayerController::ShouldShowAimHud() const
     const ABBBCharacter *PawnCharacter = GetItemCharacter();
     return PawnCharacter && !IsPlayerMenuOpen() && !bShowMouseCursor
         && PawnCharacter->RuntimeData.Animation.ReadAnimationFactState().bIsAiming
-        && IsValid(PawnCharacter->GetActiveEquipment());
+        && IsValid(PawnCharacter->GetHeldEquipment());
 }
 
 bool ABBBPlayerController::GetActualAimScreenPosition(FVector2D &ScreenPosition) const
 {
     ScreenPosition = FVector2D::ZeroVector;
     const ABBBCharacter *PawnCharacter = GetItemCharacter();
-    const ABBBEquipment *Equipment = PawnCharacter ? PawnCharacter->GetActiveEquipment() : nullptr;
+    const ABBBEquipment *Equipment = PawnCharacter ? PawnCharacter->GetHeldEquipment() : nullptr;
     FTransform Muzzle;
     if (!GetWorld() || !IsValid(Equipment) || !Equipment->TryGetMuzzleTransform(Muzzle))
     {

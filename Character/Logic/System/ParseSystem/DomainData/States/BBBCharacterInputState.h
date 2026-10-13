@@ -1,4 +1,10 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemConsumeLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemQuickUseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionSecondaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionReleaseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceColorLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceCamouflageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceBaseLocalControlPacket.h"
@@ -6,14 +12,14 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceWeatheringLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Appearance/FBBBCharacterAppearanceRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Appearance/FBBBCharacterAppearanceAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBEquipmentSelectionRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterInteractionSelectionRemoteMessagePacket.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterLifeRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterDamageDeliveryRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBCharacterEquipmentUseAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Equipment/FBBBCharacterEquipmentUseRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterInteractionUseAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterInteractionUseRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
@@ -34,15 +40,15 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemMoveLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Equipment/FBBBEquipmentSelectionAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterInteractionSelectionAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemSelectLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalStartRemoteMessagePacket.h"
 
@@ -52,10 +58,10 @@
 
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalEndAuthorityFactPacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginActionLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndActionLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentBeginContactLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Equipment/FBBBCharacterEquipmentEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionEndContactLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueBeginLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCancelLocalControlPacket.h"
@@ -71,6 +77,18 @@
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** ItemConsume 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterItemConsumeLocalControlPacket> ItemConsume;
+    /** ItemQuickUse 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterItemQuickUseLocalControlPacket> ItemQuickUse;
+    /** InteractionPrimary 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterInteractionPrimaryLocalControlPacket> InteractionPrimary;
+    /** InteractionSecondary 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterInteractionSecondaryLocalControlPacket> InteractionSecondary;
+    /** InteractionRelease 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterInteractionReleaseLocalControlPacket> InteractionRelease;
+    /** InteractionFinish 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterInteractionFinishLocalControlPacket> InteractionFinish;
     /** 接收的生命结果 */
     TBBBCharacterInputSlot<FBBBCharacterLifeAuthorityFactPacket> AuthorityLife;
     /** 控制者生成的生命结果 */
@@ -78,19 +96,19 @@ struct FBBBCharacterInputState final
     /** 需向控制者投送的独立命中 */
     TBBBCharacterInputSlot<FBBBCharacterDamageDeliveryRemoteMessagePacket> DamageDelivery;
     /** 装备独立使用结果输入 */
-    TBBBCharacterInputSlot<FBBBCharacterEquipmentUseAuthorityFactPacket> AuthorityFactEquipmentUse;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionUseAuthorityFactPacket> AuthorityFactInteractionUse;
     /** 装备独立使用结果输入 */
-    TBBBCharacterInputSlot<FBBBCharacterEquipmentUseRemoteMessagePacket> RemoteMessageEquipmentUse;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionUseRemoteMessagePacket> RemoteMessageInteractionUse;
     /** 本帧全部独立伤害输入 */
     TBBBCharacterInputSlot<FBBBCharacterDamageLocalControlPacket> Damage;
     /** 装备BeginAction通知输入槽 */
-    TBBBCharacterInputSlot<FBBBCharacterEquipmentBeginActionLocalControlPacket> EquipmentBeginAction;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionBeginActionLocalControlPacket> EquipmentBeginAction;
     /** 装备EndAction通知输入槽 */
-    TBBBCharacterInputSlot<FBBBCharacterEquipmentEndActionLocalControlPacket> EquipmentEndAction;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionEndActionLocalControlPacket> EquipmentEndAction;
     /** 装备BeginContact通知输入槽 */
-    TBBBCharacterInputSlot<FBBBCharacterEquipmentBeginContactLocalControlPacket> EquipmentBeginContact;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionBeginContactLocalControlPacket> EquipmentBeginContact;
     /** 装备EndContact通知输入槽 */
-    TBBBCharacterInputSlot<FBBBCharacterEquipmentEndContactLocalControlPacket> EquipmentEndContact;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionEndContactLocalControlPacket> EquipmentEndContact;
     /** 翻越StartRemoteMessage输入槽位 */
     TBBBCharacterInputSlot<FBBBTraversalStartRemoteMessagePacket> TraversalStartRemoteMessage;
     /** 翻越EndRemoteMessage输入槽位 */
@@ -108,16 +126,16 @@ struct FBBBCharacterInputState final
     /** 当前加速度事实的镜像还原 */
     TBBBCharacterInputSlot<FBBBAccelerationAuthorityFactPacket> AuthorityAcceleration;
     /** 装备选择输入槽位 */
-    TBBBCharacterInputSlot<FBBBItemAddLocalControlPacket> ItemAdd;
+    TBBBCharacterInputSlot<FBBBCharacterItemAddLocalControlPacket> ItemAdd;
     /** 背包移动输入槽位 */
-    TBBBCharacterInputSlot<FBBBItemMoveLocalControlPacket> ItemMove;
+    TBBBCharacterInputSlot<FBBBCharacterItemMoveLocalControlPacket> ItemMove;
     /** 远端已经成立的装备持有关系 */
-    TBBBCharacterInputSlot<FBBBEquipmentSelectionRemoteMessagePacket> RemoteEquipmentSelectionState;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionSelectionRemoteMessagePacket> RemoteInteractionSelectionState;
 
     /** 权威装备选择事实输入槽位 */
-    TBBBCharacterInputSlot<FBBBEquipmentSelectionAuthorityFactPacket> AuthorityEquipmentSelectionState;
+    TBBBCharacterInputSlot<FBBBCharacterInteractionSelectionAuthorityFactPacket> AuthorityInteractionSelectionState;
     /** 快捷栏装备选择输入槽位 */
-    TBBBCharacterInputSlot<FBBBItemSelectLocalControlPacket> ItemSelect;
+    TBBBCharacterInputSlot<FBBBCharacterItemSelectLocalControlPacket> ItemSelect;
     /** 移动命令输入槽位 */
     TBBBCharacterInputSlot<FBBBCharacterMovementLocalControlPacket> Movement;
     /** 跑步动作输入槽位 */

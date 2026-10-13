@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/BBBCharacterPhysicalPresentationDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AimSystem/DomainData/BBBAimDomainState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/EquipmentSystem/DomainData/BBBCharacterEquipmentDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/BBBCharacterInteractionDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/BBBCharacterLocomotionDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/BBBCharacterExternalDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/BBBCharacterAnimationDomainState.h"
@@ -57,7 +57,7 @@ struct FBBBCharacterRuntimeData final
 
     /** 角色装备状态 */
     UPROPERTY(Transient)
-    FBBBCharacterEquipmentDomainState Equipment;
+    FBBBCharacterInteractionDomainState Interaction;
 
     /** 角色动画状态 */
     UPROPERTY(Transient)

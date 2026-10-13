@@ -281,7 +281,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     Packet.ExplosionRadiusCm = 0.0f;
     Packet.FuseSeconds = 0.0f;
     Packet.GravityScale = 1.0f;
-    Packet.MuzzleTransform = FTransform(FRotator(0, 90, 0));
+    Packet.LaunchTransform = FTransform(FRotator(0, 90, 0));
     Packet.LocalDirection = FVector(1, 1, 0).GetSafeNormal();
     const auto Ballistic = Spawn();
     Run(UBBBProjectileMovementProcessor::StaticClass());

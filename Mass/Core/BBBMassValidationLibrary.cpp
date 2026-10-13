@@ -126,7 +126,7 @@ bool UBBBMassValidationLibrary::SpawnInspectionProjectile(UObject* WorldContext,
     }
 
     FBBBProjectileSpawnLocalControlPacket Packet;
-    Packet.MuzzleTransform = FTransform((End - Start).ToOrientationQuat(), Start);
+    Packet.LaunchTransform = FTransform((End - Start).ToOrientationQuat(), Start);
     Packet.Speed = Definition->InitialSpeedCmPerSecond;
     Packet.Lifetime = Definition->MaximumLifetimeSeconds;
     Packet.Damage = Damage;

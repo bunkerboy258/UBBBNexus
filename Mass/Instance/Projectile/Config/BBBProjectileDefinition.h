@@ -33,6 +33,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|爆炸", meta = (ClampMin = "0.0", ForceUnits = "cm", DisplayName = "爆炸半径 (厘米)", ToolTip = "0 为点伤害弹 大于 0 为范围伤害弹 越大影响范围越大 爆炸弹必须关闭穿透并配置接触引爆或正数引信"))
     float ExplosionRadiusCm = 0.0f;
 
+    /** 爆炸是否也影响发射者 飞行碰撞仍忽略发射者 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|爆炸", meta = (DisplayName = "爆炸伤害发射者", ToolTip = "手雷可对自己和队友造成伤害 不改变普通弹丸的飞行碰撞忽略规则"))
+    bool bDamageInstigator = false;
+
     /** 正数表示出生后延时引爆 零表示没有引信 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|爆炸", meta = (ClampMin = "0.0", ForceUnits = "s", DisplayName = "引信时间 (秒)", ToolTip = "出生后延时引爆的时间 越小越快引爆 0 无计时引信 仅适用于爆炸弹 不能大于最长存活时间"))
     float FuseSeconds = 0.0f;

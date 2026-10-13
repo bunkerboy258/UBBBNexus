@@ -1,10 +1,11 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/BBBItemType.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentType.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentType.h"
 #include "BBBCharacterAnimationFactState.generated.h"
 
 /** 游戏线程维护并提交给动画实例的角色动画事实状态 */
@@ -12,6 +13,13 @@ USTRUCT()
 struct FBBBCharacterAnimationFactState final
 {
     GENERATED_BODY()
+    /** 当前实际持有物品的静态类别 */
+    EBBBItemType ItemType = EBBBItemType::Misc;
+    /** 当前物品正在进行使用动作 */
+    bool bUsingItem = false;
+    /** 当前物品已经开始的使用序号 */
+    int32 ItemUseSerial = 0;
+
     /** 当前生命阶段 */
     UPROPERTY(Transient)
     EBBBCharacterLifePhase LifePhase = EBBBCharacterLifePhase::Alive;

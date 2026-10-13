@@ -1,7 +1,7 @@
 #pragma once
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterAppearanceObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRescueObservationProcessor.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBEquipmentObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterInteractionObservationProcessor.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterLifeObservationProcessor.h"
@@ -50,7 +50,7 @@ private:
     /** 角色网络发送配置 */
     const FBBBCharacterNetworkConfig *NetworkConfig = nullptr;
 
-    FBBBEquipmentObservationProcessor EquipmentObservationProcessor;
+    FBBBCharacterInteractionObservationProcessor InteractionObservationProcessor;
     FBBBCharacterAppearanceObservationProcessor AppearanceObservationProcessor;
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBRunObservationProcessor RunObservationProcessor;

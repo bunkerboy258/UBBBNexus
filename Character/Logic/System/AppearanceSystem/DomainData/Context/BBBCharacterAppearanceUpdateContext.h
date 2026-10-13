@@ -3,7 +3,7 @@
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
 struct FBBBCharacterAppearanceConfig;
-class UBBBItemCatalog;
+class UBBBWearableCatalog;
 struct FBBBAppearanceResource;
 
 /** 外观更新的栈上依赖 物品领域只读 */
@@ -16,7 +16,7 @@ struct FBBBCharacterAppearanceUpdateContext final
     /** 基础配置 */
     const FBBBCharacterAppearanceConfig &Config;
     /** 外侧统一物品目录 */
-    const UBBBItemCatalog *Catalog;
+    const UBBBWearableCatalog *Catalog;
     /** 主管线确定的执行路径 */
     bool bIsMirror;
     /** 本次是否需要材质维护和显示应用 */

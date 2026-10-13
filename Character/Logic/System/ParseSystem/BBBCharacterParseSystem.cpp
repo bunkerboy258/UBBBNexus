@@ -19,21 +19,22 @@ void FBBBCharacterParseSystem::Update() const
         Data->Aim.AimState,
         Data->Locomotion.LocomotionState,
         Data->Parse.ControlState,
-        Data->Equipment.EquipmentSelectionState,
+        Data->Interaction.InteractionSelectionState,
         Data->Item.ItemOperationState,
         Data->External.ReadNetworkIdentityState().bIsMirror,
         Data->Parse.CameraState,
         Data->Animation.AimImpulseState,
         Data->Animation.ReadAnimationFactState(),
         Data->Traversal.TraversalState,
-        Data->Equipment.EquipmentAnimationInputState,
+        Data->Interaction.InteractionInputState,
         Data->Life.LifeInputState,
         Data->Life.ReadLifeState(),
-        Data->Equipment.EquipmentUseInputState,
+        Data->Interaction.InteractionUseInputState,
         Data->Network.DamageInboxState,
         Data->Life.RescueInputState,
         Data->Life.ReadRescueState(),
         Data->Network.RescueInboxState,
-        Data->Appearance.InputState};
+        Data->Appearance.InputState,
+        Data->Interaction.ReadInteractionUseState()};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

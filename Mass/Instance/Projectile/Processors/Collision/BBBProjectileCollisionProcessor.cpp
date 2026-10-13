@@ -150,8 +150,11 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     const auto Detonate = [World, Mass, &DamageResults, &AttackResults](const FBBBProjectileCollisionFragment& Data, const FVector& Center)
     {
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMassExplosion), false);
-        Params.AddIgnoredActor(Data.DamageCauser.Get());
-        Params.AddIgnoredActor(Data.InstigatorPawn.Get());
+        if (!Data.bDamageInstigator)
+        {
+            Params.AddIgnoredActor(Data.DamageCauser.Get());
+            Params.AddIgnoredActor(Data.InstigatorPawn.Get());
+        }
         TArray<FBBBMassCollisionBody> Targets;
         Mass->OverlapEntities(Center, Data.ExplosionRadiusCm, Targets);
         for (const auto& Body : Targets)
@@ -176,8 +179,11 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
         if (Data.bCanCauseDamage && Data.Damage > 0.0f)
         {
             TArray<AActor*> IgnoredActors;
-            IgnoredActors.Add(Data.DamageCauser.Get());
-            IgnoredActors.Add(Data.InstigatorPawn.Get());
+            if (!Data.bDamageInstigator)
+            {
+                IgnoredActors.Add(Data.DamageCauser.Get());
+                IgnoredActors.Add(Data.InstigatorPawn.Get());
+            }
             UGameplayStatics::ApplyRadialDamage(World, Data.Damage, Center, Data.ExplosionRadiusCm, nullptr,
                 IgnoredActors, Data.DamageCauser.Get(), Data.EventInstigator.Get(), true, ECC_Visibility);
         }

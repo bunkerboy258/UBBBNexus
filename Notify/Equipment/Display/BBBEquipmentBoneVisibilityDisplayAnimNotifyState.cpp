@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Display/BBBEquipmentBoneVisibilityDisplayAnimNotifyState.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBEquipmentBoneVisibilityDisplayAnimNotifyState::NotifyBegin(

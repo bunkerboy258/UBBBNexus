@@ -1,0 +1,22 @@
+#pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/NetworkSystem/DomainData/BBBRifleNetworkDomainState.h"
+
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ParseSystem/DomainData/BBBRifleParseDomainState.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/BBBRifleActionDomainState.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/DomainData/BBBRifleAnimationDomainState.h"
+
+/** 步枪唯一运行时聚合黑板 */
+struct FBBBRifleRuntimeData final
+{
+    /** Parse 领域 */
+    FBBBRifleParseDomainState Parse;
+
+    /** Action 领域 */
+    FBBBRifleActionDomainState Action;
+
+    /** Animation 领域 */
+    FBBBRifleAnimationDomainState Animation;
+
+    /** 当前事实的网络观察基准 */
+    FBBBRifleNetworkDomainState Network;
+};

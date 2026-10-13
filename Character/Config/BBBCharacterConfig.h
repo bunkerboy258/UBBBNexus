@@ -2,12 +2,12 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
-#include "BBBWork/UBBBNexus/Character/Config/Equipment/BBBEquipmentConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Interaction/BBBCharacterInteractionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Network/BBBNetworkConfig.h"
 #include "Engine/DataAsset.h"
-#include "BBBWork/UBBBNexus/Character/Config/Item/BBBItemConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBCharacterAppearanceConfig.h"
 #include "BBBCharacterConfig.generated.h"
 
@@ -62,9 +62,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "外观配置"))
     FBBBCharacterAppearanceConfig Appearance;
 
-    /** 角色装备目录与容器配置 */
+    /** 角色四类物品注册与容器配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备"))
-    FBBBCharacterEquipmentConfig Equipment;
+    FBBBCharacterInteractionConfig Interaction;
 
     /** 角色网络状态同步配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "网络配置"))

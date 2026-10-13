@@ -1,19 +1,21 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "EnhancedInputComponent.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueBeginLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCancelLocalControlPacket.h"
 #include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 
 UBBBPlayerInputSystem::UBBBPlayerInputSystem()
@@ -126,7 +128,13 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
     }
     if (ABBBPlayerController *Controller = Cast<ABBBPlayerController>(GetOwner()))
     {
-        Controller->SubmitItemSelect(Slot);
+        int32 Start = 0;
+        int32 Count = 0;
+        if (Controller->IsConsumableBarHeld())
+        {
+            Controller->GetConsumableQuickRange(Start, Count);
+        }
+        Controller->SubmitItemSelect(Start + Slot);
     }
 }
 
@@ -140,10 +148,7 @@ void UBBBPlayerInputSystem::SubmitReload()
     {
         return;
     }
-    if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
-    {
-        Equipment->SubmitInput(FBBBEquipmentSecondaryLocalControlPacket{});
-    }
+    Character->SubmitInput(FBBBCharacterInteractionSecondaryLocalControlPacket{});
 }
 
 void UBBBPlayerInputSystem::SubmitRun(const bool bRun)
@@ -327,7 +332,7 @@ FVector UBBBPlayerInputSystem::ResolveAimTargetWorld(const FVector& ViewLocation
     if (ABBBCharacter* Target = Character.Get())
     {
         Params.AddIgnoredActor(Target);
-        Params.AddIgnoredActor(Target->GetActiveEquipment());
+        Params.AddIgnoredActor(Target->GetHeldItem());
         // 第三人称相机后退段不生成角色身后的瞄准目标
         const double ForwardDistance = FMath::Clamp(
             FVector::DotProduct(Target->GetActorLocation() - ViewLocation, Direction), 0.0, Distance - 1.0);
@@ -390,10 +395,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     // 开火与跳跃以包的存在与否表达按下 未按下时不投递
     if (bFire && Character->RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None)
     {
-        if (ABBBEquipment *Equipment = Character->GetActiveEquipment())
-        {
-            Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket{});
-        }
+        Character->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{});
     }
     if (bJump)
     {

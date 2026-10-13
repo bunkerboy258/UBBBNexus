@@ -1,14 +1,16 @@
-
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemQuickUseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
+
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemAddLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemMoveLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBItemSelectLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemSelectLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -39,6 +41,7 @@ void ABBBPlayerController::SetupInputComponent()
 {
     //先执行父类的绑定玩家输入动作
     Super::SetupInputComponent();
+    InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ABBBPlayerController::QuickUse);
 
     InputComponent->BindKey(EKeys::B, IE_Pressed, this, &ABBBPlayerController::ToggleBackpack);
     InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ABBBPlayerController::BeginQuickBar);
@@ -152,6 +155,7 @@ void ABBBPlayerController::ToggleMouseCursor()
 
 void ABBBPlayerController::BeginQuickBar()
 {
+    bConsumableBarHeld = !IsPlayerMenuOpen();
     if (ItemView && !IsPlayerMenuOpen())
     {
         ItemView->SetQuickBarHeld(true);
@@ -160,6 +164,7 @@ void ABBBPlayerController::BeginQuickBar()
 
 void ABBBPlayerController::EndQuickBar()
 {
+    bConsumableBarHeld = false;
     if (ItemView)
     {
         ItemView->SetQuickBarHeld(false);
@@ -178,6 +183,7 @@ bool ABBBPlayerController::IsPlayerMenuOpen() const
 
 void ABBBPlayerController::ToggleBackpack()
 {
+    bConsumableBarHeld = false;
     if (!IsLocalController() || !ItemView)
     {
         return;
@@ -218,7 +224,7 @@ void ABBBPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 AActor *ABBBPlayerController::GetActiveItem() const
 {
     const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter ? ItemCharacter->GetActiveEquipment() : nullptr;
+    return ItemCharacter ? ItemCharacter->GetHeldItem() : nullptr;
 }
 
 //切换鼠标菜单输入模式
@@ -272,19 +278,59 @@ int32 ABBBPlayerController::GetItemSlotCount() const
     return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Slots.Num() : 0;
 }
 
-void ABBBPlayerController::GetEquipmentStorageRange(int32 &Start, int32 &Count) const
+void ABBBPlayerController::GetStorageRange(EBBBItemType Type, int32 &Start, int32 &Count) const
 {
-    Start = GetQuickAccessSlotCount();
-    const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    Count = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().EquipmentStorageSlotCount : 0;
+    Start = 0;
+    Count = 0;
+    const auto *ItemCharacter = GetItemCharacter();
+    if (!ItemCharacter)
+    {
+        return;
+    }
+    const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
+    if (Type == EBBBItemType::Equipment)
+    {
+        Start = Inventory.QuickAccessSlotCount;
+        Count = Inventory.EquipmentSlotCount - Start;
+    }
+    if (Type == EBBBItemType::Wearable)
+    {
+        Start = Inventory.EquipmentSlotCount;
+        Count = Inventory.WearableSlotCount;
+    }
+    if (Type == EBBBItemType::Consumable)
+    {
+        Start = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount + Inventory.ConsumableQuickAccessSlotCount;
+        Count = Inventory.ConsumableSlotCount - Inventory.ConsumableQuickAccessSlotCount;
+    }
+    if (Type == EBBBItemType::Misc)
+    {
+        Start = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount + Inventory.ConsumableSlotCount;
+        Count = Inventory.MiscSlotCount;
+    }
 }
 
-void ABBBPlayerController::GetMiscStorageRange(int32 &Start, int32 &Count) const
+void ABBBPlayerController::GetConsumableQuickRange(int32 &Start, int32 &Count) const
 {
-    GetEquipmentStorageRange(Start, Count);
-    Start += Count;
-    const ABBBCharacter *ItemCharacter = GetItemCharacter();
-    Count = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().BackpackSlotCount - Start : 0;
+    Start = 0;
+    Count = 0;
+    if (const auto *ItemCharacter = GetItemCharacter())
+    {
+        const auto &Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
+        Start = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount;
+        Count = Inventory.ConsumableQuickAccessSlotCount;
+    }
+}
+
+int32 ABBBPlayerController::GetSelectedConsumableSlot() const
+{
+    const auto *ItemCharacter = GetItemCharacter();
+    return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().SelectedConsumableSlot : 0;
+}
+
+bool ABBBPlayerController::IsConsumableBarHeld() const
+{
+    return bConsumableBarHeld;
 }
 
 void ABBBPlayerController::GetWearSlotRange(int32 &Start, TArray<FName> &Names) const
@@ -337,10 +383,14 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
     }
     const auto &Item = Inventory.Slots[Slot];
     Data.InstanceId = Item.InstanceId;
-    Data.bOccupied = IsValid(Item.Definition) && Item.InstanceId.IsValid();
-    Data.bQuick = Slot >= 0 && Slot < GetQuickAccessSlotCount();
+    Data.Quantity = Item.Quantity;
+    Data.bOccupied = IsValid(Item.Definition) && Item.InstanceId.IsValid() && Item.Quantity > 0;
+    const int32 ConsumableStart = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount;
+    const bool bConsumableQuick = Slot >= ConsumableStart && Slot < ConsumableStart + Inventory.ConsumableQuickAccessSlotCount;
+    Data.bQuick = (Slot >= 0 && Slot < GetQuickAccessSlotCount()) || bConsumableQuick;
+    Data.QuickIndex = Data.bQuick ? (bConsumableQuick ? Slot - ConsumableStart : Slot) : INDEX_NONE;
     Data.bSelected = Slot == GetSelectedItemSlot();
-    Data.bActive = Data.bOccupied && Item.EquipmentInstance && Item.EquipmentInstance == GetActiveItem();
+    Data.bActive = Data.bOccupied && Item.HeldInstance && Item.HeldInstance == GetActiveItem();
     if (const UBBBItemDefinition *Definition = Item.Definition)
     {
         Data.Name = Definition->DisplayName.IsEmpty()
@@ -354,7 +404,11 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
         {
             Data.EquipSlot = 0;
         }
-        if (Definition->ItemType != EBBBItemType::Equipment && !Definition->WearSlot.IsNone())
+        if (Definition->ItemType == EBBBItemType::Consumable)
+        {
+            Data.EquipSlot = ConsumableStart;
+        }
+        if (Definition->ItemType == EBBBItemType::Wearable && !Definition->WearSlot.IsNone())
         {
             const int32 Position = Inventory.WearSlots.IndexOfByKey(Definition->WearSlot);
             if (Position != INDEX_NONE)
@@ -368,8 +422,8 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
 
 FText ABBBPlayerController::GetActiveItemName() const
 {
-    const ABBBEquipment *Equipment = Cast<ABBBEquipment>(GetActiveItem());
-    const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+    const auto *ItemCharacter = GetItemCharacter();
+    const UBBBItemDefinition *Definition = ItemCharacter ? ItemCharacter->GetHeldItemDefinition() : nullptr;
     return Definition ? (Definition->DisplayName.IsEmpty()
         ? FText::FromName(Definition->ItemId) : Definition->DisplayName) : FText::GetEmpty();
 }
@@ -380,25 +434,25 @@ int32 ABBBPlayerController::GetSelectedItemSlot() const
     return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().SelectedSlot : INDEX_NONE;
 }
 
-bool ABBBPlayerController::SubmitItemAdd(const FName EquipmentId)
+bool ABBBPlayerController::SubmitItemAdd(const FName ItemId, const int32 Quantity)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && !EquipmentId.IsNone()
-        && ItemCharacter->SubmitInput(FBBBItemAddLocalControlPacket{{EquipmentId}});
+    return ItemCharacter && !ItemId.IsNone() && Quantity > 0
+        && ItemCharacter->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{ItemId}, {Quantity}});
 }
 
 bool ABBBPlayerController::SubmitItemMove(const int32 Source, const int32 Target, const FGuid InstanceId)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
     return ItemCharacter && Source >= 0 && Target >= INDEX_NONE && InstanceId.IsValid()
-        && ItemCharacter->SubmitInput(FBBBItemMoveLocalControlPacket{{Source}, {Target}, {InstanceId}});
+        && ItemCharacter->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{Source}, {Target}, {InstanceId}});
 }
 
 bool ABBBPlayerController::SubmitItemSelect(const int32 Slot)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
     const bool bAccepted = ItemCharacter && Slot >= INDEX_NONE
-        && ItemCharacter->SubmitInput(FBBBItemSelectLocalControlPacket{{Slot}});
+        && ItemCharacter->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{Slot}});
     if (bAccepted && ItemView)
     {
         ItemView->NotifyQuickSelection();
@@ -431,7 +485,7 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
     const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Revision : 0;
     const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().Revision : 0;
     const int32 OperationRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemOperationState().Revision : 0;
-    AActor *Active = ItemCharacter ? ItemCharacter->GetActiveEquipment() : nullptr;
+    AActor *Active = ItemCharacter ? ItemCharacter->GetHeldItem() : nullptr;
     if (ObservedItemCharacter.Get() != ItemCharacter && IsBackpackOpen())
     {
         ToggleBackpack();
@@ -447,4 +501,21 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
         ObservedItemOperationRevision = OperationRevision;
         OnItemsChanged.Broadcast();
     }
+}
+
+bool ABBBPlayerController::SubmitQuickUse()
+{
+    auto *ItemCharacter = GetItemCharacter();
+    return ItemCharacter && !IsPlayerMenuOpen() && ItemCharacter->SubmitInput(FBBBCharacterItemQuickUseLocalControlPacket{});
+}
+
+bool ABBBPlayerController::SubmitPrimaryUse()
+{
+    auto *ItemCharacter = GetItemCharacter();
+    return ItemCharacter && !IsPlayerMenuOpen() && ItemCharacter->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{});
+}
+
+void ABBBPlayerController::QuickUse()
+{
+    SubmitQuickUse();
 }

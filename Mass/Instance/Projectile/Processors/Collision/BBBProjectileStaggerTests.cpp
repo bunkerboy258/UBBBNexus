@@ -69,7 +69,7 @@ bool FBBBProjectileStaggerTest::RunTest(const FString&)
     const auto Fire = [&](const int32 Count, const bool bSameAttack, const float Value)
     {
         FBBBProjectileSpawnLocalControlPacket Packet;
-        Packet.MuzzleTransform = FTransform(FVector(0, 0, 90));
+        Packet.LaunchTransform = FTransform(FVector(0, 0, 90));
         Packet.Mesh = NewObject<UStaticMesh>(World);
         Packet.Speed = 1000.0f;
         Packet.Radius = 0.0f;
