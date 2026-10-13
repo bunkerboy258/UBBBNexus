@@ -8,6 +8,17 @@
 #include "BBBMassSubsystem.generated.h"
 
 class UMassEntityConfigAsset;
+class UMassProcessor;
+struct FConstStructView;
+struct FBBBMonsterDirectorInitializeLocalControlPacket;
+struct FBBBMonsterDirectorStartLocalControlPacket;
+struct FBBBMonsterDirectorPauseLocalControlPacket;
+struct FBBBMonsterDirectorResumeLocalControlPacket;
+struct FBBBMonsterDirectorStopLocalControlPacket;
+struct FBBBMonsterDirectorTriggerLocalControlPacket;
+struct FBBBMonsterDirectorQueryResultLocalControlPacket;
+struct FBBBMonsterDirectorCreatedLocalControlPacket;
+struct FBBBMonsterDirectorStateAuthorityFactPacket;
 struct FBBBProjectileSpawnLocalControlPacket;
 struct FBBBMonsterDamageLocalControlPacket;
 struct FBBBMonsterDamageRemoteMessagePacket;
@@ -29,6 +40,23 @@ public:
      * @return 创建的实体句柄
      */
     FMassEntityHandle CreateEntity(const UMassEntityConfigAsset& Config);
+
+    /**
+     * @param Config		实体模板
+     * @param Count		批量创建数量
+     * @param SpawnData	初始化纯值数据
+     * @param Initializer	出生初始化处理器
+     * @param Result		实际创建句柄
+     * @return 是否成功完成批量创建
+     */
+    bool CreateEntities(const UMassEntityConfigAsset& Config, int32 Count, FConstStructView SpawnData,
+        TSubclassOf<UMassProcessor> Initializer, TArray<FMassEntityHandle>& Result);
+
+    /**
+     * @param Entity	待回收实体
+     * @return 无返回值
+     */
+    void DestroyEntity(FMassEntityHandle Entity);
 
     /** 清空本帧逻辑碰撞缓存 */
     void BeginCollisionFrame();
@@ -95,6 +123,15 @@ public:
     }
 
 private:
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorInitializeLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStartLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorPauseLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorResumeLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStopLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorTriggerLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorQueryResultLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorCreatedLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStateAuthorityFactPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBProjectileSpawnLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageRemoteMessagePacket& Packet);

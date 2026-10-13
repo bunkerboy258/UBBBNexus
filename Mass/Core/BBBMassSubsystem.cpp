@@ -3,6 +3,8 @@
 #include "MassEntityConfigAsset.h"
 #include "MassEntityTemplate.h"
 #include "MassSpawnerSubsystem.h"
+#include "MassCommands.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
@@ -48,6 +50,86 @@ namespace
             FMath::FloorToInt(Position.X / CollisionCellSize),
             FMath::FloorToInt(Position.Y / CollisionCellSize));
     }
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorInitializeLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStartLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorPauseLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorResumeLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStopLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorTriggerLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorQueryResultLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorCreatedLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStateAuthorityFactPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::CreateEntities(const UMassEntityConfigAsset& Config, const int32 Count, FConstStructView SpawnData,
+    TSubclassOf<UMassProcessor> Initializer, TArray<FMassEntityHandle>& Result)
+{
+    Result.Reset();
+    UMassSpawnerSubsystem* Spawner = GetWorld()->GetSubsystem<UMassSpawnerSubsystem>();
+    if (!IsInGameThread() || !Spawner || Count <= 0 || Spawner->GetEntityManagerChecked().IsProcessing())
+    {
+        ensureMsgf(false, TEXT("Mass 批量创建必须位于游戏线程安全时机"));
+        return false;
+    }
+    const FMassEntityTemplate& Template = Config.GetOrCreateEntityTemplate(*GetWorld());
+    if (!Template.IsValid())
+    {
+        return false;
+    }
+    auto Creation = Spawner->SpawnEntities(Template.GetTemplateID(), Count, SpawnData, Initializer, Result);
+    return Creation.IsValid() && Result.Num() == Count;
+}
+
+void UBBBMassSubsystem::DestroyEntity(const FMassEntityHandle Entity)
+{
+    UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
+    if (!Entities || !Entities->GetEntityManager().IsEntityValid(Entity))
+    {
+        return;
+    }
+    auto& Manager = Entities->GetMutableEntityManager();
+    if (Manager.IsProcessing())
+    {
+        Manager.Defer().DestroyEntity(Entity);
+        return;
+    }
+    GetWorld()->GetSubsystem<UMassSpawnerSubsystem>()->DestroyEntities(MakeArrayView(&Entity, 1));
 }
 
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBProjectileSpawnLocalControlPacket& Packet)

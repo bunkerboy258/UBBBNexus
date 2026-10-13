@@ -3,6 +3,7 @@
 #include "MassEntityTemplateRegistry.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterSpawnOwnershipFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "MassActorSubsystem.h"
@@ -43,6 +44,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddTag<FBBBMonsterTag>();
     BuildContext.AddTag<FBBBMonsterInitializationPendingTag>();
     BuildContext.AddFragment<FBBBMonsterVariationFragment>();
+    BuildContext.AddFragment<FBBBMonsterSpawnOwnershipFragment>();
     BuildContext.AddTag<FMassCustomMovementTag>();
     BuildContext.AddFragment<FTransformFragment>();
     BuildContext.AddFragment<FMassVelocityFragment>();
