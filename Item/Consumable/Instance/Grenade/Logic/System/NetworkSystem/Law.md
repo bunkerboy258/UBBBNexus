@@ -21,3 +21,6 @@ NetworkSystem/
 └─ Processors/
    └─ BBBGrenadeNetworkProcessor.h / .cpp
 ```
+
+- 网络同步只传递使用和释放结果 房主据此生成独立投掷物 客机还原角色表现
+- 释放数据包含实际释放变换及持有者速度 运动复制由投掷物的 UE 原生物理复制负责

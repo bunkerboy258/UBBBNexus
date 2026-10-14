@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "MassExecutionContext.h"
+#include "MassEntitySubsystem.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
@@ -131,4 +132,20 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
     {
         Transport->EndPublish();
     }
+}
+
+bool UBBBMonsterNetworkObservationProcessor::QueryIdentity(UWorld& World, FMassEntityHandle Entity, FGuid& Result)
+{
+    const auto* Entities = World.GetSubsystem<UMassEntitySubsystem>();
+    if (!IsInGameThread() || !Entities || !Entities->GetEntityManager().IsEntityValid(Entity))
+    {
+        return false;
+    }
+    const auto* State = Entities->GetEntityManager().GetFragmentDataPtr<FBBBMonsterNetworkFragment>(Entity);
+    if (!State || !State->InstanceId.IsValid())
+    {
+        return false;
+    }
+    Result = State->InstanceId;
+    return true;
 }

@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Network/BBBMonsterNetworkObservationProcessor.h"
 
 namespace
 {
@@ -155,6 +156,11 @@ bool UBBBMassSubsystem::QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonster
 bool UBBBMassSubsystem::QueryMonsterBodyPart(FMassEntityHandle Entity, uint8 Part, FBBBMonsterBodyPartDefinition& Result) const
 {
     return UBBBMonsterDamageProcessor::QueryPart(*GetWorld(), Entity, Part, Result);
+}
+
+bool UBBBMassSubsystem::QueryMonsterInstanceId(FMassEntityHandle Entity, FGuid& Result) const
+{
+    return UBBBMonsterNetworkObservationProcessor::QueryIdentity(*GetWorld(), Entity, Result);
 }
 
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet)

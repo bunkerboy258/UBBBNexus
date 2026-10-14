@@ -15,6 +15,8 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerState.h"
 #include "MassEntitySubsystem.h"
+#include "EngineUtils.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "Misc/ScopeExit.h"
 
 /** 真实角色和物品实例验证释放幂等 零数量生命周期及自动返回 */
@@ -141,7 +143,16 @@ bool FBBBConsumableTest::RunTest(const FString &)
     Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
     Step();
     Step();
-    const int32 Baseline = FMath::Max(0, Manager.DebugGetEntityCount());
+    const auto CountThrowables = [World]()
+    {
+        int32 Count = 0;
+        for (TActorIterator<ABBBThrowable> It(World); It; ++It)
+        {
+            ++Count;
+        }
+        return Count;
+    };
+    const int32 Baseline = CountThrowables();
     for (int32 Use = 0; Use < 4; ++Use)
     {
         Controller->SubmitQuickUse();
@@ -164,7 +175,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
         Step();
         Step();
         TestEqual(TEXT("成功释放后仅扣一枚"), Character->GetHeldItemQuantity(), 3 - Use);
-        TestEqual(TEXT("释放后独立实体只出生一次"), Manager.DebugGetEntityCount(), Baseline + Use + 1);
+        TestEqual(TEXT("释放后独立实体只出生一次"), CountThrowables(), Baseline + Use + 1);
         Character->SubmitInput(FBBBCharacterInteractionReleaseLocalControlPacket{{Consumable}, {Generation}, {Serial}});
         Controller->SubmitItemSelect(0);
         Step();
@@ -174,7 +185,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
         Step();
         Step();
         TestTrue(TEXT("完成后恢复原装备实例"), Character->GetHeldItem() == Original);
-        TestEqual(TEXT("结束不回收已投出的独立实体"), Manager.DebugGetEntityCount(), Baseline + Use + 1);
+        TestEqual(TEXT("结束不回收已投出的独立实体"), CountThrowables(), Baseline + Use + 1);
     }
     TestFalse(TEXT("最后一枚收手后销毁持有实例"), IsValid(Stored));
     TestFalse(TEXT("耗尽后原位置为空"), Controller->GetItemDisplayData(Start).bOccupied);

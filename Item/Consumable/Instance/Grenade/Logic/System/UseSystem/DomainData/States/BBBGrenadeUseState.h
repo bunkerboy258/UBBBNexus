@@ -16,10 +16,12 @@ struct FBBBGrenadeUseState final
     int32 UseSerial = 0;
     /** 已成立的释放序号 */
     int32 ReleaseSerial = 0;
-    /** 本机已生成表现实体的释放序号 */
+    /** 房主已生成投掷物的释放序号 */
     int32 SpawnedReleaseSerial = 0;
     /** 已还原的网络结果顺序 */
     uint64 ReceivedRevision = 0;
     /** 已成立的释放变换 */
+    /** 释放时持有者速度 */
+    FVector InheritedVelocity = FVector::ZeroVector;
     FTransform LaunchTransform = FTransform::Identity;
 };

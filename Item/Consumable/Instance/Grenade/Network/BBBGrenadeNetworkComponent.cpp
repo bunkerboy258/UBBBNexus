@@ -17,7 +17,7 @@ bool UBBBGrenadeNetworkComponent::PublishState(FBBBGrenadeNetworkMessage Message
     TArray<uint8> Data;
     FMemoryWriter Writer(Data);
     uint8 Using = Message.bUsing ? 1 : 0, Released = Message.bReleased ? 1 : 0;
-    Writer << Message.UseSerial << Message.ReleaseSerial << Using << Released << Message.LaunchTransform;
+    Writer << Message.UseSerial << Message.ReleaseSerial << Using << Released << Message.LaunchTransform << Message.InheritedVelocity;
     return !Writer.IsError() && PublishMessage(0, MoveTemp(Data));
 }
 
@@ -33,7 +33,7 @@ bool UBBBGrenadeNetworkComponent::ReceiveMessage(uint8 Kind, const TArray<uint8>
     Message.Revision = Revision;
     uint8 Using = 0, Released = 0;
     FMemoryReader Reader(Data);
-    Reader << Message.UseSerial << Message.ReleaseSerial << Using << Released << Message.LaunchTransform;
+    Reader << Message.UseSerial << Message.ReleaseSerial << Using << Released << Message.LaunchTransform << Message.InheritedVelocity;
     Message.bUsing = Using != 0;
     Message.bReleased = Released != 0;
     if (Reader.IsError() || Reader.Tell() != Data.Num() || Using > 1 || Released > 1 || !Message.IsValid())

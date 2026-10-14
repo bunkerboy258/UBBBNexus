@@ -48,6 +48,7 @@ struct FBBBGrenadeStateRemoteMessagePacket final : public FBBBConsumableStateRem
             State.bUsing = Fact.bUsing;
             State.bReleased = Fact.bReleased;
             State.LaunchTransform = Fact.LaunchTransform;
+            State.InheritedVelocity = Fact.InheritedVelocity;
         }
     }
 };

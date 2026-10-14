@@ -11,7 +11,8 @@ Consumable/
 ├─ Law.md
 ├─ Catalog/
 ├─ Base/
-└─ Instance/
+├─ Instance/
+└─ Projectile/
 ```
 
 - 消耗品在独立的 `Base/` 定义公共持有组件、配置和输入，`Instance/X/` 定义具体业务，不复用装备 `Base/`

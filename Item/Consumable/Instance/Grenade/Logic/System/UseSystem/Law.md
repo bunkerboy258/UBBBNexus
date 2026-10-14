@@ -5,7 +5,8 @@
 - `DomainData/` 只保存 B，`DomainData/States/` 只保存 A。
 - B 直接私有持有 A 并提供对应的 `const` 读取方法。
 - 持久状态由显式 `friend` 处理器通过 `RuntimeData` 访问。
-- `Launch` 只提交 Mass 投掷物出生输入；投掷物后续模拟与伤害由 `Mass/Instance/Projectile/` 负责。
+- `Launch` 在控制端确定释放结果并消耗一次数量 房主根据有效结果生成独立物理投掷物 客机不得生成第二个因果实体
+- 生成去重使用物品代次和释放序号 晚到的释放结果不得作用于新实例
 
 ## 物理目录
 

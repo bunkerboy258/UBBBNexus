@@ -27,6 +27,7 @@ void FBBBGrenadeNetworkProcessor::Update(FBBBGrenadeNetworkUpdateContext &Contex
     Message.bUsing = Use.bUsing;
     Message.bReleased = Use.bReleased;
     Message.LaunchTransform = Use.LaunchTransform;
+    Message.InheritedVelocity = Use.InheritedVelocity;
     if (!Protocol->PublishState(Message))
     {
         return;

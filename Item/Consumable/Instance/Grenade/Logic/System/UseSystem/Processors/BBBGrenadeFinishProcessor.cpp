@@ -19,7 +19,8 @@ void FBBBGrenadeFinishProcessor::Update(FBBBGrenadeUseUpdateContext &Context) co
     Inputs.bRelease = false;
     Inputs.bFinish = false;
     Inputs.bHasPermission = false;
-    if (!State.bAllowed || Context.Character.GetHeldItem() != &Context.Actor)
+    const bool bUsable = Context.bIsMirror ? Context.Character.IsItemUsable() : State.bAllowed;
+    if (!bUsable || Context.Character.GetHeldItem() != &Context.Actor)
     {
         Context.Actor.SetActorTickEnabled(false);
     }

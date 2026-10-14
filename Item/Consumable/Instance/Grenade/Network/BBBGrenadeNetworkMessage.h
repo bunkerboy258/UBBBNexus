@@ -15,10 +15,12 @@ struct FBBBGrenadeNetworkMessage final
     bool bReleased = false;
     /** 最近成立的释放变换 */
     FTransform LaunchTransform = FTransform::Identity;
+    /** 释放时持有者速度 */
+    FVector InheritedVelocity = FVector::ZeroVector;
     /** @return 结果数据是否有效 */
     bool IsValid() const
     {
         return Revision > 0 && UseSerial >= 0 && ReleaseSerial >= 0
-            && ReleaseSerial <= UseSerial && !LaunchTransform.ContainsNaN();
+            && ReleaseSerial <= UseSerial && !LaunchTransform.ContainsNaN() && !InheritedVelocity.ContainsNaN();
     }
 };

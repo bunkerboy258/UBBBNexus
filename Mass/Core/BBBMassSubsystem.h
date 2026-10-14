@@ -112,6 +112,13 @@ public:
     bool QueryMonsterBodyPart(FMassEntityHandle Entity, uint8 Part, FBBBMonsterBodyPartDefinition& Result) const;
 
     /**
+     * @param Entity\t目标实体
+     * @param Result\t跨机出生身份
+     * @return 是否取得有效的小怪身份
+     */
+    bool QueryMonsterInstanceId(FMassEntityHandle Entity, FGuid& Result) const;
+
+    /**
      * @param Entity	目标实体
      * @param Packet	覆盖提交的输入
      * @return 是否成功投递
