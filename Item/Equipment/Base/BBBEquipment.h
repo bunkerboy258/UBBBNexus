@@ -36,8 +36,11 @@ class ABBB_EVAC_API ABBBEquipment : public AActor
 public:
     ABBBEquipment();
 
-    /** @return 当前装备是否允许临时切出 */
+    /** @return 当前装备是否允许主动切换或解除装备 */
     virtual bool CanSwitch() const;
+
+    /** @return 当前装备是否允许快捷消耗品临时打断 */
+    virtual bool CanQuickUse() const;
 
     /** @return 装备继承的世界空间移动速度 单位为厘米每秒 */
     virtual FVector GetVelocity() const override;

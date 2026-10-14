@@ -200,3 +200,8 @@ bool ABBBEquipment::CanSwitch() const
 {
     return true;
 }
+
+bool ABBBEquipment::CanQuickUse() const
+{
+    return CanSwitch();
+}

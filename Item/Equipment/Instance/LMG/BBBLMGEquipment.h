@@ -28,8 +28,8 @@ class ABBB_EVAC_API ABBBLMGEquipment final : public ABBBEquipment
     GENERATED_BODY()
 
 public:
-    /** @return 换弹和动作阻塞是否均已结束 */
-    virtual bool CanSwitch() const override;
+    /** @return 换弹和动作阻塞是否允许快捷消耗品打断 */
+    virtual bool CanQuickUse() const override;
     ABBBLMGEquipment();
 
     /**

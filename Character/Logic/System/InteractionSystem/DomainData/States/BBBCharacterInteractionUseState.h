@@ -11,8 +11,10 @@ struct FBBBCharacterInteractionUseState final
     bool bBusy = false;
     /** 当前实例的只读使用序号 用于拒绝过期通知 */
     int32 UseSerial = 0;
-    /** 当前持有物品是否允许临时切出 */
+    /** 当前持有物品是否允许主动切换或解除装备 */
     bool bSwitchAllowed = true;
+    /** 当前持有物品是否允许 G 快捷消耗品打断 */
+    bool bQuickUseAllowed = true;
     /** 当前持有实例是否可使用 */
     bool bUsable = false;
     /** 是否已建立当前实例的使用基线 */

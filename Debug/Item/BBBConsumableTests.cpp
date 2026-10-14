@@ -4,6 +4,10 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionReleaseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionSecondaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "Engine/Engine.h"
@@ -85,6 +89,58 @@ bool FBBBConsumableTest::RunTest(const FString &)
     {
         return false;
     }
+
+    Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
+    Step();
+    auto *Rifle = Cast<ABBBRifleEquipment>(Original);
+    if (!TestNotNull(TEXT("步枪切换权限验证实例"), Rifle))
+    {
+        return false;
+    }
+    Controller->SubmitPrimaryUse();
+    Step();
+    Step();
+    Character->SubmitInput(FBBBCharacterInteractionSecondaryLocalControlPacket{});
+    Step();
+    Step();
+    TestTrue(TEXT("步枪实际进入换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
+    const int32 AmmoBeforeSwitch = Rifle->GetLoadedAmmo();
+    Rifle->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket{});
+    Step();
+    Step();
+    TestTrue(TEXT("换弹及禁火不能禁止普通切枪"), Rifle->CanSwitch());
+    TestFalse(TEXT("换弹期间仍拒绝 G 快速使用"), Rifle->CanQuickUse());
+    Controller->SubmitQuickUse();
+    Step();
+    TestTrue(TEXT("G 冲突请求保留原步枪"), Character->GetHeldItem() == Original);
+    Controller->SubmitItemSelect(INDEX_NONE);
+    Step();
+    TestNull(TEXT("换弹期间可以实际解除装备"), Character->GetHeldItem());
+    TestFalse(TEXT("卸下完成后终止旧换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
+    TestEqual(TEXT("卸下不能重置已有弹药"), Rifle->GetLoadedAmmo(), AmmoBeforeSwitch);
+    Controller->SubmitItemSelect(0);
+    Step();
+    Step();
+    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+    Character->SubmitInput(FBBBCharacterInteractionSecondaryLocalControlPacket{});
+    Step();
+    Step();
+    TestTrue(TEXT("切枪验证重新进入换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
+    Controller->SubmitItemSelect(1);
+    Step();
+    Step();
+    TestTrue(TEXT("换弹期间可以实际切到另一支枪"), Character->GetHeldItem() && Character->GetHeldItem() != Original);
+    Controller->SubmitItemSelect(INDEX_NONE);
+    Step();
+    TestNull(TEXT("换弹后的持有关系可以实际解除"), Character->GetHeldItem());
+    Controller->SubmitItemSelect(0);
+    Step();
+    Step();
+    TestTrue(TEXT("重新持有原步枪实例"), Character->GetHeldItem() == Original);
+    TestFalse(TEXT("重新持有不能继续旧换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
+    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+    Step();
+    Step();
     const int32 Baseline = FMath::Max(0, Manager.DebugGetEntityCount());
     for (int32 Use = 0; Use < 4; ++Use)
     {

@@ -284,7 +284,7 @@ bool ABBBMinigunEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool 
     return Capacity > 0;
 }
 
-bool ABBBMinigunEquipment::CanSwitch() const
+bool ABBBMinigunEquipment::CanQuickUse() const
 {
     const auto &State = RuntimeData.Action.ReadMinigunActionState();
     return !State.bIsReloading && !State.bFireBlocked;

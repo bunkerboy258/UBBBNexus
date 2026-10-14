@@ -266,7 +266,7 @@ bool ABBBSMGEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bCo
     return Capacity > 0;
 }
 
-bool ABBBSMGEquipment::CanSwitch() const
+bool ABBBSMGEquipment::CanQuickUse() const
 {
     const auto &State = RuntimeData.Action.ReadSMGActionState();
     return !State.bIsReloading && !State.bFireBlocked;

@@ -15,6 +15,7 @@ void FBBBCharacterInteractionActionPermissionProcessor::Update(FBBBCharacterInte
     Use.UseSerial = Consumable ? Consumable->GetUseSerial() : 0;
     Use.bBusy = Consumable && Consumable->IsUsing();
     Use.bSwitchAllowed = !Use.bBusy && (!Equipment || Equipment->CanSwitch());
+    Use.bQuickUseAllowed = Use.bSwitchAllowed && (!Equipment || Equipment->CanQuickUse());
     if (Context.bIsMirror)
     {
         return;

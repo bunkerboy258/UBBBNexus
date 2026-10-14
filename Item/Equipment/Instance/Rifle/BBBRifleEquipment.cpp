@@ -266,7 +266,7 @@ bool ABBBRifleEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &b
     return Capacity > 0;
 }
 
-bool ABBBRifleEquipment::CanSwitch() const
+bool ABBBRifleEquipment::CanQuickUse() const
 {
     const auto &State = RuntimeData.Action.ReadRifleActionState();
     return !State.bIsReloading && !State.bFireBlocked;
