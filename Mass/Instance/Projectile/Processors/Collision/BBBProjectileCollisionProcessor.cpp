@@ -184,8 +184,10 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 IgnoredActors.Add(Data.DamageCauser.Get());
                 IgnoredActors.Add(Data.InstigatorPawn.Get());
             }
+            // 引擎始终排除 DamageCauser 允许自伤时仅通过控制器保留伤害归属
+            AActor *RadialCauser = Data.bDamageInstigator ? nullptr : Data.DamageCauser.Get();
             UGameplayStatics::ApplyRadialDamage(World, Data.Damage, Center, Data.ExplosionRadiusCm, nullptr,
-                IgnoredActors, Data.DamageCauser.Get(), Data.EventInstigator.Get(), true, ECC_Visibility);
+                IgnoredActors, RadialCauser, Data.EventInstigator.Get(), true, ECC_Visibility);
         }
     };
     EntityQuery.ForEachEntityChunk(Context, [World, Mass, Delta, &Detonate, &DamageResults, &AttackResults, &Impacts, &ImpactChannel](FMassExecutionContext& Chunk)
