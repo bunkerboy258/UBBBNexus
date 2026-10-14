@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ParseSystem/Processors/BBBPistolParseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ActionSystem/DomainData/Context/BBBPistolUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ParseSystem/DomainData/Context/BBBPistolParseUpdateContext.h"
 
 namespace
 {
@@ -35,7 +35,7 @@ namespace
     }
 }
 
-void FBBBPistolParseProcessor::Update(FBBBPistolUpdateContext &Context)
+void FBBBPistolParseProcessor::Update(FBBBPistolParseUpdateContext &Context)
 {
     auto &Queue = Context.RuntimeData.Parse.InputState;
     auto &Input = Context.RuntimeData.Action.ActionInputState;

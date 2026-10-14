@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/RuntimeData/BBBSMGRuntimeData.h"
 
-struct FBBBSMGUpdateContext;
+struct FBBBSMGParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBSMGParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBSMGUpdateContext &Context);
+    static void Update(FBBBSMGParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBSMGRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBSMGRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBSMGActionPermissionLocalControlPacket>)
         {
@@ -83,12 +87,12 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBSMGInputSlot<FBBBSMGFireLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGFireLocalControlPacket &)
+    static TBBBSMGInputSlot<FBBBSMGPrimaryLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGPrimaryLocalControlPacket &)
     {
         return State.Fire;
     }
 
-    static TBBBSMGInputSlot<FBBBSMGReloadLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGReloadLocalControlPacket &)
+    static TBBBSMGInputSlot<FBBBSMGSecondaryLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGSecondaryLocalControlPacket &)
     {
         return State.Reload;
     }
@@ -103,7 +107,7 @@ private:
         return State.AllowFire;
     }
 
-    static TBBBSMGInputSlot<FBBBSMGLoadMagazineLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGLoadMagazineLocalControlPacket &)
+    static TBBBSMGInputSlot<FBBBSMGLoadAmmoLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGLoadAmmoLocalControlPacket &)
     {
         return State.LoadMagazine;
     }

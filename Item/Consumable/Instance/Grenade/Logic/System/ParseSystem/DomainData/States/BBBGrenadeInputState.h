@@ -1,29 +1,29 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableEquipLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableReleaseLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableFinishLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePermissionLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/RemoteMessage/Use/FBBBConsumableStateRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/AuthorityFact/Use/FBBBConsumableStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadePrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeEquipLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeReleaseLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeFinishLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadePermissionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/RemoteMessage/Use/FBBBGrenadeStateRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/AuthorityFact/Use/FBBBGrenadeStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/ParseSystem/DomainData/Definitions/BBBGrenadeInputSlot.h"
 
 /** 手雷Parse领域持久状态 */
 struct FBBBGrenadeInputState final
 {
     /** PrimaryLocalControl 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumablePrimaryLocalControlPacket> PrimaryLocalControl;
+    TBBBGrenadeInputSlot<FBBBGrenadePrimaryLocalControlPacket> PrimaryLocalControl;
     /** EquipLocalControl 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumableEquipLocalControlPacket> EquipLocalControl;
+    TBBBGrenadeInputSlot<FBBBGrenadeEquipLocalControlPacket> EquipLocalControl;
     /** ReleaseLocalControl 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumableReleaseLocalControlPacket> ReleaseLocalControl;
+    TBBBGrenadeInputSlot<FBBBGrenadeReleaseLocalControlPacket> ReleaseLocalControl;
     /** FinishLocalControl 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumableFinishLocalControlPacket> FinishLocalControl;
+    TBBBGrenadeInputSlot<FBBBGrenadeFinishLocalControlPacket> FinishLocalControl;
     /** PermissionLocalControl 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumablePermissionLocalControlPacket> PermissionLocalControl;
+    TBBBGrenadeInputSlot<FBBBGrenadePermissionLocalControlPacket> PermissionLocalControl;
     /** StateRemoteMessage 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumableStateRemoteMessagePacket> StateRemoteMessage;
+    TBBBGrenadeInputSlot<FBBBGrenadeStateRemoteMessagePacket> StateRemoteMessage;
     /** StateAuthorityFact 固定输入槽位 */
-    TBBBGrenadeInputSlot<FBBBConsumableStateAuthorityFactPacket> StateAuthorityFact;
+    TBBBGrenadeInputSlot<FBBBGrenadeStateAuthorityFactPacket> StateAuthorityFact;
 };

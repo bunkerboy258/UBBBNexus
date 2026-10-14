@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRiflePoseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/DomainData/Context/BBBRifleAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBRiflePoseProcessor::Update(FBBBRifleUpdateContext &Context)
+void FBBBRiflePoseProcessor::Update(FBBBRifleAnimationUpdateContext &Context)
 {
     auto &Facts = Context.RuntimeData.Animation.AnimationState.Pose;
     // 失败时清除目标 避免动画继续使用上一帧的握持位置

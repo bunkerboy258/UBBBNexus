@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/AnimationSystem/Processors/BBBLMGPresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/Context/BBBLMGUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/AnimationSystem/DomainData/Context/BBBLMGAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/RuntimeData/BBBLMGRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/BBBLMGEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/BBBLMGDefinition.h"
@@ -16,7 +16,7 @@
 #include "Animation/AnimInstance.h"
 
 void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
-    const FBBBLMGUpdateContext &Context, UAnimMontage *Montage)
+    const FBBBLMGAnimationUpdateContext &Context, UAnimMontage *Montage)
 {
     if (!Montage || !Context.Equipment.IsEquipped())
     {
@@ -93,7 +93,7 @@ void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
 }
 
 void FBBBLMGPresentationProcessor::PlayEquipmentMontage(
-    const FBBBLMGUpdateContext &Context, UAnimMontage *Montage)
+    const FBBBLMGAnimationUpdateContext &Context, UAnimMontage *Montage)
 {
     UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance();
     if (ensureMsgf(Animation && Montage, TEXT("装备表现缺少动画实例或蒙太奇")))
@@ -102,7 +102,7 @@ void FBBBLMGPresentationProcessor::PlayEquipmentMontage(
     }
 }
 
-void FBBBLMGPresentationProcessor::PlayFire(const FBBBLMGUpdateContext &Context)
+void FBBBLMGPresentationProcessor::PlayFire(const FBBBLMGAnimationUpdateContext &Context)
 {
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
     const auto &Hip = Context.Definition.HipFireSettings;

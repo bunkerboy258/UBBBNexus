@@ -1,30 +1,18 @@
 #pragma once
 #include "CoreMinimal.h"
 
-/** 持有者发布的通用使用许可 */
-struct FBBBConsumablePermissionLocalControlPacket final
+/** 公共输入契约 具体包以自身类型继承并完整实现接口 */
+template<typename TDerived = void>
+struct FBBBConsumablePermissionLocalControlPacket
 {
-    /** 同帧许可按提交顺序累积 */
+    /** 公共请求数据 由具体实例解释 */
     TArray<bool> Values;
-
-    /** @return 输入是否包含许可 */
-    bool IsValid() const
-    {
-        return !Values.IsEmpty();
-    }
-
-    /** @param Context	解析上下文 @return 是否拥有因果权限 */
+    /** @return 由具体包验证格式 */
+    bool IsValid() const;
+    /** @param Context 具体实例依赖 @return 由具体包判断许可 */
     template<typename TContext>
-    bool CanApply(const TContext &Context) const
-    {
-        return !Context.bIsMirror;
-    }
-
-    /** @param Context	解析上下文 @return 无 */
+    bool CanApply(const TContext &Context) const;
+    /** @param Context 具体实例输入状态 @return 无 */
     template<typename TContext>
-    void Apply(TContext &Context) const
-    {
-        Context.Inputs.bHasPermission = true;
-        Context.Inputs.bAllowed = Values.Last();
-    }
+    void Apply(TContext &Context) const;
 };

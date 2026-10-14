@@ -1,9 +1,10 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionInputState.h"
 
 /** 步枪结束换弹输入 */
-struct FBBBRifleInterruptReloadLocalControlPacket final
+struct FBBBRifleInterruptReloadLocalControlPacket final : public FBBBEquipmentInterruptReloadLocalControlPacket<FBBBRifleInterruptReloadLocalControlPacket>
 {
     /** @return 输入数据是否有效 */
     bool IsValid() const

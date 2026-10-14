@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ParseSystem/Processors/BBBShotgunParseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ParseSystem/DomainData/Context/BBBShotgunParseUpdateContext.h"
 
 namespace
 {
@@ -35,7 +35,7 @@ namespace
     }
 }
 
-void FBBBShotgunParseProcessor::Update(FBBBShotgunUpdateContext &Context)
+void FBBBShotgunParseProcessor::Update(FBBBShotgunParseUpdateContext &Context)
 {
     auto &Queue = Context.RuntimeData.Parse.InputState;
     auto &Input = Context.RuntimeData.Action.ActionInputState;

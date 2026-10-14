@@ -58,29 +58,29 @@ void ABBBLMGEquipment::Tick(const float DeltaSeconds)
     FBBBLMGUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBLMGEquipLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
     return QueueInput(FBBBLMGEquipAuthorityFactPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGFireLocalControlPacket{});
+    return QueueInput(FBBBLMGPrimaryLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGActionPermissionLocalControlPacket{MoveTemp(Packet.Permissions)});
+    return QueueInput(FBBBLMGActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGReloadLocalControlPacket{});
+    return QueueInput(FBBBLMGSecondaryLocalControlPacket{});
 }
 
 bool ABBBLMGEquipment::QueueInput(FBBBLMGEquipLocalControlPacket Packet)
@@ -103,7 +103,7 @@ bool ABBBLMGEquipment::QueueInput(FBBBLMGEquipAuthorityFactPacket Packet)
     return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGFireLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBLMGPrimaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -113,7 +113,7 @@ bool ABBBLMGEquipment::QueueInput(FBBBLMGFireLocalControlPacket Packet)
     return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGReloadLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBLMGSecondaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -143,7 +143,7 @@ bool ABBBLMGEquipment::QueueInput(FBBBLMGAllowFireLocalControlPacket Packet)
     return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGLoadMagazineLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBLMGLoadAmmoLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -238,22 +238,22 @@ void ABBBLMGEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBLMGBlockFireLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBLMGAllowFireLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGLoadMagazineLocalControlPacket{});
+    return QueueInput(FBBBLMGLoadAmmoLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet)
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBLMGInterruptReloadLocalControlPacket{});
 }
@@ -270,4 +270,28 @@ bool ABBBLMGEquipment::CanQuickUse() const
 {
     const auto &State = RuntimeData.Action.ReadLMGActionState();
     return !State.bIsReloading && !State.bFireBlocked;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
+{
+    return false;
 }

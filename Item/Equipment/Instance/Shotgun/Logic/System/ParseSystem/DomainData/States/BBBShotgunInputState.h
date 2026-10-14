@@ -4,8 +4,8 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ParseSystem/DomainData/Definitions/BBBShotgunInputSlot.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Equipment/FBBBShotgunEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/AuthorityFact/Equipment/FBBBShotgunEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Fire/FBBBShotgunFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Equipment/FBBBShotgunPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Equipment/FBBBShotgunSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Fire/FBBBShotgunBlockFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Fire/FBBBShotgunAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Reload/FBBBShotgunLoadAmmoLocalControlPacket.h"
@@ -29,10 +29,10 @@ struct FBBBShotgunInputState final
     TBBBShotgunInputSlot<FBBBShotgunEquipAuthorityFactPacket> AuthorityEquip;
 
     /** Fire固定槽位 */
-    TBBBShotgunInputSlot<FBBBShotgunFireLocalControlPacket> Fire;
+    TBBBShotgunInputSlot<FBBBShotgunPrimaryLocalControlPacket> Fire;
 
     /** Reload固定槽位 */
-    TBBBShotgunInputSlot<FBBBShotgunReloadLocalControlPacket> Reload;
+    TBBBShotgunInputSlot<FBBBShotgunSecondaryLocalControlPacket> Reload;
 
     /** BlockFire固定槽位 */
     TBBBShotgunInputSlot<FBBBShotgunBlockFireLocalControlPacket> BlockFire;

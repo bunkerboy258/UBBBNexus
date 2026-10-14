@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/NetworkSystem/Processors/BBBMeleeNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/NetworkSystem/DomainData/Context/BBBMeleeNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/RuntimeData/BBBMeleeRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Network/BBBMeleeNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBMeleeNetworkProcessor::Update(FBBBMeleeUpdateContext &Context)
+void FBBBMeleeNetworkProcessor::Update(FBBBMeleeNetworkUpdateContext &Context)
 {
     auto *Network = Cast<UBBBMeleeNetworkComponent>(Context.Equipment.GetNetworkComponent());
     if (!ensureMsgf(Network, TEXT("近战缺少自身协议组件")))
@@ -13,8 +13,8 @@ void FBBBMeleeNetworkProcessor::Update(FBBBMeleeUpdateContext &Context)
         return;
     }
 
-    auto &Sent = Context.Data.Network.ObservationState;
-    const auto &Action = Context.Data.Action.ReadMeleeActionState();
+    auto &Sent = Context.RuntimeData.Network.ObservationState;
+    const auto &Action = Context.RuntimeData.Action.ReadMeleeActionState();
     const uint64 Generation = Context.Character.GetItemGeneration();
     if (Sent.Generation != Generation)
     {

@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/RuntimeData/BBBMeleeRuntimeData.h"
 
-struct FBBBMeleeUpdateContext;
+struct FBBBMeleeParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBMeleeParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBMeleeUpdateContext &Context);
+    static void Update(FBBBMeleeParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBMeleeRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBMeleeRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBMeleeActionPermissionLocalControlPacket>)
         {
@@ -89,7 +93,7 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBMeleeInputSlot<FBBBMeleeAttackLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeAttackLocalControlPacket &)
+    static TBBBMeleeInputSlot<FBBBMeleePrimaryLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleePrimaryLocalControlPacket &)
     {
         return State.Attack;
     }

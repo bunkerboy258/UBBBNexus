@@ -4,11 +4,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ParseSystem/DomainData/Definitions/BBBSniperInputSlot.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Equipment/FBBBSniperEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/AuthorityFact/Equipment/FBBBSniperEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Fire/FBBBSniperFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Reload/FBBBSniperReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Equipment/FBBBSniperPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Equipment/FBBBSniperSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Fire/FBBBSniperBlockFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Fire/FBBBSniperAllowFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Reload/FBBBSniperLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Reload/FBBBSniperLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Reload/FBBBSniperInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/LocalControl/Equipment/FBBBSniperActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Input/RemoteMessage/Fire/FBBBSniperFireRemoteMessagePacket.h"
@@ -28,10 +28,10 @@ struct FBBBSniperInputState final
     TBBBSniperInputSlot<FBBBSniperEquipAuthorityFactPacket> AuthorityEquip;
 
     /** Fire固定槽位 */
-    TBBBSniperInputSlot<FBBBSniperFireLocalControlPacket> Fire;
+    TBBBSniperInputSlot<FBBBSniperPrimaryLocalControlPacket> Fire;
 
     /** Reload固定槽位 */
-    TBBBSniperInputSlot<FBBBSniperReloadLocalControlPacket> Reload;
+    TBBBSniperInputSlot<FBBBSniperSecondaryLocalControlPacket> Reload;
 
     /** BlockFire固定槽位 */
     TBBBSniperInputSlot<FBBBSniperBlockFireLocalControlPacket> BlockFire;
@@ -40,7 +40,7 @@ struct FBBBSniperInputState final
     TBBBSniperInputSlot<FBBBSniperAllowFireLocalControlPacket> AllowFire;
 
     /** LoadMagazine固定槽位 */
-    TBBBSniperInputSlot<FBBBSniperLoadMagazineLocalControlPacket> LoadMagazine;
+    TBBBSniperInputSlot<FBBBSniperLoadAmmoLocalControlPacket> LoadMagazine;
 
     /** InterruptReload固定槽位 */
     TBBBSniperInputSlot<FBBBSniperInterruptReloadLocalControlPacket> InterruptReload;

@@ -23,7 +23,7 @@ void UBBBEquipmentBlockFireLogicAnimNotifyState::NotifyBegin(USkeletalMeshCompon
             It.RemoveCurrent();
         }
     }
-    if (Equipment->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket{}))
+    if (Equipment->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket<>{}))
     {
         Recipients.Add(MeshComp, Equipment);
     }
@@ -40,6 +40,6 @@ void UBBBEquipmentBlockFireLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponen
     ABBBEquipment* Equipment = Recipient.Get();
     if (IsValid(Equipment) && Equipment->IsEquipped() && !Equipment->IsMirror())
     {
-        Equipment->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+        Equipment->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
     }
 }

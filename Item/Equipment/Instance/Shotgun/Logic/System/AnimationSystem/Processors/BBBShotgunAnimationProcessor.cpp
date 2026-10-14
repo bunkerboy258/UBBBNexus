@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/AnimationSystem/Processors/BBBShotgunAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/AnimationSystem/DomainData/Context/BBBShotgunAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/RuntimeData/BBBShotgunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Config/BBBShotgunDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/AnimationSystem/Processors/BBBShotgunPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Animation/BBBShotgunAnimInstance.h"
 
-void FBBBShotgunAnimationProcessor::Stop(FBBBShotgunUpdateContext &Context)
+void FBBBShotgunAnimationProcessor::Stop(FBBBShotgunAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -19,7 +19,7 @@ void FBBBShotgunAnimationProcessor::Stop(FBBBShotgunUpdateContext &Context)
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
 }
 
-void FBBBShotgunAnimationProcessor::Update(FBBBShotgunUpdateContext &Context)
+void FBBBShotgunAnimationProcessor::Update(FBBBShotgunAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadShotgunActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

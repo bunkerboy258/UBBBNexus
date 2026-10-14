@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/Processors/BBBMeleeContactProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
@@ -13,15 +13,15 @@
 #include "GameFramework/GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
 
-void FBBBMeleeContactProcessor::Update(FBBBMeleeUpdateContext &Context)
+void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
 {
-    auto &State = Context.Data.Action.ActionState;
+    auto &State = Context.RuntimeData.Action.ActionState;
     if (!State.bContactOpen || !State.bAttacking || !Context.bCausal)
     {
         return;
     }
-    const FVector Base = Context.Mesh.GetSocketLocation(Context.Definition.TraceStartSocket);
-    const FVector Tip = Context.Mesh.GetSocketLocation(Context.Definition.TraceEndSocket);
+    const FVector Base = Context.WeaponMesh.GetSocketLocation(Context.Definition.TraceStartSocket);
+    const FVector Tip = Context.WeaponMesh.GetSocketLocation(Context.Definition.TraceEndSocket);
     const FVector PreviousBase = State.bHasPreviousPose ? State.PreviousBase : Base;
     const FVector PreviousTip = State.bHasPreviousPose ? State.PreviousTip : Tip;
     State.PreviousBase = Base;

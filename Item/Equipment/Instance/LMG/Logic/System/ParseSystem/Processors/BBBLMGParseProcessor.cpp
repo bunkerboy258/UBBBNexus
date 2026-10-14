@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ParseSystem/Processors/BBBLMGParseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/Context/BBBLMGUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ParseSystem/DomainData/Context/BBBLMGParseUpdateContext.h"
 
 namespace
 {
@@ -35,7 +35,7 @@ namespace
     }
 }
 
-void FBBBLMGParseProcessor::Update(FBBBLMGUpdateContext &Context)
+void FBBBLMGParseProcessor::Update(FBBBLMGParseUpdateContext &Context)
 {
     auto &Queue = Context.RuntimeData.Parse.InputState;
     auto &Input = Context.RuntimeData.Action.ActionInputState;

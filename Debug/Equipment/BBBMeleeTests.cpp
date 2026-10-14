@@ -1,8 +1,9 @@
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/BBBMeleeActionSystem.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ParseSystem/BBBMeleeParseSystem.h"
 #include "Misc/AutomationTest.h"
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ParseSystem/Processors/BBBMeleeParseProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/Processors/BBBMeleeActionProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/Processors/BBBMeleeContactProcessor.h"
@@ -102,56 +103,53 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
         *Equipment->GetEquipmentSkeletalMesh()->GetSocketLocation(Definition->TraceStartSocket).ToString(),
         *Equipment->GetEquipmentSkeletalMesh()->GetSocketLocation(Definition->TraceEndSocket).ToString(),
         *Target->GetActorLocation().ToString());
-    FBBBMeleeUpdateContext Context{*Equipment, *Character, *Equipment->GetEquipmentSkeletalMesh(),
-        *Definition, Equipment->RuntimeData, *World};
     auto &Data = Equipment->RuntimeData;
-    FBBBMeleeContactProcessor::Update(Context);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestEqual(TEXT("没有窗口不结算任何命中"), Equipment->GetHitCount(), 0);
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeAttackLocalControlPacket{});
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleePrimaryLocalControlPacket{});
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestEqual(TEXT("主行为创建首轮攻击"), Equipment->GetAttackSequence(), 1);
     TestFalse(TEXT("攻击开始不能提前造成伤害"), Equipment->IsContactOpen());
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeBeginActionLocalControlPacket{{10}});
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeBeginActionLocalControlPacket{{11}});
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeBeginContactLocalControlPacket{{20}});
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeBeginActionLocalControlPacket{{{10}}});
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeBeginActionLocalControlPacket{{{11}}});
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeBeginContactLocalControlPacket{{{20}}});
     TestEqual(TEXT("同帧通知标识累计"), Data.Parse.ReadMeleeInputState().BeginAction.Packet.Tokens.Num(), 2);
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestTrue(TEXT("收到开窗通知才启用伤害"), Equipment->IsContactOpen());
     TestEqual(TEXT("首个生命周期标识绑定当前攻击"), Data.Action.ReadMeleeActionState().ActionToken, 10);
-    FBBBMeleeContactProcessor::Update(Context);
+    FBBBMeleeActionSystem::Update(*Equipment);
     const int32 FirstHits = Equipment->GetHitCount();
     TestTrue(TEXT("窗口内真实物理扫掠命中靶标"), FirstHits > 0);
-    FBBBMeleeContactProcessor::Update(Context);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestEqual(TEXT("连续多帧同一目标只结算一次"), Equipment->GetHitCount(), FirstHits);
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndContactLocalControlPacket{{99}});
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndContactLocalControlPacket{{{99}}});
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestTrue(TEXT("错误窗口的结束通知不会关闭当前窗口"), Equipment->IsContactOpen());
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndContactLocalControlPacket{{20}});
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeAttackLocalControlPacket{});
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndContactLocalControlPacket{{{20}}});
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleePrimaryLocalControlPacket{});
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestFalse(TEXT("正确关窗通知停止伤害"), Equipment->IsContactOpen());
     TestEqual(TEXT("关窗之后收手期间不允许下一次攻击"), Equipment->GetAttackSequence(), 1);
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndActionLocalControlPacket{{99}});
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndActionLocalControlPacket{{{99}}});
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestTrue(TEXT("迟到的其它生命周期结束不影响当前攻击"), Data.Action.ReadMeleeActionState().bAttacking);
-    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndActionLocalControlPacket{{10}});
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
+    FBBBMeleeParseProcessor::Submit(Data, FBBBMeleeEndActionLocalControlPacket{{{10}}});
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestFalse(TEXT("动作结束才恢复可攻击状态"), Data.Action.ReadMeleeActionState().bAttacking);
     FBBBMeleeActionProcessor::Stop(Data);
     TestTrue(TEXT("失活清除本轮命中集合"), Data.Action.ReadMeleeActionState().HitActors.IsEmpty());
     Character->RuntimeData.External.NetworkIdentityState.bIsMirror = true;
-    Context.bCausal = false;
     FBBBMeleeAttackStartAuthorityFactPacket Mirror{{3}, {1}};
     FBBBMeleeParseProcessor::Submit(Data, Mirror);
-    FBBBMeleeParseProcessor::Update(Context);
-    FBBBMeleeActionProcessor::Update(Context);
-    FBBBMeleeContactProcessor::Update(Context);
+    FBBBMeleeParseSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
+    FBBBMeleeActionSystem::Update(*Equipment);
     TestEqual(TEXT("镜像采用当前序号"), Equipment->GetAttackSequence(), 3);
     TestFalse(TEXT("镜像绝不开启伤害窗口"), Equipment->IsContactOpen());
     TestEqual(TEXT("镜像绝不重复结算世界伤害"), Equipment->GetHitCount(), FirstHits);

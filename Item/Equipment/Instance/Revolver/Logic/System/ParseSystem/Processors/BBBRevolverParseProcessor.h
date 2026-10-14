@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/RuntimeData/BBBRevolverRuntimeData.h"
 
-struct FBBBRevolverUpdateContext;
+struct FBBBRevolverParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBRevolverParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBRevolverUpdateContext &Context);
+    static void Update(FBBBRevolverParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBRevolverRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBRevolverRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBRevolverActionPermissionLocalControlPacket>)
         {
@@ -83,12 +87,12 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBRevolverInputSlot<FBBBRevolverFireLocalControlPacket> &Select(FBBBRevolverInputState &State, const FBBBRevolverFireLocalControlPacket &)
+    static TBBBRevolverInputSlot<FBBBRevolverPrimaryLocalControlPacket> &Select(FBBBRevolverInputState &State, const FBBBRevolverPrimaryLocalControlPacket &)
     {
         return State.Fire;
     }
 
-    static TBBBRevolverInputSlot<FBBBRevolverReloadLocalControlPacket> &Select(FBBBRevolverInputState &State, const FBBBRevolverReloadLocalControlPacket &)
+    static TBBBRevolverInputSlot<FBBBRevolverSecondaryLocalControlPacket> &Select(FBBBRevolverInputState &State, const FBBBRevolverSecondaryLocalControlPacket &)
     {
         return State.Reload;
     }
@@ -103,7 +107,7 @@ private:
         return State.AllowFire;
     }
 
-    static TBBBRevolverInputSlot<FBBBRevolverLoadMagazineLocalControlPacket> &Select(FBBBRevolverInputState &State, const FBBBRevolverLoadMagazineLocalControlPacket &)
+    static TBBBRevolverInputSlot<FBBBRevolverLoadAmmoLocalControlPacket> &Select(FBBBRevolverInputState &State, const FBBBRevolverLoadAmmoLocalControlPacket &)
     {
         return State.LoadMagazine;
     }

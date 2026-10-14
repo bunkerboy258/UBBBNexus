@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/Processors/BBBMinigunActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/Context/BBBMinigunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/Context/BBBMinigunActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/RuntimeData/BBBMinigunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/BBBMinigunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/BBBMinigunDefinition.h"
@@ -45,7 +45,7 @@ void FBBBMinigunActionProcessor::Stop(FBBBMinigunRuntimeData &Data)
     Data.Action.ActionState.SpinRevision = 0;
 }
 
-void FBBBMinigunActionProcessor::Update(FBBBMinigunUpdateContext &Context)
+void FBBBMinigunActionProcessor::Update(FBBBMinigunActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
@@ -175,7 +175,7 @@ void FBBBMinigunActionProcessor::Update(FBBBMinigunUpdateContext &Context)
 }
 
 
-void FBBBMinigunActionProcessor::SpawnProjectile(FBBBMinigunUpdateContext& Context)
+void FBBBMinigunActionProcessor::SpawnProjectile(FBBBMinigunActionUpdateContext& Context)
 {
     const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
     UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();

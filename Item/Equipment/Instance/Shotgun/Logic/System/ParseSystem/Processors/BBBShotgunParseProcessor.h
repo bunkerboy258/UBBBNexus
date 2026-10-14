@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/RuntimeData/BBBShotgunRuntimeData.h"
 
-struct FBBBShotgunUpdateContext;
+struct FBBBShotgunParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBShotgunParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBShotgunUpdateContext &Context);
+    static void Update(FBBBShotgunParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBShotgunRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBShotgunRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBShotgunActionPermissionLocalControlPacket>)
         {
@@ -88,12 +92,12 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBShotgunInputSlot<FBBBShotgunFireLocalControlPacket> &Select(FBBBShotgunInputState &State, const FBBBShotgunFireLocalControlPacket &)
+    static TBBBShotgunInputSlot<FBBBShotgunPrimaryLocalControlPacket> &Select(FBBBShotgunInputState &State, const FBBBShotgunPrimaryLocalControlPacket &)
     {
         return State.Fire;
     }
 
-    static TBBBShotgunInputSlot<FBBBShotgunReloadLocalControlPacket> &Select(FBBBShotgunInputState &State, const FBBBShotgunReloadLocalControlPacket &)
+    static TBBBShotgunInputSlot<FBBBShotgunSecondaryLocalControlPacket> &Select(FBBBShotgunInputState &State, const FBBBShotgunSecondaryLocalControlPacket &)
     {
         return State.Reload;
     }

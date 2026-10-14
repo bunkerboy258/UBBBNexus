@@ -7,6 +7,8 @@
 #include "BBBWork/UBBBNexus/Item/Misc/Catalog/BBBMiscCatalog.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -28,20 +30,20 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
                 ++Candidates;
             }
         };
-        const auto *Equipment = Context.Config.EquipmentCatalog ? Context.Config.EquipmentCatalog->FindItem(Id) : nullptr;
+        const auto Equipment = Context.Config.EquipmentCatalog ? Context.Config.EquipmentCatalog->FindItem(Id) : nullptr;
         const auto *Wearable = Context.Config.WearableCatalog ? Context.Config.WearableCatalog->FindItem(Id) : nullptr;
-        const auto *Consumable = Context.Config.ConsumableCatalog ? Context.Config.ConsumableCatalog->FindItem(Id) : nullptr;
-        Accept(Equipment ? Equipment->Definition.Get() : nullptr);
+        const auto Consumable = Context.Config.ConsumableCatalog ? Context.Config.ConsumableCatalog->FindItem(Id) : nullptr;
+        Accept(Equipment ? Equipment.GetDefaultObject()->GetDefinition() : nullptr);
         Accept(Wearable ? Wearable->Definition.Get() : nullptr);
-        Accept(Consumable ? Consumable->Definition.Get() : nullptr);
+        Accept(Consumable ? Consumable.GetDefaultObject()->GetDefinition() : nullptr);
         Accept(Context.Config.MiscCatalog ? Context.Config.MiscCatalog->FindItem(Id) : nullptr);
         if (Equipment)
         {
-            ActorClass = Equipment->ActorClass;
+            ActorClass = Equipment;
         }
         if (Consumable)
         {
-            ActorClass = Consumable->ActorClass;
+            ActorClass = Consumable;
         }
         ++Operations.Revision;
         if (Candidates != 1 || !Definition || Definition->MaxStack < 1)

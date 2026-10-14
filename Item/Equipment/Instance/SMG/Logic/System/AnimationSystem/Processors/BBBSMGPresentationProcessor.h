@@ -1,7 +1,7 @@
 #pragma once
 
 class UAnimMontage;
-struct FBBBSMGUpdateContext;
+struct FBBBSMGAnimationUpdateContext;
 
 /** 已成立动作的直接表现操作 */
 class FBBBSMGPresentationProcessor final
@@ -12,11 +12,11 @@ public:
      * @param Montage	覆盖对应槽位的角色蒙太奇
      * @return 无
      */
-    static void SubmitCharacterMontage(const FBBBSMGUpdateContext &Context, UAnimMontage *Montage);
+    static void SubmitCharacterMontage(const FBBBSMGAnimationUpdateContext &Context, UAnimMontage *Montage);
 
     /** @param Context	本次更新上下文 @param Montage	装备蒙太奇 @return 无 */
-    static void PlayEquipmentMontage(const FBBBSMGUpdateContext &Context, UAnimMontage *Montage);
+    static void PlayEquipmentMontage(const FBBBSMGAnimationUpdateContext &Context, UAnimMontage *Montage);
 
     /** @param Context	本次更新上下文 @return 无 */
-    static void PlayFire(const FBBBSMGUpdateContext &Context);
+    static void PlayFire(const FBBBSMGAnimationUpdateContext &Context);
 };

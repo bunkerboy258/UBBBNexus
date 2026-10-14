@@ -17,7 +17,6 @@ void FBBBGrenadeParseSystem::Update()
     {
         return;
     }
-    FBBBGrenadeParseUpdateContext Context{Data->Parse.InputState, Data->Use.UseInputState,
-        Data->Use.UseState, Character->IsNetworkMirror()};
+    FBBBGrenadeParseUpdateContext Context{*Data, Character->IsNetworkMirror()};
     ParseProcessor.Update(Context);
 }

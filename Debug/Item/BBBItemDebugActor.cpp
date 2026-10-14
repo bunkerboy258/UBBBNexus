@@ -1,4 +1,8 @@
 #include "BBBWork/UBBBNexus/Debug/Item/BBBItemDebugActor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
@@ -97,17 +101,17 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     for (const UBBBItemDefinition *Definition : ItemDefinitions)
     {
         int32 Registered = 0;
-        if (const auto *Entry = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Definition->ItemId) : nullptr)
+        if (const auto Entry = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            Registered += Entry->Definition == Definition ? 1 : 0;
+            Registered += Entry.GetDefaultObject()->GetDefinition() == Definition ? 1 : 0;
         }
         if (const auto *Entry = Config.WearableCatalog ? Config.WearableCatalog->FindItem(Definition->ItemId) : nullptr)
         {
             Registered += Entry->Definition == Definition ? 1 : 0;
         }
-        if (const auto *Entry = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Definition->ItemId) : nullptr)
+        if (const auto Entry = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            Registered += Entry->Definition == Definition ? 1 : 0;
+            Registered += Entry.GetDefaultObject()->GetDefinition() == Definition ? 1 : 0;
         }
         Registered += Config.MiscCatalog && Config.MiscCatalog->FindItem(Definition->ItemId) == Definition ? 1 : 0;
         if (Registered != 1)

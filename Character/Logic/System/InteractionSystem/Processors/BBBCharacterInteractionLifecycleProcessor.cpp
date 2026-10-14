@@ -150,8 +150,8 @@ void FBBBCharacterInteractionLifecycleProcessor::Detach(USkeletalMeshComponent &
     auto *Consumable = Cast<ABBBConsumable>(&Item);
     if (Consumable)
     {
-        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket{{false}});
-        Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket{});
+        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket<>{{false}});
+        Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket<>{});
     }
     // 装备卸下后保留一次更新 由自身关闭管线收束换弹与通知 再自行停止 Tick
     const auto *Equipment = Cast<ABBBEquipment>(&Item);

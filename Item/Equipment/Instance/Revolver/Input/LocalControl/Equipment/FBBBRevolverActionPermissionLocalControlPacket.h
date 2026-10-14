@@ -1,13 +1,11 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/States/BBBRevolverActionInputState.h"
 
 /** 本类装备收到的操作许可 */
-struct FBBBRevolverActionPermissionLocalControlPacket final
+struct FBBBRevolverActionPermissionLocalControlPacket final : public FBBBEquipmentActionPermissionLocalControlPacket<FBBBRevolverActionPermissionLocalControlPacket>
 {
-    /** 本帧按提交顺序累计的操作许可 */
-    TArray<bool> Permissions;
-
     /** @return 数据有效 */
     bool IsValid() const
     {

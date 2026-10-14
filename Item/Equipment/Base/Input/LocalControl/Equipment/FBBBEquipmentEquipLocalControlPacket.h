@@ -1,22 +1,17 @@
 #pragma once
+#include "CoreMinimal.h"
 
-/** 建立装备持有关系后的表现请求 */
-struct FBBBEquipmentEquipLocalControlPacket final
+/** 公共输入契约 具体包以自身类型继承并完整实现接口 */
+template<typename TDerived = void>
+struct FBBBEquipmentEquipLocalControlPacket
 {
-    /** @return 包内容是否合法 */
-    bool IsValid() const
-    {
-        return true;
-    }
 
-    /** @return 是否允许提交表现请求 */
-    bool CanApply() const
-    {
-        return true;
-    }
-
-    /** @return 无 */
-    void Apply() const
-    {
-    }
+    /** @return 由具体包验证格式 */
+    bool IsValid() const;
+    /** @param Context 具体实例依赖 @return 由具体包判断许可 */
+    template<typename TContext>
+    bool CanApply(const TContext &Context) const;
+    /** @param Context 具体实例输入状态 @return 无 */
+    template<typename TContext>
+    void Apply(TContext &Context) const;
 };

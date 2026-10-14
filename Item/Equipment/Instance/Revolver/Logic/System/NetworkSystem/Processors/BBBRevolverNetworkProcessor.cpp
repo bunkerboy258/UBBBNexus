@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/NetworkSystem/Processors/BBBRevolverNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/Context/BBBRevolverUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/NetworkSystem/DomainData/Context/BBBRevolverNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/RuntimeData/BBBRevolverRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/BBBRevolverEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Network/BBBRevolverNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBRevolverNetworkProcessor::Update(FBBBRevolverUpdateContext &Context)
+void FBBBRevolverNetworkProcessor::Update(FBBBRevolverNetworkUpdateContext &Context)
 {
     auto *Network = Cast<UBBBRevolverNetworkComponent>(Context.Equipment.GetNetworkComponent());
     if (!ensureMsgf(Network, TEXT("左轮缺少自身协议组件")))

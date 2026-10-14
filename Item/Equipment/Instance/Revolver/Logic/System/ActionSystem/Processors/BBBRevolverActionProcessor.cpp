@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/Processors/BBBRevolverActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/Context/BBBRevolverUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/Context/BBBRevolverActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/RuntimeData/BBBRevolverRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/BBBRevolverEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/BBBRevolverDefinition.h"
@@ -42,7 +42,7 @@ void FBBBRevolverActionProcessor::Stop(FBBBRevolverRuntimeData &Data)
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
 }
 
-void FBBBRevolverActionProcessor::Update(FBBBRevolverUpdateContext &Context)
+void FBBBRevolverActionProcessor::Update(FBBBRevolverActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
@@ -152,7 +152,7 @@ void FBBBRevolverActionProcessor::Update(FBBBRevolverUpdateContext &Context)
 }
 
 
-void FBBBRevolverActionProcessor::SpawnProjectile(FBBBRevolverUpdateContext& Context)
+void FBBBRevolverActionProcessor::SpawnProjectile(FBBBRevolverActionUpdateContext& Context)
 {
     const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
     UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();

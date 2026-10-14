@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/Processors/BBBLMGActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/Context/BBBLMGUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/Context/BBBLMGActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/RuntimeData/BBBLMGRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/BBBLMGEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/BBBLMGDefinition.h"
@@ -43,7 +43,7 @@ void FBBBLMGActionProcessor::Stop(FBBBLMGRuntimeData &Data)
     Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
 }
 
-void FBBBLMGActionProcessor::Update(FBBBLMGUpdateContext &Context)
+void FBBBLMGActionProcessor::Update(FBBBLMGActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
@@ -175,7 +175,7 @@ void FBBBLMGActionProcessor::Update(FBBBLMGUpdateContext &Context)
 }
 
 
-void FBBBLMGActionProcessor::SpawnProjectile(FBBBLMGUpdateContext& Context)
+void FBBBLMGActionProcessor::SpawnProjectile(FBBBLMGActionUpdateContext& Context)
 {
     const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
     UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();

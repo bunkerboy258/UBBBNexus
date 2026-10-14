@@ -22,15 +22,15 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
     auto *Consumable = Cast<ABBBConsumable>(Context.Character.GetHeldItem());
     if (bUsable && State.bPrimary && Equipment)
     {
-        Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket{});
+        Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket<>{});
     }
     if (bUsable && State.bPrimary && Consumable)
     {
-        Consumable->SubmitInput(FBBBConsumablePrimaryLocalControlPacket{});
+        Consumable->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{});
     }
     if (bUsable && State.bSecondary && Equipment)
     {
-        Equipment->SubmitInput(FBBBEquipmentSecondaryLocalControlPacket{});
+        Equipment->SubmitInput(FBBBEquipmentSecondaryLocalControlPacket<>{});
     }
     State.bPrimary = false;
     State.bSecondary = false;
@@ -40,7 +40,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
             && State.ReleaseGenerations[Index] == Context.Character.GetItemGeneration()
             && State.ReleaseTokens[Index] == Consumable->GetUseSerial())
         {
-            Consumable->SubmitInput(FBBBConsumableReleaseLocalControlPacket{});
+            Consumable->SubmitInput(FBBBConsumableReleaseLocalControlPacket<>{});
         }
     }
     for (int32 Index = 0; Index < State.FinishRecipients.Num(); ++Index)
@@ -49,7 +49,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
             && State.FinishGenerations[Index] == Context.Character.GetItemGeneration()
             && State.FinishTokens[Index] == Consumable->GetUseSerial())
         {
-            Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket{});
+            Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket<>{});
         }
     }
     State.ReleaseRecipients.Reset();
@@ -64,7 +64,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
         ABBBEquipment *Recipient = State.BeginActionRecipients[Index].Get();
         if (bUsable && Recipient && Recipient == Context.Character.GetHeldEquipment())
         {
-            Recipient->SubmitInput(FBBBEquipmentBeginActionLocalControlPacket{{State.BeginActionTokens[Index]}});
+            Recipient->SubmitInput(FBBBEquipmentBeginActionLocalControlPacket<>{{State.BeginActionTokens[Index]}});
         }
     }
     State.BeginActionRecipients.Reset();
@@ -75,7 +75,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
         ABBBEquipment *Recipient = State.EndActionRecipients[Index].Get();
         if (Recipient && Recipient == Context.Character.GetHeldEquipment())
         {
-            Recipient->SubmitInput(FBBBEquipmentEndActionLocalControlPacket{{State.EndActionTokens[Index]}});
+            Recipient->SubmitInput(FBBBEquipmentEndActionLocalControlPacket<>{{State.EndActionTokens[Index]}});
         }
     }
     State.EndActionRecipients.Reset();
@@ -86,7 +86,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
         ABBBEquipment *Recipient = State.BeginContactRecipients[Index].Get();
         if (bUsable && Recipient && Recipient == Context.Character.GetHeldEquipment())
         {
-            Recipient->SubmitInput(FBBBEquipmentBeginContactLocalControlPacket{{State.BeginContactTokens[Index]}});
+            Recipient->SubmitInput(FBBBEquipmentBeginContactLocalControlPacket<>{{State.BeginContactTokens[Index]}});
         }
     }
     State.BeginContactRecipients.Reset();
@@ -97,7 +97,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
         ABBBEquipment *Recipient = State.EndContactRecipients[Index].Get();
         if (Recipient && Recipient == Context.Character.GetHeldEquipment())
         {
-            Recipient->SubmitInput(FBBBEquipmentEndContactLocalControlPacket{{State.EndContactTokens[Index]}});
+            Recipient->SubmitInput(FBBBEquipmentEndContactLocalControlPacket<>{{State.EndContactTokens[Index]}});
         }
     }
     State.EndContactRecipients.Reset();

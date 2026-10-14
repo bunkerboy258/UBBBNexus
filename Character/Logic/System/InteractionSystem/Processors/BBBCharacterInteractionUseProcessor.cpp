@@ -71,11 +71,11 @@ void FBBBCharacterInteractionUseProcessor::Update(FBBBCharacterInteractionUpdate
         {
             if (Context.bIsMirror)
             {
-                Equipment->SubmitInput(FBBBEquipmentEquipAuthorityFactPacket{});
+                Equipment->SubmitInput(FBBBEquipmentEquipAuthorityFactPacket<>{});
             }
             if (!Context.bIsMirror)
             {
-                Equipment->SubmitInput(FBBBEquipmentEquipLocalControlPacket{});
+                Equipment->SubmitInput(FBBBEquipmentEquipLocalControlPacket<>{});
             }
         }
     }

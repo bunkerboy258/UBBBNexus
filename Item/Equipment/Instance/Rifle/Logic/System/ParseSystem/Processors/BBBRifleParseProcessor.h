@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 
-struct FBBBRifleUpdateContext;
+struct FBBBRifleParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBRifleParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBRifleUpdateContext &Context);
+    static void Update(FBBBRifleParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBRifleRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBRifleRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBRifleActionPermissionLocalControlPacket>)
         {
@@ -83,12 +87,12 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBRifleInputSlot<FBBBRifleFireLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRifleFireLocalControlPacket &)
+    static TBBBRifleInputSlot<FBBBRiflePrimaryLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRiflePrimaryLocalControlPacket &)
     {
         return State.Fire;
     }
 
-    static TBBBRifleInputSlot<FBBBRifleReloadLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRifleReloadLocalControlPacket &)
+    static TBBBRifleInputSlot<FBBBRifleSecondaryLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRifleSecondaryLocalControlPacket &)
     {
         return State.Reload;
     }
@@ -103,7 +107,7 @@ private:
         return State.AllowFire;
     }
 
-    static TBBBRifleInputSlot<FBBBRifleLoadMagazineLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRifleLoadMagazineLocalControlPacket &)
+    static TBBBRifleInputSlot<FBBBRifleLoadAmmoLocalControlPacket> &Select(FBBBRifleInputState &State, const FBBBRifleLoadAmmoLocalControlPacket &)
     {
         return State.LoadMagazine;
     }

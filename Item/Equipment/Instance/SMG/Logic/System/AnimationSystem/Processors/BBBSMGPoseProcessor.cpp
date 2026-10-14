@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/System/AnimationSystem/Processors/BBBSMGPoseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/System/ActionSystem/DomainData/Context/BBBSMGUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/System/AnimationSystem/DomainData/Context/BBBSMGAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/RuntimeData/BBBSMGRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/BBBSMGEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Config/BBBSMGDefinition.h"
@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBSMGPoseProcessor::Update(FBBBSMGUpdateContext &Context)
+void FBBBSMGPoseProcessor::Update(FBBBSMGAnimationUpdateContext &Context)
 {
     auto &Facts = Context.RuntimeData.Animation.AnimationState.Pose;
     // 失败时清除目标 避免动画继续使用上一帧的握持位置

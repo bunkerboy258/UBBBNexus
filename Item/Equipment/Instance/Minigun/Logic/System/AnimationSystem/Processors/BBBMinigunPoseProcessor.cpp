@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/AnimationSystem/Processors/BBBMinigunPoseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/Context/BBBMinigunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/AnimationSystem/DomainData/Context/BBBMinigunAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/RuntimeData/BBBMinigunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/BBBMinigunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/BBBMinigunDefinition.h"
@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBMinigunPoseProcessor::Update(FBBBMinigunUpdateContext &Context)
+void FBBBMinigunPoseProcessor::Update(FBBBMinigunAnimationUpdateContext &Context)
 {
     auto &Facts = Context.RuntimeData.Animation.AnimationState.Pose;
     // 失败时清除目标 避免动画继续使用上一帧的握持位置

@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ParseSystem/Processors/BBBMeleeParseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ParseSystem/DomainData/Context/BBBMeleeParseUpdateContext.h"
 
 namespace
 {
@@ -35,11 +35,11 @@ namespace
     }
 }
 
-void FBBBMeleeParseProcessor::Update(FBBBMeleeUpdateContext &Context)
+void FBBBMeleeParseProcessor::Update(FBBBMeleeParseUpdateContext &Context)
 {
-    auto &Queue = Context.Data.Parse.InputState;
-    auto &Input = Context.Data.Action.InputState;
-    auto &Action = Context.Data.Action.ActionState;
+    auto &Queue = Context.RuntimeData.Parse.InputState;
+    auto &Input = Context.RuntimeData.Action.InputState;
+    auto &Action = Context.RuntimeData.Action.ActionState;
     Input.bPrimary = false;
     Input.bEquip = false;
     Input.bActionPermissionReceived = false;
@@ -57,7 +57,7 @@ void FBBBMeleeParseProcessor::Update(FBBBMeleeUpdateContext &Context)
         Process(Queue.BeginContact, Input);
         Process(Queue.EndContact, Input);
         Process(Queue.EndAction, Input);
-        Clear(Context.Data);
+        Clear(Context.RuntimeData);
         return;
     }
 
@@ -67,7 +67,7 @@ void FBBBMeleeParseProcessor::Update(FBBBMeleeUpdateContext &Context)
     Process(Queue.AuthorityAttackStart, Action);
     Process(Queue.AuthorityAttackEnd, Action);
 
-    Clear(Context.Data);
+    Clear(Context.RuntimeData);
 }
 
 void FBBBMeleeParseProcessor::Clear(FBBBMeleeRuntimeData &Data)

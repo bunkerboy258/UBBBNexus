@@ -1,27 +1,18 @@
 #pragma once
-
 #include "CoreMinimal.h"
 
-/** 持有者提交的操作许可 不解释具体装备行为 */
-struct FBBBEquipmentActionPermissionLocalControlPacket final
+/** 公共输入契约 具体包以自身类型继承并完整实现接口 */
+template<typename TDerived = void>
+struct FBBBEquipmentActionPermissionLocalControlPacket
 {
-    /** 是否允许装备启动或继续自身操作 */
+    /** 公共请求数据 由具体实例解释 */
     TArray<bool> Permissions;
-
-    /** @return 至少有一份操作许可 */
-    bool IsValid() const
-    {
-        return !Permissions.IsEmpty();
-    }
-
-    /** @return 公共请求可以转交具体装备 */
-    bool CanApply() const
-    {
-        return true;
-    }
-
-    /** @return 无 公共请求不写具体装备状态 */
-    void Apply() const
-    {
-    }
+    /** @return 由具体包验证格式 */
+    bool IsValid() const;
+    /** @param Context 具体实例依赖 @return 由具体包判断许可 */
+    template<typename TContext>
+    bool CanApply(const TContext &Context) const;
+    /** @param Context 具体实例输入状态 @return 无 */
+    template<typename TContext>
+    void Apply(TContext &Context) const;
 };

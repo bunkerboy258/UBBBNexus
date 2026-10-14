@@ -1,16 +1,13 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Logic/Core/Update/BBBConsumableUpdatePipeline.h"
 #include "Components/StaticMeshComponent.h"
 
 ABBBConsumable::ABBBConsumable()
 {
-    PrimaryActorTick.bCanEverTick = true;
-    PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+    FBBBConsumableUpdatePipeline::ConfigureTick(*this);
     ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
     SetRootComponent(ItemMesh);
-    ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    ItemMesh->SetGenerateOverlapEvents(false);
-    SetActorEnableCollision(false);
 }
 
 void ABBBConsumable::BeginPlay()
@@ -23,10 +20,7 @@ void ABBBConsumable::BeginPlay()
 void ABBBConsumable::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    if (bInitialized)
-    {
-        UpdateRuntimeData();
-    }
+    UpdateRuntimeData();
 }
 
 void ABBBConsumable::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -66,4 +60,9 @@ bool ABBBConsumable::TryGetAttachmentOffset(FTransform &OutOffset) const
     }
     OutOffset = Definition->SpawnOffset;
     return !OutOffset.ContainsNaN();
+}
+
+UBBBConsumableNetworkComponent *ABBBConsumable::GetNetworkComponent() const
+{
+    return NetworkComponent;
 }

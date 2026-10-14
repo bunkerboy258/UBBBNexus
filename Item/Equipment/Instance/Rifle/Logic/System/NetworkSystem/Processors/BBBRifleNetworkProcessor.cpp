@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/NetworkSystem/Processors/BBBRifleNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/NetworkSystem/DomainData/Context/BBBRifleNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Network/BBBRifleNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBRifleNetworkProcessor::Update(FBBBRifleUpdateContext &Context)
+void FBBBRifleNetworkProcessor::Update(FBBBRifleNetworkUpdateContext &Context)
 {
     auto *Network = Cast<UBBBRifleNetworkComponent>(Context.Equipment.GetNetworkComponent());
     if (!ensureMsgf(Network, TEXT("步枪缺少自身协议组件")))

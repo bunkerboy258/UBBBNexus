@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ParseSystem/DomainData/Context/BBBRifleParseUpdateContext.h"
 
 namespace
 {
@@ -35,7 +35,7 @@ namespace
     }
 }
 
-void FBBBRifleParseProcessor::Update(FBBBRifleUpdateContext &Context)
+void FBBBRifleParseProcessor::Update(FBBBRifleParseUpdateContext &Context)
 {
     auto &Queue = Context.RuntimeData.Parse.InputState;
     auto &Input = Context.RuntimeData.Action.ActionInputState;

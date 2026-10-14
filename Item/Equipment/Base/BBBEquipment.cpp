@@ -92,19 +92,19 @@ bool ABBBEquipment::TryGetMuzzleTransform(FTransform &OutTransform) const
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现装备表现输入"));
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现权威装备表现输入"));
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
     ensureMsgf(false, TEXT("抽象装备未实现主行为输入"));
     return false;
@@ -122,27 +122,27 @@ bool ABBBEquipment::IsEquipped() const
     return Character && Character->GetHeldEquipment() == this && Character->IsItemUsable();
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
 {
     ensureMsgf(false, TEXT("装备未实现持有者操作许可输入"));
     return false;
@@ -163,27 +163,27 @@ void ABBBEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet)
+bool ABBBEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
     return false;
 }

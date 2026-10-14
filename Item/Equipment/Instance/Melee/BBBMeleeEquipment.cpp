@@ -35,44 +35,44 @@ void ABBBMeleeEquipment::Tick(const float DeltaSeconds)
     FBBBMeleeUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBMeleeEquipLocalControlPacket{});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
     return QueueInput(FBBBMeleeEquipAuthorityFactPacket{});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMeleeAttackLocalControlPacket{});
+    return QueueInput(FBBBMeleePrimaryLocalControlPacket{});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMeleeActionPermissionLocalControlPacket{MoveTemp(Packet.Permissions)});
+    return QueueInput(FBBBMeleeActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMeleeBeginActionLocalControlPacket{MoveTemp(Packet.Tokens)});
+    return QueueInput(FBBBMeleeBeginActionLocalControlPacket{{MoveTemp(Packet.Tokens)}});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMeleeEndActionLocalControlPacket{MoveTemp(Packet.Tokens)});
+    return QueueInput(FBBBMeleeEndActionLocalControlPacket{{MoveTemp(Packet.Tokens)}});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMeleeBeginContactLocalControlPacket{MoveTemp(Packet.Tokens)});
+    return QueueInput(FBBBMeleeBeginContactLocalControlPacket{{MoveTemp(Packet.Tokens)}});
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMeleeEndContactLocalControlPacket{MoveTemp(Packet.Tokens)});
+    return QueueInput(FBBBMeleeEndContactLocalControlPacket{{MoveTemp(Packet.Tokens)}});
 }
 
 bool ABBBMeleeEquipment::QueueInput(FBBBMeleeEquipLocalControlPacket Packet)
@@ -95,7 +95,7 @@ bool ABBBMeleeEquipment::QueueInput(FBBBMeleeEquipAuthorityFactPacket Packet)
     return FBBBMeleeParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMeleeEquipment::QueueInput(FBBBMeleeAttackLocalControlPacket Packet)
+bool ABBBMeleeEquipment::QueueInput(FBBBMeleePrimaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -213,4 +213,34 @@ int32 ABBBMeleeEquipment::GetHitCount() const
 bool ABBBMeleeEquipment::CanSwitch() const
 {
     return !RuntimeData.Action.ReadMeleeActionState().bAttacking;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBMeleeEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
+{
+    return false;
 }

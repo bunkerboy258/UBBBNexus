@@ -1,13 +1,11 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/States/BBBMeleeActionInputState.h"
 
 /** 本类装备收到的操作许可 */
-struct FBBBMeleeActionPermissionLocalControlPacket final
+struct FBBBMeleeActionPermissionLocalControlPacket final : public FBBBEquipmentActionPermissionLocalControlPacket<FBBBMeleeActionPermissionLocalControlPacket>
 {
-    /** 本帧按提交顺序累计的操作许可 */
-    TArray<bool> Permissions;
-
     /** @return 数据有效 */
     bool IsValid() const
     {

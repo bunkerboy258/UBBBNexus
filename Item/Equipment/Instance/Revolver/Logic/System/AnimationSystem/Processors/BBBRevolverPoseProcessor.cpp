@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/Processors/BBBRevolverPoseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/Context/BBBRevolverUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/DomainData/Context/BBBRevolverAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/RuntimeData/BBBRevolverRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/BBBRevolverEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/BBBRevolverDefinition.h"
@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void FBBBRevolverPoseProcessor::Update(FBBBRevolverUpdateContext &Context)
+void FBBBRevolverPoseProcessor::Update(FBBBRevolverAnimationUpdateContext &Context)
 {
     auto &Facts = Context.RuntimeData.Animation.AnimationState.Pose;
     // 失败时清除目标 避免动画继续使用上一帧的握持位置

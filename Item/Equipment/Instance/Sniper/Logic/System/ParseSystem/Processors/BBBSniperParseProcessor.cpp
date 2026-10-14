@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ParseSystem/Processors/BBBSniperParseProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/Context/BBBSniperUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ParseSystem/DomainData/Context/BBBSniperParseUpdateContext.h"
 
 namespace
 {
@@ -35,7 +35,7 @@ namespace
     }
 }
 
-void FBBBSniperParseProcessor::Update(FBBBSniperUpdateContext &Context)
+void FBBBSniperParseProcessor::Update(FBBBSniperParseUpdateContext &Context)
 {
     auto &Queue = Context.RuntimeData.Parse.InputState;
     auto &Input = Context.RuntimeData.Action.ActionInputState;

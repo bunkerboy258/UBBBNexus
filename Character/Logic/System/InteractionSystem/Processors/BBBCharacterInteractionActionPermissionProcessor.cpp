@@ -22,10 +22,10 @@ void FBBBCharacterInteractionActionPermissionProcessor::Update(FBBBCharacterInte
     }
     if (Equipment)
     {
-        Equipment->SubmitInput(FBBBEquipmentActionPermissionLocalControlPacket{{Use.bUsable}});
+        Equipment->SubmitInput(FBBBEquipmentActionPermissionLocalControlPacket<>{{Use.bUsable}});
     }
     if (Consumable)
     {
-        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket{{Use.bUsable}});
+        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket<>{{Use.bUsable}});
     }
 }

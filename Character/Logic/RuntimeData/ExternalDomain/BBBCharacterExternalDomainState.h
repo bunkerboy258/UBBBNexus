@@ -32,6 +32,7 @@ private:
     friend class FBBBCharacterItemSystemTest;
     friend class FBBBCharacterItemRegionsTest;
     friend class FBBBMeleeWindowTest;
+    friend class FBBBItemCatalogTest;
 #endif
 
     /** 当前帧世界快照 */

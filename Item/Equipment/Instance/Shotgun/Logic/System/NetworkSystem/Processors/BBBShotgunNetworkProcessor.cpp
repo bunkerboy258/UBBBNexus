@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/NetworkSystem/Processors/BBBShotgunNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/NetworkSystem/DomainData/Context/BBBShotgunNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/RuntimeData/BBBShotgunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Network/BBBShotgunNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBShotgunNetworkProcessor::Update(FBBBShotgunUpdateContext &Context)
+void FBBBShotgunNetworkProcessor::Update(FBBBShotgunNetworkUpdateContext &Context)
 {
     auto *Network = Cast<UBBBShotgunNetworkComponent>(Context.Equipment.GetNetworkComponent());
     if (!ensureMsgf(Network, TEXT("霰弹枪缺少自身协议组件")))

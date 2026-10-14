@@ -1,9 +1,10 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/States/BBBShotgunActionInputState.h"
 
 /** 霰弹枪Equip输入效果 */
-struct FBBBShotgunEquipLocalControlPacket final
+struct FBBBShotgunEquipLocalControlPacket final : public FBBBEquipmentEquipLocalControlPacket<FBBBShotgunEquipLocalControlPacket>
 {
     /** @return 输入数据有效 */
     bool IsValid() const

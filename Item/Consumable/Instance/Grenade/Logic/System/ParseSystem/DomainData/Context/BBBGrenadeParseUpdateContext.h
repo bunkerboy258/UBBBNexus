@@ -1,13 +1,10 @@
 #pragma once
-#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/ParseSystem/DomainData/States/BBBGrenadeInputState.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/UseSystem/DomainData/States/BBBGrenadeUseInputState.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/UseSystem/DomainData/States/BBBGrenadeUseState.h"
-
-/** 手雷输入解析的一次调用数据 */
+struct FBBBGrenadeRuntimeData;
+/** 本次输入解析依赖 */
 struct FBBBGrenadeParseUpdateContext final
 {
-    FBBBGrenadeInputState &Slots;
-    FBBBGrenadeUseInputState &Inputs;
-    FBBBGrenadeUseState &State;
+    /** 唯一运行时黑板 */
+    FBBBGrenadeRuntimeData &Data;
+    /** 是否仅还原远端结果 */
     bool bIsMirror = true;
 };

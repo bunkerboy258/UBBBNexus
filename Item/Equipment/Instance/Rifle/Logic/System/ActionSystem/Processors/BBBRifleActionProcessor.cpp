@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
@@ -43,7 +43,7 @@ void FBBBRifleActionProcessor::Stop(FBBBRifleRuntimeData &Data)
     Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
 }
 
-void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
+void FBBBRifleActionProcessor::Update(FBBBRifleActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
@@ -171,7 +171,7 @@ void FBBBRifleActionProcessor::Update(FBBBRifleUpdateContext &Context)
 }
 
 
-void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleUpdateContext& Context)
+void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleActionUpdateContext& Context)
 {
     const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
     UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();

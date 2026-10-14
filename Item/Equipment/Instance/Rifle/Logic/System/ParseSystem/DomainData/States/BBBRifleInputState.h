@@ -4,11 +4,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ParseSystem/DomainData/Definitions/BBBRifleInputSlot.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/AuthorityFact/Equipment/FBBBRifleEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Fire/FBBBRifleFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRiflePrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Fire/FBBBRifleBlockFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Fire/FBBBRifleAllowFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/RemoteMessage/Fire/FBBBRifleFireRemoteMessagePacket.h"
@@ -28,10 +28,10 @@ struct FBBBRifleInputState final
     TBBBRifleInputSlot<FBBBRifleEquipAuthorityFactPacket> AuthorityEquip;
 
     /** Fire固定槽位 */
-    TBBBRifleInputSlot<FBBBRifleFireLocalControlPacket> Fire;
+    TBBBRifleInputSlot<FBBBRiflePrimaryLocalControlPacket> Fire;
 
     /** Reload固定槽位 */
-    TBBBRifleInputSlot<FBBBRifleReloadLocalControlPacket> Reload;
+    TBBBRifleInputSlot<FBBBRifleSecondaryLocalControlPacket> Reload;
 
     /** BlockFire固定槽位 */
     TBBBRifleInputSlot<FBBBRifleBlockFireLocalControlPacket> BlockFire;
@@ -40,7 +40,7 @@ struct FBBBRifleInputState final
     TBBBRifleInputSlot<FBBBRifleAllowFireLocalControlPacket> AllowFire;
 
     /** LoadMagazine固定槽位 */
-    TBBBRifleInputSlot<FBBBRifleLoadMagazineLocalControlPacket> LoadMagazine;
+    TBBBRifleInputSlot<FBBBRifleLoadAmmoLocalControlPacket> LoadMagazine;
 
     /** InterruptReload固定槽位 */
     TBBBRifleInputSlot<FBBBRifleInterruptReloadLocalControlPacket> InterruptReload;

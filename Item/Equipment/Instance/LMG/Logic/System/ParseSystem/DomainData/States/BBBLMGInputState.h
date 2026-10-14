@@ -4,11 +4,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ParseSystem/DomainData/Definitions/BBBLMGInputSlot.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Equipment/FBBBLMGEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/AuthorityFact/Equipment/FBBBLMGEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Fire/FBBBLMGFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Reload/FBBBLMGReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Equipment/FBBBLMGPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Equipment/FBBBLMGSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Fire/FBBBLMGBlockFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Fire/FBBBLMGAllowFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Reload/FBBBLMGLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Reload/FBBBLMGLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Reload/FBBBLMGInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/LocalControl/Equipment/FBBBLMGActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Input/RemoteMessage/Fire/FBBBLMGFireRemoteMessagePacket.h"
@@ -28,10 +28,10 @@ struct FBBBLMGInputState final
     TBBBLMGInputSlot<FBBBLMGEquipAuthorityFactPacket> AuthorityEquip;
 
     /** Fire固定槽位 */
-    TBBBLMGInputSlot<FBBBLMGFireLocalControlPacket> Fire;
+    TBBBLMGInputSlot<FBBBLMGPrimaryLocalControlPacket> Fire;
 
     /** Reload固定槽位 */
-    TBBBLMGInputSlot<FBBBLMGReloadLocalControlPacket> Reload;
+    TBBBLMGInputSlot<FBBBLMGSecondaryLocalControlPacket> Reload;
 
     /** BlockFire固定槽位 */
     TBBBLMGInputSlot<FBBBLMGBlockFireLocalControlPacket> BlockFire;
@@ -40,7 +40,7 @@ struct FBBBLMGInputState final
     TBBBLMGInputSlot<FBBBLMGAllowFireLocalControlPacket> AllowFire;
 
     /** LoadMagazine固定槽位 */
-    TBBBLMGInputSlot<FBBBLMGLoadMagazineLocalControlPacket> LoadMagazine;
+    TBBBLMGInputSlot<FBBBLMGLoadAmmoLocalControlPacket> LoadMagazine;
 
     /** InterruptReload固定槽位 */
     TBBBLMGInputSlot<FBBBLMGInterruptReloadLocalControlPacket> InterruptReload;

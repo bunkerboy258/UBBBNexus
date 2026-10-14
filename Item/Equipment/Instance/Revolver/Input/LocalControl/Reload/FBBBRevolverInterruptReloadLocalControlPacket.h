@@ -1,9 +1,10 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/States/BBBRevolverActionInputState.h"
 
 /** 左轮结束换弹输入 */
-struct FBBBRevolverInterruptReloadLocalControlPacket final
+struct FBBBRevolverInterruptReloadLocalControlPacket final : public FBBBEquipmentInterruptReloadLocalControlPacket<FBBBRevolverInterruptReloadLocalControlPacket>
 {
     /** @return 输入数据是否有效 */
     bool IsValid() const

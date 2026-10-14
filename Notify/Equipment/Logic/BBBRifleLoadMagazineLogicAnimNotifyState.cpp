@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Notify/Equipment/Logic/BBBRifleLoadMagazineLogicAnimNotifyState.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Reload/FBBBRifleLoadAmmoLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void UBBBRifleLoadMagazineLogicAnimNotifyState::NotifyBegin(
@@ -17,7 +17,7 @@ void UBBBRifleLoadMagazineLogicAnimNotifyState::NotifyBegin(
     }
 
     // 网络镜像不得由本机动画生成装填事实 输入只进入步枪自身的解析管线
-    if (!ensureMsgf(Rifle->SubmitInput(FBBBRifleLoadMagazineLocalControlPacket{}),
+    if (!ensureMsgf(Rifle->SubmitInput(FBBBRifleLoadAmmoLocalControlPacket{}),
         TEXT("武器装填通知提交输入失败 %s"), *Rifle->GetName()))
     {
         return;

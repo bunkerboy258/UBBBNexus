@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/AnimationSystem/Processors/BBBSniperAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/Context/BBBSniperUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/AnimationSystem/DomainData/Context/BBBSniperAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/RuntimeData/BBBSniperRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/BBBSniperEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Config/BBBSniperDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/AnimationSystem/Processors/BBBSniperPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Animation/BBBSniperAnimInstance.h"
 
-void FBBBSniperAnimationProcessor::Stop(FBBBSniperUpdateContext &Context)
+void FBBBSniperAnimationProcessor::Stop(FBBBSniperAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -19,7 +19,7 @@ void FBBBSniperAnimationProcessor::Stop(FBBBSniperUpdateContext &Context)
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
 }
 
-void FBBBSniperAnimationProcessor::Update(FBBBSniperUpdateContext &Context)
+void FBBBSniperAnimationProcessor::Update(FBBBSniperAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadSniperActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

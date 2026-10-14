@@ -18,12 +18,10 @@ public:
         return UseInputState;
     }
 private:
-    friend class FBBBGrenadeParseSystem;
     friend class FBBBGrenadeUseProcessor;
     friend class FBBBGrenadeLaunchProcessor;
     friend class FBBBGrenadeFinishProcessor;
     friend class FBBBGrenadeParseProcessor;
-    friend class FBBBGrenadeInitializer;
     FBBBGrenadeUseState UseState;
     FBBBGrenadeUseInputState UseInputState;
 };

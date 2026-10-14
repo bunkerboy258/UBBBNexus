@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRifleAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/DomainData/Context/BBBRifleAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRiflePresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Animation/BBBRifleAnimInstance.h"
 
-void FBBBRifleAnimationProcessor::Stop(FBBBRifleUpdateContext &Context)
+void FBBBRifleAnimationProcessor::Stop(FBBBRifleAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -19,7 +19,7 @@ void FBBBRifleAnimationProcessor::Stop(FBBBRifleUpdateContext &Context)
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
 }
 
-void FBBBRifleAnimationProcessor::Update(FBBBRifleUpdateContext &Context)
+void FBBBRifleAnimationProcessor::Update(FBBBRifleAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadRifleActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

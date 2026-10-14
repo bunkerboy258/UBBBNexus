@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/AnimationSystem/Processors/BBBMinigunAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/Context/BBBMinigunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/AnimationSystem/DomainData/Context/BBBMinigunAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/RuntimeData/BBBMinigunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/BBBMinigunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/BBBMinigunDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/AnimationSystem/Processors/BBBMinigunPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Animation/BBBMinigunAnimInstance.h"
 
-void FBBBMinigunAnimationProcessor::Stop(FBBBMinigunUpdateContext &Context)
+void FBBBMinigunAnimationProcessor::Stop(FBBBMinigunAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -23,7 +23,7 @@ void FBBBMinigunAnimationProcessor::Stop(FBBBMinigunUpdateContext &Context)
     }
 }
 
-void FBBBMinigunAnimationProcessor::Update(FBBBMinigunUpdateContext &Context)
+void FBBBMinigunAnimationProcessor::Update(FBBBMinigunAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadMinigunActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

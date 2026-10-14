@@ -1,29 +1,28 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 
-const FBBBEquipmentCatalogEntry *UBBBEquipmentCatalog::FindItem(const FName ItemId) const
+TSubclassOf<ABBBEquipment> UBBBEquipmentCatalog::FindItem(const FName ItemId) const
 {
     if (ItemId.IsNone())
     {
         return nullptr;
     }
-    const FBBBEquipmentCatalogEntry *Found = nullptr;
-    for (const auto &Entry : Items)
+    TSubclassOf<ABBBEquipment> Found;
+    for (const auto &ActorClass : Items)
     {
-        if (!IsValid(Entry.Definition) || Entry.Definition->ItemId != ItemId)
+        const auto *Actor = ActorClass ? ActorClass.GetDefaultObject() : nullptr;
+        const auto *Definition = Actor ? Actor->GetDefinition() : nullptr;
+        if (!IsValid(Definition) || Definition->ItemId != ItemId)
         {
             continue;
         }
-        if (Found)
+        if (Found || Definition->ItemType != EBBBItemType::Equipment
+            || !Definition->WearSlot.IsNone() || Definition->MaxStack != 1)
         {
             return nullptr;
         }
-        Found = &Entry;
-    }
-    if (!Found || Found->Definition->ItemType != EBBBItemType::Equipment
-        || !Found->Definition->WearSlot.IsNone() || Found->Definition->MaxStack < 1 || Found->Definition->MaxStack != 1 || !Found->ActorClass || Found->ActorClass.GetDefaultObject()->GetDefinition() != Found->Definition.Get())
-    {
-        return nullptr;
+        Found = ActorClass;
     }
     return Found;
 }

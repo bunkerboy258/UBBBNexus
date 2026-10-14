@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/AnimationSystem/Processors/BBBShotgunPresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/AnimationSystem/DomainData/Context/BBBShotgunAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/RuntimeData/BBBShotgunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Config/BBBShotgunDefinition.h"
@@ -16,7 +16,7 @@
 #include "Animation/AnimInstance.h"
 
 void FBBBShotgunPresentationProcessor::SubmitCharacterMontage(
-    const FBBBShotgunUpdateContext &Context, UAnimMontage *Montage)
+    const FBBBShotgunAnimationUpdateContext &Context, UAnimMontage *Montage)
 {
     if (!Montage || !Context.Equipment.IsEquipped())
     {
@@ -93,7 +93,7 @@ void FBBBShotgunPresentationProcessor::SubmitCharacterMontage(
 }
 
 void FBBBShotgunPresentationProcessor::PlayEquipmentMontage(
-    const FBBBShotgunUpdateContext &Context, UAnimMontage *Montage)
+    const FBBBShotgunAnimationUpdateContext &Context, UAnimMontage *Montage)
 {
     UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance();
     if (ensureMsgf(Animation && Montage, TEXT("装备表现缺少动画实例或蒙太奇")))
@@ -102,7 +102,7 @@ void FBBBShotgunPresentationProcessor::PlayEquipmentMontage(
     }
 }
 
-void FBBBShotgunPresentationProcessor::PlayFire(const FBBBShotgunUpdateContext &Context)
+void FBBBShotgunPresentationProcessor::PlayFire(const FBBBShotgunAnimationUpdateContext &Context)
 {
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
     const auto &Hip = Context.Definition.HipFireSettings;

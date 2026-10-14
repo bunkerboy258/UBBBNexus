@@ -1,34 +1,65 @@
 #pragma once
+
+#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Network/BBBConsumableNetworkMessage.h"
 #include "BBBConsumableNetworkComponent.generated.h"
 
-/** 持有角色上的消耗品消息载体 不执行使用规则 */
+class ABBBConsumable;
+
+/** 公共消息载体与具体消耗品协议组件的基类 */
 UCLASS(ClassGroup = "BBB")
-class ABBB_EVAC_API UBBBConsumableNetworkComponent final : public UActorComponent
+class ABBB_EVAC_API UBBBConsumableNetworkComponent : public UActorComponent
 {
     GENERATED_BODY()
+
 public:
     UBBBConsumableNetworkComponent();
+
+    /** @param OutLifetimeProps	复制字段 @return 无 */
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
-    /** @param Message	已成立的当前结果 @return 无 */
-    void Publish(FBBBConsumableNetworkMessage Message);
-    /** @return 无 向当前有效实例投递结果 */
+
+    /** @return 无 向已经创建的当前实例投递待接收消息 */
     void DeliverPending();
+
+protected:
+    /** @param Kind	本类协议编号 @param Data	已编码结果 @return 是否接受发送 */
+    bool PublishMessage(uint8 Kind, TArray<uint8> Data);
+
+    /** @param Kind	协议编号 @param Data	消息内容 @param Revision	消息顺序 @param bRemoteMessage	是否为主机收到的事件 @return 是否接受 */
+    virtual bool ReceiveMessage(uint8 Kind, const TArray<uint8> &Data, uint64 Revision, bool bRemoteMessage);
+
 private:
-    /** @param Message	控制端已成立结果 @return 无 */
+    /** @param Message	本机已经成立的结果 @return 无 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitState(FBBBConsumableNetworkMessage Message);
-    /** @return 无 通过实例输入投递当前结果 */
+    void ServerSubmitMessage(FBBBConsumableNetworkMessage Message);
+
+    /** @return 无 当前消息到达后尝试投递 */
     UFUNCTION()
-    void OnRep_State();
-    /** 最新结果传输副本 */
-    UPROPERTY(ReplicatedUsing = OnRep_State)
-    FBBBConsumableNetworkMessage State;
-    /** 等待当前持有关系建立的最新结果 */
-    FBBBConsumableNetworkMessage Pending;
-    /** 已向实例投递的代次 */
+    void OnRep_Messages();
+
+    /** @param Message	待保存的消息 @param Destination	当前协议槽位 @return 无 */
+    static void StoreMessage(FBBBConsumableNetworkMessage Message, TArray<FBBBConsumableNetworkMessage> &Destination);
+
+    /** 每个协议编号仅保留当前消息 不保存事件历史 */
+    UPROPERTY(ReplicatedUsing = OnRep_Messages)
+    TArray<FBBBConsumableNetworkMessage> Messages;
+
+    /** 主机等待持有关系建立的当前事件 */
+    TArray<FBBBConsumableNetworkMessage> RemoteMessages;
+
+    /** 当前发送实例 */
+    uint64 PublishedGeneration = 0;
+
+    /** 当前发送顺序 */
+    uint64 PublishedRevision = 0;
+
+    /** 当前接收实例 */
     uint64 DeliveredGeneration = 0;
-    /** 已向实例投递的顺序 */
-    uint64 DeliveredRevision = 0;
+
+    /** 当前接收使用许可 */
+    uint64 DeliveredUseRevision = 0;
+
+    /** 各协议槽位已经消费的顺序 */
+    TMap<uint8, uint64> DeliveredRevisions;
 };

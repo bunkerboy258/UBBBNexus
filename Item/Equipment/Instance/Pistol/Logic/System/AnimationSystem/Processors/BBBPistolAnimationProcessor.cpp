@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/AnimationSystem/Processors/BBBPistolAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ActionSystem/DomainData/Context/BBBPistolUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/AnimationSystem/DomainData/Context/BBBPistolAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/RuntimeData/BBBPistolRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/BBBPistolEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Config/BBBPistolDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/AnimationSystem/Processors/BBBPistolPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Animation/BBBPistolAnimInstance.h"
 
-void FBBBPistolAnimationProcessor::Stop(FBBBPistolUpdateContext &Context)
+void FBBBPistolAnimationProcessor::Stop(FBBBPistolAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -19,7 +19,7 @@ void FBBBPistolAnimationProcessor::Stop(FBBBPistolUpdateContext &Context)
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
 }
 
-void FBBBPistolAnimationProcessor::Update(FBBBPistolUpdateContext &Context)
+void FBBBPistolAnimationProcessor::Update(FBBBPistolAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadPistolActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

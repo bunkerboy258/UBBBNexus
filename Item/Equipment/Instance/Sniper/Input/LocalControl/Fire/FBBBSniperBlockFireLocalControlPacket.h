@@ -1,9 +1,10 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/States/BBBSniperActionInputState.h"
 
 /** 狙击枪动画开火限制输入 */
-struct FBBBSniperBlockFireLocalControlPacket final
+struct FBBBSniperBlockFireLocalControlPacket final : public FBBBEquipmentBlockFireLocalControlPacket<FBBBSniperBlockFireLocalControlPacket>
 {
     /** @return 请求有效 */
     bool IsValid() const

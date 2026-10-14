@@ -105,7 +105,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
     Step();
     TestTrue(TEXT("步枪实际进入换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
     const int32 AmmoBeforeSwitch = Rifle->GetLoadedAmmo();
-    Rifle->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket{});
+    Rifle->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket<>{});
     Step();
     Step();
     TestTrue(TEXT("换弹及禁火不能禁止普通切枪"), Rifle->CanSwitch());
@@ -121,7 +121,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
     Controller->SubmitItemSelect(0);
     Step();
     Step();
-    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
     Character->SubmitInput(FBBBCharacterInteractionSecondaryLocalControlPacket{});
     Step();
     Step();
@@ -138,7 +138,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
     Step();
     TestTrue(TEXT("重新持有原步枪实例"), Character->GetHeldItem() == Original);
     TestFalse(TEXT("重新持有不能继续旧换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
-    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
     Step();
     Step();
     const int32 Baseline = FMath::Max(0, Manager.DebugGetEntityCount());

@@ -1,35 +1,14 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/Core/Shutdown/BBBRifleShutdown.h"
-
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/Processors/BBBRifleAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ParseSystem/Processors/BBBRifleParseProcessor.h"
-#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/AnimationSystem/BBBRifleAnimationSystem.h"
 
 void FBBBRifleShutdown::ShutdownInstance(ABBBEquipment &BaseEquipment) const
 {
     auto &Equipment = static_cast<ABBBRifleEquipment &>(BaseEquipment);
-    ABBBCharacter *Character = Cast<ABBBCharacter>(Equipment.GetOwner());
-    USkeletalMeshComponent *Mesh = Equipment.GetEquipmentSkeletalMesh();
-    const UBBBRifleDefinition *RifleDefinition = Cast<UBBBRifleDefinition>(Equipment.GetDefinition());
-    UWorld *World = Equipment.GetWorld();
     FBBBRifleActionProcessor::Stop(Equipment.RuntimeData);
-    if (Character && Mesh && RifleDefinition && World)
-    {
-        FBBBRifleUpdateContext Context{
-            Equipment,
-            *Character,
-            *Mesh,
-            *RifleDefinition,
-            Equipment.RuntimeData,
-            *World, !Equipment.IsMirror()};
-        FBBBRifleAnimationProcessor::Stop(Context);
-    }
-
-    // 停止蒙太奇可能同步触发结束通知 所以输入最后统一清除
+    FBBBRifleAnimationSystem::Stop(Equipment);
+    // 停止蒙太奇可同步触发通知 最后清空输入
     FBBBRifleParseProcessor::Clear(Equipment.RuntimeData);
 }

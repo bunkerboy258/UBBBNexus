@@ -58,29 +58,29 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
     FBBBRifleUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRifleEquipLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
     return QueueInput(FBBBRifleEquipAuthorityFactPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleFireLocalControlPacket{});
+    return QueueInput(FBBBRiflePrimaryLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleActionPermissionLocalControlPacket{MoveTemp(Packet.Permissions)});
+    return QueueInput(FBBBRifleActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleReloadLocalControlPacket{});
+    return QueueInput(FBBBRifleSecondaryLocalControlPacket{});
 }
 
 bool ABBBRifleEquipment::QueueInput(FBBBRifleEquipLocalControlPacket Packet)
@@ -103,7 +103,7 @@ bool ABBBRifleEquipment::QueueInput(FBBBRifleEquipAuthorityFactPacket Packet)
     return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleFireLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRiflePrimaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -113,7 +113,7 @@ bool ABBBRifleEquipment::QueueInput(FBBBRifleFireLocalControlPacket Packet)
     return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleReloadLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRifleSecondaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -143,7 +143,7 @@ bool ABBBRifleEquipment::QueueInput(FBBBRifleAllowFireLocalControlPacket Packet)
     return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleLoadMagazineLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBRifleLoadAmmoLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -238,22 +238,22 @@ void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransfo
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRifleBlockFireLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRifleAllowFireLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleLoadMagazineLocalControlPacket{});
+    return QueueInput(FBBBRifleLoadAmmoLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet)
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRifleInterruptReloadLocalControlPacket{});
 }
@@ -270,4 +270,28 @@ bool ABBBRifleEquipment::CanQuickUse() const
 {
     const auto &State = RuntimeData.Action.ReadRifleActionState();
     return !State.bIsReloading && !State.bFireBlocked;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
+{
+    return false;
 }

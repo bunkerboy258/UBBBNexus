@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/Processors/BBBShotgunActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/RuntimeData/BBBShotgunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Config/BBBShotgunDefinition.h"
@@ -45,7 +45,7 @@ void FBBBShotgunActionProcessor::Stop(FBBBShotgunRuntimeData &Data)
     Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
 }
 
-void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
+void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
@@ -201,7 +201,7 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunUpdateContext &Context)
 }
 
 
-void FBBBShotgunActionProcessor::SpawnProjectile(FBBBShotgunUpdateContext& Context)
+void FBBBShotgunActionProcessor::SpawnProjectile(FBBBShotgunActionUpdateContext& Context)
 {
     const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
     UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();

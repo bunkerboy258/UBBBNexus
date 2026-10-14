@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/RuntimeData/BBBMinigunRuntimeData.h"
 
-struct FBBBMinigunUpdateContext;
+struct FBBBMinigunParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBMinigunParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBMinigunUpdateContext &Context);
+    static void Update(FBBBMinigunParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBMinigunRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBMinigunRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBMinigunSpinRemoteMessagePacket>
             || std::is_same_v<TPacket, FBBBMinigunSpinAuthorityFactPacket>)
@@ -101,12 +105,12 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBMinigunInputSlot<FBBBMinigunFireLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunFireLocalControlPacket &)
+    static TBBBMinigunInputSlot<FBBBMinigunPrimaryLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunPrimaryLocalControlPacket &)
     {
         return State.Fire;
     }
 
-    static TBBBMinigunInputSlot<FBBBMinigunReloadLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunReloadLocalControlPacket &)
+    static TBBBMinigunInputSlot<FBBBMinigunSecondaryLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunSecondaryLocalControlPacket &)
     {
         return State.Reload;
     }
@@ -121,7 +125,7 @@ private:
         return State.AllowFire;
     }
 
-    static TBBBMinigunInputSlot<FBBBMinigunLoadMagazineLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunLoadMagazineLocalControlPacket &)
+    static TBBBMinigunInputSlot<FBBBMinigunLoadAmmoLocalControlPacket> &Select(FBBBMinigunInputState &State, const FBBBMinigunLoadAmmoLocalControlPacket &)
     {
         return State.LoadMagazine;
     }

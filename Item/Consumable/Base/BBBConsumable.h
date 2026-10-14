@@ -12,15 +12,10 @@
 class UBBBConsumableDefinition;
 class UStaticMeshComponent;
 class UAnimInstance;
-class FBBBGrenadeInitializer;
-struct FBBBConsumablePrimaryLocalControlPacket;
-struct FBBBConsumableEquipLocalControlPacket;
-struct FBBBConsumableReleaseLocalControlPacket;
-struct FBBBConsumableFinishLocalControlPacket;
-struct FBBBConsumablePermissionLocalControlPacket;
-struct FBBBConsumableStateRemoteMessagePacket;
-struct FBBBConsumableStateAuthorityFactPacket;
-
+class FBBBConsumableInitializer;
+class FBBBConsumableUpdatePipeline;
+class FBBBConsumableShutdown;
+class UBBBConsumableNetworkComponent;
 /** 不具有物品动画实例的消耗品公共根 */
 UCLASS(Abstract, BlueprintType, Blueprintable)
 class ABBB_EVAC_API ABBBConsumable : public AActor
@@ -32,6 +27,8 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+    /** @return 本类网络协议组件 */
+    UBBBConsumableNetworkComponent *GetNetworkComponent() const;
     /** @return 外侧消耗品定义 */
     UBBBConsumableDefinition *GetDefinition() const;
     /** @return 已成立的初始化结果 */
@@ -53,21 +50,27 @@ public:
     template<typename TPacket>
     bool SubmitInput(TPacket &&Packet)
     {
-        return IsInGameThread() && Packet.IsValid() && QueueInput(Forward<TPacket>(Packet));
+        return IsInGameThread() && QueueInput(Forward<TPacket>(Packet));
     }
 
 protected:
+    /** 由具体实例构造的协议组件 */
+    UPROPERTY(VisibleAnywhere, Category="BBB|消耗品", meta=(DisplayName="消耗品协议组件"))
+    TObjectPtr<UBBBConsumableNetworkComponent> NetworkComponent = nullptr;
     virtual bool InitializeRuntimeData() PURE_VIRTUAL(ABBBConsumable::InitializeRuntimeData, return false;);
     virtual void UpdateRuntimeData() PURE_VIRTUAL(ABBBConsumable::UpdateRuntimeData, );
     virtual void ShutdownRuntimeData() PURE_VIRTUAL(ABBBConsumable::ShutdownRuntimeData, );
-    virtual bool QueueInput(FBBBConsumablePrimaryLocalControlPacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableEquipLocalControlPacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableReleaseLocalControlPacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableFinishLocalControlPacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumablePermissionLocalControlPacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableStateRemoteMessagePacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableStateAuthorityFactPacket Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumablePermissionLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual bool QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
 private:
+    friend class FBBBConsumableInitializer;
+    friend class FBBBConsumableUpdatePipeline;
+    friend class FBBBConsumableShutdown;
     /** 共享静态配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|消耗品", meta = (AllowPrivateAccess = "true", DisplayName = "定义资产"))
     TObjectPtr<UBBBConsumableDefinition> Definition = nullptr;

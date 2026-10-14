@@ -33,15 +33,15 @@ void FBBBCharacterInteractionSelectionProcessor::Update(FBBBCharacterInteraction
         return;
     }
     const auto &Config = Context.Character.GetCharacterConfig().Item;
-    const auto *Equipment = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Selection.PendingItemId) : nullptr;
-    const auto *Consumable = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Selection.PendingItemId) : nullptr;
+    const auto Equipment = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Selection.PendingItemId) : nullptr;
+    const auto Consumable = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Selection.PendingItemId) : nullptr;
     if (Equipment && !Consumable)
     {
-        Context.PendingItemClass = Equipment->ActorClass;
+        Context.PendingItemClass = Equipment;
     }
     if (Consumable && !Equipment)
     {
-        Context.PendingItemClass = Consumable->ActorClass;
+        Context.PendingItemClass = Consumable;
     }
     Context.bHasSelectionResult = Context.PendingItemClass != nullptr;
 }

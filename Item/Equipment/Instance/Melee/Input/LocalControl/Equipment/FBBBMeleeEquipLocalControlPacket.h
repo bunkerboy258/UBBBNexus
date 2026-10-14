@@ -1,9 +1,10 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/States/BBBMeleeActionInputState.h"
 
 /** 近战Equip输入效果 */
-struct FBBBMeleeEquipLocalControlPacket final
+struct FBBBMeleeEquipLocalControlPacket final : public FBBBEquipmentEquipLocalControlPacket<FBBBMeleeEquipLocalControlPacket>
 {
     /** @return 输入数据有效 */
     bool IsValid() const

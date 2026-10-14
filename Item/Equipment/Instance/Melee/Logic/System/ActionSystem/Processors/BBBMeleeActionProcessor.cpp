@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/Processors/BBBMeleeActionProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
@@ -17,10 +17,10 @@ void FBBBMeleeActionProcessor::Stop(FBBBMeleeRuntimeData &Data)
     State.HitActors.Reset();
     State.HitEntities.Reset();
 }
-void FBBBMeleeActionProcessor::Update(FBBBMeleeUpdateContext &Context)
+void FBBBMeleeActionProcessor::Update(FBBBMeleeActionUpdateContext &Context)
 {
-    auto &State = Context.Data.Action.ActionState;
-    const auto &Input = Context.Data.Action.ReadMeleeActionInputState();
+    auto &State = Context.RuntimeData.Action.ActionState;
+    const auto &Input = Context.RuntimeData.Action.ReadMeleeActionInputState();
     if (!Context.bCausal)
     {
         State.bContactOpen = false;
@@ -32,7 +32,7 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeUpdateContext &Context)
     }
     if (!State.bOwnerActionsAllowed)
     {
-        Stop(Context.Data);
+        Stop(Context.RuntimeData);
         return;
     }
 
@@ -66,7 +66,7 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeUpdateContext &Context)
     {
         if (Token == State.ActionToken)
         {
-            Stop(Context.Data);
+            Stop(Context.RuntimeData);
             UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Attack ended Sequence=%d"), State.AttackSequence);
         }
     }
@@ -79,7 +79,7 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeUpdateContext &Context)
     {
         return;
     }
-    Stop(Context.Data);
+    Stop(Context.RuntimeData);
     ++State.AttackSequence;
     State.LastAttackTime = Time;
     State.bAttacking = true;

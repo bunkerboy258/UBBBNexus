@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/Processors/BBBRevolverAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/Context/BBBRevolverUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/DomainData/Context/BBBRevolverAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/RuntimeData/BBBRevolverRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/BBBRevolverEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/BBBRevolverDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/Processors/BBBRevolverPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Animation/BBBRevolverAnimInstance.h"
 
-void FBBBRevolverAnimationProcessor::Stop(FBBBRevolverUpdateContext &Context)
+void FBBBRevolverAnimationProcessor::Stop(FBBBRevolverAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -19,7 +19,7 @@ void FBBBRevolverAnimationProcessor::Stop(FBBBRevolverUpdateContext &Context)
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
 }
 
-void FBBBRevolverAnimationProcessor::Update(FBBBRevolverUpdateContext &Context)
+void FBBBRevolverAnimationProcessor::Update(FBBBRevolverAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadRevolverActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

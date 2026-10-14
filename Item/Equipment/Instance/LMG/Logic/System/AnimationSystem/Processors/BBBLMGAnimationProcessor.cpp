@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/AnimationSystem/Processors/BBBLMGAnimationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/Context/BBBLMGUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/AnimationSystem/DomainData/Context/BBBLMGAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/RuntimeData/BBBLMGRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/BBBLMGEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/BBBLMGDefinition.h"
@@ -9,7 +9,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/AnimationSystem/Processors/BBBLMGPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Animation/BBBLMGAnimInstance.h"
 
-void FBBBLMGAnimationProcessor::Stop(FBBBLMGUpdateContext &Context)
+void FBBBLMGAnimationProcessor::Stop(FBBBLMGAnimationUpdateContext &Context)
 {
     if (UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance())
     {
@@ -19,7 +19,7 @@ void FBBBLMGAnimationProcessor::Stop(FBBBLMGUpdateContext &Context)
     Context.RuntimeData.Animation.AnimationState.bIsReloading = false;
 }
 
-void FBBBLMGAnimationProcessor::Update(FBBBLMGUpdateContext &Context)
+void FBBBLMGAnimationProcessor::Update(FBBBLMGAnimationUpdateContext &Context)
 {
     const auto &Action = Context.RuntimeData.Action.ReadLMGActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;

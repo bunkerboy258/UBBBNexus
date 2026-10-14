@@ -13,6 +13,6 @@ void UBBBEquipmentAllowFireLogicAnimNotify::Notify(USkeletalMeshComponent* MeshC
     ABBBEquipment* Equipment = Cast<ABBBEquipment>(MeshComp->GetOwner());
     if (IsValid(Equipment) && Equipment->IsEquipped() && !Equipment->IsMirror())
     {
-        Equipment->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket{});
+        Equipment->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
     }
 }

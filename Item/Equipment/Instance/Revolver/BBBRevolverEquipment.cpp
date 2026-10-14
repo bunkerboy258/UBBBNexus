@@ -58,29 +58,29 @@ void ABBBRevolverEquipment::Tick(const float DeltaSeconds)
     FBBBRevolverUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRevolverEquipLocalControlPacket{});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
     return QueueInput(FBBBRevolverEquipAuthorityFactPacket{});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRevolverFireLocalControlPacket{});
+    return QueueInput(FBBBRevolverPrimaryLocalControlPacket{});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRevolverActionPermissionLocalControlPacket{MoveTemp(Packet.Permissions)});
+    return QueueInput(FBBBRevolverActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRevolverReloadLocalControlPacket{});
+    return QueueInput(FBBBRevolverSecondaryLocalControlPacket{});
 }
 
 bool ABBBRevolverEquipment::QueueInput(FBBBRevolverEquipLocalControlPacket Packet)
@@ -103,7 +103,7 @@ bool ABBBRevolverEquipment::QueueInput(FBBBRevolverEquipAuthorityFactPacket Pack
     return FBBBRevolverParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBRevolverFireLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBRevolverPrimaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -113,7 +113,7 @@ bool ABBBRevolverEquipment::QueueInput(FBBBRevolverFireLocalControlPacket Packet
     return FBBBRevolverParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBRevolverReloadLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBRevolverSecondaryLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -143,7 +143,7 @@ bool ABBBRevolverEquipment::QueueInput(FBBBRevolverAllowFireLocalControlPacket P
     return FBBBRevolverParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBRevolverLoadMagazineLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBRevolverLoadAmmoLocalControlPacket Packet)
 {
     if (!IsEquipped() || IsMirror())
     {
@@ -238,22 +238,22 @@ void ABBBRevolverEquipment::EmitShot_Implementation(const FTransform &MuzzleTran
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRevolverBlockFireLocalControlPacket{});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRevolverAllowFireLocalControlPacket{});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRevolverLoadMagazineLocalControlPacket{});
+    return QueueInput(FBBBRevolverLoadAmmoLocalControlPacket{});
 }
 
-bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket Packet)
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
     return QueueInput(FBBBRevolverInterruptReloadLocalControlPacket{});
 }
@@ -270,4 +270,28 @@ bool ABBBRevolverEquipment::CanQuickUse() const
 {
     const auto &State = RuntimeData.Action.ReadRevolverActionState();
     return !State.bIsReloading && !State.bFireBlocked;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
+{
+    return false;
+}
+
+/** 本类拒绝不支持的操作 */
+bool ABBBRevolverEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
+{
+    return false;
 }

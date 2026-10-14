@@ -4,14 +4,14 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/RuntimeData/BBBSniperRuntimeData.h"
 
-struct FBBBSniperUpdateContext;
+struct FBBBSniperParseUpdateContext;
 
 /** 固定槽位存储与按序解析 */
 class FBBBSniperParseProcessor final
 {
 public:
     /** @param Context	本帧依赖 @return 无 */
-    static void Update(FBBBSniperUpdateContext &Context);
+    static void Update(FBBBSniperParseUpdateContext &Context);
 
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBSniperRuntimeData &Data);
@@ -20,6 +20,10 @@ public:
     template<typename TPacket>
     static bool Submit(FBBBSniperRuntimeData &Data, TPacket Packet)
     {
+        if (!Packet.IsValid())
+        {
+            return false;
+        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
         if constexpr (std::is_same_v<TPacket, FBBBSniperActionPermissionLocalControlPacket>)
         {
@@ -83,12 +87,12 @@ private:
         return State.AuthorityEquip;
     }
 
-    static TBBBSniperInputSlot<FBBBSniperFireLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperFireLocalControlPacket &)
+    static TBBBSniperInputSlot<FBBBSniperPrimaryLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperPrimaryLocalControlPacket &)
     {
         return State.Fire;
     }
 
-    static TBBBSniperInputSlot<FBBBSniperReloadLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperReloadLocalControlPacket &)
+    static TBBBSniperInputSlot<FBBBSniperSecondaryLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperSecondaryLocalControlPacket &)
     {
         return State.Reload;
     }
@@ -103,7 +107,7 @@ private:
         return State.AllowFire;
     }
 
-    static TBBBSniperInputSlot<FBBBSniperLoadMagazineLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperLoadMagazineLocalControlPacket &)
+    static TBBBSniperInputSlot<FBBBSniperLoadAmmoLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperLoadAmmoLocalControlPacket &)
     {
         return State.LoadMagazine;
     }

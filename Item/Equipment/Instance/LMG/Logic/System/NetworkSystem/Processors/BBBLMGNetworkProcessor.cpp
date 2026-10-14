@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/NetworkSystem/Processors/BBBLMGNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/Context/BBBLMGUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/NetworkSystem/DomainData/Context/BBBLMGNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/RuntimeData/BBBLMGRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/BBBLMGEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Network/BBBLMGNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBLMGNetworkProcessor::Update(FBBBLMGUpdateContext &Context)
+void FBBBLMGNetworkProcessor::Update(FBBBLMGNetworkUpdateContext &Context)
 {
     auto *Network = Cast<UBBBLMGNetworkComponent>(Context.Equipment.GetNetworkComponent());
     if (!ensureMsgf(Network, TEXT("轻机枪缺少自身协议组件")))

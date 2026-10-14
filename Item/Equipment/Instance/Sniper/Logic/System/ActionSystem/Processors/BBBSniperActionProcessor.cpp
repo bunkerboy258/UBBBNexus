@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/Processors/BBBSniperActionProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/Context/BBBSniperUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/Context/BBBSniperActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/RuntimeData/BBBSniperRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/BBBSniperEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Config/BBBSniperDefinition.h"
@@ -42,7 +42,7 @@ void FBBBSniperActionProcessor::Stop(FBBBSniperRuntimeData &Data)
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
 }
 
-void FBBBSniperActionProcessor::Update(FBBBSniperUpdateContext &Context)
+void FBBBSniperActionProcessor::Update(FBBBSniperActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
@@ -152,7 +152,7 @@ void FBBBSniperActionProcessor::Update(FBBBSniperUpdateContext &Context)
 }
 
 
-void FBBBSniperActionProcessor::SpawnProjectile(FBBBSniperUpdateContext& Context)
+void FBBBSniperActionProcessor::SpawnProjectile(FBBBSniperActionUpdateContext& Context)
 {
     const UBBBProjectileDefinition* Definition = Context.Definition.ProjectileDefinition;
     UBBBMassSubsystem* Mass = Context.World.GetSubsystem<UBBBMassSubsystem>();

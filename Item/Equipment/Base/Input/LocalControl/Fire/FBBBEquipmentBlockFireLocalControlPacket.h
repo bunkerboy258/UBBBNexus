@@ -1,22 +1,17 @@
 #pragma once
+#include "CoreMinimal.h"
 
-/** 具体装备解释的禁止开火请求 */
-struct FBBBEquipmentBlockFireLocalControlPacket final
+/** 公共输入契约 具体包以自身类型继承并完整实现接口 */
+template<typename TDerived = void>
+struct FBBBEquipmentBlockFireLocalControlPacket
 {
-    /** @return 无数据请求始终有效 */
-    bool IsValid() const
-    {
-        return true;
-    }
 
-    /** @return 由具体装备决定如何应用请求 */
-    bool CanApply() const
-    {
-        return true;
-    }
-
-    /** @return 基座不写入具体装备状态 */
-    void Apply() const
-    {
-    }
+    /** @return 由具体包验证格式 */
+    bool IsValid() const;
+    /** @param Context 具体实例依赖 @return 由具体包判断许可 */
+    template<typename TContext>
+    bool CanApply(const TContext &Context) const;
+    /** @param Context 具体实例输入状态 @return 无 */
+    template<typename TContext>
+    void Apply(TContext &Context) const;
 };

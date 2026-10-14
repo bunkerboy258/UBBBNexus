@@ -6,11 +6,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ParseSystem/DomainData/Definitions/BBBMinigunInputSlot.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/AuthorityFact/Equipment/FBBBMinigunEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Fire/FBBBMinigunFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Reload/FBBBMinigunReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Fire/FBBBMinigunBlockFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Fire/FBBBMinigunAllowFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Reload/FBBBMinigunLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Reload/FBBBMinigunLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Reload/FBBBMinigunInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/RemoteMessage/Fire/FBBBMinigunFireRemoteMessagePacket.h"
@@ -36,10 +36,10 @@ struct FBBBMinigunInputState final
     TBBBMinigunInputSlot<FBBBMinigunEquipAuthorityFactPacket> AuthorityEquip;
 
     /** Fire固定槽位 */
-    TBBBMinigunInputSlot<FBBBMinigunFireLocalControlPacket> Fire;
+    TBBBMinigunInputSlot<FBBBMinigunPrimaryLocalControlPacket> Fire;
 
     /** Reload固定槽位 */
-    TBBBMinigunInputSlot<FBBBMinigunReloadLocalControlPacket> Reload;
+    TBBBMinigunInputSlot<FBBBMinigunSecondaryLocalControlPacket> Reload;
 
     /** BlockFire固定槽位 */
     TBBBMinigunInputSlot<FBBBMinigunBlockFireLocalControlPacket> BlockFire;
@@ -48,7 +48,7 @@ struct FBBBMinigunInputState final
     TBBBMinigunInputSlot<FBBBMinigunAllowFireLocalControlPacket> AllowFire;
 
     /** LoadMagazine固定槽位 */
-    TBBBMinigunInputSlot<FBBBMinigunLoadMagazineLocalControlPacket> LoadMagazine;
+    TBBBMinigunInputSlot<FBBBMinigunLoadAmmoLocalControlPacket> LoadMagazine;
 
     /** InterruptReload固定槽位 */
     TBBBMinigunInputSlot<FBBBMinigunInterruptReloadLocalControlPacket> InterruptReload;

@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/UseSystem/Processors/BBBGrenadeUseProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/RuntimeData/BBBGrenadeRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/UseSystem/DomainData/Context/BBBGrenadeUseUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/BBBGrenadeConsumable.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
@@ -25,4 +26,20 @@ void FBBBGrenadeUseProcessor::Update(FBBBGrenadeUseUpdateContext &Context) const
         ++State.UseSerial;
         UE_LOG(LogTemp, Log, TEXT("[BBBGrenade] Use started Serial=%d"), State.UseSerial);
     }
+}
+
+void FBBBGrenadeUseProcessor::Clear(FBBBGrenadeRuntimeData &Data)
+{
+    auto &State = Data.Use.UseState;
+    State.bAllowed = false;
+    State.bPrimaryHeld = false;
+    State.bUsing = false;
+    State.bReleased = false;
+    auto &Inputs = Data.Use.UseInputState;
+    Inputs.bPrimary = false;
+    Inputs.bEquip = false;
+    Inputs.bRelease = false;
+    Inputs.bFinish = false;
+    Inputs.bHasPermission = false;
+    Inputs.bAllowed = false;
 }

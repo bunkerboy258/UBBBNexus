@@ -1,25 +1,18 @@
 #pragma once
 #include "CoreMinimal.h"
-/** 装备动画EndAction事实请求 */
-struct FBBBEquipmentEndActionLocalControlPacket final
+
+/** 公共输入契约 具体包以自身类型继承并完整实现接口 */
+template<typename TDerived = void>
+struct FBBBEquipmentEndActionLocalControlPacket
 {
-    /** 当前动画通知实例标识 */
+    /** 公共请求数据 由具体实例解释 */
     TArray<int32> Tokens;
-    /** @return 通知标识是否有效 */
-    bool IsValid() const
-    {
-        return !Tokens.IsEmpty() && !Tokens.ContainsByPredicate([](int32 Value)
-        {
-            return Value < 0;
-        });
-    }
-    /** @return 是否可贡献通知事实 */
-    bool CanApply() const
-    {
-        return IsValid();
-    }
-    /** @return 无 */
-    void Apply() const
-    {
-    }
+    /** @return 由具体包验证格式 */
+    bool IsValid() const;
+    /** @param Context 具体实例依赖 @return 由具体包判断许可 */
+    template<typename TContext>
+    bool CanApply(const TContext &Context) const;
+    /** @param Context 具体实例输入状态 @return 无 */
+    template<typename TContext>
+    void Apply(TContext &Context) const;
 };

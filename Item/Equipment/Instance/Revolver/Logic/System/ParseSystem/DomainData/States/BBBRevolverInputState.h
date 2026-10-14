@@ -4,11 +4,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ParseSystem/DomainData/Definitions/BBBRevolverInputSlot.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/AuthorityFact/Equipment/FBBBRevolverEquipAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Fire/FBBBRevolverFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Reload/FBBBRevolverReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverPrimaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Fire/FBBBRevolverBlockFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Fire/FBBBRevolverAllowFireLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Reload/FBBBRevolverLoadMagazineLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Reload/FBBBRevolverLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Reload/FBBBRevolverInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/RemoteMessage/Fire/FBBBRevolverFireRemoteMessagePacket.h"
@@ -28,10 +28,10 @@ struct FBBBRevolverInputState final
     TBBBRevolverInputSlot<FBBBRevolverEquipAuthorityFactPacket> AuthorityEquip;
 
     /** Fire固定槽位 */
-    TBBBRevolverInputSlot<FBBBRevolverFireLocalControlPacket> Fire;
+    TBBBRevolverInputSlot<FBBBRevolverPrimaryLocalControlPacket> Fire;
 
     /** Reload固定槽位 */
-    TBBBRevolverInputSlot<FBBBRevolverReloadLocalControlPacket> Reload;
+    TBBBRevolverInputSlot<FBBBRevolverSecondaryLocalControlPacket> Reload;
 
     /** BlockFire固定槽位 */
     TBBBRevolverInputSlot<FBBBRevolverBlockFireLocalControlPacket> BlockFire;
@@ -40,7 +40,7 @@ struct FBBBRevolverInputState final
     TBBBRevolverInputSlot<FBBBRevolverAllowFireLocalControlPacket> AllowFire;
 
     /** LoadMagazine固定槽位 */
-    TBBBRevolverInputSlot<FBBBRevolverLoadMagazineLocalControlPacket> LoadMagazine;
+    TBBBRevolverInputSlot<FBBBRevolverLoadAmmoLocalControlPacket> LoadMagazine;
 
     /** InterruptReload固定槽位 */
     TBBBRevolverInputSlot<FBBBRevolverInterruptReloadLocalControlPacket> InterruptReload;

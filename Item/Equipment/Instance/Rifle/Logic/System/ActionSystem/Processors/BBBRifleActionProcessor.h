@@ -1,7 +1,7 @@
 #pragma once
 
 struct FBBBRifleRuntimeData;
-struct FBBBRifleUpdateContext;
+struct FBBBRifleActionUpdateContext;
 class UBBBRifleDefinition;
 
 /** 步枪动作规则的唯一写入者 */
@@ -9,7 +9,7 @@ class FBBBRifleActionProcessor final
 {
 public:
     /** @param Context	本次更新上下文 @return 无 */
-    static void Update(FBBBRifleUpdateContext &Context);
+    static void Update(FBBBRifleActionUpdateContext &Context);
 
     /** @param Data	步枪运行时数据 @param Definition	步枪静态配置 @return 无 */
     static void Initialize(FBBBRifleRuntimeData &Data, const UBBBRifleDefinition &Definition);
@@ -19,5 +19,5 @@ public:
 
 private:
     /** @param Context	本机枪口与控制权上下文 @return 无 */
-    static void SpawnProjectile(FBBBRifleUpdateContext& Context);
+    static void SpawnProjectile(FBBBRifleActionUpdateContext& Context);
 };

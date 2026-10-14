@@ -1,10 +1,15 @@
 #pragma once
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/RuntimeData/BBBMeleeRuntimeData.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Input/LocalControl/Equipment/FBBBMeleeSecondaryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Input/LocalControl/Fire/FBBBMeleeAllowFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Input/LocalControl/Fire/FBBBMeleeBlockFireLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Input/LocalControl/Reload/FBBBMeleeInterruptReloadLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Input/LocalControl/Reload/FBBBMeleeLoadAmmoLocalControlPacket.h"
 #include "BBBMeleeEquipment.generated.h"
 struct FBBBMeleeEquipLocalControlPacket;
 struct FBBBMeleeEquipAuthorityFactPacket;
-struct FBBBMeleeAttackLocalControlPacket;
+struct FBBBMeleePrimaryLocalControlPacket;
 struct FBBBMeleeActionPermissionLocalControlPacket;
 struct FBBBMeleeBeginActionLocalControlPacket;
 struct FBBBMeleeBeginContactLocalControlPacket;
@@ -29,7 +34,7 @@ public:
     template<typename TPacket>
     bool SubmitInput(TPacket &&Packet)
     {
-        if (!ensureMsgf(IsInGameThread() && Packet.IsValid(), TEXT("近战输入线程或数据无效")))
+        if (!ensureMsgf(IsInGameThread(), TEXT("近战输入线程或数据无效")))
         {
             return false;
         }
@@ -49,23 +54,33 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|近战", meta = (DisplayName = "累计命中数"))
     int32 GetHitCount() const;
 private:
+    /** @param Packet 不支持的公共操作 @return 拒绝 */
+    virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet) override;
+    /** @param Packet 不支持的公共操作 @return 拒绝 */
+    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet) override;
+    /** @param Packet 不支持的公共操作 @return 拒绝 */
+    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet) override;
+    /** @param Packet 不支持的公共操作 @return 拒绝 */
+    virtual bool QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet) override;
+    /** @param Packet 不支持的公共操作 @return 拒绝 */
+    virtual bool QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet) override;
     using ABBBEquipment::QueueInput;
 
     virtual void Tick(float DeltaSeconds) override;
     virtual bool InitializeRuntimeData() override;
     virtual void ShutdownRuntimeData() override;
 
-    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentEndActionLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentBeginContactLocalControlPacket Packet) override;
-    virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket Packet) override;
+    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet) override;
+    virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet) override;
     bool QueueInput(FBBBMeleeEquipLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeEquipAuthorityFactPacket Packet);
-    bool QueueInput(FBBBMeleeAttackLocalControlPacket Packet);
+    bool QueueInput(FBBBMeleePrimaryLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeActionPermissionLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeBeginActionLocalControlPacket Packet);
     bool QueueInput(FBBBMeleeBeginContactLocalControlPacket Packet);

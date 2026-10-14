@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/ParseSystem/Processors/BBBGrenadeParseProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/RuntimeData/BBBGrenadeRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Logic/System/ParseSystem/DomainData/Context/BBBGrenadeParseUpdateContext.h"
 
 void FBBBGrenadeParseProcessor::Update(FBBBGrenadeParseUpdateContext &Context) const
@@ -9,18 +10,37 @@ void FBBBGrenadeParseProcessor::Update(FBBBGrenadeParseUpdateContext &Context) c
         {
             return;
         }
-        if (Slot.Data.IsValid() && Slot.Data.CanApply(Context))
+        if (Slot.Data.IsValid() && Slot.Data.CanApply(Context.bIsMirror))
         {
-            Slot.Data.Apply(Context);
+            Slot.Data.Apply(Context.Data.Use.UseInputState, Context.Data.Use.UseState);
         }
         Slot.bActive = false;
         Slot.Data = {};
     };
-    Process(Context.Slots.PrimaryLocalControl);
-    Process(Context.Slots.EquipLocalControl);
-    Process(Context.Slots.ReleaseLocalControl);
-    Process(Context.Slots.FinishLocalControl);
-    Process(Context.Slots.PermissionLocalControl);
-    Process(Context.Slots.StateRemoteMessage);
-    Process(Context.Slots.StateAuthorityFact);
+    Process(Context.Data.Parse.InputState.PrimaryLocalControl);
+    Process(Context.Data.Parse.InputState.EquipLocalControl);
+    Process(Context.Data.Parse.InputState.ReleaseLocalControl);
+    Process(Context.Data.Parse.InputState.FinishLocalControl);
+    Process(Context.Data.Parse.InputState.PermissionLocalControl);
+    Process(Context.Data.Parse.InputState.StateRemoteMessage);
+    Process(Context.Data.Parse.InputState.StateAuthorityFact);
+}
+
+void FBBBGrenadeParseProcessor::Clear(FBBBGrenadeRuntimeData &Data)
+{
+    auto &Slots = Data.Parse.InputState;
+    Slots.PrimaryLocalControl.bActive = false;
+    Slots.PrimaryLocalControl.Data = {};
+    Slots.EquipLocalControl.bActive = false;
+    Slots.EquipLocalControl.Data = {};
+    Slots.ReleaseLocalControl.bActive = false;
+    Slots.ReleaseLocalControl.Data = {};
+    Slots.FinishLocalControl.bActive = false;
+    Slots.FinishLocalControl.Data = {};
+    Slots.PermissionLocalControl.bActive = false;
+    Slots.PermissionLocalControl.Data = {};
+    Slots.StateRemoteMessage.bActive = false;
+    Slots.StateRemoteMessage.Data = {};
+    Slots.StateAuthorityFact.bActive = false;
+    Slots.StateAuthorityFact.Data = {};
 }

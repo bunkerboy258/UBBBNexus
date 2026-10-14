@@ -1,19 +1,19 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalogEntry.h"
 #include "BBBEquipmentCatalog.generated.h"
+class ABBBEquipment;
 
-/** 本类别的唯一静态注册目录 */
+/** 只登记具体实例类的静态型号目录 */
 UCLASS(BlueprintType)
 class ABBB_EVAC_API UBBBEquipmentCatalog final : public UPrimaryDataAsset
 {
     GENERATED_BODY()
 public:
-    /** @param ItemId	型号标识 @return 唯一有效条目 */
-    const FBBBEquipmentCatalogEntry *FindItem(FName ItemId) const;
+    /** @param ItemId 型号标识 @return 唯一有效实例类 */
+    TSubclassOf<ABBBEquipment> FindItem(FName ItemId) const;
 
-    /** 已注册的物品 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "物品列表"))
-    TArray<FBBBEquipmentCatalogEntry> Items;
+    /** 静态定义由所登记类的默认对象提供 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "型号实例类"))
+    TArray<TSubclassOf<ABBBEquipment>> Items;
 };

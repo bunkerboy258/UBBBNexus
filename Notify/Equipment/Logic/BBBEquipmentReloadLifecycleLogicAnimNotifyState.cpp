@@ -12,6 +12,6 @@ void UBBBEquipmentReloadLifecycleLogicAnimNotifyState::NotifyEnd(USkeletalMeshCo
         return;
     }
 
-    ensureMsgf(Equipment->SubmitInput(FBBBEquipmentInterruptReloadLocalControlPacket{}),
+    ensureMsgf(Equipment->SubmitInput(FBBBEquipmentInterruptReloadLocalControlPacket<>{}),
         TEXT("装备换弹生命周期通知提交失败 %s"), *Equipment->GetName());
 }

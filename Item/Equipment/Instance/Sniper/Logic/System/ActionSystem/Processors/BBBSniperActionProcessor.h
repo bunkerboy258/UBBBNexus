@@ -1,7 +1,7 @@
 #pragma once
 
 struct FBBBSniperRuntimeData;
-struct FBBBSniperUpdateContext;
+struct FBBBSniperActionUpdateContext;
 class UBBBSniperDefinition;
 
 /** 狙击枪动作规则的唯一写入者 */
@@ -9,7 +9,7 @@ class FBBBSniperActionProcessor final
 {
 public:
     /** @param Context	本次更新上下文 @return 无 */
-    static void Update(FBBBSniperUpdateContext &Context);
+    static void Update(FBBBSniperActionUpdateContext &Context);
 
     /** @param Data	狙击枪运行时数据 @param Definition	狙击枪静态配置 @return 无 */
     static void Initialize(FBBBSniperRuntimeData &Data, const UBBBSniperDefinition &Definition);
@@ -19,5 +19,5 @@ public:
 
 private:
     /** @param Context	本机枪口与控制权上下文 @return 无 */
-    static void SpawnProjectile(FBBBSniperUpdateContext& Context);
+    static void SpawnProjectile(FBBBSniperActionUpdateContext& Context);
 };

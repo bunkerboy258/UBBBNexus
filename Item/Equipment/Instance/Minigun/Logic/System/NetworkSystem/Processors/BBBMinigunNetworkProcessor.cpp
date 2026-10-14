@@ -1,11 +1,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/NetworkSystem/Processors/BBBMinigunNetworkProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/Context/BBBMinigunUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/NetworkSystem/DomainData/Context/BBBMinigunNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/RuntimeData/BBBMinigunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/BBBMinigunEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Network/BBBMinigunNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 
-void FBBBMinigunNetworkProcessor::Update(FBBBMinigunUpdateContext &Context)
+void FBBBMinigunNetworkProcessor::Update(FBBBMinigunNetworkUpdateContext &Context)
 {
     auto *Network = Cast<UBBBMinigunNetworkComponent>(Context.Equipment.GetNetworkComponent());
     if (!ensureMsgf(Network, TEXT("转管机枪缺少自身协议组件")))

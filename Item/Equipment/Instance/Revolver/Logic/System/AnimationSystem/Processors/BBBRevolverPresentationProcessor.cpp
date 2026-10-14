@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/Processors/BBBRevolverPresentationProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/ActionSystem/DomainData/Context/BBBRevolverUpdateContext.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/System/AnimationSystem/DomainData/Context/BBBRevolverAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Logic/RuntimeData/BBBRevolverRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/BBBRevolverEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/BBBRevolverDefinition.h"
@@ -16,7 +16,7 @@
 #include "Animation/AnimInstance.h"
 
 void FBBBRevolverPresentationProcessor::SubmitCharacterMontage(
-    const FBBBRevolverUpdateContext &Context, UAnimMontage *Montage)
+    const FBBBRevolverAnimationUpdateContext &Context, UAnimMontage *Montage)
 {
     if (!Montage || !Context.Equipment.IsEquipped())
     {
@@ -93,7 +93,7 @@ void FBBBRevolverPresentationProcessor::SubmitCharacterMontage(
 }
 
 void FBBBRevolverPresentationProcessor::PlayEquipmentMontage(
-    const FBBBRevolverUpdateContext &Context, UAnimMontage *Montage)
+    const FBBBRevolverAnimationUpdateContext &Context, UAnimMontage *Montage)
 {
     UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance();
     if (ensureMsgf(Animation && Montage, TEXT("装备表现缺少动画实例或蒙太奇")))
@@ -102,7 +102,7 @@ void FBBBRevolverPresentationProcessor::PlayEquipmentMontage(
     }
 }
 
-void FBBBRevolverPresentationProcessor::PlayFire(const FBBBRevolverUpdateContext &Context)
+void FBBBRevolverPresentationProcessor::PlayFire(const FBBBRevolverAnimationUpdateContext &Context)
 {
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
     const auto &Hip = Context.Definition.HipFireSettings;
