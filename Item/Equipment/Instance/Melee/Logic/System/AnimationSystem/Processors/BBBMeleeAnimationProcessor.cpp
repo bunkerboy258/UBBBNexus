@@ -6,9 +6,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "Animation/AnimInstance.h"
 
 void FBBBMeleeAnimationProcessor::Update(FBBBMeleeUpdateContext &Context)
 {
@@ -51,16 +49,6 @@ void FBBBMeleeAnimationProcessor::Update(FBBBMeleeUpdateContext &Context)
     }
     if (!Action.bAttacking && State.bAttacking)
     {
-        UAnimInstance *MainAnimation = Context.Character.GetMesh()->GetAnimInstance();
-        const bool bOwnMontage = MainAnimation && MainAnimation->Montage_IsActive(Context.Definition.AttackMontage);
-        if (bOwnMontage && !Context.bCausal)
-        {
-            Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{nullptr});
-        }
-        if (bOwnMontage && Context.bCausal)
-        {
-            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{nullptr});
-        }
         Stop(Context);
     }
     Animation->PublishAnimationFacts(FBBBEquipmentAnimationFacts{});

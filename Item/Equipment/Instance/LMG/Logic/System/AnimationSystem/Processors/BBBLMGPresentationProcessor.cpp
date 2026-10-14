@@ -14,19 +14,11 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimInstance.h"
-#include "Components/SkeletalMeshComponent.h"
 
 void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
-    const FBBBLMGUpdateContext &Context, UAnimMontage *Montage, const bool bClear)
+    const FBBBLMGUpdateContext &Context, UAnimMontage *Montage)
 {
     if (!Montage || !Context.Equipment.IsEquipped())
-    {
-        return;
-    }
-
-    // 仅允许收束仍属于此装备的动画 不能清掉同槽中接替它的攀爬
-    UAnimInstance *CharacterAnimation = Context.Character.GetMesh()->GetAnimInstance();
-    if (bClear && (!CharacterAnimation || !CharacterAnimation->Montage_IsActive(Montage)))
     {
         return;
     }
@@ -40,11 +32,11 @@ void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
         {
             if (bMirror)
             {
-                Context.Character.SubmitInput(FBBBFullBodyMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                Context.Character.SubmitInput(FBBBFullBodyMontageAuthorityFactPacket{Montage});
                 continue;
             }
 
-            Context.Character.SubmitInput(FBBBFullBodyMontageLocalControlPacket{bClear ? nullptr : Montage});
+            Context.Character.SubmitInput(FBBBFullBodyMontageLocalControlPacket{Montage});
             continue;
         }
 
@@ -52,11 +44,11 @@ void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
         {
             if (bMirror)
             {
-                Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{Montage});
                 continue;
             }
 
-            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{bClear ? nullptr : Montage});
+            Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Montage});
             continue;
         }
 
@@ -64,11 +56,11 @@ void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
         {
             if (bMirror)
             {
-                Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket{Montage});
                 continue;
             }
 
-            Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontageLocalControlPacket{bClear ? nullptr : Montage});
+            Context.Character.SubmitInput(FBBBFullBodyAdditivePreAimMontageLocalControlPacket{Montage});
             continue;
         }
 
@@ -76,11 +68,11 @@ void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
         {
             if (bMirror)
             {
-                Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageAuthorityFactPacket{Montage});
                 continue;
             }
 
-            Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageLocalControlPacket{bClear ? nullptr : Montage});
+            Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageLocalControlPacket{Montage});
             continue;
         }
 
@@ -88,11 +80,11 @@ void FBBBLMGPresentationProcessor::SubmitCharacterMontage(
         {
             if (bMirror)
             {
-                Context.Character.SubmitInput(FBBBAdditiveHitReactMontageAuthorityFactPacket{bClear ? nullptr : Montage});
+                Context.Character.SubmitInput(FBBBAdditiveHitReactMontageAuthorityFactPacket{Montage});
                 continue;
             }
 
-            Context.Character.SubmitInput(FBBBAdditiveHitReactMontageLocalControlPacket{bClear ? nullptr : Montage});
+            Context.Character.SubmitInput(FBBBAdditiveHitReactMontageLocalControlPacket{Montage});
             continue;
         }
 

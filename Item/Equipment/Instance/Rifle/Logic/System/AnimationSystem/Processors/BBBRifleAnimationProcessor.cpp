@@ -42,10 +42,9 @@ void FBBBRifleAnimationProcessor::Update(FBBBRifleUpdateContext &Context)
 
     if (!Action.bIsReloading && State.bIsReloading)
     {
-        // 装匣成功后让人物收手和武器动作自然结束 中断才立刻停止
+        // 装匣成功后让武器动作自然结束 中断只停止武器自身动画
         if (!Action.bReloadCompletedThisFrame)
         {
-            FBBBRiflePresentationProcessor::SubmitCharacterMontage(Context, Context.Definition.CharacterReloadMontage, true);
             UBBBEquipmentAnimInstance *Animation = Context.Equipment.GetEquipmentAnimationInstance();
             if (Animation && Context.Definition.EquipmentReloadMontage)
             {
