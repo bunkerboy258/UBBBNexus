@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
-#include "Components/PoseableMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/PointLightComponent.h"
@@ -76,6 +75,7 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     Pose->SetPosition(0.0f, false);
     Pose->TickAnimation(1.0f / 30.0f, false);
     Pose->RefreshBoneTransforms();
+    Pose->SetComponentTickEnabled(false);
     Texture = NewObject<UTextureRenderTarget2D>(this);
     Texture->ClearColor = FLinearColor::Transparent;
     Texture->RenderTargetFormat = RTF_RGBA16f;
@@ -136,19 +136,20 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         if (!Components.IsValidIndex(Index))
         {
-            UPoseableMeshComponent *Part = NewObject<UPoseableMeshComponent>(Display);
+            USkeletalMeshComponent *Part = NewObject<USkeletalMeshComponent>(Display);
             Display->AddInstanceComponent(Part);
             Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             Part->SetVisibleInSceneCaptureOnly(true);
             Part->SetLightingChannels(false, true, false);
+            Part->SetComponentTickEnabled(false);
             Part->RegisterComponent();
             Components.Add(Part);
         }
         auto *Part = Components[Index].Get();
         auto *Original = Actual[Index];
-        if (Part->GetSkinnedAsset() != Original->GetSkeletalMeshAsset())
+        if (Part->GetSkeletalMeshAsset() != Original->GetSkeletalMeshAsset())
         {
-            Part->SetSkinnedAssetAndUpdate(Original->GetSkeletalMeshAsset());
+            Part->SetSkeletalMesh(Original->GetSkeletalMeshAsset());
         }
         if (!Original->GetSkeletalMeshAsset())
         {
@@ -162,8 +163,12 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         }
         const FName Socket = Original->GetAttachSocketName();
         const bool bRigid = !Socket.IsNone() && !Original->LeaderPoseComponent.IsValid();
-        Part->CopyPoseFromSkeletalComponent(bRigid ? Original : Pose.Get());
-        Part->RefreshBoneTransforms();
+        Part->SetLeaderPoseComponent(bRigid ? nullptr : Pose.Get());
+        Part->SetForceRefPose(bRigid);
+        if (bRigid)
+        {
+            Part->RefreshBoneTransforms();
+        }
         FTransform Relative = Original->GetComponentTransform().GetRelativeTransform(Source->GetActorTransform());
         const ABBBCharacter *Character = Cast<ABBBCharacter>(Source.Get());
         if (bRigid && Character && Original->GetAttachParent() == Character->GetMesh())

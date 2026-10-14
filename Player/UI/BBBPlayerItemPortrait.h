@@ -7,7 +7,6 @@ class APawn;
 class AActor;
 class ASceneCapture2D;
 class UTextureRenderTarget2D;
-class UPoseableMeshComponent;
 class USkeletalMeshComponent;
 class UMaterialInstanceDynamic;
 
@@ -38,7 +37,7 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UMaterialInstanceDynamic> Material;
     UPROPERTY(Transient)
-    TArray<TObjectPtr<UPoseableMeshComponent>> Components;
+    TArray<TObjectPtr<USkeletalMeshComponent>> Components;
     UPROPERTY(Transient)
     TObjectPtr<USkeletalMeshComponent> Pose;
     FVector Origin = FVector::ZeroVector;
