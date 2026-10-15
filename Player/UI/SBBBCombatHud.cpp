@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBCombatAmmoRail.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
@@ -111,21 +112,7 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         return Layer + 3;
     }
     Loaded = FMath::Clamp(Loaded, 0, Capacity);
-    const float AmmoRadius = 50.0f;
-    const float AmmoFrom = 20.0f;
-    const float AmmoSweep = 60.0f;
-    const FLinearColor Track(1.0f, 1.0f, 1.0f, 0.20f);
-    if (bContinuous)
-    {
-        Arc(Center, AmmoRadius, AmmoFrom, AmmoFrom + AmmoSweep, 2.0f, Track);
-        Arc(Center, AmmoRadius, AmmoFrom, AmmoFrom + AmmoSweep * Loaded / Capacity, 2.0f, White);
-        return Layer + 3;
-    }
-    const float Step = AmmoSweep / Capacity;
-    for (int32 Index = 0; Index < Capacity; ++Index)
-    {
-        const float Begin = AmmoFrom + Step * Index;
-        Arc(Center, AmmoRadius, Begin, Begin + Step * 0.70f, 3.0f, Index < Loaded ? White : Track);
-    }
+    // 弹药细轨道独立于角落数字 保持准星右下短弧
+    BBBCombatAmmoRail::Paint(Elements, Geometry, Layer, Loaded, Capacity, bContinuous, White);
     return Layer + 3;
 }
