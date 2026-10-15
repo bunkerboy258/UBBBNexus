@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "Widgets/Layout/SBackgroundBlur.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/Layout/SScrollBox.h"
@@ -35,10 +36,16 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
                                               return FLinearColor(1.0f, 1.0f, 1.0f, GetQuickSelectionOpacity());
                                           })[SNew(SBox).WidthOverride(900.0f)[SAssignNew(QuickBar, SHorizontalBox)]]] +
         SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(0.0f, 0.0f, 0.0f, 24.0f)
-            [SNew(SVerticalBox)
-                + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
-                    [SNew(STextBlock).Text(FText::FromString(TEXT("G 使用  TAB+数字切换"))).Font(BBBItemUI::Font(14))]
-                + SVerticalBox::Slot().AutoHeight()[SAssignNew(ConsumableBar, SHorizontalBox)]] +
+            [SNew(STextBlock)
+                .Visibility_Lambda([this]()
+                {
+                    const ABBBPlayerController *Controller = GetItemController();
+                    const ABBBConsumable *Consumable = Controller ? Cast<ABBBConsumable>(Controller->GetActiveItem()) : nullptr;
+                    return !bBackpackOpen && IsValid(Consumable) && !Consumable->IsReleased()
+                        ? EVisibility::HitTestInvisible : EVisibility::Collapsed;
+                })
+                .Text(FText::FromString(TEXT("左键 使用")))
+                .Font(BBBItemUI::Font(14))] +
         SOverlay::Slot()[SNew(SOverlay).Visibility_Lambda(
                              [this]()
                              {

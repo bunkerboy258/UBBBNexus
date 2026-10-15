@@ -206,18 +206,6 @@ void UBBBPlayerItemView::RefreshItems()
     }
     RefreshDetail();
     QuickBar->ClearChildren();
-    if (ConsumableBar)
-    {
-        ConsumableBar->ClearChildren();
-        int32 Start = 0;
-        int32 Count = 0;
-        Controller->GetConsumableQuickRange(Start, Count);
-        for (int32 Index = 0; Index < Count; ++Index)
-        {
-            ConsumableBar->AddSlot().AutoWidth().Padding(4.0f)
-                [SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Index).Compact(true).Width(78.0f).Height(58.0f)];
-        }
-    }
     BackpackSlots->ClearChildren();
     EquipmentSlots->ClearChildren();
     int32 QuickStart = 0;
