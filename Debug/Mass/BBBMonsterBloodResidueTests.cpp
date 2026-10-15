@@ -9,6 +9,8 @@
 #include "Components/BoxComponent.h"
 #include "Components/DecalComponent.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialExpressionConstant.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBloodPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterBloodPresentationSubsystem.h"
 
@@ -18,6 +20,17 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterBloodResidueTest, "UBBB.Mass.ZombieB
 
 bool FBBBMonsterBloodResidueTest::RunTest(const FString& Parameters)
 {
+    auto* ResidueMaterial = LoadObject<UMaterial>(nullptr,
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Effects/Materials/M_BBBZombieBloodResidue.M_BBBZombieBloodResidue"));
+    if (!TestNotNull(TEXT("正式地面血迹材质"), ResidueMaterial))
+    {
+        return false;
+    }
+    const auto* ResidueData = ResidueMaterial->GetEditorOnlyData();
+    const auto* Specular = Cast<UMaterialExpressionConstant>(ResidueData->Specular.Expression);
+    const auto* Metallic = Cast<UMaterialExpressionConstant>(ResidueData->Metallic.Expression);
+    TestTrue(TEXT("血迹镜面反射不在阴影中形成灰白色覆盖"), Specular && Specular->R <= 0.1f);
+    TestTrue(TEXT("血迹使用非金属表面"), Metallic && Metallic->R == 0.0f);
     const auto Initialization = UWorld::InitializationValues().AllowAudioPlayback(false)
         .CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false).ShouldSimulatePhysics(false);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true,

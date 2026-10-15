@@ -15,6 +15,7 @@
 #include "MeshDescription.h"
 #include "StaticMeshAttributes.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionCustom.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/PoseableMeshComponent.h"
@@ -232,6 +233,21 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterSeveringTest, "UBBB.Mass.ZombieSever
 bool FBBBMonsterSeveringTest::RunTest(const FString&)
 {
     FEditorScriptExecutionGuard ScriptGuard;
+    const auto CheckTissueSurface = [this](UMaterialInterface* Surface)
+    {
+        auto* Material = Surface ? Surface->GetMaterial() : nullptr;
+        if (!TestNotNull(TEXT("断面具有组织材质"), Material))
+        {
+            return;
+        }
+        const auto* Data = Material->GetEditorOnlyData();
+        const auto* Roughness = Cast<UMaterialExpressionConstant>(Data->Roughness.Expression);
+        const auto* Specular = Cast<UMaterialExpressionConstant>(Data->Specular.Expression);
+        const auto* Metallic = Cast<UMaterialExpressionConstant>(Data->Metallic.Expression);
+        TestTrue(TEXT("断面粗糙度抑制大面积银白高光"), Roughness && Roughness->R >= 0.6f);
+        TestTrue(TEXT("断面镜面反射不盖住暗红组织"), Specular && Specular->R <= 0.15f);
+        TestTrue(TEXT("断面使用非金属组织表面"), Metallic && Metallic->R == 0.0f);
+    };
     const auto Initialization = UWorld::InitializationValues().AllowAudioPlayback(false)
         .CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false).ShouldSimulatePhysics(false);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
@@ -251,7 +267,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
     for (int32 Index = 0; Index < Names.Num(); ++Index)
     {
         const FString Gender = Index < 6 ? TEXT("Male") : TEXT("Female");
-        const FString Root = TEXT("/Game/_Project/System/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Names[Index] + TEXT("/");
+        const FString Root = TEXT("/Game/_Project/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Names[Index] + TEXT("/");
         const FString ActorName = TEXT("BP_BBBZombie") + Names[Index] + TEXT("Presentation");
         const FString DefinitionName = TEXT("DA_BBBZombie") + Names[Index] + TEXT("Definition");
         UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr, *(Root + ActorName + TEXT(".") + ActorName + TEXT("_C")));
@@ -281,6 +297,7 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
                 return false;
             }
             TestEqual(TEXT("共享伤口只有一个表面材质槽"), Definition->WoundGeometry->GetMaterials().Num(), 1);
+            CheckTissueSurface(Definition->WoundGeometry->GetMaterials()[0].MaterialInterface);
             const auto* CutGeometry = Definition->WoundGeometry->GetMeshDescription(0);
             if (!TestNotNull(TEXT("断口保留可核验拓扑"), CutGeometry))
             {
@@ -459,10 +476,25 @@ bool FBBBMonsterSeveringTest::RunTest(const FString&)
             TestTrue(TEXT("正式部件不使用无法动态模拟的逐三角形替代"), Body->CollisionTraceFlag != CTF_UseComplexAsSimple);
             TestTrue(Names[Index] + TEXT(" ") + Part.Bone.ToString() + TEXT("脱落部件没有未封口几何边"), HasClosedPartGeometry(*Part.DetachedMesh));
             TestTrue(TEXT("封口不是空几何"), !Part.CapMesh->GetBoundingBox().GetSize().IsNearlyZero());
+            CheckTissueSurface(Part.CapMesh->GetMaterial(0));
+            for (const auto& Slot : Part.DetachedMesh->GetStaticMaterials())
+            {
+                if (Slot.MaterialSlotName == TEXT("CutSurface"))
+                {
+                    CheckTissueSurface(Slot.MaterialInterface);
+                }
+            }
             TestFalse(TEXT("封口包围盒没有无效数值"), Part.CapMesh->GetBounds().ContainsNaN());
             TestNotNull(TEXT("近距离姿态部件完整"), Part.PoseMesh.Get());
             if (Part.PoseMesh)
             {
+                for (const auto& Slot : Part.PoseMesh->GetMaterials())
+                {
+                    if (Slot.MaterialSlotName == TEXT("CutSurface"))
+                    {
+                        CheckTissueSurface(Slot.MaterialInterface);
+                    }
+                }
                 const auto* PoseModel = Part.PoseMesh->GetImportedModel();
                 if (!TestNotNull(TEXT("姿态部件保留可核验模型"), PoseModel)
                     || !TestEqual(TEXT("姿态部件不保留全身额外LOD"), PoseModel->LODModels.Num(), 1))
@@ -554,7 +586,7 @@ bool FBBBMonsterGibPoolTest::RunTest(const FString&)
         World->DestroyWorld(false);
         World->GetOutermost()->SetDirtyFlag(false);
     };
-    const FString Root = TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/Variants/Connor/");
+    const FString Root = TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Connor/");
     UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
         *(Root + TEXT("BP_BBBZombieConnorPresentation.BP_BBBZombieConnorPresentation_C")));
     auto* Definition = LoadObject<UBBBMonsterDefinition>(nullptr,
@@ -679,7 +711,7 @@ bool FBBBMonsterGibFlightTest::RunTest(const FString&)
     const TCHAR* Names[] = {TEXT("Connor"), TEXT("Alice")};
     for (int32 Index = 0; Index < 2; ++Index)
     {
-        const FString Root = FString::Printf(TEXT("/Game/_Project/System/Mass/Monster/Zombie/%s/Variants/%s/"),
+        const FString Root = FString::Printf(TEXT("/Game/_Project/Mass/Monster/Zombie/%s/Variants/%s/"),
             Index == 0 ? TEXT("Male") : TEXT("Female"), Names[Index]);
         UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
             *(Root + FString::Printf(TEXT("BP_BBBZombie%sPresentation.BP_BBBZombie%sPresentation_C"), Names[Index], Names[Index])));
@@ -736,7 +768,7 @@ bool FBBBMonsterGibLandingTest::RunTest(const FString&)
             World->GetOutermost()->SetDirtyFlag(false);
         }
     };
-    const FString Root = TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/Variants/Connor/");
+    const FString Root = TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Connor/");
     UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
         *(Root + TEXT("BP_BBBZombieConnorPresentation.BP_BBBZombieConnorPresentation_C")));
     auto* Definition = LoadObject<UBBBMonsterDefinition>(nullptr,
@@ -830,7 +862,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterDefaultWoundsTest, "UBBB.Mass.Zombie
 
 bool FBBBMonsterDefaultWoundsTest::RunTest(const FString&)
 {
-    const FString Root = TEXT("/Game/_Project/System/Mass/Monster/Zombie/");
+    const FString Root = TEXT("/Game/_Project/Mass/Monster/Zombie/");
     for (int32 Index = 0; Index < 2; ++Index)
     {
         const FString Gender = Index == 0 ? TEXT("Male") : TEXT("Female");
