@@ -49,6 +49,7 @@ void FBBBShotgunParseProcessor::Update(FBBBShotgunParseUpdateContext &Context)
     Input.bLoadAmmoRequested = false;
     Input.bInterruptReloadRequested = false;
     Input.bReloadCycleEnded = false;
+    Input.bReloadFinishEnded = false;
 
     if (Context.bCausal)
     {

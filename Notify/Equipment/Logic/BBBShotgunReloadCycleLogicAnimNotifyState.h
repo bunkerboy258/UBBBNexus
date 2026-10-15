@@ -11,6 +11,10 @@ class ABBB_EVAC_API UBBBShotgunReloadCycleLogicAnimNotifyState final : public UA
     GENERATED_BODY()
 
 public:
+    /** 仅收手蒙太奇启用 防止旧装填段结束提前允许射击 */
+    UPROPERTY(EditAnywhere, Category = "Reload", meta = (DisplayName = "收手阶段", ToolTip = "仅收手动作启用 结束后允许排队射击 装入一发的动作保持关闭"))
+    bool bFinishing = false;
+
     /**
      * 仅向直接所属霰弹枪提交结束输入
      * @param MeshComp	通知直接所属网格

@@ -5,7 +5,10 @@
 /** 一发装填动作与收手已自然完成 */
 struct FBBBShotgunReloadCycleEndLocalControlPacket final
 {
-    /** @return 无字段通知始终有效 */
+    /** 本通知来自收手动作 而不是一发装入动作 */
+    bool bFinishing = false;
+
+    /** @return 两种结束阶段均有效 */
     bool IsValid() const
     {
         return true;
@@ -24,6 +27,7 @@ struct FBBBShotgunReloadCycleEndLocalControlPacket final
      */
     void Apply(FBBBShotgunActionInputState &State) const
     {
-        State.bReloadCycleEnded = true;
+        State.bReloadCycleEnded = !bFinishing;
+        State.bReloadFinishEnded = bFinishing;
     }
 };

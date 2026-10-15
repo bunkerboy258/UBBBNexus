@@ -36,12 +36,20 @@ void FBBBShotgunAnimationProcessor::Update(FBBBShotgunAnimationUpdateContext &Co
 
     if (Action.bIsReloading && (!State.bIsReloading || State.ReloadSequence != Action.ReloadSequence))
     {
-        FBBBShotgunPresentationProcessor::SubmitCharacterMontage(Context, Context.Definition.CharacterReloadMontage);
-        FBBBShotgunPresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentReloadMontage);
+        const bool bStarting = Context.Definition.bReloadOneRoundAtATime && !State.bIsReloading;
+        FBBBShotgunPresentationProcessor::SubmitCharacterMontage(Context,
+            bStarting ? Context.Definition.CharacterReloadStartMontage : Context.Definition.CharacterReloadMontage);
+        FBBBShotgunPresentationProcessor::PlayEquipmentMontage(Context,
+            bStarting ? Context.Definition.EquipmentReloadStartMontage : Context.Definition.EquipmentReloadMontage);
     }
 
     if (!Action.bIsReloading && State.bIsReloading)
     {
+        if (Action.bReloadCompletedThisFrame && Context.Definition.bReloadOneRoundAtATime)
+        {
+            FBBBShotgunPresentationProcessor::SubmitCharacterMontage(Context, Context.Definition.CharacterReloadEndMontage);
+            FBBBShotgunPresentationProcessor::PlayEquipmentMontage(Context, Context.Definition.EquipmentReloadEndMontage);
+        }
         // 装匣成功后让武器动作自然结束 中断只停止武器自身动画
         if (!Action.bReloadCompletedThisFrame)
         {

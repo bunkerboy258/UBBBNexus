@@ -26,6 +26,7 @@ namespace
         Input.bLoadAmmoRequested = false;
         Input.bInterruptReloadRequested = false;
         Input.bReloadCycleEnded = false;
+        Input.bReloadFinishEnded = false;
     }
 }
 
@@ -40,6 +41,7 @@ void FBBBShotgunActionProcessor::Stop(FBBBShotgunRuntimeData &Data)
 {
     Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
+    Data.Action.ActionState.bReloadFinishing = false;
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
     Data.Action.ActionState.bFireAfterReload = false;
     Data.Action.ActionState.NextFireTimeSeconds = 0.0f;
@@ -107,32 +109,42 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
     }
 
     // 装入与生命周期结束同帧到达时保留装填成功事实 避免把正常完成误判为打断
-    if (Input.bInterruptReloadRequested && !State.bReloadCompletedThisFrame)
+    if (Input.bInterruptReloadRequested && State.bIsReloading && !State.bReloadCompletedThisFrame)
     {
         Stop(Context.RuntimeData);
     }
 
-    if (Context.Definition.bReloadOneRoundAtATime && State.bIsReloading && bPrimaryPressed && State.LoadedAmmo > 0)
+    if (Context.Definition.bReloadOneRoundAtATime && (State.bIsReloading || State.bReloadFinishing) && bPrimaryPressed)
     {
         State.bFireAfterReload = true;
     }
 
-    if (Input.bReloadCycleEnded && Context.Definition.bReloadOneRoundAtATime && State.bIsReloading)
+    // 先消费上一个收手阶段的结束 避免本帧新进入收手时被旧周期通知提前解锁
+    if (Input.bReloadFinishEnded && State.bReloadFinishing)
     {
-        if (State.LoadedAmmo >= State.AmmoCapacity || State.bFireAfterReload)
-        {
-            State.bIsReloading = false;
-            State.bReloadCompletedThisFrame = true;
-        }
-        if (State.bIsReloading)
-        {
-            ++State.ReloadSequence;
-        }
+        State.bReloadFinishing = false;
     }
 
-    if (Input.bReloadRequested && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)
+    // 有弹时立即收手 空枪则等第一发实际装入后收手 不强迫再装一发
+    if (Context.Definition.bReloadOneRoundAtATime && State.bIsReloading
+        && (State.LoadedAmmo >= State.AmmoCapacity || (State.bFireAfterReload && State.LoadedAmmo > 0)))
     {
-        if (ensureMsgf(Context.Definition.CharacterReloadMontage && Context.Definition.EquipmentReloadMontage,
+        State.bIsReloading = false;
+        State.bReloadCompletedThisFrame = true;
+        State.bReloadFinishing = true;
+    }
+
+    if (Input.bReloadCycleEnded && Context.Definition.bReloadOneRoundAtATime && State.bIsReloading)
+    {
+        ++State.ReloadSequence;
+    }
+
+    if (Input.bReloadRequested && !State.bIsReloading && !State.bReloadFinishing && State.LoadedAmmo < State.AmmoCapacity)
+    {
+        const bool bStagesConfigured = !Context.Definition.bReloadOneRoundAtATime
+            || (Context.Definition.CharacterReloadStartMontage && Context.Definition.EquipmentReloadStartMontage
+                && Context.Definition.CharacterReloadEndMontage && Context.Definition.EquipmentReloadEndMontage);
+        if (ensureMsgf(bStagesConfigured && Context.Definition.CharacterReloadMontage && Context.Definition.EquipmentReloadMontage,
             TEXT("霰弹枪换弹缺少角色或装备蒙太奇")))
         {
             State.bIsReloading = true;
@@ -153,7 +165,7 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
         || State.bFireAfterReload;
     const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
     const float FireInterval = FMath::Max(0.01f, Context.Definition.FireInterval);
-    const bool bCanFire = bFireRequested && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0;
+    const bool bCanFire = bFireRequested && !State.bFireBlocked && !State.bIsReloading && !State.bReloadFinishing && State.LoadedAmmo > 0;
     if (!bCanFire)
     {
         State.NextFireTimeSeconds = 0.0f;

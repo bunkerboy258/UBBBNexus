@@ -35,6 +35,9 @@ struct FBBBShotgunActionState final
     /** 当前是否处于换弹流程 */
     bool bIsReloading = false;
 
+    /** 已结束装填 正在等待收手动画结束 此期间不能射击或重新换弹 */
+    bool bReloadFinishing = false;
+
     /** 装填中收到的有效开火边沿 等待本轮收手结束后执行一次 */
     bool bFireAfterReload = false;
 

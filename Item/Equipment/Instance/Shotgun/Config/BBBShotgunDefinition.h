@@ -53,6 +53,14 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|角色", meta = (DisplayName = "角色换弹蒙太奇", ToolTip = "开始或继续换弹时提交给角色播放 应与本武器换弹动作和通知时序对应"))
     TObjectPtr<UAnimMontage> CharacterReloadMontage = nullptr;
 
+    /** 逐发装填首次取弹并装入的角色动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|角色", meta = (DisplayName = "角色首次装填蒙太奇", ToolTip = "进入装填姿势并装入第一发 与武器首次装填蒙太奇等长 后续每发使用角色换弹蒙太奇"))
+    TObjectPtr<UAnimMontage> CharacterReloadStartMontage = nullptr;
+
+    /** 逐发装填结束或开火打断时恢复射击姿势 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|角色", meta = (DisplayName = "角色装填收手蒙太奇", ToolTip = "装满或请求开火后覆盖角色换弹槽位 武器收手结束通知到达后才允许射击"))
+    TObjectPtr<UAnimMontage> CharacterReloadEndMontage = nullptr;
+
     /** 本武器独立持有的角色局部空间加法后坐力序列 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|角色", meta = (DisplayName = "角色后向震动动画", ToolTip = "专属局部空间加法序列 每枪从头求值 按经过秒数播放 强度由持枪配置的后向震动权重控制"))
     TObjectPtr<UAnimSequence> CharacterRecoilAnimation = nullptr;
@@ -60,6 +68,14 @@ public:
     /** 霰弹枪换弹时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|武器", meta = (DisplayName = "武器换弹蒙太奇", ToolTip = "播放在本武器骨骼网格上 装弹和操作许可由通知驱动 不用动作时长结算弹药"))
     TObjectPtr<UAnimMontage> EquipmentReloadMontage = nullptr;
+
+    /** 首次装填的机构动作和第一发装弹通知 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|武器", meta = (DisplayName = "武器首次装填蒙太奇", ToolTip = "仅逐发装填使用 在实际装入时配置一次装弹通知 周期结束通知驱动后续循环"))
+    TObjectPtr<UAnimMontage> EquipmentReloadStartMontage = nullptr;
+
+    /** 逐发装填收手动作 结束通知释放待执行的开火请求 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|武器", meta = (DisplayName = "武器装填收手蒙太奇", ToolTip = "仅逐发装填使用 配置周期结束通知并勾选收手阶段 不配置装弹通知 与角色收手动作等长"))
+    TObjectPtr<UAnimMontage> EquipmentReloadEndMontage = nullptr;
 
     /** 霰弹枪开火时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|霰弹枪|动画|武器", meta = (DisplayName = "武器开火蒙太奇", ToolTip = "每次开火更新在本武器网格播放 同帧多枪不逐个排队 特效和音效由动画通知驱动"))
