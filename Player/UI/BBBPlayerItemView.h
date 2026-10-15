@@ -92,7 +92,6 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
 
     /** 两处格子均只引用同一个背包索引 */
     TSharedPtr<SHorizontalBox> QuickBar;
-    /** 消耗品快捷栏同样只引用真实物品位置 */
     TSharedPtr<SVerticalBox> BackpackSlots;
     TSharedPtr<SVerticalBox> EquipmentSlots;
     TSharedPtr<SBox> DetailImage;
