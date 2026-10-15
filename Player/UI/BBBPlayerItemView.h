@@ -16,6 +16,14 @@ class SHorizontalBox;
 class SVerticalBox;
 class STextBlock;
 
+/** 背包右侧展示页面 与左侧存储分类独立 */
+enum class EBBBItemPanelPage : uint8
+{
+    Weapons,
+    Character,
+    Consumables
+};
+
 /** 读取玩家物品结果并转交界面输入 */
 UCLASS()
 class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
@@ -56,8 +64,6 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     void InspectSlot(int32 Slot);
     /** @return 当前查看的物品位置 */
     int32 GetInspectedSlot() const;
-    /** @return 当前是否处于穿戴页面 */
-    bool IsGearPage() const;
     /** @return 快捷切换提示当前不透明度 */
     float GetQuickSelectionOpacity() const;
 
@@ -82,10 +88,10 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     const FSlateBrush *GetDetailBrush() const;
     /** @return 角色实时预览画刷 */
     const FSlateBrush *GetCharacterBrush() const;
-    /** @param bMisc 是否展示杂物 @return 已处理 */
+    /** @param Type\t左侧存储分类 @return 已处理 */
     FReply ShowStorage(EBBBItemType Type);
-    /** @param bGear 是否展示穿戴 @return 已处理 */
-    FReply ShowGear(bool bGear);
+    /** @param Page\t右侧展示页面 @return 已处理 */
+    FReply ShowPanel(EBBBItemPanelPage Page);
 
     /** 字体引用同时承担打包依赖 */
     UPROPERTY()
@@ -109,7 +115,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     int32 InspectedSlot = INDEX_NONE;
     FGuid InspectedInstance;
     EBBBItemType StoragePage = EBBBItemType::Equipment;
-    bool bGearPage = false;
+    EBBBItemPanelPage PanelPage = EBBBItemPanelPage::Weapons;
     bool bQuickBarHeld = false;
     TSharedPtr<STextBlock> StatusText;
     /** 上次收到的操作结果版本 */

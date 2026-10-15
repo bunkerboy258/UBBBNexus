@@ -37,10 +37,6 @@ bool UBBBPlayerItemView::IsBackpackOpen() const
 {
     return bBackpackOpen;
 }
-bool UBBBPlayerItemView::IsGearPage() const
-{
-    return bGearPage;
-}
 int32 UBBBPlayerItemView::GetInspectedSlot() const
 {
     return InspectedSlot;
@@ -99,7 +95,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     }
     InspectedInstance = Controller ? Controller->GetItemDisplayData(InspectedSlot).InstanceId : FGuid();
     StoragePage = EBBBItemType::Equipment;
-    bGearPage = false;
+    PanelPage = EBBBItemPanelPage::Weapons;
     CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
     CharacterPreview->Open(Controller ? Controller->GetPawn() : nullptr);
     CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
@@ -159,9 +155,9 @@ FReply UBBBPlayerItemView::ShowStorage(EBBBItemType Type)
     RefreshItems();
     return FReply::Handled();
 }
-FReply UBBBPlayerItemView::ShowGear(bool bGear)
+FReply UBBBPlayerItemView::ShowPanel(EBBBItemPanelPage Page)
 {
-    bGearPage = bGear;
+    PanelPage = Page;
     RefreshItems();
     return FReply::Handled();
 }
@@ -245,25 +241,26 @@ void UBBBPlayerItemView::RefreshItems()
     TSharedRef<SUniformGridPanel> Right = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
     int32 RightStart = 0;
     int32 RightCount = Controller->GetQuickAccessSlotCount();
-    if (StoragePage == EBBBItemType::Consumable && !bGearPage)
+    const bool bCharacterPage = PanelPage == EBBBItemPanelPage::Character;
+    if (PanelPage == EBBBItemPanelPage::Consumables)
     {
         Controller->GetConsumableQuickRange(RightStart, RightCount);
     }
-    if (bGearPage)
+    if (bCharacterPage)
     {
         RightCount = WearNames.Num();
     }
     for (int32 Position = 0; Position < RightCount; ++Position)
     {
         Right->AddSlot(
-            bGearPage ? Position % 2 : 0,
-            bGearPage
+            bCharacterPage ? Position % 2 : 0,
+            bCharacterPage
                 ? Position / 2
                 : Position)[SNew(SBBBPlayerItemSlot)
                                 .View(this)
-                                .Slot(bGearPage ? Start + Position : RightStart + Position)
-                                .PositionLabel(bGearPage ? BBBItemText::WearPosition(WearNames[Position]) : FText::GetEmpty())
-                                .Width(bGearPage ? 162.0f : 340.0f)
+                                .Slot(bCharacterPage ? Start + Position : RightStart + Position)
+                                .PositionLabel(bCharacterPage ? BBBItemText::WearPosition(WearNames[Position]) : FText::GetEmpty())
+                                .Width(bCharacterPage ? 162.0f : 340.0f)
                                 .Height(126.0f)];
     }
     EquipmentSlots->AddSlot().AutoHeight()[Right];
@@ -281,8 +278,16 @@ void UBBBPlayerItemView::RefreshItems()
 bool UBBBPlayerItemView::SelectSlot(int32 SlotIndex)
 {
     ABBBPlayerController *Controller = GetItemController();
-    return Controller && SlotIndex >= INDEX_NONE && SlotIndex < Controller->GetQuickAccessSlotCount() &&
-           Controller->SubmitItemSelect(SlotIndex);
+    if (!Controller)
+    {
+        return false;
+    }
+    int32 ConsumableStart = 0;
+    int32 ConsumableCount = 0;
+    Controller->GetConsumableQuickRange(ConsumableStart, ConsumableCount);
+    const bool bWeaponSlot = SlotIndex >= INDEX_NONE && SlotIndex < Controller->GetQuickAccessSlotCount();
+    const bool bConsumableSlot = SlotIndex >= ConsumableStart && SlotIndex < ConsumableStart + ConsumableCount;
+    return (bWeaponSlot || bConsumableSlot) && Controller->SubmitItemSelect(SlotIndex);
 }
 
 bool UBBBPlayerItemView::MoveItem(int32 Source, int32 Target, const APawn *SourcePawn, FGuid InstanceId)
@@ -321,7 +326,7 @@ bool UBBBPlayerItemView::EquipItem(int32 Source, const APawn *SourcePawn, FGuid 
 
 FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, const FKeyEvent &Event)
 {
-    if (bBackpackOpen)
+    if (bBackpackOpen && PanelPage != EBBBItemPanelPage::Character)
     {
         const FKey Keys[] = {EKeys::One, EKeys::Two, EKeys::Three, EKeys::Four, EKeys::Five};
         for (int32 SlotIndex = 0; SlotIndex < UE_ARRAY_COUNT(Keys); ++SlotIndex)
@@ -332,7 +337,7 @@ FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, con
                 {
                     int32 Start = 0;
                     int32 Count = 0;
-                    if (StoragePage == EBBBItemType::Consumable)
+                    if (PanelPage == EBBBItemPanelPage::Consumables)
                     {
                         GetItemController()->GetConsumableQuickRange(Start, Count);
                     }

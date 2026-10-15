@@ -96,18 +96,19 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                         .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.92f))]]);
     const auto TabButton = [this](const FText &Text, EBBBItemType Type)
     {
-        return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
+        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Storage.%d"), static_cast<int32>(Type))))
+            .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left).OnClicked_Lambda(
             [this, Type]()
             {
                 return ShowStorage(Type);
             })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
                    .Text(Text)
-                   .Font(ChineseArtFont(22))
+                   .Font(ChineseArtFont(18))
                    .ColorAndOpacity_Lambda(
                        [this, Type]()
                        {
                            return StoragePage == Type ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
-                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Left).Padding(16.0f, 0.0f, 0.0f, 0.0f)
+                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Center)
                 [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
                     [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
                         .Visibility_Lambda([this, Type]()
@@ -115,10 +116,10 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             return StoragePage == Type ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(60.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Equipment, EBBBItemType::Equipment));
-    Place(220.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Wearables, EBBBItemType::Wearable));
-    Place(380.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
-    Place(540.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
+    Place(60.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Weapons, EBBBItemType::Equipment));
+    Place(280.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Wearables, EBBBItemType::Wearable));
+    Place(500.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
+    Place(720.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
     Place(StorageLeft, 608.0f, 862.0f, 398.0f,
           SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));
@@ -141,30 +142,32 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         68.0f, 620.0f, 844.0f, 373.0f,
         SNew(SScrollBox).ExternalScrollbar(Bar).Orientation(Orient_Vertical).ScrollBarThickness(FVector2D(7.0f, 7.0f)) +
             SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
-    Place(1000.0f, 160.0f, 350.0f, 710.0f, SAssignNew(EquipmentSlots, SVerticalBox));
-    const auto MakeNavigation = [this](const FText &Text, bool bGear)
+    Place(1000.0f, 160.0f, 350.0f, 710.0f, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
+    const auto MakeNavigation = [this](const FText &Text, EBBBItemPanelPage Page)
     {
-        return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
-            [this, bGear]()
+        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Panel.%d"), static_cast<int32>(Page))))
+            .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left).OnClicked_Lambda(
+            [this, Page]()
             {
-                return ShowGear(bGear);
+                return ShowPanel(Page);
             })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
                    .Text(Text)
-                   .Font(ChineseArtFont(23))
+                   .Font(ChineseArtFont(18))
                    .ColorAndOpacity_Lambda(
-                       [this, bGear]()
+                       [this, Page]()
                        {
-                           return bGearPage == bGear ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
-                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Left).Padding(18.0f, 0.0f, 0.0f, 0.0f)
+                           return PanelPage == Page ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
+                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Center)
                 [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
                     [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
-                        .Visibility_Lambda([this, bGear]()
+                        .Visibility_Lambda([this, Page]()
                         {
-                            return bGearPage == bGear ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+                            return PanelPage == Page ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(1485.0f, 41.0f, 175.0f, 50.0f, MakeNavigation(BBBItemText::QuickBar, false));
-    Place(1700.0f, 41.0f, 120.0f, 50.0f, MakeNavigation(BBBItemText::Gear, true));
+    Place(1000.0f, 41.0f, 180.0f, 40.0f, MakeNavigation(BBBItemText::Weapons, EBBBItemPanelPage::Weapons));
+    Place(1280.0f, 41.0f, 180.0f, 40.0f, MakeNavigation(BBBItemText::Character, EBBBItemPanelPage::Character));
+    Place(1560.0f, 41.0f, 180.0f, 40.0f, MakeNavigation(BBBItemText::Consumables, EBBBItemPanelPage::Consumables));
     Place(1420.0f, 115.0f, 435.0f, 765.0f,
           SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
               [this]()

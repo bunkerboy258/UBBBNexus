@@ -5,10 +5,9 @@
 namespace BBBItemText
 {
 inline const FText Backpack = NSLOCTEXT("BBBPlayerItems", "Backpack", "背包");
-inline const FText QuickBar = NSLOCTEXT("BBBPlayerItems", "QuickBar", "快捷栏");
-inline const FText Gear = NSLOCTEXT("BBBPlayerItems", "Gear", "穿戴");
-inline const FText Equipment = NSLOCTEXT("BBBPlayerItems", "Equipment", "装备");
-inline const FText Wearables = NSLOCTEXT("BBBPlayerItems", "Wearables", "穿戴物");
+inline const FText Weapons = NSLOCTEXT("BBBPlayerItems", "Weapons", "武器");
+inline const FText Character = NSLOCTEXT("BBBPlayerItems", "Character", "角色");
+inline const FText Wearables = NSLOCTEXT("BBBPlayerItems", "Wearables", "穿戴");
 inline const FText Consumables = NSLOCTEXT("BBBPlayerItems", "Consumables", "消耗品");
 inline const FText Misc = NSLOCTEXT("BBBPlayerItems", "Misc", "杂物");
 inline const FText Return = NSLOCTEXT("BBBPlayerItems", "Return", "返回");
@@ -33,6 +32,6 @@ inline FText WearPosition(const FName Slot)
     {
         return *Label;
     }
-    return Gear;
+    return Wearables;
 }
 }

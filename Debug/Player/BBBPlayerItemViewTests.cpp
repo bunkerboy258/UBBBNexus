@@ -13,9 +13,10 @@
 #include "Engine/SceneCapture2D.h"
 #include "EngineUtils.h"
 #include "Misc/ScopeExit.h"
+#include "Widgets/Input/SButton.h"
 
 /** 通过公开控制器接口验证界面请求 不访问物品系统或写入领域状态 */
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBPlayerItemViewTest, "BBB.Player.ItemView",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBPlayerItemViewTest, "BBB.Player.ItemView.Interaction",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
 bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
@@ -89,6 +90,78 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     View->SetBackpackOpen(true);
     TestEqual(TEXT("人物捕获不建立额外世界上下文"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);
     TestEqual(TEXT("捕获演员只生成在玩家世界"), CaptureCount(), 1);
+    TFunction<TSharedPtr<SWidget>(const TSharedRef<SWidget> &, FName)> FindTagged;
+    FindTagged = [&FindTagged](const TSharedRef<SWidget> &Node, FName Tag) -> TSharedPtr<SWidget>
+    {
+        if (Node->GetTag() == Tag)
+        {
+            return Node;
+        }
+        FChildren *Children = Node->GetChildren();
+        for (int32 Index = 0; Index < Children->Num(); ++Index)
+        {
+            if (TSharedPtr<SWidget> Found = FindTagged(Children->GetChildAt(Index), Tag))
+            {
+                return Found;
+            }
+        }
+        return nullptr;
+    };
+    const auto Click = [&](FName Tag)
+    {
+        const TSharedPtr<SWidget> Button = FindTagged(Widget, Tag);
+        if (TestTrue(FString::Printf(TEXT("导航按钮存在 %s"), *Tag.ToString()),
+            Button.IsValid() && Button->GetType() == TEXT("SButton")))
+        {
+            StaticCastSharedPtr<SButton>(Button)->SimulateClick();
+        }
+    };
+    TFunction<int32(const TSharedRef<SWidget> &)> CountSlots;
+    CountSlots = [&CountSlots](const TSharedRef<SWidget> &Node)
+    {
+        int32 Count = Node->GetType() == TEXT("SBBBPlayerItemSlot") ? 1 : 0;
+        FChildren *Children = Node->GetChildren();
+        for (int32 Index = 0; Index < Children->Num(); ++Index)
+        {
+            Count += CountSlots(Children->GetChildAt(Index));
+        }
+        return Count;
+    };
+    const TSharedPtr<SWidget> PanelSlots = FindTagged(Widget, TEXT("Backpack.PanelSlots"));
+    if (!TestTrue(TEXT("右侧物品展示面板存在"), PanelSlots.IsValid()))
+    {
+        return false;
+    }
+    int32 ConsumableStart = 0;
+    int32 ConsumableCount = 0;
+    Controller->GetConsumableQuickRange(ConsumableStart, ConsumableCount);
+    const auto PressNumber = [&](FKey Key, int32 ExpectedSlot)
+    {
+        TestTrue(TEXT("数字键由背包界面处理"),
+            Widget->OnPreviewKeyDown(FGeometry(), FKeyEvent(Key, FModifierKeysState(), 0, false, 0, 0)).IsEventHandled());
+        Character->Tick(1.0f / 60.0f);
+        TestEqual(TEXT("角色消费输入后选中当前右侧快捷位"), Controller->GetSelectedItemSlot(), ExpectedSlot);
+    };
+    TestEqual(TEXT("默认右侧显示武器快捷位"), CountSlots(PanelSlots.ToSharedRef()), Controller->GetQuickAccessSlotCount());
+    Click(TEXT("Backpack.Panel.2"));
+    TestEqual(TEXT("消耗品页显示真实快捷位数量"), CountSlots(PanelSlots.ToSharedRef()), ConsumableCount);
+    PressNumber(EKeys::Two, ConsumableStart + 1);
+    Click(TEXT("Backpack.Storage.1"));
+    PressNumber(EKeys::Three, ConsumableStart + 2);
+    TestFalse(TEXT("普通消耗品存储位不能直接作为快捷目标"), View->SelectSlot(ConsumableStart + ConsumableCount));
+    Click(TEXT("Backpack.Panel.1"));
+    TestEqual(TEXT("角色页显示全部身体穿戴位置"), CountSlots(PanelSlots.ToSharedRef()), Character->GetCharacterConfig().Item.WearSlots.Num());
+    const int32 BeforeCharacterKey = Controller->GetSelectedItemSlot();
+    Widget->OnPreviewKeyDown(FGeometry(), FKeyEvent(EKeys::Four, FModifierKeysState(), 0, false, 0, 0));
+    Character->Tick(1.0f / 60.0f);
+    TestEqual(TEXT("角色页数字键不误选武器或消耗品"),
+        Controller->GetSelectedItemSlot(), BeforeCharacterKey);
+    Click(TEXT("Backpack.Panel.0"));
+    Click(TEXT("Backpack.Storage.3"));
+    PressNumber(EKeys::Two, 1);
+    Click(TEXT("Backpack.Storage.0"));
+    Controller->SubmitItemSelect(INDEX_NONE);
+    Character->Tick(1.0f / 60.0f);
     UBBBPlayerItemPortrait *Portrait = NewObject<UBBBPlayerItemPortrait>(Controller);
     TestTrue(TEXT("建立穿脱回归捕获"), Portrait->Open(Character));
     Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet01"));

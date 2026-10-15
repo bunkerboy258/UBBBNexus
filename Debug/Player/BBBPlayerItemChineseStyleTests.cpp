@@ -17,11 +17,12 @@ bool FBBBPlayerItemChineseStyleTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("背包界面初始化"), View->Initialize());
     const TSharedRef<SWidget> Root = View->TakeWidget();
     const TSet<FString> Required = {
-        TEXT("背包"), TEXT("装备"), TEXT("穿戴物"), TEXT("消耗品"),
-        TEXT("杂物"), TEXT("快捷栏"), TEXT("穿戴"), TEXT("返回")};
+        TEXT("背包"), TEXT("武器"), TEXT("角色"), TEXT("消耗品"),
+        TEXT("杂物"), TEXT("穿戴"), TEXT("返回")};
     const TSet<FString> Removed = {
         TEXT("Bag"), TEXT("QUICKBAR"), TEXT("GEAR"), TEXT("EXIT"),
-        TEXT("EQUIPMENT"), TEXT("WEARABLES"), TEXT("CONSUMABLES"), TEXT("MISC")};
+        TEXT("EQUIPMENT"), TEXT("WEARABLES"), TEXT("CONSUMABLES"), TEXT("MISC"),
+        TEXT("装备"), TEXT("穿戴物"), TEXT("快捷栏")};
     TSet<FString> Found;
     const FSlateFontInfo Art = BBBItemUI::ChineseArtFont(22);
     TFunction<void(const TSharedRef<SWidget> &)> Visit;
