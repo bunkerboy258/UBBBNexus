@@ -2,6 +2,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemText.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
@@ -19,6 +20,12 @@ UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializ
     static ConstructorHelpers::FObjectFinder<UFontFace> Font(
         TEXT("/Game/_Project/Customization/UI/Fonts/NotoSansCJKsc_Regular.NotoSansCJKsc_Regular"));
     InterfaceFont = Font.Object;
+    static ConstructorHelpers::FObjectFinder<UFontFace> ArtFont(
+        TEXT("/Game/_ThirdParty/Fonts/NotoSansCJKsc/NotoSansCJKsc_Bold.NotoSansCJKsc_Bold"));
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> ArtMaterial(
+        TEXT("/Game/_Project/UI/Bag/Materials/M_BagChineseArt.M_BagChineseArt"));
+    InterfaceArtFont = ArtFont.Object;
+    InterfaceArtMaterial = ArtMaterial.Object;
 }
 
 ABBBPlayerController *UBBBPlayerItemView::GetItemController() const
@@ -255,7 +262,7 @@ void UBBBPlayerItemView::RefreshItems()
                 : Position)[SNew(SBBBPlayerItemSlot)
                                 .View(this)
                                 .Slot(bGearPage ? Start + Position : RightStart + Position)
-                                .PositionLabel(bGearPage ? FText::FromString(WearNames[Position].ToString().ToUpper()) : FText::GetEmpty())
+                                .PositionLabel(bGearPage ? BBBItemText::WearPosition(WearNames[Position]) : FText::GetEmpty())
                                 .Width(bGearPage ? 162.0f : 340.0f)
                                 .Height(126.0f)];
     }
@@ -266,7 +273,7 @@ void UBBBPlayerItemView::RefreshItems()
     Controller->GetItemOperationResult(Revision, Succeeded, Rejected);
     if (StatusText && Revision != ObservedOperationRevision)
     {
-        StatusText->SetText(Rejected ? FText::FromString(TEXT("ITEM CANNOT BE PLACED HERE")) : FText::GetEmpty());
+        StatusText->SetText(Rejected ? BBBItemText::PlacementRejected : FText::GetEmpty());
     }
     ObservedOperationRevision = Revision;
 }

@@ -95,7 +95,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .VAlign(VAlign_Bottom)
                            .Padding(0.0f, 4.0f)[SNew(STextBlock)
                                                     .Text(Arguments._PositionLabel)
-                                                    .Font(BBBItemUI::Font(14))
+                                                    .Font(BBBItemUI::ChineseArtFont(14))
                                                     .ColorAndOpacity(BBBItemUI::MutedText)] +
                        SOverlay::Slot()
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)

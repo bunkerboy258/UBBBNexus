@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
+#include "Materials/MaterialInterface.h"
 #include "Fonts/CompositeFont.h"
 #include "Styling/SlateTypes.h"
 #include "UObject/StrongObjectPtr.h"
@@ -80,10 +81,24 @@ inline FSlateFontInfo Font(int32 Size)
     return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/BebasNeue/BebasNeue_Bold.BebasNeue_Bold")), Size);
 }
 
-/** @param Size 字号 @return 原稿轻字重大标题 */
-inline FSlateFontInfo TitleFont(int32 Size)
+/** @param Size 字号 @return 白色字心与内收暗边的中文艺术字 */
+inline FSlateFontInfo ChineseArtFont(int32 Size)
 {
-    return FSlateFontInfo(Typeface(TEXT("/Game/_ThirdParty/Fonts/Akrobat/Akrobat_Bold.Akrobat_Bold")), Size);
+    static TStrongObjectPtr<UFontFace> Face(LoadObject<UFontFace>(nullptr,
+        TEXT("/Game/_ThirdParty/Fonts/NotoSansCJKsc/NotoSansCJKsc_Bold.NotoSansCJKsc_Bold")));
+    static TStrongObjectPtr<UMaterialInterface> Material(LoadObject<UMaterialInterface>(nullptr,
+        TEXT("/Game/_Project/UI/Bag/Materials/M_BagChineseArt.M_BagChineseArt")));
+    checkf(Face.IsValid() && Material.IsValid(), TEXT("背包中文艺术字字体或材质缺失"));
+    static const TSharedPtr<const FCompositeFont> Chinese = []()
+    {
+        TSharedPtr<FCompositeFont> Composite = MakeShared<FCompositeFont>();
+        Composite->DefaultTypeface.Fonts.AddDefaulted_GetRef().Font = FFontData(Face.Get());
+        return Composite;
+    }();
+    FSlateFontInfo Result(Chinese, Size);
+    Result.FontMaterial = Material.Get();
+    Result.LetterSpacing = 24;
+    return Result;
 }
 
 /** @param Size 字号 @return P08 使用的艺术字字体 */

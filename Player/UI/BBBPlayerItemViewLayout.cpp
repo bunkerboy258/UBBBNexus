@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemText.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
@@ -67,8 +68,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     static const FSlateColorBrush Dim(FLinearColor(0.002f, 0.003f, 0.003f, 0.82f));
     constexpr float StorageLeft = 58.0f;
     Place(StorageLeft, 20.0f, 480.0f, 160.0f,
-          SNew(STextBlock).Text(FText::FromString(TEXT("Bag"))).Font(TitleFont(76))
-              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.90f)));
+          SNew(STextBlock).Text(BBBItemText::Backpack).Font(ChineseArtFont(64))
+              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.96f)));
     Place(StorageLeft, 150.0f, 862.0f, 365.0f,
           SAssignNew(DetailImage, SBox)
               [SNew(SOverlay) +
@@ -93,15 +94,15 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                         .ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.85f))
                         .ShadowOffset(FVector2D(2.0f, 2.0f))
                         .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.92f))]]);
-    const auto TabButton = [this](const TCHAR *Text, EBBBItemType Type)
+    const auto TabButton = [this](const FText &Text, EBBBItemType Type)
     {
         return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
             [this, Type]()
             {
                 return ShowStorage(Type);
             })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
-                   .Text(FText::FromString(Text))
-                   .Font(Font(22))
+                   .Text(Text)
+                   .Font(ChineseArtFont(22))
                    .ColorAndOpacity_Lambda(
                        [this, Type]()
                        {
@@ -114,10 +115,10 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             return StoragePage == Type ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(60.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("装备"), EBBBItemType::Equipment));
-    Place(220.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("穿戴物"), EBBBItemType::Wearable));
-    Place(380.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("消耗品"), EBBBItemType::Consumable));
-    Place(540.0f, 550.0f, 130.0f, 40.0f, TabButton(TEXT("杂物"), EBBBItemType::Misc));
+    Place(60.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Equipment, EBBBItemType::Equipment));
+    Place(220.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Wearables, EBBBItemType::Wearable));
+    Place(380.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
+    Place(540.0f, 550.0f, 130.0f, 40.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
     Place(StorageLeft, 608.0f, 862.0f, 398.0f,
           SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));
@@ -141,15 +142,15 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         SNew(SScrollBox).ExternalScrollbar(Bar).Orientation(Orient_Vertical).ScrollBarThickness(FVector2D(7.0f, 7.0f)) +
             SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
     Place(1000.0f, 160.0f, 350.0f, 710.0f, SAssignNew(EquipmentSlots, SVerticalBox));
-    const auto MakeNavigation = [this](const TCHAR *Text, bool bGear)
+    const auto MakeNavigation = [this](const FText &Text, bool bGear)
     {
         return SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda(
             [this, bGear]()
             {
                 return ShowGear(bGear);
             })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
-                   .Text(FText::FromString(Text))
-                   .Font(Font(23))
+                   .Text(Text)
+                   .Font(ChineseArtFont(23))
                    .ColorAndOpacity_Lambda(
                        [this, bGear]()
                        {
@@ -162,8 +163,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             return bGearPage == bGear ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(1485.0f, 41.0f, 175.0f, 50.0f, MakeNavigation(TEXT("QUICKBAR"), false));
-    Place(1700.0f, 41.0f, 120.0f, 50.0f, MakeNavigation(TEXT("GEAR"), true));
+    Place(1485.0f, 41.0f, 175.0f, 50.0f, MakeNavigation(BBBItemText::QuickBar, false));
+    Place(1700.0f, 41.0f, 120.0f, 50.0f, MakeNavigation(BBBItemText::Gear, true));
     Place(1420.0f, 115.0f, 435.0f, 765.0f,
           SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
               [this]()
@@ -177,14 +178,15 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                   {
                       const auto *Controller = GetItemController();
                       const auto *ItemCharacter = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
-                      return ItemCharacter ? FText::FromString(FString::Printf(
-                                                 TEXT("HP  %.0f / %.0f"), ItemCharacter->GetHealth(),
-                                                 ItemCharacter->GetLifePhase() == EBBBCharacterLifePhase::Downed
-                                                     ? ItemCharacter->GetCharacterConfig().DownedHealth
-                                                     : ItemCharacter->GetCharacterConfig().MaximumHealth))
+                      return ItemCharacter ? FText::Format(BBBItemText::Health,
+                                                 FText::AsNumber(FMath::RoundToInt(ItemCharacter->GetHealth())),
+                                                 FText::AsNumber(FMath::RoundToInt(
+                                                     ItemCharacter->GetLifePhase() == EBBBCharacterLifePhase::Downed
+                                                         ? ItemCharacter->GetCharacterConfig().DownedHealth
+                                                         : ItemCharacter->GetCharacterConfig().MaximumHealth)))
                                            : FText::GetEmpty();
                   })
-              .Font(Font(16))
+              .Font(ChineseArtFont(16))
               .ColorAndOpacity(FLinearColor::White));
     static const FProgressBarStyle Health = []()
     {
@@ -205,14 +207,14 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                   {
                       return GetItemController() ? GetItemController()->GetHudHealthFraction() : 0.0f;
                   }));
-    Place(60.0f, 1033.0f, 820.0f, 24.0f, SAssignNew(StatusText, STextBlock).Font(Font(14)).ColorAndOpacity(MutedText));
+    Place(60.0f, 1033.0f, 820.0f, 24.0f, SAssignNew(StatusText, STextBlock).Font(ChineseArtFont(14)).ColorAndOpacity(MutedText));
     Place(1510.0f, 931.0f, 280.0f, 82.0f,
           SNew(SButton).ButtonStyle(ExitButton()).HAlign(HAlign_Center).VAlign(VAlign_Center).OnClicked_Lambda(
               [this]()
               {
                   GetItemController()->ToggleBackpack();
                   return FReply::Handled();
-              })[SNew(STextBlock).Text(FText::FromString(TEXT("EXIT"))).Font(ArtFont(31)).ColorAndOpacity(FLinearColor::White)]);
+              })[SNew(STextBlock).Text(BBBItemText::Return).Font(ChineseArtFont(28)).ColorAndOpacity(FLinearColor::White)]);
     return SNew(SOverlay) +
         SOverlay::Slot()[SNew(SBorder).BorderImage(&Dim).Padding(0.0f).Visibility(EVisibility::HitTestInvisible)] +
         SOverlay::Slot()[SNew(SScaleBox).Stretch(EStretch::ScaleToFill).Clipping(EWidgetClipping::ClipToBounds)

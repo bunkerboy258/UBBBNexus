@@ -7,6 +7,7 @@
 class ABBBPlayerController;
 class APawn;
 class UFontFace;
+class UMaterialInterface;
 class UBBBPlayerItemPortrait;
 class SImage;
 class SScrollBox;
@@ -89,6 +90,11 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     /** 字体引用同时承担打包依赖 */
     UPROPERTY()
     TObjectPtr<UFontFace> InterfaceFont;
+    /** 主界面中文艺术字与材质的打包依赖 */
+    UPROPERTY()
+    TObjectPtr<UFontFace> InterfaceArtFont;
+    UPROPERTY()
+    TObjectPtr<UMaterialInterface> InterfaceArtMaterial;
 
     /** 两处格子均只引用同一个背包索引 */
     TSharedPtr<SHorizontalBox> QuickBar;
