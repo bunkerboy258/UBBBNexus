@@ -116,10 +116,10 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             return StoragePage == Type ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(60.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Weapons, EBBBItemType::Equipment));
-    Place(280.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Wearables, EBBBItemType::Wearable));
-    Place(500.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
-    Place(720.0f, 568.0f, 160.0f, 36.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
+    Place(60.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Weapons, EBBBItemType::Equipment));
+    Place(280.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Wearables, EBBBItemType::Wearable));
+    Place(500.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
+    Place(720.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
     Place(StorageLeft, 608.0f, 862.0f, 398.0f,
           SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));
@@ -165,9 +165,9 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             return PanelPage == Page ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                         })]]];
     };
-    Place(1000.0f, 41.0f, 180.0f, 40.0f, MakeNavigation(BBBItemText::Weapons, EBBBItemPanelPage::Weapons));
-    Place(1280.0f, 41.0f, 180.0f, 40.0f, MakeNavigation(BBBItemText::Character, EBBBItemPanelPage::Character));
-    Place(1560.0f, 41.0f, 180.0f, 40.0f, MakeNavigation(BBBItemText::Consumables, EBBBItemPanelPage::Consumables));
+    Place(1000.0f, 41.0f, 180.0f, 46.0f, MakeNavigation(BBBItemText::Weapons, EBBBItemPanelPage::Weapons));
+    Place(1280.0f, 41.0f, 180.0f, 46.0f, MakeNavigation(BBBItemText::Character, EBBBItemPanelPage::Character));
+    Place(1560.0f, 41.0f, 180.0f, 46.0f, MakeNavigation(BBBItemText::Consumables, EBBBItemPanelPage::Consumables));
     Place(1420.0f, 115.0f, 435.0f, 765.0f,
           SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
               [this]()
