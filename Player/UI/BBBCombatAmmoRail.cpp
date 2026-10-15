@@ -13,8 +13,8 @@ void BBBCombatAmmoRail::Paint(FSlateWindowElementList &Elements, const FGeometry
     const FVector2D Size = Geometry.GetLocalSize();
     const FVector2D Center = Size * 0.5;
     const float Scale = FMath::Clamp(static_cast<float>(Size.Y / 1080.0), 0.55f, 1.6f);
-    // 已确认的弹药轨道构图 半径五十 起始二十度 跨度六十度 不随角落弹药数字布局移动
-    constexpr float Radius = 50.0f;
+    // 已确认的弹药轨道构图 半径四十 起始二十度 跨度六十度 不随角落弹药数字布局移动
+    constexpr float Radius = 40.0f;
     constexpr float From = 20.0f;
     constexpr float Sweep = 60.0f;
     const FLinearColor Track(1.0f, 1.0f, 1.0f, 0.20f);
@@ -38,14 +38,14 @@ void BBBCombatAmmoRail::Paint(FSlateWindowElementList &Elements, const FGeometry
     };
     if (bContinuous)
     {
-        Arc(From, From + Sweep, 2.0f, Track);
-        Arc(From, From + Sweep * Loaded / Capacity, 2.0f, Color);
+        Arc(From, From + Sweep, 4.0f, Track);
+        Arc(From, From + Sweep * Loaded / Capacity, 4.0f, Color);
         return;
     }
     const float Step = Sweep / Capacity;
     for (int32 Index = 0; Index < Capacity; ++Index)
     {
         const float Begin = From + Step * Index;
-        Arc(Begin, Begin + Step * 0.70f, 3.0f, Index < Loaded ? Color : Track);
+        Arc(Begin, Begin + Step * 0.70f, 6.0f, Index < Loaded ? Color : Track);
     }
 }

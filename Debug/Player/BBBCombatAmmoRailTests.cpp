@@ -19,7 +19,8 @@ bool FBBBCombatAmmoRailTest::RunTest(const FString &Parameters)
         const FVector2f Size(Height * 16.0f / 9.0f, Height);
         const FGeometry Geometry = FGeometry::MakeRoot(Size, FSlateLayoutTransform());
         const FVector2f Center = Size * 0.5f;
-        const float Radius = 50.0f * FMath::Clamp(Height / 1080.0f, 0.55f, 1.6f);
+        const float Scale = FMath::Clamp(Height / 1080.0f, 0.55f, 1.6f);
+        const float Radius = 40.0f * Scale;
         FSlateWindowElementList Elements(nullptr);
         BBBCombatAmmoRail::Paint(Elements, Geometry, 0, 3, 6, false, AmmoColor);
         const auto &Lines = Elements.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Line>();
@@ -27,7 +28,11 @@ bool FBBBCombatAmmoRailTest::RunTest(const FString &Parameters)
         int32 Filled = 0;
         for (const FSlateLineElement &Line : Lines)
         {
-            Filled += Line.GetTint().Equals(AmmoColor) ? 1 : 0;
+            if (Line.GetTint().Equals(AmmoColor))
+            {
+                ++Filled;
+                TestTrue(TEXT("弹药短刻线宽度为六"), FMath::IsNearlyEqual(Line.GetThickness(), 6.0f * Scale));
+            }
             for (const FVector2f &Point : Line.GetPoints())
             {
                 const FVector2f Offset = Point - Center;
@@ -49,6 +54,7 @@ bool FBBBCombatAmmoRailTest::RunTest(const FString &Parameters)
     const auto &HalfLines = Half.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Line>();
     if (TestEqual(TEXT("连续弹药同时绘制暗轨与剩余量"), HalfLines.Num(), 4))
     {
+        TestEqual(TEXT("连续弹药白条宽度为四"), HalfLines[3].GetThickness(), 4.0f);
         const FVector2f End = HalfLines[3].GetPoints().Last() - FVector2f(960.0f, 540.0f);
         TestTrue(TEXT("半仓连续填充终点为五十度"),
             FMath::IsNearlyEqual(FMath::RadiansToDegrees(FMath::Atan2(End.Y, End.X)), 50.0f, 0.1f));
