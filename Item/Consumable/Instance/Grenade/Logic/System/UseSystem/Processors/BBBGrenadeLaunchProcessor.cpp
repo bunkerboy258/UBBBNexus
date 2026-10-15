@@ -31,7 +31,23 @@ void FBBBGrenadeLaunchProcessor::Update(FBBBGrenadeUseUpdateContext& Context) co
         const auto* Controller = Context.Character.GetController();
         FRotator Rotation = Controller ? Controller->GetControlRotation() : Context.Character.GetActorRotation();
         Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch) + Context.Definition.PitchOffset, -75.0f, 85.0f);
-        State.LaunchTransform = FTransform(Rotation, Context.Actor.GetActorLocation(), FVector::OneVector);
+        FVector ReleasePosition = Context.Actor.GetActorLocation();
+        FVector ClearanceStart = Context.Character.GetActorLocation();
+        ClearanceStart.Z = ReleasePosition.Z;
+        FCollisionQueryParams Clearance(SCENE_QUERY_STAT(BBBGrenadeRelease), false, &Context.Character);
+        Clearance.AddIgnoredActor(&Context.Actor);
+        FHitResult Obstruction;
+        if (Context.World.SweepSingleByProfile(Obstruction, ClearanceStart, ReleasePosition, FQuat::Identity,
+            Definition->Physics.CollisionProfile, FCollisionShape::MakeSphere(Definition->Physics.Radius), Clearance))
+        {
+            if (Obstruction.bStartPenetrating)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[BBBGrenade] Release blocked by penetrating geometry"));
+                return;
+            }
+            ReleasePosition = Obstruction.Location + Obstruction.Normal;
+        }
+        State.LaunchTransform = FTransform(Rotation, ReleasePosition, FVector::OneVector);
         State.InheritedVelocity = Context.Character.GetVelocity();
     }
     if (Context.Character.HasNetworkAuthority())
