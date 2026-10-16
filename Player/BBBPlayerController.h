@@ -69,6 +69,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|界面")
     bool ShouldShowAimHud() const;
 
+    /** @param WorldPosition	枪口射线的最近命中位置或远端 @return 是否取得有效枪口射线 */
+    UFUNCTION(BlueprintPure, Category = "BBB|界面")
+    bool GetActualAimWorldPosition(FVector &WorldPosition) const;
+
     /** @param ScreenPosition	玩家视口相对像素位置 @return 是否存在可投影的枪口实际落点 */
     UFUNCTION(BlueprintPure, Category = "BBB|界面")
     bool GetActualAimScreenPosition(FVector2D &ScreenPosition) const;

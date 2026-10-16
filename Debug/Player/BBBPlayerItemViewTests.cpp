@@ -6,7 +6,15 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
+#include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
+#include "MassCommonFragments.h"
+#include "Components/BoxComponent.h"
+#include "Input/HittestGrid.h"
+#include "Types/PaintArgs.h"
+#include "Rendering/DrawElements.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
@@ -36,6 +44,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
         World->EndPlay(EEndPlayReason::Quit);
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
+        World->GetOutermost()->SetDirtyFlag(false);
     };
 
     UClass *CharacterClass = LoadClass<ABBBCharacter>(nullptr,
@@ -201,6 +210,91 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("界面读取角色处理后的选择"), Controller->GetSelectedItemSlot(), 0);
     TestTrue(TEXT("控制器区分实际装备状态"), Controller->GetItemDisplayData(0).bActive);
+    const TSharedRef<SBBBCombatHud> Hud = SNew(SBBBCombatHud).View(View);
+    const FGeometry HudGeometry = FGeometry::MakeRoot(FVector2f(1920.0f, 1080.0f), FSlateLayoutTransform());
+    FHittestGrid HudHitGrid;
+    const FPaintArgs HudArgs(nullptr, HudHitGrid, FVector2D::ZeroVector, 0.0, 0.0f);
+    TestFalse(TEXT("持枪未瞄准时准星仍隐藏"), Controller->ShouldShowAimHud());
+    FSlateWindowElementList HipFireHud(nullptr);
+    Hud->OnPaint(HudArgs, HudGeometry, FSlateRect(0.0f, 0.0f, 1920.0f, 1080.0f),
+        HipFireHud, 0, FWidgetStyle(), true);
+    const auto &AmmoTexts = HipFireHud.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Text>();
+    if (TestEqual(TEXT("未瞄准也绘制剩余弹药与容量"), AmmoTexts.Num(), 2))
+    {
+        int32 Loaded = 0;
+        int32 Capacity = 0;
+        bool bContinuous = false;
+        const ABBBEquipment *Held = Cast<ABBBEquipment>(Controller->GetActiveItem());
+        TestTrue(TEXT("弹药绘制读取真实枪械"), Held && Held->ReadAmmoDisplay(Loaded, Capacity, bContinuous));
+        TestEqual(TEXT("右下数字保持真实剩余弹药"), FString(AmmoTexts[0].GetText()), FString::FromInt(Loaded));
+        TestEqual(TEXT("右下数字保持真实容量"), FString(AmmoTexts[1].GetText()), FString::Printf(TEXT("/ %d"), Capacity));
+        for (const FSlateTextElement &Text : AmmoTexts)
+        {
+            const FVector2f Position = Text.GetPosition();
+            TestTrue(TEXT("弹药数字固定在右下角"), Position.X > 1600.0f && Position.Y > 950.0f);
+        }
+    }
+    ABBBEquipment *HeldEquipment = Cast<ABBBEquipment>(Controller->GetActiveItem());
+    FTransform Muzzle;
+    if (!TestTrue(TEXT("真实手持枪械提供枪口"), HeldEquipment && HeldEquipment->TryGetMuzzleTransform(Muzzle)))
+    {
+        return false;
+    }
+    const FVector RayStart = Muzzle.GetLocation();
+    const FVector RayDirection = Muzzle.GetUnitAxis(EAxis::X);
+    UBBBMassSubsystem *Mass = World->GetSubsystem<UBBBMassSubsystem>();
+    if (!TestNotNull(TEXT("枪口落点使用公开实体碰撞"), Mass))
+    {
+        return false;
+    }
+    FMassEntityManager &Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
+    const FMassArchetypeHandle AimArchetype = Manager.CreateArchetype({FTransformFragment::StaticStruct()});
+    const FMassEntityHandle NearEntity = Manager.CreateEntity(AimArchetype);
+    const FMassEntityHandle FarEntity = Manager.CreateEntity(AimArchetype);
+    FBBBMassCollisionBody NearBody;
+    NearBody.Entity = NearEntity;
+    NearBody.Center = RayStart + RayDirection * 2000.0;
+    NearBody.Radius = 25.0f;
+    FBBBMassCollisionBody FarBody = NearBody;
+    FarBody.Entity = FarEntity;
+    FarBody.Center = RayStart + RayDirection * 4000.0;
+    Mass->AddCollisionBody(FarBody);
+    Mass->AddCollisionBody(NearBody);
+    FVector AimImpact;
+    TestTrue(TEXT("无表现演员的实体仍能提供枪口落点"), Controller->GetActualAimWorldPosition(AimImpact));
+    TestTrue(TEXT("白圈落在最近实体表面"), AimImpact.Equals(RayStart + RayDirection * 1975.0, 0.1));
+    AActor *AimWall = World->SpawnActor<AActor>();
+    UBoxComponent *AimWallBox = NewObject<UBoxComponent>(AimWall);
+    AimWall->SetRootComponent(AimWallBox);
+    AimWallBox->SetBoxExtent(FVector(15.0, 200.0, 200.0));
+    AimWallBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    AimWallBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+    AimWallBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+    AimWallBox->RegisterComponent();
+    AimWall->SetActorRotation(Muzzle.GetRotation());
+    AimWall->SetActorLocation(RayStart + RayDirection * 1000.0);
+    Controller->GetActualAimWorldPosition(AimImpact);
+    TestTrue(TEXT("墙前遮挡优先于墙后僵尸"), AimImpact.Equals(RayStart + RayDirection * 985.0, 0.1));
+    AimWall->SetActorLocation(RayStart + RayDirection * 7000.0);
+    Controller->GetActualAimWorldPosition(AimImpact);
+    TestTrue(TEXT("僵尸后方墙面不覆盖实体落点"), AimImpact.Equals(RayStart + RayDirection * 1975.0, 0.1));
+    Mass->BeginCollisionFrame();
+    NearBody.Center = RayStart + RayDirection * 2300.0;
+    Mass->AddCollisionBody(NearBody);
+    Controller->GetActualAimWorldPosition(AimImpact);
+    TestTrue(TEXT("白圈跟随实体新位置"), AimImpact.Equals(RayStart + RayDirection * 2275.0, 0.1));
+    Mass->BeginCollisionFrame();
+    NearBody.Center += Muzzle.GetUnitAxis(EAxis::Y) * 250.0;
+    Mass->AddCollisionBody(NearBody);
+    Controller->GetActualAimWorldPosition(AimImpact);
+    TestTrue(TEXT("目标移出射线后白圈立即回到场景命中"), AimImpact.Equals(RayStart + RayDirection * 6985.0, 0.1));
+    Mass->BeginCollisionFrame();
+    AimWallBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Controller->GetActualAimWorldPosition(AimImpact);
+    TestTrue(TEXT("目标与遮挡移除后不残留旧白圈位置"), AimImpact.Equals(RayStart + RayDirection * 100000.0, 0.1));
+    Manager.DestroyEntity(NearEntity);
+    Manager.DestroyEntity(FarEntity);
+    AimWall->Destroy();
     TestTrue(TEXT("界面提交拖动交换"), View->MoveItem(0, 1, Character, First));
     TestTrue(TEXT("界面不提前改变槽位内容"), Controller->GetItemDisplayData(0).InstanceId == First);
     Character->Tick(1.0f / 60.0f);
@@ -232,6 +326,12 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestNull(TEXT("收起后实际空手"), Controller->GetActiveItem());
+    FSlateWindowElementList UnarmedHud(nullptr);
+    Hud->OnPaint(HudArgs, HudGeometry, FSlateRect(0.0f, 0.0f, 1920.0f, 1080.0f),
+        UnarmedHud, 0, FWidgetStyle(), true);
+    TestEqual(TEXT("空手时不显示旧枪械弹药"),
+        UnarmedHud.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Text>().Num(), 0);
+    TestFalse(TEXT("空手时不保留枪口落点"), Controller->GetActualAimWorldPosition(AimImpact));
     TestEqual(TEXT("快捷栏使用前五格"), Controller->GetQuickAccessSlotCount(), 5);
     TestEqual(TEXT("四类背包和身体穿戴共一百一十格"), Controller->GetItemSlotCount(), 110);
     TestEqual(TEXT("满生命显示完整白线"), Controller->GetHudHealthFraction(), 1.0f);

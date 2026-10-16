@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "Engine/World.h"
 
 float ABBBPlayerController::GetHudHealthFraction() const
@@ -24,9 +25,9 @@ bool ABBBPlayerController::ShouldShowAimHud() const
         && IsValid(PawnCharacter->GetHeldEquipment());
 }
 
-bool ABBBPlayerController::GetActualAimScreenPosition(FVector2D &ScreenPosition) const
+bool ABBBPlayerController::GetActualAimWorldPosition(FVector &WorldPosition) const
 {
-    ScreenPosition = FVector2D::ZeroVector;
+    WorldPosition = FVector::ZeroVector;
     const ABBBCharacter *PawnCharacter = GetItemCharacter();
     const ABBBEquipment *Equipment = PawnCharacter ? PawnCharacter->GetHeldEquipment() : nullptr;
     FTransform Muzzle;
@@ -40,5 +41,29 @@ bool ABBBPlayerController::GetActualAimScreenPosition(FVector2D &ScreenPosition)
     Query.AddIgnoredActor(Equipment);
     FHitResult Hit;
     const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Query);
-    return ProjectWorldLocationToScreen(bHit ? Hit.ImpactPoint : End, ScreenPosition, true);
+    WorldPosition = bHit ? Hit.ImpactPoint : End;
+    if (const UBBBMassSubsystem *Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>())
+    {
+        FMassEntityHandle HitEntity;
+        float HitTime = 1.0f;
+        FVector HitPosition;
+        FVector HitNormal;
+        EPhysicalSurface HitSurface;
+        uint8 HitPart = 0;
+        // 场景遮挡裁短射线 后方实体不覆盖枪口最近落点
+        if (Mass->TraceEntities(Start, WorldPosition, 0.0f, {}, HitEntity, HitTime,
+            HitPosition, HitNormal, HitSurface, HitPart))
+        {
+            WorldPosition = HitPosition;
+        }
+    }
+    return true;
+}
+
+bool ABBBPlayerController::GetActualAimScreenPosition(FVector2D &ScreenPosition) const
+{
+    ScreenPosition = FVector2D::ZeroVector;
+    FVector WorldPosition;
+    return GetActualAimWorldPosition(WorldPosition)
+        && ProjectWorldLocationToScreen(WorldPosition, ScreenPosition, true);
 }
