@@ -25,7 +25,8 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     TargetMesh->SetCollisionObjectType(ECC_Pawn);
     TargetMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     TargetMesh->SetCollisionResponseToAllChannels(ECR_Block);
-    TargetMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+    // 正式子弹使用 Pawn 查询通道 必须阻挡才能收到标准点命中
+    TargetMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
     TargetMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
     TargetMesh->SetGenerateOverlapEvents(false);
     TargetMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;

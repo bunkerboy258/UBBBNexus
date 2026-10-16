@@ -4,7 +4,10 @@
 #include "Animation/AnimSequence.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/DamageEvents.h"
+#include "Engine/Engine.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 #include "HitReactProfile.h"
 #include "Misc/AutomationTest.h"
 #include "PhysicsEngine/PhysicsAsset.h"
@@ -28,6 +31,7 @@ bool FBBBZombieHitReactionTargetTest::RunTest(const FString&)
     }
 
     TestEqual(TEXT("完整查询和局部物理反应"), Target->TargetMesh->GetCollisionEnabled(), ECollisionEnabled::QueryAndPhysics);
+    TestEqual(TEXT("调参靶必须阻挡正式子弹的 Pawn 查询通道"), Target->TargetMesh->GetCollisionResponseToChannel(ECC_Pawn), ECR_Block);
     TestEqual(TEXT("不接入动画状态机"), Target->TargetMesh->GetAnimationMode(), EAnimationMode::AnimationSingleNode);
     const auto* Idle = Cast<UAnimSequence>(Target->TargetMesh->AnimationData.AnimToPlay);
     const auto* Mesh = Target->TargetMesh->GetSkeletalMeshAsset();
@@ -69,6 +73,47 @@ bool FBBBZombieHitReactionTargetTest::RunTest(const FString&)
     const FDamageEvent Damage;
     TestEqual(TEXT("非点命中不生成生命伤害"), Target->TakeDamage(MAX_flt, Damage, nullptr, nullptr), 0.0f);
     TestEqual(TEXT("静态检查不注入游戏命中"), Target->HitCount, 0u);
+    return true;
+}
+
+/** 在当前编辑器关卡直接检查真实子弹通道 不创建世界或启动游戏 */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBZombieHitReactionTargetCollisionTest, "UBBB.Debug.ZombieHitReactionTargetCollision",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBZombieHitReactionTargetCollisionTest::RunTest(const FString&)
+{
+    UWorld* EditorWorld = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+    {
+        if (Context.WorldType == EWorldType::Editor)
+        {
+            EditorWorld = Context.World();
+            break;
+        }
+    }
+    if (!TestNotNull(TEXT("需要已打开的编辑器关卡"), EditorWorld))
+    {
+        return false;
+    }
+
+    int32 Count = 0;
+    for (TActorIterator<ABBBZombieHitReactionTarget> It(EditorWorld); It; ++It)
+    {
+        ++Count;
+        const FName Bones[] = {TEXT("spine_02"), TEXT("head")};
+        for (const FName Bone : Bones)
+        {
+            const FVector Position = It->TargetMesh->GetBoneLocation(Bone);
+            const FVector Forward = It->GetActorForwardVector();
+            FHitResult Hit;
+            const bool bHit = EditorWorld->LineTraceSingleByChannel(Hit,
+                Position + Forward * 200.0f, Position - Forward * 50.0f, ECC_Pawn);
+            TestTrue(*FString::Printf(TEXT("真实子弹通道命中调参靶 %s"), *Bone.ToString()), bHit && Hit.GetActor() == *It);
+            TestTrue(TEXT("点命中落在目标骨骼网格"), Hit.GetComponent() == It->TargetMesh);
+            TestFalse(TEXT("命中具备可用于部位识别的骨骼"), Hit.BoneName.IsNone());
+        }
+    }
+    TestEqual(TEXT("关卡中只有一只调参靶"), Count, 1);
     return true;
 }
 
