@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBCombatAmmoRail.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
@@ -81,9 +82,36 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
             Geometry.ToPaintGeometry(FVector2f(Width, Height), FSlateLayoutTransform(FVector2f(Position))),
             &Brush, ESlateDrawEffect::None, White);
     }
+    int32 Loaded = 0;
+    int32 Capacity = 0;
+    bool bContinuous = false;
+    const bool bHasAmmoDisplay = Equipment && Equipment->ReadAmmoDisplay(Loaded, Capacity, bContinuous) && Capacity > 0;
+    FLinearColor AmmoColor = White;
+    if (bHasAmmoDisplay)
+    {
+        Loaded = FMath::Clamp(Loaded, 0, Capacity);
+        const float AmmoLeft = Size.X - 184.0f * Scale;
+        const float AmmoTop = Size.Y - 62.0f * Scale;
+        AmmoColor = Loaded > 0 && Loaded <= FMath::Max(1, Capacity / 4)
+            ? BBBItemUI::Accent : White;
+
+        Line({FVector2D(AmmoLeft - 11.0f * Scale, AmmoTop + 4.0f * Scale),
+            FVector2D(AmmoLeft - 11.0f * Scale, AmmoTop + 30.0f * Scale)}, 2.0f, BBBItemUI::Accent);
+        FSlateDrawElement::MakeText(Elements, Layer + 3,
+            Geometry.ToPaintGeometry(FVector2f(70.0f * Scale, 35.0f * Scale),
+                FSlateLayoutTransform(FVector2f(AmmoLeft, AmmoTop))),
+            FString::FromInt(Loaded), BBBItemUI::Font(FMath::RoundToInt(27.0f * Scale)),
+            ESlateDrawEffect::None, AmmoColor);
+        FSlateDrawElement::MakeText(Elements, Layer + 3,
+            Geometry.ToPaintGeometry(FVector2f(70.0f * Scale, 23.0f * Scale),
+                FSlateLayoutTransform(FVector2f(AmmoLeft + 69.0f * Scale, AmmoTop + 10.0f * Scale))),
+            FString::Printf(TEXT("/ %d"), Capacity), BBBItemUI::Font(FMath::RoundToInt(15.0f * Scale)),
+            ESlateDrawEffect::None, FLinearColor(1.0f, 1.0f, 1.0f, 0.70f));
+    }
+
     if (!Controller->ShouldShowAimHud())
     {
-        return Layer + 2;
+        return Layer + 3;
     }
 
     const FVector2D Center = Size * 0.5;
@@ -104,15 +132,10 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         }
     }
 
-    int32 Loaded = 0;
-    int32 Capacity = 0;
-    bool bContinuous = false;
-    if (!Equipment || !Equipment->ReadAmmoDisplay(Loaded, Capacity, bContinuous) || Capacity <= 0)
-    {
-        return Layer + 3;
-    }
-    Loaded = FMath::Clamp(Loaded, 0, Capacity);
     // 弹药细轨道独立于角落数字 保持准星右下短弧
-    BBBCombatAmmoRail::Paint(Elements, Geometry, Layer, Loaded, Capacity, bContinuous, White);
+    if (bHasAmmoDisplay)
+    {
+        BBBCombatAmmoRail::Paint(Elements, Geometry, Layer, Loaded, Capacity, bContinuous, AmmoColor);
+    }
     return Layer + 3;
 }
