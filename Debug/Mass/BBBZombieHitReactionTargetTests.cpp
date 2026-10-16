@@ -32,6 +32,9 @@ bool FBBBZombieHitReactionTargetTest::RunTest(const FString&)
 
     TestEqual(TEXT("完整查询和局部物理反应"), Target->TargetMesh->GetCollisionEnabled(), ECollisionEnabled::QueryAndPhysics);
     TestEqual(TEXT("调参靶必须阻挡正式子弹的 Pawn 查询通道"), Target->TargetMesh->GetCollisionResponseToChannel(ECC_Pawn), ECR_Block);
+    TestEqual(TEXT("网格持有局部物理位置求解次数"), Target->TargetMesh->BodyInstance.GetPositionSolverIterationCount(), 32);
+    TestEqual(TEXT("网格持有局部物理速度求解次数"), Target->TargetMesh->BodyInstance.GetVelocitySolverIterationCount(), 8);
+    TestEqual(TEXT("网格持有关节投影求解次数"), Target->TargetMesh->BodyInstance.GetProjectionSolverIterationCount(), 4);
     TestEqual(TEXT("不接入动画状态机"), Target->TargetMesh->GetAnimationMode(), EAnimationMode::AnimationSingleNode);
     const auto* Idle = Cast<UAnimSequence>(Target->TargetMesh->AnimationData.AnimToPlay);
     const auto* Mesh = Target->TargetMesh->GetSkeletalMeshAsset();

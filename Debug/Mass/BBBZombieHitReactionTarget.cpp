@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitReactionTarget.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitTrajectoryComponent.h"
 
 #include "Animation/AnimSequence.h"
 #include "Components/SceneComponent.h"
@@ -25,6 +26,11 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     TargetMesh->SetCollisionObjectType(ECC_Pawn);
     TargetMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     TargetMesh->SetCollisionResponseToAllChannels(ECR_Block);
+    // 网格组件持有整条局部物理链的求解覆盖 避免只改刚体模板而未实际生效
+    TargetMesh->BodyInstance.SetOverrideIterationCounts(true);
+    TargetMesh->BodyInstance.SetPositionSolverIterationCount(32);
+    TargetMesh->BodyInstance.SetVelocitySolverIterationCount(8);
+    TargetMesh->BodyInstance.SetProjectionSolverIterationCount(4);
     // 正式子弹使用 Pawn 查询通道 必须阻挡才能收到标准点命中
     TargetMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
     TargetMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -48,6 +54,7 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     PhysicalAnimation = CreateDefaultSubobject<UBBBMonsterPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
     PhysicalAnimation->PrimaryComponentTick.bStartWithTickEnabled = false;
     HitReaction = CreateDefaultSubobject<UBBBMonsterHitReactionComponent>(TEXT("HitReaction"));
+    Trajectory = CreateDefaultSubobject<UBBBZombieHitTrajectoryComponent>(TEXT("Trajectory"));
     HitReaction->AvailableProfiles.Reset();
     const TCHAR* Parts[] = {TEXT("Torso"), TEXT("Head"), TEXT("Arms"), TEXT("Legs")};
     for (const TCHAR* Part : Parts)
@@ -55,6 +62,16 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
         HitReaction->AvailableProfiles.Add(TSoftObjectPtr<UHitReactProfile>(FSoftObjectPath(FString::Printf(
             TEXT("/Game/_Project/Debug/ZombieHitReaction/HRP_Target%s.HRP_Target%s"), Part, Part))));
     }
+}
+
+FString ABBBZombieHitReactionTarget::StartHitTrajectory(const FString& RequestJson)
+{
+    return Trajectory->Start(RequestJson);
+}
+
+FString ABBBZombieHitReactionTarget::GetHitTrajectoryStatus() const
+{
+    return Trajectory->Status();
 }
 
 float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FDamageEvent& DamageEvent,

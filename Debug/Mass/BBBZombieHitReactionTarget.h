@@ -8,6 +8,7 @@
 class USkeletalMeshComponent;
 class UBBBMonsterHitReactionComponent;
 class UBBBMonsterPhysicalAnimationComponent;
+class UBBBZombieHitTrajectoryComponent;
 
 /** 仅用于本地受击调参的固定表现靶 不创建实体或维护生命与部位损毁 */
 UCLASS(meta = (DisplayName = "僵尸程序化受击调参靶"))
@@ -18,6 +19,14 @@ class ABBB_EVAC_API ABBBZombieHitReactionTarget final : public AActor
 public:
     /** @return 已配置独立物理资产和部位配置的调参靶 */
     ABBBZombieHitReactionTarget();
+
+    /** @param RequestJson	独立运行时副本的采样配置 @return 启动结果 */
+    UFUNCTION(BlueprintCallable, Category = "受击调参")
+    FString StartHitTrajectory(const FString& RequestJson);
+
+    /** @return 当前轨迹采样状态 */
+    UFUNCTION(BlueprintCallable, Category = "受击调参")
+    FString GetHitTrajectoryStatus() const;
 
     //~ Begin AActor Interface
     /**
@@ -43,6 +52,10 @@ public:
     /** 复用正式物理驱动桥接 不启用移动或全身布娃娃 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "受击调参", meta = (DisplayName = "物理动画"))
     TObjectPtr<UBBBMonsterPhysicalAnimationComponent> PhysicalAnimation;
+
+    /** 默认关闭的物理后轨迹诊断 */
+    UPROPERTY(VisibleAnywhere, Category = "受击调参", meta = (DisplayName = "轨迹采样"))
+    TObjectPtr<UBBBZombieHitTrajectoryComponent> Trajectory;
 
     /** 当前游戏实例收到的有效点命中数量 不保存历史 */
     UPROPERTY(Transient, VisibleInstanceOnly, Category = "受击调参", meta = (DisplayName = "命中次数"))
