@@ -225,27 +225,9 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceItemType;
     }
 
-    /** @return 当前物品是否处于使用动作 */
-    UFUNCTION(BlueprintPure, Category = "BBB|交互", meta = (BlueprintThreadSafe))
-    bool IsUsingItem() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->bSourceUsingItem;
-    }
-
-    /** @return 当前物品的基本使用序号 */
-    UFUNCTION(BlueprintPure, Category = "BBB|交互", meta = (BlueprintThreadSafe))
-    int32 GetItemUseSerial() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceItemUseSerial;
-    }
-
 private:
     /** 实际物品类别的动画快照 */
     EBBBItemType SourceItemType = EBBBItemType::Misc;
-    /** 实际使用动作的动画快照 */
-    bool bSourceUsingItem = false;
-    /** 实际使用序号的动画快照 */
-    int32 SourceItemUseSerial = 0;
 
     /** 由角色动画系统发布的实际装备类别 */
     UPROPERTY(Transient)

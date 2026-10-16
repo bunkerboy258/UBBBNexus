@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Config/Aim/BBBAimConfig.h"
@@ -46,9 +45,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
         : -1.0f;
     const UBBBItemDefinition *ItemDefinition = Character.GetHeldItemDefinition();
     FactState.ItemType = ItemDefinition ? ItemDefinition->ItemType : EBBBItemType::Misc;
-    const auto *Consumable = Cast<ABBBConsumable>(Character.GetHeldItem());
-    FactState.bUsingItem = Consumable && Consumable->IsUsing();
-    FactState.ItemUseSerial = Consumable ? Consumable->GetUseSerial() : 0;
     const ABBBEquipment *Equipment = Character.GetHeldEquipment();
     const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
     FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;

@@ -27,6 +27,8 @@ struct FBBBCharacterItemOperationState final
     TArray<FGuid> PendingFinishedInstances;
     /** 本帧临时使用当前消耗品的请求 */
     bool bQuickUse = false;
+    /** 请求开始的使用阶段 */
+    uint8 UseStage = 0;
     /** 操作完成版本 */
     UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "操作版本"))
     int32 Revision = 0;

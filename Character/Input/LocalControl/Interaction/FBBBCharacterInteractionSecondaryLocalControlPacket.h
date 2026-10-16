@@ -15,7 +15,8 @@ struct FBBBCharacterInteractionSecondaryLocalControlPacket final
     /** @param Context	角色输入上下文 @return 是否允许操作当前物品 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror && Context.Life.bActionsAllowed && !Context.Traversal.bTraversing;
+        return !Context.bIsMirror && Context.Life.bActionsAllowed && !Context.Traversal.bTraversing &&
+               !Context.InteractionUse.bBusy;
     }
     /** @param Context	角色输入上下文 @return 无 */
     void Apply(FBBBCharacterInputContext &Context) const

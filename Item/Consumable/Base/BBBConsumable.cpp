@@ -1,68 +1,25 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Logic/Core/Update/BBBConsumableUpdatePipeline.h"
-#include "Components/StaticMeshComponent.h"
-
-ABBBConsumable::ABBBConsumable()
+bool UBBBConsumable::InitializeUse(UBBBConsumableDefinition &InDefinition)
 {
-    FBBBConsumableUpdatePipeline::ConfigureTick(*this);
-    ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
-    SetRootComponent(ItemMesh);
+    Definition = &InDefinition;
+    return GetCharacter() && InitializeRuntimeData();
 }
-
-void ABBBConsumable::BeginPlay()
+void UBBBConsumable::UpdateUse()
 {
-    Super::BeginPlay();
-    bInitialized = InitializeRuntimeData();
-    ensureMsgf(bInitialized, TEXT("消耗品初始化失败 %s"), *GetPathName());
-}
-
-void ABBBConsumable::Tick(float DeltaSeconds)
-{
-    Super::Tick(DeltaSeconds);
     UpdateRuntimeData();
 }
-
-void ABBBConsumable::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UBBBConsumable::ShutdownUse()
 {
-    if (bInitialized)
-    {
-        ShutdownRuntimeData();
-    }
-    Super::EndPlay(EndPlayReason);
+    ShutdownRuntimeData();
+    Definition = nullptr;
 }
-
-UBBBConsumableDefinition *ABBBConsumable::GetDefinition() const
+ABBBCharacter *UBBBConsumable::GetCharacter() const
+{
+    return GetTypedOuter<ABBBCharacter>();
+}
+UBBBConsumableDefinition *UBBBConsumable::GetDefinition() const
 {
     return Definition;
-}
-
-bool ABBBConsumable::IsInitialized() const
-{
-    return bInitialized;
-}
-
-UStaticMeshComponent *ABBBConsumable::GetMesh() const
-{
-    return ItemMesh;
-}
-
-TSubclassOf<UAnimInstance> ABBBConsumable::GetCharacterAnimationLayerClass() const
-{
-    return Definition ? Definition->CharacterAnimationLayerClass : nullptr;
-}
-
-bool ABBBConsumable::TryGetAttachmentOffset(FTransform &OutOffset) const
-{
-    if (!Definition)
-    {
-        return false;
-    }
-    OutOffset = Definition->SpawnOffset;
-    return !OutOffset.ContainsNaN();
-}
-
-UBBBConsumableNetworkComponent *ABBBConsumable::GetNetworkComponent() const
-{
-    return NetworkComponent;
 }

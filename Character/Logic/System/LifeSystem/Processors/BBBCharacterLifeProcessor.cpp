@@ -52,6 +52,15 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         Initialize(Context);
     }
 
+    if (!bMirror && State.Phase == EBBBCharacterLifePhase::Alive)
+    {
+        for (float Recovery : Input.Recoveries)
+        {
+            State.Health = FMath::Min(Context.Config.MaximumHealth, State.Health + Recovery);
+            ++State.Revision;
+        }
+    }
+    Input.Recoveries.Reset();
     for (int32 Index = 0; Index < Input.Damages.Num(); ++Index)
     {
         if (bMirror)

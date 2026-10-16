@@ -33,23 +33,27 @@ public:
     }
 
 private:
-    friend class FBBBCharacterInteractionVisibilityProcessor;
-    friend class FBBBCharacterInteractionActionPermissionProcessor;
-    /** 独立使用生命周期 */
-    UPROPERTY(Transient)
-    FBBBCharacterInteractionUseState InteractionUseState;
-    friend class FBBBCharacterInteractionInputProcessor;
-    /** 动画通知通信状态 */
-    FBBBCharacterInteractionInputState InteractionInputState;
+  friend class FBBBCharacterQuickMeleeContactProcessor;
+  friend class FBBBCharacterUseProcessor;
+  friend class FBBBCharacterUseReleaseProcessor;
+  friend class FBBBCharacterUseFinishProcessor;
+  friend class FBBBCharacterInteractionVisibilityProcessor;
+  friend class FBBBCharacterInteractionActionPermissionProcessor;
+  /** 独立使用生命周期 */
+  UPROPERTY(Transient)
+  FBBBCharacterInteractionUseState InteractionUseState;
+  friend class FBBBCharacterInteractionInputProcessor;
+  /** 动画通知通信状态 */
+  FBBBCharacterInteractionInputState InteractionInputState;
 
-    friend class FBBBCharacterInteractionSystem;
-    friend class FBBBCharacterInteractionSelectionProcessor;
-    friend class FBBBCharacterInteractionLifecycleProcessor;
-    friend class FBBBCharacterParseSystem;
+  friend class FBBBCharacterInteractionSystem;
+  friend class FBBBCharacterInteractionSelectionProcessor;
+  friend class FBBBCharacterInteractionLifecycleProcessor;
+  friend class FBBBCharacterParseSystem;
 
-    /** 角色装备选择状态 */
-    UPROPERTY()
-    FBBBCharacterInteractionSelectionState InteractionSelectionState;
+  /** 角色装备选择状态 */
+  UPROPERTY()
+  FBBBCharacterInteractionSelectionState InteractionSelectionState;
 
 
 };

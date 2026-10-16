@@ -3,6 +3,7 @@
 class UStaticMesh;
 class UNiagaraSystem;
 class USoundBase;
+class USoundAttenuation;
 #include "BBBThrowablePresentationConfig.generated.h"
 
 /** 投掷物Presentation静态配置 */
@@ -26,6 +27,21 @@ struct FBBBThrowablePresentationConfig final
     /** 爆炸时在每端播放一次的声音 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "爆炸音效", ToolTip = "爆炸时在每端播放一次的声音"))
     TObjectPtr<USoundBase> ExplosionSound = nullptr;
+
+    /** 爆炸声音的空间衰减 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物",
+              meta = (DisplayName = "爆炸声音衰减", ToolTip = "控制爆炸声音的空间定位与距离衰减"))
+    TObjectPtr<USoundAttenuation> ExplosionAttenuation = nullptr;
+
+    /** 硬质地面弹跳声音 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物",
+              meta = (DisplayName = "弹跳音效", ToolTip = "物理速度突变时播放的轻量弹跳声音"))
+    TObjectPtr<USoundBase> BounceSound = nullptr;
+
+    /** 弹跳声音的空间衰减 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物",
+              meta = (DisplayName = "弹跳声音衰减", ToolTip = "控制弹跳声音的近距离传播范围"))
+    TObjectPtr<USoundAttenuation> BounceAttenuation = nullptr;
 
     /** 爆炸效果的整体缩放倍率 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "爆炸特效缩放", ToolTip = "爆炸效果的整体缩放倍率", ClampMin = "0.01"))

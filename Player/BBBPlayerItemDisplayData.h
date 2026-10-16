@@ -25,4 +25,6 @@ struct FBBBPlayerItemDisplayData
     bool bQuick = false;
     bool bSelected = false;
     bool bActive = false;
+    /** 需要显示堆叠数量 包括剩余一件 */
+    bool bShowQuantity = false;
 };

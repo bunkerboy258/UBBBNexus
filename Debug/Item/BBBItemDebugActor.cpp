@@ -111,7 +111,7 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
         }
         if (const auto Entry = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            Registered += Entry.GetDefaultObject()->GetDefinition() == Definition ? 1 : 0;
+            Registered += Entry == Definition ? 1 : 0;
         }
         Registered += Config.MiscCatalog && Config.MiscCatalog->FindItem(Definition->ItemId) == Definition ? 1 : 0;
         if (Registered != 1)

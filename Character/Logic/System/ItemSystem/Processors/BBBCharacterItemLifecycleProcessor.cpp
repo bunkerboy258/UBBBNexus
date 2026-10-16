@@ -2,25 +2,47 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/Context/BBBCharacterItemUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 
 void FBBBCharacterItemLifecycleProcessor::Update(FBBBCharacterItemUpdateContext &Context) const
 {
     auto &Inventory = Context.RuntimeData.Item.ItemInventoryState;
+    auto &Use = Context.RuntimeData.Item.ItemUseState;
+    const auto &Interaction = Context.RuntimeData.Interaction.ReadInteractionUseState();
+    if (Use.Runtime && !Use.Runtime->IsUsing() && !Interaction.bBusy)
+    {
+        Use.Runtime->ShutdownUse();
+        Use.Runtime = nullptr;
+        Use.Instance.Invalidate();
+    }
+    const auto &Bar = Context.RuntimeData.Item.ReadCharacterItemBarState();
+    const auto *Definition = Bar.DesiredConsumableDefinition.Get();
+    if (Bar.bStartUse && Definition && !Use.Runtime && !Interaction.bBusy &&
+        !Context.RuntimeData.Interaction.ReadInteractionInputState().bQuickMelee && Definition->RuntimeClass)
+    {
+        auto *Runtime = NewObject<UBBBConsumable>(&Context.Character, Definition->RuntimeClass);
+        if (Runtime && Runtime->InitializeUse(*const_cast<UBBBConsumableDefinition *>(Definition)))
+        {
+            Use.Runtime = Runtime;
+            Use.Instance = Bar.DesiredConsumableIdentity;
+            Use.Serial = Interaction.UseSerial + 1;
+            Runtime->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{{Bar.UseStage}});
+            Runtime->UpdateUse();
+        }
+    }
     for (auto &Item : Inventory.Slots)
     {
         if (!Item.Definition)
         {
             continue;
         }
-        if (!IsValid(Item.Definition) || !Item.InstanceId.IsValid()
-            || ((Item.Definition->ItemType == EBBBItemType::Equipment
-                || Item.Definition->ItemType == EBBBItemType::Consumable) && !IsValid(Item.HeldInstance)))
+        if (!IsValid(Item.Definition) || !Item.InstanceId.IsValid() ||
+            (Item.Definition->ItemType == EBBBItemType::Equipment && !IsValid(Item.HeldInstance)))
         {
             Item.Quantity = 0;
         }
-        const auto *Consumable = Cast<ABBBConsumable>(Item.HeldInstance);
-        if (Item.Quantity > 0 || (Item.HeldInstance && Item.HeldInstance == Context.Character.GetHeldItem())
-            || (Consumable && Consumable->IsUsing()))
+        if (Item.Quantity > 0 || (Item.HeldInstance && Item.HeldInstance == Context.Character.GetHeldItem()) ||
+            (Use.Runtime && Use.Instance == Item.InstanceId))
         {
             continue;
         }
@@ -35,6 +57,13 @@ void FBBBCharacterItemLifecycleProcessor::Update(FBBBCharacterItemUpdateContext 
 
 void FBBBCharacterItemLifecycleProcessor::Shutdown(FBBBCharacterItemUpdateContext &Context) const
 {
+    auto &Use = Context.RuntimeData.Item.ItemUseState;
+    if (Use.Runtime)
+    {
+        Use.Runtime->ShutdownUse();
+        Use.Runtime = nullptr;
+    }
+    Use.Instance.Invalidate();
     auto &Inventory = Context.RuntimeData.Item.ItemInventoryState;
     for (auto &Item : Inventory.Slots)
     {

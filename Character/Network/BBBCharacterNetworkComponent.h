@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Definitions/BBBCharacterUseFact.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "Components/ActorComponent.h"
@@ -164,6 +165,17 @@ private:
     UPROPERTY(Replicated)
     FVector ReplicatedHitDirection = FVector::ForwardVector;
     friend class FBBBCharacterInteractionObservationProcessor;
+    /** @param Fact 已成立的使用结果 @return 无 */
+    void ReplicateUse(const FBBBCharacterUseFact &Fact);
+    /** @param Fact 控制端已成立的使用结果 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitUse(FBBBCharacterUseFact Fact);
+    /** @return 无 接收当前使用结果 */
+    UFUNCTION()
+    void OnRep_Use();
+    /** 当前使用结果 由角色载体同步 */
+    UPROPERTY(ReplicatedUsing = OnRep_Use)
+    FBBBCharacterUseFact ReplicatedUse;
 
     /** @param EquipmentId	实际装备标识 @param Generation	持有实例标识 @return 无 */
     void ReplicateInteraction(FName EquipmentId, uint64 Generation);

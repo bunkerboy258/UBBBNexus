@@ -12,6 +12,8 @@ struct FBBBCharacterLifeInputState final
 {
     GENERATED_BODY()
 
+    /** 同帧已经成立的恢复量 */
+    TArray<float> Recoveries;
     /** 同帧全部伤害数值 */
     TArray<float> Damages;
 

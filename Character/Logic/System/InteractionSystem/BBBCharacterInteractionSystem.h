@@ -1,4 +1,8 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterQuickMeleeContactProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterUseProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterUseReleaseProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterUseFinishProcessor.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionVisibilityProcessor.h"
@@ -64,6 +68,10 @@ private:
     /** 右手装备挂接插槽 */
     FName RightHandSocketName = NAME_None;
 
+    FBBBCharacterQuickMeleeContactProcessor QuickMeleeContactProcessor;
+    FBBBCharacterUseProcessor ConsumableUseProcessor;
+    FBBBCharacterUseReleaseProcessor ConsumableReleaseProcessor;
+    FBBBCharacterUseFinishProcessor ConsumableFinishProcessor;
     /** 装备选择处理器 */
     FBBBCharacterInteractionSelectionProcessor SelectionProcessor;
 

@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 
 #include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
@@ -36,14 +35,6 @@ void FBBBCharacterAnimationLayerProcessor::Update(
         if (EquipmentLayerClass)
         {
             DesiredLayerClass = EquipmentLayerClass;
-        }
-    }
-
-    if (const auto *Consumable = Cast<ABBBConsumable>(HeldItem))
-    {
-        if (Consumable->GetCharacterAnimationLayerClass())
-        {
-            DesiredLayerClass = Consumable->GetCharacterAnimationLayerClass();
         }
     }
 

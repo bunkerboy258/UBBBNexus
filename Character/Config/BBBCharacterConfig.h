@@ -17,8 +17,21 @@ UCLASS(BlueprintType)
 class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 {
     GENERATED_BODY()
+  public:
+    /** 快速近战普通伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战伤害", ClampMin = "0"))
+    float QuickMeleeDamage = 45.0f;
+    /** 快速近战耐久伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战耐久伤害", ClampMin = "0"))
+    float QuickMeleeDurableDamage = 20.0f;
+    /** 手部接触段半径 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战接触半径", ClampMin = "1"))
+    float QuickMeleeRadius = 14.0f;
+    /** 从手部向前延伸的接触段 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战接触长度", ClampMin = "1"))
+    float QuickMeleeReach = 45.0f;
 
-public:
+  public:
     /** 正常生命上限与出生生命 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "最大生命", ClampMin = "1"))
     float MaximumHealth = 500.0f;

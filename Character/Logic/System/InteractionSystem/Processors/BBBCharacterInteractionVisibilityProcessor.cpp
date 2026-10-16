@@ -7,17 +7,14 @@
 void FBBBCharacterInteractionVisibilityProcessor::Update(FBBBCharacterInteractionUpdateContext &Context) const
 {
     if (Context.bIsMirror) return;
-    const bool bHide = Context.RuntimeData.Traversal.ReadTraversalState().bTraversing
-        || !Context.RuntimeData.Life.ReadLifeState().bActionsAllowed;
+    const bool bHide = Context.RuntimeData.Traversal.ReadTraversalState().bTraversing ||
+                       !Context.RuntimeData.Life.ReadLifeState().bActionsAllowed ||
+                       (Context.RuntimeData.Interaction.ReadInteractionUseState().bBusy &&
+                        !Context.RuntimeData.Interaction.ReadInteractionUseState().Fact.bQuickMelee);
     AActor *Item = Context.RuntimeData.Interaction.ReadInteractionSelectionState().ActiveMainHandInstance;
     if (auto *Equipment = Cast<ABBBEquipment>(Item); Equipment && Equipment->IsMeshHidden() != bHide)
     {
         if (bHide) Equipment->SubmitInput(FBBBEquipmentHideLocalControlPacket<>{});
         else Equipment->SubmitInput(FBBBEquipmentShowLocalControlPacket<>{});
-    }
-    if (auto *Consumable = Cast<ABBBConsumable>(Item); Consumable && Consumable->IsMeshHidden() != bHide)
-    {
-        if (bHide) Consumable->SubmitInput(FBBBConsumableHideLocalControlPacket<>{});
-        else Consumable->SubmitInput(FBBBConsumableShowLocalControlPacket<>{});
     }
 }

@@ -201,10 +201,11 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
     if (Config.FireAction)
     {
         Input.BindActionValueLambda(Config.FireAction, ETriggerEvent::Started,
-            [this](const FInputActionValue &Value)
-            {
-                bFire = bInputEnabled;
-            });
+                                    [this](const FInputActionValue &Value)
+                                    {
+                                        bFire = bInputEnabled && Character.IsValid() &&
+                                                !Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy;
+                                    });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.FireAction, Event,
@@ -217,10 +218,12 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
     if (Config.PrecisionAimAction)
     {
         Input.BindActionValueLambda(Config.PrecisionAimAction, ETriggerEvent::Started,
-            [this](const FInputActionValue &Value)
-            {
-                AimState.bAim = bInputEnabled;
-            });
+                                    [this](const FInputActionValue &Value)
+                                    {
+                                        AimState.bAim =
+                                            bInputEnabled && Character.IsValid() &&
+                                            !Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy;
+                                    });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
             Input.BindActionValueLambda(Config.PrecisionAimAction, Event,
@@ -364,6 +367,12 @@ FVector UBBBPlayerInputSystem::ResolveAimTargetWorld(const FVector& ViewLocation
 void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTick TickType,
     FActorComponentTickFunction *ThisTickFunction)
 {
+    if (Character.IsValid() && Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy)
+    {
+        bFire = false;
+        AimState.bAim = false;
+    }
+
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     APlayerController *Controller = Cast<APlayerController>(GetOwner());
     if (!Controller || !Controller->IsLocalController())

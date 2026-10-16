@@ -219,8 +219,17 @@ void UBBBPlayerItemView::RefreshItems()
     }
     for (int32 Index = 0; Index < QuickCount; ++Index)
     {
-        QuickBar->AddSlot().FillWidth(1.0f).Padding(12.0f)
-            [SNew(SBBBPlayerItemSlot).View(this).Slot(QuickStart + Index).Compact(true).Width(160.0f).Height(90.0f)];
+        QuickBar->AddSlot().FillWidth(1.0f).Padding(
+            12.0f)[SNew(SBBBPlayerItemSlot)
+                       .View(this)
+                       .Slot(QuickStart + Index)
+                       .Compact(true)
+                       .PositionLabel(bQuickBarHeld
+                                          ? FText::FromString(Index < 2 ? FString::Printf(TEXT("投掷 %d"), Index + 1)
+                                                                        : FString::Printf(TEXT("恢复 %d"), Index - 1))
+                                          : FText::GetEmpty())
+                       .Width(160.0f)
+                       .Height(90.0f)];
     }
     int32 Start = 0;
     int32 Count = 0;
@@ -259,7 +268,12 @@ void UBBBPlayerItemView::RefreshItems()
                 : Position)[SNew(SBBBPlayerItemSlot)
                                 .View(this)
                                 .Slot(bCharacterPage ? Start + Position : RightStart + Position)
-                                .PositionLabel(bCharacterPage ? BBBItemText::WearPosition(WearNames[Position]) : FText::GetEmpty())
+                                .PositionLabel(bCharacterPage ? BBBItemText::WearPosition(WearNames[Position])
+                                               : PanelPage == EBBBItemPanelPage::Consumables
+                                                   ? FText::FromString(
+                                                         Position < 2 ? FString::Printf(TEXT("投掷 %d"), Position + 1)
+                                                                      : FString::Printf(TEXT("恢复 %d"), Position - 1))
+                                                   : FText::GetEmpty())
                                 .Width(bCharacterPage ? 162.0f : 340.0f)
                                 .Height(126.0f)];
     }

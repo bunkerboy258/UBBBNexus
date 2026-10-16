@@ -3,14 +3,34 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Logic/Core/Initialization/BBBThrowableInitializer.h"
 #include "Components/SphereComponent.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 void FBBBThrowableLifetimeProcessor::Update(ABBBThrowable& Actor) const
 {
+    auto &Life = Actor.RuntimeData.Lifetime.State;
+    auto &Explosion = Actor.RuntimeData.Explosion.State;
+    if (Actor.Definition && Actor.GetNetMode() != NM_DedicatedServer && !Explosion.Fact.bExploded &&
+        Actor.PhysicsBody->IsSimulatingPhysics())
+    {
+        const FVector Velocity = Actor.PhysicsBody->GetPhysicsLinearVelocity();
+        const float Change = FVector::Distance(Velocity, Life.LastAudibleVelocity);
+        const double Now = Actor.GetWorld()->GetTimeSeconds();
+        const auto &Presentation = Actor.Definition->Presentation;
+        if (Life.bHasAudibleVelocity && Change > 180.0f && Now - Life.LastBounceSoundTime >= 0.12 &&
+            Presentation.BounceSound)
+        {
+            Life.LastBounceSoundTime = Now;
+            UGameplayStatics::PlaySoundAtLocation(Actor.GetWorld(), Presentation.BounceSound, Actor.GetActorLocation(),
+                                                  FRotator::ZeroRotator, FMath::Clamp(Change / 900.0f, 0.15f, 1.0f),
+                                                  FMath::FRandRange(0.94f, 1.06f), 0.0f,
+                                                  Presentation.BounceAttenuation);
+        }
+        Life.LastAudibleVelocity = Velocity;
+        Life.bHasAudibleVelocity = true;
+    }
     if (!Actor.HasAuthority())
     {
         return;
     }
-    auto& Life = Actor.RuntimeData.Lifetime.State;
-    auto& Explosion = Actor.RuntimeData.Explosion.State;
     if (!Life.bLaunched && Life.PendingDefinition)
     {
         Actor.Definition = Life.PendingDefinition;

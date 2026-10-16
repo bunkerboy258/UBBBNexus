@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionSelectionState.h"
@@ -11,7 +12,7 @@
 struct FBBBCharacterInteractionReleaseLocalControlPacket final
 {
     /** 通知开始时对应的实例 */
-    TArray<TWeakObjectPtr<AActor>> Recipients;
+    TArray<TWeakObjectPtr<UObject>> Recipients;
     /** 对应的持有代次 */
     TArray<uint64> Generations;
     /** 对应的使用序号 */
@@ -34,9 +35,9 @@ struct FBBBCharacterInteractionReleaseLocalControlPacket final
     {
         for (int32 Index = 0; Index < Recipients.Num(); ++Index)
         {
-            if (Recipients[Index].Get() != Context.InteractionSelection.ActiveMainHandInstance
-                || Generations[Index] != Context.InteractionSelection.ActiveGeneration
-                || Tokens[Index] != Context.InteractionUse.UseSerial || Tokens[Index] <= 0)
+            if (Recipients[Index].Get() != Context.InteractionUse.Runtime.Get() ||
+                Generations[Index] != static_cast<uint64>(Context.InteractionUse.UseSerial) ||
+                Tokens[Index] != Context.InteractionUse.UseSerial || Tokens[Index] <= 0)
             {
                 continue;
             }

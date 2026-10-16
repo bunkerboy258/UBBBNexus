@@ -3,7 +3,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableReleaseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableFinishLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Context/BBBCharacterInteractionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
@@ -18,14 +17,9 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
 {
     auto &State = Context.RuntimeData.Interaction.InteractionInputState;
     auto *Equipment = Context.Character.GetHeldEquipment();
-    auto *Consumable = Cast<ABBBConsumable>(Context.Character.GetHeldItem());
     if (State.bPrimary && Equipment)
     {
         Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket<>{});
-    }
-    if (State.bPrimary && Consumable)
-    {
-        Consumable->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{});
     }
     if (State.bSecondary && Equipment)
     {
@@ -33,31 +27,6 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
     }
     State.bPrimary = false;
     State.bSecondary = false;
-    for (int32 Index = 0; Index < State.ReleaseRecipients.Num(); ++Index)
-    {
-        if (Consumable && State.ReleaseRecipients[Index] == Consumable
-            && State.ReleaseGenerations[Index] == Context.Character.GetItemGeneration()
-            && State.ReleaseTokens[Index] == Consumable->GetUseSerial())
-        {
-            Consumable->SubmitInput(FBBBConsumableReleaseLocalControlPacket<>{});
-        }
-    }
-    for (int32 Index = 0; Index < State.FinishRecipients.Num(); ++Index)
-    {
-        if (Consumable && State.FinishRecipients[Index] == Consumable
-            && State.FinishGenerations[Index] == Context.Character.GetItemGeneration()
-            && State.FinishTokens[Index] == Consumable->GetUseSerial())
-        {
-            Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket<>{});
-        }
-    }
-    State.ReleaseRecipients.Reset();
-    State.ReleaseGenerations.Reset();
-    State.ReleaseTokens.Reset();
-    State.FinishRecipients.Reset();
-    State.FinishGenerations.Reset();
-    State.FinishTokens.Reset();
-
     for (int32 Index = 0; Index < State.BeginActionRecipients.Num(); ++Index)
     {
         ABBBEquipment *Recipient = State.BeginActionRecipients[Index].Get();

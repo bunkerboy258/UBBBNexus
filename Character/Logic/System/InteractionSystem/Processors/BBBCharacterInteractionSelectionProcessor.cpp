@@ -34,14 +34,9 @@ void FBBBCharacterInteractionSelectionProcessor::Update(FBBBCharacterInteraction
     }
     const auto &Config = Context.Character.GetCharacterConfig().Item;
     const auto Equipment = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Selection.PendingItemId) : nullptr;
-    const auto Consumable = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Selection.PendingItemId) : nullptr;
-    if (Equipment && !Consumable)
+    if (Equipment)
     {
         Context.PendingItemClass = Equipment;
-    }
-    if (Consumable && !Equipment)
-    {
-        Context.PendingItemClass = Consumable;
     }
     Context.bHasSelectionResult = Context.PendingItemClass != nullptr;
 }

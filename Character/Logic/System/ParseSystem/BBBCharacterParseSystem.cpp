@@ -14,26 +14,25 @@ void FBBBCharacterParseSystem::Update() const
         return;
     }
 
-    FBBBCharacterInputContext Context{
-        Data->Animation.AnimationMontageState,
-        Data->Aim.AimState,
-        Data->Locomotion.LocomotionState,
-        Data->Parse.ControlState,
-        Data->Interaction.InteractionSelectionState,
-        Data->Item.ItemOperationState,
-        Data->External.ReadNetworkIdentityState().bIsMirror,
-        Data->Parse.CameraState,
-        Data->Animation.AimImpulseState,
-        Data->Animation.ReadAnimationFactState(),
-        Data->Traversal.TraversalState,
-        Data->Interaction.InteractionInputState,
-        Data->Life.LifeInputState,
-        Data->Life.ReadLifeState(),
-        Data->Network.DamageInboxState,
-        Data->Life.RescueInputState,
-        Data->Life.ReadRescueState(),
-        Data->Network.RescueInboxState,
-        Data->Appearance.InputState,
-        Data->Interaction.ReadInteractionUseState()};
+    FBBBCharacterInputContext Context{Data->Animation.AnimationMontageState,
+                                      Data->Aim.AimState,
+                                      Data->Locomotion.LocomotionState,
+                                      Data->Parse.ControlState,
+                                      Data->Interaction.InteractionSelectionState,
+                                      Data->Item.ItemOperationState,
+                                      Data->External.ReadNetworkIdentityState().bIsMirror,
+                                      Data->Parse.CameraState,
+                                      Data->Animation.AimImpulseState,
+                                      Data->Animation.ReadAnimationFactState(),
+                                      Data->Traversal.TraversalState,
+                                      Data->Interaction.InteractionInputState,
+                                      Data->Life.LifeInputState,
+                                      Data->Life.ReadLifeState(),
+                                      Data->Network.DamageInboxState,
+                                      Data->Life.RescueInputState,
+                                      Data->Life.ReadRescueState(),
+                                      Data->Network.RescueInboxState,
+                                      Data->Appearance.InputState,
+                                      Data->Interaction.InteractionUseState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

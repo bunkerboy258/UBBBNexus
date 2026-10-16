@@ -14,6 +14,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
 {
@@ -180,12 +181,34 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
         {
             if (Definition->Presentation.ExplosionEffect)
             {
-                UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.ExplosionEffect,
-                    State.Fact.Position, FRotator::ZeroRotator, FVector(Definition->Presentation.EffectScale));
+                FHitResult Ground;
+                FCollisionQueryParams SurfaceParams(SCENE_QUERY_STAT(BBBThrowablePresentationSurface), false, &Actor);
+                SurfaceParams.AddIgnoredActor(Actor.GetInstigator());
+                const bool bGround =
+                    World.LineTraceSingleByChannel(Ground, State.Fact.Position + FVector(0.0, 0.0, 15.0),
+                                                   State.Fact.Position - FVector(0.0, 0.0, 65.0), ECC_WorldStatic,
+                                                   SurfaceParams) &&
+                    Ground.ImpactNormal.Z > 0.25;
+                auto *Effect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                    &World, Definition->Presentation.ExplosionEffect, State.Fact.Position, FRotator::ZeroRotator,
+                    FVector(Definition->Presentation.EffectScale), true, false, ENCPoolMethod::AutoRelease);
+                if (Effect)
+                {
+                    Effect->SetVariableFloat(TEXT("User.GroundContact"), bGround ? 1.0f : 0.0f);
+                    Effect->SetVariableVec3(TEXT("User.GroundOffset"),
+                                            bGround ? Ground.ImpactPoint - State.Fact.Position : FVector::ZeroVector);
+                    Effect->SetVariableVec3(TEXT("User.GroundNormal"),
+                                            bGround ? Ground.ImpactNormal : FVector::UpVector);
+                    Effect->Activate(true);
+                    UE_LOG(LogTemp, Log, TEXT("[BBBThrowable] Presented Ground=%d Position=%s"), bGround,
+                           *State.Fact.Position.ToString());
+                }
             }
             if (Definition->Presentation.ExplosionSound)
             {
-                UGameplayStatics::PlaySoundAtLocation(&World, Definition->Presentation.ExplosionSound, State.Fact.Position);
+                UGameplayStatics::PlaySoundAtLocation(&World, Definition->Presentation.ExplosionSound,
+                                                      State.Fact.Position, FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f,
+                                                      Definition->Presentation.ExplosionAttenuation);
             }
         }
     }

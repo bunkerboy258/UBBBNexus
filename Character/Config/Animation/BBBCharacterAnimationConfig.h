@@ -12,6 +12,12 @@ USTRUCT(BlueprintType)
 struct FBBBCharacterAnimationConfig
 {
     GENERATED_BODY()
+    /** 空手快速近战动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "空手快速近战"))
+    TObjectPtr<class UAnimMontage> UnarmedQuickMeleeMontage = nullptr;
+    /** 空手使用结束的短收势动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "空手使用结束收势"))
+    TObjectPtr<class UAnimMontage> UseReturnMontage = nullptr;
 
     /** 未装备专用动画层时链接的默认动画层 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|动画层", meta = (DisplayName = "默认动画层类"))

@@ -14,12 +14,17 @@ struct FBBBCharacterItemBarState final
     int32 SelectedSlot = INDEX_NONE;
     /** 当前选择的消耗品快捷索引 空格也保留选择 */
     int32 SelectedConsumableSlot = 0;
-    /** 需要恢复的原装备稳定身份 */
-    FGuid PreviousEquipment;
-    /** 临时使用结束时恢复装备 */
-    bool bReturnAfterUse = false;
-    /** 挂接成功后只提交一次主行为 */
-    bool bUseWhenReady = false;
+    /** 最近选择的投掷位置 */
+    int32 SelectedThrowableSlot = 0;
+    /** 本帧选中的消耗品稳定身份 不替换装备主手 */
+    FGuid DesiredConsumableIdentity;
+    /** 本帧选中的消耗品静态定义 */
+    UPROPERTY(Transient)
+    TObjectPtr<class UBBBConsumableDefinition> DesiredConsumableDefinition = nullptr;
+    /** 已批准的当次使用请求 */
+    bool bStartUse = false;
+    /** 已批准的起始阶段 */
+    uint8 UseStage = 0;
     /** 本帧唯一目标主手物品 */
     UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "目标主手物品"))
     TObjectPtr<AActor> DesiredMainHandItem = nullptr;

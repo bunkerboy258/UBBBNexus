@@ -2,20 +2,24 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 
 void UBBBCharacterItemUseLifecycleLogicAnimNotifyState::NotifyBegin(USkeletalMeshComponent *Mesh, UAnimSequenceBase *Animation, float Duration, const FAnimNotifyEventReference &Reference)
 {
     Super::NotifyBegin(Mesh, Animation, Duration, Reference);
     auto *Character = Mesh ? Cast<ABBBCharacter>(Mesh->GetOwner()) : nullptr;
-    if (!Character || Character->IsNetworkMirror() || !Character->GetHeldItem()
-        || Character->GetHeldUseSerial() <= 0)
+    if (!Character || Character->IsNetworkMirror() ||
+        (!Character->GetActiveConsumable() &&
+         !Character->RuntimeData.Interaction.ReadInteractionUseState().Fact.bQuickMelee) ||
+        Character->GetCharacterUseSerial() <= 0)
     {
         return;
     }
-    Recipients.Add(Mesh, Character->GetHeldItem());
-    Generations.Add(Mesh, Character->GetItemGeneration());
-    Tokens.Add(Mesh, Character->GetHeldUseSerial());
-    Instances.Add(Mesh, Character->GetHeldItemIdentity());
+    Recipients.Add(Mesh, Character->GetActiveConsumable() ? static_cast<UObject *>(Character->GetActiveConsumable())
+                                                          : Character);
+    Generations.Add(Mesh, Character->GetCharacterUseSerial());
+    Tokens.Add(Mesh, Character->GetCharacterUseSerial());
+    Instances.Add(Mesh, Character->RuntimeData.Interaction.ReadInteractionUseState().Instance);
 }
 
 void UBBBCharacterItemUseLifecycleLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponent *Mesh, UAnimSequenceBase *Animation, const FAnimNotifyEventReference &Reference)

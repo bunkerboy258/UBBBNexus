@@ -14,4 +14,11 @@ struct FBBBThrowableLifetimeState final
     FTransform PendingTransform = FTransform::Identity;
     /** 释放时持有者速度 */
     FVector PendingVelocity = FVector::ZeroVector;
+
+    /** 仅供声音判断使用的上一帧引擎速度样本 */
+    FVector LastAudibleVelocity = FVector::ZeroVector;
+    /** 声音速度样本是否已建立 */
+    bool bHasAudibleVelocity = false;
+    /** 最近一次弹跳声音时间 */
+    double LastBounceSoundTime = -1.0;
 };

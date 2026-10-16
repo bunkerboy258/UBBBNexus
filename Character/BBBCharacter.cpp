@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Network/BBBConsumableNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "MotionWarpingComponent.h"
@@ -23,7 +22,6 @@ ABBBCharacter::ABBBCharacter()
     PhysicalAnimation = CreateDefaultSubobject<UBBBCharacterPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
     MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
     EquipmentNetworkComponent = CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
-    ConsumableNetworkComponent = CreateDefaultSubobject<UBBBConsumableNetworkComponent>(TEXT("ConsumableNetwork"));
 
     //启用帧更新
     PrimaryActorTick.bCanEverTick = true;
@@ -192,10 +190,6 @@ UBBBItemDefinition *ABBBCharacter::GetHeldItemDefinition() const
     {
         return Equipment->GetDefinition();
     }
-    if (const auto *Consumable = Cast<ABBBConsumable>(GetHeldItem()))
-    {
-        return Consumable->GetDefinition();
-    }
     return nullptr;
 }
 
@@ -225,8 +219,11 @@ int32 ABBBCharacter::GetHeldItemQuantity() const
     return 0;
 }
 
-int32 ABBBCharacter::GetHeldUseSerial() const
+int32 ABBBCharacter::GetCharacterUseSerial() const
 {
-    const auto *Consumable = Cast<ABBBConsumable>(GetHeldItem());
-    return Consumable ? Consumable->GetUseSerial() : 0;
+    return RuntimeData.Interaction.ReadInteractionUseState().UseSerial;
+}
+UBBBConsumable *ABBBCharacter::GetActiveConsumable() const
+{
+    return RuntimeData.Interaction.ReadInteractionUseState().Runtime.Get();
 }

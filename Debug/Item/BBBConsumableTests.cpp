@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionReleaseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Throwable/Grenade/BBBGrenadeConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Throwable/Grenade/Config/BBBGrenadeDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
@@ -16,8 +18,15 @@
 #include "GameFramework/PlayerState.h"
 #include "MassEntitySubsystem.h"
 #include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterConsumableStageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "Misc/ScopeExit.h"
+#include "Components/BoxComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeBeginLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeEndLocalControlPacket.h"
 
 /** 真实角色和物品实例验证释放幂等 零数量生命周期及自动返回 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBConsumableTest, "BBB.Character.Consumable",
@@ -70,129 +79,142 @@ bool FBBBConsumableTest::RunTest(const FString &)
             }
         }
     };
+
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
     Controller->SubmitItemAdd(TEXT("Grenade_01"), 4);
+    Controller->SubmitItemAdd(TEXT("HealthPack_01"), 4);
     Step();
     int32 Start = 0;
     int32 Count = 0;
     Controller->GetConsumableQuickRange(Start, Count);
-    TestEqual(TEXT("独立消耗品快捷栏"), Count, 5);
-    TestEqual(TEXT("每格四枚"), Controller->GetItemDisplayData(Start).Quantity, 4);
-    AActor *Stored = Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots[Start].HeldInstance;
-    if (!TestNotNull(TEXT("获得堆叠时已建立实例"), Stored))
+    TestEqual(TEXT("五个消耗品快捷位置"), Count, 5);
+    TestEqual(TEXT("投掷物进入第一个位置"), Controller->GetItemDisplayData(Start).Quantity, 4);
+    TestEqual(TEXT("恢复物进入第三个位置"), Controller->GetItemDisplayData(Start + 2).Quantity, 4);
+    TestNull(TEXT("库存消耗品没有手持 Actor"),
+             Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots[Start].HeldInstance.Get());
+    TestNull(TEXT("未使用时没有消耗品运行时"), Character->RuntimeData.Item.ReadCharacterItemUseState().Runtime.Get());
+    Controller->SubmitItemSelect(0);
+    Step();
+    AActor *Weapon = Character->GetHeldItem();
+    if (!TestNotNull(TEXT("装备主手有效"), Weapon))
     {
         return false;
     }
-    TestTrue(TEXT("存放时隐藏且关闭更新"), Stored->IsHidden() && !Stored->IsActorTickEnabled());
-    Controller->SubmitItemSelect(0);
+    Controller->SubmitItemSelect(Start);
     Step();
-    AActor *Original = Character->GetHeldItem();
-    if (!TestNotNull(TEXT("原装备已持有"), Original))
-    {
-        return false;
-    }
-
-    Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
-    Step();
-    auto *Rifle = Cast<ABBBRifleEquipment>(Original);
-    if (!TestNotNull(TEXT("步枪切换权限验证实例"), Rifle))
-    {
-        return false;
-    }
-    Controller->SubmitPrimaryUse();
-    Step();
-    Step();
-    Character->SubmitInput(FBBBCharacterInteractionSecondaryLocalControlPacket{});
-    Step();
-    Step();
-    TestTrue(TEXT("步枪实际进入换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
-    const int32 AmmoBeforeSwitch = Rifle->GetLoadedAmmo();
-    Rifle->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket<>{});
-    Step();
-    Step();
-    TestTrue(TEXT("换弹及禁火不能禁止普通切枪"), Rifle->CanSwitch());
-    TestFalse(TEXT("换弹期间仍拒绝 G 快速使用"), Rifle->CanQuickUse());
-    Controller->SubmitQuickUse();
-    Step();
-    TestTrue(TEXT("G 冲突请求保留原步枪"), Character->GetHeldItem() == Original);
-    Controller->SubmitItemSelect(INDEX_NONE);
-    Step();
-    TestNull(TEXT("换弹期间可以实际解除装备"), Character->GetHeldItem());
-    TestFalse(TEXT("卸下完成后终止旧换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
-    TestEqual(TEXT("卸下不能重置已有弹药"), Rifle->GetLoadedAmmo(), AmmoBeforeSwitch);
-    Controller->SubmitItemSelect(0);
-    Step();
-    Step();
-    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
-    Character->SubmitInput(FBBBCharacterInteractionSecondaryLocalControlPacket{});
-    Step();
-    Step();
-    TestTrue(TEXT("切枪验证重新进入换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
-    Controller->SubmitItemSelect(1);
-    Step();
-    Step();
-    TestTrue(TEXT("换弹期间可以实际切到另一支枪"), Character->GetHeldItem() && Character->GetHeldItem() != Original);
-    Controller->SubmitItemSelect(INDEX_NONE);
-    Step();
-    TestNull(TEXT("换弹后的持有关系可以实际解除"), Character->GetHeldItem());
-    Controller->SubmitItemSelect(0);
-    Step();
-    Step();
-    TestTrue(TEXT("重新持有原步枪实例"), Character->GetHeldItem() == Original);
-    TestFalse(TEXT("重新持有不能继续旧换弹"), Rifle->RuntimeData.Action.ReadRifleActionState().bIsReloading);
-    Rifle->SubmitInput(FBBBEquipmentAllowFireLocalControlPacket<>{});
-    Step();
-    Step();
+    TestEqual(TEXT("选择手雷保持装备主手"), Character->GetHeldItem(), Weapon);
     const auto CountThrowables = [World]()
     {
-        int32 Count = 0;
+        int32 Result = 0;
         for (TActorIterator<ABBBThrowable> It(World); It; ++It)
         {
-            ++Count;
+            ++Result;
         }
-        return Count;
+        return Result;
+    };
+    const auto Release = [Character]()
+    {
+        const auto &Use = Character->RuntimeData.Interaction.ReadInteractionUseState();
+        Character->SubmitInput(FBBBCharacterInteractionReleaseLocalControlPacket{
+            {Use.Runtime.Get()}, {static_cast<uint64>(Use.UseSerial)}, {Use.UseSerial}});
+    };
+    const auto Finish = [Character]()
+    {
+        const auto &Use = Character->RuntimeData.Interaction.ReadInteractionUseState();
+        Character->SubmitInput(FBBBCharacterInteractionFinishLocalControlPacket{
+            {Use.Runtime.Get()}, {static_cast<uint64>(Use.UseSerial)}, {Use.UseSerial}, {Use.Instance}});
     };
     const int32 Baseline = CountThrowables();
-    for (int32 Use = 0; Use < 4; ++Use)
+    for (int32 Index = 0; Index < 4; ++Index)
     {
         Controller->SubmitQuickUse();
-        for (int32 Frame = 0; Frame < 5; ++Frame)
-        {
-            Step();
-        }
-        auto *Consumable = Cast<ABBBConsumable>(Character->GetHeldItem());
-        if (!TestTrue(TEXT("快速使用只切出原堆叠并开始动作"), Consumable == Stored && Consumable->IsUsing()))
+        Step();
+        const auto &Use = Character->RuntimeData.Interaction.ReadInteractionUseState();
+        if (!TestNotNull(TEXT("使用期间创建轻量对象"), Character->GetActiveConsumable()))
         {
             return false;
         }
-        const uint64 Generation = Character->GetItemGeneration();
-        const int32 Serial = Consumable->GetUseSerial();
-        const FGuid Identity = Character->GetHeldItemIdentity();
-        Character->SubmitInput(FBBBCharacterInteractionReleaseLocalControlPacket{{Consumable}, {Generation}, {Serial + 1}});
+        TestTrue(TEXT("使用占用已经成立"), Use.bBusy);
+        Controller->SubmitItemSelect(INDEX_NONE);
+        Controller->SubmitItemMove(Start, Start + 1, Controller->GetItemInstanceId(Start));
         Step();
-        TestEqual(TEXT("过期通知不得消耗"), Character->GetHeldItemQuantity(), 4 - Use);
-        Character->SubmitInput(FBBBCharacterInteractionReleaseLocalControlPacket{{Consumable}, {Generation}, {Serial}});
-        Step();
-        Step();
-        TestEqual(TEXT("成功释放后仅扣一枚"), Character->GetHeldItemQuantity(), 3 - Use);
-        TestEqual(TEXT("释放后独立实体只出生一次"), CountThrowables(), Baseline + Use + 1);
-        Character->SubmitInput(FBBBCharacterInteractionReleaseLocalControlPacket{{Consumable}, {Generation}, {Serial}});
-        Controller->SubmitItemSelect(0);
-        Step();
-        TestTrue(TEXT("收手前拒绝主动切换并保留零数量实例"), Character->GetHeldItem() == Consumable);
-        TestEqual(TEXT("重复释放不重复扣减"), Character->GetHeldItemQuantity(), 3 - Use);
-        Character->SubmitInput(FBBBCharacterInteractionFinishLocalControlPacket{{Consumable}, {Generation}, {Serial}, {Identity}});
+        TestEqual(TEXT("使用期间拒绝装备切换"), Character->GetHeldItem(), Weapon);
+        TestEqual(TEXT("使用期间拒绝库存移动"), Controller->GetItemDisplayData(Start + 1).Quantity, 0);
+        Release();
+        Release();
         Step();
         Step();
-        TestTrue(TEXT("完成后恢复原装备实例"), Character->GetHeldItem() == Original);
-        TestEqual(TEXT("结束不回收已投出的独立实体"), CountThrowables(), Baseline + Use + 1);
+        TestEqual(TEXT("重复释放只生成一次世界实体"), CountThrowables(), Baseline + Index + 1);
+        TestEqual(TEXT("每次只扣除一枚"), Controller->GetItemDisplayData(Start).Quantity, 3 - Index);
+        if (Index == 3)
+        {
+            TestTrue(TEXT("零数量仍保留至使用结束"),
+                     Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots[Start].InstanceId.IsValid());
+        }
+        Finish();
+        Step();
+        Step();
+        TestFalse(TEXT("完成后解除使用占用"), Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy);
+        TestNull(TEXT("完成后回收当次对象"), Character->RuntimeData.Item.ReadCharacterItemUseState().Runtime.Get());
+        TestEqual(TEXT("耗尽不清空有效装备"), Character->GetHeldItem(), Weapon);
+        TestEqual(TEXT("结束不销毁已投出的世界实体"), CountThrowables(), Baseline + Index + 1);
     }
-    TestFalse(TEXT("最后一枚收手后销毁持有实例"), IsValid(Stored));
-    TestFalse(TEXT("耗尽后原位置为空"), Controller->GetItemDisplayData(Start).bOccupied);
-    TestEqual(TEXT("耗尽后保留消耗品选择"), Controller->GetSelectedConsumableSlot(), 0);
-    Controller->SubmitQuickUse();
+    Controller->SubmitItemSelect(Start + 2);
     Step();
-    TestTrue(TEXT("空位置快速使用不改变原装备"), Character->GetHeldItem() == Original);
+    TestNull(TEXT("满血不能开始血药使用"), Character->GetActiveConsumable());
+    UGameplayStatics::ApplyDamage(Character, 200.0f, Controller, nullptr, nullptr);
+    Step();
+    const float BeforeRecovery = Character->GetHealth();
+    Controller->SubmitItemSelect(Start + 2);
+    Step();
+    if (!TestNotNull(TEXT("受伤后可以使用血药"), Character->GetActiveConsumable()))
+    {
+        return false;
+    }
+    Release();
+    Release();
+    Step();
+    Step();
+    const float Expected = FMath::Min(Character->GetCharacterConfig().MaximumHealth,
+                                      BeforeRecovery + Character->GetCharacterConfig().MaximumHealth * 0.30f);
+    TestEqual(TEXT("恢复通知只生效一次且封顶"), Character->GetHealth(), Expected);
+    TestEqual(TEXT("恢复只扣除一件"), Controller->GetItemDisplayData(Start + 2).Quantity, 3);
+    Finish();
+    Step();
+    Step();
+    TestEqual(TEXT("血药结束保留装备关系"), Character->GetHeldItem(), Weapon);
+    auto *Target = World->SpawnActor<AActor>();
+    auto *Collision = NewObject<UBoxComponent>(Target);
+    Collision->SetBoxExtent(FVector(8.0f));
+    Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    Collision->SetCollisionResponseToAllChannels(ECR_Block);
+    Target->SetRootComponent(Collision);
+    Target->SetCanBeDamaged(true);
+    Target->SetActorLocation(Character->GetMesh()->GetSocketLocation(TEXT("hand_r")) +
+                             Character->GetActorForwardVector() * 25.0f);
+    Collision->RegisterComponent();
+    Character->SubmitInput(FBBBCharacterQuickMeleeLocalControlPacket{});
+    Step();
+    const auto &Melee = Character->RuntimeData.Interaction.ReadInteractionUseState();
+    TestTrue(TEXT("快速近战建立独立使用占用"), Melee.bBusy && Melee.Fact.bQuickMelee);
+    TestFalse(TEXT("快速近战不沿用上次消耗品身份"), Melee.Instance.IsValid());
+    TestTrue(TEXT("未收到开窗通知不能命中"), Melee.MeleeActors.IsEmpty());
+    Character->SubmitInput(FBBBCharacterMeleeBeginLocalControlPacket{{Melee.UseSerial}});
+    Character->SubmitInput(FBBBCharacterMeleeBeginLocalControlPacket{{Melee.UseSerial}});
+    Step();
+    Step();
+    TestEqual(TEXT("同帧重复开窗和连续帧只记录一个靶标"), Melee.MeleeActors.Num(), 1);
+    Character->SubmitInput(FBBBCharacterMeleeEndLocalControlPacket{{Melee.UseSerial + 1}});
+    Step();
+    TestTrue(TEXT("旧窗口结束不能关闭当前近战"), Melee.bMeleeContact);
+    Character->SubmitInput(FBBBCharacterMeleeEndLocalControlPacket{{Melee.UseSerial}});
+    Step();
+    TestFalse(TEXT("当前通知结束关闭命中窗口"), Melee.bMeleeContact);
+    Character->SubmitInput(FBBBCharacterInteractionFinishLocalControlPacket{
+        {Character}, {static_cast<uint64>(Melee.UseSerial)}, {Melee.UseSerial}, {Melee.Instance}});
+    Step();
+    TestFalse(TEXT("近战结束解除使用占用"), Melee.bBusy);
+    TestEqual(TEXT("快速近战保持装备主手"), Character->GetHeldItem(), Weapon);
     return !HasAnyErrors();
 }
 #endif

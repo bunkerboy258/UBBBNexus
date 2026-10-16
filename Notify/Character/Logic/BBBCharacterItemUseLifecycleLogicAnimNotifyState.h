@@ -11,8 +11,8 @@ public:
     virtual void NotifyBegin(USkeletalMeshComponent *Mesh, UAnimSequenceBase *Animation, float Duration, const FAnimNotifyEventReference &Reference) override;
     virtual void NotifyEnd(USkeletalMeshComponent *Mesh, UAnimSequenceBase *Animation, const FAnimNotifyEventReference &Reference) override;
 private:
-    TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<AActor>> Recipients;
-    TMap<TWeakObjectPtr<USkeletalMeshComponent>, uint64> Generations;
-    TMap<TWeakObjectPtr<USkeletalMeshComponent>, int32> Tokens;
-    TMap<TWeakObjectPtr<USkeletalMeshComponent>, FGuid> Instances;
+  TMap<TWeakObjectPtr<USkeletalMeshComponent>, TWeakObjectPtr<UObject>> Recipients;
+  TMap<TWeakObjectPtr<USkeletalMeshComponent>, uint64> Generations;
+  TMap<TWeakObjectPtr<USkeletalMeshComponent>, int32> Tokens;
+  TMap<TWeakObjectPtr<USkeletalMeshComponent>, FGuid> Instances;
 };

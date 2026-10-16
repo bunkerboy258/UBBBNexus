@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterUseRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterUseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalEndAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalStartAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalEndRemoteMessagePacket.h"
@@ -45,6 +47,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedUse, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAppearance, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAcceleration, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMovementInput, COND_SimulatedOnly);
@@ -504,5 +507,28 @@ void UBBBCharacterNetworkComponent::OnRep_Appearance()
     if (Character && !IsOwnerAuthority() && !Character->IsLocallyControlled() && ReplicatedAppearance.IsValid())
     {
         Character->SubmitInput(FBBBCharacterAppearanceAuthorityFactPacket{{ReplicatedAppearance}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ReplicateUse(const FBBBCharacterUseFact &Fact)
+{
+    if (IsOwnerAuthority() && Fact.Revision > ReplicatedUse.Revision)
+    {
+        ReplicatedUse = Fact;
+        GetOwner()->ForceNetUpdate();
+    }
+}
+void UBBBCharacterNetworkComponent::ServerSubmitUse_Implementation(FBBBCharacterUseFact Fact)
+{
+    if (Character && IsOwnerAuthority() && Fact.Revision > ReplicatedUse.Revision)
+    {
+        Character->SubmitInput(FBBBCharacterUseRemoteMessagePacket{{Fact}});
+    }
+}
+void UBBBCharacterNetworkComponent::OnRep_Use()
+{
+    if (Character && Character->IsNetworkMirror())
+    {
+        Character->SubmitInput(FBBBCharacterUseAuthorityFactPacket{{ReplicatedUse}});
     }
 }

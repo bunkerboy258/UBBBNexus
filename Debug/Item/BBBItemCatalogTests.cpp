@@ -5,8 +5,9 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Catalog/BBBConsumableCatalog.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/BBBGrenadeConsumable.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Config/BBBGrenadeDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Throwable/Grenade/BBBGrenadeConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Throwable/Grenade/Config/BBBGrenadeDefinition.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Misc/ScopeExit.h"
@@ -64,31 +65,15 @@ bool FBBBItemCatalogTest::RunTest(const FString &)
         Equipment->Destroy();
     }
     TestEqual(TEXT("九类装备均有真实登记资产"), Types.Num(), 9);
-    const auto GrenadeClass = ConsumableCatalog->FindItem(TEXT("Grenade_01"));
-    if (!TestNotNull(TEXT("实际手雷类"), GrenadeClass.Get()))
+    auto *Definition = ConsumableCatalog->FindItem(TEXT("Grenade_01"));
+    TestNotNull(TEXT("正式手雷定义"), Definition);
+    if (Definition)
     {
-        return false;
+        TestTrue(TEXT("轻量使用类型有效"),
+                 Definition->RuntimeClass && Definition->RuntimeClass->IsChildOf(UBBBConsumable::StaticClass()));
+        TestFalse(TEXT("消耗品类型不属于 Actor"),
+                  Definition->RuntimeClass && Definition->RuntimeClass->IsChildOf(AActor::StaticClass()));
     }
-    auto *Grenade = World->SpawnActor<ABBBGrenadeConsumable>(GrenadeClass);
-    Grenade->SetOwner(Character);
-    Grenade->DispatchBeginPlay();
-    TestTrue(TEXT("手雷经公共和具体初始化成立"), Grenade->IsInitialized());
-    TestNotNull(TEXT("手雷具有具体协议组件"), Grenade->GetNetworkComponent());
-    Character->RuntimeData.External.NetworkIdentityState.bIsMirror = true;
-    FBBBGrenadeNetworkMessage Result;
-    Result.Revision = 20;
-    Result.UseSerial = 4;
-    Result.bUsing = true;
-    Grenade->SubmitInput(FBBBGrenadeStateAuthorityFactPacket{{}, {Result}});
-    Grenade->Tick(1.0f / 60.0f);
-    TestEqual(TEXT("镜像还原当前使用序号"), Grenade->GetUseSerial(), 4);
-    Result.Revision = 19;
-    Result.UseSerial = 3;
-    Grenade->SubmitInput(FBBBGrenadeStateAuthorityFactPacket{{}, {Result}});
-    Grenade->Tick(1.0f / 60.0f);
-    TestEqual(TEXT("迟到结果不得覆盖当前使用序号"), Grenade->GetUseSerial(), 4);
-    Result.ReleaseSerial = 5;
-    Grenade->SubmitInput(FBBBGrenadeStateAuthorityFactPacket{{}, {Result}});
     return !HasAnyErrors();
 }
 #endif

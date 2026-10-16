@@ -7,7 +7,6 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Network/BBBConsumableNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
 
 void FBBBCharacterInteractionObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Context) const
@@ -18,9 +17,21 @@ void FBBBCharacterInteractionObservationProcessor::Update(FBBBCharacterNetworkUp
         Character->GetEquipmentNetworkComponent()->DeliverPending();
     }
 
-    if (Character && Character->GetConsumableNetworkComponent())
+    if (Character)
     {
-        Character->GetConsumableNetworkComponent()->DeliverPending();
+        const auto &Fact = Context.Data.Interaction.ReadInteractionUseState().Fact;
+        if (Fact.Revision > Context.InteractionObservation.UseRevision)
+        {
+            if (Context.NetworkIdentityState.bHasAuthority)
+            {
+                Context.NetworkComponent.ReplicateUse(Fact);
+            }
+            if (!Context.NetworkIdentityState.bHasAuthority && Context.NetworkIdentityState.bLocallyControlled)
+            {
+                Context.NetworkComponent.ServerSubmitUse(Fact);
+            }
+            Context.InteractionObservation.UseRevision = Fact.Revision;
+        }
     }
 
     if (Context.InteractionObservation.Generation == Context.Interaction.ActiveGeneration) return;

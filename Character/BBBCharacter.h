@@ -1,4 +1,3 @@
-
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/BBBCharacterPhysicalPresentationSystem.h"
@@ -23,7 +22,7 @@ class FBBBCharacterShutdown;
 class UBBBAnimInstance;
 class UBBBCharacterNetworkComponent;
 class UBBBEquipmentNetworkComponent;
-class UBBBConsumableNetworkComponent;
+class UBBBConsumable;
 class UBBBItemDefinition;
 class ABBBPlayerCameraSystem;
 class ABBBEquipment;
@@ -221,14 +220,11 @@ public:
     /** @return 实际持有真实物品的稳定身份 镜像为空 */
     FGuid GetHeldItemIdentity() const;
     /** @return 当前持有物品的基本使用序号 */
-    int32 GetHeldUseSerial() const;
+    int32 GetCharacterUseSerial() const;
+    /** @return 当前使用对象 不构成主手关系 */
+    UBBBConsumable *GetActiveConsumable() const;
     /** @return 实际持有真实物品的数量 镜像为零 */
     int32 GetHeldItemQuantity() const;
-    /** @return 消耗品领域自己的网络载体 */
-    UBBBConsumableNetworkComponent *GetConsumableNetworkComponent() const
-    {
-        return ConsumableNetworkComponent;
-    }
 
     /** @return 角色是否只执行网络镜像还原 */
     bool IsNetworkMirror() const;
@@ -278,9 +274,6 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "ABBB|网络", meta = (DisplayName = "装备网络组件"))
     TObjectPtr<UBBBEquipmentNetworkComponent> EquipmentNetworkComponent;
 
-    /** 消耗品消息的独立领域载体 */
-    UPROPERTY(VisibleAnywhere, Category = "BBB|交互", meta = (DisplayName = "消耗品协议"))
-    TObjectPtr<UBBBConsumableNetworkComponent> ConsumableNetworkComponent;
     /*分类命名为ABBB是为了快点找到(bushi*/
 
 private:

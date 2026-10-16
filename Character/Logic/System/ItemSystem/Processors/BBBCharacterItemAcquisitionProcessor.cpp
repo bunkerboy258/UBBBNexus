@@ -35,15 +35,11 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
         const auto Consumable = Context.Config.ConsumableCatalog ? Context.Config.ConsumableCatalog->FindItem(Id) : nullptr;
         Accept(Equipment ? Equipment.GetDefaultObject()->GetDefinition() : nullptr);
         Accept(Wearable ? Wearable->Definition.Get() : nullptr);
-        Accept(Consumable ? Consumable.GetDefaultObject()->GetDefinition() : nullptr);
+        Accept(Consumable);
         Accept(Context.Config.MiscCatalog ? Context.Config.MiscCatalog->FindItem(Id) : nullptr);
         if (Equipment)
         {
             ActorClass = Equipment;
-        }
-        if (Consumable)
-        {
-            ActorClass = Consumable;
         }
         ++Operations.Revision;
         if (Candidates != 1 || !Definition || Definition->MaxStack < 1)
@@ -77,6 +73,11 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
             {
                 const auto &Item = Inventory.Slots[Slot];
                 const bool bExisting = Item.Definition == Definition && Item.Quantity > 0;
+                const auto *UseDefinition = Cast<UBBBConsumableDefinition>(Definition);
+                if (UseDefinition && Slot < Start + 5 && ((Slot - Start < 2) != UseDefinition->bThrowable))
+                {
+                    continue;
+                }
                 if ((Pass == 0 && !bExisting) || (Pass == 1 && Item.Definition))
                 {
                     continue;
@@ -115,9 +116,7 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
                 Actor->SetActorTickEnabled(false);
             }
             const auto *EquipmentActor = Cast<ABBBEquipment>(Actor);
-            const auto *ConsumableActor = Cast<ABBBConsumable>(Actor);
-            bPrepared = IsValid(Actor) && ((EquipmentActor && EquipmentActor->IsInitialized())
-                || (ConsumableActor && ConsumableActor->IsInitialized()));
+            bPrepared = IsValid(Actor) && EquipmentActor && EquipmentActor->IsInitialized();
             if (!bPrepared)
             {
                 break;

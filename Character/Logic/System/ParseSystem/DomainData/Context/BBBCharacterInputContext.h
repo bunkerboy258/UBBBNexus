@@ -81,5 +81,5 @@ struct FBBBCharacterInputContext final
     /** 待消费的外观输入 */
     FBBBCharacterAppearanceInputState &AppearanceInputs;
     /** 本帧输入许可的只读交互结果 */
-    const FBBBCharacterInteractionUseState &InteractionUse;
+    FBBBCharacterInteractionUseState &InteractionUse;
 };

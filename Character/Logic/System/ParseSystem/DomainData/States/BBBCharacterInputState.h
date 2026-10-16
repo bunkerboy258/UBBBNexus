@@ -1,4 +1,11 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeEndLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeBeginLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterUseAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterUseRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRecoveryLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterConsumableStageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemConsumeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemQuickUseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
@@ -75,6 +82,20 @@
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 快速近战输入 */
+    TBBBCharacterInputSlot<FBBBCharacterMeleeEndLocalControlPacket> MeleeEnd;
+    /** 快速近战输入 */
+    TBBBCharacterInputSlot<FBBBCharacterMeleeBeginLocalControlPacket> MeleeBegin;
+    /** 快速近战输入 */
+    TBBBCharacterInputSlot<FBBBCharacterQuickMeleeLocalControlPacket> QuickMelee;
+    /** 当前使用结果输入 */
+    TBBBCharacterInputSlot<FBBBCharacterUseAuthorityFactPacket> UseAuthorityFact;
+    /** 当前使用结果输入 */
+    TBBBCharacterInputSlot<FBBBCharacterUseRemoteMessagePacket> UseRemoteMessage;
+    /** Recovery 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterRecoveryLocalControlPacket> Recovery;
+    /** ConsumableStage 固定输入 */
+    TBBBCharacterInputSlot<FBBBCharacterConsumableStageLocalControlPacket> ConsumableStage;
     /** ItemConsume 固定输入 */
     TBBBCharacterInputSlot<FBBBCharacterItemConsumeLocalControlPacket> ItemConsume;
     /** ItemQuickUse 固定输入 */

@@ -90,6 +90,13 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSecondaryLocalControlPacket, In
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionReleaseLocalControlPacket, InteractionRelease)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionFinishLocalControlPacket, InteractionFinish)
 
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterConsumableStageLocalControlPacket, ConsumableStage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRecoveryLocalControlPacket, Recovery)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterUseRemoteMessagePacket, UseRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterUseAuthorityFactPacket, UseAuthorityFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterQuickMeleeLocalControlPacket, QuickMelee)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeBeginLocalControlPacket, MeleeBegin)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeEndLocalControlPacket, MeleeEnd)
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */
@@ -322,43 +329,78 @@ namespace BBBCharacterInput
                 Slot.Data.Instances.Append(Packet.Instances);
             }
         }
-        if constexpr (!std::is_same_v<FPacket, FBBBCharacterItemConsumeLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionReleaseLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionFinishLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterItemAddLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterItemSelectLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionBeginActionLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionEndActionLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionBeginContactLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionEndContactLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueRequestLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueRequestRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueEndLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueEndRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueReplyLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueReplyRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceColorLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceCamouflageLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceBaseLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceDirtLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceWeatheringLocalControlPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterAppearanceAuthorityFactPacket>)
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterConsumableStageLocalControlPacket>)
+        {
+            Slot.Data.Stages.Append(Packet.Stages);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRecoveryLocalControlPacket>)
+        {
+            Slot.Data.Amounts.Append(Packet.Amounts);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterUseRemoteMessagePacket>)
+        {
+            Slot.Data.Snapshots.Append(Packet.Snapshots);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterUseAuthorityFactPacket>)
+        {
+            Slot.Data.Snapshots.Append(Packet.Snapshots);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterMeleeBeginLocalControlPacket>)
+        {
+            Slot.Data.Tokens.Append(Packet.Tokens);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket>)
+        {
+            Slot.Data.Tokens.Append(Packet.Tokens);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterItemQuickUseLocalControlPacket>)
+        {
+            Slot.Data.Stages.Append(Packet.Stages);
+        }
+        if constexpr (!std::is_same_v<FPacket, FBBBCharacterItemQuickUseLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterMeleeBeginLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterUseAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterUseRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRecoveryLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterConsumableStageLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterItemConsumeLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionReleaseLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionFinishLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterItemAddLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterItemSelectLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionBeginActionLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionEndActionLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionBeginContactLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterInteractionEndContactLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueRequestLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueRequestRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueEndLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueEndRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueReplyLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueReplyRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRescueSnapshotAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceColorLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceCamouflageLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceBaseLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceDirtLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceWeatheringLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterAppearanceAuthorityFactPacket>)
         {
             Slot.Data = Forward<TPacket>(Packet);
         }

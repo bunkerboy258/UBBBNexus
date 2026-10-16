@@ -83,10 +83,6 @@ void FBBBCharacterInteractionLifecycleProcessor::Update(FBBBCharacterInteraction
             Equipment->SubmitInput(FBBBEquipmentEquipAuthorityFactPacket<>{});
         }
     }
-    if (const auto *Consumable = Cast<ABBBConsumable>(Desired))
-    {
-        Selection.ActiveItemId = Consumable->GetDefinition()->ItemId;
-    }
 }
 
 void FBBBCharacterInteractionLifecycleProcessor::Shutdown(FBBBCharacterInteractionUpdateContext &Context)
@@ -118,8 +114,7 @@ AActor *FBBBCharacterInteractionLifecycleProcessor::Create(ABBBCharacter &Charac
         Item->SetActorTickEnabled(false);
     }
     const auto *Equipment = Cast<ABBBEquipment>(Item);
-    const auto *Consumable = Cast<ABBBConsumable>(Item);
-    if (!IsValid(Item) || !((Equipment && Equipment->IsInitialized()) || (Consumable && Consumable->IsInitialized())))
+    if (!IsValid(Item) || !Equipment || !Equipment->IsInitialized())
     {
         if (IsValid(Item))
         {
@@ -133,14 +128,9 @@ AActor *FBBBCharacterInteractionLifecycleProcessor::Create(ABBBCharacter &Charac
 bool FBBBCharacterInteractionLifecycleProcessor::Attach(USkeletalMeshComponent &Mesh, FName Socket, AActor &Item)
 {
     auto *Equipment = Cast<ABBBEquipment>(&Item);
-    auto *Consumable = Cast<ABBBConsumable>(&Item);
     FTransform Offset;
-    if (Consumable && Consumable->GetDefinition())
-    {
-        Socket = Consumable->GetDefinition()->HandSocketName;
-    }
-    const bool bValid = Equipment ? Equipment->GetEquipmentAnimationInstance() && Equipment->TryGetAttachmentOffset(Offset)
-        : Consumable && Consumable->TryGetAttachmentOffset(Offset);
+    const bool bValid =
+        Equipment && Equipment->GetEquipmentAnimationInstance() && Equipment->TryGetAttachmentOffset(Offset);
     if (!bValid || Item.GetOwner() != Mesh.GetOwner() || Socket.IsNone() || !Mesh.DoesSocketExist(Socket)
         || !Item.AttachToComponent(&Mesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket))
     {
@@ -158,12 +148,6 @@ void FBBBCharacterInteractionLifecycleProcessor::Detach(USkeletalMeshComponent &
     FBBBCharacterUpdatePipeline::UnregisterItemTicks(Mesh, Item);
     Item.SetActorHiddenInGame(true);
     Item.DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-    auto *Consumable = Cast<ABBBConsumable>(&Item);
-    if (Consumable)
-    {
-        Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket<>{});
-    }
-    // 装备卸下后保留一次更新 由自身关闭管线收束换弹与通知 再自行停止 Tick
     const auto *Equipment = Cast<ABBBEquipment>(&Item);
-    Item.SetActorTickEnabled((Equipment && Equipment->IsInitialized()) || (Consumable && Consumable->IsUsing()));
+    Item.SetActorTickEnabled(Equipment && Equipment->IsInitialized());
 }

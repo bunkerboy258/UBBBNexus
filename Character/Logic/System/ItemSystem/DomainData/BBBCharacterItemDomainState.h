@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemInventoryState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemBarState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemOperationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemUseState.h"
 #include "BBBCharacterItemDomainState.generated.h"
 
 /** 角色物品领域全部状态的唯一持有者 */
@@ -13,6 +14,12 @@ struct FBBBCharacterItemDomainState final
     GENERATED_BODY()
 
 public:
+  /** @return 当次消耗品运行时的只读拥有关系 */
+  const FBBBCharacterItemUseState &ReadCharacterItemUseState() const
+  {
+      return ItemUseState;
+  }
+
     /** @return 真实背包只读状态 */
     const FBBBCharacterItemInventoryState &ReadCharacterItemInventoryState() const
     {
@@ -40,6 +47,9 @@ private:
     friend class FBBBCharacterItemBarProcessor;
     friend class FBBBCharacterItemSystemTest;
 
+    /** 当次使用对象的拥有关系 */
+    UPROPERTY(Transient)
+    FBBBCharacterItemUseState ItemUseState;
     /** 唯一真实物品存储 */
     UPROPERTY()
     FBBBCharacterItemInventoryState ItemInventoryState;

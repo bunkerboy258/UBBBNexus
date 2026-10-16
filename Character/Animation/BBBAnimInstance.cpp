@@ -50,8 +50,6 @@ void UBBBAnimInstance::PublishAnimationFacts(
     bSourceAiming = FactState.bIsAiming;
     SourceEquipmentType = FactState.EquipmentType;
     SourceItemType = FactState.ItemType;
-    bSourceUsingItem = FactState.bUsingItem;
-    SourceItemUseSerial = FactState.ItemUseSerial;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
     SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
     bSourceHasMuzzle = FactState.bHasMuzzle;
@@ -133,22 +131,13 @@ bool UBBBAnimInstance::RegisterMontageContribution(
 
     if (!Montage)
     {
-        if (Contribution->Get())
-        {
-            Montage_Stop(0.1f, Contribution->Get());
-        }
         *Contribution = nullptr;
         return true;
     }
 
     // 固定槽位只保留本次贡献 替换时由表现层淡出旧动画
-    if (Contribution->Get() && Contribution->Get() != Montage)
-    {
-        Montage_Stop(0.1f, Contribution->Get());
-    }
-
     *Contribution = Montage;
-    if (Montage_Play(Montage, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, false) > 0.0f)
+    if (Montage_Play(Montage, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true) > 0.0f)
     {
         return true;
     }
@@ -167,15 +156,7 @@ void UBBBAnimInstance::ClearMontageContributions()
 {
     for (TObjectPtr<UAnimMontage> *Contribution : GetMontageContributions())
     {
-        UAnimMontage *Montage = Contribution->Get();
         *Contribution = nullptr;
-
-        if (!Montage || !Montage_IsActive(Montage))
-        {
-            continue;
-        }
-
-        Montage_Stop(0.1f, Montage);
     }
 }
 

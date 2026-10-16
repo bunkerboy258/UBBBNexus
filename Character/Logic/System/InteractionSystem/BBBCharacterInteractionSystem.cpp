@@ -64,6 +64,10 @@ void FBBBCharacterInteractionSystem::UpdateUsage()
         *RuntimeData,
         RightHandSocketName,
         RuntimeData->External.ReadNetworkIdentityState().bIsMirror};
+    ConsumableUseProcessor.Update(Context);
+    ConsumableReleaseProcessor.Update(Context);
+    QuickMeleeContactProcessor.Update(Context);
+    ConsumableFinishProcessor.Update(Context);
     VisibilityProcessor.Update(Context);
     ActionPermissionProcessor.Update(Context);
     AnimationInputProcessor.Update(Context);

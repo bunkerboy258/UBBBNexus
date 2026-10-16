@@ -9,6 +9,7 @@ class UBBBEquipmentAnimInstance;
 class UAnimInstance;
 class USkeletalMesh;
 class UTexture2D;
+class UAnimMontage;
 
 /** 所有装备实例共享的静态资源配置 */
 UCLASS(BlueprintType)
@@ -17,10 +18,16 @@ class ABBB_EVAC_API UBBBEquipmentDefinition : public UBBBItemDefinition
     GENERATED_BODY()
 
 public:
-    UBBBEquipmentDefinition()
-    {
-        ItemType = EBBBItemType::Equipment;
-    }
+  /** 当前装备姿态的角色快速近战动作 */
+  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|动画|角色", meta = (DisplayName = "快速近战动作"))
+  TObjectPtr<UAnimMontage> QuickMeleeMontage = nullptr;
+  /** 一次使用结束后覆盖上半身循环的收势动作 */
+  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|动画|角色", meta = (DisplayName = "使用结束收势"))
+  TObjectPtr<UAnimMontage> UseReturnMontage = nullptr;
+  UBBBEquipmentDefinition()
+  {
+      ItemType = EBBBItemType::Equipment;
+  }
 
     /** 装备所属类别 供角色动画读取统一分类 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备|分类", meta = (DisplayName = "装备类型", ToolTip = "供角色动画选择通用持枪类别 具体武器玩法由对应 Actor 实现 不靠此枚举切换"))

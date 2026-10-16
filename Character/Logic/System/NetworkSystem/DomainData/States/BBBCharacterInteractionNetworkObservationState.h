@@ -7,8 +7,10 @@ struct FBBBCharacterInteractionNetworkObservationState final
 {
     /** 已发送的实际持有实例 */
     uint64 Generation = 0;
+    /** 已发送的角色使用版本 */
+    uint64 UseRevision = 0;
 
-private:
+  private:
     friend struct FBBBCharacterNetworkDomainState;
     FBBBCharacterInteractionNetworkObservationState() = default;
 };

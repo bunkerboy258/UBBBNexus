@@ -101,16 +101,23 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
                            .VAlign(bCompact ? VAlign_Bottom : VAlign_Top)
                            .Padding(8.0f, 5.0f)[SNew(STextBlock)
-                                                    .Text(IsQuickSlot() ? FText::AsNumber(Data.QuickIndex + 1) : FText::GetEmpty())
+                                                    .Text(IsQuickSlot() ? FText::AsNumber(Data.QuickIndex + 1)
+                                                                        : FText::GetEmpty())
                                                     .Font(BBBItemUI::Font(bCompact ? 16 : 14))
                                                     .ColorAndOpacity_Lambda(
                                                         [this]()
                                                         {
                                                             return IsSelected() ? FLinearColor::White : BBBItemUI::MutedText;
                                                         })] +
-                       SOverlay::Slot().HAlign(HAlign_Right).VAlign(VAlign_Top).Padding(8.0f)
-                           [SNew(STextBlock).Text(Data.Quantity > 1 ? FText::AsNumber(Data.Quantity) : FText::GetEmpty())
-                               .Font(BBBItemUI::Font(18)).ColorAndOpacity(FLinearColor::White)] +
+                       SOverlay::Slot()
+                           .HAlign(HAlign_Right)
+                           .VAlign(VAlign_Top)
+                           .Padding(
+                               8.0f)[SNew(STextBlock)
+                                         .Text(Data.Quantity > 0 && Data.bShowQuantity ? FText::AsNumber(Data.Quantity)
+                                                                                       : FText::GetEmpty())
+                                         .Font(BBBItemUI::Font(18))
+                                         .ColorAndOpacity(FLinearColor::White)] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Right)
                            .VAlign(VAlign_Bottom)
