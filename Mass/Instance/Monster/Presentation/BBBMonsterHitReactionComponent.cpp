@@ -18,7 +18,7 @@ UBBBMonsterHitReactionComponent::UBBBMonsterHitReactionComponent(const FObjectIn
     for (const TCHAR* Name : ProfileNames)
     {
         AvailableProfiles.Add(TSoftObjectPtr<UHitReactProfile>(FSoftObjectPath(FString::Printf(
-            TEXT("/Game/_Project/System/Mass/Monster/Zombie/Shared/HitReaction/%s.%s"), Name, Name))));
+            TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/HitReaction/%s.%s"), Name, Name))));
     }
 }
 
