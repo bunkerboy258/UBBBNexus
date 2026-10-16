@@ -22,27 +22,18 @@ void UBBBConsumableNetworkComponent::StoreMessage(
 {
     Destination.RemoveAll([&Message](const auto &Existing)
     {
-        return Existing.Generation < Message.Generation
-            || (Existing.Generation == Message.Generation && Existing.UseRevision < Message.UseRevision);
+        return Existing.Generation < Message.Generation;
     });
-
     auto *Existing = Destination.FindByPredicate([&Message](const auto &Value)
     {
-        return Value.Generation == Message.Generation && Value.UseRevision == Message.UseRevision
-            && Value.Kind == Message.Kind;
+        return Value.Generation == Message.Generation && Value.Kind == Message.Kind;
     });
-
     if (Existing)
     {
-        if (Message.Revision > Existing->Revision)
-        {
-            *Existing = MoveTemp(Message);
-        }
+        if (Message.Revision > Existing->Revision) *Existing = MoveTemp(Message);
         return;
     }
-
-    if (Destination.IsEmpty() || Destination[0].Generation < Message.Generation
-        || (Destination[0].Generation == Message.Generation && Destination[0].UseRevision <= Message.UseRevision))
+    if (Destination.IsEmpty() || Destination[0].Generation <= Message.Generation)
     {
         Destination.Add(MoveTemp(Message));
     }
@@ -65,8 +56,7 @@ bool UBBBConsumableNetworkComponent::PublishMessage(const uint8 Kind, TArray<uin
     }
 
     const uint64 Generation = Character->GetItemGeneration();
-    const uint64 UseRevision = Character->GetItemUseRevision();
-    if (Generation == 0 || UseRevision == 0)
+    if (Generation == 0)
     {
         return false;
     }
@@ -81,7 +71,6 @@ bool UBBBConsumableNetworkComponent::PublishMessage(const uint8 Kind, TArray<uin
     FBBBConsumableNetworkMessage Message;
     Message.ItemId = Consumable->GetDefinition()->ItemId;
     Message.Generation = Generation;
-    Message.UseRevision = UseRevision;
     Message.Revision = ++Carrier->PublishedRevision;
     Message.Kind = Kind;
     Message.Data = MoveTemp(Data);
@@ -101,11 +90,9 @@ void UBBBConsumableNetworkComponent::ServerSubmitMessage_Implementation(FBBBCons
 {
     auto *Character = Cast<ABBBCharacter>(GetOwner());
     if (!Character || !Character->HasAuthority() || Message.ItemId.IsNone()
-        || Message.Generation == 0 || Message.UseRevision == 0 || Message.Revision == 0 || Message.Kind >= 8
+        || Message.Generation == 0 || Message.Revision == 0 || Message.Kind >= 8
         || Message.Data.IsEmpty() || Message.Data.Num() > 256
-        || Message.Generation < Character->GetItemGeneration()
-        || (Message.Generation == Character->GetItemGeneration()
-            && Message.UseRevision < Character->GetItemUseRevision()))
+        || Message.Generation < Character->GetItemGeneration())
     {
         return;
     }
@@ -139,11 +126,9 @@ void UBBBConsumableNetworkComponent::DeliverPending()
     }
 
     const uint64 Generation = Character->GetItemGeneration();
-    const uint64 UseRevision = Character->GetItemUseRevision();
-    if (DeliveredGeneration != Generation || DeliveredUseRevision != UseRevision)
+    if (DeliveredGeneration != Generation)
     {
         DeliveredGeneration = Generation;
-        DeliveredUseRevision = UseRevision;
         DeliveredRevisions.Reset();
     }
 
@@ -156,7 +141,7 @@ void UBBBConsumableNetworkComponent::DeliverPending()
 
     for (const auto &Message : Pending)
     {
-        if (Message.Generation != Generation || Message.UseRevision != UseRevision
+        if (Message.Generation != Generation
             || Message.ItemId != Consumable->GetDefinition()->ItemId
             || Message.Revision <= DeliveredRevisions.FindRef(Message.Kind))
         {

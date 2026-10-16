@@ -25,6 +25,8 @@ void FBBBMinigunAnimationProcessor::Stop(FBBBMinigunAnimationUpdateContext &Cont
 
 void FBBBMinigunAnimationProcessor::Update(FBBBMinigunAnimationUpdateContext &Context)
 {
+    Context.Equipment.GetEquipmentSkeletalMesh()->SetHiddenInGame(Context.RuntimeData.Action.ReadMinigunActionState().bHide);
+
     const auto &Action = Context.RuntimeData.Action.ReadMinigunActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;
     if (Action.bEquippedThisFrame)

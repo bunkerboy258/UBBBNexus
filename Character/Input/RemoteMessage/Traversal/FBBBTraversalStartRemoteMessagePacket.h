@@ -62,6 +62,7 @@ struct FBBBTraversalStartRemoteMessagePacket final
                 continue;
             }
             Context.Traversal.ActionId = ActionIds[Index];
+            Context.Traversal.bTraversing = true;
             Context.Traversal.Action = Actions[Index];
             Context.Traversal.ContactTarget = Contacts[Index];
             Context.Traversal.EndTarget = Ends[Index];

@@ -34,7 +34,7 @@ struct FBBBCharacterItemSelectLocalControlPacket final
     {
         return (Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin)
             && !Context.InteractionUse.bBusy && Context.InteractionUse.bSwitchAllowed
-            && Context.Traversal.Action == EBBBTraversalAction::None && !Context.bIsMirror;
+            && !Context.Traversal.bTraversing && !Context.bIsMirror;
     }
 
     /** @param Context	本次输入上下文 @return 无 */

@@ -2,9 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Context/BBBCharacterInteractionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePermissionLocalControlPacket.h"
 
 void FBBBCharacterInteractionActionPermissionProcessor::Update(FBBBCharacterInteractionUpdateContext &Context) const
 {
@@ -16,16 +14,4 @@ void FBBBCharacterInteractionActionPermissionProcessor::Update(FBBBCharacterInte
     Use.bBusy = Consumable && Consumable->IsUsing();
     Use.bSwitchAllowed = !Use.bBusy && (!Equipment || Equipment->CanSwitch());
     Use.bQuickUseAllowed = Use.bSwitchAllowed && (!Equipment || Equipment->CanQuickUse());
-    if (Context.bIsMirror)
-    {
-        return;
-    }
-    if (Equipment)
-    {
-        Equipment->SubmitInput(FBBBEquipmentActionPermissionLocalControlPacket<>{{Use.bUsable}});
-    }
-    if (Consumable)
-    {
-        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket<>{{Use.bUsable}});
-    }
 }

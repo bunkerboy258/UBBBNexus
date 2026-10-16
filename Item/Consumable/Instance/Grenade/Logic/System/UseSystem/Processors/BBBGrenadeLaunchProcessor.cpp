@@ -13,7 +13,7 @@ void FBBBGrenadeLaunchProcessor::Update(FBBBGrenadeUseUpdateContext& Context) co
     auto& State = Context.Data.Use.UseState;
     const auto& Inputs = Context.Data.Use.ReadGrenadeUseInputState();
     const bool bCausalRelease = !Context.bIsMirror && Inputs.bRelease && State.bUsing
-        && !State.bReleased && State.bAllowed && Context.Character.GetHeldItemQuantity() > 0;
+        && !State.bReleased && !State.bHide && Context.Character.GetHeldItemQuantity() > 0;
     const bool bHostRelease = Context.Character.HasNetworkAuthority() && Context.bIsMirror
         && State.bReleased && State.ReleaseSerial == State.UseSerial
         && State.ReleaseSerial > State.SpawnedReleaseSerial;
@@ -64,11 +64,7 @@ void FBBBGrenadeLaunchProcessor::Update(FBBBGrenadeUseUpdateContext& Context) co
         Packet.Definition = Definition;
         Packet.Transform = State.LaunchTransform;
         Packet.InheritedVelocity = State.InheritedVelocity;
-        if (!Throwable->SubmitInput(MoveTemp(Packet)))
-        {
-            Throwable->Destroy();
-            return;
-        }
+        Throwable->SubmitInput(MoveTemp(Packet));
         Throwable->FinishSpawning(State.LaunchTransform);
         State.SpawnedReleaseSerial = bCausalRelease ? State.UseSerial : State.ReleaseSerial;
     }

@@ -68,30 +68,39 @@ bool UBBBSniperNetworkComponent::ReceiveMessage(
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBSniperFireRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBSniperFireRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBSniperFireAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBSniperFireAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 1)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBSniperReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBSniperReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBSniperReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBSniperReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 2)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBSniperReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            Equipment->SubmitInput(FBBBSniperReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBSniperReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+        Equipment->SubmitInput(FBBBSniperReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+
+        return true;
     }
 
     return false;

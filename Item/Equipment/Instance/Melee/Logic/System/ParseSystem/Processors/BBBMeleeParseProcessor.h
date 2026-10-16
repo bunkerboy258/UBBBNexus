@@ -16,73 +16,85 @@ public:
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBMeleeRuntimeData &Data);
 
-    /** @param Data	本类装备的黑板 @param Packet	本帧输入 @return 是否接受 */
+    /** @param Data	本类装备的黑板 @param Packet	本帧输入 @return 无 仅贡献输入 */
     template<typename TPacket>
-    static bool Submit(FBBBMeleeRuntimeData &Data, TPacket Packet)
+    static void Submit(FBBBMeleeRuntimeData &Data, TPacket Packet)
     {
-        if (!Packet.IsValid())
-        {
-            return false;
-        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeActionPermissionLocalControlPacket>)
-        {
-            Slot.Packet.Permissions.Append(Packet.Permissions);
-        }
         if constexpr (std::is_same_v<TPacket, FBBBMeleeBeginActionLocalControlPacket>)
         {
             Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeBeginContactLocalControlPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeBeginContactLocalControlPacket>)
         {
             Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeEndContactLocalControlPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeEndContactLocalControlPacket>)
         {
             Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeEndActionLocalControlPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeEndActionLocalControlPacket>)
         {
             Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackStartRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackStartRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackEndRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackEndRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackStartAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackStartAuthorityFactPacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackEndAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeAttackEndAuthorityFactPacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-
-        if constexpr (!(std::is_same_v<TPacket, FBBBMeleeActionPermissionLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBMeleeBeginActionLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBMeleeBeginContactLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBMeleeEndContactLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBMeleeEndActionLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBMeleeAttackStartRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBMeleeAttackEndRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBMeleeAttackStartAuthorityFactPacket>
-            || std::is_same_v<TPacket, FBBBMeleeAttackEndAuthorityFactPacket>))
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeVisibilityRemoteMessagePacket>)
+        {
+            Slot.Packet.Hidden.Append(Packet.Hidden);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBMeleeVisibilityAuthorityFactPacket>)
+        {
+            Slot.Packet.Hidden.Append(Packet.Hidden);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else
         {
             Slot.Packet = MoveTemp(Packet);
         }
         Slot.bActive = true;
-        return true;
     }
 
 private:
+    static TBBBMeleeInputSlot<FBBBMeleeLoadAmmoLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeLoadAmmoLocalControlPacket &)
+    {
+        return State.LoadAmmoLocalControl;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeInterruptReloadLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeInterruptReloadLocalControlPacket &)
+    {
+        return State.InterruptReloadLocalControl;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeBlockFireLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeBlockFireLocalControlPacket &)
+    {
+        return State.BlockFireLocalControl;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeAllowFireLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeAllowFireLocalControlPacket &)
+    {
+        return State.AllowFireLocalControl;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeSecondaryLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeSecondaryLocalControlPacket &)
+    {
+        return State.SecondaryLocalControl;
+    }
     static TBBBMeleeInputSlot<FBBBMeleeEquipLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeEquipLocalControlPacket &)
     {
         return State.Equip;
@@ -98,10 +110,7 @@ private:
         return State.Attack;
     }
 
-    static TBBBMeleeInputSlot<FBBBMeleeActionPermissionLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeActionPermissionLocalControlPacket &)
-    {
-        return State.ActionPermission;
-    }
+
 
     static TBBBMeleeInputSlot<FBBBMeleeBeginActionLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeBeginActionLocalControlPacket &)
     {
@@ -143,4 +152,20 @@ private:
         return State.AuthorityAttackEnd;
     }
 
+    static TBBBMeleeInputSlot<FBBBMeleeHideLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeHideLocalControlPacket &)
+    {
+        return State.HideLocalControl;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeShowLocalControlPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeShowLocalControlPacket &)
+    {
+        return State.ShowLocalControl;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeVisibilityRemoteMessagePacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeVisibilityRemoteMessagePacket &)
+    {
+        return State.VisibilityRemoteMessage;
+    }
+    static TBBBMeleeInputSlot<FBBBMeleeVisibilityAuthorityFactPacket> &Select(FBBBMeleeInputState &State, const FBBBMeleeVisibilityAuthorityFactPacket &)
+    {
+        return State.VisibilityAuthorityFact;
+    }
 };

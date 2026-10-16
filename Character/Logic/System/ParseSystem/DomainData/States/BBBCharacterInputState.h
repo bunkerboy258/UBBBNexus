@@ -18,8 +18,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterLifeRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterDamageDeliveryRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterInteractionUseAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterInteractionUseRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
@@ -96,9 +94,7 @@ struct FBBBCharacterInputState final
     /** 需向控制者投送的独立命中 */
     TBBBCharacterInputSlot<FBBBCharacterDamageDeliveryRemoteMessagePacket> DamageDelivery;
     /** 装备独立使用结果输入 */
-    TBBBCharacterInputSlot<FBBBCharacterInteractionUseAuthorityFactPacket> AuthorityFactInteractionUse;
     /** 装备独立使用结果输入 */
-    TBBBCharacterInputSlot<FBBBCharacterInteractionUseRemoteMessagePacket> RemoteMessageInteractionUse;
     /** 本帧全部独立伤害输入 */
     TBBBCharacterInputSlot<FBBBCharacterDamageLocalControlPacket> Damage;
     /** 装备BeginAction通知输入槽 */

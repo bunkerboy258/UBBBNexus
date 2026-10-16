@@ -8,7 +8,7 @@ void FBBBGrenadeFinishProcessor::Update(FBBBGrenadeUseUpdateContext &Context) co
 {
     auto &State = Context.Data.Use.UseState;
     auto &Inputs = Context.Data.Use.UseInputState;
-    if (!Context.bIsMirror && (Inputs.bFinish || !State.bAllowed))
+    if (!Context.bIsMirror && Inputs.bFinish)
     {
         State.bUsing = false;
         State.bReleased = false;
@@ -18,9 +18,9 @@ void FBBBGrenadeFinishProcessor::Update(FBBBGrenadeUseUpdateContext &Context) co
     Inputs.bEquip = false;
     Inputs.bRelease = false;
     Inputs.bFinish = false;
-    Inputs.bHasPermission = false;
-    const bool bUsable = Context.bIsMirror ? Context.Character.IsItemUsable() : State.bAllowed;
-    if (!bUsable || Context.Character.GetHeldItem() != &Context.Actor)
+
+    Context.Actor.GetMesh()->SetHiddenInGame(State.bHide);
+    if (Context.Character.GetHeldItem() != &Context.Actor)
     {
         Context.Actor.SetActorTickEnabled(false);
     }

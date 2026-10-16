@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/States/BBBMeleeActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndActionLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/States/BBBMeleeActionInputState.h"
@@ -16,7 +17,7 @@ struct FBBBMeleeEndActionLocalControlPacket final : public FBBBEquipmentEndActio
     }
 
     /** @return 可以写入当前动作请求 */
-    bool CanApply() const
+    bool CanApply(const FBBBMeleeActionState &State) const
     {
         return true;
     }

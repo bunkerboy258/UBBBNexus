@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionInputState.h"
@@ -13,9 +14,9 @@ struct FBBBRifleBlockFireLocalControlPacket final : public FBBBEquipmentBlockFir
     }
 
     /** @return 可以写入本帧请求 */
-    bool CanApply() const
+    bool CanApply(const FBBBRifleActionState &State) const
     {
-        return true;
+        return !State.bHide;
     }
 
     /** @param State	步枪动作输入 @return 无 */

@@ -16,8 +16,8 @@ bool UBBBGrenadeNetworkComponent::PublishState(FBBBGrenadeNetworkMessage Message
     }
     TArray<uint8> Data;
     FMemoryWriter Writer(Data);
-    uint8 Using = Message.bUsing ? 1 : 0, Released = Message.bReleased ? 1 : 0;
-    Writer << Message.UseSerial << Message.ReleaseSerial << Using << Released << Message.LaunchTransform << Message.InheritedVelocity;
+    uint8 Using = Message.bUsing ? 1 : 0, Released = Message.bReleased ? 1 : 0, Hidden = Message.bHide ? 1 : 0;
+    Writer << Message.UseSerial << Message.ReleaseSerial << Using << Released << Hidden << Message.LaunchTransform << Message.InheritedVelocity;
     return !Writer.IsError() && PublishMessage(0, MoveTemp(Data));
 }
 
@@ -31,18 +31,21 @@ bool UBBBGrenadeNetworkComponent::ReceiveMessage(uint8 Kind, const TArray<uint8>
     }
     FBBBGrenadeNetworkMessage Message;
     Message.Revision = Revision;
-    uint8 Using = 0, Released = 0;
+    uint8 Using = 0, Released = 0, Hidden = 0;
     FMemoryReader Reader(Data);
-    Reader << Message.UseSerial << Message.ReleaseSerial << Using << Released << Message.LaunchTransform << Message.InheritedVelocity;
+    Reader << Message.UseSerial << Message.ReleaseSerial << Using << Released << Hidden << Message.LaunchTransform << Message.InheritedVelocity;
+    Message.bHide = Hidden != 0;
     Message.bUsing = Using != 0;
     Message.bReleased = Released != 0;
-    if (Reader.IsError() || Reader.Tell() != Data.Num() || Using > 1 || Released > 1 || !Message.IsValid())
+    if (Reader.IsError() || Reader.Tell() != Data.Num() || Using > 1 || Released > 1 || Hidden > 1 || !Message.IsValid())
     {
         return false;
     }
     if (bRemoteMessage)
     {
-        return Actor->SubmitInput(FBBBGrenadeStateRemoteMessagePacket{{}, {Message}});
+        Actor->SubmitInput(FBBBGrenadeStateRemoteMessagePacket{{}, {Message}});
+        return true;
     }
-    return Actor->SubmitInput(FBBBGrenadeStateAuthorityFactPacket{{}, {Message}});
+    Actor->SubmitInput(FBBBGrenadeStateAuthorityFactPacket{{}, {Message}});
+    return true;
 }

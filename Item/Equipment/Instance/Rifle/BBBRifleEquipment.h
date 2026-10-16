@@ -6,6 +6,14 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleBeginContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleEndActionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleHideLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleShowLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/RemoteMessage/Equipment/FBBBRifleVisibilityRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/AuthorityFact/Equipment/FBBBRifleVisibilityAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleEndContactLocalControlPacket.h"
 #include "BBBRifleEquipment.generated.h"
 
 
@@ -17,7 +25,6 @@ struct FBBBRifleBlockFireLocalControlPacket;
 struct FBBBRifleAllowFireLocalControlPacket;
 struct FBBBRifleLoadAmmoLocalControlPacket;
 struct FBBBRifleInterruptReloadLocalControlPacket;
-struct FBBBRifleActionPermissionLocalControlPacket;
 struct FBBBRifleFireRemoteMessagePacket;
 struct FBBBRifleReloadStartRemoteMessagePacket;
 struct FBBBRifleReloadEndRemoteMessagePacket;
@@ -32,6 +39,7 @@ class ABBB_EVAC_API ABBBRifleEquipment final : public ABBBEquipment
     GENERATED_BODY()
 
 public:
+    virtual bool IsMeshHidden() const override;
     /** @return 换弹和动作阻塞是否允许快捷消耗品打断 */
     virtual bool CanQuickUse() const override;
     ABBBRifleEquipment();
@@ -52,17 +60,12 @@ public:
     /**
      * 提交步枪输入
      * @param Packet	待提交的输入包
-     * @return 是否接受
+     * @return 无 仅贡献输入
      */
     template<typename TPacket>
-    bool SubmitInput(TPacket &&Packet)
+    void SubmitInput(TPacket &&Packet)
     {
-        if (!ensureMsgf(IsInGameThread(), TEXT("步枪输入线程或数据无效")))
-        {
-            return false;
-        }
-
-        return QueueInput(Forward<TPacket>(Packet));
+        QueueInput(Forward<TPacket>(Packet));
     }
 
     /** @return 当前弹匣内弹量 */
@@ -95,43 +98,53 @@ protected:
     virtual void EmitShot_Implementation(const FTransform &MuzzleTransform);
 
 private:
+    virtual void QueueInput(FBBBEquipmentVisibilityAuthorityFactPacket<> Packet) override;
+    void QueueInput(FBBBRifleVisibilityAuthorityFactPacket Packet);
+    virtual void QueueInput(FBBBEquipmentVisibilityRemoteMessagePacket<> Packet) override;
+    void QueueInput(FBBBRifleVisibilityRemoteMessagePacket Packet);
+    virtual void QueueInput(FBBBEquipmentShowLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleShowLocalControlPacket Packet);
+    virtual void QueueInput(FBBBEquipmentHideLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleHideLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleBeginActionLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleBeginContactLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleEndActionLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleEndContactLocalControlPacket Packet);
     using ABBBEquipment::QueueInput;
-    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet) override;
     friend class FBBBRifleActionProcessor;
 
     virtual void Tick(float DeltaSeconds) override;
     virtual bool InitializeRuntimeData() override;
     virtual void ShutdownRuntimeData() override;
 
-    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBRifleEquipLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleEquipAuthorityFactPacket Packet);
-    bool QueueInput(FBBBRiflePrimaryLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleSecondaryLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleBlockFireLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleAllowFireLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleLoadAmmoLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleInterruptReloadLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleActionPermissionLocalControlPacket Packet);
-    bool QueueInput(FBBBRifleFireRemoteMessagePacket Packet);
-    bool QueueInput(FBBBRifleReloadStartRemoteMessagePacket Packet);
-    bool QueueInput(FBBBRifleReloadEndRemoteMessagePacket Packet);
-    bool QueueInput(FBBBRifleFireAuthorityFactPacket Packet);
-    bool QueueInput(FBBBRifleReloadStartAuthorityFactPacket Packet);
-    bool QueueInput(FBBBRifleReloadEndAuthorityFactPacket Packet);
+    virtual void QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRifleEquipLocalControlPacket Packet);
+    void QueueInput(FBBBRifleEquipAuthorityFactPacket Packet);
+    void QueueInput(FBBBRiflePrimaryLocalControlPacket Packet);
+    void QueueInput(FBBBRifleSecondaryLocalControlPacket Packet);
+    void QueueInput(FBBBRifleBlockFireLocalControlPacket Packet);
+    void QueueInput(FBBBRifleAllowFireLocalControlPacket Packet);
+    void QueueInput(FBBBRifleLoadAmmoLocalControlPacket Packet);
+    void QueueInput(FBBBRifleInterruptReloadLocalControlPacket Packet);
+    void QueueInput(FBBBRifleFireRemoteMessagePacket Packet);
+    void QueueInput(FBBBRifleReloadStartRemoteMessagePacket Packet);
+    void QueueInput(FBBBRifleReloadEndRemoteMessagePacket Packet);
+    void QueueInput(FBBBRifleFireAuthorityFactPacket Packet);
+    void QueueInput(FBBBRifleReloadStartAuthorityFactPacket Packet);
+    void QueueInput(FBBBRifleReloadEndAuthorityFactPacket Packet);
 };

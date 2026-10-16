@@ -8,6 +8,8 @@ struct FBBBGrenadeNetworkObservationState final
     int32 UseSerial = INDEX_NONE;
     /** 最近已发布的释放序号 */
     int32 ReleaseSerial = INDEX_NONE;
+    /** 最近已发布的网格隐藏结果 */
+    bool bHide = false;
     /** 最近已发布的动作结果 */
     bool bUsing = false;
     /** 发送结果的顺序 */

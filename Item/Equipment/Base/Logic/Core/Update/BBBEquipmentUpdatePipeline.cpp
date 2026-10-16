@@ -23,7 +23,7 @@ void FBBBEquipmentUpdatePipeline::Update(ABBBEquipment &Equipment) const
         return;
     }
 
-    // 已卸下或暂停使用的装备只收束自身 不再消费玩法输入
+    // 真正卸下后才关闭装备 隐藏网格不改变持有关系
     if (!Equipment.IsEquipped())
     {
         Equipment.ShutdownRuntimeData();

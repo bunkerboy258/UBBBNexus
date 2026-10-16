@@ -17,11 +17,11 @@ class ABBB_EVAC_API ABBBThrowable final : public AActor
     GENERATED_BODY()
 public:
     ABBBThrowable();
-    /** @param Packet	投掷物独立输入 @return 是否接受输入 */
+    /** @param Packet	投掷物独立输入 @return 无 仅贡献输入 */
     template<typename TPacket>
-    bool SubmitInput(TPacket&& Packet)
+    void SubmitInput(TPacket&& Packet)
     {
-        return IsInGameThread() && ParseSystem.Submit(RuntimeData, Forward<TPacket>(Packet));
+        ParseSystem.Submit(RuntimeData, Forward<TPacket>(Packet));
     }
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;

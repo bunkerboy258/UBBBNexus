@@ -22,6 +22,12 @@ void FBBBRifleNetworkProcessor::Update(FBBBRifleNetworkUpdateContext &Context)
         Sent.bPublished = false;
     }
 
+    if (!Sent.bPublished || Sent.bHide != Action.bHide)
+    {
+        if (!Network->PublishVisibility(Action.bHide)) return;
+        Sent.bHide = Action.bHide;
+    }
+
     if (!Sent.bPublished || Sent.FireSequence != Action.FireSequence)
     {
         if (!Network->PublishFire(Action.FireSequence))

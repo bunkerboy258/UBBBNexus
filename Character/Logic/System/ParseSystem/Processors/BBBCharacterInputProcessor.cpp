@@ -33,8 +33,6 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.ItemMove, Context);
     Process(InputState.RemoteInteractionSelectionState, Context);
     Process(InputState.AuthorityInteractionSelectionState, Context);
-    Process(InputState.RemoteMessageInteractionUse, Context);
-    Process(InputState.AuthorityFactInteractionUse, Context);
     Process(InputState.ItemSelect, Context);
     Process(InputState.ItemQuickUse, Context);
     Process(InputState.InteractionPrimary, Context);

@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionInputState.h"
@@ -13,9 +14,9 @@ struct FBBBRiflePrimaryLocalControlPacket final : public FBBBEquipmentPrimaryLoc
     }
 
     /** @return 输入可写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBRifleActionState &State) const
     {
-        return true;
+        return !State.bHide;
     }
 
     /** @param State	本类装备的动作输入状态 @return 无 */

@@ -166,6 +166,7 @@ void FBBBCharacterTraversalProbeProcessor::Update(FBBBCharacterTraversalUpdateCo
         return;
     }
     FBBBCharacterTraversalState &State = Context.Traversal;
+    State.bTraversing = true;
     State.Action = Action;
     ++State.ActionId;
     if (State.ActionId == 0)

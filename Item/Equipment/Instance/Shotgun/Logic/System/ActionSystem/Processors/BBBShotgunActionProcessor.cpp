@@ -18,7 +18,6 @@ namespace
     void Clear(FBBBShotgunActionInputState &Input)
     {
         Input.bEquipRequested = false;
-        Input.bActionPermissionReceived = false;
         Input.bBlockFireRequested = false;
         Input.bAllowFireRequested = false;
         Input.bPrimaryRequested = false;
@@ -72,18 +71,8 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
         return;
     }
 
-    // 操作许可先于装匣与开火通知处理 禁止旧通知在攀爬中补结算
-    if (Input.bActionPermissionReceived)
-    {
-        State.bOwnerActionsAllowed = Input.bActionsAllowed;
-    }
-    if (!State.bOwnerActionsAllowed)
-    {
-        Stop(Context.RuntimeData);
-        State.bEquippedThisFrame = false;
-        Clear(Input);
-        return;
-    }
+
+
 
     // 同帧收到区间结束与就绪通知时允许开火优先 不提前阻塞装备请求帧
     if (Input.bBlockFireRequested)

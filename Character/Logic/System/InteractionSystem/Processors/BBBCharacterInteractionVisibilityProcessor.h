@@ -1,8 +1,8 @@
 #pragma once
 struct FBBBCharacterInteractionUpdateContext;
 
-/** 在持有关系之外维护临时收起及恢复边沿 */
-class FBBBCharacterInteractionUseProcessor final
+/** 维护持有物品的网格隐藏状态 */
+class FBBBCharacterInteractionVisibilityProcessor final
 {
   public:
     /**

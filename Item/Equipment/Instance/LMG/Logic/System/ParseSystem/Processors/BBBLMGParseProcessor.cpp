@@ -4,33 +4,14 @@
 namespace
 {
     template<typename TPacket, typename TState>
-    void Process(TBBBLMGInputSlot<TPacket> &Slot, TState &State)
+    void Process(TBBBLMGInputSlot<TPacket> &Slot, TState &State, const FBBBLMGActionState &Permission)
     {
-        if (!Slot.bActive)
-        {
-            return;
-        }
-
+        if (!Slot.bActive) return;
         Slot.bActive = false;
-        if (Slot.Packet.IsValid())
+        if (Slot.Packet.IsValid() && Slot.Packet.CanApply(Permission))
         {
-            if constexpr (std::is_same_v<TState, FBBBLMGActionState>)
-            {
-                if (Slot.Packet.CanApply(State))
-                {
-                    Slot.Packet.Apply(State);
-                }
-            }
-
-            if constexpr (!std::is_same_v<TState, FBBBLMGActionState>)
-            {
-                if (Slot.Packet.CanApply())
-                {
-                    Slot.Packet.Apply(State);
-                }
-            }
+            Slot.Packet.Apply(State);
         }
-
         Slot.Packet = {};
     }
 }
@@ -41,7 +22,6 @@ void FBBBLMGParseProcessor::Update(FBBBLMGParseUpdateContext &Context)
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &Action = Context.RuntimeData.Action.ActionState;
     Input.bEquipRequested = false;
-    Input.bActionPermissionReceived = false;
     Input.bBlockFireRequested = false;
     Input.bAllowFireRequested = false;
     Input.bPrimaryRequested = false;
@@ -51,31 +31,60 @@ void FBBBLMGParseProcessor::Update(FBBBLMGParseUpdateContext &Context)
 
     if (Context.bCausal)
     {
-        Process(Queue.Equip, Input);
-        Process(Queue.Fire, Input);
-        Process(Queue.Reload, Input);
-        Process(Queue.BlockFire, Input);
-        Process(Queue.AllowFire, Input);
-        Process(Queue.LoadMagazine, Input);
-        Process(Queue.InterruptReload, Input);
-        Process(Queue.ActionPermission, Input);
+        Process(Queue.EndContactLocalControl, Input, Action);
+        Process(Queue.EndActionLocalControl, Input, Action);
+        Process(Queue.BeginContactLocalControl, Input, Action);
+        Process(Queue.BeginActionLocalControl, Input, Action);
+        Process(Queue.ShowLocalControl, Action, Action);
+
+        Process(Queue.HideLocalControl, Action, Action);
+
+        Process(Queue.Equip, Input, Action);
+        Process(Queue.Fire, Input, Action);
+        Process(Queue.Reload, Input, Action);
+        Process(Queue.BlockFire, Input, Action);
+        Process(Queue.AllowFire, Input, Action);
+        Process(Queue.LoadMagazine, Input, Action);
+        Process(Queue.InterruptReload, Input, Action);
         Clear(Context.RuntimeData);
         return;
     }
 
-    Process(Queue.AuthorityEquip, Input);
-    Process(Queue.RemoteFire, Action);
-    Process(Queue.RemoteReloadStart, Action);
-    Process(Queue.RemoteReloadEnd, Action);
-    Process(Queue.AuthorityFire, Action);
-    Process(Queue.AuthorityReloadStart, Action);
-    Process(Queue.AuthorityReloadEnd, Action);
+    Process(Queue.VisibilityRemoteMessage, Action, Action);
+    Process(Queue.VisibilityAuthorityFact, Action, Action);
+    Process(Queue.AuthorityEquip, Input, Action);
+    Process(Queue.RemoteFire, Action, Action);
+    Process(Queue.RemoteReloadStart, Action, Action);
+    Process(Queue.RemoteReloadEnd, Action, Action);
+    Process(Queue.AuthorityFire, Action, Action);
+    Process(Queue.AuthorityReloadStart, Action, Action);
+    Process(Queue.AuthorityReloadEnd, Action, Action);
 
     Clear(Context.RuntimeData);
 }
 
 void FBBBLMGParseProcessor::Clear(FBBBLMGRuntimeData &Data)
 {
+    Data.Parse.InputState.EndContactLocalControl.bActive = false;
+    Data.Parse.InputState.EndContactLocalControl.Packet = {};
+    Data.Parse.InputState.EndActionLocalControl.bActive = false;
+    Data.Parse.InputState.EndActionLocalControl.Packet = {};
+    Data.Parse.InputState.BeginContactLocalControl.bActive = false;
+    Data.Parse.InputState.BeginContactLocalControl.Packet = {};
+    Data.Parse.InputState.BeginActionLocalControl.bActive = false;
+    Data.Parse.InputState.BeginActionLocalControl.Packet = {};
+    Data.Parse.InputState.VisibilityAuthorityFact.bActive = false;
+    Data.Parse.InputState.VisibilityAuthorityFact.Packet = {};
+
+    Data.Parse.InputState.VisibilityRemoteMessage.bActive = false;
+    Data.Parse.InputState.VisibilityRemoteMessage.Packet = {};
+
+    Data.Parse.InputState.ShowLocalControl.bActive = false;
+    Data.Parse.InputState.ShowLocalControl.Packet = {};
+
+    Data.Parse.InputState.HideLocalControl.bActive = false;
+    Data.Parse.InputState.HideLocalControl.Packet = {};
+
     Data.Parse.InputState.Equip.bActive = false;
     Data.Parse.InputState.Equip.Packet = {};
     Data.Parse.InputState.AuthorityEquip.bActive = false;
@@ -92,8 +101,6 @@ void FBBBLMGParseProcessor::Clear(FBBBLMGRuntimeData &Data)
     Data.Parse.InputState.LoadMagazine.Packet = {};
     Data.Parse.InputState.InterruptReload.bActive = false;
     Data.Parse.InputState.InterruptReload.Packet = {};
-    Data.Parse.InputState.ActionPermission.bActive = false;
-    Data.Parse.InputState.ActionPermission.Packet = {};
     Data.Parse.InputState.RemoteFire.bActive = false;
     Data.Parse.InputState.RemoteFire.Packet = {};
     Data.Parse.InputState.RemoteReloadStart.bActive = false;

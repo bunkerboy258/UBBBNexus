@@ -22,6 +22,12 @@ void FBBBMinigunNetworkProcessor::Update(FBBBMinigunNetworkUpdateContext &Contex
         Sent.bPublished = false;
     }
 
+    if (!Sent.bPublished || Sent.bHide != Action.bHide)
+    {
+        if (!Network->PublishVisibility(Action.bHide)) return;
+        Sent.bHide = Action.bHide;
+    }
+
     if (!Sent.bPublished || Sent.bSpinning != Action.bIsSpinning)
     {
         if (!Network->PublishSpin(Action.bIsSpinning))

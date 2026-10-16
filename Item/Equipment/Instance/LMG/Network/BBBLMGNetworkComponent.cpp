@@ -68,30 +68,39 @@ bool UBBBLMGNetworkComponent::ReceiveMessage(
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBLMGFireRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBLMGFireRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBLMGFireAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBLMGFireAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 1)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBLMGReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBLMGReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBLMGReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBLMGReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 2)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBLMGReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            Equipment->SubmitInput(FBBBLMGReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBLMGReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+        Equipment->SubmitInput(FBBBLMGReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+
+        return true;
     }
 
     return false;

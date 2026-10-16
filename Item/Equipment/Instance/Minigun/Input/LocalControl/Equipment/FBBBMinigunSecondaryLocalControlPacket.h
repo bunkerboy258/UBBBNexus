@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/States/BBBMinigunActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/States/BBBMinigunActionInputState.h"
@@ -13,9 +14,9 @@ struct FBBBMinigunSecondaryLocalControlPacket final : public FBBBEquipmentSecond
     }
 
     /** @return 输入可写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBMinigunActionState &State) const
     {
-        return true;
+        return !State.bHide;
     }
 
     /** @param State	本类装备的动作输入状态 @return 无 */

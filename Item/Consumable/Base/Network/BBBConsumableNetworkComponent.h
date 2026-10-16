@@ -57,8 +57,6 @@ private:
     /** 当前接收实例 */
     uint64 DeliveredGeneration = 0;
 
-    /** 当前接收使用许可 */
-    uint64 DeliveredUseRevision = 0;
 
     /** 各协议槽位已经消费的顺序 */
     TMap<uint8, uint64> DeliveredRevisions;

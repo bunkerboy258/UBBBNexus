@@ -16,7 +16,7 @@ void FBBBGrenadeNetworkProcessor::Update(FBBBGrenadeNetworkUpdateContext &Contex
     const auto &Use = Context.Data.Use.ReadGrenadeUseState();
     auto &Network = Context.Data.Network.NetworkObservationState;
     if (!Protocol || (Network.UseSerial == Use.UseSerial && Network.ReleaseSerial == Use.ReleaseSerial
-        && Network.bUsing == Use.bUsing))
+        && Network.bUsing == Use.bUsing && Network.bHide == Use.bHide))
     {
         return;
     }
@@ -24,6 +24,7 @@ void FBBBGrenadeNetworkProcessor::Update(FBBBGrenadeNetworkUpdateContext &Contex
     Message.Revision = ++Network.Revision;
     Message.UseSerial = Use.UseSerial;
     Message.ReleaseSerial = Use.ReleaseSerial;
+    Message.bHide = Use.bHide;
     Message.bUsing = Use.bUsing;
     Message.bReleased = Use.bReleased;
     Message.LaunchTransform = Use.LaunchTransform;
@@ -34,6 +35,7 @@ void FBBBGrenadeNetworkProcessor::Update(FBBBGrenadeNetworkUpdateContext &Contex
     }
     Network.UseSerial = Use.UseSerial;
     Network.ReleaseSerial = Use.ReleaseSerial;
+    Network.bHide = Use.bHide;
     Network.bUsing = Use.bUsing;
 }
 

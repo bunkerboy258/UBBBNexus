@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/States/BBBLMGActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginActionLocalControlPacket.h"
 
 /** 本类装备不支持的公共操作 明确拒绝且不贡献状态 */
@@ -10,7 +11,7 @@ struct FBBBLMGBeginActionLocalControlPacket final : public FBBBEquipmentBeginAct
         return true;
     }
     /** @return 本类不支持此操作 */
-    bool CanApply() const
+    bool CanApply(const FBBBLMGActionState &State) const
     {
         return false;
     }

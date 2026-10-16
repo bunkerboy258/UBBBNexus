@@ -60,7 +60,7 @@ class ABBB_EVAC_API ABBBCharacter : public ACharacter
 
     friend class ABBBPlayerCameraSystem;
 
-    
+
 public:
     /** @return 角色当前移动的世界空间速度 单位为厘米每秒 */
     FVector GetMovementVelocity() const;
@@ -131,19 +131,14 @@ public:
         return RuntimeData.Life.ReadRescueState().EndReason;
     }
 
-    /** @return 当前持有装备已经成立的使用许可 */
+    /** @return 角色当前是否允许操作主手物品 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (DisplayName = "装备可使用"))
     bool IsItemUsable() const
     {
-        return RuntimeData.Interaction.ReadInteractionUseState().bUsable;
+        return RuntimeData.Life.ReadLifeState().bActionsAllowed
+            && !RuntimeData.Traversal.ReadTraversalState().bTraversing;
     }
 
-    /** @return 当前装备使用许可的修订号 */
-    uint64 GetItemUseRevision() const
-    {
-        return RuntimeData.Interaction.ReadInteractionUseState().Revision;
-    }
-    
     /**
      * 构造角色并装配相机臂与相机等默认组件
      */
@@ -202,17 +197,13 @@ public:
     /**
      * 提交离散快照包到本帧输入队列
      * @param Packet	输入包
-     * @return 是否接受输入
+     * @return 无 仅贡献输入
      */
     template<typename TPacket>
-    bool SubmitInput(TPacket &&Packet)
+    void SubmitInput(TPacket &&Packet)
     {
-        return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Forward<TPacket>(Packet));
+        BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Forward<TPacket>(Packet));
     }
-
-    /** @param Packet 蓝图构造的全身蒙太奇输入 @return 是否接受输入 */
-    UFUNCTION(BlueprintCallable, Category = "BBB|输入")
-    bool SubmitInput(const FBBBFullBodyMontageLocalControlPacket &Packet);
 
     /** @return 当前激活主手装备 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备")
@@ -280,7 +271,7 @@ public:
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ABBB|配置", meta = (DisplayName = "角色配置资产"))
     TObjectPtr<UBBBCharacterConfig> CharacterConfigAsset = nullptr;
-    
+
     UPROPERTY(VisibleAnywhere, Category = "ABBB|网络", meta = (DisplayName = "角色网络组件"))
     TObjectPtr<UBBBCharacterNetworkComponent> CharacterNetworkComponent;
     /** 装备独立网络传输组件 */
@@ -314,7 +305,7 @@ private:
 
     /** 独立维护生命阶段和受击事实 */
     FBBBCharacterLifeSystem LifeSystem;
-    
+
     FBBBCharacterItemSystem ItemSystem;
 
     FBBBCharacterAppearanceSystem AppearanceSystem;
@@ -322,11 +313,11 @@ private:
     FBBBCharacterInteractionSystem InteractionSystem;
 
     FBBBCharacterParseSystem ParseSystem;
-    
+
     FBBBCharacterAnimationSystem AnimationSystem;
-    
+
     FBBBCharacterNetworkSystem NetworkSystem;
-    
+
 
     FBBBCharacterUpdatePipeline CharacterUpdatePipeline;
 };

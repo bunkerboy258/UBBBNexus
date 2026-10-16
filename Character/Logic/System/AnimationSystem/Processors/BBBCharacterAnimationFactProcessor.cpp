@@ -50,8 +50,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.bUsingItem = Consumable && Consumable->IsUsing();
     FactState.ItemUseSerial = Consumable ? Consumable->GetUseSerial() : 0;
     const ABBBEquipment *Equipment = Character.GetHeldEquipment();
-    const UBBBEquipmentDefinition *Definition = IsValid(Equipment)
-        && RuntimeData.Interaction.ReadInteractionUseState().bUsable ? Equipment->GetDefinition() : nullptr;
+    const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
     FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
 

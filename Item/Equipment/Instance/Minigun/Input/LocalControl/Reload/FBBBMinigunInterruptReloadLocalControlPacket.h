@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/States/BBBMinigunActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/States/BBBMinigunActionInputState.h"
@@ -13,7 +14,7 @@ struct FBBBMinigunInterruptReloadLocalControlPacket final : public FBBBEquipment
     }
 
     /** @return 输入是否可写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBMinigunActionState &State) const
     {
         return true;
     }

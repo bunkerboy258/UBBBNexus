@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/States/BBBLMGActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/DomainData/States/BBBLMGActionInputState.h"
@@ -13,7 +14,7 @@ struct FBBBLMGInterruptReloadLocalControlPacket final : public FBBBEquipmentInte
     }
 
     /** @return 输入是否可写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBLMGActionState &State) const
     {
         return true;
     }

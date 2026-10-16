@@ -40,7 +40,6 @@ void FBBBCharacterNetworkSystem::Update()
         RuntimeData->Traversal.ReadTraversalState(),
         RuntimeData->Network.InteractionObservationState,
         RuntimeData->Interaction.ReadInteractionSelectionState(),
-        RuntimeData->Interaction.ReadInteractionUseState(),
         *RuntimeData};
 
     InteractionObservationProcessor.Update(Context);

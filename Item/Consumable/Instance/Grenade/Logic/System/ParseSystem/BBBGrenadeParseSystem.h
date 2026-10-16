@@ -14,7 +14,7 @@ public:
     void Update();
     /** @param Packet	待合并的固定输入 @return 是否接受 */
     template<typename TPacket>
-    bool Submit(TPacket Packet);
+    void Submit(TPacket Packet);
 
 private:
     friend class FBBBGrenadeInitializer;
@@ -26,7 +26,7 @@ private:
 };
 
 template<typename TPacket>
-bool FBBBGrenadeParseSystem::Submit(TPacket Packet)
+void FBBBGrenadeParseSystem::Submit(TPacket Packet)
 {
-    return Data && FBBBGrenadeParseProcessor::Submit(*Data, MoveTemp(Packet));
+    FBBBGrenadeParseProcessor::Submit(*Data, MoveTemp(Packet));
 }

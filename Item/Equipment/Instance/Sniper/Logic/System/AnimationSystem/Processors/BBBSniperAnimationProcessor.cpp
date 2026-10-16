@@ -21,6 +21,8 @@ void FBBBSniperAnimationProcessor::Stop(FBBBSniperAnimationUpdateContext &Contex
 
 void FBBBSniperAnimationProcessor::Update(FBBBSniperAnimationUpdateContext &Context)
 {
+    Context.Equipment.GetEquipmentSkeletalMesh()->SetHiddenInGame(Context.RuntimeData.Action.ReadSniperActionState().bHide);
+
     const auto &Action = Context.RuntimeData.Action.ReadSniperActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;
     if (Action.bEquippedThisFrame)

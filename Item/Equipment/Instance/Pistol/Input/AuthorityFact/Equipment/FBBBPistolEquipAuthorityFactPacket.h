@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ActionSystem/DomainData/States/BBBPistolActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ActionSystem/DomainData/States/BBBPistolActionInputState.h"
@@ -13,7 +14,7 @@ struct FBBBPistolEquipAuthorityFactPacket final : public FBBBEquipmentEquipAutho
     }
 
     /** @return 输入可写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBPistolActionState &State) const
     {
         return true;
     }

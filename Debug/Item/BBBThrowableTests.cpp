@@ -62,7 +62,7 @@ bool FBBBThrowablePhysicsTest::RunTest(const FString&)
     Launch.Definition = Definition;
     Launch.Transform = Transform;
     Launch.InheritedVelocity = FVector(100.0, 0.0, 0.0);
-    TestTrue(TEXT("释放输入接受"), Actor->SubmitInput(Launch));
+    Actor->SubmitInput(Launch);
     Actor->FinishSpawning(Transform);
     Actor->Tick(0.0f);
     TestEqual(TEXT("引擎 Predictive Interpolation 模式"), Actor->GetPhysicsReplicationMode(), EPhysicsReplicationMode::PredictiveInterpolation);

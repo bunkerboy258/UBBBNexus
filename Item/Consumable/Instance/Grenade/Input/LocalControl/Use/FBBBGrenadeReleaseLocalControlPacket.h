@@ -14,9 +14,9 @@ struct FBBBGrenadeReleaseLocalControlPacket final : public FBBBConsumableRelease
     }
 
     /** @param Context	解析上下文 @return 是否拥有本机因果权限 */
-    bool CanApply(bool bIsMirror) const
+    bool CanApply(bool bIsMirror, const FBBBGrenadeUseState &State) const
     {
-        return !bIsMirror;
+        return !bIsMirror && !State.bHide;
     }
 
     /** @param Context	解析上下文 @return 无 */

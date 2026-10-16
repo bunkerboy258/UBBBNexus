@@ -16,7 +16,7 @@ struct FBBBCharacterItemQuickUseLocalControlPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
         return !Context.bIsMirror && Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin
-            && Context.Traversal.Action == EBBBTraversalAction::None
+            && !Context.Traversal.bTraversing
             && Context.InteractionUse.bQuickUseAllowed && !Context.InteractionUse.bBusy;
     }
     /** @param Context	角色输入上下文 @return 无 */

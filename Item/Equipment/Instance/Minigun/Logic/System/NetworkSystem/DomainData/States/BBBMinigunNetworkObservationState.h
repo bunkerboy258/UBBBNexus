@@ -11,6 +11,9 @@ struct FBBBMinigunNetworkObservationState final
     /** 已发布本次持有的基准 */
     bool bPublished = false;
 
+    /** 已发送的网格隐藏事实 */
+    bool bHide = false;
+
     /** 最近已发送的电机驱动状态 */
     bool bSpinning = false;
 

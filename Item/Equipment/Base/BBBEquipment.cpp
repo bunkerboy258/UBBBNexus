@@ -16,7 +16,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndActionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndContactLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -92,23 +91,11 @@ bool ABBBEquipment::TryGetMuzzleTransform(FTransform &OutTransform) const
     return false;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现装备表现输入"));
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现权威装备表现输入"));
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
-{
-    ensureMsgf(false, TEXT("抽象装备未实现主行为输入"));
-    return false;
-}
+
+
+
 
 bool ABBBEquipment::IsMirror() const
 {
@@ -119,34 +106,18 @@ bool ABBBEquipment::IsMirror() const
 bool ABBBEquipment::IsEquipped() const
 {
     const ABBBCharacter *Character = Cast<ABBBCharacter>(GetOwner());
-    return Character && Character->GetHeldEquipment() == this && Character->IsItemUsable();
+    return Character && Character->GetHeldEquipment() == this;
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
-{
-    ensureMsgf(false, TEXT("装备未实现持有者操作许可输入"));
-    return false;
-}
+
+
+
+
+
 
 UBBBEquipmentNetworkComponent *ABBBEquipment::GetNetworkComponent() const
 {
@@ -163,30 +134,15 @@ void ABBBEquipment::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
 }
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
-{
-    return false;
-}
 
-bool ABBBEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
-{
-    return false;
-}
+
+
+
+
+
 
 bool ABBBEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const
 {

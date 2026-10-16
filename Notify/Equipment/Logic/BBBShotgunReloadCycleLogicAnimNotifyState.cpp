@@ -16,11 +16,9 @@ void UBBBShotgunReloadCycleLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponen
 
     if (UAnimNotifyLibrary::NotifyStateReachedEnd(EventReference))
     {
-        ensureMsgf(Equipment->SubmitInput(FBBBShotgunReloadCycleEndLocalControlPacket{bFinishing}),
-            TEXT("霰弹枪装填周期结束通知提交失败 %s"), *Equipment->GetName());
+        Equipment->SubmitInput(FBBBShotgunReloadCycleEndLocalControlPacket{bFinishing});
         return;
     }
 
-    ensureMsgf(Equipment->SubmitInput(FBBBShotgunInterruptReloadLocalControlPacket{}),
-        TEXT("霰弹枪装填取消通知提交失败 %s"), *Equipment->GetName());
+    Equipment->SubmitInput(FBBBShotgunInterruptReloadLocalControlPacket{});
 }

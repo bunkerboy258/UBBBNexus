@@ -68,30 +68,39 @@ bool UBBBPistolNetworkComponent::ReceiveMessage(
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBPistolFireRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBPistolFireRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBPistolFireAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBPistolFireAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 1)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBPistolReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBPistolReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBPistolReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBPistolReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 2)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBPistolReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            Equipment->SubmitInput(FBBBPistolReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBPistolReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+        Equipment->SubmitInput(FBBBPistolReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+
+        return true;
     }
 
     return false;

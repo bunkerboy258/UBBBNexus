@@ -18,7 +18,6 @@ struct FBBBCharacterInteractionInputState;
 struct FBBBCharacterItemOperationState;
 struct FBBBCharacterAimImpulseState;
 struct FBBBCharacterLifeInputState;
-struct FBBBCharacterInteractionUseInputState;
 struct FBBBCharacterInteractionUseState;
 struct FBBBCharacterDamageInboxState;
 struct FBBBCharacterAppearanceInputState;
@@ -70,8 +69,6 @@ struct FBBBCharacterInputContext final
 
     /** 当前生命阶段 仅用于输入许可 */
     const FBBBCharacterLifeState &Life;
-    /** 待还原的装备独立使用结果 */
-    FBBBCharacterInteractionUseInputState &InteractionUseInputs;
     /** 待投送的独立命中消息 */
     FBBBCharacterDamageInboxState &DamageInbox;
 

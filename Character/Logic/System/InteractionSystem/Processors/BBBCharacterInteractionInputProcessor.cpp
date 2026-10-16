@@ -17,18 +17,17 @@
 void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpdateContext &Context) const
 {
     auto &State = Context.RuntimeData.Interaction.InteractionInputState;
-    const bool bUsable = Context.RuntimeData.Interaction.ReadInteractionUseState().bUsable;
     auto *Equipment = Context.Character.GetHeldEquipment();
     auto *Consumable = Cast<ABBBConsumable>(Context.Character.GetHeldItem());
-    if (bUsable && State.bPrimary && Equipment)
+    if (State.bPrimary && Equipment)
     {
         Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket<>{});
     }
-    if (bUsable && State.bPrimary && Consumable)
+    if (State.bPrimary && Consumable)
     {
         Consumable->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{});
     }
-    if (bUsable && State.bSecondary && Equipment)
+    if (State.bSecondary && Equipment)
     {
         Equipment->SubmitInput(FBBBEquipmentSecondaryLocalControlPacket<>{});
     }
@@ -36,7 +35,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
     State.bSecondary = false;
     for (int32 Index = 0; Index < State.ReleaseRecipients.Num(); ++Index)
     {
-        if (bUsable && Consumable && State.ReleaseRecipients[Index] == Consumable
+        if (Consumable && State.ReleaseRecipients[Index] == Consumable
             && State.ReleaseGenerations[Index] == Context.Character.GetItemGeneration()
             && State.ReleaseTokens[Index] == Consumable->GetUseSerial())
         {
@@ -62,7 +61,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
     for (int32 Index = 0; Index < State.BeginActionRecipients.Num(); ++Index)
     {
         ABBBEquipment *Recipient = State.BeginActionRecipients[Index].Get();
-        if (bUsable && Recipient && Recipient == Context.Character.GetHeldEquipment())
+        if (Recipient && Recipient == Context.Character.GetHeldEquipment())
         {
             Recipient->SubmitInput(FBBBEquipmentBeginActionLocalControlPacket<>{{State.BeginActionTokens[Index]}});
         }
@@ -84,7 +83,7 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
     for (int32 Index = 0; Index < State.BeginContactRecipients.Num(); ++Index)
     {
         ABBBEquipment *Recipient = State.BeginContactRecipients[Index].Get();
-        if (bUsable && Recipient && Recipient == Context.Character.GetHeldEquipment())
+        if (Recipient && Recipient == Context.Character.GetHeldEquipment())
         {
             Recipient->SubmitInput(FBBBEquipmentBeginContactLocalControlPacket<>{{State.BeginContactTokens[Index]}});
         }

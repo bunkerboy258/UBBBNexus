@@ -12,6 +12,10 @@ struct FBBBCharacterTraversalState final
 {
     GENERATED_BODY()
 
+    /** 攀爬领域当前持有角色控制权 */
+    UPROPERTY(Transient)
+    bool bTraversing = false;
+
     /** 当前已经确定的翻越动作 */
     UPROPERTY(Transient)
     EBBBTraversalAction Action = EBBBTraversalAction::None;

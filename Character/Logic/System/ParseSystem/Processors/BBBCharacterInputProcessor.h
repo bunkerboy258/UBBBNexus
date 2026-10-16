@@ -38,7 +38,7 @@ private:
             return;
         }
 
-        if (Slot.Data.CanApply(Context))
+        if (Slot.Data.IsValid() && Slot.Data.CanApply(Context))
         {
             Slot.Data.Apply(Context);
         }

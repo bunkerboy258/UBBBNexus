@@ -23,26 +23,15 @@ void FBBBCharacterInteractionObservationProcessor::Update(FBBBCharacterNetworkUp
         Character->GetConsumableNetworkComponent()->DeliverPending();
     }
 
-    if (!Context.InteractionUse.bInitialized
-        || (Context.InteractionObservation.Generation == Context.Interaction.ActiveGeneration
-            && Context.InteractionObservation.UseRevision == Context.InteractionUse.Revision))
-    {
-        return;
-    }
-
+    if (Context.InteractionObservation.Generation == Context.Interaction.ActiveGeneration) return;
     if (Context.NetworkIdentityState.bHasAuthority)
     {
-        Context.NetworkComponent.ReplicateInteraction(Context.Interaction.ActiveItemId, Context.Interaction.ActiveGeneration,
-            Context.InteractionUse.bUsable, Context.InteractionUse.Revision);
+        Context.NetworkComponent.ReplicateInteraction(Context.Interaction.ActiveItemId, Context.Interaction.ActiveGeneration);
         Context.InteractionObservation.Generation = Context.Interaction.ActiveGeneration;
-        Context.InteractionObservation.UseRevision = Context.InteractionUse.Revision;
     }
-
     if (!Context.NetworkIdentityState.bHasAuthority && Context.NetworkIdentityState.bLocallyControlled)
     {
-        Context.NetworkComponent.ServerSubmitInteraction(Context.Interaction.ActiveItemId, Context.Interaction.ActiveGeneration,
-            Context.InteractionUse.bUsable, Context.InteractionUse.Revision);
+        Context.NetworkComponent.ServerSubmitInteraction(Context.Interaction.ActiveItemId, Context.Interaction.ActiveGeneration);
         Context.InteractionObservation.Generation = Context.Interaction.ActiveGeneration;
-        Context.InteractionObservation.UseRevision = Context.InteractionUse.Revision;
     }
 }

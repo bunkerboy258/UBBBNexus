@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionUseProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionVisibilityProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionActionPermissionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionSelectionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionLifecycleProcessor.h"
@@ -76,6 +76,6 @@ private:
     /** CMC 前的持有者操作许可通信 */
     FBBBCharacterInteractionActionPermissionProcessor ActionPermissionProcessor;
     /** 临时收起与恢复通信 */
-    FBBBCharacterInteractionUseProcessor UseProcessor;
+    FBBBCharacterInteractionVisibilityProcessor VisibilityProcessor;
 
 };

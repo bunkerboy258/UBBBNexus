@@ -10,6 +10,7 @@ struct FBBBGrenadeNetworkMessage final
     /** 已完成的释放序号 */
     int32 ReleaseSerial = 0;
     /** 当前是否处于使用动作 */
+    bool bHide = false;
     bool bUsing = false;
     /** 当前手持网格是否已释放 */
     bool bReleased = false;

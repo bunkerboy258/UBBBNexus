@@ -42,6 +42,7 @@ void FBBBCharacterTraversalLifeProcessor::Update(FBBBCharacterTraversalUpdateCon
     // 必须同时得到动画退出与 CMC 释放结果 才能清空业务状态和校正目标
     if (State.bEndRequested && State.bAnimationReleased && !Context.Locomotion.bTraversalControlled)
     {
+        State.bTraversing = false;
         State.Action = EBBBTraversalAction::None;
         State.bEndRequested = false;
         State.Obstacle.Reset();

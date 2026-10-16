@@ -1,4 +1,12 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/AuthorityFact/Equipment/FBBBPistolVisibilityAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/RemoteMessage/Equipment/FBBBPistolVisibilityRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolShowLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolHideLocalControlPacket.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ParseSystem/DomainData/Definitions/BBBPistolInputSlot.h"
@@ -10,7 +18,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Fire/FBBBPistolAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Reload/FBBBPistolLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Reload/FBBBPistolInterruptReloadLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/LocalControl/Equipment/FBBBPistolActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/RemoteMessage/Fire/FBBBPistolFireRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/RemoteMessage/Reload/FBBBPistolReloadStartRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Input/RemoteMessage/Reload/FBBBPistolReloadEndRemoteMessagePacket.h"
@@ -21,6 +28,26 @@
 /** 手枪等待更新时消费的固定输入槽 */
 struct FBBBPistolInputState final
 {
+    /** EndContactLocalControl固定输入槽 */
+    TBBBPistolInputSlot<FBBBPistolEndContactLocalControlPacket> EndContactLocalControl;
+
+    /** EndActionLocalControl固定输入槽 */
+    TBBBPistolInputSlot<FBBBPistolEndActionLocalControlPacket> EndActionLocalControl;
+
+    /** BeginContactLocalControl固定输入槽 */
+    TBBBPistolInputSlot<FBBBPistolBeginContactLocalControlPacket> BeginContactLocalControl;
+
+    /** BeginActionLocalControl固定输入槽 */
+    TBBBPistolInputSlot<FBBBPistolBeginActionLocalControlPacket> BeginActionLocalControl;
+
+    /** 网格显示输入槽位 */
+    TBBBPistolInputSlot<FBBBPistolVisibilityAuthorityFactPacket> VisibilityAuthorityFact;
+    /** 网格显示输入槽位 */
+    TBBBPistolInputSlot<FBBBPistolVisibilityRemoteMessagePacket> VisibilityRemoteMessage;
+    /** 网格显示输入槽位 */
+    TBBBPistolInputSlot<FBBBPistolShowLocalControlPacket> ShowLocalControl;
+    /** 网格显示输入槽位 */
+    TBBBPistolInputSlot<FBBBPistolHideLocalControlPacket> HideLocalControl;
     /** Equip固定槽位 */
     TBBBPistolInputSlot<FBBBPistolEquipLocalControlPacket> Equip;
 
@@ -44,9 +71,6 @@ struct FBBBPistolInputState final
 
     /** InterruptReload固定槽位 */
     TBBBPistolInputSlot<FBBBPistolInterruptReloadLocalControlPacket> InterruptReload;
-
-    /** ActionPermission固定槽位 */
-    TBBBPistolInputSlot<FBBBPistolActionPermissionLocalControlPacket> ActionPermission;
 
     /** RemoteFire固定槽位 */
     TBBBPistolInputSlot<FBBBPistolFireRemoteMessagePacket> RemoteFire;

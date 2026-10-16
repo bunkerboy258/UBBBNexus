@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionSelectionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
@@ -25,7 +26,7 @@ struct FBBBCharacterInteractionReleaseLocalControlPacket final
     /** @param Context	角色输入上下文 @return 是否拥有动作生成权限 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror;
+        return !Context.Traversal.bTraversing && !Context.bIsMirror;
 
     }
     /** @param Context	角色输入上下文 @return 无 */

@@ -21,6 +21,8 @@ void FBBBRifleAnimationProcessor::Stop(FBBBRifleAnimationUpdateContext &Context)
 
 void FBBBRifleAnimationProcessor::Update(FBBBRifleAnimationUpdateContext &Context)
 {
+    Context.Equipment.GetEquipmentSkeletalMesh()->SetHiddenInGame(Context.RuntimeData.Action.ReadRifleActionState().bHide);
+
     const auto &Action = Context.RuntimeData.Action.ReadRifleActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;
     if (Action.bEquippedThisFrame)

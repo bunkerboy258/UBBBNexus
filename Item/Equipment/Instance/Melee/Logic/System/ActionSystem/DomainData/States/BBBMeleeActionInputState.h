@@ -6,9 +6,6 @@ struct FBBBMeleeActionInputState final
     /** 当前帧主行为请求 */
     bool bPrimary = false;
 
-    /** 当前帧收到持有者操作许可 */
-    bool bActionPermissionReceived = false;
-
     /** 持有者允许继续装备操作 */
     bool bActionsAllowed = true;
     /** 生命周期开始标识 */

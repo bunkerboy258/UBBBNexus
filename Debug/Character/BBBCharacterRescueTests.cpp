@@ -13,6 +13,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
 #include "Engine/LocalPlayer.h"
@@ -151,6 +152,14 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
 
     TestFalse(TEXT("帮扶期间装备收起"), Helper->IsItemUsable());
     TestTrue(TEXT("装备实例未重建"), Helper->GetHeldEquipment() == Equipment);
+    if (TestNotNull(TEXT("持有装备"), Equipment))
+    {
+        TestTrue(TEXT("隐藏仅作用于网格"), Equipment->GetEquipmentSkeletalMesh()->bHiddenInGame && !Equipment->IsHidden());
+        TestTrue(TEXT("隐藏不解除装备关系"), Equipment->IsEquipped());
+        TestTrue(TEXT("隐藏不关闭装备更新"), Equipment->IsActorTickEnabled());
+        TestTrue(TEXT("隐藏不解绑握持动画"), HelperAnimation &&
+            HelperAnimation->TryGetWeaponAnimInstance() == Equipment->GetEquipmentAnimationInstance());
+    }
     Helper->SubmitInput(FBBBJumpLocalControlPacket{});
     Helper->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{INDEX_NONE}});
     Target->SubmitInput(FBBBCharacterMovementLocalControlPacket{FVector::ForwardVector, FRotator::ZeroRotator});
@@ -164,6 +173,11 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Step();
     TestFalse(TEXT("松键释放被救者"), Target->IsRescueReceiving());
     TestTrue(TEXT("取消恢复原装备"), Helper->IsItemUsable() && Helper->GetHeldEquipment() == Equipment);
+    if (auto *Rifle = Cast<ABBBRifleEquipment>(Equipment))
+    {
+        TestFalse(TEXT("恢复后显示原网格"), Rifle->GetEquipmentSkeletalMesh()->bHiddenInGame);
+        TestFalse(TEXT("恢复不重新生成拿枪动作"), Rifle->RuntimeData.Action.ReadRifleActionState().bEquippedThisFrame);
+    }
     Target->SubmitInput(FBBBCharacterMovementLocalControlPacket{});
     Begin();
     Damage(Helper, 10);

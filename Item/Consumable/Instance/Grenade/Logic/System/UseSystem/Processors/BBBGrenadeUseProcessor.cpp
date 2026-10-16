@@ -12,13 +12,10 @@ void FBBBGrenadeUseProcessor::Update(FBBBGrenadeUseUpdateContext &Context) const
     {
         return;
     }
-    if (Inputs.bHasPermission)
-    {
-        State.bAllowed = Inputs.bAllowed;
-    }
+
     const bool bPressed = Inputs.bPrimary && !State.bPrimaryHeld;
     State.bPrimaryHeld = Inputs.bPrimary;
-    if (bPressed && State.bAllowed && !State.bUsing && State.UseSerial < MAX_int32
+    if (bPressed && !State.bHide && !State.bUsing && State.UseSerial < MAX_int32
         && Context.Character.GetHeldItem() == &Context.Actor && Context.Character.GetHeldItemQuantity() > 0)
     {
         State.bUsing = true;
@@ -31,7 +28,7 @@ void FBBBGrenadeUseProcessor::Update(FBBBGrenadeUseUpdateContext &Context) const
 void FBBBGrenadeUseProcessor::Clear(FBBBGrenadeRuntimeData &Data)
 {
     auto &State = Data.Use.UseState;
-    State.bAllowed = false;
+    State.bHide = false;
     State.bPrimaryHeld = false;
     State.bUsing = false;
     State.bReleased = false;
@@ -40,6 +37,4 @@ void FBBBGrenadeUseProcessor::Clear(FBBBGrenadeRuntimeData &Data)
     Inputs.bEquip = false;
     Inputs.bRelease = false;
     Inputs.bFinish = false;
-    Inputs.bHasPermission = false;
-    Inputs.bAllowed = false;
 }

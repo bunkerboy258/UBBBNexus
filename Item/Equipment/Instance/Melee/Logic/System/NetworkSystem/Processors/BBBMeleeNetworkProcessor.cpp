@@ -22,6 +22,12 @@ void FBBBMeleeNetworkProcessor::Update(FBBBMeleeNetworkUpdateContext &Context)
         Sent.bPublished = false;
     }
 
+    if (!Sent.bPublished || Sent.bHide != Action.bHide)
+    {
+        if (!Network->PublishVisibility(Action.bHide)) return;
+        Sent.bHide = Action.bHide;
+    }
+
     if (!Sent.bPublished || Sent.AttackSequence != Action.AttackSequence || Sent.bAttacking != Action.bAttacking)
     {
         bool bSent = false;

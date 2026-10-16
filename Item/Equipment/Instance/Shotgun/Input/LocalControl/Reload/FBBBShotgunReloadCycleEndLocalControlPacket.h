@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/States/BBBShotgunActionState.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/States/BBBShotgunActionInputState.h"
 
@@ -15,7 +16,7 @@ struct FBBBShotgunReloadCycleEndLocalControlPacket final
     }
 
     /** @return 请求允许写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBShotgunActionState &State) const
     {
         return true;
     }

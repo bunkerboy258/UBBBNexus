@@ -21,27 +21,18 @@ void UBBBEquipmentNetworkComponent::StoreMessage(
 {
     Destination.RemoveAll([&Message](const auto &Existing)
     {
-        return Existing.Generation < Message.Generation
-            || (Existing.Generation == Message.Generation && Existing.UseRevision < Message.UseRevision);
+        return Existing.Generation < Message.Generation;
     });
-
     auto *Existing = Destination.FindByPredicate([&Message](const auto &Value)
     {
-        return Value.Generation == Message.Generation && Value.UseRevision == Message.UseRevision
-            && Value.Kind == Message.Kind;
+        return Value.Generation == Message.Generation && Value.Kind == Message.Kind;
     });
-
     if (Existing)
     {
-        if (Message.Revision > Existing->Revision)
-        {
-            *Existing = MoveTemp(Message);
-        }
+        if (Message.Revision > Existing->Revision) *Existing = MoveTemp(Message);
         return;
     }
-
-    if (Destination.IsEmpty() || Destination[0].Generation < Message.Generation
-        || (Destination[0].Generation == Message.Generation && Destination[0].UseRevision <= Message.UseRevision))
+    if (Destination.IsEmpty() || Destination[0].Generation <= Message.Generation)
     {
         Destination.Add(MoveTemp(Message));
     }
@@ -51,7 +42,7 @@ bool UBBBEquipmentNetworkComponent::PublishMessage(const uint8 Kind, TArray<uint
 {
     auto *Equipment = Cast<ABBBEquipment>(GetOwner());
     auto *Character = Equipment ? Cast<ABBBCharacter>(Equipment->GetOwner()) : nullptr;
-    if (!Character || Character->GetHeldEquipment() != Equipment || !Character->IsItemUsable()
+    if (!Character || Character->GetHeldEquipment() != Equipment
         || Kind >= 8 || Data.IsEmpty() || Data.Num() > 32)
     {
         return false;
@@ -64,8 +55,7 @@ bool UBBBEquipmentNetworkComponent::PublishMessage(const uint8 Kind, TArray<uint
     }
 
     const uint64 Generation = Character->GetItemGeneration();
-    const uint64 UseRevision = Character->GetItemUseRevision();
-    if (Generation == 0 || UseRevision == 0)
+    if (Generation == 0)
     {
         return false;
     }
@@ -80,7 +70,6 @@ bool UBBBEquipmentNetworkComponent::PublishMessage(const uint8 Kind, TArray<uint
     FBBBEquipmentNetworkMessage Message;
     Message.EquipmentId = Equipment->GetEquipmentId();
     Message.Generation = Generation;
-    Message.UseRevision = UseRevision;
     Message.Revision = ++Carrier->PublishedRevision;
     Message.Kind = Kind;
     Message.Data = MoveTemp(Data);
@@ -100,11 +89,9 @@ void UBBBEquipmentNetworkComponent::ServerSubmitMessage_Implementation(FBBBEquip
 {
     auto *Character = Cast<ABBBCharacter>(GetOwner());
     if (!Character || !Character->HasAuthority() || Message.EquipmentId.IsNone()
-        || Message.Generation == 0 || Message.UseRevision == 0 || Message.Revision == 0 || Message.Kind >= 8
+        || Message.Generation == 0 || Message.Revision == 0 || Message.Kind >= 8
         || Message.Data.IsEmpty() || Message.Data.Num() > 32
-        || Message.Generation < Character->GetItemGeneration()
-        || (Message.Generation == Character->GetItemGeneration()
-            && Message.UseRevision < Character->GetItemUseRevision()))
+        || Message.Generation < Character->GetItemGeneration())
     {
         return;
     }
@@ -122,7 +109,7 @@ void UBBBEquipmentNetworkComponent::DeliverPending()
 {
     auto *Character = Cast<ABBBCharacter>(GetOwner());
     ABBBEquipment *Equipment = Character ? Character->GetHeldEquipment() : nullptr;
-    if (!Character || !Character->IsNetworkMirror() || !Character->IsItemUsable()
+    if (!Character || !Character->IsNetworkMirror()
         || !IsValid(Equipment) || !Equipment->IsInitialized())
     {
         return;
@@ -135,11 +122,9 @@ void UBBBEquipmentNetworkComponent::DeliverPending()
     }
 
     const uint64 Generation = Character->GetItemGeneration();
-    const uint64 UseRevision = Character->GetItemUseRevision();
-    if (DeliveredGeneration != Generation || DeliveredUseRevision != UseRevision)
+    if (DeliveredGeneration != Generation)
     {
         DeliveredGeneration = Generation;
-        DeliveredUseRevision = UseRevision;
         DeliveredRevisions.Reset();
     }
 
@@ -152,14 +137,25 @@ void UBBBEquipmentNetworkComponent::DeliverPending()
 
     for (const auto &Message : Pending)
     {
-        if (Message.Generation != Generation || Message.UseRevision != UseRevision
+        if (Message.Generation != Generation
             || Message.EquipmentId != Equipment->GetEquipmentId()
             || Message.Revision <= DeliveredRevisions.FindRef(Message.Kind))
         {
             continue;
         }
 
-        Protocol->ReceiveMessage(Message.Kind, Message.Data, Message.Revision, bRemoteMessage);
+        bool bDelivered = false;
+        if (Message.Kind == 7)
+        {
+            if (Message.Data.Num() == 1 && Message.Data[0] <= 1)
+            {
+                if (bRemoteMessage) Equipment->SubmitInput(FBBBEquipmentVisibilityRemoteMessagePacket<>{{Message.Data[0] != 0}, {Message.Revision}});
+                else Equipment->SubmitInput(FBBBEquipmentVisibilityAuthorityFactPacket<>{{Message.Data[0] != 0}, {Message.Revision}});
+                bDelivered = true;
+            }
+        }
+        else bDelivered = Protocol->ReceiveMessage(Message.Kind, Message.Data, Message.Revision, bRemoteMessage);
+        if (!bDelivered) continue;
         DeliveredRevisions.Add(Message.Kind, Message.Revision);
     }
 }
@@ -168,4 +164,9 @@ bool UBBBEquipmentNetworkComponent::ReceiveMessage(
     uint8 Kind, const TArray<uint8> &Data, uint64 Revision, bool bRemoteMessage)
 {
     return false;
+}
+
+bool UBBBEquipmentNetworkComponent::PublishVisibility(bool bHide)
+{
+    return PublishMessage(7, {uint8(bHide ? 1 : 0)});
 }

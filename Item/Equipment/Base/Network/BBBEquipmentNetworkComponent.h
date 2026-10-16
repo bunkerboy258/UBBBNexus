@@ -23,6 +23,17 @@ public:
     void DeliverPending();
 
 protected:
+    /** @param bHide 已成立的隐藏事实 @return 是否已发送 */
+    bool PublishVisibility(bool bHide);
+    friend class FBBBRifleNetworkProcessor;
+    friend class FBBBSMGNetworkProcessor;
+    friend class FBBBLMGNetworkProcessor;
+    friend class FBBBSniperNetworkProcessor;
+    friend class FBBBPistolNetworkProcessor;
+    friend class FBBBRevolverNetworkProcessor;
+    friend class FBBBShotgunNetworkProcessor;
+    friend class FBBBMinigunNetworkProcessor;
+    friend class FBBBMeleeNetworkProcessor;
     /** @param Kind	本类协议编号 @param Data	已编码结果 @return 是否接受发送 */
     bool PublishMessage(uint8 Kind, TArray<uint8> Data);
 
@@ -57,8 +68,6 @@ private:
     /** 当前接收实例 */
     uint64 DeliveredGeneration = 0;
 
-    /** 当前接收使用许可 */
-    uint64 DeliveredUseRevision = 0;
 
     /** 各协议槽位已经消费的顺序 */
     TMap<uint8, uint64> DeliveredRevisions;

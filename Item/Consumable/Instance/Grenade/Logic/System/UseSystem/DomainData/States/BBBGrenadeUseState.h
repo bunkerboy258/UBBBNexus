@@ -4,8 +4,8 @@
 /** 手雷Use领域持久状态 */
 struct FBBBGrenadeUseState final
 {
-    /** 持有者当前许可 */
-    bool bAllowed = false;
+    /** 当前手持网格隐藏并拒绝主动操作 */
+    bool bHide = false;
     /** 上一帧是否持续收到主行为 按下边缘只使用一次 */
     bool bPrimaryHeld = false;
     /** 当前使用动作 */

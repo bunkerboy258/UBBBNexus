@@ -33,77 +33,94 @@ void ABBBGrenadeConsumable::ShutdownRuntimeData()
 {
     FBBBGrenadeShutdown{}.Shutdown(*this);
 }
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBGrenadePrimaryLocalControlPacket{{}});
+    QueueInput(FBBBGrenadePrimaryLocalControlPacket{{}});
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBGrenadeEquipLocalControlPacket{{}});
+    QueueInput(FBBBGrenadeEquipLocalControlPacket{{}});
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBGrenadeReleaseLocalControlPacket{{}});
+    QueueInput(FBBBGrenadeReleaseLocalControlPacket{{}});
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBGrenadeFinishLocalControlPacket{{}});
+    QueueInput(FBBBGrenadeFinishLocalControlPacket{{}});
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumablePermissionLocalControlPacket<> Packet)
+
+
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet)
 {
-    return QueueInput(FBBBGrenadePermissionLocalControlPacket{{MoveTemp(Packet.Values)}});
+    QueueInput(FBBBGrenadeStateRemoteMessagePacket{});
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet)
 {
-    return false;
+    QueueInput(FBBBGrenadeStateAuthorityFactPacket{});
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeStateRemoteMessagePacket Packet)
 {
-    return false;
+    ParseSystem.Submit(MoveTemp(Packet));
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadeStateRemoteMessagePacket Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeEquipLocalControlPacket Packet)
 {
-    return ParseSystem.Submit(MoveTemp(Packet));
+    ParseSystem.Submit(MoveTemp(Packet));
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadeEquipLocalControlPacket Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeFinishLocalControlPacket Packet)
 {
-    return ParseSystem.Submit(MoveTemp(Packet));
+    ParseSystem.Submit(MoveTemp(Packet));
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadeFinishLocalControlPacket Packet)
+
+
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadePrimaryLocalControlPacket Packet)
 {
-    return ParseSystem.Submit(MoveTemp(Packet));
+    ParseSystem.Submit(MoveTemp(Packet));
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadePermissionLocalControlPacket Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeReleaseLocalControlPacket Packet)
 {
-    return ParseSystem.Submit(MoveTemp(Packet));
+    ParseSystem.Submit(MoveTemp(Packet));
 }
 
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadePrimaryLocalControlPacket Packet)
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeStateAuthorityFactPacket Packet)
 {
-    return ParseSystem.Submit(MoveTemp(Packet));
-}
-
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadeReleaseLocalControlPacket Packet)
-{
-    return ParseSystem.Submit(MoveTemp(Packet));
-}
-
-bool ABBBGrenadeConsumable::QueueInput(FBBBGrenadeStateAuthorityFactPacket Packet)
-{
-    return ParseSystem.Submit(MoveTemp(Packet));
+    ParseSystem.Submit(MoveTemp(Packet));
 }
 
 ABBBGrenadeConsumable::ABBBGrenadeConsumable()
 {
     NetworkComponent = CreateDefaultSubobject<UBBBGrenadeNetworkComponent>(TEXT("GrenadeProtocol"));
+}
+
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableHideLocalControlPacket<> Packet)
+{
+    QueueInput(FBBBGrenadeHideLocalControlPacket{{}});
+}
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeHideLocalControlPacket Packet)
+{
+    ParseSystem.Submit(MoveTemp(Packet));
+}
+
+void ABBBGrenadeConsumable::QueueInput(FBBBConsumableShowLocalControlPacket<> Packet)
+{
+    QueueInput(FBBBGrenadeShowLocalControlPacket{{}});
+}
+void ABBBGrenadeConsumable::QueueInput(FBBBGrenadeShowLocalControlPacket Packet)
+{
+    ParseSystem.Submit(MoveTemp(Packet));
+}
+
+bool ABBBGrenadeConsumable::IsMeshHidden() const
+{
+    return RuntimeData.Use.ReadGrenadeUseState().bHide;
 }

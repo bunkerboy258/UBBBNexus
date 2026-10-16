@@ -1,4 +1,12 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/AuthorityFact/Equipment/FBBBMinigunVisibilityAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/RemoteMessage/Equipment/FBBBMinigunVisibilityRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunShowLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunHideLocalControlPacket.h"
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/RemoteMessage/Fire/FBBBMinigunSpinRemoteMessagePacket.h"
@@ -12,7 +20,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Fire/FBBBMinigunAllowFireLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Reload/FBBBMinigunLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Reload/FBBBMinigunInterruptReloadLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/RemoteMessage/Fire/FBBBMinigunFireRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/RemoteMessage/Reload/FBBBMinigunReloadStartRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/RemoteMessage/Reload/FBBBMinigunReloadEndRemoteMessagePacket.h"
@@ -23,6 +30,26 @@
 /** 转管机枪等待更新时消费的固定输入槽 */
 struct FBBBMinigunInputState final
 {
+    /** EndContactLocalControl固定输入槽 */
+    TBBBMinigunInputSlot<FBBBMinigunEndContactLocalControlPacket> EndContactLocalControl;
+
+    /** EndActionLocalControl固定输入槽 */
+    TBBBMinigunInputSlot<FBBBMinigunEndActionLocalControlPacket> EndActionLocalControl;
+
+    /** BeginContactLocalControl固定输入槽 */
+    TBBBMinigunInputSlot<FBBBMinigunBeginContactLocalControlPacket> BeginContactLocalControl;
+
+    /** BeginActionLocalControl固定输入槽 */
+    TBBBMinigunInputSlot<FBBBMinigunBeginActionLocalControlPacket> BeginActionLocalControl;
+
+    /** 网格显示输入槽位 */
+    TBBBMinigunInputSlot<FBBBMinigunVisibilityAuthorityFactPacket> VisibilityAuthorityFact;
+    /** 网格显示输入槽位 */
+    TBBBMinigunInputSlot<FBBBMinigunVisibilityRemoteMessagePacket> VisibilityRemoteMessage;
+    /** 网格显示输入槽位 */
+    TBBBMinigunInputSlot<FBBBMinigunShowLocalControlPacket> ShowLocalControl;
+    /** 网格显示输入槽位 */
+    TBBBMinigunInputSlot<FBBBMinigunHideLocalControlPacket> HideLocalControl;
     /** 收到的电机事件消息固定槽位 */
     TBBBMinigunInputSlot<FBBBMinigunSpinRemoteMessagePacket> RemoteSpin;
 
@@ -52,9 +79,6 @@ struct FBBBMinigunInputState final
 
     /** InterruptReload固定槽位 */
     TBBBMinigunInputSlot<FBBBMinigunInterruptReloadLocalControlPacket> InterruptReload;
-
-    /** ActionPermission固定槽位 */
-    TBBBMinigunInputSlot<FBBBMinigunActionPermissionLocalControlPacket> ActionPermission;
 
     /** RemoteFire固定槽位 */
     TBBBMinigunInputSlot<FBBBMinigunFireRemoteMessagePacket> RemoteFire;

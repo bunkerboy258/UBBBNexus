@@ -437,27 +437,29 @@ int32 ABBBPlayerController::GetSelectedItemSlot() const
 bool ABBBPlayerController::SubmitItemAdd(const FName ItemId, const int32 Quantity)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && !ItemId.IsNone() && Quantity > 0
-        && ItemCharacter->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{ItemId}, {Quantity}});
+    if (!ItemCharacter || ItemId.IsNone() || Quantity <= 0) return false;
+    ItemCharacter->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{ItemId}, {Quantity}});
+    return true;
 }
 
 bool ABBBPlayerController::SubmitItemMove(const int32 Source, const int32 Target, const FGuid InstanceId)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && Source >= 0 && Target >= INDEX_NONE && InstanceId.IsValid()
-        && ItemCharacter->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{Source}, {Target}, {InstanceId}});
+    if (!ItemCharacter || Source < 0 || Target < INDEX_NONE || !InstanceId.IsValid()) return false;
+    ItemCharacter->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{Source}, {Target}, {InstanceId}});
+    return true;
 }
 
 bool ABBBPlayerController::SubmitItemSelect(const int32 Slot)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    const bool bAccepted = ItemCharacter && Slot >= INDEX_NONE
-        && ItemCharacter->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{Slot}});
-    if (bAccepted && ItemView)
+    const bool bSubmitted = ItemCharacter && Slot >= INDEX_NONE;
+    if (bSubmitted) ItemCharacter->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{Slot}});
+    if (bSubmitted && ItemView)
     {
         ItemView->NotifyQuickSelection();
     }
-    return bAccepted;
+    return bSubmitted;
 }
 
 void ABBBPlayerController::GetItemOperationResult(int32 &Revision, int32 &SucceededCount, int32 &RejectedCount) const
@@ -506,13 +508,23 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
 bool ABBBPlayerController::SubmitQuickUse()
 {
     auto *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && !IsPlayerMenuOpen() && ItemCharacter->SubmitInput(FBBBCharacterItemQuickUseLocalControlPacket{});
+    if (!ItemCharacter || IsPlayerMenuOpen())
+    {
+        return false;
+    }
+    ItemCharacter->SubmitInput(FBBBCharacterItemQuickUseLocalControlPacket{});
+    return true;
 }
 
 bool ABBBPlayerController::SubmitPrimaryUse()
 {
     auto *ItemCharacter = GetItemCharacter();
-    return ItemCharacter && !IsPlayerMenuOpen() && ItemCharacter->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{});
+    if (!ItemCharacter || IsPlayerMenuOpen())
+    {
+        return false;
+    }
+    ItemCharacter->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{});
+    return true;
 }
 
 void ABBBPlayerController::QuickUse()

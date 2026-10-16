@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/States/BBBRifleActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndActionLocalControlPacket.h"
 
 /** 本类装备不支持的公共操作 明确拒绝且不贡献状态 */
@@ -10,7 +11,7 @@ struct FBBBRifleEndActionLocalControlPacket final : public FBBBEquipmentEndActio
         return true;
     }
     /** @return 本类不支持此操作 */
-    bool CanApply() const
+    bool CanApply(const FBBBRifleActionState &State) const
     {
         return false;
     }

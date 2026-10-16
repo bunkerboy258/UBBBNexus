@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseInputState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionSelectionState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionInputState.h"
 #include "BBBCharacterInteractionDomainState.generated.h"
@@ -21,8 +20,6 @@ struct FBBBCharacterInteractionDomainState final
 public:
     /** @return 当前装备独立使用状态 */
     const FBBBCharacterInteractionUseState &ReadInteractionUseState() const { return InteractionUseState; }
-    /** @return 待还原的当前装备使用结果 */
-    const FBBBCharacterInteractionUseInputState &ReadInteractionUseInputState() const { return InteractionUseInputState; }
     /** @return 角色装备选择状态 */
     const FBBBCharacterInteractionSelectionState &ReadInteractionSelectionState() const
     {
@@ -36,13 +33,11 @@ public:
     }
 
 private:
-    friend class FBBBCharacterInteractionUseProcessor;
+    friend class FBBBCharacterInteractionVisibilityProcessor;
     friend class FBBBCharacterInteractionActionPermissionProcessor;
     /** 独立使用生命周期 */
     UPROPERTY(Transient)
     FBBBCharacterInteractionUseState InteractionUseState;
-    /** 使用结果待解析数据 */
-    FBBBCharacterInteractionUseInputState InteractionUseInputState;
     friend class FBBBCharacterInteractionInputProcessor;
     /** 动画通知通信状态 */
     FBBBCharacterInteractionInputState InteractionInputState;

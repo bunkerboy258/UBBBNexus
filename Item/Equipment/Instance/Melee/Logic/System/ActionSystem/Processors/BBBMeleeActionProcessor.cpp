@@ -26,15 +26,8 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeActionUpdateContext &Context)
         State.bContactOpen = false;
         return;
     }
-    if (Input.bActionPermissionReceived)
-    {
-        State.bOwnerActionsAllowed = Input.bActionsAllowed;
-    }
-    if (!State.bOwnerActionsAllowed)
-    {
-        Stop(Context.RuntimeData);
-        return;
-    }
+
+
 
     for (int32 Token : Input.BeginActions)
     {

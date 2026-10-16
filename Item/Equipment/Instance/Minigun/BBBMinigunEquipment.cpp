@@ -11,7 +11,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/BBBMinigunDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -58,197 +57,122 @@ void ABBBMinigunEquipment::Tick(const float DeltaSeconds)
     FBBBMinigunUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunEquipLocalControlPacket{});
+    QueueInput(FBBBMinigunEquipLocalControlPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunEquipAuthorityFactPacket{});
+    QueueInput(FBBBMinigunEquipAuthorityFactPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunPrimaryLocalControlPacket{});
+    QueueInput(FBBBMinigunPrimaryLocalControlPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
+
+
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
+    QueueInput(FBBBMinigunSecondaryLocalControlPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunEquipLocalControlPacket Packet)
 {
-    return QueueInput(FBBBMinigunSecondaryLocalControlPacket{});
+
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunEquipLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunEquipAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunEquipAuthorityFactPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunPrimaryLocalControlPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunPrimaryLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunSecondaryLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunSecondaryLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunBlockFireLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunBlockFireLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunAllowFireLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunAllowFireLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunLoadAmmoLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunLoadAmmoLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunInterruptReloadLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunInterruptReloadLocalControlPacket Packet)
-{
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunFireRemoteMessagePacket Packet)
+{
+
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunActionPermissionLocalControlPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunSpinRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunFireRemoteMessagePacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunSpinAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunSpinRemoteMessagePacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadStartRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunSpinAuthorityFactPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadEndRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadStartRemoteMessagePacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunFireAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadEndRemoteMessagePacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadStartAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunFireAuthorityFactPacket Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadEndAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadStartAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBMinigunEquipment::QueueInput(FBBBMinigunReloadEndAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
 void ABBBMinigunEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform)
@@ -256,24 +180,24 @@ void ABBBMinigunEquipment::EmitShot_Implementation(const FTransform &MuzzleTrans
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunBlockFireLocalControlPacket{});
+    QueueInput(FBBBMinigunBlockFireLocalControlPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunAllowFireLocalControlPacket{});
+    QueueInput(FBBBMinigunAllowFireLocalControlPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunLoadAmmoLocalControlPacket{});
+    QueueInput(FBBBMinigunLoadAmmoLocalControlPacket{});
 }
 
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBMinigunInterruptReloadLocalControlPacket{});
+    QueueInput(FBBBMinigunInterruptReloadLocalControlPacket{});
 }
 
 bool ABBBMinigunEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const
@@ -291,25 +215,106 @@ bool ABBBMinigunEquipment::CanQuickUse() const
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBMinigunBeginActionLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBMinigunBeginContactLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBMinigunEndActionLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBMinigunEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBMinigunEndContactLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
+}
+
+bool ABBBMinigunEquipment::IsMeshHidden() const
+{
+    return RuntimeData.Action.ReadMinigunActionState().bHide;
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentHideLocalControlPacket<> Packet)
+{
+    FBBBMinigunHideLocalControlPacket Concrete;
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunHideLocalControlPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentShowLocalControlPacket<> Packet)
+{
+    FBBBMinigunShowLocalControlPacket Concrete;
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunShowLocalControlPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentVisibilityRemoteMessagePacket<> Packet)
+{
+    FBBBMinigunVisibilityRemoteMessagePacket Concrete;
+    Concrete.Hidden = MoveTemp(Packet.Hidden);
+    Concrete.Revisions = MoveTemp(Packet.Revisions);
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunVisibilityRemoteMessagePacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBEquipmentVisibilityAuthorityFactPacket<> Packet)
+{
+    FBBBMinigunVisibilityAuthorityFactPacket Concrete;
+    Concrete.Hidden = MoveTemp(Packet.Hidden);
+    Concrete.Revisions = MoveTemp(Packet.Revisions);
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunVisibilityAuthorityFactPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunBeginActionLocalControlPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunBeginContactLocalControlPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunEndActionLocalControlPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBMinigunEquipment::QueueInput(FBBBMinigunEndContactLocalControlPacket Packet)
+{
+    FBBBMinigunParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/States/BBBShotgunActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Fire/FBBBEquipmentBlockFireLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/States/BBBShotgunActionInputState.h"
@@ -13,9 +14,9 @@ struct FBBBShotgunBlockFireLocalControlPacket final : public FBBBEquipmentBlockF
     }
 
     /** @return 可以写入本帧请求 */
-    bool CanApply() const
+    bool CanApply(const FBBBShotgunActionState &State) const
     {
-        return true;
+        return !State.bHide;
     }
 
     /** @param State	霰弹枪动作输入 @return 无 */

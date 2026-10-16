@@ -17,11 +17,7 @@ void UBBBRifleLoadMagazineLogicAnimNotifyState::NotifyBegin(
     }
 
     // 网络镜像不得由本机动画生成装填事实 输入只进入步枪自身的解析管线
-    if (!ensureMsgf(Rifle->SubmitInput(FBBBRifleLoadAmmoLocalControlPacket{}),
-        TEXT("武器装填通知提交输入失败 %s"), *Rifle->GetName()))
-    {
-        return;
-    }
+    Rifle->SubmitInput(FBBBRifleLoadAmmoLocalControlPacket{});
 
     UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Load input submitted Equipment=%s"), *Rifle->GetName());
 }

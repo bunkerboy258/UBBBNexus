@@ -11,7 +11,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -58,179 +57,112 @@ void ABBBRifleEquipment::Tick(const float DeltaSeconds)
     FBBBRifleUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleEquipLocalControlPacket{});
+    QueueInput(FBBBRifleEquipLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
-    return QueueInput(FBBBRifleEquipAuthorityFactPacket{});
+    QueueInput(FBBBRifleEquipAuthorityFactPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRiflePrimaryLocalControlPacket{});
+    QueueInput(FBBBRiflePrimaryLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
+
+
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
+    QueueInput(FBBBRifleSecondaryLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleEquipLocalControlPacket Packet)
 {
-    return QueueInput(FBBBRifleSecondaryLocalControlPacket{});
+
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleEquipLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleEquipAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleEquipAuthorityFactPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRiflePrimaryLocalControlPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRiflePrimaryLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleSecondaryLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleSecondaryLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleBlockFireLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleBlockFireLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleAllowFireLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleAllowFireLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleLoadAmmoLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleLoadAmmoLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleInterruptReloadLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleInterruptReloadLocalControlPacket Packet)
-{
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleFireRemoteMessagePacket Packet)
+{
+
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleActionPermissionLocalControlPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleReloadStartRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleFireRemoteMessagePacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleReloadEndRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleReloadStartRemoteMessagePacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleFireAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleReloadEndRemoteMessagePacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleReloadStartAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBRifleFireAuthorityFactPacket Packet)
+void ABBBRifleEquipment::QueueInput(FBBBRifleReloadEndAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBRifleEquipment::QueueInput(FBBBRifleReloadStartAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBRifleEquipment::QueueInput(FBBBRifleReloadEndAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
 void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform)
@@ -238,24 +170,24 @@ void ABBBRifleEquipment::EmitShot_Implementation(const FTransform &MuzzleTransfo
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleBlockFireLocalControlPacket{});
+    QueueInput(FBBBRifleBlockFireLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleAllowFireLocalControlPacket{});
+    QueueInput(FBBBRifleAllowFireLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleLoadAmmoLocalControlPacket{});
+    QueueInput(FBBBRifleLoadAmmoLocalControlPacket{});
 }
 
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBRifleInterruptReloadLocalControlPacket{});
+    QueueInput(FBBBRifleInterruptReloadLocalControlPacket{});
 }
 
 bool ABBBRifleEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const
@@ -273,25 +205,106 @@ bool ABBBRifleEquipment::CanQuickUse() const
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBRifleBeginActionLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBRifleBeginContactLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBRifleEndActionLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBRifleEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBRifleEndContactLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
+}
+
+bool ABBBRifleEquipment::IsMeshHidden() const
+{
+    return RuntimeData.Action.ReadRifleActionState().bHide;
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentHideLocalControlPacket<> Packet)
+{
+    FBBBRifleHideLocalControlPacket Concrete;
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleHideLocalControlPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentShowLocalControlPacket<> Packet)
+{
+    FBBBRifleShowLocalControlPacket Concrete;
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleShowLocalControlPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentVisibilityRemoteMessagePacket<> Packet)
+{
+    FBBBRifleVisibilityRemoteMessagePacket Concrete;
+    Concrete.Hidden = MoveTemp(Packet.Hidden);
+    Concrete.Revisions = MoveTemp(Packet.Revisions);
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleVisibilityRemoteMessagePacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBEquipmentVisibilityAuthorityFactPacket<> Packet)
+{
+    FBBBRifleVisibilityAuthorityFactPacket Concrete;
+    Concrete.Hidden = MoveTemp(Packet.Hidden);
+    Concrete.Revisions = MoveTemp(Packet.Revisions);
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleVisibilityAuthorityFactPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleBeginActionLocalControlPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleBeginContactLocalControlPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleEndActionLocalControlPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBRifleEquipment::QueueInput(FBBBRifleEndContactLocalControlPacket Packet)
+{
+    FBBBRifleParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }

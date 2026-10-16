@@ -109,7 +109,8 @@ float ABBBCharacter::TakeDamage(float DamageAmount, const FDamageEvent &DamageEv
     FBBBCharacterDamageLocalControlPacket Packet{
         {DamageAmount}, {Hit.BoneName}, {Hit.ImpactPoint}, {Direction},
         {EventInstigator ? EventInstigator->GetPawn() : nullptr}};
-    return SubmitInput(MoveTemp(Packet)) ? DamageAmount : 0.0f;
+    SubmitInput(MoveTemp(Packet));
+    return DamageAmount;
 }
 
 //------------------------------------------------------------------------------
@@ -178,10 +179,7 @@ EBBBCharacterMontageSlot ABBBCharacter::ClassifyMontageSlot(FName SlotName)
     return EBBBCharacterMontageSlot::Unknown;
 }
 
-bool ABBBCharacter::SubmitInput(const FBBBFullBodyMontageLocalControlPacket &Packet)
-{
-    return BBBCharacterInput::Submit(RuntimeData.Parse.InputState, Packet);
-}
+
 
 ABBBEquipment *ABBBCharacter::GetHeldEquipment() const
 {

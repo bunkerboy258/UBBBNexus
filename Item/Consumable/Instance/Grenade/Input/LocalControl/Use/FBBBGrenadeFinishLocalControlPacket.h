@@ -14,7 +14,7 @@ struct FBBBGrenadeFinishLocalControlPacket final : public FBBBConsumableFinishLo
     }
 
     /** @param Context	解析上下文 @return 是否拥有本机因果权限 */
-    bool CanApply(bool bIsMirror) const
+    bool CanApply(bool bIsMirror, const FBBBGrenadeUseState &State) const
     {
         return !bIsMirror;
     }

@@ -6,6 +6,14 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverBeginContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverEndActionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverEndContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverHideLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverShowLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/RemoteMessage/Equipment/FBBBRevolverVisibilityRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/AuthorityFact/Equipment/FBBBRevolverVisibilityAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverBeginActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverBeginContactLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverEndActionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Input/LocalControl/Equipment/FBBBRevolverEndContactLocalControlPacket.h"
 #include "BBBRevolverEquipment.generated.h"
 
 
@@ -17,7 +25,6 @@ struct FBBBRevolverBlockFireLocalControlPacket;
 struct FBBBRevolverAllowFireLocalControlPacket;
 struct FBBBRevolverLoadAmmoLocalControlPacket;
 struct FBBBRevolverInterruptReloadLocalControlPacket;
-struct FBBBRevolverActionPermissionLocalControlPacket;
 struct FBBBRevolverFireRemoteMessagePacket;
 struct FBBBRevolverReloadStartRemoteMessagePacket;
 struct FBBBRevolverReloadEndRemoteMessagePacket;
@@ -32,6 +39,7 @@ class ABBB_EVAC_API ABBBRevolverEquipment final : public ABBBEquipment
     GENERATED_BODY()
 
 public:
+    virtual bool IsMeshHidden() const override;
     /** @return 换弹和动作阻塞是否允许快捷消耗品打断 */
     virtual bool CanQuickUse() const override;
     ABBBRevolverEquipment();
@@ -52,17 +60,12 @@ public:
     /**
      * 提交左轮输入
      * @param Packet	待提交的输入包
-     * @return 是否接受
+     * @return 无 仅贡献输入
      */
     template<typename TPacket>
-    bool SubmitInput(TPacket &&Packet)
+    void SubmitInput(TPacket &&Packet)
     {
-        if (!ensureMsgf(IsInGameThread(), TEXT("左轮输入线程或数据无效")))
-        {
-            return false;
-        }
-
-        return QueueInput(Forward<TPacket>(Packet));
+        QueueInput(Forward<TPacket>(Packet));
     }
 
     /** @return 当前弹匣内弹量 */
@@ -95,43 +98,53 @@ protected:
     virtual void EmitShot_Implementation(const FTransform &MuzzleTransform);
 
 private:
+    virtual void QueueInput(FBBBEquipmentVisibilityAuthorityFactPacket<> Packet) override;
+    void QueueInput(FBBBRevolverVisibilityAuthorityFactPacket Packet);
+    virtual void QueueInput(FBBBEquipmentVisibilityRemoteMessagePacket<> Packet) override;
+    void QueueInput(FBBBRevolverVisibilityRemoteMessagePacket Packet);
+    virtual void QueueInput(FBBBEquipmentShowLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverShowLocalControlPacket Packet);
+    virtual void QueueInput(FBBBEquipmentHideLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverHideLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverBeginActionLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverBeginContactLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverEndActionLocalControlPacket Packet);
     /** @param Packet 不支持的公共操作 @return 拒绝 */
-    virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverEndContactLocalControlPacket Packet);
     using ABBBEquipment::QueueInput;
-    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet) override;
     friend class FBBBRevolverActionProcessor;
 
     virtual void Tick(float DeltaSeconds) override;
     virtual bool InitializeRuntimeData() override;
     virtual void ShutdownRuntimeData() override;
 
-    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet) override;
-    virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBRevolverEquipLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverEquipAuthorityFactPacket Packet);
-    bool QueueInput(FBBBRevolverPrimaryLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverSecondaryLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverBlockFireLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverAllowFireLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverLoadAmmoLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverInterruptReloadLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverActionPermissionLocalControlPacket Packet);
-    bool QueueInput(FBBBRevolverFireRemoteMessagePacket Packet);
-    bool QueueInput(FBBBRevolverReloadStartRemoteMessagePacket Packet);
-    bool QueueInput(FBBBRevolverReloadEndRemoteMessagePacket Packet);
-    bool QueueInput(FBBBRevolverFireAuthorityFactPacket Packet);
-    bool QueueInput(FBBBRevolverReloadStartAuthorityFactPacket Packet);
-    bool QueueInput(FBBBRevolverReloadEndAuthorityFactPacket Packet);
+    virtual void QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet) override;
+    virtual void QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBRevolverEquipLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverEquipAuthorityFactPacket Packet);
+    void QueueInput(FBBBRevolverPrimaryLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverSecondaryLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverBlockFireLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverAllowFireLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverLoadAmmoLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverInterruptReloadLocalControlPacket Packet);
+    void QueueInput(FBBBRevolverFireRemoteMessagePacket Packet);
+    void QueueInput(FBBBRevolverReloadStartRemoteMessagePacket Packet);
+    void QueueInput(FBBBRevolverReloadEndRemoteMessagePacket Packet);
+    void QueueInput(FBBBRevolverFireAuthorityFactPacket Packet);
+    void QueueInput(FBBBRevolverReloadStartAuthorityFactPacket Packet);
+    void QueueInput(FBBBRevolverReloadEndAuthorityFactPacket Packet);
 };

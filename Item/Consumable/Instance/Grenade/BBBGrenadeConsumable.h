@@ -7,10 +7,11 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/RemoteMessage/Use/FBBBGrenadeStateRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeFinishLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadePermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadePrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeReleaseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/AuthorityFact/Use/FBBBGrenadeStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeHideLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Instance/Grenade/Input/LocalControl/Use/FBBBGrenadeShowLocalControlPacket.h"
 #include "BBBGrenadeConsumable.generated.h"
 class FBBBGrenadeInitializer;
 class FBBBGrenadeUpdatePipeline;
@@ -24,12 +25,13 @@ class ABBB_EVAC_API ABBBGrenadeConsumable final : public ABBBConsumable
 public:
     /** 创建本类协议组件 */
     ABBBGrenadeConsumable();
-    /** @param Packet 本类输入 @return 是否接受 */
+    /** @param Packet 本类输入 @return 无 仅贡献输入 */
     template<typename TPacket>
-    bool SubmitInput(TPacket &&Packet)
+    void SubmitInput(TPacket &&Packet)
     {
-        return IsInGameThread() && QueueInput(Forward<TPacket>(Packet));
+        QueueInput(Forward<TPacket>(Packet));
     }
+    virtual bool IsMeshHidden() const override;
     virtual bool IsUsing() const override;
     virtual bool IsReleased() const override;
     virtual int32 GetUseSerial() const override;
@@ -43,20 +45,22 @@ private:
     virtual bool InitializeRuntimeData() override;
     virtual void UpdateRuntimeData() override;
     virtual void ShutdownRuntimeData() override;
-    virtual bool QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBGrenadePrimaryLocalControlPacket Packet);
-    virtual bool QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBGrenadeEquipLocalControlPacket Packet);
-    virtual bool QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBGrenadeReleaseLocalControlPacket Packet);
-    virtual bool QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBGrenadeFinishLocalControlPacket Packet);
-    virtual bool QueueInput(FBBBConsumablePermissionLocalControlPacket<> Packet) override;
-    bool QueueInput(FBBBGrenadePermissionLocalControlPacket Packet);
-    virtual bool QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet) override;
-    bool QueueInput(FBBBGrenadeStateRemoteMessagePacket Packet);
-    virtual bool QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet) override;
-    bool QueueInput(FBBBGrenadeStateAuthorityFactPacket Packet);
+    virtual void QueueInput(FBBBConsumableHideLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBGrenadeHideLocalControlPacket Packet);
+    virtual void QueueInput(FBBBConsumableShowLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBGrenadeShowLocalControlPacket Packet);
+    virtual void QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBGrenadePrimaryLocalControlPacket Packet);
+    virtual void QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBGrenadeEquipLocalControlPacket Packet);
+    virtual void QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBGrenadeReleaseLocalControlPacket Packet);
+    virtual void QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet) override;
+    void QueueInput(FBBBGrenadeFinishLocalControlPacket Packet);
+    virtual void QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet) override;
+    void QueueInput(FBBBGrenadeStateRemoteMessagePacket Packet);
+    virtual void QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet) override;
+    void QueueInput(FBBBGrenadeStateAuthorityFactPacket Packet);
     FBBBGrenadeParseSystem ParseSystem;
     FBBBGrenadeUseSystem UseSystem;
     FBBBGrenadeNetworkSystem NetworkSystem;

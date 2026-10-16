@@ -12,8 +12,4 @@ struct FBBBGrenadeUseInputState final
     bool bRelease = false;
     /** 本帧结束通知 */
     bool bFinish = false;
-    /** 是否收到许可 */
-    bool bHasPermission = false;
-    /** 本帧许可结果 */
-    bool bAllowed = false;
 };

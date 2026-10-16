@@ -71,9 +71,11 @@ bool UBBBMinigunNetworkComponent::ReceiveMessage(
         }
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBMinigunSpinRemoteMessagePacket{{Spinning}, {Revision}});
+            Equipment->SubmitInput(FBBBMinigunSpinRemoteMessagePacket{{Spinning}, {Revision}});
+            return true;
         }
-        return Equipment->SubmitInput(FBBBMinigunSpinAuthorityFactPacket{{Spinning}, {Revision}});
+        Equipment->SubmitInput(FBBBMinigunSpinAuthorityFactPacket{{Spinning}, {Revision}});
+        return true;
     }
 
     int32 Sequence = 0;
@@ -93,30 +95,39 @@ bool UBBBMinigunNetworkComponent::ReceiveMessage(
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBMinigunFireRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBMinigunFireRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBMinigunFireAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBMinigunFireAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 1)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBMinigunReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBMinigunReloadStartRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBMinigunReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBMinigunReloadStartAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 2)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBMinigunReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            Equipment->SubmitInput(FBBBMinigunReloadEndRemoteMessagePacket{{Sequence}, {Revision}, {Completed != 0}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBMinigunReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+        Equipment->SubmitInput(FBBBMinigunReloadEndAuthorityFactPacket{{Sequence}, {Revision}, {Completed != 0}});
+
+        return true;
     }
 
     return false;

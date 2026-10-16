@@ -26,3 +26,5 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 E:/BBB_Evac
 本次以 ABBB_EvacEditor Win64 Development 编译通过为验收
 不修改编辑器资产 不保留旧接口兼容层 不声称完成 PIE 或联机运行验证
 资产后续适配事项见 Equipment/README.md
+
+2026-10-16：Actor 输入只贡献固定槽位并返回 void，校验与许可由 Parse 执行。攀爬领域维护 bTraversing，角色交互发送 Hide／Show；装备自行维护 bHide 与显示结果，隐藏不关闭 Tick、不解绑动画，不重播拿枪。

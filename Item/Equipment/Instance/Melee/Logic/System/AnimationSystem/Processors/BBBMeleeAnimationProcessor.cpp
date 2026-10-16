@@ -1,3 +1,4 @@
+#include "Components/SkeletalMeshComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/AnimationSystem/Processors/BBBMeleeAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Animation/BBBMeleeAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
@@ -10,6 +11,8 @@
 
 void FBBBMeleeAnimationProcessor::Update(FBBBMeleeAnimationUpdateContext &Context)
 {
+    Context.Equipment.GetEquipmentSkeletalMesh()->SetHiddenInGame(Context.RuntimeData.Action.ReadMeleeActionState().bHide);
+
     auto &State = Context.RuntimeData.Animation.AnimationState;
     const auto &Action = Context.RuntimeData.Action.ReadMeleeActionState();
     UBBBMeleeAnimInstance *Animation = Cast<UBBBMeleeAnimInstance>(Context.Equipment.GetEquipmentAnimationInstance());

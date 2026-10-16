@@ -8,8 +8,8 @@ public:
     void Update(ABBBThrowable& Actor) const { FBBBThrowableParseProcessor{}.Update(Actor); }
     /** @param Data	唯一黑板 @param Packet	独立输入 @return 是否接受 */
     template<typename TPacket>
-    bool Submit(FBBBThrowableRuntimeData& Data, TPacket&& Packet) const
+    void Submit(FBBBThrowableRuntimeData& Data, TPacket&& Packet) const
     {
-        return FBBBThrowableParseProcessor::Submit(Data, Forward<TPacket>(Packet));
+        FBBBThrowableParseProcessor::Submit(Data, Forward<TPacket>(Packet));
     }
 };

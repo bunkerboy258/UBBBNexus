@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/States/BBBSniperActionState.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentLoadAmmoLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/DomainData/States/BBBSniperActionInputState.h"
@@ -13,7 +14,7 @@ struct FBBBSniperLoadAmmoLocalControlPacket final : public FBBBEquipmentLoadAmmo
     }
 
     /** @return 输入是否可写入本帧状态 */
-    bool CanApply() const
+    bool CanApply(const FBBBSniperActionState &State) const
     {
         return true;
     }

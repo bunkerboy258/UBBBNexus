@@ -26,8 +26,10 @@ struct FBBBPistolActionState final
     /** 动画通知控制的开火限制 不替代弹药与射速检查 */
     bool bFireBlocked = false;
 
-    /** 持有者操作限制 与动画开火通知独立 */
-    bool bOwnerActionsAllowed = true;
+    /** 隐藏装备网格并拒绝新的主动输入 不改变内部生命周期 */
+    bool bHide = false;
+    /** 最新网格显示结果版本 */
+    uint64 VisibilityRevision = 0;
 
     /** 当前是否处于换弹流程 */
     bool bIsReloading = false;

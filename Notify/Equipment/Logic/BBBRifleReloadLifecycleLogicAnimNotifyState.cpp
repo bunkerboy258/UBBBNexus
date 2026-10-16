@@ -16,11 +16,7 @@ void UBBBRifleReloadLifecycleLogicAnimNotifyState::NotifyEnd(
     }
 
     // 生命周期通知只报告动画结束 不在通知回调中直接修改换弹玩法状态
-    if (!ensureMsgf(Rifle->SubmitInput(FBBBRifleInterruptReloadLocalControlPacket{}),
-        TEXT("武器换弹收束通知提交输入失败 %s"), *Rifle->GetName()))
-    {
-        return;
-    }
+    Rifle->SubmitInput(FBBBRifleInterruptReloadLocalControlPacket{});
 
     UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Reload lifecycle input submitted Equipment=%s"), *Rifle->GetName());
 }

@@ -11,7 +11,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/BBBLMGDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -58,179 +57,112 @@ void ABBBLMGEquipment::Tick(const float DeltaSeconds)
     FBBBLMGUpdatePipeline{}.Update(*this);
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGEquipLocalControlPacket{});
+    QueueInput(FBBBLMGEquipLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet)
 {
-    return QueueInput(FBBBLMGEquipAuthorityFactPacket{});
+    QueueInput(FBBBLMGEquipAuthorityFactPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGPrimaryLocalControlPacket{});
+    QueueInput(FBBBLMGPrimaryLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet)
+
+
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGActionPermissionLocalControlPacket{{MoveTemp(Packet.Permissions)}});
+    QueueInput(FBBBLMGSecondaryLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGEquipLocalControlPacket Packet)
 {
-    return QueueInput(FBBBLMGSecondaryLocalControlPacket{});
+
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGEquipLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGEquipAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGEquipAuthorityFactPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGPrimaryLocalControlPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGPrimaryLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGSecondaryLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGSecondaryLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGBlockFireLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGBlockFireLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGAllowFireLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGAllowFireLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGLoadAmmoLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGLoadAmmoLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGInterruptReloadLocalControlPacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGInterruptReloadLocalControlPacket Packet)
-{
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGFireRemoteMessagePacket Packet)
+{
+
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGActionPermissionLocalControlPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGReloadStartRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGFireRemoteMessagePacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGReloadEndRemoteMessagePacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGReloadStartRemoteMessagePacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGFireAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGReloadEndRemoteMessagePacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGReloadStartAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBLMGFireAuthorityFactPacket Packet)
+void ABBBLMGEquipment::QueueInput(FBBBLMGReloadEndAuthorityFactPacket Packet)
 {
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
 
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBLMGEquipment::QueueInput(FBBBLMGReloadStartAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
-}
-
-bool ABBBLMGEquipment::QueueInput(FBBBLMGReloadEndAuthorityFactPacket Packet)
-{
-    if (!IsEquipped() || !IsMirror())
-    {
-        return false;
-    }
-
-    return FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }
 
 void ABBBLMGEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform)
@@ -238,24 +170,24 @@ void ABBBLMGEquipment::EmitShot_Implementation(const FTransform &MuzzleTransform
     // 默认不产生弹丸 此处是本次保留的唯一发射扩展
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGBlockFireLocalControlPacket{});
+    QueueInput(FBBBLMGBlockFireLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGAllowFireLocalControlPacket{});
+    QueueInput(FBBBLMGAllowFireLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGLoadAmmoLocalControlPacket{});
+    QueueInput(FBBBLMGLoadAmmoLocalControlPacket{});
 }
 
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet)
 {
-    return QueueInput(FBBBLMGInterruptReloadLocalControlPacket{});
+    QueueInput(FBBBLMGInterruptReloadLocalControlPacket{});
 }
 
 bool ABBBLMGEquipment::ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const
@@ -273,25 +205,106 @@ bool ABBBLMGEquipment::CanQuickUse() const
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBLMGBeginActionLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBLMGBeginContactLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBLMGEndActionLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
 }
 
 /** 本类拒绝不支持的操作 */
-bool ABBBLMGEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet)
 {
-    return false;
+    FBBBLMGEndContactLocalControlPacket Concrete;
+    Concrete.Tokens = MoveTemp(Packet.Tokens);
+    QueueInput(MoveTemp(Concrete));
+}
+
+bool ABBBLMGEquipment::IsMeshHidden() const
+{
+    return RuntimeData.Action.ReadLMGActionState().bHide;
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentHideLocalControlPacket<> Packet)
+{
+    FBBBLMGHideLocalControlPacket Concrete;
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGHideLocalControlPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentShowLocalControlPacket<> Packet)
+{
+    FBBBLMGShowLocalControlPacket Concrete;
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGShowLocalControlPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentVisibilityRemoteMessagePacket<> Packet)
+{
+    FBBBLMGVisibilityRemoteMessagePacket Concrete;
+    Concrete.Hidden = MoveTemp(Packet.Hidden);
+    Concrete.Revisions = MoveTemp(Packet.Revisions);
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGVisibilityRemoteMessagePacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBEquipmentVisibilityAuthorityFactPacket<> Packet)
+{
+    FBBBLMGVisibilityAuthorityFactPacket Concrete;
+    Concrete.Hidden = MoveTemp(Packet.Hidden);
+    Concrete.Revisions = MoveTemp(Packet.Revisions);
+    QueueInput(MoveTemp(Concrete));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGVisibilityAuthorityFactPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGBeginActionLocalControlPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGBeginContactLocalControlPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGEndActionLocalControlPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
+}
+
+void ABBBLMGEquipment::QueueInput(FBBBLMGEndContactLocalControlPacket Packet)
+{
+    FBBBLMGParseProcessor::Submit(RuntimeData, MoveTemp(Packet));
 }

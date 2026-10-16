@@ -21,6 +21,8 @@ void FBBBPistolAnimationProcessor::Stop(FBBBPistolAnimationUpdateContext &Contex
 
 void FBBBPistolAnimationProcessor::Update(FBBBPistolAnimationUpdateContext &Context)
 {
+    Context.Equipment.GetEquipmentSkeletalMesh()->SetHiddenInGame(Context.RuntimeData.Action.ReadPistolActionState().bHide);
+
     const auto &Action = Context.RuntimeData.Action.ReadPistolActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;
     if (Action.bEquippedThisFrame)

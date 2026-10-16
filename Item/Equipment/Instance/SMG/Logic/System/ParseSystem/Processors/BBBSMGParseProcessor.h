@@ -16,67 +16,93 @@ public:
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBSMGRuntimeData &Data);
 
-    /** @param Data	本类装备的黑板 @param Packet	本帧输入 @return 是否接受 */
+    /** @param Data	本类装备的黑板 @param Packet	本帧输入 @return 无 仅贡献输入 */
     template<typename TPacket>
-    static bool Submit(FBBBSMGRuntimeData &Data, TPacket Packet)
+    static void Submit(FBBBSMGRuntimeData &Data, TPacket Packet)
     {
-        if (!Packet.IsValid())
-        {
-            return false;
-        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
-        if constexpr (std::is_same_v<TPacket, FBBBSMGActionPermissionLocalControlPacket>)
+        if constexpr (std::is_same_v<TPacket, FBBBSMGEndContactLocalControlPacket>)
         {
-            Slot.Packet.Permissions.Append(Packet.Permissions);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSMGFireRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGEndActionLocalControlPacket>)
         {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSMGReloadStartRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGBeginContactLocalControlPacket>)
         {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSMGReloadEndRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGBeginActionLocalControlPacket>)
         {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSMGFireAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGFireRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSMGReloadStartAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGReloadStartRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSMGReloadEndAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGReloadEndRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
             Slot.Packet.Completed.Append(Packet.Completed);
         }
-
-        if constexpr (!(std::is_same_v<TPacket, FBBBSMGActionPermissionLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBSMGFireRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBSMGReloadStartRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBSMGReloadEndRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBSMGFireAuthorityFactPacket>
-            || std::is_same_v<TPacket, FBBBSMGReloadStartAuthorityFactPacket>
-            || std::is_same_v<TPacket, FBBBSMGReloadEndAuthorityFactPacket>))
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGFireAuthorityFactPacket>)
+        {
+            Slot.Packet.Sequences.Append(Packet.Sequences);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGReloadStartAuthorityFactPacket>)
+        {
+            Slot.Packet.Sequences.Append(Packet.Sequences);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGReloadEndAuthorityFactPacket>)
+        {
+            Slot.Packet.Sequences.Append(Packet.Sequences);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+            Slot.Packet.Completed.Append(Packet.Completed);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGVisibilityRemoteMessagePacket>)
+        {
+            Slot.Packet.Hidden.Append(Packet.Hidden);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSMGVisibilityAuthorityFactPacket>)
+        {
+            Slot.Packet.Hidden.Append(Packet.Hidden);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else
         {
             Slot.Packet = MoveTemp(Packet);
         }
         Slot.bActive = true;
-        return true;
     }
 
 private:
+    static TBBBSMGInputSlot<FBBBSMGEndContactLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGEndContactLocalControlPacket &)
+    {
+        return State.EndContactLocalControl;
+    }
+    static TBBBSMGInputSlot<FBBBSMGEndActionLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGEndActionLocalControlPacket &)
+    {
+        return State.EndActionLocalControl;
+    }
+    static TBBBSMGInputSlot<FBBBSMGBeginContactLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGBeginContactLocalControlPacket &)
+    {
+        return State.BeginContactLocalControl;
+    }
+    static TBBBSMGInputSlot<FBBBSMGBeginActionLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGBeginActionLocalControlPacket &)
+    {
+        return State.BeginActionLocalControl;
+    }
     static TBBBSMGInputSlot<FBBBSMGEquipLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGEquipLocalControlPacket &)
     {
         return State.Equip;
@@ -117,10 +143,7 @@ private:
         return State.InterruptReload;
     }
 
-    static TBBBSMGInputSlot<FBBBSMGActionPermissionLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGActionPermissionLocalControlPacket &)
-    {
-        return State.ActionPermission;
-    }
+
 
     static TBBBSMGInputSlot<FBBBSMGFireRemoteMessagePacket> &Select(FBBBSMGInputState &State, const FBBBSMGFireRemoteMessagePacket &)
     {
@@ -152,4 +175,20 @@ private:
         return State.AuthorityReloadEnd;
     }
 
+    static TBBBSMGInputSlot<FBBBSMGHideLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGHideLocalControlPacket &)
+    {
+        return State.HideLocalControl;
+    }
+    static TBBBSMGInputSlot<FBBBSMGShowLocalControlPacket> &Select(FBBBSMGInputState &State, const FBBBSMGShowLocalControlPacket &)
+    {
+        return State.ShowLocalControl;
+    }
+    static TBBBSMGInputSlot<FBBBSMGVisibilityRemoteMessagePacket> &Select(FBBBSMGInputState &State, const FBBBSMGVisibilityRemoteMessagePacket &)
+    {
+        return State.VisibilityRemoteMessage;
+    }
+    static TBBBSMGInputSlot<FBBBSMGVisibilityAuthorityFactPacket> &Select(FBBBSMGInputState &State, const FBBBSMGVisibilityAuthorityFactPacket &)
+    {
+        return State.VisibilityAuthorityFact;
+    }
 };

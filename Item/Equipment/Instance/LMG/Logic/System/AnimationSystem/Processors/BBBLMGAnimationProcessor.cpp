@@ -21,6 +21,8 @@ void FBBBLMGAnimationProcessor::Stop(FBBBLMGAnimationUpdateContext &Context)
 
 void FBBBLMGAnimationProcessor::Update(FBBBLMGAnimationUpdateContext &Context)
 {
+    Context.Equipment.GetEquipmentSkeletalMesh()->SetHiddenInGame(Context.RuntimeData.Action.ReadLMGActionState().bHide);
+
     const auto &Action = Context.RuntimeData.Action.ReadLMGActionState();
     auto &State = Context.RuntimeData.Animation.AnimationState;
     if (Action.bEquippedThisFrame)

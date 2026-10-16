@@ -60,7 +60,7 @@ bool FBBBGrenadePresentationTest::RunTest(const FString&)
         Packet.Definition = Definition;
         Packet.Transform = Transform;
         Packet.InheritedVelocity = Index == 0 ? FVector(600, 0, 0) : FVector::ZeroVector;
-        TestTrue(TEXT("正式配置释放成功"), Actor->SubmitInput(Packet));
+        Actor->SubmitInput(Packet);
         Actor->FinishSpawning(Transform);
         Actor->Tick(0);
         Actors.Add(Actor);

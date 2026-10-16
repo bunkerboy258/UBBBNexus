@@ -10,7 +10,9 @@ struct FBBBMeleeActionState final
     bool bAttacking = false;
 
     /** 持有者操作限制独立于伤害窗口通知 */
-    bool bOwnerActionsAllowed = true;
+    bool bHide = false;
+    /** 最新网格显示结果版本 */
+    uint64 VisibilityRevision = 0;
     /** 动画已经开启伤害窗口 */
     bool bContactOpen = false;
     /** 当前攻击的生命周期通知标识 */

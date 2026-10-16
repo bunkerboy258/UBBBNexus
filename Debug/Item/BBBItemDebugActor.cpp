@@ -127,12 +127,8 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     {
         return Id.ToString();
     });
-    const bool bSubmitted = Character->SubmitInput(MoveTemp(Packet));
+    Character->SubmitInput(MoveTemp(Packet));
     SetActorTickEnabled(false);
-    if (!bSubmitted)
-    {
-        UE_LOG(LogBBBItemDebug, Error, TEXT("%s 向角色 %s 提交物品 %s 失败"), *GetPathName(), *Character->GetPathName(), *ItemNames);
-        return;
-    }
+
     UE_LOG(LogBBBItemDebug, Display, TEXT("%s 已向角色 %s 提交物品 %s 的入包输入"), *GetPathName(), *Character->GetPathName(), *ItemNames);
 }

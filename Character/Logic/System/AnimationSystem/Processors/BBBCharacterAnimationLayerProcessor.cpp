@@ -21,9 +21,7 @@ void FBBBCharacterAnimationLayerProcessor::Update(
     TSubclassOf<UAnimInstance> DesiredLayerClass = AnimationConfig.DefaultAnimationLayerClass;
     AActor *HeldItem = EquipmentState.ActiveMainHandInstance;
     ABBBEquipment *ActiveInstance = Cast<ABBBEquipment>(HeldItem);
-    // 暂时收起只解除握持数据 动画层继续使用原装备以保留移动状态
     UBBBEquipmentAnimInstance *DesiredWeaponAnimation = IsValid(ActiveInstance)
-        && Context.RuntimeData.Interaction.ReadInteractionUseState().bUsable
         ? ActiveInstance->GetEquipmentAnimationInstance()
         : nullptr;
     if (Context.AnimationInstance.TryGetWeaponAnimInstance() != DesiredWeaponAnimation)

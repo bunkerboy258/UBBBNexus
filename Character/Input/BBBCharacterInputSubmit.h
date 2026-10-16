@@ -22,8 +22,6 @@ BBB_CHARACTER_INPUT_SLOT(FBBBAimStateAuthorityFactPacket, AimState)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeAuthorityFactPacket, AuthorityLife)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeRemoteMessagePacket, RemoteLife)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageDeliveryRemoteMessagePacket, DamageDelivery)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionUseAuthorityFactPacket, AuthorityFactInteractionUse)
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionUseRemoteMessagePacket, RemoteMessageInteractionUse)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageLocalControlPacket, Damage)
 BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
 BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationRemoteMessagePacket, RemoteAcceleration)
@@ -104,12 +102,8 @@ namespace BBBCharacterInput
      * @return 是否接受输入
      */
     template<typename TPacket>
-    bool Submit(FBBBCharacterInputState &State, TPacket &&Packet)
+    void Submit(FBBBCharacterInputState &State, TPacket &&Packet)
     {
-        if (!ensureMsgf(Packet.IsValid(), TEXT("角色输入包数据无效")))
-        {
-            return false;
-        }
 
         using FPacket = typename TDecay<TPacket>::Type;
 
@@ -134,13 +128,7 @@ namespace BBBCharacterInput
             Slot.Data.DownedRevisions.Append(Packet.DownedRevisions);
             Slot.Data.RecoveryCrouched.Append(Packet.RecoveryCrouched);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionUseAuthorityFactPacket>
-            || std::is_same_v<FPacket, FBBBCharacterInteractionUseRemoteMessagePacket>)
-        {
-            Slot.Data.Generations.Append(Packet.Generations);
-            Slot.Data.Revisions.Append(Packet.Revisions);
-            Slot.Data.Usable.Append(Packet.Usable);
-        }
+
         if constexpr (std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
             || std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>)
         {
@@ -343,8 +331,6 @@ namespace BBBCharacterInput
             && !std::is_same_v<FPacket, FBBBCharacterLifeAuthorityFactPacket>
             && !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionUseAuthorityFactPacket>
-            && !std::is_same_v<FPacket, FBBBCharacterInteractionUseRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
             && !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
             && !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>
@@ -377,6 +363,6 @@ namespace BBBCharacterInput
             Slot.Data = Forward<TPacket>(Packet);
         }
         Slot.bActive = true;
-        return true;
+        return;
     }
 }

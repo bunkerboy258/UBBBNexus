@@ -3,11 +3,12 @@
 #include "GameFramework/Actor.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableEquipLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableFinishLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableReleaseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/RemoteMessage/Use/FBBBConsumableStateRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/AuthorityFact/Use/FBBBConsumableStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableHideLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableShowLocalControlPacket.h"
 #include "BBBConsumable.generated.h"
 class UBBBConsumableDefinition;
 class UStaticMeshComponent;
@@ -39,6 +40,8 @@ public:
     TSubclassOf<UAnimInstance> GetCharacterAnimationLayerClass() const;
     /** @param OutOffset	局部挂接偏移 @return 配置是否有效 */
     bool TryGetAttachmentOffset(FTransform &OutOffset) const;
+    /** @return 手持网格隐藏事实 */
+    virtual bool IsMeshHidden() const PURE_VIRTUAL(ABBBConsumable::IsMeshHidden, return false;);
     /** @return 当前动作是否阻止主动切换 */
     virtual bool IsUsing() const PURE_VIRTUAL(ABBBConsumable::IsUsing, return false;);
     /** @return 当前手持模型是否已释放 */
@@ -46,11 +49,11 @@ public:
     /** @return 已开始的使用序号 */
     virtual int32 GetUseSerial() const PURE_VIRTUAL(ABBBConsumable::GetUseSerial, return 0;);
 
-    /** @param Packet	外部输入 @return 是否接受 */
+    /** @param Packet	外部输入 @return 无 仅贡献输入 */
     template<typename TPacket>
-    bool SubmitInput(TPacket &&Packet)
+    void SubmitInput(TPacket &&Packet)
     {
-        return IsInGameThread() && QueueInput(Forward<TPacket>(Packet));
+        QueueInput(Forward<TPacket>(Packet));
     }
 
 protected:
@@ -60,13 +63,14 @@ protected:
     virtual bool InitializeRuntimeData() PURE_VIRTUAL(ABBBConsumable::InitializeRuntimeData, return false;);
     virtual void UpdateRuntimeData() PURE_VIRTUAL(ABBBConsumable::UpdateRuntimeData, );
     virtual void ShutdownRuntimeData() PURE_VIRTUAL(ABBBConsumable::ShutdownRuntimeData, );
-    virtual bool QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumablePermissionLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
-    virtual bool QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, return false;);
+    virtual void QueueInput(FBBBConsumableHideLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumableShowLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumableEquipLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumableReleaseLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumableStateRemoteMessagePacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
+    virtual void QueueInput(FBBBConsumableStateAuthorityFactPacket<> Packet) PURE_VIRTUAL(ABBBConsumable::QueueInput, );
 private:
     friend class FBBBConsumableInitializer;
     friend class FBBBConsumableUpdatePipeline;

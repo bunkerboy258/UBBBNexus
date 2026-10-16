@@ -16,67 +16,93 @@ public:
     /** @param Data	本类装备的黑板 @return 无 */
     static void Clear(FBBBSniperRuntimeData &Data);
 
-    /** @param Data	本类装备的黑板 @param Packet	本帧输入 @return 是否接受 */
+    /** @param Data	本类装备的黑板 @param Packet	本帧输入 @return 无 仅贡献输入 */
     template<typename TPacket>
-    static bool Submit(FBBBSniperRuntimeData &Data, TPacket Packet)
+    static void Submit(FBBBSniperRuntimeData &Data, TPacket Packet)
     {
-        if (!Packet.IsValid())
-        {
-            return false;
-        }
         auto &Slot = Select(Data.Parse.InputState, Packet);
-        if constexpr (std::is_same_v<TPacket, FBBBSniperActionPermissionLocalControlPacket>)
+        if constexpr (std::is_same_v<TPacket, FBBBSniperEndContactLocalControlPacket>)
         {
-            Slot.Packet.Permissions.Append(Packet.Permissions);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSniperFireRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperEndActionLocalControlPacket>)
         {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSniperReloadStartRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperBeginContactLocalControlPacket>)
         {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSniperReloadEndRemoteMessagePacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperBeginActionLocalControlPacket>)
         {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
+            Slot.Packet.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSniperFireAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperFireRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSniperReloadStartAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperReloadStartRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
         }
-        if constexpr (std::is_same_v<TPacket, FBBBSniperReloadEndAuthorityFactPacket>)
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperReloadEndRemoteMessagePacket>)
         {
             Slot.Packet.Sequences.Append(Packet.Sequences);
             Slot.Packet.Revisions.Append(Packet.Revisions);
             Slot.Packet.Completed.Append(Packet.Completed);
         }
-
-        if constexpr (!(std::is_same_v<TPacket, FBBBSniperActionPermissionLocalControlPacket>
-            || std::is_same_v<TPacket, FBBBSniperFireRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBSniperReloadStartRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBSniperReloadEndRemoteMessagePacket>
-            || std::is_same_v<TPacket, FBBBSniperFireAuthorityFactPacket>
-            || std::is_same_v<TPacket, FBBBSniperReloadStartAuthorityFactPacket>
-            || std::is_same_v<TPacket, FBBBSniperReloadEndAuthorityFactPacket>))
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperFireAuthorityFactPacket>)
+        {
+            Slot.Packet.Sequences.Append(Packet.Sequences);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperReloadStartAuthorityFactPacket>)
+        {
+            Slot.Packet.Sequences.Append(Packet.Sequences);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperReloadEndAuthorityFactPacket>)
+        {
+            Slot.Packet.Sequences.Append(Packet.Sequences);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+            Slot.Packet.Completed.Append(Packet.Completed);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperVisibilityRemoteMessagePacket>)
+        {
+            Slot.Packet.Hidden.Append(Packet.Hidden);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else if constexpr (std::is_same_v<TPacket, FBBBSniperVisibilityAuthorityFactPacket>)
+        {
+            Slot.Packet.Hidden.Append(Packet.Hidden);
+            Slot.Packet.Revisions.Append(Packet.Revisions);
+        }
+        else
         {
             Slot.Packet = MoveTemp(Packet);
         }
         Slot.bActive = true;
-        return true;
     }
 
 private:
+    static TBBBSniperInputSlot<FBBBSniperEndContactLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperEndContactLocalControlPacket &)
+    {
+        return State.EndContactLocalControl;
+    }
+    static TBBBSniperInputSlot<FBBBSniperEndActionLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperEndActionLocalControlPacket &)
+    {
+        return State.EndActionLocalControl;
+    }
+    static TBBBSniperInputSlot<FBBBSniperBeginContactLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperBeginContactLocalControlPacket &)
+    {
+        return State.BeginContactLocalControl;
+    }
+    static TBBBSniperInputSlot<FBBBSniperBeginActionLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperBeginActionLocalControlPacket &)
+    {
+        return State.BeginActionLocalControl;
+    }
     static TBBBSniperInputSlot<FBBBSniperEquipLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperEquipLocalControlPacket &)
     {
         return State.Equip;
@@ -117,10 +143,7 @@ private:
         return State.InterruptReload;
     }
 
-    static TBBBSniperInputSlot<FBBBSniperActionPermissionLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperActionPermissionLocalControlPacket &)
-    {
-        return State.ActionPermission;
-    }
+
 
     static TBBBSniperInputSlot<FBBBSniperFireRemoteMessagePacket> &Select(FBBBSniperInputState &State, const FBBBSniperFireRemoteMessagePacket &)
     {
@@ -152,4 +175,20 @@ private:
         return State.AuthorityReloadEnd;
     }
 
+    static TBBBSniperInputSlot<FBBBSniperHideLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperHideLocalControlPacket &)
+    {
+        return State.HideLocalControl;
+    }
+    static TBBBSniperInputSlot<FBBBSniperShowLocalControlPacket> &Select(FBBBSniperInputState &State, const FBBBSniperShowLocalControlPacket &)
+    {
+        return State.ShowLocalControl;
+    }
+    static TBBBSniperInputSlot<FBBBSniperVisibilityRemoteMessagePacket> &Select(FBBBSniperInputState &State, const FBBBSniperVisibilityRemoteMessagePacket &)
+    {
+        return State.VisibilityRemoteMessage;
+    }
+    static TBBBSniperInputSlot<FBBBSniperVisibilityAuthorityFactPacket> &Select(FBBBSniperInputState &State, const FBBBSniperVisibilityAuthorityFactPacket &)
+    {
+        return State.VisibilityAuthorityFact;
+    }
 };

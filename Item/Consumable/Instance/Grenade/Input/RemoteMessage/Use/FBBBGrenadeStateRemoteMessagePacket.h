@@ -28,7 +28,7 @@ struct FBBBGrenadeStateRemoteMessagePacket final : public FBBBConsumableStateRem
     }
 
     /** @param Context	解析上下文 @return 是否只执行镜像还原 */
-    bool CanApply(bool bIsMirror) const
+    bool CanApply(bool bIsMirror, const FBBBGrenadeUseState &State) const
     {
         return bIsMirror;
     }
@@ -45,6 +45,7 @@ struct FBBBGrenadeStateRemoteMessagePacket final : public FBBBConsumableStateRem
             State.ReceivedRevision = Fact.Revision;
             State.UseSerial = Fact.UseSerial;
             State.ReleaseSerial = Fact.ReleaseSerial;
+            State.bHide = Fact.bHide;
             State.bUsing = Fact.bUsing;
             State.bReleased = Fact.bReleased;
             State.LaunchTransform = Fact.LaunchTransform;

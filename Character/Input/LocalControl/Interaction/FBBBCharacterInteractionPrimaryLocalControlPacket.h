@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionInputState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
@@ -14,7 +15,7 @@ struct FBBBCharacterInteractionPrimaryLocalControlPacket final
     /** @param Context	角色输入上下文 @return 是否允许操作当前物品 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror && Context.Life.bActionsAllowed && Context.InteractionUse.bUsable;
+        return !Context.bIsMirror && Context.Life.bActionsAllowed && !Context.Traversal.bTraversing;
     }
     /** @param Context	角色输入上下文 @return 无 */
     void Apply(FBBBCharacterInputContext &Context) const

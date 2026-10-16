@@ -51,20 +51,26 @@ bool UBBBMeleeNetworkComponent::ReceiveMessage(
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBMeleeAttackStartRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBMeleeAttackStartRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBMeleeAttackStartAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBMeleeAttackStartAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     if (Kind == 1)
     {
         if (bRemoteMessage)
         {
-            return Equipment->SubmitInput(FBBBMeleeAttackEndRemoteMessagePacket{{Sequence}, {Revision}});
+            Equipment->SubmitInput(FBBBMeleeAttackEndRemoteMessagePacket{{Sequence}, {Revision}});
+            return true;
         }
 
-        return Equipment->SubmitInput(FBBBMeleeAttackEndAuthorityFactPacket{{Sequence}, {Revision}});
+        Equipment->SubmitInput(FBBBMeleeAttackEndAuthorityFactPacket{{Sequence}, {Revision}});
+
+        return true;
     }
 
     return false;

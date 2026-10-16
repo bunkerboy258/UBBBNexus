@@ -12,6 +12,5 @@ void UBBBEquipmentLoadAmmoLogicAnimNotifyState::NotifyBegin(USkeletalMeshCompone
         return;
     }
 
-    ensureMsgf(Equipment->SubmitInput(FBBBEquipmentLoadAmmoLocalControlPacket<>{}),
-        TEXT("装备装入弹药通知提交失败 %s"), *Equipment->GetName());
+    Equipment->SubmitInput(FBBBEquipmentLoadAmmoLocalControlPacket<>{});
 }

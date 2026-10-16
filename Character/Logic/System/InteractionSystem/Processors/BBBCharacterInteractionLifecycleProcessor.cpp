@@ -4,10 +4,11 @@
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEquipLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumableFinishLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Base/Input/LocalControl/Use/FBBBConsumablePermissionLocalControlPacket.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -44,6 +45,7 @@ void FBBBCharacterInteractionLifecycleProcessor::Update(FBBBCharacterInteraction
             Previous->Destroy();
         }
     }
+    const bool bHadBinding = Selection.ActiveGeneration > 0;
     Selection.ActiveMainHandInstance = nullptr;
     Selection.ActiveItemId = NAME_None;
     if (Context.bIsMirror)
@@ -68,9 +70,18 @@ void FBBBCharacterInteractionLifecycleProcessor::Update(FBBBCharacterInteraction
         return;
     }
     Selection.ActiveMainHandInstance = Desired;
-    if (const auto *Equipment = Cast<ABBBEquipment>(Desired))
+    if (auto *Equipment = Cast<ABBBEquipment>(Desired))
     {
         Selection.ActiveItemId = Equipment->GetEquipmentId();
+        // 装备动作只来自真正的主手关系变更 初始镜像快照不补播
+        if (!Context.bIsMirror)
+        {
+            Equipment->SubmitInput(FBBBEquipmentEquipLocalControlPacket<>{});
+        }
+        if (Context.bIsMirror && bHadBinding)
+        {
+            Equipment->SubmitInput(FBBBEquipmentEquipAuthorityFactPacket<>{});
+        }
     }
     if (const auto *Consumable = Cast<ABBBConsumable>(Desired))
     {
@@ -150,7 +161,6 @@ void FBBBCharacterInteractionLifecycleProcessor::Detach(USkeletalMeshComponent &
     auto *Consumable = Cast<ABBBConsumable>(&Item);
     if (Consumable)
     {
-        Consumable->SubmitInput(FBBBConsumablePermissionLocalControlPacket<>{{false}});
         Consumable->SubmitInput(FBBBConsumableFinishLocalControlPacket<>{});
     }
     // 装备卸下后保留一次更新 由自身关闭管线收束换弹与通知 再自行停止 Tick

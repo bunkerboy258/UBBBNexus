@@ -11,6 +11,9 @@ struct FBBBMeleeNetworkObservationState final
     /** 已发布本次持有的基准 */
     bool bPublished = false;
 
+    /** 已发送的网格隐藏事实 */
+    bool bHide = false;
+
     /** 已发送的AttackSequence事实 */
     int32 AttackSequence = 0;
 

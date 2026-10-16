@@ -23,10 +23,8 @@ void UBBBEquipmentBlockFireLogicAnimNotifyState::NotifyBegin(USkeletalMeshCompon
             It.RemoveCurrent();
         }
     }
-    if (Equipment->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket<>{}))
-    {
-        Recipients.Add(MeshComp, Equipment);
-    }
+    Equipment->SubmitInput(FBBBEquipmentBlockFireLocalControlPacket<>{});
+    Recipients.Add(MeshComp, Equipment);
 }
 
 void UBBBEquipmentBlockFireLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponent* MeshComp,

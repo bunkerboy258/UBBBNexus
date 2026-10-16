@@ -8,12 +8,6 @@ struct FBBBSMGActionInputState final
     /** 本帧是否收到装备表现请求 */
     bool bEquipRequested = false;
 
-    /** 本帧是否收到持有者操作许可 */
-    bool bActionPermissionReceived = false;
-
-    /** 持有者允许装备继续操作的当前结果 */
-    bool bActionsAllowed = true;
-
     /** 本帧是否收到动画禁止开火请求 */
     bool bBlockFireRequested = false;
 

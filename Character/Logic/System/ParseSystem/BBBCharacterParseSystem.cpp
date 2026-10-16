@@ -29,7 +29,6 @@ void FBBBCharacterParseSystem::Update() const
         Data->Interaction.InteractionInputState,
         Data->Life.LifeInputState,
         Data->Life.ReadLifeState(),
-        Data->Interaction.InteractionUseInputState,
         Data->Network.DamageInboxState,
         Data->Life.RescueInputState,
         Data->Life.ReadRescueState(),

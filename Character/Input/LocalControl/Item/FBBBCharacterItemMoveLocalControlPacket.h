@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
 
 #include "CoreMinimal.h"
@@ -36,7 +37,7 @@ struct FBBBCharacterItemMoveLocalControlPacket final
     /** @param Context	本次输入上下文 @return 当前角色是否拥有真实物品控制权 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror && !Context.InteractionUse.bBusy && Context.InteractionUse.bSwitchAllowed && (Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin);
+        return !Context.Traversal.bTraversing && !Context.bIsMirror && !Context.InteractionUse.bBusy && Context.InteractionUse.bSwitchAllowed && (Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin);
     }
 
     /** @param Context	本次输入上下文 @return 无 */

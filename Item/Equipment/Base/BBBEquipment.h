@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentActionPermissionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginActionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentBeginContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentEndActionLocalControlPacket.h"
@@ -15,6 +14,10 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentLoadAmmoLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentEquipAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentHideLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentShowLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/RemoteMessage/Equipment/FBBBEquipmentVisibilityRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/AuthorityFact/Equipment/FBBBEquipmentVisibilityAuthorityFactPacket.h"
 #include "BBBEquipment.generated.h"
 
 class UBBBEquipmentAnimInstance;
@@ -32,6 +35,8 @@ class ABBB_EVAC_API ABBBEquipment : public AActor
     GENERATED_BODY()
 
 public:
+    /** @return 网格隐藏事实 */
+    virtual bool IsMeshHidden() const PURE_VIRTUAL(ABBBEquipment::IsMeshHidden, return false;);
     ABBBEquipment();
 
     /** @return 当前装备是否允许主动切换或解除装备 */
@@ -102,17 +107,12 @@ public:
     /**
      * 提交装备输入或网络传输结果
      * @param Packet	待提交的数据
-     * @return 是否接受
+     * @return 无 仅贡献输入
      */
     template<typename TPacket>
-    bool SubmitInput(TPacket &&Packet)
+    void SubmitInput(TPacket &&Packet)
     {
-        if (!ensureMsgf(IsInGameThread(), TEXT("装备输入线程或数据无效")))
-        {
-            return false;
-        }
-
-        return QueueInput(Forward<TPacket>(Packet));
+        QueueInput(Forward<TPacket>(Packet));
     }
 
     /** @return 装备自身的网络协议组件 */
@@ -126,17 +126,21 @@ private:
     friend class FBBBEquipmentUpdatePipeline;
 
 protected:
-    /** @param Packet 由具体装备解释的阻止开火请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet);
+    virtual void QueueInput(FBBBEquipmentVisibilityAuthorityFactPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
+    virtual void QueueInput(FBBBEquipmentVisibilityRemoteMessagePacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
+    virtual void QueueInput(FBBBEquipmentShowLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
+    virtual void QueueInput(FBBBEquipmentHideLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
+    /** @param Packet 由具体装备解释的阻止开火请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentBlockFireLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet 由具体装备解释的允许开火请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet);
+    /** @param Packet 由具体装备解释的允许开火请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentAllowFireLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet 由具体装备解释的装入弹药请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet);
+    /** @param Packet 由具体装备解释的装入弹药请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentLoadAmmoLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet 由具体装备解释的中断换弹请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet);
+    /** @param Packet 由具体装备解释的中断换弹请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentInterruptReloadLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
     /** 初始化具体装备状态 @return 是否初始化成功 */
     virtual bool InitializeRuntimeData() PURE_VIRTUAL(ABBBEquipment::InitializeRuntimeData, return false;);
@@ -144,36 +148,35 @@ protected:
     /** @return 无 通过具体关闭类收束自身 */
     virtual void ShutdownRuntimeData() PURE_VIRTUAL(ABBBEquipment::ShutdownRuntimeData, );
 
-    /** @param Packet 通用次行为请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet);
+    /** @param Packet 通用次行为请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentSecondaryLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
     /** 由具体装备根创建自己的协议组件 */
     UPROPERTY(VisibleAnywhere, Category = "BBB|装备", meta = (DisplayName = "装备协议组件"))
     TObjectPtr<UBBBEquipmentNetworkComponent> NetworkComponent = nullptr;
 
-    /** @param Packet	装备表现请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet);
+    /** @param Packet	装备表现请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentEquipLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet	权威装备表现请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet);
+    /** @param Packet	权威装备表现请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet	主行为请求 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet);
+    /** @param Packet	主行为请求 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet\t持有者操作许可 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentActionPermissionLocalControlPacket<> Packet);
+    /** @param Packet\t持有者操作许可 @return 无 仅贡献输入 */
 
-    /** @param Packet BeginAction动画事实 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet);
+    /** @param Packet BeginAction动画事实 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentBeginActionLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet EndAction动画事实 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet);
+    /** @param Packet EndAction动画事实 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentEndActionLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet BeginContact动画事实 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet);
+    /** @param Packet BeginContact动画事实 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentBeginContactLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
-    /** @param Packet EndContact动画事实 @return 是否接受 */
-    virtual bool QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet);
+    /** @param Packet EndContact动画事实 @return 无 仅贡献输入 */
+    virtual void QueueInput(FBBBEquipmentEndContactLocalControlPacket<> Packet) PURE_VIRTUAL(ABBBEquipment::QueueInput, );
 
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|装备", meta = (AllowPrivateAccess = "true", DisplayName = "定义资产"))
