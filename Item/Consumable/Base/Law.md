@@ -1,22 +1,21 @@
 # Consumable Base Law
 
-- 本目录只定义消耗品的公共运行时根与共用持有组件，禁止放入具体消耗品业务。
-- 共用静态定义、输入包与网络桥接分别放入 `Config/`、`Input/` 与 `Network/`。
-- 对外输入统一通过消耗品根的 `SubmitInput(...)` 进入实例逻辑。
+- 本目录只定义消耗品的公共轻量运行时根 静态定义与输入 禁止放入具体消耗品业务
+- 消耗品运行时只服务本次使用 不构造持续持有关系
+- 本根不拥有网格组件 独立 Tick 动画实例或网络组件
+- 对外输入统一通过消耗品根的模板 `void SubmitInput(...)` 进入实例逻辑
+- 消耗品内部状态由自身内部逻辑维护
 
 ## 物理目录
 
-固定为以下结构
 ```text
 Base/
     BBBConsumable.h / .cpp
     Config/
     Input/
-    Network/
     Logic/
         Core/
             Initialization/
             Update/
             Shutdown/
 ```
-- 具体消耗品实现要求看各子文件夹的law.md
