@@ -28,7 +28,6 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.RunState, Context);
     Process(InputState.RemoteAcceleration, Context);
     Process(InputState.AuthorityAcceleration, Context);
-    Process(InputState.ConsumableStage, Context);
     Process(InputState.Recovery, Context);
     Process(InputState.UseRemoteMessage, Context);
     Process(InputState.UseAuthorityFact, Context);

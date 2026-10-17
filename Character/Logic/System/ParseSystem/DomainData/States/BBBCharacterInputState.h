@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterUseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterUseRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRecoveryLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterConsumableStageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemConsumeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemQuickUseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
@@ -94,8 +93,6 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBCharacterUseRemoteMessagePacket> UseRemoteMessage;
     /** Recovery 固定输入 */
     TBBBCharacterInputSlot<FBBBCharacterRecoveryLocalControlPacket> Recovery;
-    /** ConsumableStage 固定输入 */
-    TBBBCharacterInputSlot<FBBBCharacterConsumableStageLocalControlPacket> ConsumableStage;
     /** ItemConsume 固定输入 */
     TBBBCharacterInputSlot<FBBBCharacterItemConsumeLocalControlPacket> ItemConsume;
     /** ItemQuickUse 固定输入 */

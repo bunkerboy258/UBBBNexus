@@ -3,8 +3,6 @@
 /** 当帧已经批准的动作请求 */
 struct FBBBHealthPackUseInputState final
 {
-    /** 新动作阶段 */
-    uint8 Stage = 0;
     /** 是否存在动作请求 */
     bool bPrimary = false;
     /** 是否结束当次使用 */

@@ -4,6 +4,7 @@
 class UStaticMesh;
 class UBBBConsumable;
 class UAnimMontage;
+class UBBBAnimInstance;
 class UBBBThrowableDefinition;
 
 /** 消耗品共有的静态持有资源 */
@@ -12,18 +13,18 @@ class ABBB_EVAC_API UBBBConsumableDefinition : public UBBBItemDefinition
 {
     GENERATED_BODY()
 public:
-  /** @param Stage 使用阶段 @return 对应角色动作 */
-  virtual UAnimMontage *GetUseMontage(uint8 Stage) const
+  /** @param Animation 角色动画层默认对象 @return 当前动画层对应的使用动作 */
+  virtual UAnimMontage *GetUseMontage(const UBBBAnimInstance *Animation) const
   {
       return nullptr;
   }
-  /** @param Stage 释放阶段 @return 独立世界实体定义 */
-  virtual UBBBThrowableDefinition *GetReleaseDefinition(uint8 Stage) const
+  /** @return 独立世界实体定义 */
+  virtual UBBBThrowableDefinition *GetReleaseDefinition() const
   {
       return nullptr;
   }
-  /** @param Stage 释放阶段 @return 相对视线的抬角 */
-  virtual float GetReleasePitch(uint8 Stage) const
+  /** @return 相对视线的抬角 */
+  virtual float GetReleasePitch() const
   {
       return 0.0f;
   }

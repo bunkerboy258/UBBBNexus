@@ -19,7 +19,6 @@
 #include "MassEntitySubsystem.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterConsumableStageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "Misc/ScopeExit.h"
 #include "Components/BoxComponent.h"

@@ -1,6 +1,5 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterConsumableStageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemQuickUseLocalControlPacket.h"
@@ -46,7 +45,6 @@ void ABBBPlayerController::SetupInputComponent()
     //先执行父类的绑定玩家输入动作
     Super::SetupInputComponent();
     InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ABBBPlayerController::QuickUse);
-    InputComponent->BindKey(EKeys::G, IE_Released, this, &ABBBPlayerController::EndQuickUse);
     InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ABBBPlayerController::QuickMelee);
 
     InputComponent->BindKey(EKeys::B, IE_Pressed, this, &ABBBPlayerController::ToggleBackpack);
@@ -236,20 +234,6 @@ AActor *ABBBPlayerController::GetActiveItem() const
 //切换鼠标菜单输入模式
 void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
 {
-    if (bEnabled)
-    {
-        if (const auto *ItemCharacter = GetItemCharacter())
-        {
-            const auto &Use = ItemCharacter->RuntimeData.Interaction.ReadInteractionUseState();
-            if (Use.bBusy && Use.Runtime.IsValid() && Use.Fact.Stage >= 1 && Use.Fact.Stage <= 3)
-            {
-                GetItemCharacter()->SubmitInput(FBBBCharacterInteractionFinishLocalControlPacket{
-                    {Use.Runtime.Get()}, {static_cast<uint64>(Use.UseSerial)}, {Use.UseSerial}, {Use.Instance}});
-            }
-        }
-        bQuickUseHeld = false;
-        QuickUseMouse = 0;
-    }
     PlayerInputSystem->SetInputEnabled(!bEnabled);
     //启用菜单模式时同时保留界面与游戏输入
     if (bEnabled)
@@ -505,45 +489,6 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
         return;
     }
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    if (IsPlayerMenuOpen() || !ItemCharacter || !ItemCharacter->IsItemUsable())
-    {
-        bQuickUseHeld = false;
-        bQuickUsePrepareSubmitted = false;
-        QuickUseMouse = 0;
-    }
-    if (bQuickUseHeld && !bQuickUsePrepareSubmitted && GetWorld() &&
-        GetWorld()->GetRealTimeSeconds() - QuickUsePressedAt >= QuickUseHoldSeconds)
-    {
-        ItemCharacter->SubmitInput(FBBBCharacterItemQuickUseLocalControlPacket{{1}});
-        bQuickUsePrepareSubmitted = true;
-    }
-    if (ItemCharacter && !IsPlayerMenuOpen())
-    {
-        const auto &Use = ItemCharacter->RuntimeData.Interaction.ReadInteractionUseState();
-        const bool bPreparing =
-            Use.bBusy && !Use.Fact.bQuickMelee && Use.Definition && Use.Fact.Stage >= 1 && Use.Fact.Stage <= 3;
-        if (bPreparing && QuickUseMouse == 0)
-        {
-            if (WasInputKeyJustPressed(EKeys::LeftMouseButton))
-            {
-                QuickUseMouse = 1;
-                ItemCharacter->SubmitInput(FBBBCharacterConsumableStageLocalControlPacket{{2}});
-            }
-            if (QuickUseMouse == 0 && WasInputKeyJustPressed(EKeys::RightMouseButton))
-            {
-                QuickUseMouse = 2;
-                ItemCharacter->SubmitInput(FBBBCharacterConsumableStageLocalControlPacket{{3}});
-            }
-        }
-        if (bPreparing && QuickUseMouse > 0 &&
-            WasInputKeyJustReleased(QuickUseMouse == 1 ? EKeys::LeftMouseButton : EKeys::RightMouseButton))
-        {
-            ItemCharacter->SubmitInput(
-                FBBBCharacterConsumableStageLocalControlPacket{{static_cast<uint8>(QuickUseMouse == 1 ? 4 : 5)}});
-            QuickUseMouse = 0;
-            bQuickUseHeld = false;
-        }
-    }
     const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Revision : 0;
     const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().Revision : 0;
     const int32 OperationRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemOperationState().Revision : 0;
@@ -572,7 +517,7 @@ bool ABBBPlayerController::SubmitQuickUse()
     {
         return false;
     }
-    ItemCharacter->SubmitInput(FBBBCharacterItemQuickUseLocalControlPacket{{0}});
+    ItemCharacter->SubmitInput(FBBBCharacterItemQuickUseLocalControlPacket{});
     return true;
 }
 
@@ -589,32 +534,9 @@ bool ABBBPlayerController::SubmitPrimaryUse()
 
 void ABBBPlayerController::QuickUse()
 {
-    if (IsPlayerMenuOpen() || !GetWorld())
-    {
-        return;
-    }
-    bQuickUseHeld = true;
-    bQuickUsePrepareSubmitted = false;
-    QuickUseMouse = 0;
-    QuickUsePressedAt = GetWorld()->GetRealTimeSeconds();
+    SubmitQuickUse();
 }
-void ABBBPlayerController::EndQuickUse()
-{
-    auto *ItemCharacter = GetItemCharacter();
-    if (!bQuickUseHeld || IsPlayerMenuOpen() || !ItemCharacter)
-    {
-        return;
-    }
-    if (!bQuickUsePrepareSubmitted)
-    {
-        SubmitQuickUse();
-    }
-    if (bQuickUsePrepareSubmitted && QuickUseMouse == 0)
-    {
-        ItemCharacter->SubmitInput(FBBBCharacterConsumableStageLocalControlPacket{{4}});
-    }
-    bQuickUseHeld = false;
-}
+
 void ABBBPlayerController::QuickMelee()
 {
     if (auto *ItemCharacter = GetItemCharacter(); ItemCharacter && !IsPlayerMenuOpen())

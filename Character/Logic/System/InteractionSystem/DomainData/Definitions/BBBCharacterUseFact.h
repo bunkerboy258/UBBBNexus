@@ -15,9 +15,6 @@ struct FBBBCharacterUseFact final
     /** 静态物品型号 */
     UPROPERTY()
     FName ItemId;
-    /** 当前动作阶段 */
-    UPROPERTY()
-    uint8 Stage = 0;
     /** 当前使用是否占用角色 */
     UPROPERTY()
     bool bActive = false;

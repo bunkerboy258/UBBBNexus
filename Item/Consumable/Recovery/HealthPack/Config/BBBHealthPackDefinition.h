@@ -9,7 +9,7 @@ class ABBB_EVAC_API UBBBHealthPackDefinition final : public UBBBConsumableDefini
 {
     GENERATED_BODY()
   public:
-    virtual UAnimMontage *GetUseMontage(uint8 Stage) const override
+    virtual UAnimMontage *GetUseMontage(const UBBBAnimInstance *Animation) const override
     {
         return UseMontage;
     }

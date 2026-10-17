@@ -8,11 +8,7 @@ struct FBBBGrenadePrimaryLocalControlPacket final
     /** @return 格式有效 */
     bool IsValid() const
     {
-        return !Stages.IsEmpty() && !Stages.ContainsByPredicate(
-                                        [](uint8 Stage)
-                                        {
-                                            return Stage > 5;
-                                        });
+        return true;
     }
     /** @param Inputs 使用输入 @return 允许解析 */
     bool CanApply(const FBBBGrenadeUseInputState &Inputs) const
@@ -22,7 +18,6 @@ struct FBBBGrenadePrimaryLocalControlPacket final
     /** @param Inputs 使用输入 @return 无 */
     void Apply(FBBBGrenadeUseInputState &Inputs) const
     {
-        Inputs.Stage = Stages.Last();
         Inputs.bPrimary = true;
     }
 };

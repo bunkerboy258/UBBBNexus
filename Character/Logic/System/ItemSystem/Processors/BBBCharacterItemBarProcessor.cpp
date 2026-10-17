@@ -30,7 +30,6 @@ void FBBBCharacterItemBarProcessor::Update(FBBBCharacterItemUpdateContext &Conte
                 Bar.SelectedThrowableSlot = Bar.SelectedConsumableSlot;
             }
             Operations.bQuickUse |= Bar.SelectedConsumableSlot >= 2;
-            Operations.UseStage = 0;
         }
         if (!bConsumable)
         {
@@ -74,7 +73,6 @@ void FBBBCharacterItemBarProcessor::Update(FBBBCharacterItemUpdateContext &Conte
     {
         ++Operations.Revision;
         Bar.bStartUse = Bar.DesiredConsumableDefinition != nullptr;
-        Bar.UseStage = Operations.UseStage;
         Operations.SucceededCount += Bar.bStartUse ? 1 : 0;
         Operations.RejectedCount += Bar.bStartUse ? 0 : 1;
     }

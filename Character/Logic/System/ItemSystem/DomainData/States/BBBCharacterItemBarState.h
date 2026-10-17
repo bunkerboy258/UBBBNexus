@@ -23,8 +23,6 @@ struct FBBBCharacterItemBarState final
     TObjectPtr<class UBBBConsumableDefinition> DesiredConsumableDefinition = nullptr;
     /** 已批准的当次使用请求 */
     bool bStartUse = false;
-    /** 已批准的起始阶段 */
-    uint8 UseStage = 0;
     /** 本帧唯一目标主手物品 */
     UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "目标主手物品"))
     TObjectPtr<AActor> DesiredMainHandItem = nullptr;

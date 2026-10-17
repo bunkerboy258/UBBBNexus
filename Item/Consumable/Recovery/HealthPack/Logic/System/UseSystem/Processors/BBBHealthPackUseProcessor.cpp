@@ -8,7 +8,7 @@ void FBBBHealthPackUseProcessor::Update(FBBBHealthPackUseUpdateContext &Context)
 {
     auto &State = Context.Data.Use.UseState;
     auto &Inputs = Context.Data.Use.UseInputState;
-    if (!Inputs.bPrimary || Inputs.bFinish || State.Stage == Inputs.Stage)
+    if (!Inputs.bPrimary || Inputs.bFinish || State.bUsing)
     {
         return;
     }
@@ -18,7 +18,6 @@ void FBBBHealthPackUseProcessor::Update(FBBBHealthPackUseUpdateContext &Context)
         Inputs.bFinish = true;
         return;
     }
-    State.Stage = Inputs.Stage;
     State.bUsing = true;
     Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Montage});
 }

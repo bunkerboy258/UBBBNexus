@@ -20,7 +20,7 @@ void UBBBHealthPackConsumable::ShutdownRuntimeData()
 }
 void UBBBHealthPackConsumable::QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet)
 {
-    ParseSystem.Submit(FBBBHealthPackPrimaryLocalControlPacket{{Packet.Stages}});
+    ParseSystem.Submit(FBBBHealthPackPrimaryLocalControlPacket{});
 }
 void UBBBHealthPackConsumable::QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet)
 {

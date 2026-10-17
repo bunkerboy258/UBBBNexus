@@ -79,6 +79,10 @@ public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintPure, Category = "BBB|翻越", meta = (BlueprintThreadSafe))
     UAnimMontage *SelectTraversalMontage(EBBBTraversalAction Action) const;
 
+    /** @return 当前动画层配置的手雷投掷动作 */
+    UFUNCTION(BlueprintImplementableEvent, BlueprintPure, Category = "BBB|投掷", meta = (BlueprintThreadSafe))
+    UAnimMontage *SelectGrenadeThrowMontage() const;
+
     /** @return 当前骨骼网格体上的 BBB 主动画实例 主实例自身调用时返回自身 */
     UFUNCTION(BlueprintPure, Category = "BBB|动画事实", meta = (BlueprintThreadSafe))
     UBBBAnimInstance *GetBBBMainAnimInstanceThreadSafe() const;

@@ -173,21 +173,8 @@ protected:
 private:
     /** G 按键的输入适配 */
     void QuickUse();
-    /** @return 无 G 松开或被取消 */
-    void EndQuickUse();
     /** @return 无 请求角色快速近战 */
     void QuickMelee();
-    /** 本地按键采样时刻 不属于角色玩法状态 */
-    double QuickUsePressedAt = 0.0;
-    /** G 是否仍按下 */
-    bool bQuickUseHeld = false;
-    /** 本次按下是否已发起准备请求 */
-    bool bQuickUsePrepareSubmitted = false;
-    /** 首个接管准备姿势的鼠标键 0 无 1 高抛 2 低抛 */
-    uint8 QuickUseMouse = 0;
-    /** 长按识别阈值 单位秒 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|输入", meta = (DisplayName = "投掷长按阈值", ClampMin = "0.05"))
-    float QuickUseHoldSeconds = 0.20f;
     /** TAB 的输入显示状态 不属于物品玩法事实 */
     bool bConsumableBarHeld = false;
     /** 本地玩家唯一物品界面 */

@@ -17,9 +17,8 @@ void FBBBCharacterUseReleaseProcessor::Update(FBBBCharacterInteractionUpdateCont
     auto &Inputs = Context.RuntimeData.Interaction.InteractionInputState;
     UWorld *World = Context.Character.GetWorld();
     const bool bActionsAllowed = Context.Character.IsItemUsable();
-    const bool bReleaseStage = Use.Fact.Stage == 0 || Use.Fact.Stage == 4 || Use.Fact.Stage == 5;
     const bool bHasNotification = Inputs.ReleaseTokens.Contains(Use.UseSerial);
-    if (!Context.bIsMirror && Use.bBusy && bActionsAllowed && bReleaseStage && bHasNotification &&
+    if (!Context.bIsMirror && Use.bBusy && bActionsAllowed && bHasNotification &&
         !Use.Fact.bCommitted && Use.Definition && World)
     {
         const auto &Inventory = Context.RuntimeData.Item.ReadCharacterItemInventoryState();
@@ -31,7 +30,7 @@ void FBBBCharacterUseReleaseProcessor::Update(FBBBCharacterInteractionUpdateCont
         bool bCanCommit = Item != nullptr;
         if (Use.Definition->bThrowable && bCanCommit)
         {
-            const auto *Definition = Use.Definition->GetReleaseDefinition(Use.Fact.Stage);
+            const auto *Definition = Use.Definition->GetReleaseDefinition();
             bCanCommit = Definition && Definition->IsValid();
             if (bCanCommit)
             {
@@ -39,7 +38,7 @@ void FBBBCharacterUseReleaseProcessor::Update(FBBBCharacterInteractionUpdateCont
                 FRotator Rotation =
                     Controller ? Controller->GetControlRotation() : Context.Character.GetActorRotation();
                 Rotation.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Rotation.Pitch) +
-                                                  Use.Definition->GetReleasePitch(Use.Fact.Stage),
+                                                  Use.Definition->GetReleasePitch(),
                                               -75.0f, 85.0f);
                 const FTransform Hand = Context.CharacterMesh.GetSocketTransform(Use.Definition->HandSocketName);
                 FVector Position = (Use.Definition->SpawnOffset * Hand).GetLocation();
@@ -102,7 +101,7 @@ void FBBBCharacterUseReleaseProcessor::Update(FBBBCharacterInteractionUpdateCont
         {
             continue;
         }
-        auto *Definition = ItemDefinition->GetReleaseDefinition(Result.Stage);
+        auto *Definition = ItemDefinition->GetReleaseDefinition();
         if (!Definition || !Definition->IsValid())
         {
             continue;

@@ -4,37 +4,39 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Throwable/Grenade/Config/BBBGrenadeDefinition.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyAdditiveMontageLocalControlPacket.h"
+#include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+
 void FBBBGrenadeUseProcessor::Update(FBBBGrenadeUseUpdateContext &Context) const
 {
     auto &State = Context.Data.Use.UseState;
     auto &Inputs = Context.Data.Use.UseInputState;
-    if (!Inputs.bPrimary || Inputs.bFinish || State.Stage == Inputs.Stage)
+    if (!Inputs.bPrimary || Inputs.bFinish || State.bUsing)
     {
         return;
     }
-    UAnimMontage *Montage = Context.Definition.ThrowMontage;
-    if (Inputs.Stage == 1)
+    const auto *Equipment = Context.Character.GetHeldEquipment();
+    TSubclassOf<UAnimInstance> LayerClass = Equipment ? Equipment->GetCharacterAnimationLayerClass() : nullptr;
+    if (!LayerClass)
     {
-        Montage = Context.Definition.PrepareMontage;
+        LayerClass = Context.Character.GetCharacterConfig().Animation.DefaultAnimationLayerClass;
     }
-    if (Inputs.Stage == 2)
-    {
-        Montage = Context.Definition.HighHoldMontage;
-    }
-    if (Inputs.Stage == 3)
-    {
-        Montage = Context.Definition.LowHoldMontage;
-    }
-    if (Inputs.Stage == 5)
-    {
-        Montage = Context.Definition.LowThrowMontage;
-    }
-    if (!Montage)
+    const auto *Animation = LayerClass ? Cast<UBBBAnimInstance>(LayerClass.GetDefaultObject()) : nullptr;
+    UAnimMontage *Montage = Context.Definition.GetUseMontage(Animation);
+    if (!ensureMsgf(Montage && !Montage->SlotAnimTracks.IsEmpty(), TEXT("当前动画层缺少手雷投掷蒙太奇")))
     {
         Inputs.bFinish = true;
         return;
     }
-    State.Stage = Inputs.Stage;
     State.bUsing = true;
-    Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Montage});
+    if (Montage->SlotAnimTracks[0].SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
+    {
+        Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageLocalControlPacket{Montage});
+    }
+    else
+    {
+        Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Montage});
+    }
 }

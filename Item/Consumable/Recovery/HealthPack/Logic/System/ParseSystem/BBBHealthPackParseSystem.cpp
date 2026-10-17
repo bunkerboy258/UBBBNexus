@@ -24,7 +24,7 @@ void FBBBHealthPackParseSystem::Submit(FBBBHealthPackPrimaryLocalControlPacket P
     if (Data)
     {
         auto &Slot = Data->Parse.InputState.Primary;
-        Slot.Packet.Stages.Append(Packet.Stages);
+        Slot.Packet = MoveTemp(Packet);
         Slot.bActive = true;
     }
 }

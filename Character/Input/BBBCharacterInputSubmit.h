@@ -90,7 +90,6 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSecondaryLocalControlPacket, In
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionReleaseLocalControlPacket, InteractionRelease)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionFinishLocalControlPacket, InteractionFinish)
 
-BBB_CHARACTER_INPUT_SLOT(FBBBCharacterConsumableStageLocalControlPacket, ConsumableStage)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRecoveryLocalControlPacket, Recovery)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterUseRemoteMessagePacket, UseRemoteMessage)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterUseAuthorityFactPacket, UseAuthorityFact)
@@ -329,10 +328,6 @@ namespace BBBCharacterInput
                 Slot.Data.Instances.Append(Packet.Instances);
             }
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterConsumableStageLocalControlPacket>)
-        {
-            Slot.Data.Stages.Append(Packet.Stages);
-        }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterRecoveryLocalControlPacket>)
         {
             Slot.Data.Amounts.Append(Packet.Amounts);
@@ -353,17 +348,11 @@ namespace BBBCharacterInput
         {
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (std::is_same_v<FPacket, FBBBCharacterItemQuickUseLocalControlPacket>)
-        {
-            Slot.Data.Stages.Append(Packet.Stages);
-        }
-        if constexpr (!std::is_same_v<FPacket, FBBBCharacterItemQuickUseLocalControlPacket> &&
-                      !std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&
+        if constexpr (!std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterMeleeBeginLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterUseAuthorityFactPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterUseRemoteMessagePacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterRecoveryLocalControlPacket> &&
-                      !std::is_same_v<FPacket, FBBBCharacterConsumableStageLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterItemConsumeLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionReleaseLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionFinishLocalControlPacket> &&

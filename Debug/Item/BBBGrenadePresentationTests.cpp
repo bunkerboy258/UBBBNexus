@@ -19,14 +19,6 @@ bool FBBBGrenadePresentationTest::RunTest(const FString&)
     {
         return false;
     }
-    auto *LowDefinition = LoadObject<UBBBThrowableDefinition>(
-        nullptr,
-        TEXT(
-            "/Game/_Project/Characters/BBBC_UA/Items/Consumable/Grenade/Grenade_01/DA_Throwable_Grenade_01_Low.DA_Throwable_Grenade_01_Low"));
-    if (!TestTrue(TEXT("正式低抛配置有效"), LowDefinition && LowDefinition->IsValid()))
-    {
-        return false;
-    }
     const auto Options = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
         .CreateNavigation(false).CreateAISystem(false).ShouldSimulatePhysics(true);
     auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Options);
@@ -59,13 +51,13 @@ bool FBBBGrenadePresentationTest::RunTest(const FString&)
     World->SetBegunPlay(true);
     TArray<ABBBThrowable*> Actors;
     TArray<USphereComponent*> Bodies;
-    for (int32 Index = 0; Index < 5; ++Index)
+    for (int32 Index = 0; Index < 4; ++Index)
     {
-        const float Pitch = Index == 1 ? 45.0f : Index == 2 ? -45.0f : Index == 4 ? 3.0f : 12.0f;
+        const float Pitch = Index == 1 ? 45.0f : Index == 2 ? -45.0f : 12.0f;
         const FTransform Transform(FRotator(Pitch, 0, 0), FVector(0, Index * 2000, 150));
         auto* Actor = World->SpawnActorDeferred<ABBBThrowable>(ABBBThrowable::StaticClass(), Transform);
         FBBBThrowableLaunchLocalControlPacket Packet;
-        Packet.Definition = Index == 4 ? LowDefinition : Definition;
+        Packet.Definition = Definition;
         Packet.Transform = Transform;
         Packet.InheritedVelocity = Index == 0 ? FVector(600, 0, 0) : FVector::ZeroVector;
         Actor->SubmitInput(Packet);
@@ -100,9 +92,6 @@ bool FBBBGrenadePresentationTest::RunTest(const FString&)
     }
     TestTrue(TEXT("移动平投一秒达到合理距离"), PositionAtOneSecond.X > 1200 && PositionAtOneSecond.X < 2400);
     TestTrue(TEXT("仰投具有二十五米以上投程"), Actors[1]->GetActorLocation().X > 2500);
-    TestTrue(TEXT("低抛保持近距离滚落范围"),
-             Actors[4]->GetActorLocation().X > 300 && Actors[4]->GetActorLocation().X < 1500);
-    TestTrue(TEXT("高低抛投程具有明显差异"), Actors[1]->GetActorLocation().X > Actors[4]->GetActorLocation().X * 2.0);
     TestTrue(TEXT("俯投发生可见的衰减反弹"), bBounced);
     TestFalse(TEXT("连续碰撞没有穿过四厘米薄墙"), bWallCrossed);
     TestFalse(TEXT("地面碰撞没有下穿"), bBelowFloor);

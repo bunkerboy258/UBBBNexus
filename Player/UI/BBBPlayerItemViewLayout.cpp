@@ -36,28 +36,6 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
                                           {
                                               return FLinearColor(1.0f, 1.0f, 1.0f, GetQuickSelectionOpacity());
                                           })[SNew(SBox).WidthOverride(900.0f)[SAssignNew(QuickBar, SHorizontalBox)]]] +
-        SOverlay::Slot()
-            .HAlign(HAlign_Center)
-            .VAlign(VAlign_Bottom)
-            .Padding(
-                0.0f, 0.0f, 0.0f,
-                24.0f)[SNew(STextBlock)
-                           .Visibility_Lambda(
-                               [this]()
-                               {
-                                   const ABBBPlayerController *Controller = GetItemController();
-                                   const auto *Character =
-                                       Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
-                                   const bool bPreparing =
-                                       Character &&
-                                       Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy &&
-                                       Character->RuntimeData.Interaction.ReadInteractionUseState().Fact.Stage >= 1 &&
-                                       Character->RuntimeData.Interaction.ReadInteractionUseState().Fact.Stage <= 3;
-                                   return !bBackpackOpen && bPreparing ? EVisibility::HitTestInvisible
-                                                                       : EVisibility::Collapsed;
-                               })
-                           .Text(FText::FromString(TEXT("按住左键 高抛  按住右键 低抛  松开投掷")))
-                           .Font(BBBItemUI::Font(14))] +
         SOverlay::Slot()[SNew(SOverlay).Visibility_Lambda(
                              [this]()
                              {

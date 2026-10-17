@@ -22,8 +22,6 @@ struct FBBBCharacterInteractionInputState final
     TArray<TWeakObjectPtr<ABBBEquipment>> EndContactRecipients;
     /** EndContact通知的实例标识 */
     TArray<int32> EndContactTokens;
-    /** 鼠标或 G 对本次准备动作的阶段请求 */
-    TArray<uint8> UseStages;
     /** 本帧快速近战请求 */
     bool bQuickMelee = false;
     /** 命中窗口开始对应的动作序号 */

@@ -12,7 +12,7 @@ struct FBBBCharacterUseRemoteMessagePacket final
     {
         for (const auto &Fact : Snapshots)
         {
-            if (Fact.Revision == 0 || Fact.Serial <= 0 || Fact.ItemId.IsNone() || Fact.Stage > 5 ||
+            if (Fact.Revision == 0 || Fact.Serial <= 0 || Fact.ItemId.IsNone() ||
                 Fact.ReleaseTransform.ContainsNaN() || Fact.InheritedVelocity.ContainsNaN())
             {
                 return false;

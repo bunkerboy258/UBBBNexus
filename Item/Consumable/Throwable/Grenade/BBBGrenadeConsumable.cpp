@@ -20,7 +20,7 @@ void UBBBGrenadeConsumable::ShutdownRuntimeData()
 }
 void UBBBGrenadeConsumable::QueueInput(FBBBConsumablePrimaryLocalControlPacket<> Packet)
 {
-    ParseSystem.Submit(FBBBGrenadePrimaryLocalControlPacket{{Packet.Stages}});
+    ParseSystem.Submit(FBBBGrenadePrimaryLocalControlPacket{});
 }
 void UBBBGrenadeConsumable::QueueInput(FBBBConsumableFinishLocalControlPacket<> Packet)
 {

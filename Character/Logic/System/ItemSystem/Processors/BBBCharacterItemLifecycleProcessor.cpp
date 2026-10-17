@@ -26,8 +26,14 @@ void FBBBCharacterItemLifecycleProcessor::Update(FBBBCharacterItemUpdateContext 
             Use.Runtime = Runtime;
             Use.Instance = Bar.DesiredConsumableIdentity;
             Use.Serial = Interaction.UseSerial + 1;
-            Runtime->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{{Bar.UseStage}});
+            Runtime->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{});
             Runtime->UpdateUse();
+            if (!Runtime->IsUsing())
+            {
+                Runtime->ShutdownUse();
+                Use.Runtime = nullptr;
+                Use.Instance.Invalidate();
+            }
         }
     }
     for (auto &Item : Inventory.Slots)

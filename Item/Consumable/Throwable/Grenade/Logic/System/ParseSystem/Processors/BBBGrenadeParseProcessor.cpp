@@ -13,7 +13,6 @@ void FBBBGrenadeParseProcessor::Update(FBBBGrenadeParseUpdateContext &Context) c
     {
         Slots.Finish.Packet.Apply(Inputs);
     }
-    Slots.Primary.Packet.Stages.Reset();
     Slots.Primary.bActive = false;
     Slots.Finish.bActive = false;
 }

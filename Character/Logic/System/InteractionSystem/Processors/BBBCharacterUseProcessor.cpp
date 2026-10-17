@@ -9,6 +9,11 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Catalog/BBBConsumableCatalog.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
+#include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
+
 void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Context) const
 {
     auto &Use = Context.RuntimeData.Interaction.InteractionUseState;
@@ -20,7 +25,7 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
             return;
         }
         const bool bWasActive = Use.Fact.bActive;
-        const bool bNewAction = Use.PendingFact.Serial != Use.Fact.Serial || Use.PendingFact.Stage != Use.Fact.Stage;
+        const bool bNewAction = Use.PendingFact.Serial != Use.Fact.Serial;
         Use.Fact = Use.PendingFact;
         Use.UseSerial = Use.Fact.Serial;
         const auto *Catalog = Context.Character.GetCharacterConfig().Item.ConsumableCatalog.Get();
@@ -39,8 +44,25 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
         }
         if (Use.bBusy && bNewAction && Use.Definition)
         {
-            Context.Character.SubmitInput(
-                FBBBUpperBodyMontageAuthorityFactPacket{Use.Definition->GetUseMontage(Use.Fact.Stage)});
+            const auto *Equipment = Context.Character.GetHeldEquipment();
+            TSubclassOf<UAnimInstance> LayerClass = Equipment ? Equipment->GetCharacterAnimationLayerClass() : nullptr;
+            if (!LayerClass)
+            {
+                LayerClass = Context.Character.GetCharacterConfig().Animation.DefaultAnimationLayerClass;
+            }
+            const auto *Animation = LayerClass ? Cast<UBBBAnimInstance>(LayerClass.GetDefaultObject()) : nullptr;
+            UAnimMontage *Montage = Use.Definition->GetUseMontage(Animation);
+            if (Montage && !Montage->SlotAnimTracks.IsEmpty())
+            {
+                if (Montage->SlotAnimTracks[0].SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)
+                {
+                    Context.Character.SubmitInput(FBBBUpperBodyAdditiveMontageAuthorityFactPacket{Montage});
+                }
+                else
+                {
+                    Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{Montage});
+                }
+            }
         }
         if (Use.bBusy && bNewAction && Use.Fact.bQuickMelee)
         {
@@ -92,25 +114,12 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
         Use.Fact.Revision = NextRevision;
         Use.Fact.Serial = Use.UseSerial;
         Use.Fact.ItemId = Use.Definition->ItemId;
-        Use.Fact.Stage = Context.RuntimeData.Item.ReadCharacterItemBarState().UseStage;
         Use.Fact.bActive = true;
         Use.bBusy = true;
     }
     auto *Runtime = Use.Runtime.Get();
     if (Runtime && Use.bBusy)
     {
-        for (uint8 Stage : Inputs.UseStages)
-        {
-            if (Use.Fact.Stage < 1 || Use.Fact.Stage > 3 || Stage < 2 || Stage > 5 ||
-                !Use.Definition->GetUseMontage(Stage))
-            {
-                continue;
-            }
-            Use.Fact.Stage = Stage;
-            ++Use.Fact.Revision;
-            Runtime->SubmitInput(FBBBConsumablePrimaryLocalControlPacket<>{{Stage}});
-        }
         Runtime->UpdateUse();
     }
-    Inputs.UseStages.Reset();
 }
