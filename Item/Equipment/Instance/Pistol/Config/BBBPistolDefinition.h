@@ -30,8 +30,8 @@ public:
     bool bAutomaticFire = false;
 
     /** 左手握持目标所使用的装备插槽 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "4", DisplayName = "左手握持插槽", ToolTip = "武器骨骼网格上的左手握持目标插槽 None 关闭此目标"))
-    FName LeftHandSocketName = NAME_None;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "4", DisplayName = "左手握持插槽", ToolTip = "武器骨骼网格上的左手握持目标插槽 必须有效 否则取消目标并报警"))
+    FName LeftHandSocketName = TEXT("LeftHand");
 
     /** 左手握持目标在右手骨骼空间中的额外偏移 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "5", DisplayName = "左手位置偏移 (厘米)", ToolTip = "单位厘米 转换插槽位置到角色 hand_r 骨骼空间后再加此偏移 X Y Z 沿 hand_r 的局部轴 正负决定方向"))
