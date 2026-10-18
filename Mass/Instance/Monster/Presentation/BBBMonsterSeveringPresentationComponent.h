@@ -18,6 +18,10 @@ class ABBB_EVAC_API UBBBMonsterSeveringPresentationComponent final : public UAct
     GENERATED_BODY()
 
 public:
+    /** 可选的清理来源 调试靶独立设置 正式尸群保持共享血迹分组 */
+    UPROPERTY(Transient)
+    TWeakObjectPtr<AActor> ResidueSource;
+
     /** @return 创建无组件更新的断肢表现 */
     UBBBMonsterSeveringPresentationComponent();
 

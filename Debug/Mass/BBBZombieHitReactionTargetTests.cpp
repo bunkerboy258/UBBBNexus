@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitReactionTarget.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieGoreDebugComponent.h"
 #include "Animation/AnimSequence.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/DamageEvents.h"
@@ -23,7 +24,9 @@ bool FBBBZombieHitReactionTargetTest::RunTest(const FString&)
     auto* Target = GetMutableDefault<ABBBZombieHitReactionTarget>();
     TestFalse(TEXT("固定靶没有移动更新"), Target->PrimaryActorTick.bCanEverTick);
     TestFalse(TEXT("本地调参靶不产生网络实体"), Target->GetIsReplicated());
-    TestNull(TEXT("不装配断肢表现组件"), Target->FindComponentByClass<UBBBMonsterSeveringPresentationComponent>());
+    TestNotNull(TEXT("伤口断肢复用正式表现组件"), Target->GorePresentation.Get());
+    TestNotNull(TEXT("血腥调试配置存在"), Target->GoreDebug.Get());
+    TestEqual(TEXT("调参靶默认每三秒恢复"), Target->GoreDebug->ResetInterval, 3.0f);
     if (!TestNotNull(TEXT("受击复用正式组件"), Target->HitReaction.Get())
         || !TestNotNull(TEXT("具备骨骼碰撞"), Target->TargetMesh.Get()))
     {

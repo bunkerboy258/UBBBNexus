@@ -30,6 +30,12 @@ public:
      */
     void AdvancePresentation(float DeltaSeconds);
 
+    /**
+     * @param Source\t仅清除此来源的当前飞行和残留表现
+     * @return 无返回值
+     */
+    void ClearForSource(const AActor& Source);
+
     /** @return 释放世界表现组件 无返回值 */
     virtual void Deinitialize() override;
 
@@ -66,4 +72,6 @@ private:
 
     /** 本轮推进的处理耗时 */
     double LastAdvanceMilliseconds = 0.0;
+    /** 正式批处理与调试靶共用推进 每个引擎帧仅执行一次 */
+    uint64 AdvancedFrame = MAX_uint64;
 };

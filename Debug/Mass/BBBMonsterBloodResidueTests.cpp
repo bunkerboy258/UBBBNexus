@@ -182,6 +182,8 @@ bool FBBBMonsterBloodResidueTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("仅保存有限当前飞行血滴"), Presentation->Droplets.Num(), Settings->MaximumFlights);
     for (int32 Index = 0; Index < 50; ++Index)
     {
+        // 同步测试手动推进模拟步 不推进引擎帧号
+        Presentation->AdvancedFrame = MAX_uint64;
         Presentation->AdvancePresentation(0.05f);
         TestTrue(TEXT("每轮飞行与边缘查询合计不超过上限"), Presentation->LastTraceCount <= Settings->MaximumTracesPerFrame);
     }
@@ -190,6 +192,7 @@ bool FBBBMonsterBloodResidueTest::RunTest(const FString& Parameters)
     {
         Residue.CreatedAt = -200.0;
     }
+    Presentation->AdvancedFrame = MAX_uint64;
     Presentation->AdvancePresentation(0.05f);
     TestTrue(TEXT("到期组件全部隐藏等待有界复用"), !Presentation->Decals.ContainsByPredicate([](const auto& Decal)
     {
@@ -207,6 +210,19 @@ bool FBBBMonsterBloodResidueTest::RunTest(const FString& Parameters)
     {
         return Decal->IsVisible();
     }));
+    Droplet.Source = Floor;
+    Budget = 8;
+    Presentation->PlaceResidue(Droplet, ContactAt(FVector(3000, 2000, 0)), Budget);
+    const int32 BeforeClear = Presentation->Decals.FilterByPredicate([](const auto& Decal)
+    {
+        return Decal->IsVisible();
+    }).Num();
+    Presentation->ClearForSource(*Floor);
+    const int32 AfterClear = Presentation->Decals.FilterByPredicate([](const auto& Decal)
+    {
+        return Decal->IsVisible();
+    }).Num();
+    TestEqual(TEXT("按来源清理不影响其他血迹"), AfterClear, BeforeClear - 1);
     Presentation->Deinitialize();
     TestTrue(TEXT("世界清理不残留组件或飞行状态"), Presentation->Decals.IsEmpty() && Presentation->Residues.IsEmpty() && Presentation->Droplets.IsEmpty());
     return true;

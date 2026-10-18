@@ -1,5 +1,7 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitReactionTarget.h"
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitTrajectoryComponent.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieGoreDebugComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterSeveringPresentationComponent.h"
 
 #include "Animation/AnimSequence.h"
 #include "Components/SceneComponent.h"
@@ -55,6 +57,8 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     PhysicalAnimation->PrimaryComponentTick.bStartWithTickEnabled = false;
     HitReaction = CreateDefaultSubobject<UBBBMonsterHitReactionComponent>(TEXT("HitReaction"));
     Trajectory = CreateDefaultSubobject<UBBBZombieHitTrajectoryComponent>(TEXT("Trajectory"));
+    GorePresentation = CreateDefaultSubobject<UBBBMonsterSeveringPresentationComponent>(TEXT("GorePresentation"));
+    GoreDebug = CreateDefaultSubobject<UBBBZombieGoreDebugComponent>(TEXT("GoreDebug"));
     HitReaction->AvailableProfiles.Reset();
     const TCHAR* Parts[] = {TEXT("Torso"), TEXT("Head"), TEXT("Arms"), TEXT("Legs")};
     for (const TCHAR* Part : Parts)
@@ -133,6 +137,10 @@ float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FD
     Hit.Position = Point.HitInfo.ImpactPoint;
     Hit.Direction = Point.ShotDirection.GetSafeNormal();
     Hit.Normal = Point.HitInfo.ImpactNormal;
-    HitReaction->ApplyHitFacts(Hit, true);
+    if (GoreDebug->bEnablePhysicalReaction)
+    {
+        HitReaction->ApplyHitFacts(Hit, true);
+    }
+    GoreDebug->ApplyHit(Hit);
     return 0.0f;
 }

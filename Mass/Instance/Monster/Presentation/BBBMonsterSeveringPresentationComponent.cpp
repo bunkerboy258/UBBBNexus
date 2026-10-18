@@ -37,7 +37,9 @@ void UBBBMonsterSeveringPresentationComponent::ApplyWoundFacts(const FBBBMonster
     {
         const float Ratio = static_cast<float>(Health.PartDamageRatios.Get(static_cast<EBBBMonsterHitRegion>(Region)));
         const bool bDestroyed = (Health.DestroyedParts & (1u << Region)) != 0;
-        const float Stage = bDestroyed || Ratio >= 1.0f ? 1.0f : Ratio >= 0.6f ? 0.66f : Ratio >= 0.2f ? 0.33f : 0.0f;
+        const float Light = FMath::Clamp(static_cast<float>(Definition.WoundStageThresholds.X), 0.0f, 0.98f);
+        const float Heavy = FMath::Clamp(static_cast<float>(Definition.WoundStageThresholds.Y), Light + 0.01f, 0.99f);
+        const float Stage = bDestroyed || Ratio >= 1.0f ? 1.0f : Ratio >= Heavy ? 0.66f : Ratio >= Light ? 0.33f : 0.0f;
         bDamaged |= Stage > 0.0f;
         bNeedsGeometry |= Region > 0 && Stage >= 1.0f;
         if (AppliedStages[Region] != Stage)
@@ -142,6 +144,7 @@ void UBBBMonsterSeveringPresentationComponent::ApplyWoundFacts(const FBBBMonster
             Burst.Region = Part.Region;
             Burst.Seed = Seed ^ (static_cast<uint32>(Part.Region) * 7919u) ^ Hit.Serial;
             Burst.bSevering = true;
+            Burst.Source = ResidueSource;
             Bursts.Add(Burst);
             bPlaySever = true;
         }

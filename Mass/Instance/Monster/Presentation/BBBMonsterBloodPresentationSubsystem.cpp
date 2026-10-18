@@ -18,6 +18,36 @@
 #include "Misc/App.h"
 #include "HAL/PlatformTime.h"
 
+namespace
+{
+    /**
+     * @param Random\t本次表现的确定性随机源
+     * @param Range\t允许倒序填写的速度或尺寸范围
+     * @param Lower\t安全下界
+     * @param Upper\t安全上界
+     * @return 有界采样结果
+     */
+    float BloodRange(FRandomStream& Random, const FVector2D& Range, const float Lower, const float Upper)
+    {
+        const float A = FMath::Clamp(static_cast<float>(Range.X), Lower, Upper);
+        const float B = FMath::Clamp(static_cast<float>(Range.Y), Lower, Upper);
+        return Random.FRandRange(FMath::Min(A, B), FMath::Max(A, B));
+    }
+
+    /**
+     * @param Settings\t当前共享喷射权重
+     * @param Impact\t本轮真实接触方向
+     * @return 非零归一化喷射方向
+     */
+    FVector BloodDirection(const UBBBMonsterBloodPresentationDefinition& Settings, const FBBBMonsterBloodImpact& Impact)
+    {
+        const FVector Outward = Impact.Normal.GetSafeNormal();
+        const FVector Tangent = FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal();
+        return (Outward * Settings.SprayDirectionWeights.X + Tangent * Settings.SprayDirectionWeights.Y
+            + FVector::UpVector * Settings.SprayDirectionWeights.Z).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
+    }
+}
+
 void UBBBMonsterBloodPresentationSubsystem::Deinitialize()
 {
     for (UDecalComponent* Decal : Decals)
@@ -40,48 +70,54 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
     {
         return;
     }
-    if (!ensureMsgf(Settings.ImpactChannel && Settings.ImpactChannel->Get(), TEXT("[BBBMonsterBlood]血效配置不完整")))
+    if (Settings.bEnableParticles)
     {
-        return;
-    }
-
-    UNiagaraDataChannel* Channel = Settings.ImpactChannel->Get();
-    auto* Handler = UNiagaraDataChannelLibrary::FindDataChannelHandler(World, Channel);
-    if (!ensureMsgf(Channel && Handler, TEXT("[BBBMonsterBlood]通道处理器缺失")))
-    {
-        return;
-    }
-    TMap<FNiagaraDataChannelData*, TArray<int32>> Batches;
-    for (int32 Index = 0; Index < Impacts.Num(); ++Index)
-    {
-        FNDCAccessContextInst Access(Channel->GetAccessContextType());
-        Access.GetChecked<FNDCAccessContextLegacy>() = FNDCAccessContextLegacy(Impacts[Index].Position);
-        auto Data = Handler->FindData(Access, ENiagaraResourceAccess::WriteOnly);
-        if (ensureMsgf(Data.IsValid(), TEXT("[BBBMonsterBlood]空间岛缺失")))
+        if (!ensureMsgf(Settings.ImpactChannel && Settings.ImpactChannel->Get(), TEXT("[BBBMonsterBlood]血效配置不完整")))
         {
-            Batches.FindOrAdd(Data.Get()).Add(Index);
+            return;
         }
-    }
-    for (const auto& Batch : Batches)
-    {
-        FNDCAccessContextInst Access(Channel->GetAccessContextType());
-        Access.GetChecked<FNDCAccessContextLegacy>() = FNDCAccessContextLegacy(Impacts[Batch.Value[0]].Position);
-        auto* Writer = UNiagaraDataChannelLibrary::WriteToNiagaraDataChannel_WithContext(World,
-            Settings.ImpactChannel, Access, Batch.Value.Num(), false, true, false, TEXT("BBBMonsterBlood"));
-        if (ensureMsgf(Writer, TEXT("[BBBMonsterBlood]批量血粒子通道写入失败")))
+
+        UNiagaraDataChannel* Channel = Settings.ImpactChannel->Get();
+        auto* Handler = UNiagaraDataChannelLibrary::FindDataChannelHandler(World, Channel);
+        if (!ensureMsgf(Channel && Handler, TEXT("[BBBMonsterBlood]通道处理器缺失")))
         {
-            for (int32 Index = 0; Index < Batch.Value.Num(); ++Index)
+            return;
+        }
+        TMap<FNiagaraDataChannelData*, TArray<int32>> Batches;
+        for (int32 Index = 0; Index < Impacts.Num(); ++Index)
+        {
+            FNDCAccessContextInst Access(Channel->GetAccessContextType());
+            Access.GetChecked<FNDCAccessContextLegacy>() = FNDCAccessContextLegacy(Impacts[Index].Position);
+            auto Data = Handler->FindData(Access, ENiagaraResourceAccess::WriteOnly);
+            if (ensureMsgf(Data.IsValid(), TEXT("[BBBMonsterBlood]空间岛缺失")))
             {
-                const auto& Impact = Impacts[Batch.Value[Index]];
-                Writer->WritePosition(TEXT("Position"), Index, Impact.Position);
-                const FVector Outward = Impact.Normal.GetSafeNormal();
-                const FVector Tangent = FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal();
-                const FVector Spray = (Outward * 0.75f + Tangent * 0.25f + FVector::UpVector * 0.25f).GetSafeNormal();
-                Writer->WriteVector(TEXT("Normal"), Index, Outward);
-                Writer->WriteVector(TEXT("Direction"), Index, Spray);
-                Writer->WriteInt(TEXT("Surface"), Index, Impact.bSevering ? 3 : 2);
+                Batches.FindOrAdd(Data.Get()).Add(Index);
             }
         }
+        for (const auto& Batch : Batches)
+        {
+            FNDCAccessContextInst Access(Channel->GetAccessContextType());
+            Access.GetChecked<FNDCAccessContextLegacy>() = FNDCAccessContextLegacy(Impacts[Batch.Value[0]].Position);
+            auto* Writer = UNiagaraDataChannelLibrary::WriteToNiagaraDataChannel_WithContext(World,
+                Settings.ImpactChannel, Access, Batch.Value.Num(), false, true, false, TEXT("BBBMonsterBlood"));
+            if (ensureMsgf(Writer, TEXT("[BBBMonsterBlood]批量血粒子通道写入失败")))
+            {
+                for (int32 Index = 0; Index < Batch.Value.Num(); ++Index)
+                {
+                    const auto& Impact = Impacts[Batch.Value[Index]];
+                    Writer->WritePosition(TEXT("Position"), Index, Impact.Position);
+                    const FVector Outward = Impact.Normal.GetSafeNormal();
+                    const FVector Spray = BloodDirection(Settings, Impact);
+                    Writer->WriteVector(TEXT("Normal"), Index, Outward);
+                    Writer->WriteVector(TEXT("Direction"), Index, Spray);
+                    Writer->WriteInt(TEXT("Surface"), Index, Impact.bSevering ? 3 : 2);
+                }
+            }
+        }
+    }
+    if (!Settings.bEnableResidue)
+    {
+        return;
     }
     for (const FBBBMonsterBloodImpact& Impact : Impacts)
     {
@@ -97,26 +133,30 @@ void UBBBMonsterBloodPresentationSubsystem::EmitDroplets(const UBBBMonsterBloodP
     }
 
     const FVector Outward = Impact.Normal.GetSafeNormal();
-    const FVector Spray = (Outward * 0.75f + FVector::VectorPlaneProject(Impact.Direction, Outward).GetSafeNormal() * 0.25f
-        + FVector::UpVector * 0.25f).GetSafeNormal();
+    const FVector Spray = BloodDirection(Settings, Impact);
     const FVector Tangent = FVector::CrossProduct(Spray, FMath::Abs(Spray.Z) > 0.95f ? FVector::ForwardVector : FVector::UpVector).GetSafeNormal();
     const FVector Bitangent = FVector::CrossProduct(Spray, Tangent);
     FRandomStream Random(Impact.Seed ^ GetTypeHash(Impact.Position));
-    const int32 Count = Impact.bSevering ? 6 : Random.RandRange(2, 3);
+    const int32 Minimum = FMath::Clamp(FMath::Min(Settings.DropletCount.X, Settings.DropletCount.Y), 0, 32);
+    const int32 Maximum = FMath::Clamp(FMath::Max(Settings.DropletCount.X, Settings.DropletCount.Y), 0, 32);
+    const int32 Count = Impact.bSevering ? FMath::Clamp(Settings.SeveringDropletCount, 0, 32) : Random.RandRange(Minimum, Maximum);
     for (int32 Index = 0; Index < Count && Droplets.Num() < FMath::Clamp(Settings.MaximumFlights, 3, 128); ++Index)
     {
         const float Angle = Random.FRandRange(0.0f, 2.0f * PI);
         const FVector Spread = Tangent * FMath::Cos(Angle) + Bitangent * FMath::Sin(Angle);
         FBBBMonsterBloodDroplet Droplet;
         Droplet.Settings = &Settings;
-        Droplet.Position = Impact.Position + Outward * 6.0f;
-        Droplet.Velocity = Spray * Random.FRandRange(520.0f, 800.0f) + Spread * Random.FRandRange(80.0f, 220.0f);
+        Droplet.Source = Impact.Source;
+        Droplet.Position = Impact.Position + Outward * FMath::Clamp(Settings.SurfaceOffset, 0.0f, 50.0f);
+        Droplet.Velocity = Spray * BloodRange(Random, Settings.DropletSpeed, 0, 5000)
+            + Spread * BloodRange(Random, Settings.DropletSpreadSpeed, 0, 2000);
         Droplet.Seed = Random.GetUnsignedInt();
         Droplet.bFine = Index > 0;
         if (Impact.bSevering && Index >= 3)
         {
-            Droplet.Velocity = FVector(0.0f, 0.0f, -80.0f) + Spread * 45.0f;
-            Droplet.Age = -0.12f * static_cast<float>(Index - 2);
+            Droplet.Velocity = FVector(0.0f, 0.0f, -FMath::Clamp(Settings.SeveringDripSpeed, 0.0f, 2000.0f))
+                + Spread * FMath::Clamp(Settings.SeveringDripSpread, 0.0f, 2000.0f);
+            Droplet.Age = -FMath::Clamp(Settings.SeveringDripInterval, 0.0f, 0.5f) * static_cast<float>(Index - 2);
         }
         Droplets.Add(Droplet);
     }
@@ -130,6 +170,11 @@ void UBBBMonsterBloodPresentationSubsystem::AdvancePresentation(float DeltaSecon
     {
         return;
     }
+    if (AdvancedFrame == GFrameCounter)
+    {
+        return;
+    }
+    AdvancedFrame = GFrameCounter;
 
     int32 TraceBudget = 8;
     for (const auto& Droplet : Droplets)
@@ -175,7 +220,7 @@ void UBBBMonsterBloodPresentationSubsystem::AdvancePresentation(float DeltaSecon
     const double Now = World->GetTimeSeconds();
     for (int32 Index = 0; Index < Decals.Num(); ++Index)
     {
-        if (!Residues[Index].Surface.IsValid() || Now - Residues[Index].CreatedAt > Residues[Index].Lifetime + 4.0f)
+        if (!Residues[Index].Surface.IsValid() || Now - Residues[Index].CreatedAt > Residues[Index].Lifetime + Residues[Index].FadeDuration)
         {
             Decals[Index]->SetVisibility(false);
         }
@@ -202,7 +247,7 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
     int32 NearbyFine = 0;
     for (int32 Index = 0; Index < Decals.Num(); ++Index)
     {
-        if (Residues[Index].Surface.Get() == Surface && Now - Residues[Index].CreatedAt < Residues[Index].Lifetime
+        if (Residues[Index].Source == Droplet.Source && Residues[Index].Surface.Get() == Surface && Now - Residues[Index].CreatedAt < Residues[Index].Lifetime
             && FVector::DistSquared(Decals[Index]->GetComponentLocation(), Contact.ImpactPoint) < FMath::Square(Settings->AccumulationRadius)
             && FVector::DotProduct(Residues[Index].Normal, Normal) > 0.95f)
         {
@@ -229,7 +274,7 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
     if (!Droplet.bFine && NearbyPool != INDEX_NONE && Nearby >= Settings->LocalDecalLimit)
     {
         auto& Residue = Residues[NearbyPool];
-        Residue.Coverage = FMath::Min(1.0f, Residue.Coverage + 0.12f);
+        Residue.Coverage = FMath::Min(1.0f, Residue.Coverage + FMath::Clamp(Settings->PoolCoverageStep, 0.0f, 1.0f));
         Residue.CreatedAt = Now;
         auto* Material = Cast<UMaterialInstanceDynamic>(Decals[NearbyPool]->GetDecalMaterial());
         if (ensure(Material))
@@ -237,7 +282,7 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
             Material->SetScalarParameterValue(TEXT("Coverage"), Residue.Coverage);
             Material->SetScalarParameterValue(TEXT("SpawnTime"), Now);
         }
-        Decals[NearbyPool]->SetFadeOut(Residue.Lifetime, 4.0f, false);
+        Decals[NearbyPool]->SetFadeOut(Residue.Lifetime, Residue.FadeDuration, false);
         Decals[NearbyPool]->SetLifeSpan(0.0f);
         return;
     }
@@ -260,15 +305,16 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
     Source->GetTextureParameterValue(FMaterialParameterInfo(TEXT("BloodMask")), Mask);
     const auto* Texture = Cast<UTexture2D>(Mask);
     const float Aspect = Texture ? FMath::Clamp(static_cast<float>(Texture->GetSizeX()) / FMath::Max(1, Texture->GetSizeY()), 0.5f, 3.0f) : 1.0f;
-    float HalfLength = Kind == 1 ? Random.FRandRange(10.0f, 24.0f) : Random.FRandRange(30.0f, 48.0f);
-    const float WidthRatio = Kind == 0 ? Random.FRandRange(0.4f, 0.65f) : Random.FRandRange(0.6f, 0.9f);
+    float HalfLength = BloodRange(Random, Kind == 1 ? Settings->FineHalfLength : Settings->SplatterHalfLength, 1, 200);
+    const float WidthRatio = BloodRange(Random, Kind == 0 ? Settings->SplatterWidthRatio : Settings->OtherWidthRatio, 0.05f, 2);
     float HalfWidth = HalfLength / Aspect * WidthRatio;
     FVector Axis = FVector::VectorPlaneProject(Droplet.Velocity, Normal).GetSafeNormal();
     if (Axis.IsNearlyZero())
     {
         Axis = FVector::CrossProduct(Normal, FMath::Abs(Normal.Z) > 0.95f ? FVector::ForwardVector : FVector::UpVector).GetSafeNormal();
     }
-    Axis = Axis.RotateAngleAxis(Random.FRandRange(-18.0f, 18.0f), Normal);
+    const float Jitter = FMath::Clamp(Settings->DirectionJitter, 0.0f, 180.0f);
+    Axis = Axis.RotateAngleAxis(Random.FRandRange(-Jitter, Jitter), Normal);
     const FVector Side = FVector::CrossProduct(Normal, Axis).GetSafeNormal();
 
     FCollisionObjectQueryParams Objects(ECC_WorldStatic);
@@ -330,9 +376,9 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
 
     UDecalComponent* Decal = Decals[Slot];
     auto* Material = Cast<UMaterialInstanceDynamic>(Decal->GetDecalMaterial());
-    if (!Material || Material->GetMaterial() != Source->GetMaterial())
+    if (!Material || Material->Parent != Source)
     {
-        Material = UMaterialInstanceDynamic::Create(Source->GetMaterial(), Decal);
+        Material = UMaterialInstanceDynamic::Create(Source, Decal);
     }
     if (Mask)
     {
@@ -340,6 +386,8 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
     }
     auto& Residue = Residues[Slot];
     Residue.Surface = Surface;
+    Residue.Source = Droplet.Source;
+    Residue.FadeDuration = FMath::Clamp(Settings->FadeDuration, 0.1f, 60.0f);
     Residue.Normal = Normal;
     Residue.CreatedAt = Now;
     Residue.Kind = Kind;
@@ -351,8 +399,24 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
     Decal->SetDecalMaterial(Material);
     Decal->DecalSize = FVector(2.0f, HalfLength, HalfWidth);
     Decal->SetWorldLocationAndRotation(Contact.ImpactPoint + Normal * 0.25f, FRotationMatrix::MakeFromXY(-Normal, Axis).Rotator());
-    Decal->SetFadeOut(Residue.Lifetime, 4.0f, false);
+    Decal->SetFadeOut(Residue.Lifetime, Residue.FadeDuration, false);
     Decal->SetLifeSpan(0.0f);
     Decal->SetVisibility(true);
     Decal->MarkRenderStateDirty();
+}
+
+void UBBBMonsterBloodPresentationSubsystem::ClearForSource(const AActor& Source)
+{
+    Droplets.RemoveAllSwap([&Source](const FBBBMonsterBloodDroplet& Droplet)
+    {
+        return Droplet.Source.Get() == &Source;
+    });
+    for (int32 Index = 0; Index < Residues.Num(); ++Index)
+    {
+        if (Residues[Index].Source.Get() == &Source)
+        {
+            Decals[Index]->SetVisibility(false);
+            Residues[Index] = FBBBMonsterBloodResidue();
+        }
+    }
 }

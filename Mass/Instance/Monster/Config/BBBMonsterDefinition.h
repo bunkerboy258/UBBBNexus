@@ -20,6 +20,10 @@ class ABBB_EVAC_API UBBBMonsterDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    /** 仅控制表现阶段 不改变部位伤害或损毁条件 */
+    UPROPERTY(EditAnywhere, Category = "小怪|伤口", meta = (DisplayName = "轻伤重伤显示阈值"))
+    FVector2D WoundStageThresholds = FVector2D(0.2, 0.6);
+
     /** 当前外观的封闭断肢资源 */
     UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "断肢资源"))
     TArray<FBBBMonsterSeveredPartDefinition> SeveredParts;

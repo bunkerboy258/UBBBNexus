@@ -13,6 +13,78 @@ class ABBB_EVAC_API UBBBMonsterBloodPresentationDefinition final : public UDataA
     GENERATED_BODY()
 
 public:
+    /** 关闭后不写入空中血粒子通道 不影响环境血迹 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|开关", meta = (DisplayName = "启用空中喷血"))
+    bool bEnableParticles = true;
+
+    /** 关闭后不生成落地采样血滴 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|开关", meta = (DisplayName = "启用环境血迹"))
+    bool bEnableResidue = true;
+
+    /** 向外 沿入射切线 向上的喷射方向权重 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|喷射", meta = (DisplayName = "喷射方向权重", ClampMin = "0"))
+    FVector SprayDirectionWeights = FVector(0.75, 0.25, 0.25);
+
+    /** 普通命中用于落地碰撞的代表性血滴数量范围 不是空中粒子数量 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|落地血滴", meta = (DisplayName = "普通命中血滴数量范围"))
+    FIntPoint DropletCount = FIntPoint(2, 3);
+
+    /** 断开时包含延迟滴落在内的代表性血滴数量 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|落地血滴", meta = (DisplayName = "断肢血滴数量", ClampMin = "0", ClampMax = "32"))
+    int32 SeveringDropletCount = 6;
+
+    /** 沿喷射方向的初速度最小值与最大值 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|落地血滴", meta = (DisplayName = "喷射速度范围", Units = "cm/s"))
+    FVector2D DropletSpeed = FVector2D(520, 800);
+
+    /** 横向散开的速度范围 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|落地血滴", meta = (DisplayName = "散射速度范围", Units = "cm/s"))
+    FVector2D DropletSpreadSpeed = FVector2D(80, 220);
+
+    /** 沿命中法线离开身体的距离 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|落地血滴", meta = (DisplayName = "离体偏移", ClampMin = "0", Units = "cm"))
+    float SurfaceOffset = 6;
+
+    /** 断开后的短促滴落向下初速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|断口滴血", meta = (DisplayName = "断口滴落速度", ClampMin = "0", Units = "cm/s"))
+    float SeveringDripSpeed = 80;
+
+    /** 延迟滴落的横向速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|断口滴血", meta = (DisplayName = "断口滴落散射速度", ClampMin = "0", Units = "cm/s"))
+    float SeveringDripSpread = 45;
+
+    /** 相邻延迟滴落的间隔 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|断口滴血", meta = (DisplayName = "断口滴落间隔", ClampMin = "0", ClampMax = "0.5", Units = "s"))
+    float SeveringDripInterval = 0.12f;
+
+    /** 主飞溅贴花的半长范围 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "主飞溅半长范围", Units = "cm"))
+    FVector2D SplatterHalfLength = FVector2D(30, 48);
+
+    /** 细滴贴花的半长范围 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "细滴半长范围", Units = "cm"))
+    FVector2D FineHalfLength = FVector2D(10, 24);
+
+    /** 主痕迹相对于材质宽高比的宽度范围 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "主飞溅宽度比例范围"))
+    FVector2D SplatterWidthRatio = FVector2D(0.4, 0.65);
+
+    /** 细滴和积血的宽度比例范围 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "细滴积血宽度比例范围"))
+    FVector2D OtherWidthRatio = FVector2D(0.6, 0.9);
+
+    /** 相对血滴飞行切线的随机旋转幅度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "方向随机角度", ClampMin = "0", ClampMax = "180", Units = "deg"))
+    float DirectionJitter = 18;
+
+    /** 同一积血再次接收落点时增加的覆盖量 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "积血增长量", ClampMin = "0", ClampMax = "1"))
+    float PoolCoverageStep = 0.12f;
+
+    /** 完整保留结束后的淡出时间 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|环境残留", meta = (DisplayName = "血迹淡出秒数", ClampMin = "0.1", Units = "s"))
+    float FadeDuration = 4;
+
     /** 空间岛批量血粒子通道 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "小怪|血效", meta = (DisplayName = "血粒子通道"))
     TObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;

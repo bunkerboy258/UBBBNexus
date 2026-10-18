@@ -221,7 +221,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         Pose->MarkRefreshTransformDirty();
         Pose->RefreshBoneTransforms();
     }
-    for (int32 Index = 0; Index < 8; ++Index)
+    for (int32 Index = 0; Index < 22; ++Index)
     {
         const float Value = Source.GetCustomPrimitiveData().Data.IsValidIndex(Index) ? Source.GetCustomPrimitiveData().Data[Index] : 0.0f;
         Piece->SetCustomPrimitiveDataFloat(Index, Value);
