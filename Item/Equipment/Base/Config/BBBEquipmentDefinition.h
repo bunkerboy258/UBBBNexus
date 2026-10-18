@@ -10,6 +10,7 @@ class UAnimInstance;
 class USkeletalMesh;
 class UTexture2D;
 class UAnimMontage;
+class UAnimSequence;
 
 /** 所有装备实例共享的静态资源配置 */
 UCLASS(BlueprintType, PrioritizeCategories = ("物品资料", "装配与握持", "角色动画", "武器动画", "开火与装填", "持枪表现", "镜头后坐力", "专属机制"))
@@ -36,6 +37,10 @@ public:
     /** 角色装备后链接的动画层类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "1", DisplayName = "角色动画层类", ToolTip = "装备激活后链接到角色主动画实例的动画层类 不作为武器网格的动画实例"))
     TSubclassOf<UAnimInstance> CharacterAnimationLayerClass;
+
+    /** 当前装备供角色手指层固定采样的双手握姿 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "2", DisplayName = "角色双手握姿", ToolTip = "使用角色骨架的非加法静态序列 左右手指分别混合 未配置时保留当前动作的手指姿势"))
+    TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
 
     /** 装备骨骼网格使用的动画实例类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "武器动画", meta = (DisplayPriority = "1", DisplayName = "武器动画类", ToolTip = "本武器骨骼网格创建的动画实例类 必须继承此装备类型的动画基类 每件装备独立实例"))

@@ -49,6 +49,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     GroundDistance = FactState.GroundDistance;
     bSourceAiming = FactState.bIsAiming;
     SourceEquipmentType = FactState.EquipmentType;
+    SourceCharacterGripPose = FactState.CharacterGripPose;
     SourceItemType = FactState.ItemType;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
     SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
@@ -185,6 +186,11 @@ UBBBEquipmentAnimInstance *UBBBAnimInstance::TryGetWeaponAnimInstance() const
 {
     // 武器动画实例允许为空未装备时由调用方获得默认回退
     return GetBBBMainAnimInstanceThreadSafe()->WeaponAnimInstance.Get();
+}
+
+UAnimSequence *UBBBAnimInstance::GetCharacterGripPose() const
+{
+    return GetBBBMainAnimInstanceThreadSafe()->SourceCharacterGripPose.Get();
 }
 
 FTransform UBBBAnimInstance::TryGetMuzzleTransformHandRSpace() const

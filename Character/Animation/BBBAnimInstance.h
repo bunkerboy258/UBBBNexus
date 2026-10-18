@@ -13,6 +13,7 @@ class FBBBCharacterAnimationMontageProcessor;
 class FBBBCharacterAnimationSystem;
 class UBBBEquipmentAnimInstance;
 class UAnimMontage;
+class UAnimSequence;
 
 namespace BBBCharacterMontageSlots
 {
@@ -192,6 +193,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     UBBBEquipmentAnimInstance *TryGetWeaponAnimInstance() const;
 
+    /** @return 当前装备的角色双手握姿快照 未配置或空手时返回空 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "角色双手握姿"))
+    UAnimSequence *GetCharacterGripPose() const;
+
     /** @return 枪口在角色 hand_r 骨骼空间中的快照变换 获取失败时返回单位变换 */
     UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     FTransform TryGetMuzzleTransformHandRSpace() const;
@@ -236,6 +241,10 @@ private:
     /** 由角色动画系统发布的实际装备类别 */
     UPROPERTY(Transient)
     EBBBEquipmentType SourceEquipmentType = EBBBEquipmentType::None;
+
+    /** 由角色动画系统统一发布的双手握姿引用 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimSequence> SourceCharacterGripPose = nullptr;
 
     /**
      * 绑定装备实际使用的武器动画实例

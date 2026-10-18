@@ -8,6 +8,8 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentType.h"
 #include "BBBCharacterAnimationFactState.generated.h"
 
+class UAnimSequence;
+
 /** 游戏线程维护并提交给动画实例的角色动画事实状态 */
 USTRUCT()
 struct FBBBCharacterAnimationFactState final
@@ -31,6 +33,10 @@ struct FBBBCharacterAnimationFactState final
     /** 实际持有装备的配置类别 空手时为无 */
     UPROPERTY(Transient)
     EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;
+
+    /** 当前装备提供的角色双手握姿 未配置或空手时为空 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
 
     /** 本帧已经成立的攀爬类别 */
     UPROPERTY(Transient)
