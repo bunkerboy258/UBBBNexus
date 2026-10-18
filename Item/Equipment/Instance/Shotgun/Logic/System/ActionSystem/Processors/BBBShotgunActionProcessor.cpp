@@ -86,19 +86,23 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
 
     if (Input.bLoadAmmoRequested && State.bIsReloading)
     {
-        State.LoadedAmmo = FMath::Min(State.AmmoCapacity,
-            State.LoadedAmmo + (Context.Definition.bReloadOneRoundAtATime ? 1 : State.AmmoCapacity));
+        if (Context.Definition.bReloadOneRoundAtATime)
+        {
+            State.LoadedAmmo = FMath::Min(State.AmmoCapacity, State.LoadedAmmo + 1);
+        }
         if (!Context.Definition.bReloadOneRoundAtATime)
         {
-            State.bReloadCompletedThisFrame = State.LoadedAmmo >= State.AmmoCapacity;
-            State.bIsReloading = !State.bReloadCompletedThisFrame;
+            State.LoadedAmmo = State.AmmoCapacity;
+            State.bIsReloading = false;
+            State.bReloadCompletedThisFrame = true;
         }
         UE_LOG(LogTemp, Log, TEXT("[BBBShotgun] Ammo loaded Equipment=%s Loaded=%d Capacity=%d Completed=%d"),
             *Context.Equipment.GetName(), State.LoadedAmmo, State.AmmoCapacity, State.bReloadCompletedThisFrame);
     }
 
     // 装入与生命周期结束同帧到达时保留装填成功事实 避免把正常完成误判为打断
-    if (Input.bInterruptReloadRequested && State.bIsReloading && !State.bReloadCompletedThisFrame)
+    if (Input.bInterruptReloadRequested && !State.bReloadCompletedThisFrame
+        && (!Context.Definition.bReloadOneRoundAtATime || State.bIsReloading))
     {
         Stop(Context.RuntimeData);
     }

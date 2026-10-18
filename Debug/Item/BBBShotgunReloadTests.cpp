@@ -9,13 +9,14 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ParseSystem/DomainData/Context/BBBShotgunParseUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ParseSystem/Processors/BBBShotgunParseProcessor.h"
 #include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Misc/ScopeExit.h"
 #include "UObject/UnrealType.h"
 
-/** 使用真实输入解析与动作系统验证逐发装填边界 不播放动画或重演网络逻辑 */
+/** 使用真实输入解析与动作系统验证逐发及一次性装填边界 不播放动画或重演网络逻辑 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBShotgunReloadTest, "BBB.Equipment.Shotgun.PerShellReload",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FBBBShotgunReloadTest::RunTest(const FString &Parameters)
@@ -115,6 +116,77 @@ bool FBBBShotgunReloadTest::RunTest(const FString &Parameters)
     TestFalse(TEXT("失活清除待发射请求"), State.bFireAfterReload);
     TestFalse(TEXT("失活清除收手阶段"), State.bReloadFinishing);
     TestEqual(TEXT("失活不丢弃已装弹药"), State.LoadedAmmo, 1);
+
+    Definition->bReloadOneRoundAtATime = false;
+    Definition->AmmoCapacity = 5;
+    Definition->FireInterval = 0.01f;
+    Character->SetActorTickEnabled(false);
+    Character->GetMesh()->SetComponentTickEnabled(false);
+    Equipment->SetActorTickEnabled(false);
+    Equipment->GetEquipmentSkeletalMesh()->SetComponentTickEnabled(false);
+    FBBBShotgunActionProcessor::Initialize(Data, *Definition);
+    Update();
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunSecondaryLocalControlPacket{});
+    Update();
+    TestFalse(TEXT("一次性装填满弹时拒绝换弹"), State.bIsReloading);
+
+    const auto FireOnce = [&]()
+    {
+        World->Tick(LEVELTICK_All, 0.5f);
+        Update();
+        FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunPrimaryLocalControlPacket{});
+        Update();
+        Update();
+    };
+    FireOnce();
+    FireOnce();
+    FireOnce();
+    TestEqual(TEXT("一次性装填前留下两发"), State.LoadedAmmo, 2);
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunSecondaryLocalControlPacket{});
+    Update();
+    TestTrue(TEXT("一次性装填开始换弹"), State.bIsReloading);
+    TestFalse(TEXT("一次性装填不进入逐发收手"), State.bReloadFinishing);
+    const int32 ReloadSequence = State.ReloadSequence;
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunReloadCycleEndLocalControlPacket{});
+    Update();
+    TestEqual(TEXT("一次性装填忽略逐发循环通知"), State.ReloadSequence, ReloadSequence);
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunInterruptReloadLocalControlPacket{});
+    Update();
+    TestFalse(TEXT("装弹前中断退出换弹"), State.bIsReloading);
+    TestEqual(TEXT("装弹前中断保留原有弹药"), State.LoadedAmmo, 2);
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunLoadAmmoLocalControlPacket{});
+    Update();
+    TestEqual(TEXT("中断后迟到的装弹通知无效"), State.LoadedAmmo, 2);
+
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunSecondaryLocalControlPacket{});
+    Update();
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunBlockFireLocalControlPacket{});
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunLoadAmmoLocalControlPacket{});
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunInterruptReloadLocalControlPacket{});
+    Update();
+    TestEqual(TEXT("一次装弹通知直接补满"), State.LoadedAmmo, 5);
+    TestTrue(TEXT("装弹与结束同帧保留成功事实"), State.bReloadCompletedThisFrame);
+    TestFalse(TEXT("补满后立即结束装填"), State.bIsReloading);
+    TestFalse(TEXT("补满后不进入逐发收手"), State.bReloadFinishing);
+    TestTrue(TEXT("装入时仍保留动作开火限制"), State.bFireBlocked);
+    Update();
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunLoadAmmoLocalControlPacket{});
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunInterruptReloadLocalControlPacket{});
+    Update();
+    TestEqual(TEXT("补满后重复通知不增加弹药"), State.LoadedAmmo, 5);
+    TestFalse(TEXT("补满后生命周期结束清理动作开火限制"), State.bFireBlocked);
+
+    for (int32 Index = 0; Index < 5; ++Index)
+    {
+        FireOnce();
+    }
+    TestEqual(TEXT("一次性装填空枪前提"), State.LoadedAmmo, 0);
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunSecondaryLocalControlPacket{});
+    Update();
+    FBBBShotgunParseProcessor::Submit(Data, FBBBShotgunLoadAmmoLocalControlPacket{});
+    Update();
+    TestEqual(TEXT("空枪也只需一次装弹通知补满"), State.LoadedAmmo, 5);
+    TestFalse(TEXT("空枪补满后结束换弹"), State.bIsReloading);
     return true;
 }
 #endif
