@@ -1,5 +1,7 @@
 # UBBBNexus
 
+2026-10-18 装备配置统一物品资料 装配与握持 角色动画 武器动画 开火与装填 持枪表现 镜头后坐力及专属机制分类 使用原生 PrioritizeCategories 与 DisplayPriority 控制排版 不改变字段类型 默认值或资产配置 UE5.8 编译通过 31 份装备资产保存内容保持不变 界面效果由用户验收
+
 Unreal Engine 5.8 的角色与装备运行时源码 宿主为 E:/BBB_Evac
 
 ## 职责
