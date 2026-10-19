@@ -189,7 +189,9 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
             C.SetProjectionParams(true, Number(Tune, TEXT("linearProjection"), .8),
                 Number(Tune, TEXT("angularProjection"), .2), Number(Tune, TEXT("linearTolerance"), .1),
                 Number(Tune, TEXT("angularTolerance"), 1));
+#if WITH_EDITOR
             Joint->SetDefaultProfile(C);
+#endif
         }
     }
     Target->TargetMesh->SetPhysicsAsset(ProbePhysics, true);

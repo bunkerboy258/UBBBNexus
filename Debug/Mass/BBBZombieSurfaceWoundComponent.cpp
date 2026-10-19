@@ -364,10 +364,10 @@ bool UBBBZombieSurfaceWoundComponent::Sever(const EBBBMonsterHitRegion Region,
     const auto& PieceSlots = Cut->Piece->GetMaterials();
     for (int32 Index = 0; Index < PieceSlots.Num(); ++Index)
     {
-        const FName Name = PieceSlots[Index].ImportedMaterialSlotName;
+        const FName Name = PieceSlots[Index].MaterialSlotName;
         const int32 SourceIndex = SourceSlots.IndexOfByPredicate([Name](const auto& Slot)
         {
-            return Slot.ImportedMaterialSlotName == Name;
+            return Slot.MaterialSlotName == Name;
         });
         if (SourceIndex != INDEX_NONE)
         {
