@@ -40,3 +40,7 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 E:/BBB_Evac
 装备定义的 `RightHandGripRotationOffset` 通过动画事实快照发布给 `UBBBAnimInstance`，以线程安全只读 getter 提供给基础动画层。实际节点在父骨骼空间对动作右腕叠加旋转，零值关闭该校准；左右手指静态握姿和各自抑制曲线保持原职责。传统枪托武器据此保留自然右腕，型号挂接与左手目标使用相同基准反补，动作 AS 不重复烘焙该增量。
 
 角色固定站姿预览使用 `Animation/UsedAnimation/unarmed/MM_Unarmed_Idle_Ready` 的唯一正式路径。制作与原生节点数据核验不等于玩家最终运行观感通过。
+
+## 手部层封装
+
+主动画图的HandPose_OverrideState只保留姿势输入输出 握姿与两侧权重都在Base内部取得。GetMainAnimationCurveValue显式读取主实例曲线 与GetCharacterGripPose使用同一主实例来源 不增加角色事实写入入口。

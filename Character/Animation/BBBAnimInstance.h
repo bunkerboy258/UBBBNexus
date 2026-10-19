@@ -189,6 +189,17 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceAimOffsetDegrees;
     }
 
+    /**
+     * 读取主动画实例曲线供关联层内部计算权重
+     * @param CurveName	主实例已求值的曲线名
+     * @return 与主图读取相同来源的曲线值 缺少曲线时为零
+     */
+    UFUNCTION(BlueprintPure, Category = "BBB|动画事实", meta = (BlueprintThreadSafe, DisplayName = "主动画实例曲线值"))
+    float GetMainAnimationCurveValue(FName CurveName) const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->GetCurveValue(CurveName);
+    }
+
     /** @return 当前装备的实际武器动画实例 链接层自动读取主实例绑定 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     UBBBEquipmentAnimInstance *TryGetWeaponAnimInstance() const;
