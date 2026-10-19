@@ -330,6 +330,12 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetBoolField(TEXT("reached"), Navigation->bReachedDestination);
             Sample->SetBoolField(TEXT("partialPath"), Navigation->bPartialPath);
             Sample->SetNumberField(TEXT("navigationFailures"), Navigation->FailureCount);
+            Sample->SetNumberField(TEXT("navigationQueryMs"), Navigation->LastQueryMs);
+            Sample->SetNumberField(TEXT("navigationArcStrength"), Navigation->ArcStrength);
+            Sample->SetNumberField(TEXT("navigationLaneOffset"), Navigation->LaneOffset);
+            Sample->SetNumberField(TEXT("navigationRequestSince"), Navigation->RequestSince);
+            Sample->SetNumberField(TEXT("navigationLastPathTime"), Navigation->LastPathTime);
+            Sample->SetBoolField(TEXT("navigationUpToDate"), Navigation->NativePath.IsValid() && Navigation->NativePath->IsUpToDate());
             Sample->SetNumberField(TEXT("excludedUntil"), Navigation->ExcludedUntil);
             Sample->SetNumberField(TEXT("approachSlot"), Navigation->ApproachSlot);
             Sample->SetBoolField(TEXT("waitingForSpace"), Navigation->bWaitingForSpace);

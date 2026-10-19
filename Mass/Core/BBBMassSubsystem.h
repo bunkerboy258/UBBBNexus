@@ -9,6 +9,7 @@
 
 class UMassEntityConfigAsset;
 class UMassProcessor;
+class ABBBMassNavigationQueryActor;
 struct FConstStructView;
 struct FBBBMonsterDirectorInitializeLocalControlPacket;
 struct FBBBMonsterDirectorStartLocalControlPacket;
@@ -35,6 +36,12 @@ class ABBB_EVAC_API UBBBMassSubsystem final : public UWorldSubsystem
     GENERATED_BODY()
 
 public:
+    /** @return 由世界持有的同步导航参数载体 仅在游戏线程创建 */
+    ABBBMassNavigationQueryActor* GetNavigationQueryActor();
+
+    /** @return 无返回值 释放本世界的导航查询载体 */
+    virtual void Deinitialize() override;
+
     /**
      * @param Config	实体模板配置
      * @return 创建的实体句柄
@@ -130,6 +137,10 @@ public:
     }
 
 private:
+    /** 只提供当次 APS 查询参数 不保存实体状态 */
+    UPROPERTY(Transient)
+    TObjectPtr<ABBBMassNavigationQueryActor> NavigationQueryActor;
+
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorInitializeLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStartLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorPauseLocalControlPacket& Packet);

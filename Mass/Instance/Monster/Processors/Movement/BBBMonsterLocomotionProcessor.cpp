@@ -376,9 +376,9 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 // 同一求解内约束导航边界 防止避让把实体推到墙外
                 const FVector FootOffset(0.0f, 0.0f, Geometry.CapsuleHalfHeight);
                 auto* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
-                const auto* NavMesh = NavigationSystem ? Cast<ARecastNavMesh>(NavigationSystem->GetDefaultNavDataInstance()) : nullptr;
+                const auto* NavMesh = Path.NativePath.IsValid() ? Cast<ARecastNavMesh>(Path.NativePath->GetNavigationDataUsed()) : nullptr;
                 FNavLocation ProjectedFoot;
-                if (!NavMesh || !NavigationSystem->ProjectPointToNavigation(Location - FootOffset, ProjectedFoot,
+                if (!NavigationSystem || !NavMesh || !NavigationSystem->ProjectPointToNavigation(Location - FootOffset, ProjectedFoot,
                     FVector(Geometry.CapsuleRadius, Geometry.CapsuleRadius, 250.0f), NavMesh))
                 {
                     Destination = Location;

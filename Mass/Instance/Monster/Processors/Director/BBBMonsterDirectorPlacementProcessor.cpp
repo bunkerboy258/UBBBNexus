@@ -203,7 +203,9 @@ void UBBBMonsterDirectorPlacementProcessor::Filter(UWorld& World, const UBBBMons
                 FPathFindingQuery Query(nullptr, *NavData, Location, Goal.Location, NavData->GetDefaultQueryFilter());
                 Query.SetAllowPartialPaths(false);
                 const FPathFindingResult Path = Navigation->FindPathSync(Query);
-                if (Path.IsSuccessful() && Path.Path.IsValid() && !Path.Path->IsPartial())
+                if (Path.IsSuccessful() && Path.Path.IsValid() && Path.Path->IsValid() && !Path.Path->IsPartial() &&
+                    Path.Path->GetPathPoints().Num() >= 2 &&
+                    FVector::DistSquared(Path.Path->GetPathPoints().Last().Location, Goal.Location) <= FMath::Square(15.0f))
                 {
                     bReachable = true;
                     break;

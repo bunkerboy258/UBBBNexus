@@ -3,6 +3,7 @@
 #include "Engine/DataAsset.h"
 #include "BBBMonsterSeveredPartDefinition.h"
 #include "BBBMonsterBodyPartDefinition.h"
+#include "BBBMonsterNavigationProfile.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBMonsterDefinition.generated.h"
 
@@ -271,6 +272,42 @@ public:
     /** 到达最后线索位置后的停留秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|感知", meta = (ClampMin = "0.1", DisplayName = "调查结束警觉时间"))
     float InvestigationAlertDuration = 1.5f;
+
+    /** 巡逻路线的个体形状 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "巡逻路线"))
+    FBBBMonsterNavigationProfile PatrolNavigation;
+
+    /** 追击路线的个体形状 靠近目标后逐渐收直 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "追击路线"))
+    FBBBMonsterNavigationProfile ChaseNavigation;
+
+    /** 目标明显移动后 近距离重算的最短间隔 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "近距离重算间隔", Units = "s", ClampMin = "0.1"))
+    float NavigationNearInterval = 0.4f;
+
+    /** 远处的怪物降低重算频率 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "远距离重算间隔", Units = "s", ClampMin = "0.1"))
+    float NavigationFarInterval = 1.2f;
+
+    /** 超过此距离降低刷新频率并关闭路线塑形 仍通过 APS 查询 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "远距离分界", Units = "cm", ClampMin = "1"))
+    float NavigationFarDistance = 3000.0f;
+
+    /** 近处目标自上次查询移动此距离后才请求重算 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "近距离目标移动阈值", Units = "cm", ClampMin = "1"))
+    float NavigationNearGoalThreshold = 60.0f;
+
+    /** 远处容许更大的目标位移 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "远距离目标移动阈值", Units = "cm", ClampMin = "1"))
+    float NavigationFarGoalThreshold = 180.0f;
+
+    /** 追击路径即使目标静止也定期核验 巡逻有效路径不定时重算 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "追击路径最长复用时间", Units = "s", ClampMin = "0.1"))
+    float NavigationMaxPathAge = 4.0f;
+
+    /** 在包围距离与此距离之间逐渐恢复完整路线形状 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (DisplayName = "完整塑形距离", Units = "cm", ClampMin = "1"))
+    float NavigationFullShapeDistance = 1200.0f;
 
     /** 实际无进展持续此秒数后重算路径 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|寻路", meta = (ClampMin = "0.1", DisplayName = "卡住检测时间"))

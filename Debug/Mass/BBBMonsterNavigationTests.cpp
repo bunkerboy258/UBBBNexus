@@ -12,12 +12,14 @@
 #include "NavigationSystem.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 #include "NavMesh/RecastNavMesh.h"
+#include "Navigation/APS_NavigationData.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "MassEntitySubsystem.h"
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterNavigationSettings.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
@@ -25,6 +27,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
@@ -87,8 +90,8 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     Nav->OnNavigationBoundsUpdated(Bounds);
     Nav->OnWorldInitDone(FNavigationSystemRunMode::GameMode);
     Nav->Build();
-    auto* Mesh = Cast<ARecastNavMesh>(Nav->GetDefaultNavDataInstance(FNavigationSystem::Create));
-    if (!TestNotNull(TEXT("真实 Recast 导航网格"), Mesh))
+    auto* Mesh = Cast<AAPS_NavigationData>(Nav->GetDefaultNavDataInstance(FNavigationSystem::Create));
+    if (!TestNotNull(TEXT("真实 APS 导航网格"), Mesh))
     {
         return false;
     }
@@ -102,7 +105,8 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     const auto Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterMovementFragment::StaticStruct(), FBBBMonsterNavigationFragment::StaticStruct(),
         FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
-        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterTargetFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()});
+        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterTargetFragment::StaticStruct(),
+        FBBBMonsterVariationFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()});
     auto* Settings = NewObject<UBBBMonsterDefinition>(World);
     auto* Navigation = NewObject<UBBBMonsterNavigationProcessor>(World);
     auto* Movement = NewObject<UBBBMonsterLocomotionProcessor>(World);
@@ -121,6 +125,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         const auto Entity = Manager.CreateEntity(Type);
         Manager.GetFragmentDataChecked<FTransformFragment>(Entity).GetMutableTransform().SetLocation(Position);
         Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition = Settings;
+        Manager.GetFragmentDataChecked<FBBBMonsterVariationFragment>(Entity).Seed = GetTypeHash(Entity.Index + 1);
         auto& State = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity);
         State.State = EBBBMonsterBehavior::Chase;
         State.ActionId = 1;
@@ -131,6 +136,86 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Target.TargetLocation = FVector(1800.0f, 0.0f, 90.0f);
         return Entity;
     };
+    const auto Plan = [&Manager, Navigation, &Run](TConstArrayView<FMassEntityHandle> Entities)
+    {
+        for (int32 Attempt = 0; Attempt <= Entities.Num(); ++Attempt)
+        {
+            Run(Navigation);
+            const bool bPending = Entities.ContainsByPredicate([&Manager](const FMassEntityHandle Entity)
+            {
+                return Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity).RequestSince >= 0.0f;
+            });
+            if (!bPending)
+            {
+                break;
+            }
+        }
+    };
+    auto* Budget = GetMutableDefault<UBBBMonsterNavigationSettings>();
+    const int32 OriginalRequestLimit = Budget->MaxRequestsPerFrame;
+    ON_SCOPE_EXIT
+    {
+        Budget->MaxRequestsPerFrame = OriginalRequestLimit;
+    };
+    Budget->MaxRequestsPerFrame = 2;
+    TArray<FMassEntityHandle> Idle;
+    for (int32 Index = 0; Index < 32; ++Index)
+    {
+        const auto Monster = Create(FVector(-1200.0f, -3100.0f, 90.0f));
+        Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Monster).State = EBBBMonsterBehavior::Idle;
+        Idle.Add(Monster);
+    }
+    TArray<FMassEntityHandle> Pending;
+    for (int32 Index = 0; Index < 20; ++Index)
+    {
+        const auto Monster = Create(FVector(-1200.0f + Index, -3100.0f, 90.0f));
+        Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Monster).TargetLocation = FVector(800.0f, -3100.0f, 90.0f);
+        Pending.Add(Monster);
+    }
+    Run(Navigation);
+    int32 Planned = 0;
+    for (const auto Monster : Pending)
+    {
+        Planned += Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Monster).bHasPath;
+    }
+    TestTrue(TEXT("空闲实体不占预算且首轮不超过两次请求"), Planned > 0 && Planned <= 2);
+    Plan(Pending);
+    TestFalse(TEXT("预算耗尽后保留请求并最终全部规划"), Pending.ContainsByPredicate([&Manager](const FMassEntityHandle Monster)
+    {
+        return !Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Monster).bHasPath;
+    }));
+    auto& CachedRoute = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Pending[0]);
+    auto& MovingGoal = Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Pending[0]);
+    const auto OriginalPath = CachedRoute.NativePath;
+    const float OriginalArc = CachedRoute.ArcStrength;
+    const float OriginalLane = CachedRoute.LaneOffset;
+    MovingGoal.TargetLocation.X += 1.0f;
+    World->TimeSeconds = 0.5;
+    Run(Navigation);
+    TestTrue(TEXT("目标轻微移动时复用原有路径"), CachedRoute.NativePath == OriginalPath);
+    MovingGoal.TargetLocation.X += 250.0f;
+    World->TimeSeconds = 1.0;
+    Run(Navigation);
+    TestTrue(TEXT("目标明显移动后重新规划并保持个体形状"), CachedRoute.bHasPath && CachedRoute.NativePath != OriginalPath &&
+        CachedRoute.ArcStrength == OriginalArc && CachedRoute.LaneOffset == OriginalLane);
+    const auto InvalidatedPath = CachedRoute.NativePath;
+    if (InvalidatedPath.IsValid())
+    {
+        InvalidatedPath->Invalidate();
+        Run(Navigation);
+        TestTrue(TEXT("路径失效时忽略普通刷新间隔并由 Mass 重算"), CachedRoute.bHasPath && CachedRoute.NativePath != InvalidatedPath);
+    }
+    for (const auto Monster : Pending)
+    {
+        Manager.DestroyEntity(Monster);
+    }
+    for (const auto Monster : Idle)
+    {
+        Manager.DestroyEntity(Monster);
+    }
+    Budget->MaxRequestsPerFrame = OriginalRequestLimit;
+    World->TimeSeconds = 0.0;
+    Settings->ChaseNavigation.DirectPathChance = 1.0f;
     TArray<FMassEntityHandle> StepWalkers;
     for (int32 Index = 0; Index < 3; ++Index)
     {
@@ -140,7 +225,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Walker).TargetLocation = FVector(650.0f, Y, 90.5f + Height);
         StepWalkers.Add(Walker);
     }
-    Run(Navigation);
+    Plan(StepWalkers);
     for (const auto Walker : StepWalkers)
     {
         const auto& Route = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Walker);
@@ -163,6 +248,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
             FMath::IsNearlyEqual(Position.Y, -1400.0f - Index * 800.0f, 40.0f) && FMath::IsNearlyEqual(Position.Z, 90.5f + Height, 2.0f));
         Manager.DestroyEntity(Walker);
     }
+    Settings->ChaseNavigation.DirectPathChance = 0.2f;
     World->TimeSeconds = 0.0;
     const auto Entity = Create(FVector(-1800.0f, 0.0f, 90.0f));
     Run(Navigation);
@@ -211,7 +297,8 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     World->TimeSeconds = 10.0;
     Path.ProgressTime = 6.0f;
     Run(Navigation);
-    TestTrue(TEXT("第二次失败尝试有限侧向绕行"), Path.FailureCount == 2 && Path.DetourEndsAt > World->GetTimeSeconds());
+    TestTrue(TEXT("第二次无进展仍通过 APS 重算真实目标路线"), Path.FailureCount == 2 && Path.bHasPath &&
+        Path.NativePath.IsValid());
     World->TimeSeconds = 15.0;
     Path.ProgressTime = 11.0f;
     Run(Navigation);
@@ -230,7 +317,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Target.TargetActor = Player;
         Ring.Add(Monster);
     }
-    Run(Navigation);
+    Plan(Ring);
     TSet<int32> Slots;
     int32 Waiting = 0;
     for (const auto Monster : Ring)
@@ -259,7 +346,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Target.TargetActor = Player;
         WallCrowd.Add(Monster);
     }
-    Run(Navigation);
+    Plan(WallCrowd);
     int32 WallSlots = 0;
     int32 WallWaiting = 0;
     for (const auto Monster : WallCrowd)

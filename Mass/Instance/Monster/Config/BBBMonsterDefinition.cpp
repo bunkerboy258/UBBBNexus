@@ -3,6 +3,9 @@
 
 UBBBMonsterDefinition::UBBBMonsterDefinition()
 {
+    PatrolNavigation.MidpointMode = EAPSArcMidpointMode::Wavy;
+    PatrolNavigation.ArcStrengthRange = FVector2D(0.35, 0.9);
+    PatrolNavigation.DirectPathChance = 0.1f;
     TorsoPart = {1.0f, 0.25f, 1.0f, true};
     HeadPart = {0.35f, 0.0f, 1.0f, true};
     LeftArmPart = {0.4f, 0.5f, 0.25f, false};
@@ -92,6 +95,14 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AllyAlertRange) && AllyAlertRange >= 0.0f
         && FMath::IsFinite(AllyAlertCooldown) && AllyAlertCooldown > 0.0f
         && FMath::IsFinite(InvestigationAlertDuration) && InvestigationAlertDuration > 0.0f
+        && PatrolNavigation.IsValid() && ChaseNavigation.IsValid()
+        && FMath::IsFinite(NavigationNearInterval) && NavigationNearInterval >= 0.1f
+        && FMath::IsFinite(NavigationFarInterval) && NavigationFarInterval >= NavigationNearInterval
+        && FMath::IsFinite(NavigationFarDistance) && NavigationFarDistance > NavigationFullShapeDistance
+        && FMath::IsFinite(NavigationNearGoalThreshold) && NavigationNearGoalThreshold > 0.0f
+        && FMath::IsFinite(NavigationFarGoalThreshold) && NavigationFarGoalThreshold >= NavigationNearGoalThreshold
+        && FMath::IsFinite(NavigationMaxPathAge) && NavigationMaxPathAge >= NavigationFarInterval
+        && FMath::IsFinite(NavigationFullShapeDistance) && NavigationFullShapeDistance > EncircleRange
         && FMath::IsFinite(NavigationStuckDuration) && NavigationStuckDuration > 0.0f
         && FMath::IsFinite(NavigationRetryDuration) && NavigationRetryDuration > 0.0f
         && FMath::IsFinite(EncircleRange) && EncircleRange > 0.0f

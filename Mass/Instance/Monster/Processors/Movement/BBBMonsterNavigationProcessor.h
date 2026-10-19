@@ -6,7 +6,7 @@
 
 #include "BBBMonsterNavigationProcessor.generated.h"
 
-/** 基于烘焙 NavMesh 批量驱动小怪移动 */
+/** 按世界预算调度 APS 查询并维护小怪路线 */
 UCLASS()
 class ABBB_EVAC_API UBBBMonsterNavigationProcessor final : public UMassProcessor
 {
@@ -26,7 +26,4 @@ protected:
 private:
     /** 查询全部小怪实体的 Mass 查询器 */
     FMassEntityQuery MonsterQuery;
-
-    /** 轮转导航预算的实体位置 不保存片段引用 */
-    int32 NextPathQueryIndex = 0;
 };

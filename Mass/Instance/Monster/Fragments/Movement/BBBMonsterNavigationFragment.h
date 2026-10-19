@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "MassEntityTypes.h"
+#include "NavigationData.h"
 #include "BBBMonsterNavigationFragment.generated.h"
 
 /** 导航路径与本次移动目的地 仅由寻路处理器维护 */
@@ -18,6 +19,9 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
     UPROPERTY()
     TArray<float> TailDistances;
 
+    /** 保留导航失效通知 由 Mass 在预算内重算 禁止原生自动重算 */
+    FNavPathSharedPtr NativePath;
+
     /** 当前应接近的拐点 */
     int32 PathPointIndex = 1;
 
@@ -29,6 +33,24 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 
     /** 下次允许刷新导航路径的时间 */
     float NextPathRefreshTime = 0.0f;
+
+    /** 上次成功查询时的原始目标位置 */
+    FVector RequestedGoal = FVector::ZeroVector;
+
+    /** 上次成功接受路线的时间 */
+    float LastPathTime = -1.0f;
+
+    /** 本次待处理请求开始等待的时间 未等待时为负 */
+    float RequestSince = -1.0f;
+
+    /** 最近一次 APS 同步调用耗时 单位为毫秒 */
+    float LastQueryMs = 0.0f;
+
+    /** 最近一次实际提交的弧线强度 用于调试 */
+    float ArcStrength = 0.0f;
+
+    /** 最近一次实际提交的横向偏移 用于调试 */
+    float LaneOffset = 0.0f;
 
     /** 缓存路径是否可用于移动 */
     bool bHasPath = false;
@@ -56,12 +78,6 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 
     /** 上次有实际移动进展的世界时间 */
     float ProgressTime = -1.0f;
-
-    /** 本次局部绕行结束时刻 */
-    float DetourEndsAt = 0.0f;
-
-    /** 本次局部绕行的位置 */
-    FVector DetourPosition = FVector::ZeroVector;
 
     /** 当前稳定的包围接近位置编号 */
     int32 ApproachSlot = INDEX_NONE;
