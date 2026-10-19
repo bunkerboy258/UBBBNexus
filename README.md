@@ -35,12 +35,14 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 E:/BBB_Evac
 
 2026-10-17 消耗品战斗更新:消耗品改为仅服务当次使用的 UObject 装备主手与消耗品使用目标独立 快捷栏固定两个投掷位置和三个恢复位置 F 发起当前装备姿态的快速近战;G 短按高抛 长按后左键高抛、右键低抛 保持所选鼠标键维持姿势 松键释放 网格显示、释放、恢复、近战窗口和结束均由各自通知负责 角色同步使用事实与结果 数量仍由 ItemSystem 维护 血药使用 2.8 秒 在 2.1 秒恢复最大生命的 30% 满血拒绝使用 编译及 12 项 UE 战斗回归通过 双端和第三端迟加入通过;物理对象容量测试不冒充 16 客户端验收
 
-## 武器手部握姿应用
+## 武器右腕握持校准
 
-手部层固定采样 CharacterGripPose 第 0 帧 分别覆盖 hand_l 与 hand_r 分支的腕部及手指 两侧继续使用主实例的 DisableLeftHandPoseOverride 与 DisableRightHandPoseOverride 曲线控制权重。左手位置使用装备发布的 hand_r 空间位置 由基础层 Two Bone IK 求解 肘部方向使用既有 LeftHandIKJointTarget 插槽 父骨 clavicle_l 禁止拉伸并保持输入腕部局部旋转。运行时不再配置 计算或发布左手目标角度和右腕角度增量 角度来自正式握姿动画。逐枪制作 LS 和 AS 保留。
+装备定义的 `RightHandGripRotationOffset` 通过动画事实快照发布给 `UBBBAnimInstance`，以线程安全只读 getter 提供给基础动画层。实际节点在父骨骼空间对动作右腕叠加旋转，零值关闭该校准；左右手指静态握姿和各自抑制曲线保持原职责。传统枪托武器据此保留自然右腕，型号挂接与左手目标使用相同基准反补，动作 AS 不重复烘焙该增量。
 
 角色固定站姿预览使用 `Animation/UsedAnimation/unarmed/MM_Unarmed_Idle_Ready` 的唯一正式路径。制作与原生节点数据核验不等于玩家最终运行观感通过。
 
 ## 手部层封装
 
 主动画图的HandPose_OverrideState只保留姿势输入输出 握姿与两侧权重都在Base内部取得。GetMainAnimationCurveValue显式读取主实例曲线 与GetCharacterGripPose使用同一主实例来源 不增加角色事实写入入口。
+
+2026-10-19 经用户批准恢复完整 FABRIK 握持链路：装备发布 hand_r 空间目标位置与旋转，恢复 LeftHandIKRotation 和 RightHandGripRotationOffset 的配置、快照与只读 getter。静态握姿层仅覆盖手指。UE5.8 完整编译通过；PIE 由用户验收。

@@ -37,6 +37,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "5", DisplayName = "左手位置偏移 (厘米)", ToolTip = "单位厘米 转换插槽位置到角色 hand_r 骨骼空间后再加此偏移 X Y Z 沿 hand_r 的局部轴 正负决定方向"))
     FVector LeftHandIKOffset = FVector::ZeroVector;
 
+    /** 左手握持目标相对装备插槽局部坐标的额外旋转 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "6", DisplayName = "左手旋转修正 (度)", ToolTip = "单位度 在握持插槽局部空间追加旋转 Pitch 绕 Y 轴 Yaw 绕 Z 轴 Roll 绕 X 轴 再转换到 hand_r 空间"))
+    FRotator LeftHandIKRotation = FRotator::ZeroRotator;
+
     /** 角色装备狙击枪时播放的蒙太奇 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "2", DisplayName = "角色装备蒙太奇", ToolTip = "装备时提交给角色播放 使用蒙太奇已注册的角色槽位 不播放在武器网格上"))
     TObjectPtr<UAnimMontage> CharacterEquipMontage = nullptr;

@@ -208,6 +208,22 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "角色双手握姿"))
     UAnimSequence *GetCharacterGripPose() const;
 
+    /** @return 当前装备在右前臂空间的右腕增量 保留动作原始旋转 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "右腕握持旋转偏移"))
+    FRotator GetRightHandGripRotationOffset() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->SourceRightHandGripRotationOffset;
+    }
+
+    /** @return 当前装备是否具有非零右腕校准 独立于手指握姿抑制曲线 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "启用右腕握持旋转"))
+    bool HasRightHandGripRotationOffset() const
+    {
+        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+        return Main->SourceEquipmentType != EBBBEquipmentType::None
+            && !Main->SourceRightHandGripRotationOffset.IsNearlyZero();
+    }
+
     /** @return 枪口在角色 hand_r 骨骼空间中的快照变换 获取失败时返回单位变换 */
     UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
     FTransform TryGetMuzzleTransformHandRSpace() const;
@@ -222,6 +238,10 @@ public:
     /** @return 左手目标在右手骨骼空间中的位置 未装备时返回零向量 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
     FVector GetLeftHandIKPosition() const;
+
+    /** @return 左手目标相对右手骨骼的旋转 未装备时返回零旋转 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
+    FRotator GetLeftHandIKRotation() const;
 
     /** @return 武器左手目标是否有效 未装备时返回 false */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe))
@@ -252,6 +272,10 @@ private:
     /** 由角色动画系统统一发布的双手握姿引用 */
     UPROPERTY(Transient)
     TObjectPtr<UAnimSequence> SourceCharacterGripPose = nullptr;
+
+    /** 角色动画系统发布的父骨骼空间右腕旋转增量 */
+    UPROPERTY(Transient)
+    FRotator SourceRightHandGripRotationOffset = FRotator::ZeroRotator;
 
     /**
      * 绑定装备实际使用的武器动画实例

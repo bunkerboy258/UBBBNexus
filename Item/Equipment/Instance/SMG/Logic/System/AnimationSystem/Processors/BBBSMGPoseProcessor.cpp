@@ -12,6 +12,7 @@ void FBBBSMGPoseProcessor::Update(FBBBSMGAnimationUpdateContext &Context)
     auto &Facts = Context.RuntimeData.Animation.AnimationState.Pose;
     // 失败时清除目标 避免动画继续使用上一帧的握持位置
     Facts.LeftHandTargetHandRSpace = FVector::ZeroVector;
+    Facts.LeftHandTargetHandRSpaceRotation = FRotator::ZeroRotator;
     Facts.bHasLeftHandTarget = false;
     if (!ensureMsgf(IsInGameThread(), TEXT("冲锋枪左手握持目标只能在游戏线程计算")))
     {
@@ -43,7 +44,18 @@ void FBBBSMGPoseProcessor::Update(FBBBSMGAnimationUpdateContext &Context)
     const FVector TargetHandRSpace = HandWorld.InverseTransformPosition(SocketWorld.GetLocation())
         + Context.Definition.LeftHandIKOffset;
     if (!ensureMsgf(
-        !TargetHandRSpace.ContainsNaN(),
+        !Context.Definition.LeftHandIKRotation.ContainsNaN(),
+        TEXT("冲锋枪配置 %s 的左手握持旋转包含非有限数值"),
+        *Context.Definition.GetName()))
+    {
+        return;
+    }
+
+    const FQuat TargetRotationHandRSpace = (HandWorld.GetRotation().Inverse()
+        * SocketWorld.GetRotation()
+        * Context.Definition.LeftHandIKRotation.Quaternion()).GetNormalized();
+    if (!ensureMsgf(
+        !TargetHandRSpace.ContainsNaN() && !TargetRotationHandRSpace.ContainsNaN() && TargetRotationHandRSpace.IsNormalized(),
         TEXT("冲锋枪配置 %s 产生非有限左手握持目标"),
         *Context.Definition.GetName()))
     {
@@ -51,5 +63,6 @@ void FBBBSMGPoseProcessor::Update(FBBBSMGAnimationUpdateContext &Context)
     }
 
     Facts.LeftHandTargetHandRSpace = TargetHandRSpace;
+    Facts.LeftHandTargetHandRSpaceRotation = TargetRotationHandRSpace.Rotator();
     Facts.bHasLeftHandTarget = true;
 }
