@@ -89,6 +89,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|伤害", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "踉跄值", ToolTip = "0 不触发踉跄 1 为基础必定触发 命中部位再乘部位系数 同发霰弹每个目标只判定一次 不随伤害或穿透衰减"))
     float StaggerValue = 0.25f;
 
+    /** 独立伤口表现参数 本轮仅调试靶读取 不改变伤害与断肢概率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|表现|伤口", meta = (DisplayName = "伤口表现强度", ClampMin = "0.1", ClampMax = "4", ToolTip = "只控制表面伤口大小和破损 不改变生命伤害 踉跄值或程序化受击力度"))
+    float WoundStrength = 1.0f;
+
     /** 命中目标后可继续穿过的目标数量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|弹丸|穿透", meta = (ClampMin = "0", ClampMax = "32", DisplayName = "可继续穿透次数", ToolTip = "无单位 0 命中即停止 越大可继续穿过更多 Pawn 或 Mass 小怪 不能穿世界几何 爆炸弹必须为 0"))
     int32 MaximumPenetrations = 0;

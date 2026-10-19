@@ -30,6 +30,9 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
     /** 不随穿透伤害变化的基础踉跄值 */
     float StaggerValue = 0.0f;
 
+    /** 公开点命中携带的伤口表现强度 不参与玩法计算 */
+    float WoundStrength = 1.0f;
+
     /** 范围伤害半径 零表示点伤害 */
     float ExplosionRadiusCm = 0.0f;
     /** 爆炸是否影响发射者 */

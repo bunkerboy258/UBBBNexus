@@ -10,7 +10,7 @@ class UBBBMonsterHitReactionComponent;
 class UBBBMonsterPhysicalAnimationComponent;
 class UBBBZombieHitTrajectoryComponent;
 class UBBBZombieGoreDebugComponent;
-class UBBBMonsterSeveringPresentationComponent;
+class UBBBZombieSurfaceWoundComponent;
 
 /** 仅用于本地受击与血腥调参的固定表现靶 不创建实体或维护玩法生命 */
 UCLASS(meta = (DisplayName = "僵尸程序化受击调参靶"))
@@ -65,7 +65,7 @@ public:
 
     /** 仅还原调试受损结果 */
     UPROPERTY(VisibleAnywhere, Category = "受击调参", meta = (DisplayName = "伤口断肢表现"))
-    TObjectPtr<UBBBMonsterSeveringPresentationComponent> GorePresentation;
+    TObjectPtr<UBBBZombieSurfaceWoundComponent> GorePresentation;
 
     /** 当前游戏实例收到的有效点命中数量 不保存历史 */
     UPROPERTY(Transient, VisibleInstanceOnly, Category = "受击调参", meta = (DisplayName = "命中次数"))

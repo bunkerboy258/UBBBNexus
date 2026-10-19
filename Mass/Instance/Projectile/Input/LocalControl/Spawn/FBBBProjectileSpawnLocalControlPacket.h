@@ -48,6 +48,9 @@ struct FBBBProjectileSpawnLocalControlPacket final
     double AttackTime = FPlatformTime::Seconds();
     /** 独立于伤害的踉跄触发能力 */
     float StaggerValue = 0.0f;
+
+    /** 独立的伤口表现参数 */
+    float WoundStrength = 1.0f;
     float Radius = 2.0f;
     int32 Penetrations = 0;
     float PenetrationMultiplier = 0.65f;
@@ -82,6 +85,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && FMath::IsFinite(DurableDamage) && DurableDamage >= 0.0f
             && AttackId.IsValid() && FMath::IsFinite(AttackTime) && AttackTime >= 0.0
             && FMath::IsFinite(StaggerValue) && StaggerValue >= 0.0f && StaggerValue <= 1.0f
+            && FMath::IsFinite(WoundStrength) && WoundStrength >= 0.1f && WoundStrength <= 4.0f
             && FMath::IsFinite(Radius) && Radius >= 0.0f
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
@@ -130,6 +134,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Collision.AttackId = AttackId;
         Collision.AttackTime = AttackTime;
         Collision.StaggerValue = StaggerValue;
+        Collision.WoundStrength = WoundStrength;
         Collision.ExplosionRadiusCm = ExplosionRadiusCm;
         Collision.bDamageInstigator = bDamageInstigator;
         Collision.bDetonateOnImpact = bDetonateOnImpact;

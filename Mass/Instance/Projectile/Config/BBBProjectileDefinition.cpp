@@ -32,6 +32,7 @@ bool UBBBProjectileDefinition::IsValid() const
         && BaseDamage >= 0.0f
         && FMath::IsFinite(DurableDamage) && DurableDamage >= 0.0f
         && FMath::IsFinite(StaggerValue) && StaggerValue >= 0.0f && StaggerValue <= 1.0f
+        && FMath::IsFinite(WoundStrength) && WoundStrength >= 0.1f && WoundStrength <= 4.0f
         && MaximumPenetrations >= 0
         && MaximumPenetrations <= 32
         && FMath::IsFinite(PenetrationDamageMultiplier)

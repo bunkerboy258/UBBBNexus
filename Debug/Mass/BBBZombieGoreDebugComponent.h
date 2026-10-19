@@ -4,9 +4,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 #include "BBBZombieGoreDebugComponent.generated.h"
 
-class UBBBMonsterDefinition;
+class UBBBZombieGoreSurfaceDefinition;
 class UBBBMonsterBloodPresentationDefinition;
-class UBBBMonsterSeveringPresentationComponent;
 
 /** 单只调试靶的当前血腥表现 不创建实体或维护玩法生命 */
 UCLASS(meta = (DisplayName = "血腥表现调试"))
@@ -19,7 +18,7 @@ public:
 
     /** 独立的调试伤口和断肢资源 不能指定正式外观配置 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|配置", meta = (DisplayName = "伤口资源配置"))
-    TObjectPtr<UBBBMonsterDefinition> AppearanceDefinition;
+    TObjectPtr<UBBBZombieGoreSurfaceDefinition> AppearanceDefinition;
 
     /** 独立的血滴与环境残留配置 修改后重新开始游戏 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|配置", meta = (DisplayName = "喷血和残留配置"))
@@ -57,12 +56,8 @@ public:
     UPROPERTY(EditAnywhere, Category = "血腥调试|身体", meta = (DisplayName = "显示创口"))
     bool bShowWounds = true;
 
-    /** 轻伤和重伤的显示比例阈值 不改变玩法伤害 */
-    UPROPERTY(EditAnywhere, Category = "血腥调试|身体", meta = (DisplayName = "轻伤重伤显示阈值"))
-    FVector2D WoundThresholds = FVector2D(0.2, 0.6);
-
-    /** 当前材质支持四种稳定图案 取模使用 */
-    UPROPERTY(EditAnywhere, Category = "血腥调试|身体", meta = (DisplayName = "伤口图案种子", ClampMin = "0"))
+    /** 当前血效的稳定随机种子 */
+    UPROPERTY(EditAnywhere, Category = "血腥调试|身体", meta = (DisplayName = "血效随机种子", ClampMin = "0"))
     int32 PatternSeed = 17;
 
     /** 线性颜色空间下的身体血污基色 */
@@ -77,14 +72,6 @@ public:
     UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织颜色"))
     FLinearColor TissueTint = FLinearColor(0.055f, 0.002f, 0.004f);
 
-    /** 只缩放现有胸腹创口遮罩 不生成新几何 */
-    UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "创口范围", ClampMin = "0.1", ClampMax = "2"))
-    float WoundScale = 1;
-
-    /** 创口周围染血边缘宽度倍率 */
-    UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "伤口边缘染血范围", ClampMin = "0", ClampMax = "3"))
-    float EdgeScale = 1;
-
     /** 组织表面粗糙度 越低越光滑 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织粗糙度", ClampMin = "0", ClampMax = "1"))
     float TissueRoughness = 0.66f;
@@ -97,9 +84,9 @@ public:
     UPROPERTY(EditAnywhere, Category = "血腥调试|手动预览", meta = (DisplayName = "预览部位"))
     EBBBMonsterHitRegion PreviewRegion = EBBBMonsterHitRegion::Torso;
 
-    /** 手动设置当前部位受损程度 */
-    UPROPERTY(EditAnywhere, Category = "血腥调试|手动预览", meta = (DisplayName = "预览受损比例", ClampMin = "0", ClampMax = "1"))
-    float PreviewDamageRatio = 0.65f;
+    /** 一为近端 二为远端 只影响手动预览 */
+    UPROPERTY(EditAnywhere, Category = "血腥调试|手动预览", meta = (DisplayName = "预览断点档位", ClampMin = "1", ClampMax = "2"))
+    int32 PreviewCutTier = 2;
 
     /** 当前六部位的调试受损程度 顺序为躯干 头 左臂 右臂 左腿 右腿 */
     UPROPERTY(Transient, VisibleInstanceOnly, Category = "血腥调试|诊断", meta = (DisplayName = "当前六部位受损比例"))
@@ -113,10 +100,6 @@ public:
     UFUNCTION(CallInEditor, BlueprintCallable, Category = "血腥调试|操作", meta = (DisplayName = "立即重置僵尸"))
     void ResetTarget();
 
-    /** @return 将预览比例应用到选定部位 无返回值 */
-    UFUNCTION(CallInEditor, BlueprintCallable, Category = "血腥调试|操作", meta = (DisplayName = "应用部位受损预览"))
-    void ApplyPreview();
-
     /** @return 还原选定非躯干部位断开 不杀死调试靶 无返回值 */
     UFUNCTION(CallInEditor, BlueprintCallable, Category = "血腥调试|操作", meta = (DisplayName = "预览选定部位断开"))
     void PreviewSevering();
@@ -129,7 +112,7 @@ public:
      * @param Hit\t靶子已接受的当前点命中
      * @return 无返回值
      */
-    void ApplyHit(const FBBBMonsterHitReactionFragment& Hit);
+    void ApplyHit(const FBBBMonsterHitReactionFragment& Hit, float WoundStrength = 1.0f);
 
     //~ Begin UActorComponent Interface
     /** @return 建立独立的当前调试资源副本 无返回值 */
@@ -148,9 +131,8 @@ public:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     //~ End UActorComponent Interface
 private:
-    /** 每只调试靶独立的资源配置副本 不改正式定义 */
-    UPROPERTY(Transient)
-    TObjectPtr<UBBBMonsterDefinition> RuntimeDefinition;
+    /** 资源初始化成功后才允许更新当前表现 */
+    bool bSurfaceReady = false;
     /** 最近有效命中只用于当前表现 */
     FBBBMonsterHitReactionFragment CurrentHit;
     /** 当前恢复周期的截止世界时间 */

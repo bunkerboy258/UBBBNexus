@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Collision/BBBProjectileCollisionProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePointDamageEvent.h"
 
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
@@ -295,10 +296,14 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 if (!bUseEntity)
                 {
                     AActor* Actor = WorldHit.GetActor();
-                    if (Data.bCanCauseDamage && IsValid(Actor))
+                    if (Data.bCanCauseDamage && Data.Damage != 0.0f && IsValid(Actor))
                     {
-                        UGameplayStatics::ApplyPointDamage(Actor, Data.Damage, Direction, WorldHit,
-                            Data.EventInstigator.Get(), Data.DamageCauser.Get(), nullptr);
+                        FBBBProjectilePointDamageEvent Event;
+                        Event.Damage = Data.Damage;
+                        Event.HitInfo = WorldHit;
+                        Event.ShotDirection = Direction;
+                        Event.WoundStrength = Data.WoundStrength;
+                        Actor->TakeDamage(Data.Damage, Event, Data.EventInstigator.Get(), Data.DamageCauser.Get());
                     }
 
                     Params.AddIgnoredActor(Actor);

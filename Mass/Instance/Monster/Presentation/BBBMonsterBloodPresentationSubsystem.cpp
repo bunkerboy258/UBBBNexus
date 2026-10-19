@@ -70,7 +70,12 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
     {
         return;
     }
-    if (Settings.bEnableParticles)
+    bool bHasSpray = false;
+    for (const auto& Impact : Impacts)
+    {
+        bHasSpray |= !Impact.bDripOnly;
+    }
+    if (Settings.bEnableParticles && bHasSpray)
     {
         if (!ensureMsgf(Settings.ImpactChannel && Settings.ImpactChannel->Get(), TEXT("[BBBMonsterBlood]血效配置不完整")))
         {
@@ -86,6 +91,10 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         TMap<FNiagaraDataChannelData*, TArray<int32>> Batches;
         for (int32 Index = 0; Index < Impacts.Num(); ++Index)
         {
+            if (Impacts[Index].bDripOnly)
+            {
+                continue;
+            }
             FNDCAccessContextInst Access(Channel->GetAccessContextType());
             Access.GetChecked<FNDCAccessContextLegacy>() = FNDCAccessContextLegacy(Impacts[Index].Position);
             auto Data = Handler->FindData(Access, ENiagaraResourceAccess::WriteOnly);
@@ -139,7 +148,7 @@ void UBBBMonsterBloodPresentationSubsystem::EmitDroplets(const UBBBMonsterBloodP
     FRandomStream Random(Impact.Seed ^ GetTypeHash(Impact.Position));
     const int32 Minimum = FMath::Clamp(FMath::Min(Settings.DropletCount.X, Settings.DropletCount.Y), 0, 32);
     const int32 Maximum = FMath::Clamp(FMath::Max(Settings.DropletCount.X, Settings.DropletCount.Y), 0, 32);
-    const int32 Count = Impact.bSevering ? FMath::Clamp(Settings.SeveringDropletCount, 0, 32) : Random.RandRange(Minimum, Maximum);
+    const int32 Count = Impact.bDripOnly ? 1 : Impact.bSevering ? FMath::Clamp(Settings.SeveringDropletCount, 0, 32) : Random.RandRange(Minimum, Maximum);
     for (int32 Index = 0; Index < Count && Droplets.Num() < FMath::Clamp(Settings.MaximumFlights, 3, 128); ++Index)
     {
         const float Angle = Random.FRandRange(0.0f, 2.0f * PI);
@@ -152,11 +161,12 @@ void UBBBMonsterBloodPresentationSubsystem::EmitDroplets(const UBBBMonsterBloodP
             + Spread * BloodRange(Random, Settings.DropletSpreadSpeed, 0, 2000);
         Droplet.Seed = Random.GetUnsignedInt();
         Droplet.bFine = Index > 0;
-        if (Impact.bSevering && Index >= 3)
+        if (Impact.bDripOnly || (Impact.bSevering && Index >= 3))
         {
             Droplet.Velocity = FVector(0.0f, 0.0f, -FMath::Clamp(Settings.SeveringDripSpeed, 0.0f, 2000.0f))
                 + Spread * FMath::Clamp(Settings.SeveringDripSpread, 0.0f, 2000.0f);
-            Droplet.Age = -FMath::Clamp(Settings.SeveringDripInterval, 0.0f, 0.5f) * static_cast<float>(Index - 2);
+            Droplet.Age = Impact.bDripOnly ? 0 : -FMath::Clamp(Settings.SeveringDripInterval, 0.0f, 0.5f) * static_cast<float>(Index - 2);
+            Droplet.bFine = true;
         }
         Droplets.Add(Droplet);
     }
