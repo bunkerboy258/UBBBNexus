@@ -57,7 +57,7 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     }
     const ABBBCharacter *Character = Cast<ABBBCharacter>(Pawn);
     UAnimSequence *Standing = LoadObject<UAnimSequence>(
-        nullptr, TEXT("/Game/_Project/Characters/BBBC_UA/Animation/Lyra/MM_Unarmed_Idle_Ready.MM_Unarmed_Idle_Ready"));
+        nullptr, TEXT("/Game/_Project/Characters/BBBC_UA/Animation/UsedAnimation/unarmed/MM_Unarmed_Idle_Ready.MM_Unarmed_Idle_Ready"));
     if (!ensureMsgf(Character && Standing, TEXT("固定人物预览缺少角色或站姿动画")))
     {
         Close();
