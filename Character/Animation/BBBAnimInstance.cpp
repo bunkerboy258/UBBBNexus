@@ -50,7 +50,6 @@ void UBBBAnimInstance::PublishAnimationFacts(
     bSourceAiming = FactState.bIsAiming;
     SourceEquipmentType = FactState.EquipmentType;
     SourceCharacterGripPose = FactState.CharacterGripPose;
-    SourceRightHandGripRotationOffset = FactState.RightHandGripRotationOffset;
     SourceItemType = FactState.ItemType;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;
     SourceMuzzleTransformHandRSpace = FactState.MuzzleTransformHandRSpace;
@@ -208,17 +207,6 @@ FVector UBBBAnimInstance::GetLeftHandIKPosition() const
     }
 
     return FVector::ZeroVector;
-}
-
-FRotator UBBBAnimInstance::GetLeftHandIKRotation() const
-{
-    const UBBBEquipmentAnimInstance *Weapon = TryGetWeaponAnimInstance();
-    if (Weapon)
-    {
-        return Weapon->GetLeftHandTargetHandRSpaceRotation();
-    }
-
-    return FRotator::ZeroRotator;
 }
 
 bool UBBBAnimInstance::HasLeftHandIKTarget() const

@@ -38,10 +38,6 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
 
-    /** 当前实际装备的父骨骼空间右腕增量 空手时为零 */
-    UPROPERTY(Transient)
-    FRotator RightHandGripRotationOffset = FRotator::ZeroRotator;
-
     /** 本帧已经成立的攀爬类别 */
     UPROPERTY(Transient)
     EBBBTraversalAction TraversalAction = EBBBTraversalAction::None;

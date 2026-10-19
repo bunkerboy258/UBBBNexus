@@ -42,10 +42,6 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "2", DisplayName = "角色双手握姿", ToolTip = "使用角色骨架的非加法静态序列 左右手指分别混合 未配置时保留当前动作的手指姿势"))
     TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
 
-    /** 在父骨骼空间叠加到角色原始右腕动作的握持旋转 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "4", DisplayName = "右腕握持旋转偏移", ToolTip = "相对右前臂的增量旋转 单位度 保留动作原右腕轨迹 挂接偏移须按相同参考姿势反补偿 零值不改变动作"))
-    FRotator RightHandGripRotationOffset = FRotator::ZeroRotator;
-
     /** 装备骨骼网格使用的动画实例类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "武器动画", meta = (DisplayPriority = "1", DisplayName = "武器动画类", ToolTip = "本武器骨骼网格创建的动画实例类 必须继承此装备类型的动画基类 每件装备独立实例"))
     TSubclassOf<UBBBEquipmentAnimInstance> EquipmentAnimationClass;

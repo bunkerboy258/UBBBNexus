@@ -49,11 +49,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
     FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;
     FactState.CharacterGripPose = IsValid(Definition) ? Definition->CharacterGripPose.Get() : nullptr;
-    FactState.RightHandGripRotationOffset = IsValid(Definition) ? Definition->RightHandGripRotationOffset : FRotator::ZeroRotator;
-    if (!ensureMsgf(!FactState.RightHandGripRotationOffset.ContainsNaN(), TEXT("[BBB][AnimationFacts] 装备右腕握持旋转必须有限")))
-    {
-        FactState.RightHandGripRotationOffset = FRotator::ZeroRotator;
-    }
     const FBBBAimAnimationConfig &AimConfig = Character.GetCharacterConfig().AimAnimation;
 
     // 优先使用配置骨骼作为瞄准起点否则使用角色网格位置
