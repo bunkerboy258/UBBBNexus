@@ -8,6 +8,7 @@
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
 #include "Rendering/SkeletalMeshRenderData.h"
+#include "StaticMeshAttributes.h"
 
 /** 只读取资源与静态物理参数 不启动游戏或创建世界 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBZombieGoreSurfaceAssetTest, "UBBB.Debug.ZombieGoreSurfaceAssets",
@@ -41,6 +42,22 @@ bool FBBBZombieGoreSurfaceAssetTest::RunTest(const FString&)
         }
         TestTrue(TEXT("断口几何仅在调试目录"), Cut.Cap->GetPathName().StartsWith(TEXT("/Game/_Project/Debug/")));
         TestFalse(TEXT("断口中心有限"), Cut.LocalCenter.ContainsNaN());
+        const auto* CapDescription = Cut.Cap->GetMeshDescription(0);
+        if (TestNotNull(TEXT("断面有实际拓扑"), CapDescription))
+        {
+            const FStaticMeshConstAttributes Attributes(*CapDescription);
+            int32 BoneFaces = 0;
+            for (const auto Triangle : CapDescription->Triangles().GetElementIDs())
+            {
+                bool bBone = true;
+                for (const auto Instance : CapDescription->GetTriangleVertexInstances(Triangle))
+                {
+                    bBone &= Attributes.GetVertexInstanceColors()[Instance].X > .7f;
+                }
+                BoneFaces += bBone ? 1 : 0;
+            }
+            TestEqual(TEXT("实际断面已删除骨头几何标记"), BoneFaces, 0);
+        }
         const auto* Physics = Cut.Piece->GetPhysicsAsset();
         if (!TestNotNull(TEXT("掉落部件有独立物理"), Physics))
         {

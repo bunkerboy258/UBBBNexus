@@ -70,15 +70,15 @@ public:
 
     /** 创口肌肉组织基色 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织颜色"))
-    FLinearColor TissueTint = FLinearColor(0.055f, 0.002f, 0.004f);
+    FLinearColor TissueTint = FLinearColor(0.13f, 0.004f, 0.003f);
 
     /** 组织表面粗糙度 越低越光滑 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织粗糙度", ClampMin = "0", ClampMax = "1"))
-    float TissueRoughness = 0.66f;
+    float TissueRoughness = 0.55f;
 
     /** 组织表面的高光响应 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织高光", ClampMin = "0", ClampMax = "1"))
-    float TissueSpecular = 0.12f;
+    float TissueSpecular = 0.35f;
 
     /** 手动预览的目标部位 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|手动预览", meta = (DisplayName = "预览部位"))
