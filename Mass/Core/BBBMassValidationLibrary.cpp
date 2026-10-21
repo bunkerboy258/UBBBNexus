@@ -11,7 +11,9 @@
 #include "MassEntityTemplate.h"
 #include "MassSpawnerSubsystem.h"
 #include "MassSpawnerTypes.h"
-#include "MassSpawnLocationProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnData.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnInitializationProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnProcessor.h"
 #include "SkeletalMeshComponentBudgeted.h"
 #include "IAnimationBudgetAllocator.h"
 #include "HAL/IConsoleManager.h"
@@ -216,12 +218,15 @@ TArray<FMassEntityHandle> UBBBMassValidationLibrary::SpawnPopulation(UObject* Wo
     const int32 Columns = FMath::CeilToInt(FMath::Sqrt(static_cast<float>(Count)));
     for (int32 Group = 0; Group < Configs.Num(); ++Group)
     {
-        FMassTransformsSpawnData Data;
-        Data.bRandomize = false;
+        FBBBMonsterSpawnData Data;
+        Data.DirectorId = FGuid::NewGuid();
+        Data.Generation = 1;
+        Data.StageIndex = 0;
         for (int32 Index = Group; Index < Count; Index += Configs.Num())
         {
             const FVector Position = Center + FVector((Index / Columns - Columns * 0.5f) * Spacing, (Index % Columns - Columns * 0.5f) * Spacing, 0.0f);
             Data.Transforms.Add(FTransform(Position));
+            Data.Seeds.Add(UBBBMonsterSpawnProcessor::RandomBits(42, Index, 0x407u));
         }
 
         if (Data.Transforms.IsEmpty())
@@ -229,9 +234,9 @@ TArray<FMassEntityHandle> UBBBMassValidationLibrary::SpawnPopulation(UObject* Wo
             continue;
         }
 
-        const FMassEntityTemplate& Template = Configs[Group]->GetOrCreateEntityTemplate(*World);
         TArray<FMassEntityHandle> Spawned;
-        Spawner->SpawnEntities(Template.GetTemplateID(), Data.Transforms.Num(), FConstStructView::Make(Data), UMassSpawnLocationProcessor::StaticClass(), Spawned);
+        World->GetSubsystem<UBBBMassSubsystem>()->CreateEntities(*Configs[Group], Data.Transforms.Num(),
+            FConstStructView::Make(Data), UBBBMonsterSpawnInitializationProcessor::StaticClass(), Spawned);
         Result.Append(Spawned);
     }
 

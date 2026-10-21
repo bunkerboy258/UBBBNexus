@@ -13,6 +13,8 @@ struct FBBBMonsterStateAuthorityFactPacket final
     using FInputFragment = FBBBMonsterNetworkInputFragment;
 
     FGuid InstanceId;
+    /** 出生种子只允许在本机首次初始化前还原 */
+    uint32 BirthSeed = 0;
     uint32 Revision = 0;
     FTransform Transform = FTransform::Identity;
     FVector Velocity = FVector::ZeroVector;

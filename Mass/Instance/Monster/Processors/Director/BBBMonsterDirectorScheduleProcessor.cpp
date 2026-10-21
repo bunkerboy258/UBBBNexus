@@ -3,6 +3,9 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorFragment.h"
@@ -29,6 +32,7 @@ void UBBBMonsterDirectorScheduleProcessor::ConfigureQueries(const TSharedRef<FMa
     DirectorQuery.AddTagRequirement<FBBBMonsterDirectorTag>(EMassFragmentPresence::All);
     DirectorQuery.AddRequirement<FBBBMonsterDirectorFragment>(EMassFragmentAccess::ReadWrite);
     DirectorQuery.AddRequirement<FBBBMonsterDirectorSpawnFragment>(EMassFragmentAccess::ReadWrite);
+    DirectorQuery.AddRequirement<FBBBMonsterSpawnFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterSpawnOwnershipFragment>(EMassFragmentAccess::ReadOnly);
@@ -44,7 +48,7 @@ int32 UBBBMonsterDirectorScheduleProcessor::CalculateRequest(const FBBBMonsterDi
     {
         return 0;
     }
-    return FMath::Max(0, FMath::Min3(Desired, LocalSlots, WorldSlots));
+    return FMath::Min(512, FMath::Max(0, FMath::Min3(Desired, LocalSlots, WorldSlots)));
 }
 
 void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -78,8 +82,9 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
         const auto Spawns = Chunk.GetFragmentView<FBBBMonsterDirectorSpawnFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
-            Reserved += Spawns[Index].Reserved;
-            if (const auto* Definition = States[Index].Definition.Get())
+            Reserved += FMath::Max(0, Spawns[Index].Reserved - Spawns[Index].Accounted);
+            if (const auto* Definition = States[Index].Definition.Get(); Definition && States[Index].Phase != EBBBMonsterDirectorPhase::Inactive
+                && States[Index].Phase != EBBBMonsterDirectorPhase::Stopped && States[Index].Phase != EBBBMonsterDirectorPhase::Completed)
             {
                 WorldLimit = FMath::Min(WorldLimit, Definition->WorldMaxAlive);
             }
@@ -90,6 +95,7 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
     {
         auto States = Chunk.GetMutableFragmentView<FBBBMonsterDirectorFragment>();
         auto Spawns = Chunk.GetMutableFragmentView<FBBBMonsterDirectorSpawnFragment>();
+        auto Jobs = Chunk.GetMutableFragmentView<FBBBMonsterSpawnFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& State = States[Index];
@@ -106,14 +112,13 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
             {
                 continue;
             }
-            if (Spawn.Reserved > 0 && !Spawn.bCreating && Now - Spawn.StartedAt >= Definition->QueryTimeout)
+            auto& Job = Jobs[Index];
+            if (Spawn.Reserved > 0 && !Job.bCreating && Now - Spawn.StartedAt >= Definition->QueryTimeout)
             {
-                Reserved -= Spawn.Reserved;
+                Reserved -= FMath::Max(0, Spawn.Reserved - Spawn.Accounted);
                 Spawn.Reserved = 0;
                 ++Spawn.RequestId;
-                Spawn.bNeedsQuery = false;
-                Spawn.bResultReady = false;
-                Spawn.Locations.Reset();
+                Job.bActive = false;
                 State.NextSpawnTime = Now + Definition->RetryInterval;
                 State.Reason = TEXT("出生查询超时 已释放预留");
                 ++State.Revision;
@@ -173,7 +178,7 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
                 ++State.Revision;
                 continue;
             }
-            if (State.Phase != EBBBMonsterDirectorPhase::Spawning || Spawn.Reserved > 0 || Now < State.NextSpawnTime)
+            if (State.Phase != EBBBMonsterDirectorPhase::Spawning || Spawn.Reserved > 0 || Job.bCreating || Now < State.NextSpawnTime)
             {
                 continue;
             }
@@ -188,10 +193,25 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
             ++Spawn.RequestId;
             Spawn.Reserved = Request;
             Spawn.StartedAt = Now;
-            Spawn.bNeedsQuery = true;
-            Spawn.bResultReady = false;
-            Spawn.bCreating = false;
-            Spawn.Locations.Reset();
+            Spawn.Accounted = 0;
+            FBBBMonsterSpawnRequestLocalControlPacket Packet;
+            Packet.OwnerId = State.InstanceId;
+            Packet.Generation = State.Generation;
+            Packet.StageIndex = State.StageIndex;
+            Packet.RequestId = Spawn.RequestId;
+            Packet.Definition = Stage.SpawnDefinition;
+            const uint32 RootSeed = Stage.SpawnDefinition && Stage.SpawnDefinition->Seed != 0
+                ? static_cast<uint32>(Stage.SpawnDefinition->Seed) : State.Seed;
+            Packet.Seed = UBBBMonsterSpawnProcessor::RandomBits(RootSeed, Spawn.RequestId, State.StageIndex);
+            Packet.Count = Request;
+            for (const auto& Region : State.Regions)
+            {
+                if (Stage.RegionIds.Contains(Region.Id))
+                {
+                    Packet.Regions.Add(Region);
+                }
+            }
+            World->GetSubsystem<UBBBMassSubsystem>()->SubmitInput(Chunk.GetEntity(Index), MoveTemp(Packet));
             Reserved += Request;
             State.Reason = TEXT("已预留数量 正在申请出生位置");
             ++State.Revision;

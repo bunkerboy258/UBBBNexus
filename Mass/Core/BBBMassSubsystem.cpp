@@ -5,6 +5,7 @@
 #include "MassEntityTemplate.h"
 #include "MassSpawnerSubsystem.h"
 #include "MassCommands.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
@@ -81,6 +82,26 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDi
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnRequestLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnPauseLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnResumeLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnStopLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStartLocalControlPacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
@@ -102,16 +123,6 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDi
 }
 
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorTriggerLocalControlPacket& Packet)
-{
-    return WriteInputSlot(*GetWorld(), Entity, Packet);
-}
-
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorQueryResultLocalControlPacket& Packet)
-{
-    return WriteInputSlot(*GetWorld(), Entity, Packet);
-}
-
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorCreatedLocalControlPacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }

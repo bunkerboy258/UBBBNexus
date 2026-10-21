@@ -12,13 +12,14 @@
 #include "MassEntityConfigAsset.h"
 #include "BBBMonsterDirectorScheduleProcessor.h"
 #include "BBBMonsterDirectorParseProcessor.h"
-#include "BBBMonsterDirectorSpawnInitializationProcessor.h"
-#include "BBBMonsterSpawnRegionEQSGenerator.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnInitializationProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorInputFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorSpawnData.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnData.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterSpawnOwnershipFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
@@ -88,43 +89,21 @@ bool FBBBMonsterDirectorBudgetTest::RunTest(const FString& Parameters)
     FBBBMonsterDirectorSpawnFragment Spawn;
     Spawn.RequestId = 7;
     Spawn.Reserved = 5;
-    FBBBMonsterDirectorQueryResultLocalControlPacket Result;
-    Result.InstanceId = State.InstanceId;
-    Result.Generation = 1;
-    Result.StageIndex = 0;
-    Result.RequestId = 7;
-    Result.Locations.Add(FVector(1.0, 2.0, 3.0));
-    TestTrue(TEXT("当前申请允许还原查询结果"), Result.IsValid() && Result.CanApply(State, Spawn));
     FBBBMonsterDirectorPauseLocalControlPacket Pause;
     Pause.Apply(State, Spawn);
     TestEqual(TEXT("暂停释放预留"), Spawn.Reserved, 0);
-    TestFalse(TEXT("暂停拒绝迟到查询"), Result.CanApply(State, Spawn));
     FBBBMonsterDirectorResumeLocalControlPacket Resume;
     Resume.Apply(State, Spawn);
-    Spawn.Reserved = 5;
-    TestFalse(TEXT("继续后旧申请仍无效"), Result.CanApply(State, Spawn));
-    Result.RequestId = Spawn.RequestId;
-    Spawn.bCreating = true;
-    FBBBMonsterDirectorCreatedLocalControlPacket Created;
-    Created.InstanceId = State.InstanceId;
-    Created.Generation = State.Generation;
-    Created.StageIndex = 0;
-    Created.RequestId = Spawn.RequestId;
-    Created.Count = 2;
-    Created.Time = 1.0;
-    TestTrue(TEXT("允许结算实际成功数量"), Created.CanApply(State, Spawn));
-    Created.Apply(State, Spawn);
-    TestEqual(TEXT("只扣除实际生成额度"), State.TotalSpawned, 2);
-    TestEqual(TEXT("失败位置也释放预留"), Spawn.Reserved, 0);
-    TestFalse(TEXT("重复创建结果不能重复扣除"), Created.CanApply(State, Spawn));
+    TestTrue(TEXT("继续恢复生成阶段"), State.Phase == EBBBMonsterDirectorPhase::Spawning);
     FBBBMonsterDirectorStopLocalControlPacket Stop;
     Stop.Apply(State, Spawn);
     FBBBMonsterDirectorStartLocalControlPacket Start;
     State.EntityCount = 1;
     TestFalse(TEXT("旧实体仍在时禁止重开"), Start.CanApply(State, Spawn));
     State.EntityCount = 0;
+    const uint32 PreviousGeneration = State.Generation;
     Start.Apply(State, Spawn);
-    TestFalse(TEXT("新一代拒绝旧出生结果"), Created.CanApply(State, Spawn));
+    TestTrue(TEXT("重新开始使用新一代"), State.Generation > PreviousGeneration);
 
     FBBBMonsterDirectorStateAuthorityFactPacket Fact;
     Fact.State.InstanceId = State.InstanceId;
@@ -155,7 +134,8 @@ bool FBBBMonsterDirectorScheduleTest::RunTest(const FString& Parameters)
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     auto* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     const auto DirectorType = Manager.CreateArchetype({FBBBMonsterDirectorTag::StaticStruct(), FBBBMonsterDirectorFragment::StaticStruct(),
-        FBBBMonsterDirectorSpawnFragment::StaticStruct(), FBBBMonsterDirectorInputFragment::StaticStruct()});
+        FBBBMonsterDirectorSpawnFragment::StaticStruct(), FBBBMonsterDirectorInputFragment::StaticStruct(),
+        FBBBMonsterSpawnFragment::StaticStruct(), FBBBMonsterSpawnInputFragment::StaticStruct()});
     const auto MonsterType = Manager.CreateArchetype({FBBBMonsterTag::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
         FBBBMonsterSpawnOwnershipFragment::StaticStruct()});
     auto* Definition = NewObject<UBBBMonsterDirectorDefinition>(World);
@@ -200,18 +180,20 @@ bool FBBBMonsterDirectorScheduleTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("尸体不占用存活额度"), AState.Alive, 1);
     TestEqual(TEXT("尸体仍计入导演所属实体"), AState.EntityCount, 2);
 
-    FBBBMonsterDirectorQueryResultLocalControlPacket Result;
-    Result.InstanceId = AId;
-    Result.Generation = 1;
-    Result.StageIndex = 0;
-    Result.RequestId = ASpawn.RequestId;
-    Mass->SubmitInput(A, Result);
+    auto& Job = Manager.GetFragmentDataChecked<FBBBMonsterSpawnFragment>(A);
+    Job.OwnerId = AId;
+    Job.RequestId = ASpawn.RequestId;
+    Job.Generation = 1;
+    Job.StageIndex = 0;
+    Job.Created = 2;
+    Job.bActive = true;
     Mass->SubmitInput(A, FBBBMonsterDirectorPauseLocalControlPacket());
     RunDirectorTestProcessor(World, Manager, UBBBMonsterDirectorParseProcessor::StaticClass());
-    TestTrue(TEXT("同轮暂停优先于查询完成"), AState.Phase == EBBBMonsterDirectorPhase::Paused && !ASpawn.bResultReady && ASpawn.Reserved == 0);
+    TestTrue(TEXT("已创建待结算实体在暂停前结算"), AState.TotalSpawned == 2 && AState.StageSpawned == 2);
+    TestTrue(TEXT("暂停取消剩余出生请求"), AState.Phase == EBBBMonsterDirectorPhase::Paused && !Job.bActive && ASpawn.Reserved == 0);
     Mass->SubmitInput(A, FBBBMonsterDirectorStopLocalControlPacket());
     RunDirectorTestProcessor(World, Manager, UBBBMonsterDirectorParseProcessor::StaticClass());
-    TestTrue(TEXT("停止优先于后续输入"), AState.Phase == EBBBMonsterDirectorPhase::Stopped && ASpawn.Reserved == 0);
+    TestTrue(TEXT("停止不会重复结算"), AState.Phase == EBBBMonsterDirectorPhase::Stopped && AState.TotalSpawned == 2);
 
     AState.Phase = EBBBMonsterDirectorPhase::Spawning;
     AState.StageSpawned = 20;
@@ -244,7 +226,6 @@ bool FBBBMonsterDirectorScheduleTest::RunTest(const FString& Parameters)
     auto& BState = Manager.GetFragmentDataChecked<FBBBMonsterDirectorFragment>(B);
     BSpawn.Reserved = 2;
     BSpawn.StartedAt = -20.0;
-    BSpawn.bCreating = false;
     BState.NextUpdateTime = 0.0;
     const uint32 OldRequest = BSpawn.RequestId;
     RunDirectorTestProcessor(World, Manager, UBBBMonsterDirectorScheduleProcessor::StaticClass());
@@ -260,13 +241,16 @@ bool FBBBMonsterDirectorRegionTest::RunTest(const FString& Parameters)
 {
     FBBBMonsterSpawnRegionDefinition Region;
     Region.Transform = FTransform(FRotator(10.0, 35.0, 15.0), FVector(700.0, -500.0, 200.0), FVector(2.0, 0.5, 1.5));
-    for (const auto Shape : {EBBBMonsterSpawnRegionShape::Box, EBBBMonsterSpawnRegionShape::Cylinder})
+    for (const auto Shape : {EBBBMonsterSpawnRegionShape::Box, EBBBMonsterSpawnRegionShape::Cylinder, EBBBMonsterSpawnRegionShape::Disk})
     {
         Region.Shape = Shape;
         TArray<FVector> Points;
         TArray<FVector> Repeated;
-        UBBBMonsterSpawnRegionEQSGenerator::GenerateCandidates({Region}, 1000, 42, Points);
-        UBBBMonsterSpawnRegionEQSGenerator::GenerateCandidates({Region}, 1000, 42, Repeated);
+        for (int32 Index = 0; Index < 512; ++Index)
+        {
+            Points.Add(UBBBMonsterSpawnProcessor::Candidate({Region}, 42, Index));
+            Repeated.Add(UBBBMonsterSpawnProcessor::Candidate({Region}, 42, Index));
+        }
         TestEqual(TEXT("采样数量有界"), Points.Num(), 512);
         TestTrue(TEXT("同种子可重现预览"), Points == Repeated);
         for (const auto& Point : Points)
@@ -304,15 +288,16 @@ bool FBBBMonsterDirectorBatchTest::RunTest(const FString& Parameters)
     const auto Old = Mass->CreateEntity(*Definition->EntityConfig);
     const FTransform OldTransform(FVector(-1000.0, 0.0, 90.0));
     Manager.GetFragmentDataChecked<FTransformFragment>(Old).GetMutableTransform() = OldTransform;
-    FBBBMonsterDirectorSpawnData Data;
+    FBBBMonsterSpawnData Data;
     Data.DirectorId = FGuid::NewGuid();
     Data.Generation = 3;
     Data.StageIndex = 1;
     Data.Transforms.Add(FTransform(FVector(100.0, 200.0, 90.0)));
     Data.Transforms.Add(FTransform(FVector(300.0, 400.0, 90.0)));
+    Data.Seeds = {17u, 23u};
     TArray<FMassEntityHandle> Created;
     TestTrue(TEXT("原生批量出生成功"), Mass->CreateEntities(*Definition->EntityConfig, 2, FConstStructView::Make(Data),
-        UBBBMonsterDirectorSpawnInitializationProcessor::StaticClass(), Created));
+        UBBBMonsterSpawnInitializationProcessor::StaticClass(), Created));
     TestEqual(TEXT("实际出生两只"), Created.Num(), 2);
     TestTrue(TEXT("本批初始化不触碰既有实体"), Manager.GetFragmentDataChecked<FTransformFragment>(Old).GetTransform().Equals(OldTransform));
     for (int32 Index = 0; Index < Created.Num(); ++Index)

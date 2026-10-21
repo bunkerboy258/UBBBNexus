@@ -16,6 +16,10 @@ struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
     UPROPERTY()
     FGuid InstanceId;
 
+    /** 同一代小怪只确定一次的出生种子 */
+    UPROPERTY()
+    uint32 BirthSeed = 0;
+
     UPROPERTY()
     uint32 Revision = 0;
 

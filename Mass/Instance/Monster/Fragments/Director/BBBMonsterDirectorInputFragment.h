@@ -7,8 +7,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Director/FBBBMonsterDirectorResumeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Director/FBBBMonsterDirectorStopLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Director/FBBBMonsterDirectorTriggerLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Director/FBBBMonsterDirectorQueryResultLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Director/FBBBMonsterDirectorCreatedLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/AuthorityFact/Director/FBBBMonsterDirectorStateAuthorityFactPacket.h"
 #include "BBBMonsterDirectorInputFragment.generated.h"
 
@@ -29,10 +27,6 @@ struct FBBBMonsterDirectorInputFragment final : public FMassFragment
     TBBBMassInputSlot<FBBBMonsterDirectorStopLocalControlPacket> Stop;
     /** Trigger 输入覆盖槽 */
     TBBBMassInputSlot<FBBBMonsterDirectorTriggerLocalControlPacket> Trigger;
-    /** QueryResult 输入覆盖槽 */
-    TBBBMassInputSlot<FBBBMonsterDirectorQueryResultLocalControlPacket> QueryResult;
-    /** Created 输入覆盖槽 */
-    TBBBMassInputSlot<FBBBMonsterDirectorCreatedLocalControlPacket> Created;
     /** 主机当前结果覆盖槽 */
     TBBBMassInputSlot<FBBBMonsterDirectorStateAuthorityFactPacket> State;
 
@@ -65,14 +59,6 @@ struct FBBBMonsterDirectorInputFragment final : public FMassFragment
         if constexpr (std::is_same_v<TPacket, FBBBMonsterDirectorTriggerLocalControlPacket>)
         {
             return Trigger;
-        }
-        if constexpr (std::is_same_v<TPacket, FBBBMonsterDirectorQueryResultLocalControlPacket>)
-        {
-            return QueryResult;
-        }
-        if constexpr (std::is_same_v<TPacket, FBBBMonsterDirectorCreatedLocalControlPacket>)
-        {
-            return Created;
         }
         if constexpr (std::is_same_v<TPacket, FBBBMonsterDirectorStateAuthorityFactPacket>)
         {

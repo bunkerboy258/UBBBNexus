@@ -3,7 +3,7 @@
 #include "BBBMonsterDirectorSpawnMode.h"
 #include "BBBMonsterDirectorStageDefinition.generated.h"
 
-class UBBBMonsterSpawnPoolDefinition;
+class UBBBMonsterSpawnDefinition;
 
 /** 单个副本阶段的静态生成规则 */
 USTRUCT(BlueprintType)
@@ -15,9 +15,9 @@ struct ABBB_EVAC_API FBBBMonsterDirectorStageDefinition final
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "阶段", meta = (DisplayName = "阶段标识"))
     FName Id = TEXT("Stage01");
 
-    /** 本阶段使用的小怪组合 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "阶段", meta = (DisplayName = "小怪组合"))
-    TObjectPtr<UBBBMonsterSpawnPoolDefinition> Pool;
+    /** 本阶段共用的出生规则 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "阶段", meta = (DisplayName = "出生配置"))
+    TObjectPtr<UBBBMonsterSpawnDefinition> SpawnDefinition;
 
     /** 对应地图区域蓝图中的区域标识 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "阶段", meta = (DisplayName = "生成区域"))

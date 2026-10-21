@@ -54,6 +54,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
     }
 
     Existing->InstanceId = State.InstanceId;
+    Existing->BirthSeed = State.BirthSeed;
     Existing->Definition = State.Definition;
     if (bUpdateAction)
     {
@@ -207,6 +208,7 @@ void ABBBMassNetworkActor::OnRep_Monsters()
 
         FBBBMonsterStateAuthorityFactPacket Packet;
         Packet.InstanceId = Item.InstanceId;
+        Packet.BirthSeed = Item.BirthSeed;
         Packet.Revision = Item.Revision;
         Packet.Transform = FTransform(Item.Rotation, Item.Location);
         Packet.Velocity = Item.Velocity;

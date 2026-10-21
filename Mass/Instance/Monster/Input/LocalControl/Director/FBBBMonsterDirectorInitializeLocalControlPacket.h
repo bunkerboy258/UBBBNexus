@@ -12,6 +12,8 @@ struct FBBBMonsterDirectorInitializeLocalControlPacket final
 
     /** 本地图的导演身份 */
     FGuid InstanceId;
+    /** 与网络身份无关的入口随机种子 */
+    uint32 Seed = 1;
     /** 静态副本规则 */
     TWeakObjectPtr<UBBBMonsterDirectorDefinition> Definition;
     /** 地图桥接对象 */
@@ -67,6 +69,7 @@ struct FBBBMonsterDirectorInitializeLocalControlPacket final
     void Apply(FBBBMonsterDirectorFragment& State, FBBBMonsterDirectorSpawnFragment& Spawn) const
     {
         State.InstanceId = InstanceId;
+        State.Seed = Seed;
         State.Definition = Definition;
         State.Presentation = Presentation;
         State.Regions = Regions;

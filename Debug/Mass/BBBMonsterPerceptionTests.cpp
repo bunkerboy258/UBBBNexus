@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "Misc/ScopeExit.h"
 #include "HAL/PlatformTime.h"
 #include "HAL/IConsoleManager.h"
@@ -65,7 +66,8 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(), FBBBMonsterPerceptionFragment::StaticStruct(),
         FBBBMonsterTargetFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(),
-        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(),
+        FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterVariationFragment::StaticStruct(),
+        FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(),
         FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
         FBBBMonsterHitReactionInputFragment::StaticStruct(), FBBBMonsterHitReactionFragment::StaticStruct(),

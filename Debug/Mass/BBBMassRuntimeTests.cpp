@@ -91,7 +91,8 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
         FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
         FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct(),
-        FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct()
+        FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(),
+        FBBBMonsterVariationFragment::StaticStruct()
     });
     const FMassEntityHandle Monster = Manager.CreateEntity(MonsterType);
     const FGuid InstanceId = FGuid::NewGuid();
@@ -171,7 +172,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     UNiagaraDataChannelAsset* TestChannel = NewObject<UNiagaraDataChannelAsset>(World);
     UNiagaraSystem* TestSystem = NewObject<UNiagaraSystem>(World);
     UNiagaraDataChannelAsset* TestImpactChannel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectileImpact.NDC_BBBProjectileImpact"));
+        TEXT("/Game/_Project/Mass/Projectile/NDC_BBBProjectileImpact.NDC_BBBProjectileImpact"));
     if (!TestNotNull(TEXT("正式命中通道"), TestImpactChannel))
     {
         return false;
@@ -334,7 +335,7 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("进入客机分支"), World->GetNetMode(), NM_Client);
 
     UClass* ActorClass = LoadClass<ABBBMonsterPresentationActor>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"));
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/BP_BBBZombieMalePresentation.BP_BBBZombieMalePresentation_C"));
 
     if (!TestNotNull(TEXT("使用正式男丧尸表现蓝图"), ActorClass))
     {
@@ -508,9 +509,9 @@ bool FBBBProjectilePresentationTest::RunTest(const FString& Parameters)
         World->GetOutermost()->SetDirtyFlag(false);
     };
     auto* Channel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectile.NDC_BBBProjectile"));
+        TEXT("/Game/_Project/Mass/Projectile/NDC_BBBProjectile.NDC_BBBProjectile"));
     auto* System = LoadObject<UNiagaraSystem>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Projectile/NS_BBBProjectile.NS_BBBProjectile"));
+        TEXT("/Game/_Project/Mass/Projectile/NS_BBBProjectile.NS_BBBProjectile"));
     if (!TestNotNull(TEXT("正式曳光通道"), Channel) || !TestNotNull(TEXT("正式曳光系统"), System))
     {
         return false;
@@ -602,9 +603,9 @@ bool FBBBProjectilePresentationTest::RunTest(const FString& Parameters)
     Component->DestroyComponent();
 
     auto* ImpactChannel = LoadObject<UNiagaraDataChannelAsset>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Projectile/NDC_BBBProjectileImpact.NDC_BBBProjectileImpact"));
+        TEXT("/Game/_Project/Mass/Projectile/NDC_BBBProjectileImpact.NDC_BBBProjectileImpact"));
     auto* ImpactSystem = LoadObject<UNiagaraSystem>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Projectile/NS_BBBProjectileImpact.NS_BBBProjectileImpact"));
+        TEXT("/Game/_Project/Mass/Projectile/NS_BBBProjectileImpact.NS_BBBProjectileImpact"));
     if (!TestNotNull(TEXT("正式命中通道"), ImpactChannel) || !TestNotNull(TEXT("正式命中系统"), ImpactSystem))
     {
         return false;

@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterDirectorNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Director/BBBMonsterDirectorParseProcessor.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Director/BBBMonsterDirectorPlacementProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnDefinition.h"
 
 ABBBMonsterDirectorPresentationActor::ABBBMonsterDirectorPresentationActor()
 {
@@ -97,6 +97,7 @@ bool ABBBMonsterDirectorPresentationActor::EnsureEntity()
     {
         FBBBMonsterDirectorInitializeLocalControlPacket Packet;
         Packet.InstanceId = FGuid::NewGuid();
+        Packet.Seed = static_cast<uint32>(FMath::Rand()) | 1u;
         Packet.Definition = Definition.Get();
         Packet.Presentation = this;
         for (const ABBBMonsterSpawnRegionPresentationActor* Region : Regions)
@@ -176,10 +177,6 @@ bool ABBBMonsterDirectorPresentationActor::ReadPlacementRegions(const int32 Stag
     if (!GetWorld() || !Definition || !Definition->Stages.IsValidIndex(StageIndex))
     {
         return false;
-    }
-    if (GetWorld()->IsGameWorld())
-    {
-        return UBBBMonsterDirectorPlacementProcessor::QueryRegions(*GetWorld(), Entity, StageIndex, Result);
     }
     for (const ABBBMonsterSpawnRegionPresentationActor* Region : Regions)
     {

@@ -17,7 +17,10 @@ bool UBBBMonsterVariationDefinition::IsValid() const
             return false;
         }
     }
-    return FMath::IsFinite(LowInfectionRunnerChance) && LowInfectionRunnerChance >= 0.0f && LowInfectionRunnerChance <= 1.0f
+    return MinInfection <= MaxInfection && !LocomotionWeights.ContainsNaN()
+        && FMath::IsFinite(LocomotionWeights.X + LocomotionWeights.Y + LocomotionWeights.Z)
+        && LocomotionWeights.GetMin() >= 0.0 && LocomotionWeights.X + LocomotionWeights.Y + LocomotionWeights.Z > 0.0
+        && FMath::IsFinite(LowInfectionRunnerChance) && LowInfectionRunnerChance >= 0.0f && LowInfectionRunnerChance <= 1.0f
         && FMath::IsFinite(HighInfectionRunnerChance) && HighInfectionRunnerChance >= 0.0f && HighInfectionRunnerChance <= LowInfectionRunnerChance
         && FMath::IsFinite(SpeedVariation) && SpeedVariation >= 0.0f && SpeedVariation <= 0.3f
         && FMath::IsFinite(AccelerationVariation) && AccelerationVariation >= 0.0f && AccelerationVariation <= 0.3f

@@ -1,25 +1,23 @@
 #include "BBBMonsterDirectorDefinition.h"
-#include "BBBMonsterSpawnPoolDefinition.h"
+#include "BBBMonsterSpawnDefinition.h"
 #if WITH_EDITOR
 #include "Misc/DataValidation.h"
 #endif
 
 bool UBBBMonsterDirectorDefinition::Validate(FString& Error) const
 {
-    if (Stages.IsEmpty() || !PlacementQuery || WorldMaxAlive < 1 || CandidateCount < 8 || CandidateCount > 512
-        || !FMath::IsFinite(MinPlayerDistance) || MinPlayerDistance < 0.0f
-        || !FMath::IsFinite(MinSpacing) || MinSpacing <= 0.0f
+    if (Stages.IsEmpty() || WorldMaxAlive < 1
         || !FMath::IsFinite(RetryInterval) || RetryInterval < 0.1f
         || !FMath::IsFinite(QueryTimeout) || QueryTimeout < 1.0f
         || !FMath::IsFinite(UpdateInterval) || UpdateInterval < 0.05f)
     {
-        Error = TEXT("导演需要阶段 出生查询及有效的数量与时间参数");
+        Error = TEXT("导演需要阶段及有效的数量与时间参数");
         return false;
     }
     TSet<FName> StageIds;
     for (const auto& Stage : Stages)
     {
-        if (Stage.Id.IsNone() || StageIds.Contains(Stage.Id) || !Stage.Pool || !Stage.Pool->Validate(Error)
+        if (Stage.Id.IsNone() || StageIds.Contains(Stage.Id) || !Stage.SpawnDefinition || !Stage.SpawnDefinition->Validate(Error)
             || static_cast<uint8>(Stage.Mode) > static_cast<uint8>(EBBBMonsterDirectorSpawnMode::Refill)
             || static_cast<uint8>(Stage.Activation) > static_cast<uint8>(EBBBMonsterDirectorActivation::External)
             || Stage.TotalCount < 1 || Stage.BatchCount < 1 || Stage.MaxAlive < 1

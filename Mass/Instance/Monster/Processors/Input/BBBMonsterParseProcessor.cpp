@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 UBBBMonsterParseProcessor::UBBBMonsterParseProcessor()
     : EntityQuery(*this)
 {
@@ -33,6 +34,7 @@ void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterPerceptionInputFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterStimulusFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadWrite);
 }
 
 void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -54,6 +56,7 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         auto PerceptionInputs = Chunk.GetMutableFragmentView<FBBBMonsterPerceptionInputFragment>();
         auto Stimuli = Chunk.GetMutableFragmentView<FBBBMonsterStimulusFragment>();
+        auto Variation = Chunk.GetMutableFragmentView<FBBBMonsterVariationFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Sound = PerceptionInputs[Index].Sound;
@@ -83,6 +86,10 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
                 Fact.bActive = false;
                 if (Fact.Packet.IsValid() && Fact.Packet.CanApply(Network[Index]))
                 {
+                    if (Variation[Index].Seed == 0 && Fact.Packet.BirthSeed != 0)
+                    {
+                        Variation[Index].Seed = Fact.Packet.BirthSeed;
+                    }
                     Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index]);
                 }
             }

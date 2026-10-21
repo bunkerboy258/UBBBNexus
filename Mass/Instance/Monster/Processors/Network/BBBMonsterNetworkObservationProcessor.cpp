@@ -7,6 +7,7 @@
 #include "MassEntitySubsystem.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkComponent.h"
@@ -33,6 +34,7 @@ void UBBBMonsterNetworkObservationProcessor::ConfigureQueries(const TSharedRef<F
     EntityQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -93,6 +95,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
         const auto Damage = Chunk.GetFragmentView<FBBBMonsterDamageFragment>();
         const auto Behavior = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         auto Network = Chunk.GetMutableFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Variation = Chunk.GetFragmentView<FBBBMonsterVariationFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (!bHost)
@@ -109,6 +112,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             }
             FBBBMonsterReplicationItem Item;
             Item.InstanceId = Network[Index].InstanceId;
+            Item.BirthSeed = Variation[Index].Seed;
             Item.Definition = Network[Index].Definition.Get();
             Item.Location = Transforms[Index].GetTransform().GetLocation();
             Item.Rotation = Transforms[Index].GetTransform().Rotator();

@@ -10,6 +10,22 @@ class ABBB_EVAC_API UBBBMonsterVariationDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    /** 固定感染度时将上下限设成同一个值 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|出生差异", meta = (DisplayName = "最低感染度"))
+    uint8 MinInfection = 0;
+
+    /** 感染度抽样包含此上限 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|出生差异", meta = (DisplayName = "最高感染度"))
+    uint8 MaxInfection = 255;
+
+    /** 三种现有移动风格的非负权重 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|出生差异", meta = (DisplayName = "移动风格权重"))
+    FVector LocomotionWeights = FVector(1.0, 1.0, 1.0);
+
+    /** 关闭后所有循环从零相位开始 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|出生差异", meta = (DisplayName = "随机初始相位"))
+    bool bRandomPhase = true;
+
     /** 最低感染度的跑尸概率 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|出生差异", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "低感染跑尸概率"))
     float LowInfectionRunnerChance = 0.38f;

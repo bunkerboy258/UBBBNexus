@@ -31,7 +31,7 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
         World->GetOutermost()->SetDirtyFlag(false);
     };
     UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr,
-        TEXT("/Game/_Project/System/Mass/Monster/Zombie/Male/Variants/Michael/BP_BBBZombieMichaelPresentation.BP_BBBZombieMichaelPresentation_C"));
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Michael/BP_BBBZombieMichaelPresentation.BP_BBBZombieMichaelPresentation_C"));
     if (!TestNotNull(TEXT("正式近距离表现类"), Class))
     {
         return false;

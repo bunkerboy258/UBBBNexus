@@ -38,9 +38,6 @@ struct FBBBMonsterDirectorStopLocalControlPacket final
         ++State.Revision;
         ++Spawn.RequestId;
         Spawn.Reserved = 0;
-        Spawn.bNeedsQuery = false;
-        Spawn.bResultReady = false;
-        Spawn.bCreating = false;
-        Spawn.Locations.Reset();
+
     }
 };

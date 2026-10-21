@@ -21,6 +21,8 @@ struct ABBB_EVAC_API FBBBMonsterDirectorFragment final : public FMassFragment
     TArray<FBBBMonsterSpawnRegionDefinition> Regions;
     /** 当前地图导演实例身份 */
     FGuid InstanceId;
+    /** 当前入口选择一次的随机根种子 */
+    uint32 Seed = 1;
     /** 每次重新开始递增的运行代号 */
     uint32 Generation = 0;
     /** 对外当前结果版本 */

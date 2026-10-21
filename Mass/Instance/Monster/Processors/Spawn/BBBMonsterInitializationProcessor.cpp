@@ -51,15 +51,22 @@ bool UBBBMonsterInitializationProcessor::InitializeBirth(const FGuid& Identity, 
         return false;
     }
 
-    Variation.Seed = (MixBirthBits(Identity.A ^ MixBirthBits(Identity.B) ^ MixBirthBits(Identity.C) ^ MixBirthBits(Identity.D)) & 0x7fffffffu) | 1u;
-    Variation.Infection = static_cast<uint8>(BirthSample(Variation.Seed, 0x1f83d9abu) * 256.0f);
+    if (Variation.Seed == 0)
+    {
+        return false;
+    }
+    Variation.Infection = static_cast<uint8>(Settings->MinInfection
+        + FMath::Min(static_cast<int32>(BirthSample(Variation.Seed, 0x1f83d9abu) * (Settings->MaxInfection - Settings->MinInfection + 1)),
+            Settings->MaxInfection - Settings->MinInfection));
     const float Infection = static_cast<float>(Variation.Infection) / 255.0f;
     const float RunnerChance = FMath::Lerp(Settings->LowInfectionRunnerChance, Settings->HighInfectionRunnerChance, Infection);
     Movement.MaxGait = BirthSample(Variation.Seed, 0x5be0cd19u) < RunnerChance ? EBBBMonsterGait::Sprint : EBBBMonsterGait::Walk;
     const float SpeedNoise = BirthSample(Variation.Seed, 0xa54ff53au) + BirthSample(Variation.Seed, 0x510e527fu) - 1.0f;
     Variation.SpeedScale = 1.0f + SpeedNoise * Settings->SpeedVariation;
-    Variation.PhaseOffset = BirthSample(Variation.Seed, 0x9b05688cu);
-    Variation.LocomotionStyle = static_cast<uint8>(BirthSample(Variation.Seed, 0x3c6ef372u) * 3.0f);
+    Variation.PhaseOffset = Settings->bRandomPhase ? BirthSample(Variation.Seed, 0x9b05688cu) : 0.0f;
+    const auto& Weights = Settings->LocomotionWeights;
+    const double Style = BirthSample(Variation.Seed, 0x3c6ef372u) * (Weights.X + Weights.Y + Weights.Z);
+    Variation.LocomotionStyle = Style < Weights.X ? 0 : (Style < Weights.X + Weights.Y ? 1 : 2);
     Movement.WalkSpeed = Definition.WalkSpeed * Variation.SpeedScale;
     Movement.WalkerChaseWalkSpeed = Definition.WalkerChaseWalkSpeed * Variation.SpeedScale;
     Movement.WalkerRunDistance = FMath::Lerp(Definition.WalkerRunDistanceMin, Definition.WalkerRunDistanceMax,
@@ -96,7 +103,11 @@ void UBBBMonsterInitializationProcessor::Execute(FMassEntityManager& EntityManag
             {
                 Network[Index].InstanceId = FGuid::NewGuid();
             }
-            if (!Network[Index].InstanceId.IsValid())
+            if (Variation[Index].Seed == 0 && bHost)
+            {
+                Variation[Index].Seed = static_cast<uint32>(FMath::Rand()) | 1u;
+            }
+            if (!Network[Index].InstanceId.IsValid() || Variation[Index].Seed == 0)
             {
                 continue;
             }

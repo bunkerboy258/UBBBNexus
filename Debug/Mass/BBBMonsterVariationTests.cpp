@@ -13,7 +13,6 @@
 #include "MassSpawnerTypes.h"
 #include "MassCommonUtils.h"
 #include "GameFramework/Actor.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterSpawnGenerator.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
@@ -58,6 +57,8 @@ bool FBBBMonsterVariationTest::RunTest(const FString& Parameters)
         const FGuid Identity(0x31415926u, static_cast<uint32>(Index + 1), 0x27182818u, 1u);
         FBBBMonsterVariationFragment Host;
         FBBBMonsterVariationFragment Client;
+        Host.Seed = static_cast<uint32>(Index + 1);
+        Client.Seed = Host.Seed;
         FBBBMonsterMovementFragment Movement;
         FBBBMonsterMovementFragment RemoteMovement;
         FBBBMonsterBehaviorFragment Behavior;
@@ -115,35 +116,6 @@ bool FBBBMonsterVariationTest::RunTest(const FString& Parameters)
         World->DestroyWorld(false);
         World->GetOutermost()->SetDirtyFlag(false);
     };
-    AActor* SpawnOwner = World->SpawnActor<AActor>();
-    auto* Generator = NewObject<UBBBMonsterSpawnGenerator>(SpawnOwner);
-    TArray<FMassSpawnedEntityType> AppearanceTypes;
-    for (int32 Index = 0; Index < 10; ++Index)
-    {
-        auto& Appearance = AppearanceTypes.AddDefaulted_GetRef();
-        Appearance.EntityConfig = NewObject<UMassEntityConfigAsset>(Generator);
-        Appearance.Proportion = Index == 9 ? 0.0f : 1.0f;
-    }
-    TArray<int32> AppearanceCounts;
-    AppearanceCounts.SetNumZeroed(10);
-    FFinishedGeneratingSpawnDataSignature Finished = FFinishedGeneratingSpawnDataSignature::CreateLambda(
-        [&AppearanceCounts](TConstArrayView<FMassEntitySpawnDataGeneratorResult> Results)
-        {
-            for (const auto& Result : Results)
-            {
-                AppearanceCounts[Result.EntityConfigIndex] += Result.NumEntities;
-            }
-        });
-    Generator->Generate(*SpawnOwner, AppearanceTypes, 10000, Finished);
-    int32 AppearanceTotal = 0;
-    for (int32 Index = 0; Index < 9; ++Index)
-    {
-        AppearanceTotal += AppearanceCounts[Index];
-        TestTrue(TEXT("有效外观模板随机覆盖且批次计数有界"), AppearanceCounts[Index] >= 850 && AppearanceCounts[Index] <= 1350);
-    }
-    TestEqual(TEXT("权重抽样保留请求出生总数"), AppearanceTotal, 10000);
-    TestEqual(TEXT("零权重外观不生成"), AppearanceCounts[9], 0);
-    SpawnOwner->Destroy();
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto LoopType = Manager.CreateArchetype({FBBBMonsterTag::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterVariationFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),

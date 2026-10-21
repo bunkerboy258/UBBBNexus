@@ -9,7 +9,7 @@ struct ABBB_EVAC_API FBBBMonsterVariationFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
-    /** 只由稳定出生身份派生的正数种子 */
+    /** 房主选择并分发的出生种子 与网络身份分离 */
     uint32 Seed = 0;
 
     /** 循环动作归一化起点 */

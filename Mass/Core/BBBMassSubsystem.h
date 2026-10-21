@@ -9,6 +9,10 @@
 
 class UMassEntityConfigAsset;
 class UMassProcessor;
+struct FBBBMonsterSpawnRequestLocalControlPacket;
+struct FBBBMonsterSpawnPauseLocalControlPacket;
+struct FBBBMonsterSpawnResumeLocalControlPacket;
+struct FBBBMonsterSpawnStopLocalControlPacket;
 class ABBBMassNavigationQueryActor;
 struct FConstStructView;
 struct FBBBMonsterDirectorInitializeLocalControlPacket;
@@ -17,8 +21,6 @@ struct FBBBMonsterDirectorPauseLocalControlPacket;
 struct FBBBMonsterDirectorResumeLocalControlPacket;
 struct FBBBMonsterDirectorStopLocalControlPacket;
 struct FBBBMonsterDirectorTriggerLocalControlPacket;
-struct FBBBMonsterDirectorQueryResultLocalControlPacket;
-struct FBBBMonsterDirectorCreatedLocalControlPacket;
 struct FBBBMonsterDirectorStateAuthorityFactPacket;
 struct FBBBProjectileSpawnLocalControlPacket;
 struct FBBBMonsterDamageLocalControlPacket;
@@ -137,6 +139,10 @@ public:
     }
 
 private:
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnRequestLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnPauseLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnResumeLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnStopLocalControlPacket& Packet);
     /** 只提供当次 APS 查询参数 不保存实体状态 */
     UPROPERTY(Transient)
     TObjectPtr<ABBBMassNavigationQueryActor> NavigationQueryActor;
@@ -147,8 +153,6 @@ private:
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorResumeLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStopLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorTriggerLocalControlPacket& Packet);
-    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorQueryResultLocalControlPacket& Packet);
-    bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorCreatedLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStateAuthorityFactPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBProjectileSpawnLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageLocalControlPacket& Packet);

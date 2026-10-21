@@ -92,7 +92,7 @@ bool FBBBMonsterCorpseTest::RunTest(const FString& Parameters)
     for (int32 Index = 0; Index < Names.Num(); ++Index)
     {
         const FString Gender = Index < 6 ? TEXT("Male") : TEXT("Female");
-        const FString Root = TEXT("/Game/_Project/System/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Names[Index] + TEXT("/");
+        const FString Root = TEXT("/Game/_Project/Mass/Monster/Zombie/") + Gender + TEXT("/Variants/") + Names[Index] + TEXT("/");
         const FString Name = TEXT("BP_BBBZombie") + Names[Index] + TEXT("Presentation");
         UClass* Class = LoadClass<ABBBMonsterPresentationActor>(nullptr, *(Root + Name + TEXT(".") + Name + TEXT("_C")));
         if (!TestNotNull(Names[Index], Class))

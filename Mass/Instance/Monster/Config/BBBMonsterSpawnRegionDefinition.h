@@ -27,7 +27,7 @@ struct ABBB_EVAC_API FBBBMonsterSpawnRegionDefinition final
     /** @return 标识与区域尺寸是否有效 */
     bool IsValid() const
     {
-        return static_cast<uint8>(Shape) <= static_cast<uint8>(EBBBMonsterSpawnRegionShape::Cylinder)
+        return static_cast<uint8>(Shape) <= static_cast<uint8>(EBBBMonsterSpawnRegionShape::Disk)
             && !Id.IsNone() && !Transform.ContainsNaN() && !Extent.ContainsNaN()
             && Extent.GetMin() > 0.0 && Transform.GetScale3D().GetMin() > 0.0;
     }
@@ -39,7 +39,7 @@ struct ABBB_EVAC_API FBBBMonsterSpawnRegionDefinition final
     bool Contains(const FVector& Location) const
     {
         const FVector Local = Transform.InverseTransformPosition(Location);
-        if (Shape == EBBBMonsterSpawnRegionShape::Cylinder)
+        if (Shape != EBBBMonsterSpawnRegionShape::Box)
         {
             return Local.SizeSquared2D() <= FMath::Square(Extent.X) && FMath::Abs(Local.Z) <= Extent.Z;
         }
