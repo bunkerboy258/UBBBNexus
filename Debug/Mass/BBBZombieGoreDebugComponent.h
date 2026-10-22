@@ -80,6 +80,22 @@ public:
     UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织高光", ClampMin = "0", ClampMax = "1"))
     float TissueSpecular = 0.35f;
 
+    /** 组织纹理与法线的细节倍率 */
+    UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "组织细节强度", ClampMin = "0", ClampMax = "2"))
+    float TissueDetailStrength = 0.7f;
+
+    /** 只控制局部湿润亮斑 保留组织粗糙底层 */
+    UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "湿润程度", ClampMin = "0", ClampMax = "1"))
+    float TissueWetness = 0.65f;
+
+    /** 最大四厘米的断口浸血范围 不改变断开位置 */
+    UPROPERTY(EditAnywhere, Category = "血腥调试|伤口", meta = (DisplayName = "边缘浸血宽度", ClampMin = "0", ClampMax = "4", Units = "cm"))
+    float CutBloodWidth = 1.2f;
+
+    /** 只限制昂贵的伤口绘制与普通喷血 不限制伤害 断肢或程序化受击 */
+    UPROPERTY(EditAnywhere, Category = "血腥调试|性能", meta = (DisplayName = "每秒血效采样上限", ClampMin = "1", ClampMax = "60"))
+    float MaximumBloodSamplesPerSecond = 30.0f;
+
     /** 手动预览的目标部位 */
     UPROPERTY(EditAnywhere, Category = "血腥调试|手动预览", meta = (DisplayName = "预览部位"))
     EBBBMonsterHitRegion PreviewRegion = EBBBMonsterHitRegion::Torso;
@@ -137,6 +153,8 @@ private:
     FBBBMonsterHitReactionFragment CurrentHit;
     /** 当前恢复周期的截止世界时间 */
     double NextResetTime = 0;
+    /** 同一靶子的下次普通血效采样时间 不积压命中事件 */
+    double NextBloodSampleTime = 0;
     /** 检测用户是否调整恢复间隔 不保存历次设置 */
     float AppliedResetInterval = -1;
     /** 检测断肢预览开关变化以恢复被停用的局部物理 */

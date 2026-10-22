@@ -54,9 +54,16 @@ void UBBBZombieGoreDebugComponent::ApplyHit(const FBBBMonsterHitReactionFragment
         return;
     }
     auto* Surface = CastChecked<ABBBZombieHitReactionTarget>(GetOwner())->GorePresentation.Get();
-    Surface->Stamp(Hit, Surface->DefaultStrength * WoundStrength);
+    const double Now = GetWorld()->GetTimeSeconds();
+    const bool bSampleBlood = Now >= NextBloodSampleTime;
+    if (bSampleBlood)
+    {
+        NextBloodSampleTime = Now + 1.0 / FMath::Clamp(MaximumBloodSamplesPerSecond, 1.0f, 60.0f);
+        Surface->Stamp(Hit, Surface->DefaultStrength * WoundStrength);
+    }
     DamageRatios[Region] = FMath::Clamp(DamageRatios[Region] + DamageStep, 0.0f, 1.0f);
-    if (bEnableHitBlood && BloodSettings)
+    const bool bNewSevering = Region > 0 && bAllowSevering && DamageRatios[Region] >= 1 && Surface->SelectedTiers[Region] == 0;
+    if (bEnableHitBlood && BloodSettings && (bSampleBlood || bNewSevering))
     {
         FBBBMonsterBloodImpact Impact;
         Impact.Position = Hit.Position;
@@ -65,8 +72,7 @@ void UBBBZombieGoreDebugComponent::ApplyHit(const FBBBMonsterHitReactionFragment
         Impact.Region = Hit.Region;
         Impact.Seed = Hit.Serial ^ static_cast<uint32>(PatternSeed);
         Impact.Source = GetOwner();
-        Impact.bSevering = Region > 0 && bAllowSevering && DamageRatios[Region] >= 1
-            && Surface->SelectedTiers[Region] == 0;
+        Impact.bSevering = bNewSevering;
         GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>()->Publish(*BloodSettings, MakeArrayView(&Impact, 1));
     }
     if (Region > 0 && bAllowSevering && DamageRatios[Region] >= 1)
@@ -84,7 +90,7 @@ void UBBBZombieGoreDebugComponent::ApplyCurrentWounds()
     }
     auto* Surface = CastChecked<ABBBZombieHitReactionTarget>(GetOwner())->GorePresentation.Get();
     Surface->SetStyle(BloodTint, TissueTint, bShowBloodStains ? BloodStrength : 0,
-        TissueRoughness, TissueSpecular, bShowWounds);
+        TissueRoughness, TissueSpecular, bShowWounds, TissueDetailStrength, TissueWetness, CutBloodWidth);
 }
 
 void UBBBZombieGoreDebugComponent::ResetTarget()

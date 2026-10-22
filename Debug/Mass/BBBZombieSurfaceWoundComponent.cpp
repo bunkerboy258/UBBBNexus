@@ -33,6 +33,24 @@ bool UBBBZombieSurfaceWoundComponent::InitializeSurface(UBBBZombieGoreSurfaceDef
     Body = Target->TargetMesh;
     Body->SetSkeletalMesh(Definition.Body);
     Body->SetForcedLOD(1);
+    const auto* RenderData = Definition.Body->GetResourceForRendering();
+    if (!RenderData || RenderData->LODRenderData.IsEmpty() || Definition.WoundCells.IsEmpty()
+        || RenderData->LODRenderData[0].GetNumVertices() != Definition.WoundVertexCount
+        || RenderData->LODRenderData[0].MultiSizeIndexContainer.GetIndexBuffer()->Num() != Definition.WoundIndexCount)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[BBB血腥调试]身体查询数据需要在编辑阶段重建"));
+        return false;
+    }
+    WoundLookup.Reset();
+    for (int32 Index = 0; Index < Definition.WoundCells.Num(); ++Index)
+    {
+        const auto& Cell = Definition.WoundCells[Index];
+        if (Cell.Triangles.Num() != Cell.Centers.Num())
+        {
+            return false;
+        }
+        WoundLookup.FindOrAdd(Cell.Bone).Add(Cell.Coordinate, Index);
+    }
     Mask = UTexture2D::CreateTransient(Definition.AtlasSize, Definition.AtlasSize, PF_B8G8R8A8);
     if (!Mask)
     {
@@ -46,6 +64,13 @@ bool UBBBZombieSurfaceWoundComponent::InitializeSurface(UBBBZombieGoreSurfaceDef
     Mask->UpdateResource();
     Pixels.Init(FColor(0, 0, 0, 255), Definition.AtlasSize * Definition.AtlasSize);
     MaskBytes = Pixels.Num() * sizeof(FColor);
+    // 初始化只上传一次空白纹理 后续只上传已改动的块
+    for (int32 Index = 0; Index < (Definition.AtlasSize / 32) * (Definition.AtlasSize / 32); ++Index)
+    {
+        DirtyTiles.Add(Index);
+    }
+    bMaskDirty = true;
+    UploadMask();
     Materials.Reset();
     for (int32 Index = 0; Index < Body->GetNumMaterials(); ++Index)
     {
@@ -57,8 +82,79 @@ bool UBBBZombieSurfaceWoundComponent::InitializeSurface(UBBBZombieGoreSurfaceDef
         Material->SetTextureParameterValue(TEXT("TargetWoundMask"), Mask);
         Materials.Add(Material);
     }
+    PrepareParts();
     ResetSurface();
     return true;
+}
+
+void UBBBZombieSurfaceWoundComponent::PrepareParts()
+{
+    for (const auto& Cut : Resources->Cuts)
+    {
+        auto* Cap = NewObject<USkeletalMeshComponent>(GetOwner());
+        Cap->SetSkeletalMesh(Cut.Cap);
+        Cap->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Cap->SetCanEverAffectNavigation(false);
+        Cap->SetupAttachment(Body);
+        Cap->RegisterComponent();
+        Cap->SetLeaderPoseComponent(Body);
+        Cap->SetComponentTickEnabled(false);
+        Cap->SetVisibility(false);
+        for (int32 Slot = 0; Slot < Cap->GetNumMaterials(); ++Slot)
+        {
+            DetailMaterials.Add(Cap->CreateDynamicMaterialInstance(Slot));
+        }
+        PreparedCaps.Add(Cap);
+        auto* Piece = NewObject<USkeletalMeshComponent>(GetOwner());
+        Piece->SetSkeletalMesh(Cut.Piece);
+        Piece->SetCollisionObjectType(ECC_PhysicsBody);
+        Piece->SetCollisionResponseToAllChannels(ECR_Ignore);
+        Piece->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+        Piece->SetCanEverAffectNavigation(false);
+        Piece->SetGenerateOverlapEvents(false);
+        Piece->SetLinearDamping(.35f);
+        Piece->SetAngularDamping(1.5f);
+        Piece->RegisterComponent();
+        Piece->SetAnimInstanceClass(UBBBZombieGibPoseAnimInstance::StaticClass());
+        const auto& BodySlots = Body->GetSkeletalMeshAsset()->GetMaterials();
+        const auto& PieceSlots = Cut.Piece->GetMaterials();
+        for (int32 Slot = 0; Slot < PieceSlots.Num(); ++Slot)
+        {
+            const FName Name = PieceSlots[Slot].MaterialSlotName;
+            const int32 Source = BodySlots.IndexOfByPredicate([Name](const auto& Item) { return Item.MaterialSlotName == Name; });
+            if (Source != INDEX_NONE)
+            {
+                Piece->SetMaterial(Slot, Body->GetMaterial(Source));
+            }
+            if (Source == INDEX_NONE)
+            {
+                DetailMaterials.Add(Piece->CreateDynamicMaterialInstance(Slot));
+            }
+        }
+        RetirePiece(*Piece);
+        PreparedPieces.Add(Piece);
+    }
+    HeavyWound = NewObject<UStaticMeshComponent>(GetOwner());
+    HeavyWound->SetStaticMesh(Resources->HeavyWound);
+    HeavyWound->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    HeavyWound->SetCanEverAffectNavigation(false);
+    HeavyWound->RegisterComponent();
+    HeavyWound->SetComponentTickEnabled(false);
+    HeavyWound->SetVisibility(false);
+    DetailMaterials.Add(HeavyWound->CreateDynamicMaterialInstance(0));
+}
+
+void UBBBZombieSurfaceWoundComponent::RetirePiece(USkeletalMeshComponent& Piece)
+{
+    Piece.SetAllPhysicsLinearVelocity(FVector::ZeroVector);
+    Piece.SetAllPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+    Piece.SetAllBodiesSimulatePhysics(false);
+    Piece.SetAllBodiesPhysicsBlendWeight(0);
+    Piece.SetEnableGravity(false);
+    Piece.SetCollisionResponseToAllChannels(ECR_Ignore);
+    Piece.SetVisibility(false);
+    Piece.bPauseAnims = true;
+    Piece.SetComponentTickEnabled(false);
 }
 
 void UBBBZombieSurfaceWoundComponent::UploadMask()
@@ -67,17 +163,38 @@ void UBBBZombieSurfaceWoundComponent::UploadMask()
     {
         return;
     }
-    const uint32 Size = Resources->AtlasSize;
-    auto* Data = new uint8[MaskBytes];
-    FMemory::Memcpy(Data, Pixels.GetData(), MaskBytes);
-    auto* Region = new FUpdateTextureRegion2D(0, 0, 0, 0, Size, Size);
-    Mask->UpdateTextureRegions(0, 1, Region, Size * sizeof(FColor), sizeof(FColor), Data,
+    if (DirtyTiles.IsEmpty())
+    {
+        bMaskDirty = false;
+        return;
+    }
+    constexpr int32 TileSize = 32;
+    constexpr int32 TileBytes = TileSize * TileSize * sizeof(FColor);
+    const int32 Size = Resources->AtlasSize;
+    const int32 TileColumns = Size / TileSize;
+    auto* Data = new uint8[DirtyTiles.Num() * TileBytes];
+    auto* Regions = new FUpdateTextureRegion2D[DirtyTiles.Num()];
+    int32 Index = 0;
+    for (const int32 Tile : DirtyTiles)
+    {
+        const int32 X = (Tile % TileColumns) * TileSize;
+        const int32 Y = (Tile / TileColumns) * TileSize;
+        Regions[Index] = FUpdateTextureRegion2D(X, Y, 0, Index * TileSize, TileSize, TileSize);
+        for (int32 Row = 0; Row < TileSize; ++Row)
+        {
+            FMemory::Memcpy(Data + Index * TileBytes + Row * TileSize * sizeof(FColor),
+                Pixels.GetData() + (Y + Row) * Size + X, TileSize * sizeof(FColor));
+        }
+        ++Index;
+    }
+    Mask->UpdateTextureRegions(0, DirtyTiles.Num(), Regions, TileSize * sizeof(FColor), sizeof(FColor), Data,
         [](uint8* Source, const FUpdateTextureRegion2D* Update)
         {
             delete[] Source;
-            delete Update;
+            delete[] Update;
         });
     bMaskDirty = false;
+    DirtyTiles.Reset();
 }
 
 bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment& Hit, const float Strength)
@@ -100,14 +217,64 @@ bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment
     }
     TArray<FMatrix44f> Matrices;
     Body->CacheRefToLocalMatrices(Matrices);
-    TArray<FVector3f> Positions;
-    USkinnedMeshComponent::ComputeSkinnedPositions(Body, Positions, Matrices, LOD, *Weights);
     const FTransform Transform = Body->GetComponentTransform();
-    TArray<FVector> WorldPositions;
-    WorldPositions.Reserve(Positions.Num());
-    for (const FVector3f Position : Positions)
+    const float HitRadius = FMath::Clamp(Radius * FMath::Sqrt(FMath::Clamp(Strength, 0.1f, 4.0f)), 0.2f, 10.0f);
+    const float SearchRadius = HitRadius * 3 + 12;
+    TMap<int32, float> CandidateDistances;
+    for (const auto& Bone : WoundLookup)
     {
-        WorldPositions.Add(Transform.TransformPosition(FVector(Position)));
+        const FVector Local = Body->GetSocketTransform(Bone.Key).InverseTransformPosition(Hit.Position);
+        for (const auto& Cell : Bone.Value)
+        {
+            const FVector CellMin = FVector(Cell.Key) * 4;
+            const float Distance = FBox(CellMin, CellMin + FVector(4)).ComputeSquaredDistanceToPoint(Local);
+            if (Distance <= FMath::Square(SearchRadius))
+            {
+                const auto& Prepared = Resources->WoundCells[Cell.Value];
+                for (int32 Index = 0; Index < Prepared.Triangles.Num(); ++Index)
+                {
+                    const float CenterDistance = FVector::DistSquared(Local, Prepared.Centers[Index]);
+                    auto* Existing = CandidateDistances.Find(Prepared.Triangles[Index]);
+                    if (!Existing)
+                    {
+                        CandidateDistances.Add(Prepared.Triangles[Index], CenterDistance);
+                    }
+                    if (Existing)
+                    {
+                        *Existing = FMath::Min(*Existing, CenterDistance);
+                    }
+                }
+            }
+        }
+    }
+    TArray<TPair<int32, float>> Ranked;
+    for (const auto& Candidate : CandidateDistances)
+    {
+        Ranked.Add(Candidate);
+    }
+    Ranked.Sort([](const auto& A, const auto& B) { return A.Value < B.Value; });
+    TArray<int32> Candidates;
+    // 单发最多处理两千零四十八个三角面 不因射速增长退回全身遍历
+    for (const auto& Candidate : Ranked)
+    {
+        Candidates.Add(Candidate.Key);
+        if (Candidates.Num() >= 2048)
+        {
+            break;
+        }
+    }
+    TMap<uint32, FVector> WorldPositions;
+    for (const int32 Index : Candidates)
+    {
+        for (int32 Corner = 0; Corner < 3; ++Corner)
+        {
+            const uint32 Vertex = Indices->Get(Index + Corner);
+            if (!WorldPositions.Contains(Vertex))
+            {
+                const FVector Position(USkinnedMeshComponent::GetSkinnedVertexPosition(Body, Vertex, LOD, *Weights, Matrices));
+                WorldPositions.Add(Vertex, Transform.TransformPosition(Position));
+            }
+        }
     }
     FVector Center = Hit.Position;
     FVector Normal = Hit.Normal.GetSafeNormal(UE_SMALL_NUMBER, -Hit.Direction);
@@ -122,7 +289,7 @@ bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment
         return SelectedTiers.IsValidIndex(Region) && SelectedTiers[Region] > 0
             && Tier >= SelectedTiers[Region];
     };
-    for (int32 Index = 0; Index + 2 < Indices->Num(); Index += 3)
+    for (const int32 Index : Candidates)
     {
         const uint32 A = Indices->Get(Index);
         const uint32 B = Indices->Get(Index + 1);
@@ -164,14 +331,13 @@ bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment
     FRandomStream Random(Hit.Serial * 7919u + 17u);
     const float Phase = Random.FRandRange(-PI, PI);
     const float Stretch = Random.FRandRange(0.85f, 1.15f);
-    const float HitRadius = FMath::Clamp(Radius * FMath::Sqrt(FMath::Clamp(Strength, 0.1f, 4.0f)), 0.2f, 10.0f);
     const auto* Target = CastChecked<ABBBZombieHitReactionTarget>(GetOwner());
-    const bool bOpenHeavy = Hit.Region == EBBBMonsterHitRegion::Torso && !HeavyWound && Resources->HeavyWound
+    const bool bOpenHeavy = Hit.Region == EBBBMonsterHitRegion::Torso && !bHeavyActive && Resources->HeavyWound
         && Target->GoreDebug->DamageRatios[0] + Target->GoreDebug->DamageStep >= 0.6f;
     const float Extent = HitRadius * 3.0f;
     const int32 Size = Resources->AtlasSize;
     bool bWritten = false;
-    for (int32 Index = 0; Index + 2 < Indices->Num(); Index += 3)
+    for (const int32 Index : Candidates)
     {
         const uint32 A = Indices->Get(Index);
         const uint32 B = Indices->Get(Index + 1);
@@ -238,6 +404,9 @@ bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment
                 {
                     Pixel.B = 255;
                 }
+                const int32 Tile = (Y / 32) * (Size / 32) + X / 32;
+                DirtyTiles.Add(Tile);
+                PaintedTiles.Add(Tile);
                 bWritten = true;
             }
         }
@@ -249,13 +418,8 @@ bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment
         HeavyBarycentric = FMath::ComputeBaryCentric2D(Center, WorldPositions[HeavyTriangle.X],
             WorldPositions[HeavyTriangle.Y], WorldPositions[HeavyTriangle.Z]);
         HeavyRadius = HitRadius;
-        HeavyWound = NewObject<UStaticMeshComponent>(GetOwner());
-        HeavyWound->SetStaticMesh(Resources->HeavyWound);
-        HeavyWound->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        HeavyWound->SetCanEverAffectNavigation(false);
-        HeavyWound->PrimaryComponentTick.bCanEverTick = false;
-        HeavyWound->RegisterComponent();
-        DetailMaterials.Add(HeavyWound->CreateDynamicMaterialInstance(0));
+        bHeavyActive = true;
+        HeavyWound->SetVisibility(true);
         UpdateHeavyWound();
     }
     return bWritten;
@@ -263,7 +427,7 @@ bool UBBBZombieSurfaceWoundComponent::Stamp(const FBBBMonsterHitReactionFragment
 
 void UBBBZombieSurfaceWoundComponent::UpdateHeavyWound()
 {
-    if (!HeavyWound || !Body)
+    if (!HeavyWound || !bHeavyActive || !Body)
     {
         return;
     }
@@ -315,18 +479,9 @@ bool UBBBZombieSurfaceWoundComponent::Sever(const EBBBMonsterHitRegion Region,
     {
         return false;
     }
-    auto* Cap = NewObject<USkeletalMeshComponent>(GetOwner());
-    Cap->SetSkeletalMesh(Cut->Cap);
-    Cap->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    Cap->SetCanEverAffectNavigation(false);
-    Cap->SetupAttachment(Body);
-    Cap->RegisterComponent();
-    Cap->SetLeaderPoseComponent(Body);
-    for (int32 Index = 0; Index < Cap->GetNumMaterials(); ++Index)
-    {
-        DetailMaterials.Add(Cap->CreateDynamicMaterialInstance(Index));
-    }
-    Cap->PrimaryComponentTick.bCanEverTick = false;
+    const int32 CutIndex = static_cast<int32>(Cut - Resources->Cuts.GetData());
+    auto* Cap = PreparedCaps[CutIndex].Get();
+    Cap->SetVisibility(true);
     Caps.Add(Cap);
     SelectedTiers[R] = Tier;
     Body->SetCustomPrimitiveDataFloat(R + 1, Tier);
@@ -336,48 +491,25 @@ bool UBBBZombieSurfaceWoundComponent::Sever(const EBBBMonsterHitRegion Region,
     }
     while (Pieces.Num() >= FMath::Clamp(MaximumPieces, 5, 24))
     {
-        Pieces[0]->DestroyComponent();
+        RetirePiece(*Pieces[0]);
         Pieces.RemoveAt(0);
         PieceAges.RemoveAt(0);
     }
-    auto* Piece = NewObject<USkeletalMeshComponent>(GetOwner());
-    Piece->SetSkeletalMesh(Cut->Piece);
+    auto* Piece = PreparedPieces[CutIndex].Get();
+    // 掉落件的断点标签为零 仅将对应部位的断开事实提供给边缘浸血材质
+    Piece->SetCustomPrimitiveDataFloat(R + 1, Tier);
     Piece->SetWorldTransform(Body->GetComponentTransform());
-    Piece->SetCollisionObjectType(ECC_PhysicsBody);
-    Piece->SetCollisionResponseToAllChannels(ECR_Ignore);
     Piece->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
     Piece->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-    Piece->SetCanEverAffectNavigation(false);
-    Piece->SetGenerateOverlapEvents(false);
-    Piece->SetLinearDamping(0.35f);
-    Piece->SetAngularDamping(1.5f);
     Piece->bPauseAnims = false;
-    Piece->RegisterComponent();
-    Piece->SetAnimInstanceClass(UBBBZombieGibPoseAnimInstance::StaticClass());
+    Piece->SetVisibility(true);
+    Piece->SetComponentTickEnabled(true);
     if (auto* Animation = Cast<UBBBZombieGibPoseAnimInstance>(Piece->GetAnimInstance()))
     {
         Animation->Capture(*Body);
     }
     Piece->TickAnimation(0.0f, false);
     Piece->RefreshBoneTransforms();
-    const auto& SourceSlots = Body->GetSkeletalMeshAsset()->GetMaterials();
-    const auto& PieceSlots = Cut->Piece->GetMaterials();
-    for (int32 Index = 0; Index < PieceSlots.Num(); ++Index)
-    {
-        const FName Name = PieceSlots[Index].MaterialSlotName;
-        const int32 SourceIndex = SourceSlots.IndexOfByPredicate([Name](const auto& Slot)
-        {
-            return Slot.MaterialSlotName == Name;
-        });
-        if (SourceIndex != INDEX_NONE)
-        {
-            Piece->SetMaterial(Index, Body->GetMaterial(SourceIndex));
-        }
-        if (SourceIndex == INDEX_NONE)
-        {
-            DetailMaterials.Add(Piece->CreateDynamicMaterialInstance(Index));
-        }
-    }
     Piece->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
     Piece->SetEnableGravity(true);
     Piece->SetAllBodiesSimulatePhysics(true);
@@ -401,7 +533,7 @@ void UBBBZombieSurfaceWoundComponent::Advance(const float DeltaSeconds)
         PieceAges[Index] += DeltaSeconds;
         if (PieceAges[Index] >= FMath::Clamp(PieceLifetime, 1.0f, 120.0f))
         {
-            Pieces[Index]->DestroyComponent();
+            RetirePiece(*Pieces[Index]);
             Pieces.RemoveAt(Index);
             PieceAges.RemoveAt(Index);
         }
@@ -453,21 +585,20 @@ void UBBBZombieSurfaceWoundComponent::ResetSurface()
 {
     if (HeavyWound)
     {
-        HeavyWound->DestroyComponent();
-        HeavyWound = nullptr;
+        HeavyWound->SetVisibility(false);
+        bHeavyActive = false;
     }
     for (USkeletalMeshComponent* Cap : Caps)
     {
-        Cap->DestroyComponent();
+        Cap->SetVisibility(false);
     }
     for (USkeletalMeshComponent* Piece : Pieces)
     {
-        Piece->DestroyComponent();
+        RetirePiece(*Piece);
     }
     Caps.Reset();
     Pieces.Reset();
     PieceAges.Reset();
-    DetailMaterials.Reset();
     if (Resources && Body)
     {
         for (const auto& Cut : Resources->Cuts)
@@ -485,22 +616,33 @@ void UBBBZombieSurfaceWoundComponent::ResetSurface()
     SelectedTiers.Init(0, 6);
     DripRemaining.Init(0, 6);
     DripClock = 0;
-    for (FColor& Pixel : Pixels)
+    const int32 Size = Resources ? Resources->AtlasSize : 0;
+    for (const int32 Tile : PaintedTiles)
     {
-        Pixel = FColor(0, 0, 0, 255);
+        const int32 X = (Tile % (Size / 32)) * 32;
+        const int32 Y = (Tile / (Size / 32)) * 32;
+        for (int32 Row = 0; Row < 32; ++Row)
+        {
+            for (int32 Column = 0; Column < 32; ++Column)
+            {
+                Pixels[(Y + Row) * Size + X + Column] = FColor(0, 0, 0, 255);
+            }
+        }
+        DirtyTiles.Add(Tile);
     }
-    bMaskDirty = true;
+    PaintedTiles.Reset();
+    bMaskDirty = !DirtyTiles.IsEmpty();
     UploadMask();
 }
 
 void UBBBZombieSurfaceWoundComponent::SetStyle(const FLinearColor Blood, const FLinearColor Tissue, const float Scale,
-    const float Roughness, const float Specular, const bool bVisible)
+    const float Roughness, const float Specular, const bool bVisible, const float Detail, const float Wetness, const float RimWidth)
 {
     if (HeavyWound)
     {
-        HeavyWound->SetVisibility(bVisible);
+        HeavyWound->SetVisibility(bVisible && bHeavyActive);
     }
-    const auto Apply = [Blood, Tissue, Scale, Roughness, Specular, bVisible](UMaterialInstanceDynamic* Material)
+    const auto Apply = [Blood, Tissue, Scale, Roughness, Specular, bVisible, Detail, Wetness, RimWidth](UMaterialInstanceDynamic* Material)
     {
         if (!Material)
         {
@@ -512,6 +654,9 @@ void UBBBZombieSurfaceWoundComponent::SetStyle(const FLinearColor Blood, const F
         Material->SetScalarParameterValue(TEXT("TargetBloodStrength"), FMath::Clamp(Scale, 0.0f, 3.0f));
         Material->SetScalarParameterValue(TEXT("TargetTissueRoughness"), FMath::Clamp(Roughness, 0.0f, 1.0f));
         Material->SetScalarParameterValue(TEXT("TargetTissueSpecular"), FMath::Clamp(Specular, 0.0f, 1.0f));
+        Material->SetScalarParameterValue(TEXT("TargetTissueDetail"), FMath::Clamp(Detail, 0.0f, 2.0f));
+        Material->SetScalarParameterValue(TEXT("TargetTissueWetness"), FMath::Clamp(Wetness, 0.0f, 1.0f));
+        Material->SetScalarParameterValue(TEXT("TargetCutBloodWidth"), FMath::Clamp(RimWidth, 0.0f, 4.0f));
     };
     for (UMaterialInstanceDynamic* Material : Materials)
     {
@@ -526,8 +671,27 @@ void UBBBZombieSurfaceWoundComponent::SetStyle(const FLinearColor Blood, const F
 void UBBBZombieSurfaceWoundComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     ResetSurface();
+    for (USkeletalMeshComponent* Cap : PreparedCaps)
+    {
+        Cap->DestroyComponent();
+    }
+    for (USkeletalMeshComponent* Piece : PreparedPieces)
+    {
+        Piece->DestroyComponent();
+    }
+    if (HeavyWound)
+    {
+        HeavyWound->DestroyComponent();
+        HeavyWound = nullptr;
+    }
+    PreparedCaps.Reset();
+    PreparedPieces.Reset();
+    DetailMaterials.Reset();
     Materials.Reset();
     Pixels.Reset();
+    WoundLookup.Reset();
+    DirtyTiles.Reset();
+    PaintedTiles.Reset();
     Mask = nullptr;
     Resources = nullptr;
     Body = nullptr;
