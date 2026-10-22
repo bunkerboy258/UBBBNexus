@@ -208,6 +208,21 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "角色双手握姿"))
     UAnimSequence *GetCharacterGripPose() const;
 
+    /** @return 当前装备的开火手指握姿 未制作时使用同装备的未开火握姿 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "角色开火握姿"))
+    UAnimSequence *GetCharacterFireGripPose() const
+    {
+        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+        return Main->SourceCharacterFireGripPose ? Main->SourceCharacterFireGripPose.Get() : Main->SourceCharacterGripPose.Get();
+    }
+
+    /** @return 已有开火输入的角色表现快照 */
+    UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "角色开火意图"))
+    bool HasFireIntent() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceFire;
+    }
+
     /** @return 当前装备在右前臂空间的右腕增量 保留动作原始旋转 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "右腕握持旋转偏移"))
     FRotator GetRightHandGripRotationOffset() const
@@ -272,6 +287,13 @@ private:
     /** 由角色动画系统统一发布的双手握姿引用 */
     UPROPERTY(Transient)
     TObjectPtr<UAnimSequence> SourceCharacterGripPose = nullptr;
+
+    /** 角色动画系统发布的开火手指姿势 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimSequence> SourceCharacterFireGripPose = nullptr;
+
+    /** 角色动画系统发布的已有开火输入快照 */
+    bool bSourceFire = false;
 
     /** 角色动画系统发布的父骨骼空间右腕旋转增量 */
     UPROPERTY(Transient)

@@ -38,6 +38,14 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
 
+    /** 当前装备的开火意图手指握姿 */
+    UPROPERTY(Transient)
+    TObjectPtr<UAnimSequence> CharacterFireGripPose = nullptr;
+
+    /** 已有开火输入的表现快照 与实际发射结果无关 */
+    UPROPERTY(Transient)
+    bool bFire = false;
+
     /** 当前实际装备的父骨骼空间右腕增量 空手时为零 */
     UPROPERTY(Transient)
     FRotator RightHandGripRotationOffset = FRotator::ZeroRotator;

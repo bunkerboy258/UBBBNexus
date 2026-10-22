@@ -42,6 +42,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "2", DisplayName = "角色双手握姿", ToolTip = "使用角色骨架的非加法静态序列 左右手指分别混合 未配置时保留当前动作的手指姿势"))
     TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
 
+    /** 开火意图持续时供角色手指层固定采样的绝对握姿 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "3", DisplayName = "角色开火握姿", ToolTip = "只覆盖手指 挂接 手腕和左手IK沿用未开火握姿的同一套标定"))
+    TObjectPtr<UAnimSequence> CharacterFireGripPose = nullptr;
+
     /** 在父骨骼空间叠加到角色原始右腕动作的握持旋转 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "4", DisplayName = "右腕握持旋转偏移", ToolTip = "相对右前臂的增量旋转 单位度 保留动作原右腕轨迹 挂接偏移须按相同参考姿势反补偿 零值不改变动作"))
     FRotator RightHandGripRotationOffset = FRotator::ZeroRotator;

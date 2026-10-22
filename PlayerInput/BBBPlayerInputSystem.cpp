@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBCharacterFireIntentLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
@@ -49,6 +50,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
         FBBBCharacterMovementLocalControlPacket ReleasedControl;
         ReleasedControl.FacingWorld = Previous->GetActorRotation();
         Previous->SubmitInput(ReleasedControl);
+        Previous->SubmitInput(FBBBCharacterFireIntentLocalControlPacket{false});
         Previous->SubmitInput(FBBBCharacterRescueCancelLocalControlPacket{});
         SubmitRun(false);
         SubmitCrouch(false);
@@ -400,6 +402,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     AimState.AimTargetWorld = ResolveAimTargetWorld(ViewLocation, Facing.Vector());
     Character->SubmitInput(MovementState);
     Character->SubmitInput(AimState);
+    Character->SubmitInput(FBBBCharacterFireIntentLocalControlPacket{bFire});
 
     // 开火与跳跃以包的存在与否表达按下 未按下时不投递
     if (bFire && Character->RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None)

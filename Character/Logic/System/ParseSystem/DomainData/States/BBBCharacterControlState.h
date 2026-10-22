@@ -20,6 +20,9 @@ struct FBBBCharacterControlState final
     /** 是否保持瞄准 */
     bool bAim = false;
 
+    /** 输入适配层已有开火意图的只读消费快照 不裁决射击 */
+    bool bFire = false;
+
     /** 是否请求跑步 */
     bool bRun = false;
 

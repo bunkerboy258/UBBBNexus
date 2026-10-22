@@ -7,12 +7,14 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/ExternalDomain/States/BBBCharacterWorldState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/Context/BBBCharacterNetworkUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 
 void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Context) const
 {
     // 只投影本次需要复制的字段 避免观察流程改变领域瞄准状态
     FBBBReplicatedAimState ReplicatedAimState;
     ReplicatedAimState.bIsAiming = Context.AimState.bIsAiming;
+    ReplicatedAimState.bFire = Context.Data.Parse.ReadControlState().bFire;
     ReplicatedAimState.AimTargetWorld = Context.AimState.AimTargetWorld;
 
     // 首次观测立即发送 瞄准开关变化优先于周期节流
@@ -21,6 +23,7 @@ void FBBBAimObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &Cont
     {
         const FBBBReplicatedAimState &Previous = Context.AimObservationState.LastObservedAim.GetValue();
         bShouldTransmit = Previous.bIsAiming != ReplicatedAimState.bIsAiming;
+        bShouldTransmit |= Previous.bFire != ReplicatedAimState.bFire;
 
         const bool bIntervalElapsed = Context.WorldState.WorldTimeSeconds
             - Context.AimObservationState.LastAimUploadTime

@@ -25,6 +25,7 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.DamageDelivery, Context);
 
     Process(InputState.AimState, Context);
+    Process(InputState.FireIntent, Context);
     Process(InputState.RunState, Context);
     Process(InputState.RemoteAcceleration, Context);
     Process(InputState.AuthorityAcceleration, Context);

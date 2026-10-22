@@ -49,6 +49,8 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
     FactState.EquipmentType = IsValid(Definition) ? Definition->EquipmentType : EBBBEquipmentType::None;
     FactState.CharacterGripPose = IsValid(Definition) ? Definition->CharacterGripPose.Get() : nullptr;
+    FactState.CharacterFireGripPose = IsValid(Definition) ? Definition->CharacterFireGripPose.Get() : nullptr;
+    FactState.bFire = RuntimeData.Parse.ReadControlState().bFire;
     FactState.RightHandGripRotationOffset = IsValid(Definition) ? Definition->RightHandGripRotationOffset : FRotator::ZeroRotator;
     if (!ensureMsgf(!FactState.RightHandGripRotationOffset.ContainsNaN(), TEXT("[BBB][AnimationFacts] 装备右腕握持旋转必须有限")))
     {

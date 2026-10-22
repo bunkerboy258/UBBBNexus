@@ -205,6 +205,7 @@ void UBBBCharacterNetworkComponent::SubmitAimStateInput(
 
     FBBBAimStateAuthorityFactPacket Packet;
     Packet.bIsAiming = AimState.bIsAiming;
+    Packet.bFire = AimState.bFire;
     Packet.AimTargetWorld = AimState.AimTargetWorld;
     Character->SubmitInput(MoveTemp(Packet));
 }

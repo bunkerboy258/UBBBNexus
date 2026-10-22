@@ -50,6 +50,8 @@ void UBBBAnimInstance::PublishAnimationFacts(
     bSourceAiming = FactState.bIsAiming;
     SourceEquipmentType = FactState.EquipmentType;
     SourceCharacterGripPose = FactState.CharacterGripPose;
+    SourceCharacterFireGripPose = FactState.CharacterFireGripPose;
+    bSourceFire = FactState.bFire;
     SourceRightHandGripRotationOffset = FactState.RightHandGripRotationOffset;
     SourceItemType = FactState.ItemType;
     SourceAimTargetComponentSpace = FactState.AimTargetComponentSpace;

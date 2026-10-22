@@ -8,6 +8,9 @@ struct FBBBAimStateAuthorityFactPacket final
     /** 是否保持瞄准 */
     bool bIsAiming = false;
 
+    /** 控制端已形成的开火表现意图 */
+    bool bFire = false;
+
     /** 世界空间瞄准目标 */
     FVector AimTargetWorld = FVector::ZeroVector;
 
@@ -25,5 +28,9 @@ struct FBBBAimStateAuthorityFactPacket final
     {
         Context.Aim.bIsAiming = bIsAiming;
         Context.Aim.AimTargetWorld = AimTargetWorld;
+        if (Context.bIsMirror)
+        {
+            Context.Control.bFire = bFire;
+        }
     }
 };

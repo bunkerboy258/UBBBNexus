@@ -19,6 +19,7 @@ struct TBBBCharacterInputSlotSelector;
     };
 
 BBB_CHARACTER_INPUT_SLOT(FBBBAimStateAuthorityFactPacket, AimState)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterFireIntentLocalControlPacket, FireIntent)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeAuthorityFactPacket, AuthorityLife)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterLifeRemoteMessagePacket, RemoteLife)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterDamageDeliveryRemoteMessagePacket, DamageDelivery)

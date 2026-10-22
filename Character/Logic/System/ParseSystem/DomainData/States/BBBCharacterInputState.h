@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBCharacterFireIntentLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeEndLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeBeginLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
@@ -81,6 +82,8 @@
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 角色表现使用的开火意图快照输入 */
+    TBBBCharacterInputSlot<FBBBCharacterFireIntentLocalControlPacket> FireIntent;
     /** 快速近战输入 */
     TBBBCharacterInputSlot<FBBBCharacterMeleeEndLocalControlPacket> MeleeEnd;
     /** 快速近战输入 */
