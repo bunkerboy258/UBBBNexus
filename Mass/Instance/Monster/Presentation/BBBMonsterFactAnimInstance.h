@@ -27,6 +27,10 @@ public:
     //~ End UAnimInstance Interface
 
 private:
+    /** 当前表现演员的实际世界朝向 不包含转向决策 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "实际朝向事实"))
+    float ActorYawFact = 0.0f;
+
     /** Mass 当前站立踉跄事实 不替代六种行为 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "踉跄事实"))
     bool StaggeringFact = false;

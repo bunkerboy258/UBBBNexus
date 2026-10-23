@@ -26,6 +26,7 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     ActionProgressFact = 0.0f;
     ActionIdFact = 0;
     StateEnteredTimeFact = 0.0f;
+    ActorYawFact = GetOwningActor() ? GetOwningActor()->GetActorRotation().Yaw : 0.0f;
 }
 
 void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds)
@@ -39,6 +40,7 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     }
 
     BehaviorFact = Source->BBBMonsterBehavior;
+    ActorYawFact = GetOwningActor()->GetActorRotation().Yaw;
     CrawlingFact = Source->bCrawling;
     StaggeringFact = Source->bStaggering && !CrawlingFact && BehaviorFact != EBBBMonsterBehavior::Dead;
     StaggerProgressFact = Source->StaggerProgress;

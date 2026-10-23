@@ -50,6 +50,18 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|循环采样", meta = (DisplayName = "移动风格循环秒数"))
     TArray<FVector> MovementCycleSeconds = {FVector(1.0, 1.0, 1.0), FVector(1.0, 1.0, 1.0), FVector(1.0, 1.0, 1.0)};
 
+    /** 原始蹒跚步态对应的低速采样点 不改变实际巡逻速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|循环采样", meta = (ClampMin = "1.0", DisplayName = "蹒跚采样速度"))
+    float SlowWalkSampleSpeed = 40.0f;
+
+    /** 三种风格在低速采样点的循环秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|循环采样", meta = (DisplayName = "蹒跚循环秒数"))
+    FVector SlowWalkCycleSeconds = FVector(1.0, 1.0, 1.0);
+
+    /** 三种风格在走尸追近速度处的快走循环秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|循环采样", meta = (DisplayName = "追近快走循环秒数"))
+    FVector PursuitWalkCycleSeconds = FVector(0.766667, 0.766667, 0.766667);
+
     /** 三种身份选择待机的循环秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪|循环采样", meta = (DisplayName = "待机循环秒数"))
     FVector IdleCycleSeconds = FVector(1.0, 1.0, 1.0);

@@ -113,6 +113,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", DisplayName = "走路速度"))
     float WalkSpeed = 100.0f;
 
+    /** 按模型步幅校准移动循环 不改变实体速度或非循环动作时长 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|表现", meta = (ClampMin = "0.1", DisplayName = "动画步幅比例"))
+    float AnimationStrideScale = 1.0f;
+
     /** 走尸追击尚未转跑时的行走速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|小怪|移动", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "走尸追击行走速度"))
     float WalkerChaseWalkSpeed = 180.0f;

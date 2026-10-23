@@ -6,7 +6,9 @@ bool UBBBMonsterVariationDefinition::IsValid() const
     {
         return !Cycle.ContainsNaN() && Cycle.X > 0.01 && Cycle.Y > 0.01 && Cycle.Z > 0.01;
     };
-    if (MovementCycleSeconds.Num() != 3 || !ValidCycle(IdleCycleSeconds) || !FMath::IsFinite(AlertCycleSeconds) || AlertCycleSeconds <= 0.01f)
+    if (MovementCycleSeconds.Num() != 3 || !ValidCycle(IdleCycleSeconds) || !ValidCycle(PursuitWalkCycleSeconds) ||
+        !ValidCycle(SlowWalkCycleSeconds) || !FMath::IsFinite(SlowWalkSampleSpeed) || SlowWalkSampleSpeed <= 0.0f ||
+        !FMath::IsFinite(AlertCycleSeconds) || AlertCycleSeconds <= 0.01f)
     {
         return false;
     }
