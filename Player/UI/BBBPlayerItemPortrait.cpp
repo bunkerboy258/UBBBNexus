@@ -71,6 +71,9 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     Pose->SetVisibleInSceneCaptureOnly(true);
     Pose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Pose->RegisterComponent();
+    FTransform StandingTransform = Character->GetMesh()->GetRelativeTransform();
+    StandingTransform.AddToTranslation(Origin + FVector(0.0f, 0.0f, Pawn->GetSimpleCollisionHalfHeight()));
+    Pose->SetWorldTransform(StandingTransform);
     Pose->PlayAnimation(Standing, false);
     Pose->SetPosition(0.0f, false);
     Pose->TickAnimation(1.0f / 30.0f, false);
@@ -100,8 +103,14 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     Camera->ShowFlags.SetFog(false);
     Camera->ShowFlags.SetSkyLighting(false);
     Camera->ShowFlags.SetDynamicShadows(false);
+    Camera->ShowFlags.SetScreenSpaceReflections(false);
+    Camera->ShowFlags.SetLumenReflections(false);
+    Camera->ShowFlags.SetReflectionEnvironment(false);
+    Camera->ShowFlags.SetTemporalAA(false);
     Camera->PostProcessSettings.bOverride_DynamicGlobalIlluminationMethod = true;
     Camera->PostProcessSettings.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::None;
+    Camera->PostProcessSettings.bOverride_ReflectionMethod = true;
+    Camera->PostProcessSettings.ReflectionMethod = EReflectionMethod::None;
     Camera->ProjectionType = ECameraProjectionMode::Orthographic;
     Camera->OrthoWidth = 114.0f;
     Camera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
@@ -115,7 +124,8 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
 
 void UBBBPlayerItemPortrait::Update(float DeltaTime)
 {
-    if (!Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || Source->GetWorld() != Capture->GetWorld())
+    if (!Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || !IsValid(Pose)
+        || Source->GetWorld() != Capture->GetWorld())
     {
         return;
     }
@@ -147,8 +157,10 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         }
         auto *Part = Components[Index].Get();
         auto *Original = Actual[Index];
-        if (Part->GetSkeletalMeshAsset() != Original->GetSkeletalMeshAsset())
+        const bool bMeshChanged = Part->GetSkeletalMeshAsset() != Original->GetSkeletalMeshAsset();
+        if (bMeshChanged)
         {
+            Part->EmptyOverrideMaterials();
             Part->SetSkeletalMesh(Original->GetSkeletalMeshAsset());
         }
         if (!Original->GetSkeletalMeshAsset())
@@ -156,29 +168,50 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
             Part->SetVisibility(false);
             continue;
         }
-        Part->SetVisibility(Original->IsVisible() && !Original->GetOwner()->IsHidden());
+        const bool bVisible = Original->IsVisible() && !Original->bHiddenInGame && !Original->GetOwner()->IsHidden();
+        if (Part->IsVisible() != bVisible)
+        {
+            Part->SetVisibility(bVisible);
+        }
         for (int32 MaterialIndex = 0; MaterialIndex < Original->GetNumMaterials(); ++MaterialIndex)
         {
-            Part->SetMaterial(MaterialIndex, Original->GetMaterial(MaterialIndex));
+            if (Part->GetMaterial(MaterialIndex) != Original->GetMaterial(MaterialIndex))
+            {
+                Part->SetMaterial(MaterialIndex, Original->GetMaterial(MaterialIndex));
+            }
         }
         const FName Socket = Original->GetAttachSocketName();
         const bool bRigid = !Socket.IsNone() && !Original->LeaderPoseComponent.IsValid();
-        Part->SetLeaderPoseComponent(bRigid ? nullptr : Pose.Get());
-        Part->SetForceRefPose(bRigid);
-        if (bRigid)
+        USkeletalMeshComponent *Leader = bRigid ? nullptr : Pose.Get();
+        if (Part->LeaderPoseComponent.Get() != Leader)
+        {
+            Part->SetLeaderPoseComponent(Leader);
+        }
+        const bool bPoseChanged = Part->bForceRefpose != bRigid;
+        if (bPoseChanged)
+        {
+            Part->SetForceRefPose(bRigid);
+        }
+        if (bRigid && (bMeshChanged || bPoseChanged))
         {
             Part->RefreshBoneTransforms();
         }
         FTransform Relative = Original->GetComponentTransform().GetRelativeTransform(Source->GetActorTransform());
-        const ABBBCharacter *Character = Cast<ABBBCharacter>(Source.Get());
-        if (bRigid && Character && Original->GetAttachParent() == Character->GetMesh())
-        {
-            Relative = Original->GetRelativeTransform() * Pose->GetSocketTransform(Socket, RTS_Component) *
-                       Character->GetMesh()->GetRelativeTransform();
-        }
         Relative.AddToTranslation(FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
         Relative.AddToTranslation(Origin);
-        Part->SetWorldTransform(Relative);
+        const ABBBCharacter *Character = Cast<ABBBCharacter>(Source.Get());
+        if (Character && Original == Character->GetMesh())
+        {
+            Relative = Pose->GetComponentTransform();
+        }
+        if (Character && Original->GetAttachParent() == Character->GetMesh())
+        {
+            Relative = Original->GetRelativeTransform() * Pose->GetSocketTransform(Socket, RTS_World);
+        }
+        if (!Part->GetComponentTransform().Equals(Relative))
+        {
+            Part->SetWorldTransform(Relative);
+        }
     }
     Capture->GetCaptureComponent2D()->CaptureScene();
 }
