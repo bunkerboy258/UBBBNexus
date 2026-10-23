@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
-#include "BBBMonsterSeveredPartDefinition.h"
 #include "BBBMonsterBodyPartDefinition.h"
 #include "BBBMonsterNavigationProfile.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
@@ -11,6 +10,7 @@ class UMassEntityConfigAsset;
 class UBBBMonsterBloodPresentationDefinition;
 class UBBBMonsterSoundPresentationDefinition;
 class UBBBMonsterVariationDefinition;
+class UBBBMonsterGoreDefinition;
 class USkeletalMesh;
 class UMaterialInterface;
 
@@ -21,21 +21,9 @@ class ABBB_EVAC_API UBBBMonsterDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
-    /** 仅控制表现阶段 不改变部位伤害或损毁条件 */
-    UPROPERTY(EditAnywhere, Category = "小怪|伤口", meta = (DisplayName = "轻伤重伤显示阈值"))
-    FVector2D WoundStageThresholds = FVector2D(0.2, 0.6);
-
-    /** 当前外观的封闭断肢资源 */
-    UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "断肢资源"))
-    TArray<FBBBMonsterSeveredPartDefinition> SeveredParts;
-
-    /** 与正式外观同骨架的断口与浅层胸腹伤口 共享主骨架姿势 */
-    UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "蒙皮伤口网格"))
-    TObjectPtr<USkeletalMesh> WoundGeometry;
-
-    /** 按身体材质槽对应的共享受损材质 未受损时保留普通不透明材质 */
-    UPROPERTY(EditAnywhere, Category = "BBB|小怪|断肢", meta = (DisplayName = "受损身体材质"))
-    TArray<TObjectPtr<UMaterialInterface>> WoundMaterials;
+    /** 制作 编辑预览与运行时共用的唯一血腥资源 */
+    UPROPERTY(EditAnywhere, Category = "小怪|血腥表现", meta = (DisplayName = "血腥表现配置"))
+    TObjectPtr<UBBBMonsterGoreDefinition> Gore;
 
     /** @return 建立六个部位的默认静态规则 */
     UBBBMonsterDefinition();

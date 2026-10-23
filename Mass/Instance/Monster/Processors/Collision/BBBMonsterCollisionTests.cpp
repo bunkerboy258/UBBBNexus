@@ -143,8 +143,8 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
         {
             continue;
         }
-        const FString PartPath = FString::Printf(TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/Severing/%s/SM_SKM_BBBZombie%s_head_Part"),
-            *Names[Index], *Names[Index]);
+        const FString PartPath = FString::Printf(TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/Injury/%s/SM_Detached_Head"),
+            *Names[Index]);
         const auto* HeadPart = LoadObject<UStaticMesh>(nullptr, *PartPath);
         if (!TestNotNull(TEXT("使用正式头部几何范围而非碰撞球心自证"), HeadPart))
         {

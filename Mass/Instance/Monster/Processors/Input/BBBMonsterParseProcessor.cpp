@@ -35,6 +35,7 @@ void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     EntityQuery.AddRequirement<FBBBMonsterPerceptionInputFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterStimulusFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadWrite);
 }
 
 void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -57,6 +58,7 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
         auto PerceptionInputs = Chunk.GetMutableFragmentView<FBBBMonsterPerceptionInputFragment>();
         auto Stimuli = Chunk.GetMutableFragmentView<FBBBMonsterStimulusFragment>();
         auto Variation = Chunk.GetMutableFragmentView<FBBBMonsterVariationFragment>();
+        auto Gore = Chunk.GetMutableFragmentView<FBBBMonsterGoreFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Sound = PerceptionInputs[Index].Sound;
@@ -90,7 +92,7 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
                     {
                         Variation[Index].Seed = Fact.Packet.BirthSeed;
                     }
-                    Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index]);
+                    Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index], Gore[Index]);
                 }
             }
 

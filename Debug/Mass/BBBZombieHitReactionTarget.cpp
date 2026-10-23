@@ -1,7 +1,7 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitReactionTarget.h"
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitTrajectoryComponent.h"
-#include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieGoreDebugComponent.h"
-#include "BBBZombieSurfaceWoundComponent.h"
+#include "BBBMonsterGorePreviewComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePointDamageEvent.h"
 
 #include "Animation/AnimSequence.h"
@@ -58,8 +58,8 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     PhysicalAnimation->PrimaryComponentTick.bStartWithTickEnabled = false;
     HitReaction = CreateDefaultSubobject<UBBBMonsterHitReactionComponent>(TEXT("HitReaction"));
     Trajectory = CreateDefaultSubobject<UBBBZombieHitTrajectoryComponent>(TEXT("Trajectory"));
-    GorePresentation = CreateDefaultSubobject<UBBBZombieSurfaceWoundComponent>(TEXT("GorePresentation"));
-    GoreDebug = CreateDefaultSubobject<UBBBZombieGoreDebugComponent>(TEXT("GoreDebug"));
+    Gore = CreateDefaultSubobject<UBBBMonsterGorePresentationComponent>(TEXT("Gore"));
+    GorePreview = CreateDefaultSubobject<UBBBMonsterGorePreviewComponent>(TEXT("GorePreview"));
     HitReaction->AvailableProfiles.Reset();
     const TCHAR* Parts[] = {TEXT("Torso"), TEXT("Head"), TEXT("Arms"), TEXT("Legs")};
     for (const TCHAR* Part : Parts)
@@ -138,12 +138,12 @@ float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FD
     Hit.Position = Point.HitInfo.ImpactPoint;
     Hit.Direction = Point.ShotDirection.GetSafeNormal();
     Hit.Normal = Point.HitInfo.ImpactNormal;
-    if (GoreDebug->bEnablePhysicalReaction)
+    if (GorePreview->bEnablePhysicalReaction)
     {
         HitReaction->ApplyHitFacts(Hit, true);
     }
     const float Strength = DamageEvent.IsOfType(FBBBProjectilePointDamageEvent::ClassID)
         ? static_cast<const FBBBProjectilePointDamageEvent&>(DamageEvent).WoundStrength : 1.0f;
-    GoreDebug->ApplyHit(Hit, Strength);
+    GorePreview->ApplyHit(Hit, Strength);
     return 0.0f;
 }

@@ -9,7 +9,7 @@ class UBBBMonsterHitReactionComponent;
 class UPhysicalAnimationComponent;
 class UBBBMonsterSoundPresentationComponent;
 class UAudioComponent;
-class UBBBMonsterSeveringPresentationComponent;
+class UBBBMonsterGorePresentationComponent;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
@@ -19,7 +19,7 @@ class ABBB_EVAC_API ABBBMonsterPresentationActor : public AActor
 
 public:
     /** @return 只还原 Mass 部位损毁的表现组件 */
-    UBBBMonsterSeveringPresentationComponent* GetMonsterSevering() const;
+    UBBBMonsterGorePresentationComponent* GetMonsterGore() const;
 
     /** 创建不参与玩法碰撞的表现对象 */
     ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
@@ -48,7 +48,7 @@ public:
 private:
     /** 本地断肢与封口表现 */
     UPROPERTY(VisibleAnywhere, Category = "小怪|断肢", meta = (DisplayName = "断肢表现组件"))
-    TObjectPtr<UBBBMonsterSeveringPresentationComponent> Severing;
+    TObjectPtr<UBBBMonsterGorePresentationComponent> Gore;
 
     /** 无独立更新的接触声音组件 */
     UPROPERTY(VisibleAnywhere, Category = "小怪|声音", meta = (DisplayName = "地面接触声道"))

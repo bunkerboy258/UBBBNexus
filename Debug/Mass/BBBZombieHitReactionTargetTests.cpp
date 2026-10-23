@@ -1,7 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitReactionTarget.h"
-#include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieGoreDebugComponent.h"
+#include "BBBMonsterGorePreviewComponent.h"
 #include "Animation/AnimSequence.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/DamageEvents.h"
@@ -13,8 +13,6 @@
 #include "Misc/AutomationTest.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
-#include "BBBZombieSurfaceWoundComponent.h"
-#include "BBBZombieGoreSurfaceDefinition.h"
 
 /** 静态验证调参靶独立配置和纯表现边界 不创建世界或启动游戏 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBZombieHitReactionTargetTest, "UBBB.Debug.ZombieHitReactionTarget",
@@ -25,9 +23,9 @@ bool FBBBZombieHitReactionTargetTest::RunTest(const FString&)
     auto* Target = GetMutableDefault<ABBBZombieHitReactionTarget>();
     TestFalse(TEXT("固定靶没有移动更新"), Target->PrimaryActorTick.bCanEverTick);
     TestFalse(TEXT("本地调参靶不产生网络实体"), Target->GetIsReplicated());
-    TestNotNull(TEXT("伤口断肢使用独立调试实现"), Target->GorePresentation.Get());
-    TestNotNull(TEXT("血腥调试配置存在"), Target->GoreDebug.Get());
-    TestEqual(TEXT("调参靶默认每三秒恢复"), Target->GoreDebug->ResetInterval, 3.0f);
+    TestNotNull(TEXT("伤口断肢复用正式表现"), Target->Gore.Get());
+    TestNotNull(TEXT("血腥预览输入存在"), Target->GorePreview.Get());
+    TestEqual(TEXT("调参靶默认每三秒恢复"), Target->GorePreview->ResetInterval, 3.0f);
     if (!TestNotNull(TEXT("受击复用正式组件"), Target->HitReaction.Get())
         || !TestNotNull(TEXT("具备骨骼碰撞"), Target->TargetMesh.Get()))
     {

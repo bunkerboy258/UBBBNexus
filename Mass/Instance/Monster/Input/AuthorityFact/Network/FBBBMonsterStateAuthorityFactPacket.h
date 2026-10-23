@@ -4,6 +4,7 @@
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 
 struct FBBBMonsterNetworkInputFragment;
 
@@ -16,6 +17,8 @@ struct FBBBMonsterStateAuthorityFactPacket final
     /** 出生种子只允许在本机首次初始化前还原 */
     uint32 BirthSeed = 0;
     uint32 Revision = 0;
+    /** 只还原当前伤口资源身份 不确认生命损毁 */
+    uint8 WoundPresets[5] = {};
     FTransform Transform = FTransform::Identity;
     FVector Velocity = FVector::ZeroVector;
     EBBBMonsterBehavior Behavior = EBBBMonsterBehavior::Idle;
@@ -42,13 +45,19 @@ struct FBBBMonsterStateAuthorityFactPacket final
      * @param Position	位置结果
      * @param Speed	速度结果
      * @param State	行为状态
+     * @param Gore	当前断点外观结果
      * @return 无
      */
     void Apply(FBBBMonsterNetworkFragment& Network, FTransformFragment& Position,
-        FMassVelocityFragment& Speed, FBBBMonsterBehaviorFragment& State) const
+        FMassVelocityFragment& Speed, FBBBMonsterBehaviorFragment& State, FBBBMonsterGoreFragment& Gore) const
     {
         Network.InstanceId = InstanceId;
         Network.ReceivedRevision = Revision;
+        for (int32 Index = 0; Index < 5; ++Index)
+        {
+            Gore.Wounds[Index].PresetId = WoundPresets[Index];
+            Gore.Wounds[Index].Strength = WoundPresets[Index] != 0 ? 1.0f : 0.0f;
+        }
         if (State.State == EBBBMonsterBehavior::Dead)
         {
             if (Behavior == EBBBMonsterBehavior::Dead)

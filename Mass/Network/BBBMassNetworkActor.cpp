@@ -43,18 +43,20 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
     }
 
     const bool bDamageChanged = Existing->Contributions != State.Contributions;
+    const bool bGoreChanged = FMemory::Memcmp(Existing->WoundPresets, State.WoundPresets, sizeof(State.WoundPresets)) != 0;
     const bool bActionChanged = bUpdateAction && (Existing->InstanceId != State.InstanceId
         || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
         || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
         || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
         || Existing->StateEnteredTime != State.StateEnteredTime);
-    if (!bDamageChanged && !bActionChanged)
+    if (!bDamageChanged && !bActionChanged && !bGoreChanged)
     {
         return;
     }
 
     Existing->InstanceId = State.InstanceId;
     Existing->BirthSeed = State.BirthSeed;
+    FMemory::Memcpy(Existing->WoundPresets, State.WoundPresets, sizeof(State.WoundPresets));
     Existing->Definition = State.Definition;
     if (bUpdateAction)
     {
@@ -209,6 +211,7 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         FBBBMonsterStateAuthorityFactPacket Packet;
         Packet.InstanceId = Item.InstanceId;
         Packet.BirthSeed = Item.BirthSeed;
+        FMemory::Memcpy(Packet.WoundPresets, Item.WoundPresets, sizeof(Item.WoundPresets));
         Packet.Revision = Item.Revision;
         Packet.Transform = FTransform(Item.Rotation, Item.Location);
         Packet.Velocity = Item.Velocity;

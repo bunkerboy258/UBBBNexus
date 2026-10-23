@@ -14,6 +14,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 
 UBBBMonsterNetworkObservationProcessor::UBBBMonsterNetworkObservationProcessor()
     : EntityQuery(*this)
@@ -35,6 +36,7 @@ void UBBBMonsterNetworkObservationProcessor::ConfigureQueries(const TSharedRef<F
     EntityQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -96,6 +98,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
         const auto Behavior = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         auto Network = Chunk.GetMutableFragmentView<FBBBMonsterNetworkFragment>();
         const auto Variation = Chunk.GetFragmentView<FBBBMonsterVariationFragment>();
+        const auto Gore = Chunk.GetFragmentView<FBBBMonsterGoreFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (!bHost)
@@ -113,6 +116,10 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             FBBBMonsterReplicationItem Item;
             Item.InstanceId = Network[Index].InstanceId;
             Item.BirthSeed = Variation[Index].Seed;
+            for (int32 WoundIndex = 0; WoundIndex < 5; ++WoundIndex)
+            {
+                Item.WoundPresets[WoundIndex] = Gore[Index].Wounds[WoundIndex].PresetId;
+            }
             Item.Definition = Network[Index].Definition.Get();
             Item.Location = Transforms[Index].GetTransform().GetLocation();
             Item.Rotation = Transforms[Index].GetTransform().Rotator();

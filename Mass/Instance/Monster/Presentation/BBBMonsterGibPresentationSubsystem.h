@@ -21,6 +21,12 @@ class ABBB_EVAC_API UBBBMonsterGibPresentationSubsystem final : public UWorldSub
     GENERATED_BODY()
 
 public:
+    /** @param WorldType\t实际世界类型 @return 正式世界和隔离的编辑预览均使用同一残肢池 */
+    virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override
+    {
+        return WorldType == EWorldType::EditorPreview || Super::DoesSupportWorldType(WorldType);
+    }
+
     /**
      * @param Source	当前僵尸骨架 仅在生成时读取姿势
      * @param Part	封闭静态部件与刚体形状
@@ -82,8 +88,8 @@ private:
     /** 当前组件连续稳定的开始时间 */
     TArray<float> StableSince;
 
-    /** 每世界每引擎帧只推进一次 */
-    uint64 AdvancedFrame = MAX_uint64;
+    /** 同一世界时间只推进一次 离屏预览可独立推进物理时间 */
+    float AdvancedTime = -1;
 
     /**
      * @param Index	需要交还的池槽位

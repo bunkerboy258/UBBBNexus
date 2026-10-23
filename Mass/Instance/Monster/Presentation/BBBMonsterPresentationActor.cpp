@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "BBBMonsterSoundPresentationComponent.h"
 #include "Components/AudioComponent.h"
-#include "BBBMonsterSeveringPresentationComponent.h"
+#include "BBBMonsterGorePresentationComponent.h"
 
 ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -23,7 +23,7 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     MonsterMesh->SetupAttachment(Root);
     MonsterMesh->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
     MonsterPresentation = CreateDefaultSubobject<UBBBMonsterPresentationComponent>(TEXT("MonsterPresentation"));
-    Severing = CreateDefaultSubobject<UBBBMonsterSeveringPresentationComponent>(TEXT("MonsterSevering"));
+    Gore = CreateDefaultSubobject<UBBBMonsterGorePresentationComponent>(TEXT("MonsterGore"));
     PhysicalAnimation = CreateDefaultSubobject<UBBBMonsterPhysicalAnimationComponent>(TEXT("MonsterPhysicalAnimation"));
     PhysicalAnimation->PrimaryComponentTick.bStartWithTickEnabled = false;
     HitReaction = CreateDefaultSubobject<UBBBMonsterHitReactionComponent>(TEXT("MonsterHitReaction"));
@@ -58,9 +58,9 @@ UAudioComponent* ABBBMonsterPresentationActor::GetMonsterContactAudio() const
     return ContactAudio;
 }
 
-UBBBMonsterSeveringPresentationComponent* ABBBMonsterPresentationActor::GetMonsterSevering() const
+UBBBMonsterGorePresentationComponent* ABBBMonsterPresentationActor::GetMonsterGore() const
 {
-    return Severing;
+    return Gore;
 }
 
 void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
@@ -78,8 +78,8 @@ void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
     {
         MonsterPresentation->ResetCorpsePresentation();
     }
-    if (bNewHidden && Severing)
+    if (bNewHidden && Gore)
     {
-        Severing->ResetPresentation();
+        Gore->ResetPresentation();
     }
 }

@@ -25,7 +25,10 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterInitializationPendingTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterSeveringPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterGoreProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
@@ -38,6 +41,7 @@ UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::AllNetModes);
     ExecutionOrder.ExecuteAfter.Add(UBBBMonsterPresentationStateProcessor::StaticClass()->GetFName());
     ExecutionOrder.ExecuteAfter.Add(UBBBMonsterVisualizationProcessor::StaticClass()->GetFName());
+    ExecutionOrder.ExecuteAfter.Add(UBBBMonsterGoreProcessor::StaticClass()->GetFName());
 }
 
 void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
@@ -49,6 +53,7 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
     MonsterQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
@@ -128,7 +133,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             if (bNewActor)
             {
                 MonsterActor->GetMonsterPresentation()->ResetCorpsePresentation();
-                MonsterActor->GetMonsterSevering()->ResetPresentation();
+                MonsterActor->GetMonsterGore()->ResetPresentation();
                 MonsterActor->SetActorEnableCollision(true);
                 if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
                 {
@@ -192,14 +197,14 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
             const auto& Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>()[Index];
             const auto* Definition = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].Definition.Get();
-            if (Definition)
+            if (Definition && Definition->Gore)
             {
-                MonsterActor->GetMonsterSevering()->ApplyWoundFacts(
-                    ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index], *Definition,
+                MonsterActor->GetMonsterGore()->Apply(
+                    *Definition->Gore, ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>()[Index],
                     ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
                     PresentationState.State == EBBBMonsterBehavior::Dead
                         ? ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity : Velocities[Index].Value,
-                    ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed, bNewActor);
+                    ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed, bNewActor, Definition->SoundPresentation);
             }
             Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);
             if (Definition)
@@ -229,13 +234,19 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 {
                     ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
                     const uint8 LostParts = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts;
-                    for (const auto& Part : Definition->SeveredParts)
+                    if (Definition->Gore)
                     {
-                        if (MonsterActor->GetMonsterMesh()->IsPhysicsStateCreated()
-                            && MonsterActor->GetMonsterMesh()->bHasValidBodies
-                            && (LostParts & (1u << static_cast<uint8>(Part.Region))) != 0)
+                        const auto& Wounds = ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>()[Index].Wounds;
+                        for (int32 WoundIndex = 0; WoundIndex < 5; ++WoundIndex)
                         {
-                            MonsterActor->GetMonsterMesh()->SetAllBodiesBelowPhysicsDisabled(Part.Bone, true);
+                            const auto* Part = Definition->Gore->FindWound(Wounds[WoundIndex].PresetId);
+                            if (Part && Part->bPermanent && Part->DetachedSkin
+                                && MonsterActor->GetMonsterMesh()->IsPhysicsStateCreated()
+                                && MonsterActor->GetMonsterMesh()->bHasValidBodies
+                                && (LostParts & (1u << static_cast<uint8>(Part->Region))) != 0)
+                            {
+                                MonsterActor->GetMonsterMesh()->SetAllBodiesBelowPhysicsDisabled(Part->Bone, true);
+                            }
                         }
                     }
                 }

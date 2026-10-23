@@ -21,6 +21,10 @@ namespace
 
     float ViewDistanceSquared(const UWorld& World, const FVector& Location)
     {
+        if (World.WorldType == EWorldType::EditorPreview)
+        {
+            return 0;
+        }
         float Result = TNumericLimits<float>::Max();
         for (auto It = World.GetPlayerControllerIterator(); It; ++It)
         {
@@ -107,7 +111,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
 {
     UWorld* World = GetWorld();
     if (!World || Direction.ContainsNaN() || Velocity.ContainsNaN() || Part.IsCompiling()
-        || World->GetNetMode() == NM_DedicatedServer || !Source.WasRecentlyRendered(0.2f)
+        || World->GetNetMode() == NM_DedicatedServer || (!Source.WasRecentlyRendered(0.2f) && World->WorldType != EWorldType::EditorPreview)
         || Source.GetPredictedLODLevel() > 2 || Source.bHiddenInGame || (Source.GetOwner() && Source.GetOwner()->IsHidden()))
     {
         return false;
@@ -221,7 +225,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         Pose->MarkRefreshTransformDirty();
         Pose->RefreshBoneTransforms();
     }
-    for (int32 Index = 0; Index < 22; ++Index)
+    for (int32 Index = 0; Index < 36; ++Index)
     {
         const float Value = Source.GetCustomPrimitiveData().Data.IsValidIndex(Index) ? Source.GetCustomPrimitiveData().Data[Index] : 0.0f;
         Piece->SetCustomPrimitiveDataFloat(Index, Value);
@@ -258,6 +262,17 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         Lift = 130.0f;
         SpinSpeed = 260.0f;
         Mass = 3.5f;
+    }
+    if (Bone == TEXT("lowerarm_l") || Bone == TEXT("lowerarm_r"))
+    {
+        Speed = 380;
+        Lift = 120;
+        SpinSpeed = 310;
+        Mass = 1.6f;
+    }
+    if (Bone == TEXT("calf_l") || Bone == TEXT("calf_r"))
+    {
+        Mass = 5;
     }
     FRandomStream Random(Seed ^ GetTypeHash(Bone));
     const FVector Forward = Direction.GetSafeNormal(UE_SMALL_NUMBER, Source.GetForwardVector());
@@ -300,11 +315,11 @@ void UBBBMonsterGibPresentationSubsystem::OnPieceHit(UPrimitiveComponent* HitCom
 
 void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
 {
-    if (AdvancedFrame == GFrameCounter)
+    if (!FMath::IsFinite(Now) || Now <= AdvancedTime)
     {
         return;
     }
-    AdvancedFrame = GFrameCounter;
+    AdvancedTime = Now;
     int32 Settled = GetSettledCount();
     for (int32 Index = 0; Index < Pieces.Num(); ++Index)
     {

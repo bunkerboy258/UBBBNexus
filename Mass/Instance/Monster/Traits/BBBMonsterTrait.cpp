@@ -7,6 +7,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "MassActorSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
@@ -69,6 +70,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddFragment<FBBBMonsterStimulusFragment>();
     BuildContext.AddFragment<FBBBMonsterPresentationStateFragment>();
     BuildContext.AddFragment<FBBBMonsterPresentationSmoothingFragment>();
+    BuildContext.AddFragment<FBBBMonsterGoreFragment>();
 
     auto& Network = BuildContext.AddFragment_GetRef<FBBBMonsterNetworkFragment>();
     Network.Definition = Definition;

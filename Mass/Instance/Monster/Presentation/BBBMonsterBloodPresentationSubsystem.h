@@ -16,6 +16,12 @@ class ABBB_EVAC_API UBBBMonsterBloodPresentationSubsystem final : public UWorldS
     GENERATED_BODY()
 
 public:
+    /** @param WorldType\t实际世界类型 @return 正式世界和隔离的编辑预览均使用同一血迹池 */
+    virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override
+    {
+        return WorldType == EWorldType::EditorPreview || Super::DoesSupportWorldType(WorldType);
+    }
+
     /**
      * @param Settings	共享静态表现配置
      * @param Impacts	本轮接触事实
