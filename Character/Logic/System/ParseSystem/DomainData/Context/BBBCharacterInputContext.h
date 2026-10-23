@@ -16,7 +16,6 @@ struct FBBBCharacterTraversalState;
 struct FBBBCharacterInteractionSelectionState;
 struct FBBBCharacterInteractionInputState;
 struct FBBBCharacterItemOperationState;
-struct FBBBCharacterAimImpulseState;
 struct FBBBCharacterLifeInputState;
 struct FBBBCharacterInteractionUseState;
 struct FBBBCharacterDamageInboxState;
@@ -53,8 +52,6 @@ struct FBBBCharacterInputContext final
     /** 等待相机系统消费的表现输入 */
     FBBBCharacterCameraState &Camera;
 
-    /** 动画系统维护的额外瞄准冲击 */
-    FBBBCharacterAimImpulseState &AimImpulse;
 
     /** 输入解析时可读取的角色动画事实 */
     const FBBBCharacterAnimationFactState &AnimationFacts;

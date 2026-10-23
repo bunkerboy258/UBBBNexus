@@ -85,6 +85,14 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "开火与装填", meta = (DisplayPriority = "5", DisplayName = "弹丸配置", ToolTip = "决定每次开火的弹丸数量 散射 弹道 伤害与表现 从本机枪口位置和 X 正轴发射"))
     TObjectPtr<UBBBProjectileDefinition> ProjectileDefinition = nullptr;
 
+    /** 各发之后的累计姿态目标 不含起始零点 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "后坐力轨迹", meta = (DisplayName = "逐发轨迹 (度)", ToolTip = "元素 0 对应第一发 X 向上 Y 向右 为累计角度而非单发增量 点数必须等于弹药容量"))
+    TArray<FVector2D> RecoilPattern;
+
+    /** 停火后二维姿态角向零靠近的恒定速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "后坐力轨迹", meta = (ClampMin = "0.01", DisplayName = "停火回落速度 (度/秒)", ToolTip = "停火立即回落 二维角度向量每秒缩短此角度 越大回落越快 与 AO 输入平滑和镜头回正独立"))
+    float RecoilReturnSpeed = 12.0f;
+
     /** 弹匣可容纳的子弹数量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "开火与装填", meta = (DisplayPriority = "3", ClampMin = "1", DisplayName = "弹药容量 (发)", ToolTip = "单位发 本武器最多装填的弹药数 初始化时装满 越大可连续开火的次数越多"))
     int32 AmmoCapacity = 30;

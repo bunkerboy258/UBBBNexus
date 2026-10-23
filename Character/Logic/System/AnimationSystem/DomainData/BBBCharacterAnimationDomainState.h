@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAimImpulseState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterRecoilState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterTraversalAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterLifeAnimationState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
@@ -14,7 +14,7 @@ class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterParseSystem;
 class FBBBCharacterMuzzleProcessor;
-class FBBBCharacterAimImpulseProcessor;
+class FBBBCharacterRecoilProcessor;
 
 /** 角色动画领域全部状态的唯一直接持有者 */
 USTRUCT()
@@ -29,10 +29,10 @@ public:
         return LifeAnimationState;
     }
 
-    /** @return 角色额外瞄准冲击状态 */
-    const FBBBCharacterAimImpulseState &ReadAimImpulseState() const
+    /** @return 角色后坐力轨迹状态 */
+    const FBBBCharacterRecoilState &ReadRecoilState() const
     {
-        return AimImpulseState;
+        return RecoilState;
     }
 
     /** @return 角色动画事实状态 */
@@ -70,10 +70,10 @@ private:
     /** 蓝图动画选择请求的生命周期 */
     UPROPERTY(Transient)
     FBBBCharacterTraversalAnimationState TraversalAnimationState;
-    friend class FBBBCharacterAimImpulseProcessor;
+    friend class FBBBCharacterRecoilProcessor;
 
-    /** 角色额外瞄准冲击状态 */
-    FBBBCharacterAimImpulseState AimImpulseState;
+    /** 角色后坐力轨迹状态 */
+    FBBBCharacterRecoilState RecoilState;
 
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;

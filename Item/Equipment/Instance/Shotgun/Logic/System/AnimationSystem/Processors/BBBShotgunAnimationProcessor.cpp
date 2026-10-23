@@ -74,6 +74,12 @@ void FBBBShotgunAnimationProcessor::Update(FBBBShotgunAnimationUpdateContext &Co
         return;
     }
 
+    Animation->PublishRecoilFacts(
+        Context.Definition.RecoilPattern, Context.Definition.RecoilReturnSpeed,
+        Context.Definition.HipFireSettings.RecoilScale, Context.Definition.AimFireSettings.RecoilScale,
+        Context.Definition.CrouchedModifiers.RecoilScale, Context.Definition.AirborneModifiers.RecoilScale,
+        Context.Definition.bAutomaticFire, Action.LoadedAmmo > 0 && !Action.bFireBlocked && !Action.bIsReloading,
+        Action.bEquippedThisFrame);
     Animation->PublishAnimationFacts(State.Pose);
     Animation->PublishShotgunSnapshot(
         Action.LoadedAmmo,

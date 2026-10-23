@@ -60,6 +60,6 @@ void FBBBCharacterAnimationSystem::Update()
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
     MuzzleProcessor.Update(Context);
-    AimImpulseProcessor.Update(Context);
+    RecoilProcessor.Update(Context);
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState);
 }

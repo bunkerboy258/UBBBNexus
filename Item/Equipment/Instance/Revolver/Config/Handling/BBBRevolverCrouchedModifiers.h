@@ -13,13 +13,9 @@ struct FBBBRevolverCrouchedModifiers
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "目标跟随", meta = (DisplayPriority = "1", ClampMin = "0.01", DisplayName = "目标跟随倍率", ToolTip = "无单位 1 不变 大于 1 跟随更快 小于 1 跟随更慢"))
     float AimFollowScale = 1.0f;
 
-    /** 下蹲枪口冲击倍率 无单位 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "枪口后坐力", meta = (DisplayPriority = "2", ClampMin = "0.00", DisplayName = "枪口冲击倍率", ToolTip = "无单位 1 不变 越大每枪上下左右冲击及随机幅度越大 0 无方向冲击"))
-    float AimImpulseScale = 1.0f;
-
-    /** 下蹲枪口回零速度倍率 无单位 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "枪口后坐力", meta = (DisplayPriority = "3", ClampMin = "0.01", DisplayName = "枪口回零速度倍率", ToolTip = "无单位 1 不变 越大回零越快 小于 1 回零更慢 只在开火时选择"))
-    float AimImpulseRecoveryScale = 1.0f;
+    /** 下蹲轨迹幅度倍率 无单位 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "枪口后坐力", meta = (DisplayPriority = "2", ClampMin = "0.00", DisplayName = "轨迹幅度倍率", ToolTip = "无单位 1 不变 越大轨迹上下左右幅度越大 0 无轨迹偏移"))
+    float RecoilScale = 1.0f;
 
     /** 下蹲后向震动倍率 无单位 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "后向震动", meta = (DisplayPriority = "4", ClampMin = "0.00", DisplayName = "后向震动倍率", ToolTip = "无单位 1 不变 越大向后震动越强 0 无震动 最终动画权重限制为 0 到 1"))

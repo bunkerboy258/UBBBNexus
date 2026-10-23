@@ -13,17 +13,9 @@ struct FBBBSMGHandlingSettings
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "目标跟随", meta = (DisplayPriority = "1", ClampMin = "0.01", DisplayName = "目标跟随速率 (1/秒)", ToolTip = "指数跟随系数 越大枪口追随目标越快 不是度/秒 不控制后坐力回零"))
     float AimFollowSpeed = 18.0f;
 
-    /** 每枪向上和向右的角度冲击 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "枪口后坐力", meta = (DisplayPriority = "2", DisplayName = "每枪方向冲击 (度)", ToolTip = "X 向上 Y 向右 负值反向 绝对值越大每枪方向偏移越大 与镜头冲击独立"))
-    FVector2D AimImpulseDegrees = FVector2D(2.0f, 0.15f);
-
-    /** 每枪方向冲击的对称随机范围 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "枪口后坐力", meta = (DisplayPriority = "3", DisplayName = "方向冲击随机范围 (度)", ToolTip = "X 上下 Y 左右 每枪在各轴的负范围至正范围内随机 越大波动越大 0 无随机"))
-    FVector2D AimImpulseRandomDegrees = FVector2D(0.25f, 0.5f);
-
-    /** 枪口额外角度偏移的恢复速度 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "枪口后坐力", meta = (DisplayPriority = "4", ClampMin = "0.01", DisplayName = "方向冲击回零速率 (1/秒)", ToolTip = "指数衰减系数 越大方向偏移回零越快 不改变目标跟随速度 与镜头回零独立"))
-    float AimImpulseRecoverySpeed = 14.0f;
+    /** 当前姿态对基础轨迹的幅度倍率 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "后坐力轨迹", meta = (ClampMin = "0.0", DisplayName = "轨迹幅度倍率", ToolTip = "无单位 1 使用基础轨迹 0 无方向后坐力 越大姿态偏移越大 不改变镜头"))
+    float RecoilScale = 1.0f;
 
     /** 向后受力动画的混合强度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "后向震动", meta = (DisplayPriority = "5", ClampMin = "0.0", ClampMax = "1.0", DisplayName = "后向震动权重", ToolTip = "无单位 0 无震动 1 为专属动画完整幅度 越大震动越强 每枪重播 换弹时关闭"))

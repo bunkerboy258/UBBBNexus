@@ -22,7 +22,6 @@ void FBBBCharacterParseSystem::Update() const
                                       Data->Item.ItemOperationState,
                                       Data->External.ReadNetworkIdentityState().bIsMirror,
                                       Data->Parse.CameraState,
-                                      Data->Animation.AimImpulseState,
                                       Data->Animation.ReadAnimationFactState(),
                                       Data->Traversal.TraversalState,
                                       Data->Interaction.InteractionInputState,

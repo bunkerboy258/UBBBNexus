@@ -246,6 +246,54 @@ public:
         return 1.0f;
     }
 
+    /** @return 游戏线程只读的逐发累计角度 不向动画工作线程复制数组 */
+    TConstArrayView<FVector2D> GetRecoilPattern() const
+    {
+        return RecoilPattern;
+    }
+
+    /** @return 停火回落角速度 单位度每秒 */
+    float GetRecoilReturnSpeed() const
+    {
+        return RecoilReturnSpeed;
+    }
+
+    /** @return 腰射轨迹幅度倍率 */
+    float GetHipRecoilScale() const
+    {
+        return HipRecoilScale;
+    }
+
+    /** @return 瞄准轨迹幅度倍率 */
+    float GetAimRecoilScale() const
+    {
+        return AimRecoilScale;
+    }
+
+    /** @return 下蹲轨迹幅度倍率 */
+    float GetCrouchedRecoilScale() const
+    {
+        return CrouchedRecoilScale;
+    }
+
+    /** @return 空中轨迹幅度倍率 */
+    float GetAirborneRecoilScale() const
+    {
+        return AirborneRecoilScale;
+    }
+
+    /** @return 是否在持续输入期间保持轨迹点 */
+    bool HoldsRecoilBetweenShots() const
+    {
+        return bAutomaticRecoil;
+    }
+
+    /** @return 已成立的动作状态是否允许继续连续射击 */
+    bool CanSustainRecoil() const
+    {
+        return bCanSustainRecoil;
+    }
+
 private:
     friend class FBBBRifleAnimationProcessor;
     friend class FBBBMeleeAnimationProcessor;
@@ -256,6 +304,51 @@ private:
     friend class FBBBSniperAnimationProcessor;
     friend class FBBBLMGAnimationProcessor;
     friend class FBBBMinigunAnimationProcessor;
+
+    /**
+     * 发布轨迹配置与基本射击许可快照
+     * @param Pattern 累计角度数组
+     * @param ReturnSpeed 回落角速度
+     * @param HipScale 腰射倍率
+     * @param AimScale 瞄准倍率
+     * @param CrouchedScale 下蹲倍率
+     * @param AirborneScale 空中倍率
+     * @param bAutomatic 是否连续射击
+     * @param bCanSustain 当前射击许可
+     * @param bRefresh 装备时刷新配置副本
+     * @return 无
+     */
+    void PublishRecoilFacts(const TArray<FVector2D> &Pattern, float ReturnSpeed,
+        float HipScale, float AimScale, float CrouchedScale, float AirborneScale,
+        bool bAutomatic, bool bCanSustain, bool bRefresh)
+    {
+        if (bRefresh || !bRecoilProfileInitialized)
+        {
+            RecoilPattern = Pattern;
+            bRecoilProfileInitialized = true;
+        }
+        RecoilReturnSpeed = ReturnSpeed;
+        HipRecoilScale = HipScale;
+        AimRecoilScale = AimScale;
+        CrouchedRecoilScale = CrouchedScale;
+        AirborneRecoilScale = AirborneScale;
+        bAutomaticRecoil = bAutomatic;
+        bCanSustainRecoil = bCanSustain;
+    }
+
+    /** 游戏线程消费的静态轨迹副本 */
+    TArray<FVector2D> RecoilPattern;
+    /** 停火回落角速度 */
+    float RecoilReturnSpeed = 12.0f;
+    /** 当前姿态幅度倍率 */
+    float HipRecoilScale = 1.0f;
+    float AimRecoilScale = 1.0f;
+    float CrouchedRecoilScale = 1.0f;
+    float AirborneRecoilScale = 1.0f;
+    /** 射击与配置基本事实 */
+    bool bAutomaticRecoil = false;
+    bool bCanSustainRecoil = false;
+    bool bRecoilProfileInitialized = false;
 
     /**
      * 一次性发布本帧装备动画事实

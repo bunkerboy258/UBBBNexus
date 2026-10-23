@@ -4,8 +4,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/BBBSMGEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Config/BBBSMGDefinition.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBAimImpulseLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAimImpulseAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyAdditivePreAimMontageAuthorityFactPacket.h"
@@ -105,24 +103,5 @@ void FBBBSMGPresentationProcessor::PlayEquipmentMontage(
 void FBBBSMGPresentationProcessor::PlayFire(const FBBBSMGAnimationUpdateContext &Context)
 {
     PlayEquipmentMontage(Context, Context.Definition.EquipmentFireMontage);
-    const auto &Hip = Context.Definition.HipFireSettings;
-    const auto &Aim = Context.Definition.AimFireSettings;
-    const FVector2D Random(FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f));
-    const FVector2D HipImpulse = Hip.AimImpulseDegrees + Hip.AimImpulseRandomDegrees * Random;
-    const FVector2D AimImpulse = Aim.AimImpulseDegrees + Aim.AimImpulseRandomDegrees * Random;
-    if (!Context.bCausal)
-    {
-        Context.Character.SubmitInput(FBBBAimImpulseAuthorityFactPacket{
-            HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
-            Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed,
-            Context.Definition.CrouchedModifiers.AimImpulseScale,
-            Context.Definition.CrouchedModifiers.AimImpulseRecoveryScale});
-        return;
-    }
 
-    Context.Character.SubmitInput(FBBBAimImpulseLocalControlPacket{
-        HipImpulse, AimImpulse, Context.Definition.AirborneModifiers.AimImpulseScale,
-        Hip.AimImpulseRecoverySpeed, Aim.AimImpulseRecoverySpeed,
-        Context.Definition.CrouchedModifiers.AimImpulseScale,
-        Context.Definition.CrouchedModifiers.AimImpulseRecoveryScale});
 }

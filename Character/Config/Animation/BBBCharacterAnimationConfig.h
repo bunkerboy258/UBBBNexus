@@ -37,6 +37,6 @@ struct FBBBCharacterAnimationConfig
 
     /** 额外瞄准上下与左右偏移的最大绝对角度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|动画|冲量", meta = (DisplayName = "瞄准冲量角度上限"))
-    FVector2D AimImpulseLimitDegrees = FVector2D(30.0f, 30.0f);
+    FVector2D RecoilLimitDegrees = FVector2D(30.0f, 30.0f);
 
 };
