@@ -112,9 +112,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动输入"))
     FVector SourceMovementInput = FVector::ZeroVector;
 
-    /** 本帧角色额外瞄准角度偏移 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源瞄准偏移角度"))
-    FVector2D SourceAimOffsetDegrees = FVector2D::ZeroVector;
+    /** 本帧后坐力姿势驱动角 X 向上 Y 向右 单位为度 不代表实际枪口误差 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源后坐力角度"))
+    FVector2D SourceRecoilAngles = FVector2D::ZeroVector;
 
     /** 本帧引擎移动模式 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动模式"))
@@ -182,11 +182,11 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceAimTargetComponentSpace;
     }
 
-    /** @return 本帧角色额外上下与左右瞄准角度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|瞄准", meta = (BlueprintThreadSafe))
-    FVector2D GetAimOffsetDegrees() const
+    /** @return 后坐力姿势驱动角 X 向上 Y 向右 单位为度 只读取已发布快照 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    FVector2D GetRecoilAngles() const
     {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceAimOffsetDegrees;
+        return GetBBBMainAnimInstanceThreadSafe()->SourceRecoilAngles;
     }
 
     /**

@@ -134,9 +134,9 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsAiming = false;
 
-    /** 角色当前额外瞄准角度偏移 */
+    /** 后坐力姿势驱动角 X 向上 Y 向右 单位为度 不改变瞄准目标 */
     UPROPERTY(Transient)
-    FVector2D AimOffsetDegrees = FVector2D::ZeroVector;
+    FVector2D RecoilAngles = FVector2D::ZeroVector;
 
     /** 角色组件空间中的瞄准目标 */
     UPROPERTY(Transient)

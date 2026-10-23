@@ -18,7 +18,7 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
     {
         State.PendingDegrees = FVector2D::ZeroVector;
         State.OffsetDegrees = FVector2D::ZeroVector;
-        Facts.AimOffsetDegrees = FVector2D::ZeroVector;
+        Facts.RecoilAngles = FVector2D::ZeroVector;
         return;
     }
 
@@ -26,7 +26,7 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
     {
         State.PendingDegrees = FVector2D::ZeroVector;
         State.OffsetDegrees = FVector2D::ZeroVector;
-        Facts.AimOffsetDegrees = FVector2D::ZeroVector;
+        Facts.RecoilAngles = FVector2D::ZeroVector;
         return;
     }
 
@@ -35,12 +35,12 @@ void FBBBCharacterAimImpulseProcessor::Update(FBBBCharacterAnimationUpdateContex
     State.PendingDegrees = FVector2D::ZeroVector;
     State.OffsetDegrees.X = FMath::Clamp(State.OffsetDegrees.X, -Config.AimImpulseLimitDegrees.X, Config.AimImpulseLimitDegrees.X);
     State.OffsetDegrees.Y = FMath::Clamp(State.OffsetDegrees.Y, -Config.AimImpulseLimitDegrees.Y, Config.AimImpulseLimitDegrees.Y);
-    Facts.AimOffsetDegrees = State.OffsetDegrees;
-    if (!ensureMsgf(!Facts.AimOffsetDegrees.ContainsNaN(), TEXT("角色后坐力大小无效")))
+    Facts.RecoilAngles = State.OffsetDegrees;
+    if (!ensureMsgf(!Facts.RecoilAngles.ContainsNaN(), TEXT("角色后坐力大小无效")))
     {
         State.PendingDegrees = FVector2D::ZeroVector;
         State.OffsetDegrees = FVector2D::ZeroVector;
-        Facts.AimOffsetDegrees = FVector2D::ZeroVector;
+        Facts.RecoilAngles = FVector2D::ZeroVector;
         return;
     }
 }
