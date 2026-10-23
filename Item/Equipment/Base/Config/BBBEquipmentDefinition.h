@@ -19,6 +19,10 @@ class ABBB_EVAC_API UBBBEquipmentDefinition : public UBBBItemDefinition
     GENERATED_BODY()
 
 public:
+    /** 每次装备开始时隐藏网格 等待人物动画显示通知 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayName = "开始装备时隐藏", ToolTip = "每次开始装备时先隐藏网格 到人物动画的显示装备通知后才出现 不延迟装备关系与动画"))
+    bool bHideOnEquip = false;
+
   /** 当前装备姿态的角色快速近战动作 */
   UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "7", DisplayName = "快速近战动作"))
   TObjectPtr<UAnimMontage> QuickMeleeMontage = nullptr;

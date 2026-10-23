@@ -54,6 +54,8 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.AppearanceRemoteMessage, Context);
     Process(InputState.AppearanceAuthorityFact, Context);
 
+    Process(InputState.EquipmentShow, Context);
+    Process(InputState.EquipmentHide, Context);
     Process(InputState.EquipmentBeginAction, Context);
     Process(InputState.EquipmentEndAction, Context);
     Process(InputState.EquipmentBeginContact, Context);

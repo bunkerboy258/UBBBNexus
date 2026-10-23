@@ -17,6 +17,10 @@ struct FBBBCharacterInteractionSelectionState final
     FName PendingItemId;
     /** 是否收到持有结果 */
     bool bHasInteractionRequest = false;
+    /** 上次应用生命与使用强制隐藏时的持有代次 */
+    uint64 VisibilityGeneration = 0;
+    /** 生命或使用状态是否正在要求隐藏 */
+    bool bVisibilityForced = false;
     /** 当前实际持有代次 */
     uint64 ActiveGeneration = 1;
     /** 待还原代次 */

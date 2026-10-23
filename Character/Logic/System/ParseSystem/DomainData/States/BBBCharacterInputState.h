@@ -1,4 +1,6 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterEquipmentShowLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterEquipmentHideLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBCharacterFireIntentLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeEndLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterMeleeBeginLocalControlPacket.h"
@@ -118,6 +120,10 @@ struct FBBBCharacterInputState final
     /** 装备独立使用结果输入 */
     /** 本帧全部独立伤害输入 */
     TBBBCharacterInputSlot<FBBBCharacterDamageLocalControlPacket> Damage;
+    /** 人物动画显示装备输入 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentShowLocalControlPacket> EquipmentShow;
+    /** 人物动画隐藏装备输入 */
+    TBBBCharacterInputSlot<FBBBCharacterEquipmentHideLocalControlPacket> EquipmentHide;
     /** 装备BeginAction通知输入槽 */
     TBBBCharacterInputSlot<FBBBCharacterInteractionBeginActionLocalControlPacket> EquipmentBeginAction;
     /** 装备EndAction通知输入槽 */

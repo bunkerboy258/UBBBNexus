@@ -97,6 +97,8 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterUseAuthorityFactPacket, UseAuthorityFact)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterQuickMeleeLocalControlPacket, QuickMelee)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeBeginLocalControlPacket, MeleeBegin)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeEndLocalControlPacket, MeleeEnd)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentShowLocalControlPacket, EquipmentShow)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentHideLocalControlPacket, EquipmentHide)
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */
@@ -186,6 +188,11 @@ namespace BBBCharacterInput
         if constexpr (std::is_same_v<FPacket, FBBBCharacterItemSelectLocalControlPacket>)
         {
             Slot.Data.Slots.Append(Packet.Slots);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterEquipmentShowLocalControlPacket>
+            || std::is_same_v<FPacket, FBBBCharacterEquipmentHideLocalControlPacket>)
+        {
+            Slot.Data.Generations.Append(Packet.Generations);
         }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionBeginActionLocalControlPacket>)
         {
@@ -372,6 +379,8 @@ namespace BBBCharacterInput
                       !std::is_same_v<FPacket, FBBBCharacterItemAddLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterItemSelectLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterEquipmentShowLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterEquipmentHideLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionBeginActionLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionEndActionLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionBeginContactLocalControlPacket> &&

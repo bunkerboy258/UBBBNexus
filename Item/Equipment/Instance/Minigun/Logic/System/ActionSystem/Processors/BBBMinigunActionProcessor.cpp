@@ -49,6 +49,10 @@ void FBBBMinigunActionProcessor::Update(FBBBMinigunActionUpdateContext &Context)
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
     State.bEquippedThisFrame = Input.bEquipRequested;
+    if (Context.bCausal && Input.bEquipRequested)
+    {
+        State.bHide = Context.Definition.bHideOnEquip;
+    }
     if (Context.bCausal)
     {
         State.bReloadCompletedThisFrame = false;

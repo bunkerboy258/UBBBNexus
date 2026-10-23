@@ -11,22 +11,34 @@ void FBBBCharacterInteractionVisibilityProcessor::Update(FBBBCharacterInteractio
         return;
     }
 
+    auto &Selection = Context.RuntimeData.Interaction.InteractionSelectionState;
+    auto &Inputs = Context.RuntimeData.Interaction.InteractionInputState;
+    auto *Equipment = Cast<ABBBEquipment>(Selection.ActiveMainHandInstance);
+    if (Selection.VisibilityGeneration != Selection.ActiveGeneration)
+    {
+        Selection.VisibilityGeneration = Selection.ActiveGeneration;
+        Selection.bVisibilityForced = false;
+    }
     const auto &Use = Context.RuntimeData.Interaction.ReadInteractionUseState();
     const bool bHideForRecovery = Use.bBusy && !Use.Fact.bQuickMelee &&
                                   IsValid(Use.Definition) && !Use.Definition->bThrowable;
-    const bool bHide = Context.RuntimeData.Traversal.ReadTraversalState().bTraversing ||
-                       !Context.RuntimeData.Life.ReadLifeState().bActionsAllowed ||
-                       bHideForRecovery;
-    AActor *Item = Context.RuntimeData.Interaction.ReadInteractionSelectionState().ActiveMainHandInstance;
-    if (auto *Equipment = Cast<ABBBEquipment>(Item); Equipment && Equipment->IsMeshHidden() != bHide)
+    const bool bForced = !Context.RuntimeData.Life.ReadLifeState().bActionsAllowed || bHideForRecovery;
+    const bool bChanged = bForced != Selection.bVisibilityForced;
+    Selection.bVisibilityForced = bForced;
+    const bool bShow = Inputs.ShowEquipmentGenerations.Contains(Selection.ActiveGeneration);
+    const bool bHide = Inputs.HideEquipmentGenerations.Contains(Selection.ActiveGeneration);
+    Inputs.ShowEquipmentGenerations.Reset();
+    Inputs.HideEquipmentGenerations.Reset();
+    if (!Equipment)
     {
-        if (bHide)
-        {
-            Equipment->SubmitInput(FBBBEquipmentHideLocalControlPacket<>{});
-        }
-        else
-        {
-            Equipment->SubmitInput(FBBBEquipmentShowLocalControlPacket<>{});
-        }
+        return;
+    }
+    if (bHide || (bChanged && bForced))
+    {
+        Equipment->SubmitInput(FBBBEquipmentHideLocalControlPacket<>{});
+    }
+    if (!bForced && (bShow || (bChanged && !bHide)))
+    {
+        Equipment->SubmitInput(FBBBEquipmentShowLocalControlPacket<>{});
     }
 }

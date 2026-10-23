@@ -49,6 +49,10 @@ void FBBBLMGActionProcessor::Update(FBBBLMGActionUpdateContext &Context)
     const bool bPrimaryPressed = Input.bPrimaryRequested && !State.bPrimaryHeld;
     State.bPrimaryHeld = Input.bPrimaryRequested;
     State.bEquippedThisFrame = Input.bEquipRequested;
+    if (Context.bCausal && Input.bEquipRequested)
+    {
+        State.bHide = Context.Definition.bHideOnEquip;
+    }
     if (Context.bCausal)
     {
         State.bReloadCompletedThisFrame = false;

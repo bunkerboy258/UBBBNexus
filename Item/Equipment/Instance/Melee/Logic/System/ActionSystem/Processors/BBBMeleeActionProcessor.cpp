@@ -29,6 +29,11 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeActionUpdateContext &Context)
 
 
 
+    if (Input.bEquip)
+    {
+        State.bHide = Context.Definition.bHideOnEquip;
+    }
+
     for (int32 Token : Input.BeginActions)
     {
         if (State.bAttacking && State.ActionToken == INDEX_NONE)

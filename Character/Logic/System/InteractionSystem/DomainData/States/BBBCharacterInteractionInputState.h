@@ -30,6 +30,10 @@ struct FBBBCharacterInteractionInputState final
     TArray<int32> MeleeEndTokens;
     /** 当帧收到的已成立释放结果 处理后立即清空 */
     TArray<FBBBCharacterUseFact> ReleaseResults;
+    /** 显示通知绑定的持有代次 */
+    TArray<uint64> ShowEquipmentGenerations;
+    /** 隐藏通知绑定的持有代次 */
+    TArray<uint64> HideEquipmentGenerations;
     /** 本帧通用主行为 */
     bool bPrimary = false;
     /** 本帧通用次行为 */
