@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/Handling/BBBLMGHandlingSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/Handling/BBBLMGAirborneModifiers.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/Handling/BBBLMGCrouchedModifiers.h"
 #include "BBBLMGDefinition.generated.h"
 

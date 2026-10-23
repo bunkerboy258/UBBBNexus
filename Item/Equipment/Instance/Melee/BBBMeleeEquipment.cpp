@@ -46,7 +46,7 @@ void ABBBMeleeEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Pack
 
 void ABBBMeleeEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    QueueInput(FBBBMeleePrimaryLocalControlPacket{});
+    QueueInput(FBBBMeleePrimaryLocalControlPacket{{Packet.PressCount}});
 }
 
 

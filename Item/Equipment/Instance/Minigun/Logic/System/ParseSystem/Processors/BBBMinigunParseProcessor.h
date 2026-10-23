@@ -21,77 +21,88 @@ public:
     static void Submit(FBBBMinigunRuntimeData &Data, TPacket Packet)
     {
         auto &Slot = Select(Data.Parse.InputState, Packet);
-        if constexpr (std::is_same_v<TPacket, FBBBMinigunEndContactLocalControlPacket>)
+        if constexpr (std::is_same_v<TPacket, FBBBMinigunPrimaryLocalControlPacket>)
         {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
+            if (!Slot.bActive)
+            {
+                Slot.Packet.PressCount = 0;
+            }
+            Slot.Packet.PressCount += Packet.PressCount;
         }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunEndActionLocalControlPacket>)
+        if constexpr (!std::is_same_v<TPacket, FBBBMinigunPrimaryLocalControlPacket>)
         {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunBeginContactLocalControlPacket>)
-        {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunBeginActionLocalControlPacket>)
-        {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunSpinRemoteMessagePacket>)
-        {
-            Slot.Packet.Spinning.Append(Packet.Spinning);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunSpinAuthorityFactPacket>)
-        {
-            Slot.Packet.Spinning.Append(Packet.Spinning);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunFireRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadStartRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadEndRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunFireAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadStartAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadEndAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunVisibilityRemoteMessagePacket>)
-        {
-            Slot.Packet.Hidden.Append(Packet.Hidden);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBMinigunVisibilityAuthorityFactPacket>)
-        {
-            Slot.Packet.Hidden.Append(Packet.Hidden);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else
-        {
-            Slot.Packet = MoveTemp(Packet);
+            if constexpr (std::is_same_v<TPacket, FBBBMinigunEndContactLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunEndActionLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunBeginContactLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunBeginActionLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunSpinRemoteMessagePacket>)
+            {
+                Slot.Packet.Spinning.Append(Packet.Spinning);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunSpinAuthorityFactPacket>)
+            {
+                Slot.Packet.Spinning.Append(Packet.Spinning);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunFireRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadStartRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadEndRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+                Slot.Packet.Completed.Append(Packet.Completed);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunFireAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadStartAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunReloadEndAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+                Slot.Packet.Completed.Append(Packet.Completed);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunVisibilityRemoteMessagePacket>)
+            {
+                Slot.Packet.Hidden.Append(Packet.Hidden);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBMinigunVisibilityAuthorityFactPacket>)
+            {
+                Slot.Packet.Hidden.Append(Packet.Hidden);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else
+            {
+                Slot.Packet = MoveTemp(Packet);
+            }
         }
         Slot.bActive = true;
     }

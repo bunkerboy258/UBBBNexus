@@ -19,13 +19,14 @@ void FBBBCharacterInteractionInputProcessor::Update(FBBBCharacterInteractionUpda
     auto *Equipment = Context.Character.GetHeldEquipment();
     if (State.bPrimary && Equipment)
     {
-        Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket<>{});
+        Equipment->SubmitInput(FBBBEquipmentPrimaryLocalControlPacket<>{State.PrimaryPressCount});
     }
     if (State.bSecondary && Equipment)
     {
         Equipment->SubmitInput(FBBBEquipmentSecondaryLocalControlPacket<>{});
     }
     State.bPrimary = false;
+    State.PrimaryPressCount = 0;
     State.bSecondary = false;
     for (int32 Index = 0; Index < State.BeginActionRecipients.Num(); ++Index)
     {

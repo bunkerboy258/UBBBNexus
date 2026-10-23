@@ -3,11 +3,11 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
 #include "Game/BBBGameMode.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
-#include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/Player/Input/BBBPlayerInputSystem.h"
 #include "EnhancedInputComponent.h"
 
 /** 验证默认玩法生成的控制器能够绑定输入并提供玩家相机配置 */

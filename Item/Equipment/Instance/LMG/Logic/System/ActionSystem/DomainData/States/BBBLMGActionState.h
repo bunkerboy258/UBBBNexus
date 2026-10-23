@@ -5,8 +5,8 @@
 /** 轻机枪动作产生并跨帧保留的事实 */
 struct FBBBLMGActionState final
 {
-    /** 上一帧是否存在开火请求 用于固定半自动方式的按下边沿 */
-    bool bPrimaryHeld = false;
+    /** 半自动单次点击的短暂有效期 负数表示没有待执行点击 */
+    float PendingPrimaryUntilSeconds = -1.0f;
 
     /** 弹匣容量 */
     int32 AmmoCapacity = 0;

@@ -25,6 +25,7 @@ void FBBBRevolverParseProcessor::Update(FBBBRevolverParseUpdateContext &Context)
     Input.bBlockFireRequested = false;
     Input.bAllowFireRequested = false;
     Input.bPrimaryRequested = false;
+    Input.PrimaryPressCount = 0;
     Input.bReloadRequested = false;
     Input.bLoadMagazineRequested = false;
     Input.bInterruptReloadRequested = false;

@@ -25,6 +25,7 @@ void FBBBShotgunParseProcessor::Update(FBBBShotgunParseUpdateContext &Context)
     Input.bBlockFireRequested = false;
     Input.bAllowFireRequested = false;
     Input.bPrimaryRequested = false;
+    Input.PrimaryPressCount = 0;
     Input.bReloadRequested = false;
     Input.bLoadAmmoRequested = false;
     Input.bInterruptReloadRequested = false;

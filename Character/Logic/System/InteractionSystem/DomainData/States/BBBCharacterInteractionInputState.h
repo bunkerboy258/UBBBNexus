@@ -36,6 +36,8 @@ struct FBBBCharacterInteractionInputState final
     TArray<uint64> HideEquipmentGenerations;
     /** 本帧通用主行为 */
     bool bPrimary = false;
+    /** 本帧主行为的独立按下次数 */
+    int32 PrimaryPressCount = 0;
     /** 本帧通用次行为 */
     bool bSecondary = false;
     /** 释放通知对应的实际持有实例 */

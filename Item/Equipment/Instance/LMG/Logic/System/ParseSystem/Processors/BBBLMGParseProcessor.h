@@ -21,67 +21,78 @@ public:
     static void Submit(FBBBLMGRuntimeData &Data, TPacket Packet)
     {
         auto &Slot = Select(Data.Parse.InputState, Packet);
-        if constexpr (std::is_same_v<TPacket, FBBBLMGEndContactLocalControlPacket>)
+        if constexpr (std::is_same_v<TPacket, FBBBLMGPrimaryLocalControlPacket>)
         {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
+            if (!Slot.bActive)
+            {
+                Slot.Packet.PressCount = 0;
+            }
+            Slot.Packet.PressCount += Packet.PressCount;
         }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGEndActionLocalControlPacket>)
+        if constexpr (!std::is_same_v<TPacket, FBBBLMGPrimaryLocalControlPacket>)
         {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGBeginContactLocalControlPacket>)
-        {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGBeginActionLocalControlPacket>)
-        {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGFireRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadStartRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadEndRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGFireAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadStartAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadEndAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGVisibilityRemoteMessagePacket>)
-        {
-            Slot.Packet.Hidden.Append(Packet.Hidden);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBLMGVisibilityAuthorityFactPacket>)
-        {
-            Slot.Packet.Hidden.Append(Packet.Hidden);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else
-        {
-            Slot.Packet = MoveTemp(Packet);
+            if constexpr (std::is_same_v<TPacket, FBBBLMGEndContactLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGEndActionLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGBeginContactLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGBeginActionLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGFireRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadStartRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadEndRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+                Slot.Packet.Completed.Append(Packet.Completed);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGFireAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadStartAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGReloadEndAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+                Slot.Packet.Completed.Append(Packet.Completed);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGVisibilityRemoteMessagePacket>)
+            {
+                Slot.Packet.Hidden.Append(Packet.Hidden);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBLMGVisibilityAuthorityFactPacket>)
+            {
+                Slot.Packet.Hidden.Append(Packet.Hidden);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else
+            {
+                Slot.Packet = MoveTemp(Packet);
+            }
         }
         Slot.bActive = true;
     }

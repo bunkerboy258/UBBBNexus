@@ -21,6 +21,7 @@ namespace
         Input.bBlockFireRequested = false;
         Input.bAllowFireRequested = false;
         Input.bPrimaryRequested = false;
+        Input.PrimaryPressCount = 0;
         Input.bReloadRequested = false;
         Input.bLoadMagazineRequested = false;
         Input.bInterruptReloadRequested = false;
@@ -36,6 +37,7 @@ void FBBBSniperActionProcessor::Initialize(FBBBSniperRuntimeData &Data, const UB
 
 void FBBBSniperActionProcessor::Stop(FBBBSniperRuntimeData &Data)
 {
+    Data.Action.ActionState.PendingPrimaryUntilSeconds = -1.0f;
     Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bReloadCompletedThisFrame = false;
@@ -45,8 +47,7 @@ void FBBBSniperActionProcessor::Update(FBBBSniperActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
-    const bool bPrimaryPressed = Input.bPrimaryRequested && !State.bPrimaryHeld;
-    State.bPrimaryHeld = Input.bPrimaryRequested;
+    const bool bPrimaryPressed = Input.PrimaryPressCount > 0;
     State.bEquippedThisFrame = Input.bEquipRequested;
     if (Context.bCausal && Input.bEquipRequested)
     {
@@ -116,16 +117,29 @@ void FBBBSniperActionProcessor::Update(FBBBSniperActionUpdateContext &Context)
             Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
     }
 
-    if (Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed) && !State.bFireBlocked && !State.bIsReloading && State.LoadedAmmo > 0
-        && Context.World.GetTimeSeconds() - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
+    const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
+    const bool bReady = !State.bHide && !State.bFireBlocked && !State.bIsReloading
+        && !State.bEquippedThisFrame && State.LoadedAmmo > 0;
+    if (!bReady || !Input.bPrimaryRequested)
+    {
+        State.PendingPrimaryUntilSeconds = -1.0f;
+    }
+    if (bReady && bPrimaryPressed)
+    {
+        State.PendingPrimaryUntilSeconds = CurrentTimeSeconds + FMath::Min(0.08f, Context.Definition.FireInterval);
+    }
+    const bool bFireRequested = Context.Definition.bAutomaticFire ? Input.bPrimaryRequested
+        : State.PendingPrimaryUntilSeconds >= CurrentTimeSeconds;
+    if (bReady && bFireRequested
+        && CurrentTimeSeconds - State.LastFireTimeSeconds >= Context.Definition.FireInterval)
     {
         if (ensureMsgf(Context.WeaponMesh.DoesSocketExist(Context.Definition.MuzzleSocketName),
             TEXT("狙击枪缺少枪口 Socket")))
         {
-            const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
             const float ActualFireInterval = CurrentTimeSeconds - State.LastFireTimeSeconds;
             --State.LoadedAmmo;
             ++State.FireSequence;
+            State.PendingPrimaryUntilSeconds = -1.0f;
             State.LastFireTimeSeconds = CurrentTimeSeconds;
 
             UE_LOG(LogTemp, VeryVerbose,

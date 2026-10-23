@@ -1,6 +1,6 @@
-#include "BBBWork/UBBBNexus/PlayerCamera/Processors/BBBPlayerCameraImpulseProcessor.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Processors/BBBPlayerCameraImpulseProcessor.h"
 
-#include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -37,9 +37,10 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         }
 
         CameraSystem.ActiveRecoilSettings = Settings;
-        if (FireSequence != CameraSystem.LastFireSequence)
+        const int32 NewShots = FMath::Max(0, FireSequence - CameraSystem.LastFireSequence);
+        CameraSystem.LastFireSequence = FireSequence;
+        for (int32 ShotIndex = 0; ShotIndex < NewShots; ++ShotIndex)
         {
-            CameraSystem.LastFireSequence = FireSequence;
             FBBBPlayerCameraInput Shot;
             Shot.Impulse = Settings.ImpulseDegrees + FVector(
                 FMath::FRandRange(-Settings.RandomDegrees.X, Settings.RandomDegrees.X),
@@ -48,7 +49,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
             CameraSystem.Submit(Shot);
             if (!Shot.Impulse.ContainsNaN())
             {
-                RetainedPitch = Shot.Impulse.X * Settings.PitchRetention;
+                RetainedPitch += Shot.Impulse.X * Settings.PitchRetention;
             }
         }
     }

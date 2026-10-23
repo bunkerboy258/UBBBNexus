@@ -21,67 +21,78 @@ public:
     static void Submit(FBBBRevolverRuntimeData &Data, TPacket Packet)
     {
         auto &Slot = Select(Data.Parse.InputState, Packet);
-        if constexpr (std::is_same_v<TPacket, FBBBRevolverEndContactLocalControlPacket>)
+        if constexpr (std::is_same_v<TPacket, FBBBRevolverPrimaryLocalControlPacket>)
         {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
+            if (!Slot.bActive)
+            {
+                Slot.Packet.PressCount = 0;
+            }
+            Slot.Packet.PressCount += Packet.PressCount;
         }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverEndActionLocalControlPacket>)
+        if constexpr (!std::is_same_v<TPacket, FBBBRevolverPrimaryLocalControlPacket>)
         {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverBeginContactLocalControlPacket>)
-        {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverBeginActionLocalControlPacket>)
-        {
-            Slot.Packet.Tokens.Append(Packet.Tokens);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverFireRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadStartRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadEndRemoteMessagePacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverFireAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadStartAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadEndAuthorityFactPacket>)
-        {
-            Slot.Packet.Sequences.Append(Packet.Sequences);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-            Slot.Packet.Completed.Append(Packet.Completed);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverVisibilityRemoteMessagePacket>)
-        {
-            Slot.Packet.Hidden.Append(Packet.Hidden);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else if constexpr (std::is_same_v<TPacket, FBBBRevolverVisibilityAuthorityFactPacket>)
-        {
-            Slot.Packet.Hidden.Append(Packet.Hidden);
-            Slot.Packet.Revisions.Append(Packet.Revisions);
-        }
-        else
-        {
-            Slot.Packet = MoveTemp(Packet);
+            if constexpr (std::is_same_v<TPacket, FBBBRevolverEndContactLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverEndActionLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverBeginContactLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverBeginActionLocalControlPacket>)
+            {
+                Slot.Packet.Tokens.Append(Packet.Tokens);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverFireRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadStartRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadEndRemoteMessagePacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+                Slot.Packet.Completed.Append(Packet.Completed);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverFireAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadStartAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverReloadEndAuthorityFactPacket>)
+            {
+                Slot.Packet.Sequences.Append(Packet.Sequences);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+                Slot.Packet.Completed.Append(Packet.Completed);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverVisibilityRemoteMessagePacket>)
+            {
+                Slot.Packet.Hidden.Append(Packet.Hidden);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else if constexpr (std::is_same_v<TPacket, FBBBRevolverVisibilityAuthorityFactPacket>)
+            {
+                Slot.Packet.Hidden.Append(Packet.Hidden);
+                Slot.Packet.Revisions.Append(Packet.Revisions);
+            }
+            else
+            {
+                Slot.Packet = MoveTemp(Packet);
+            }
         }
         Slot.bActive = true;
     }

@@ -1,5 +1,5 @@
-#include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Processors/BBBPlayerCameraImpulseProcessor.h"
+#include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Processors/BBBPlayerCameraImpulseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -59,7 +59,11 @@ void ABBBPlayerCameraSystem::Submit(const FBBBPlayerCameraInput &Packet)
     if (ensureMsgf(IsInGameThread() && !Packet.Impulse.ContainsNaN(),
         TEXT("[BBBCamera]Invalid camera contribution")))
     {
-        Pending = Packet;
+        if (!Pending.IsSet())
+        {
+            Pending = FBBBPlayerCameraInput{};
+        }
+        Pending->Impulse += Packet.Impulse;
     }
 }
 

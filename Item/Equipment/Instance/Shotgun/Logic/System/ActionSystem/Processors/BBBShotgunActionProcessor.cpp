@@ -21,6 +21,7 @@ namespace
         Input.bBlockFireRequested = false;
         Input.bAllowFireRequested = false;
         Input.bPrimaryRequested = false;
+        Input.PrimaryPressCount = 0;
         Input.bReloadRequested = false;
         Input.bLoadAmmoRequested = false;
         Input.bInterruptReloadRequested = false;
@@ -38,6 +39,7 @@ void FBBBShotgunActionProcessor::Initialize(FBBBShotgunRuntimeData &Data, const 
 
 void FBBBShotgunActionProcessor::Stop(FBBBShotgunRuntimeData &Data)
 {
+    Data.Action.ActionState.PendingPrimaryUntilSeconds = -1.0f;
     Data.Action.ActionState.bFireBlocked = false;
     Data.Action.ActionState.bIsReloading = false;
     Data.Action.ActionState.bReloadFinishing = false;
@@ -50,8 +52,7 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
 {
     auto &Input = Context.RuntimeData.Action.ActionInputState;
     auto &State = Context.RuntimeData.Action.ActionState;
-    const bool bPrimaryPressed = Input.bPrimaryRequested && !State.bPrimaryHeld;
-    State.bPrimaryHeld = Input.bPrimaryRequested;
+    const bool bPrimaryPressed = Input.PrimaryPressCount > 0;
     State.bEquippedThisFrame = Input.bEquipRequested;
     if (Context.bCausal && Input.bEquipRequested)
     {
@@ -158,11 +159,22 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
             Context.World.GetTimeSeconds() - State.LastFireTimeSeconds, Context.Definition.FireInterval);
     }
 
-    const bool bFireRequested = (Input.bPrimaryRequested && (Context.Definition.bAutomaticFire || bPrimaryPressed))
-        || State.bFireAfterReload;
     const float CurrentTimeSeconds = Context.World.GetTimeSeconds();
     const float FireInterval = FMath::Max(0.01f, Context.Definition.FireInterval);
-    const bool bCanFire = bFireRequested && !State.bFireBlocked && !State.bIsReloading && !State.bReloadFinishing && State.LoadedAmmo > 0;
+    const bool bReady = !State.bHide && !State.bFireBlocked && !State.bIsReloading && !State.bReloadFinishing
+        && !State.bEquippedThisFrame && State.LoadedAmmo > 0;
+    if (!bReady || !Input.bPrimaryRequested)
+    {
+        State.PendingPrimaryUntilSeconds = -1.0f;
+    }
+    if (bReady && bPrimaryPressed)
+    {
+        State.PendingPrimaryUntilSeconds = CurrentTimeSeconds + FMath::Min(0.08f, FireInterval);
+    }
+    const bool bFireRequested = (Context.Definition.bAutomaticFire && Input.bPrimaryRequested)
+        || (!Context.Definition.bAutomaticFire && State.PendingPrimaryUntilSeconds >= CurrentTimeSeconds)
+        || State.bFireAfterReload;
+    const bool bCanFire = bReady && bFireRequested;
     if (!bCanFire)
     {
         State.NextFireTimeSeconds = 0.0f;
@@ -185,6 +197,7 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
                 --State.LoadedAmmo;
                 State.bFireAfterReload = false;
                 ++State.FireSequence;
+                State.PendingPrimaryUntilSeconds = -1.0f;
                 State.LastFireTimeSeconds = CurrentTimeSeconds;
                 State.NextFireTimeSeconds += FireInterval;
 

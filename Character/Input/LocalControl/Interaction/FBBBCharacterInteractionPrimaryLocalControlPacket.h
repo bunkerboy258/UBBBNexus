@@ -7,10 +7,12 @@
 /** 当前主手物品的通用Primary请求 */
 struct FBBBCharacterInteractionPrimaryLocalControlPacket final
 {
-    /** @return 无数据请求始终有效 */
+    /** 本次主行为中独立按下的次数 持续按住时为零 */
+    int32 PressCount = 1;
+    /** @return 点击次数是否有效 */
     bool IsValid() const
     {
-        return true;
+        return PressCount >= 0;
     }
     /** @param Context	角色输入上下文 @return 是否允许操作当前物品 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
@@ -22,5 +24,6 @@ struct FBBBCharacterInteractionPrimaryLocalControlPacket final
     void Apply(FBBBCharacterInputContext &Context) const
     {
         Context.InteractionInputs.bPrimary = true;
+        Context.InteractionInputs.PrimaryPressCount += PressCount;
     }
 };

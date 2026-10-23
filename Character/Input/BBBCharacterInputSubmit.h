@@ -115,6 +115,14 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionPrimaryLocalControlPacket>)
+        {
+            if (!Slot.bActive)
+            {
+                Slot.Data.PressCount = 0;
+            }
+            Slot.Data.PressCount += Packet.PressCount;
+        }
         if constexpr (std::is_same_v<FPacket, FBBBAccelerationRemoteMessagePacket>
             || std::is_same_v<FPacket, FBBBAccelerationAuthorityFactPacket>)
         {
@@ -354,7 +362,8 @@ namespace BBBCharacterInput
         {
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
-        if constexpr (!std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&
+        if constexpr (!std::is_same_v<FPacket, FBBBCharacterInteractionPrimaryLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterMeleeBeginLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterUseAuthorityFactPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterUseRemoteMessagePacket> &&

@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/Handling/BBBMinigunHandlingSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/Handling/BBBMinigunAirborneModifiers.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/Handling/BBBMinigunCrouchedModifiers.h"
 #include "BBBMinigunDefinition.generated.h"
 

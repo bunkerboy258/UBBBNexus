@@ -10,7 +10,7 @@ struct FBBBShotgunPrimaryLocalControlPacket final : public FBBBEquipmentPrimaryL
     /** @return 输入数据有效 */
     bool IsValid() const
     {
-        return true;
+        return PressCount >= 0;
     }
 
     /** @return 输入可写入本帧状态 */
@@ -23,5 +23,6 @@ struct FBBBShotgunPrimaryLocalControlPacket final : public FBBBEquipmentPrimaryL
     void Apply(FBBBShotgunActionInputState &State) const
     {
         State.bPrimaryRequested = true;
+        State.PrimaryPressCount += PressCount;
     }
 };

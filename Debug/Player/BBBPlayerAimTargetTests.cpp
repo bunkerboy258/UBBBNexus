@@ -8,7 +8,7 @@
 #include "Engine/World.h"
 #include "Components/BoxComponent.h"
 #include "MassCommonFragments.h"
-#include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Player/Input/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 
 /** 验证准星目标选择 无表现实体与世界遮挡 不改变枪口发射规则 */

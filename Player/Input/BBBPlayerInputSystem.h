@@ -1,7 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputConfig.h"
+#include "BBBWork/UBBBNexus/Player/Input/BBBPlayerInputConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Aim/FBBBCharacterAimLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBPlayerInputSystem.generated.h"
@@ -80,5 +80,7 @@ private:
     FVector2D LookAxis = FVector2D::ZeroVector;
     bool bInputEnabled = true;
     bool bFire = false;
+    /** 尚未交给角色的主行为按下次数 */
+    int32 FirePressCount = 0;
     bool bJump = false;
 };

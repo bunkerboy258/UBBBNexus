@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/Handling/BBBRevolverHandlingSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/Handling/BBBRevolverAirborneModifiers.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Revolver/Config/Handling/BBBRevolverCrouchedModifiers.h"
 #include "BBBRevolverDefinition.generated.h"
 

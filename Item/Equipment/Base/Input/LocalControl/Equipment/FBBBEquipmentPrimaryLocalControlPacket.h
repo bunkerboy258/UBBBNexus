@@ -5,6 +5,8 @@
 template<typename TDerived = void>
 struct FBBBEquipmentPrimaryLocalControlPacket
 {
+    /** 本次主行为中独立按下的次数 持续按住时为零 */
+    int32 PressCount = 1;
 
     /** @return 由具体包验证格式 */
     bool IsValid() const;

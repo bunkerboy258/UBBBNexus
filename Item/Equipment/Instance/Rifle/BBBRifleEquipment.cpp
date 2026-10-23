@@ -69,7 +69,7 @@ void ABBBRifleEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Pack
 
 void ABBBRifleEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    QueueInput(FBBBRiflePrimaryLocalControlPacket{});
+    QueueInput(FBBBRiflePrimaryLocalControlPacket{{Packet.PressCount}});
 }
 
 

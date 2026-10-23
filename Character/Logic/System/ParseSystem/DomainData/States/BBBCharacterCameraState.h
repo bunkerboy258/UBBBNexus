@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Input/BBBPlayerCameraInput.h"
 #include "BBBCharacterCameraState.generated.h"
 
 /** 角色等待相机系统消费的表现输入状态 */

@@ -69,7 +69,7 @@ void ABBBPistolEquipment::QueueInput(FBBBEquipmentEquipAuthorityFactPacket<> Pac
 
 void ABBBPistolEquipment::QueueInput(FBBBEquipmentPrimaryLocalControlPacket<> Packet)
 {
-    QueueInput(FBBBPistolPrimaryLocalControlPacket{});
+    QueueInput(FBBBPistolPrimaryLocalControlPacket{{Packet.PressCount}});
 }
 
 

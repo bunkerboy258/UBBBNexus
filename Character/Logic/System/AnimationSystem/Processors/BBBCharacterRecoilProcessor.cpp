@@ -59,14 +59,17 @@ void FBBBCharacterRecoilProcessor::Update(FBBBCharacterAnimationUpdateContext &C
     }
     if (Shots > 0 && !Source->IsReloading())
     {
+        const auto Pattern = Source->GetRecoilPattern();
+        FVector2D PreviousTarget = State.ShotCount > 0
+            ? Pattern[FMath::Min(State.ShotCount, Pattern.Num()) - 1] : FVector2D::ZeroVector;
         if (Source->HoldsRecoilBetweenShots() && State.bStartNewSegment)
         {
             State.ShotCount = 0;
+            PreviousTarget = FVector2D::ZeroVector;
         }
-        const auto Pattern = Source->GetRecoilPattern();
         State.bStartNewSegment = false;
         State.ShotCount = FMath::Min(State.ShotCount + Shots, Pattern.Num());
-        State.OffsetDegrees = Pattern[State.ShotCount - 1];
+        State.OffsetDegrees += Pattern[State.ShotCount - 1] - PreviousTarget;
         if (!ensureMsgf(!State.OffsetDegrees.ContainsNaN(), TEXT("后坐力轨迹包含无效角度")))
         {
             State.OffsetDegrees = FVector2D::ZeroVector;

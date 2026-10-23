@@ -16,6 +16,8 @@ struct FBBBSMGActionInputState final
 
     /** 本帧是否收到开火请求 */
     bool bPrimaryRequested = false;
+    /** 本帧独立按下的次数 */
+    int32 PrimaryPressCount = 0;
 
     /** 本帧是否收到换弹请求 */
     bool bReloadRequested = false;

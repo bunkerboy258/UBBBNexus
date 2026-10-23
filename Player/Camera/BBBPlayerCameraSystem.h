@@ -1,8 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Input/BBBPlayerCameraInput.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Input/BBBPlayerCameraInput.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBPlayerCameraSystem.generated.h"
 class ABBBCharacter;
 class APlayerController;
@@ -76,7 +76,7 @@ private:
     float AimBoomInterpSpeed = 12.0f;
     TWeakObjectPtr<ABBBCharacter> Character;
     TWeakObjectPtr<APlayerController> Controller;
-    /** 当前等待消费的最后一次相机冲击 */
+    /** 当前等待消费的累计相机冲击 */
     TOptional<FBBBPlayerCameraInput> Pending;
 
     /** 当前相机三轴冲击偏移 */

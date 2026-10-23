@@ -1,4 +1,4 @@
-#include "BBBWork/UBBBNexus/PlayerInput/BBBPlayerInputSystem.h"
+#include "BBBWork/UBBBNexus/Player/Input/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBCharacterFireIntentLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionSecondaryLocalControlPacket.h"
@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBJumpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBRunLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/BBBPlayerCameraSystem.h"
+#include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentPrimaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Equipment/FBBBEquipmentSecondaryLocalControlPacket.h"
 #include "EnhancedInputComponent.h"
@@ -69,6 +69,7 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     MovementState = FBBBCharacterMovementLocalControlPacket();
     AimState = FBBBCharacterAimLocalControlPacket();
     bFire = false;
+    FirePressCount = 0;
     bJump = false;
     MoveAxis = FVector2D::ZeroVector;
     LookAxis = FVector2D::ZeroVector;
@@ -108,6 +109,7 @@ void UBBBPlayerInputSystem::SetInputEnabled(const bool bEnabled)
         MovementState = FBBBCharacterMovementLocalControlPacket();
         AimState = FBBBCharacterAimLocalControlPacket();
         bFire = false;
+        FirePressCount = 0;
         bJump = false;
         MoveAxis = FVector2D::ZeroVector;
         LookAxis = FVector2D::ZeroVector;
@@ -207,6 +209,10 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
                                     {
                                         bFire = bInputEnabled && Character.IsValid() &&
                                                 !Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy;
+                                        if (bFire)
+                                        {
+                                            ++FirePressCount;
+                                        }
                                     });
         for (const ETriggerEvent Event : {ETriggerEvent::Completed, ETriggerEvent::Canceled})
         {
@@ -372,6 +378,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     if (Character.IsValid() && Character->RuntimeData.Interaction.ReadInteractionUseState().bBusy)
     {
         bFire = false;
+        FirePressCount = 0;
         AimState.bAim = false;
     }
 
@@ -404,11 +411,12 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Character->SubmitInput(AimState);
     Character->SubmitInput(FBBBCharacterFireIntentLocalControlPacket{bFire});
 
-    // 开火与跳跃以包的存在与否表达按下 未按下时不投递
-    if (bFire && Character->RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None)
+    // 主行为同时保留连续按住与采样间隔中的独立点击
+    if ((bFire || FirePressCount > 0) && Character->RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None)
     {
-        Character->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{});
+        Character->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{FirePressCount});
     }
+    FirePressCount = 0;
     if (bJump)
     {
         Character->SubmitInput(FBBBJumpLocalControlPacket{});

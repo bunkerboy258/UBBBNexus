@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
-#include "BBBWork/UBBBNexus/PlayerCamera/Config/BBBPlayerCameraRecoilSettings.h"
+#include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBEquipmentAnimInstance.generated.h"
 
 class UAnimMontage;
