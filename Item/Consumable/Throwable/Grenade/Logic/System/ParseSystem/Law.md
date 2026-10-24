@@ -10,15 +10,15 @@
 
 ```text
 ParseSystem/
-├─ BBBGrenadeParseSystem.h / .cpp
-├─ DomainData/
-│  ├─ BBBGrenadeParseDomainState.h
-│  ├─ Context/
-│  │  └─ BBBGrenadeParseUpdateContext.h
-│  ├─ Definitions/
-│  │  └─ BBBGrenadeInputSlot.h
-│  └─ States/
-│     └─ BBBGrenadeInputState.h
-└─ Processors/
-   └─ BBBGrenadeParseProcessor.h / .cpp
++-- BBBGrenadeParseSystem.h / .cpp
++-- DomainData/
+|  +-- BBBGrenadeParseDomainState.h
+|  +-- Context/
+|  |  +-- BBBGrenadeParseUpdateContext.h
+|  +-- Definitions/
+|  |  +-- BBBGrenadeInputSlot.h
+|  +-- States/
+|     +-- BBBGrenadeInputState.h
++-- Processors/
+   +-- BBBGrenadeParseProcessor.h / .cpp
 ```

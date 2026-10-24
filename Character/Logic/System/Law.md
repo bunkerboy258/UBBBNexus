@@ -1,18 +1,18 @@
 # Character System Law
 
-严格遵守 `Constitution/Data/Law.md` 的约定
+严格遵守 `../../../../Constitution/Data/Law.md` 的约定
 
 系统根位于系统目录下 以下系统根目录统一使用 `X/` 表示
 
-- 系统根负责初始化与无参 Update。
-- 外部玩法请求统一通过角色 SubmitInput 进入 系统根不得增加外部玩法输入入口。
+- 系统根负责初始化与无参 Update.
+- 外部玩法请求统一通过角色 SubmitInput 进入 系统根不得增加外部玩法输入入口.
 - `Update` 只负责组装 Context 并按固定顺序调度处理器
 - 系统根禁止持有具体领域逻辑
 - 系统只能由 `Character/Logic/Core/Update` 下的主管线调用
 
 物理目录固定为
 
-- `X/` 直属第一级只允许系统根对应的 `.h` `.cpp` 与 `Law.md`
+- `X/` 直属第一级只允许系统根对应的 `.h` `.cpp`
 - `X/DomainData/` 放且只放 B
 - `X/DomainData/States/` 放且只放 A
 - `X/DomainData/Context/` 放且只放 D
@@ -33,11 +33,11 @@
 - 一个处理器文件只能拥有一个 `Update`
 - 处理器 `.cpp` 超过二百行时必须重新检查职责是否需要拆分
 
-- ItemSystem 与 InteractionSystem 可以读取主管线确定的执行模式。
-- ItemSystem 只维护 Causal 路径的真实物品位置及快捷选择。
-- AppearanceSystem 在 Causal 生成外观事实 在 Mirror 只还原接收的结果。
-- InteractionSystem 分别维护 Causal 的实际装备关系与 Mirror 的装备还原。
-- 执行模式读取不得引入具体网络逻辑。
-- 跨系统持久结果只能通过所属领域的公开只读状态读取。
+- ItemSystem 与 InteractionSystem 可以读取主管线确定的执行模式.
+- ItemSystem 只维护 Causal 路径的真实物品位置及快捷选择.
+- AppearanceSystem 在 Causal 生成外观事实 在 Mirror 只还原接收的结果.
+- InteractionSystem 分别维护 Causal 的实际装备关系与 Mirror 的装备还原.
+- 执行模式读取不得引入具体网络逻辑.
+- 跨系统持久结果只能通过所属领域的公开只读状态读取.
 
 只有网络系统允许存在网络语义与具体网络逻辑

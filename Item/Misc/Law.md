@@ -1,6 +1,6 @@
 # Misc Law
 
-- 遵循 `../Law.md` 与数据宪法。
+- 遵循 `../Law.md` 与数据宪法.
 
 ## 物理目录
 
@@ -8,6 +8,6 @@
 
 ```text
 Misc/
-├─ Catalog/
-└─ Config/
++-- Catalog/
++-- Config/
 ```

@@ -9,7 +9,6 @@
 
 ```text
 Instance/
-    Law.md
     <装备类型>/
         <装备Actor根>.h / .cpp           唯一运行时根与对外输入入口
         Config/                          本类装备的静态配置
