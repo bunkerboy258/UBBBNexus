@@ -36,13 +36,13 @@ private:
     /** 每轮独立物理资产 防止修改正式资产 */
     UPROPERTY(Transient)
     TObjectPtr<UPhysicsAsset> ProbePhysics;
-    /** 首次采样时的原始物理资产 每轮从此重新复制 */
+    /** 本轮开始时的原物理资产 结束后恢复并释放引用 */
     UPROPERTY(Transient)
     TObjectPtr<UPhysicsAsset> SourcePhysics;
     /** 每轮独立配置 防止修改正式资产 */
     UPROPERTY(Transient)
     TArray<TObjectPtr<UHitReactProfile>> ProbeProfiles;
-    /** 首次采样时的原始部位配置 */
+    /** 本轮开始时的原部位配置 不跨版本复用 */
     UPROPERTY(Transient)
     TArray<TObjectPtr<UHitReactProfile>> SourceProfiles;
     /** 当前诊断结果 不保留已结束试验的运行状态 */

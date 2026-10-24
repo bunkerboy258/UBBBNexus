@@ -8,20 +8,19 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "UObject/ConstructorHelpers.h"
 
 UBBBMonsterGorePreviewComponent::UBBBMonsterGorePreviewComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
-    static ConstructorHelpers::FObjectFinder<UBBBMonsterGoreDefinition> Resource(
-        TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/Injury/Connor/DA_Wounds.DA_Wounds"));
-    Definition = Resource.Object;
 }
 
 void UBBBMonsterGorePreviewComponent::BeginPlay()
 {
     Super::BeginPlay();
-    ResetTarget();
+    if (auto* Target = Cast<ABBBZombieHitReactionTarget>(GetOwner()))
+    {
+        Target->ApplyConfiguration();
+    }
 }
 
 void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragment &Hit, const float Strength)
@@ -62,7 +61,7 @@ void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragm
 void UBBBMonsterGorePreviewComponent::Present()
 {
     auto *Target = Cast<ABBBZombieHitReactionTarget>(GetOwner());
-    if (Target && Definition && Definition->IsReady())
+    if (Target && Target->bConfigurationReady && GetWorld()->IsGameWorld() && Definition && Definition->IsReady())
     {
         UBBBMonsterGorePresentationComponent::UpdateWounds(Result, *Definition, Destroyed, CurrentHit, Target->TargetMesh,
                                                       GetWorld()->GetTimeSeconds(), true);
@@ -102,6 +101,12 @@ void UBBBMonsterGorePreviewComponent::TickComponent(const float DeltaTime, const
     {
         return;
     }
+    auto* Target = Cast<ABBBZombieHitReactionTarget>(GetOwner());
+    if (!Target || !Target->bConfigurationReady)
+    {
+        return;
+    }
+    Target->UpdatePreviewAnimation();
     if (AppliedInterval != ResetInterval)
     {
         AppliedInterval = ResetInterval;

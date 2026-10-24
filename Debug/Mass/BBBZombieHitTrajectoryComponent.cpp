@@ -59,6 +59,10 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     {
         return TEXT("拒绝 需要空闲的游戏世界调试靶");
     }
+    if (!Target->bConfigurationReady || !Target->TestAnimation)
+    {
+        return TEXT("拒绝 请先应用有效版本并指定兼容的测试动画");
+    }
     if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request) || !Request.IsValid())
     {
         return TEXT("拒绝 配置不是有效对象");
@@ -105,13 +109,12 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     Target->TargetMesh->SetPosition(Phase, false);
     Target->TargetMesh->TickAnimation(0, false);
     Target->TargetMesh->RefreshBoneTransforms();
-    if (!SourcePhysics)
+    // 每次从当前版本重新取得来源 防止切换版本后复用旧副本
+    SourcePhysics = Target->TargetMesh->GetPhysicsAsset();
+    SourceProfiles.Reset();
+    for (auto& Reference : Target->HitReaction->AvailableProfiles)
     {
-        SourcePhysics = Target->TargetMesh->GetPhysicsAsset();
-        for (auto& Reference : Target->HitReaction->AvailableProfiles)
-        {
-            SourceProfiles.Add(Reference.LoadSynchronous());
-        }
+        SourceProfiles.Add(Reference.LoadSynchronous());
     }
     ProbePhysics = DuplicateObject<UPhysicsAsset>(SourcePhysics, this,
         MakeUniqueObjectName(this, UPhysicsAsset::StaticClass(), TEXT("ProbePhysics")));
@@ -419,6 +422,18 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
 void UBBBZombieHitTrajectoryComponent::Complete(const FString& Error)
 {
     SetComponentTickEnabled(false);
+    if (auto* Target = Cast<ABBBZombieHitReactionTarget>(GetOwner()))
+    {
+        Target->HitReaction->ResetPresentation();
+        Target->HitReaction->Deactivate();
+        Target->TargetMesh->SetPhysicsAsset(SourcePhysics, true);
+        Target->HitReaction->AvailableProfiles.Reset();
+        for (UHitReactProfile* Profile : SourceProfiles)
+        {
+            Target->HitReaction->AvailableProfiles.Add(Profile);
+        }
+        Target->HitReaction->Activate(true);
+    }
     Report->SetStringField(TEXT("status"), Error.IsEmpty() ? TEXT("completed") : TEXT("failed"));
     Report->SetStringField(TEXT("error"), Error);
     IFileManager::Get().MakeDirectory(*FPaths::GetPath(OutputPath), true);
@@ -434,4 +449,8 @@ void UBBBZombieHitTrajectoryComponent::Complete(const FString& Error)
         ReferenceActor = nullptr;
         ReferenceMesh = nullptr;
     }
+    ProbePhysics = nullptr;
+    ProbeProfiles.Reset();
+    SourcePhysics = nullptr;
+    SourceProfiles.Reset();
 }

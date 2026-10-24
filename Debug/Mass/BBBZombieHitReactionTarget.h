@@ -11,6 +11,12 @@ class UBBBMonsterPhysicalAnimationComponent;
 class UBBBZombieHitTrajectoryComponent;
 class UBBBMonsterGorePreviewComponent;
 class UBBBMonsterGorePresentationComponent;
+class UBBBMonsterPresentationComponent;
+class UMassEntityConfigAsset;
+class UPhysicsAsset;
+class UHitReactProfile;
+class UAnimSequence;
+class UBBBMonsterGoreDefinition;
 
 /** 仅用于本地受击与血腥调参的固定表现靶 不创建实体或维护玩法生命 */
 UCLASS(meta = (DisplayName = "僵尸程序化受击调参靶"))
@@ -19,8 +25,60 @@ class ABBB_EVAC_API ABBBZombieHitReactionTarget final : public AActor
     GENERATED_BODY()
 
 public:
-    /** @return 已配置独立物理资产和部位配置的调参靶 */
+    /** @return 通过正式模板配置的固定表现靶 */
     ABBBZombieHitReactionTarget();
+
+    /** 正式模板是模型 动画 物理与伤口引用的唯一默认来源 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "测试僵尸", meta = (DisplayName = "僵尸版本"))
+    TObjectPtr<UMassEntityConfigAsset> ZombieVersion;
+
+    /** 留空使用正式动画蓝图 指定时只播放该段兼容动画 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "测试僵尸", meta = (DisplayName = "测试动画", ToolTip = "留空使用所选版本的正式待机 轨迹采样时需指定动画序列"))
+    TObjectPtr<UAnimSequence> TestAnimation;
+
+    /** 只有启用覆盖才使用测试物理资产 */
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "覆盖物理资产", InlineEditConditionToggle))
+    bool bOverridePhysics = false;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "测试物理资产", EditCondition = "bOverridePhysics"))
+    TObjectPtr<UPhysicsAsset> PhysicsOverride;
+
+    /** 四个具名字段避免部位顺序错误 */
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "覆盖程序化受击"))
+    bool bOverrideHitProfiles = false;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "躯干受击", EditCondition = "bOverrideHitProfiles"))
+    TObjectPtr<UHitReactProfile> TorsoProfile;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "头部受击", EditCondition = "bOverrideHitProfiles"))
+    TObjectPtr<UHitReactProfile> HeadProfile;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "手臂受击", EditCondition = "bOverrideHitProfiles"))
+    TObjectPtr<UHitReactProfile> ArmsProfile;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "腿部受击", EditCondition = "bOverrideHitProfiles"))
+    TObjectPtr<UHitReactProfile> LegsProfile;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "覆盖伤口与血液", InlineEditConditionToggle))
+    bool bOverrideGore = false;
+
+    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "测试伤口与血液", EditCondition = "bOverrideGore"))
+    TObjectPtr<UBBBMonsterGoreDefinition> GoreOverride;
+
+    /** 当前配置失败时隐藏身体并禁止命中 不悄悄使用上一版本 */
+    UPROPERTY(Transient, VisibleAnywhere, Category = "测试僵尸", meta = (DisplayName = "配置状态"))
+    FString ConfigurationStatus;
+
+    /** 当前选择已经完整解析并可以用于命中 */
+    UPROPERTY(Transient, VisibleAnywhere, Category = "测试僵尸", meta = (DisplayName = "配置有效"))
+    bool bConfigurationReady = false;
+
+    /** @return 重新解析全部配置并清除上一版本的表现 */
+    UFUNCTION(CallInEditor, BlueprintCallable, Category = "测试僵尸", meta = (DisplayName = "应用版本与覆盖"))
+    bool ApplyConfiguration();
+
+    /** @return 更新正式动画蓝图需要的本地预览快照 无返回值 */
+    void UpdatePreviewAnimation();
 
     /** @param RequestJson	独立运行时副本的采样配置 @return 启动结果 */
     UFUNCTION(BlueprintCallable, Category = "受击调参")
@@ -32,7 +90,7 @@ public:
 
     //~ Begin AActor Interface
     /**
-     * 将标准子弹点命中注入正式受击表现组件 不扣血或触发断肢
+     * 将标准子弹点命中注入正式受击与血腥表现 不产生玩法生命伤害
      * @param DamageAmount	本次点伤害数值
      * @param DamageEvent	引擎命中数据
      * @param EventInstigator	射击者控制器
@@ -41,13 +99,19 @@ public:
      */
     virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent,
         AController* EventInstigator, AActor* DamageCauser) override;
+
+    virtual void OnConstruction(const FTransform& Transform) override;
+
+#if WITH_EDITOR
+    virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
     //~ End AActor Interface
 
     /** 独立网格与物理资产 只影响当前调参靶 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "受击调参", meta = (DisplayName = "调参网格"))
     TObjectPtr<USkeletalMeshComponent> TargetMesh;
 
-    /** 复用正式僵尸受击实现 四份配置仅引用调参目录 */
+    /** 复用正式僵尸受击实现 配置由版本或明确覆盖提供 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "受击调参", meta = (DisplayName = "程序化受击"))
     TObjectPtr<UBBBMonsterHitReactionComponent> HitReaction;
 
@@ -66,6 +130,10 @@ public:
     /** 仅还原调试受损结果 */
     UPROPERTY(VisibleAnywhere, Category = "受击调参", meta = (DisplayName = "伤口断肢表现"))
     TObjectPtr<UBBBMonsterGorePresentationComponent> Gore;
+
+    /** 只提供固定待机与循环相位 不创建 Mass 实体或玩法状态 */
+    UPROPERTY(VisibleAnywhere, Category = "受击调参", meta = (DisplayName = "正式动画桥接"))
+    TObjectPtr<UBBBMonsterPresentationComponent> AnimationPreview;
 
     /** 当前游戏实例收到的有效点命中数量 不保存历史 */
     UPROPERTY(Transient, VisibleInstanceOnly, Category = "受击调参", meta = (DisplayName = "命中次数"))

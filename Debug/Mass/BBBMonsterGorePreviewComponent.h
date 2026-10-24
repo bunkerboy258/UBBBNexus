@@ -15,8 +15,8 @@ class ABBB_EVAC_API UBBBMonsterGorePreviewComponent final : public UActorCompone
   public:
     UBBBMonsterGorePreviewComponent();
 
-    /** 与正式尸群共用的伤口表现配置 */
-    UPROPERTY(EditAnywhere, Category = "血腥预览", meta = (DisplayName = "血腥表现配置"))
+    /** 由固定靶版本选择与覆盖统一解析 不在此维护第二个选择入口 */
+    UPROPERTY(Transient, VisibleAnywhere, Category = "血腥预览", meta = (DisplayName = "当前伤口与血液配置"))
     TObjectPtr<UBBBMonsterGoreDefinition> Definition;
 
     /** 固定周期恢复完整身体 零关闭 不因连续命中延迟 */

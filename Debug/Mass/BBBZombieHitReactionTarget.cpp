@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePointDamageEvent.h"
 
 #include "Animation/AnimSequence.h"
+#include "Animation/Skeleton.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/DamageEvents.h"
@@ -13,6 +14,14 @@
 #include "HitReactProfile.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "UObject/ConstructorHelpers.h"
+#include "MassEntityConfigAsset.h"
+#include "MassVisualizationTrait.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPhysicalAnimationComponent.h"
 
@@ -40,33 +49,191 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     TargetMesh->SetGenerateOverlapEvents(false);
     TargetMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
-    static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT(
-        "/Game/_Project/Mass/Monster/Zombie/Male/Variants/Connor/SKM_BBBZombieConnor.SKM_BBBZombieConnor"));
-    static ConstructorHelpers::FObjectFinder<UPhysicsAsset> PhysicsAsset(TEXT(
-        "/Game/_Project/Debug/ZombieHitReaction/PA_ZombieHitReactionTarget.PA_ZombieHitReactionTarget"));
-    static ConstructorHelpers::FObjectFinder<UAnimSequence> IdleAsset(TEXT(
-        "/Game/_Project/Mass/Monster/Zombie/Male/Animations/Ramster/Zombie_Idle_01.Zombie_Idle_01"));
-    TargetMesh->SetSkeletalMesh(MeshAsset.Object);
-    TargetMesh->SetPhysicsAsset(PhysicsAsset.Object);
-    TargetMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-    TargetMesh->AnimationData.AnimToPlay = IdleAsset.Object;
-    TargetMesh->AnimationData.bSavedLooping = true;
-    TargetMesh->AnimationData.bSavedPlaying = true;
-    TargetMesh->AnimationData.SavedPlayRate = 1.0f;
+    static ConstructorHelpers::FObjectFinder<UMassEntityConfigAsset> Version(TEXT(
+        "/Game/_Project/Mass/Monster/Zombie/Male/Variants/Connor/MEC_BBBZombieConnor.MEC_BBBZombieConnor"));
+    ZombieVersion = Version.Object;
 
     PhysicalAnimation = CreateDefaultSubobject<UBBBMonsterPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
     PhysicalAnimation->PrimaryComponentTick.bStartWithTickEnabled = false;
     HitReaction = CreateDefaultSubobject<UBBBMonsterHitReactionComponent>(TEXT("HitReaction"));
+    HitReaction->bAutoActivate = false;
     Trajectory = CreateDefaultSubobject<UBBBZombieHitTrajectoryComponent>(TEXT("Trajectory"));
     Gore = CreateDefaultSubobject<UBBBMonsterGorePresentationComponent>(TEXT("Gore"));
     GorePreview = CreateDefaultSubobject<UBBBMonsterGorePreviewComponent>(TEXT("GorePreview"));
-    HitReaction->AvailableProfiles.Reset();
-    const TCHAR* Parts[] = {TEXT("Torso"), TEXT("Head"), TEXT("Arms"), TEXT("Legs")};
-    for (const TCHAR* Part : Parts)
+    AnimationPreview = CreateDefaultSubobject<UBBBMonsterPresentationComponent>(TEXT("AnimationPreview"));
+}
+
+void ABBBZombieHitReactionTarget::OnConstruction(const FTransform& Transform)
+{
+    Super::OnConstruction(Transform);
+    ApplyConfiguration();
+}
+
+#if WITH_EDITOR
+void ABBBZombieHitReactionTarget::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+    Super::PostEditChangeProperty(PropertyChangedEvent);
+    if (GetWorld() && GetWorld()->IsGameWorld())
     {
-        HitReaction->AvailableProfiles.Add(TSoftObjectPtr<UHitReactProfile>(FSoftObjectPath(FString::Printf(
-            TEXT("/Game/_Project/Debug/ZombieHitReaction/HRP_Target%s.HRP_Target%s"), Part, Part))));
+        ApplyConfiguration();
     }
+}
+#endif
+
+bool ABBBZombieHitReactionTarget::ApplyConfiguration()
+{
+    if (Trajectory->IsComponentTickEnabled())
+    {
+        ConfigurationStatus = TEXT("轨迹采样正在运行 请完成后应用配置");
+        return false;
+    }
+
+    const auto Fail = [this](const FString& Reason)
+    {
+        bConfigurationReady = false;
+        HitReaction->AvailableProfiles.Reset();
+        if (TargetMesh->GetSkeletalMeshAsset())
+        {
+            HitReaction->Activate(true);
+        }
+        HitReaction->Deactivate();
+        GorePreview->Definition = nullptr;
+        GorePreview->ResetTarget();
+        TargetMesh->SetSkeletalMesh(nullptr);
+        TargetMesh->SetVisibility(false);
+        TargetMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        ConfigurationStatus = Reason;
+        return false;
+    };
+
+    if (!ZombieVersion)
+    {
+        return Fail(TEXT("请选择正式僵尸实体模板"));
+    }
+    const auto* Trait = Cast<UBBBMonsterTrait>(ZombieVersion->FindTrait(UBBBMonsterTrait::StaticClass()));
+    const auto* Visual = Cast<UMassVisualizationTrait>(ZombieVersion->FindTrait(UMassVisualizationTrait::StaticClass()));
+    if (!Trait || !Trait->Definition || !Visual || !Visual->HighResTemplateActor
+        || !Visual->HighResTemplateActor->IsChildOf(ABBBMonsterPresentationActor::StaticClass()))
+    {
+        return Fail(TEXT("模板缺少小怪定义或正式高精度表现类"));
+    }
+    const auto* Defaults = Cast<ABBBMonsterPresentationActor>(Visual->HighResTemplateActor->GetDefaultObject());
+    auto* SourceMesh = Defaults->GetMonsterMesh();
+    const auto* SourceReaction = Defaults->FindComponentByClass<UBBBMonsterHitReactionComponent>();
+    if (!SourceMesh || !SourceMesh->GetSkeletalMeshAsset() || !SourceReaction)
+    {
+        return Fail(TEXT("正式表现类缺少身体或程序化受击组件"));
+    }
+    auto* Body = SourceMesh->GetSkeletalMeshAsset();
+    auto* Physics = bOverridePhysics ? PhysicsOverride.Get() : SourceMesh->GetPhysicsAsset();
+    auto* Wounds = bOverrideGore ? GoreOverride.Get() : Trait->Definition->Gore.Get();
+    if (!Wounds || !Wounds->IsReady() || Wounds->Body != Body)
+    {
+        return Fail(TEXT("伤口配置不完整或不属于所选版本的身体"));
+    }
+    if (!Physics)
+    {
+        return Fail(TEXT("所选版本或物理覆盖缺少物理资产"));
+    }
+    const FName RequiredBones[] = {TEXT("spine_01"), TEXT("head"), TEXT("upperarm_l"),
+        TEXT("upperarm_r"), TEXT("thigh_l"), TEXT("thigh_r")};
+    for (const FName Bone : RequiredBones)
+    {
+        if (Body->GetRefSkeleton().FindBoneIndex(Bone) == INDEX_NONE || Physics->FindBodyIndex(Bone) == INDEX_NONE)
+        {
+            return Fail(FString::Printf(TEXT("身体或物理资产缺少受击骨骼 %s"), *Bone.ToString()));
+        }
+    }
+    if (TestAnimation && (!TestAnimation->GetSkeleton() || TestAnimation->GetSkeleton() != Body->GetSkeleton()))
+    {
+        return Fail(TEXT("测试动画与所选身体骨架不兼容"));
+    }
+    if (!TestAnimation && !SourceMesh->GetAnimClass())
+    {
+        return Fail(TEXT("正式表现类缺少动画蓝图 请明确选择兼容的测试动画"));
+    }
+    TArray<TSoftObjectPtr<UHitReactProfile>> Profiles = SourceReaction->AvailableProfiles;
+    if (bOverrideHitProfiles)
+    {
+        Profiles = {TorsoProfile.Get(), HeadProfile.Get(), ArmsProfile.Get(), LegsProfile.Get()};
+    }
+    if (Profiles.Num() != 4)
+    {
+        return Fail(TEXT("程序化受击必须提供躯干 头部 手臂 腿部四份配置"));
+    }
+    for (auto& Profile : Profiles)
+    {
+        if (!Profile.LoadSynchronous())
+        {
+            return Fail(TEXT("程序化受击存在空引用或无法加载的配置"));
+        }
+    }
+
+    bConfigurationReady = false;
+    HitReaction->Deactivate();
+    GorePreview->Definition = nullptr;
+    GorePreview->ResetTarget();
+    TargetMesh->EmptyOverrideMaterials();
+    TargetMesh->SetSkeletalMesh(Body);
+    TargetMesh->SetPhysicsAsset(Physics, true);
+    TargetMesh->SetAllBodiesSimulatePhysics(false);
+    TargetMesh->SetAllBodiesPhysicsBlendWeight(0);
+    TargetMesh->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
+    TargetMesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+    FTransform Relative = SourceMesh->GetRelativeTransform();
+    // 正式演员原点位于胶囊中心 固定靶原点位于地面
+    Relative.AddToTranslation(FVector(0, 0, Trait->Definition->CapsuleHalfHeight));
+    TargetMesh->SetRelativeTransform(Relative);
+    for (int32 Index = 0; Index < SourceMesh->GetNumMaterials(); ++Index)
+    {
+        TargetMesh->SetMaterial(Index, SourceMesh->GetMaterial(Index));
+    }
+    HitReaction->AvailableProfiles = MoveTemp(Profiles);
+    TargetMesh->AnimationData = FSingleAnimationPlayData();
+    TargetMesh->SetAnimInstanceClass(nullptr);
+    if (TestAnimation)
+    {
+        TargetMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+        TargetMesh->AnimationData.AnimToPlay = TestAnimation;
+        TargetMesh->AnimationData.bSavedLooping = true;
+        TargetMesh->AnimationData.bSavedPlaying = true;
+        TargetMesh->PlayAnimation(TestAnimation, true);
+    }
+    if (!TestAnimation)
+    {
+        TargetMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+        TargetMesh->SetAnimInstanceClass(SourceMesh->GetAnimClass());
+    }
+    HitCount = 0;
+    LastHitBone = NAME_None;
+    LastHitRegion = EBBBMonsterHitRegion::Torso;
+    GorePreview->Definition = Wounds;
+    TargetMesh->SetVisibility(true);
+    TargetMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    bConfigurationReady = true;
+    UpdatePreviewAnimation();
+    GorePreview->ResetTarget();
+    if (GetWorld() && GetWorld()->IsGameWorld())
+    {
+        HitReaction->Activate(true);
+    }
+    ConfigurationStatus = FString::Printf(TEXT("已应用 %s | 物理:%s 受击:%s 血腥:%s | 动画:%s"),
+        *ZombieVersion->GetName(), bOverridePhysics ? TEXT("自定义") : TEXT("正式"),
+        bOverrideHitProfiles ? TEXT("自定义") : TEXT("正式"), bOverrideGore ? TEXT("自定义") : TEXT("正式"),
+        TestAnimation ? *TestAnimation->GetName() : TEXT("正式待机蓝图"));
+    return true;
+}
+
+void ABBBZombieHitReactionTarget::UpdatePreviewAnimation()
+{
+    if (!bConfigurationReady || !GetWorld() || TestAnimation || !TargetMesh->GetAnimInstance())
+    {
+        return;
+    }
+    FBBBMonsterVariationFragment Variation;
+    Variation.Seed = 17;
+    AnimationPreview->ApplyVariationFacts(Variation, FMath::Fmod(GetWorld()->GetTimeSeconds() / 3.0f, 1.0f));
+    AnimationPreview->ApplyPresentationState(EBBBMonsterBehavior::Idle, 0, 0, 0, 0);
 }
 
 FString ABBBZombieHitReactionTarget::StartHitTrajectory(const FString& RequestJson)
@@ -82,7 +249,7 @@ FString ABBBZombieHitReactionTarget::GetHitTrajectoryStatus() const
 float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FDamageEvent& DamageEvent,
     AController* EventInstigator, AActor* DamageCauser)
 {
-    if (!GetWorld() || !GetWorld()->IsGameWorld() || DamageAmount <= 0.0f
+    if (!bConfigurationReady || !GetWorld() || !GetWorld()->IsGameWorld() || DamageAmount <= 0.0f
         || !DamageEvent.IsOfType(FPointDamageEvent::ClassID))
     {
         return 0.0f;
