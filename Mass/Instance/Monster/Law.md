@@ -2,35 +2,51 @@
 
 僵尸的设计追求: 玩法处理决定伤成什么样和接下来做什么 身体负责把结果演出来
 
-## 目录与中文名称
+## 物理文件构造
 
-本目录为 `Mass/Instance/Monster/` 下文统一使用表中的中文名称
+本目录为 `Mass/Instance/Monster/` 按下面的目录层级组织 右侧先列中文名称 再说明功能 后文沿用这些名称
 
-| 具体目录 | 中文名称 | 对应内容与功能 |
-| --- | --- | --- |
-| `Config/` | 规则配置 | 保存血量 速度 部位规则 出生规则以及模型 动画 伤口资源引用 |
-| `Fragments/` | 实体数据 | 保存每只小怪当前的位置 行为 目标 伤害与伤口 |
-| `Input/` | 外部输入 | 定义外界递给实体的消息及其检查和写入规则 |
-| `Input/LocalControl/` | 本机输入 | 接收本机成立的命中 声音 生成与导演请求 |
-| `Input/RemoteMessage/` | 远端消息 | 接收其它玩家发来的伤害贡献 |
-| `Input/AuthorityFact/` | 房主结果 | 接收房主分发的行动与导演当前状态 |
-| `Tags/` | 分类标记 | 标识小怪 导演和等待初始化的实体 |
-| `Traits/` | 模板装配 | 创建实体时装齐需要的数据块 标记与配置初值 |
-| `Processors/` | 玩法处理 | 由实体系统统一调度 各类处理器批量读取和更新实体数据 |
-| `Processors/Spawn/` | 出生处理 | 选位置 创建实体 写入出生事实并计算个体差异 |
-| `Processors/Director/` | 导演调度 | 维护阶段 节奏 数量与存活额度 并递交出生请求 |
-| `Processors/Input/` | 输入解析 | 检查和消费输入 将有效结果写进实体数据 |
-| `Processors/Perception/` | 感知处理 | 检查视野 声音和目标线索 |
-| `Processors/Behavior/` | 行为决策 | 决定待机 警觉 巡逻 追逐 攻击或死亡 |
-| `Processors/Movement/` | 寻路移动 | 计算路线 推进位置 转向 避让与处理地面 |
-| `Processors/Collision/` | 部位碰撞 | 提供跟随身体姿势的逻辑命中区域 |
-| `Processors/Combat/` | 攻击处理 | 推进攻击时机 检查命中条件并向玩家造伤 |
-| `Processors/Health/` | 伤害生命 | 汇总部位贡献 推导血量与行动影响 并处理生命周期 |
-| `Processors/HitReaction/` | 命中血效 | 推进最近命中的时效 并批量提交新命中血效 |
-| `Processors/Presentation/` | 表现调度 | 更新动画事实 伤口集合 显示分级与身体表现 |
-| `Processors/Network/` | 网络观察 | 读取当前结果并交给网络载体 |
-| `Network/` | 网络桥接 | 定义传输数据和接收交接 连接房主与客机 |
-| `Presentation/` | 身体表现 | 定义地图入口 身体载体 动画桥接 受击 伤口 声音与共享表现池 |
+```text
+Monster/
+    Config/                                                     规则配置 保存血量 速度 部位规则 出生规则以及模型 动画 伤口资源引用
+        BBBMonsterDefinition.h / .cpp                           小怪规则 血量 速度与部位参数
+    Fragments/                                                  实体数据 保存每只小怪当前的位置 行为 目标 伤害与伤口
+        Behavior/                                               行为数据
+        Combat/                                                 攻击数据
+        Director/                                               导演数据
+        Health/                                                 生命与伤害数据
+        HitReaction/                                            最近命中数据
+        Movement/                                               移动与寻路数据
+        Network/                                                网络身份与接收数据
+        Perception/                                             感知与目标数据
+        Presentation/                                           表现事实与伤口数据
+        Spawn/                                                  出生与个体差异数据
+    Input/                                                      外部输入 定义外界递给实体的消息及其检查和写入规则
+        LocalControl/                                           本机输入 接收本机成立的命中 声音 生成与导演请求
+        RemoteMessage/                                          远端消息 接收其它玩家发来的伤害贡献
+        AuthorityFact/                                          房主结果 接收房主分发的行动与导演当前状态
+    Tags/                                                       分类标记 标识小怪 导演和等待初始化的实体
+    Traits/                                                     模板装配 创建实体时装齐需要的数据块 标记与配置初值
+        BBBMonsterTrait.h / .cpp                                小怪模板装配
+    Processors/                                                 玩法处理 由实体系统统一调度 各类处理器批量读取和更新实体数据
+        Spawn/                                                  出生处理 选位置 创建实体 写入出生事实并计算个体差异
+        Director/                                               导演调度 维护阶段 节奏 数量与存活额度 并递交出生请求
+        Input/                                                  输入解析 检查和消费输入 将有效结果写进实体数据
+        Perception/                                             感知处理 检查视野 声音和目标线索
+        Behavior/                                               行为决策 决定待机 警觉 巡逻 追逐 攻击或死亡
+        Movement/                                               寻路移动 计算路线 推进位置 转向 避让与处理地面
+        Collision/                                              部位碰撞 提供跟随身体姿势的逻辑命中区域
+        Combat/                                                 攻击处理 推进攻击时机 检查命中条件并向玩家造伤
+        Health/                                                 伤害生命 汇总部位贡献 推导血量与行动影响 并处理生命周期
+        HitReaction/                                            命中血效 推进最近命中的时效 并批量提交新命中血效
+        Presentation/                                           表现调度 更新动画事实 伤口集合 显示分级与身体表现
+        Network/                                                网络观察 读取当前结果并交给网络载体
+    Network/                                                    网络桥接 定义传输数据和接收交接 连接房主与客机
+    Presentation/                                               身体表现 定义地图入口 身体载体 动画桥接 受击 伤口 声音与共享表现池
+        BBBMonsterPresentationActor.h / .cpp                    身体载体 承载模型和表现组件
+        BBBMonsterFactAnimInstance.h / .cpp                     动画基类 将当前事实交给动画蓝图
+        BBBMonsterGorePresentationComponent.h / .cpp            伤口组件 还原伤口 血肉和缺肢
+```
 
 - 实体系统指统一管理实体身份 数据和批量调度的公共系统 公共服务位于 `Mass/Core/`
 - 公共网络载体位于 `Mass/Network/` 本目录的网络桥接负责小怪自己的传输语义

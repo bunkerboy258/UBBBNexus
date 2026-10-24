@@ -2,31 +2,35 @@
 
 子弹的设计追求: 本机算自己的命中 远端还原开火和效果 伤害沿目标的公开入口结算
 
-## 目录与中文名称
+## 物理文件构造
 
-本目录为 `Mass/Instance/Projectile/` 下文统一使用表中的中文名称
+本目录为 `Mass/Instance/Projectile/` 按下面的目录层级组织 右侧先列中文名称 再说明功能 后文沿用这些名称
 
-| 具体目录 | 中文名称 | 对应内容与功能 |
-| --- | --- | --- |
-| `Config/` | 发射配置 | 定义弹道 伤害 穿透 反弹 寿命与效果资源 |
-| `Fragments/` | 实体数据 | 保存每颗弹丸自己的当前数据 |
-| `Fragments/Spawn/` | 出生输入槽 | 保存等待处理的本次发射参数 |
-| `Fragments/Movement/` | 运动数据 | 保存上一位置 初始化状态和运动参数 |
-| `Fragments/Collision/` | 碰撞数据 | 保存当前伤害 造伤权限 穿透额度和最近命中目标 |
-| `Fragments/Lifetime/` | 寿命数据 | 保存剩余时间 引信和结束标记 |
-| `Fragments/Presentation/` | 表现数据 | 保存当前弹丸使用的效果资源与表现槽位 |
-| `Input/` | 外部输入 | 按来源和领域组织弹丸输入消息 |
-| `Input/LocalControl/` | 本机输入 | 保存本机发射产生的输入定义 |
-| `Input/LocalControl/Spawn/` | 出生输入 | 定义武器提交给弹丸的发射消息 |
-| `Tags/` | 分类标记 | 标识弹丸实体类别 |
-| `Traits/` | 模板装配 | 创建实体时装齐位置 速度和弹丸业务数据 |
-| `Processors/` | 玩法处理 | 批量执行出生 飞行 碰撞和回收逻辑 |
-| `Processors/Spawn/` | 出生解析 | 检查出生输入并完成本次发射初始化 |
-| `Processors/Movement/` | 飞行处理 | 保存上一位置并按速度和重力推进当前位置 |
-| `Processors/Collision/` | 碰撞处理 | 查询命中 递交伤害与受击结果 并处理穿透反弹 |
-| `Processors/Presentation/` | 表现调度 | 读取当前飞行和命中结果 管理共享表现槽位 |
-| `Processors/Lifetime/` | 寿命处理 | 推进剩余时间并安全回收结束的弹丸 |
-| `Presentation/` | 弹丸表现 | 定义批量飞行与命中表现的资源结构和引擎桥接 |
+```text
+Projectile/
+    Config/                                                     发射配置 定义弹道 伤害 穿透 反弹 寿命与效果资源
+        BBBProjectileDefinition.h / .cpp                        发射规则 弹道 伤害与效果参数
+    Fragments/                                                  实体数据 保存每颗弹丸自己的当前数据
+        Spawn/                                                  出生输入槽 保存等待处理的本次发射参数
+        Movement/                                               运动数据 保存上一位置 初始化状态和运动参数
+        Collision/                                              碰撞数据 保存当前伤害 造伤权限 穿透额度和最近命中目标
+        Lifetime/                                               寿命数据 保存剩余时间 引信和结束标记
+        Presentation/                                           表现数据 保存当前弹丸使用的效果资源与表现槽位
+    Input/                                                      外部输入 按来源和领域组织弹丸输入消息
+        LocalControl/                                           本机输入 保存本机发射产生的输入定义
+            Spawn/                                              出生输入 定义武器提交给弹丸的发射消息
+    Tags/                                                       分类标记 标识弹丸实体类别
+    Traits/                                                     模板装配 创建实体时装齐位置 速度和弹丸业务数据
+        BBBProjectileTrait.h / .cpp                             弹丸模板装配
+    Processors/                                                 玩法处理 批量执行出生 飞行 碰撞和回收逻辑
+        Spawn/                                                  出生解析 检查出生输入并完成本次发射初始化
+        Movement/                                               飞行处理 保存上一位置并按速度和重力推进当前位置
+        Collision/                                              碰撞处理 查询命中 递交伤害与受击结果 并处理穿透反弹
+        Presentation/                                           表现调度 读取当前飞行和命中结果 管理共享表现槽位
+        Lifetime/                                               寿命处理 推进剩余时间并安全回收结束的弹丸
+    Presentation/                                               弹丸表现 定义批量飞行与命中表现的资源结构和引擎桥接
+        BBBProjectilePresentation.h / .cpp                      弹丸表现 批量效果数据与引擎桥接
+```
 
 - 实体系统指统一管理实体身份 数据和批量调度的公共系统 公共服务位于 `Mass/Core/`
 - 武器指成立开火并提交出生输入的发射方 武器实现归 `Item/Equipment/`
