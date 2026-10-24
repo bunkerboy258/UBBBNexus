@@ -15,7 +15,7 @@ class ABBB_EVAC_API UBBBMonsterGorePreviewComponent final : public UActorCompone
   public:
     UBBBMonsterGorePreviewComponent();
 
-    /** 与正式外观及资产编辑器共享的制作配置 */
+    /** 与正式尸群共用的伤口表现配置 */
     UPROPERTY(EditAnywhere, Category = "血腥预览", meta = (DisplayName = "血腥表现配置"))
     TObjectPtr<UBBBMonsterGoreDefinition> Definition;
 

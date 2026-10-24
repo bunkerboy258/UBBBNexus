@@ -37,6 +37,36 @@ namespace
         }
         return Body.GetComponentTransform().TransformPosition(Wound.Contact);
     }
+
+    double SurfaceDistance(const UBBBMonsterGoreDefinition& Definition,
+        const FBBBMonsterGoreWoundDefinition& Wound, const USkeletalMeshComponent& Body,
+        const FBBBMonsterHitReactionFragment& Hit, FVector& Projected)
+    {
+        if (Body.GetBoneIndex(Wound.Bone) == INDEX_NONE)
+        {
+            return TNumericLimits<double>::Max();
+        }
+        const FTransform Reference = ReferenceBone(*Definition.Body, Wound.Bone);
+        const FTransform Current = Body.GetSocketTransform(Wound.Bone);
+        const FVector Position = Reference.TransformPosition(Current.InverseTransformPosition(Hit.Position));
+        const FVector Direction = Reference.TransformVectorNoScale(
+            Current.InverseTransformVectorNoScale(Hit.Direction)).GetSafeNormal();
+        const FVector Normal = Wound.Rotation.RotateVector(FVector::UpVector);
+        const double Facing = FVector::DotProduct(Direction, Normal);
+        if (Facing > -0.25)
+        {
+            return TNumericLimits<double>::Max();
+        }
+        // 物理碰撞面不等于衣物表面 沿真实弹道投到配对创口平面
+        const double Travel = FVector::DotProduct(Wound.Contact - Position, Normal) / Facing;
+        if (Travel < -Definition.HitRadius || Travel > Wound.Extent.Z * 2 + Definition.HitRadius)
+        {
+            return TNumericLimits<double>::Max();
+        }
+        Projected = Position + Direction * Travel;
+        const FVector Local = Wound.Rotation.UnrotateVector(Projected - Wound.Contact);
+        return FMath::Square(Local.X / Wound.Extent.X) + FMath::Square(Local.Y / Wound.Extent.Y);
+    }
 }
 
 UBBBMonsterGorePresentationComponent::UBBBMonsterGorePresentationComponent()
@@ -120,18 +150,38 @@ void UBBBMonsterGorePresentationComponent::UpdateWounds(FBBBMonsterGoreFragment&
     }
     const FTransform Reference = ReferenceBone(*Definition.Body, Anchor);
     const FTransform Current = Mesh->GetSocketTransform(Anchor);
-    const FVector Center = Reference.TransformPosition(Current.InverseTransformPosition(Hit.Position));
-    const FVector Normal = Reference.TransformVectorNoScale(
+    FVector Center = Reference.TransformPosition(Current.InverseTransformPosition(Hit.Position));
+    FVector Normal = Reference.TransformVectorNoScale(
         Current.InverseTransformVectorNoScale(Hit.Normal)).GetSafeNormal();
     if (Center.ContainsNaN() || Normal.IsNearlyZero())
     {
         return;
     }
+    const FBBBMonsterGoreWoundDefinition* Deep = nullptr;
+    double Distance = 1;
+    for (const auto& Wound : Definition.Wounds)
+    {
+        if (Wound.bPermanent || Wound.Region != Hit.Region || !Wound.Tissue)
+        {
+            continue;
+        }
+        FVector Projected;
+        const double Candidate = SurfaceDistance(Definition, Wound, *Mesh, Hit, Projected);
+        if (Candidate < Distance)
+        {
+            Deep = &Wound;
+            Distance = Candidate;
+            Center = Projected;
+            Normal = Wound.Rotation.RotateVector(FVector::UpVector);
+        }
+    }
     int32 SelectedSlot = INDEX_NONE;
     for (int32 Index = 5; Index < 7; ++Index)
     {
-        if (Result.Wounds[Index].PresetId != 0
-            && FVector::DistSquared(Result.Wounds[Index].Center, Center) < FMath::Square(Definition.HitRadius * 2))
+        const auto* Existing = Definition.FindWound(Result.Wounds[Index].PresetId);
+        const bool bInsideTissue = Existing && Deep && Existing->Id == Deep->Id;
+        if (Existing && (bInsideTissue
+            || FVector::DistSquared(Result.Wounds[Index].Center, Center) < FMath::Square(Definition.HitRadius * 2)))
         {
             SelectedSlot = Index;
             break;
@@ -164,29 +214,14 @@ void UBBBMonsterGorePresentationComponent::UpdateWounds(FBBBMonsterGoreFragment&
     }
 
     // 组织模型仅在其预制适配范围内选择 不把任意命中强制移到固定伤口
-    if (Slot.Strength >= 0.65f)
+    if (Deep && Slot.Strength >= 0.65f)
     {
-        const FBBBMonsterGoreWoundDefinition* Deep = nullptr;
-        double Distance = FMath::Square(Definition.HitRadius * 1.5f);
-        for (const auto& Wound : Definition.Wounds)
-        {
-            if (Wound.bPermanent || Wound.Region != Hit.Region || !Wound.Tissue)
-            {
-                continue;
-            }
-            const FVector Offset = Wound.Contact - Center;
-            const double AlongNormal = FVector::DotProduct(Offset, Normal);
-            const double Candidate = FMath::Max(0.0, Offset.SizeSquared() - AlongNormal * AlongNormal);
-            if (AlongNormal <= Definition.HitRadius && AlongNormal >= -ProjectionDepth && Candidate < Distance)
-            {
-                Deep = &Wound;
-                Distance = Candidate;
-            }
-        }
-        if (Deep)
-        {
-            Slot.PresetId = static_cast<uint8>(Deep->Id);
-        }
+        Slot.PresetId = static_cast<uint8>(Deep->Id);
+        // 缓存配对资源的坐标范围 后续命中按同一创口归并
+        Slot.Center = Deep->Center;
+        Slot.Orientation = Deep->Rotation.Quaternion();
+        Slot.RadiusDepth = FVector2D(Deep->Extent.X, Deep->Extent.Z);
+        Slot.Strength = 1;
     }
 }
 
@@ -295,27 +330,6 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
                 {
                     Tissue[Index]->SetSkeletalMesh(Preset->Tissue);
                     Tissue[Index]->SetLeaderPoseComponent(Body);
-                }
-                const FVector InverseExtent = FVector(1) / Preset->Extent.ComponentMax(FVector(.2));
-                const FQuat Orientation = Preset->Rotation.Quaternion();
-                const float Frame[] = {
-                    static_cast<float>(Preset->Center.X), static_cast<float>(Preset->Center.Y), static_cast<float>(Preset->Center.Z),
-                    static_cast<float>(InverseExtent.X), static_cast<float>(InverseExtent.Y), static_cast<float>(InverseExtent.Z)};
-                for (int32 Part = 0; Part < 6; ++Part)
-                {
-                    Tissue[Index]->SetCustomPrimitiveDataFloat(Part + 1, Frame[Part]);
-                }
-                const float Projection[] = {
-                    static_cast<float>(Orientation.X), static_cast<float>(Orientation.Y),
-                    static_cast<float>(Orientation.Z), static_cast<float>(Orientation.W),
-                    static_cast<float>(Preset->AtlasRect.X), static_cast<float>(Preset->AtlasRect.Y),
-                    static_cast<float>(Preset->AtlasRect.Z), static_cast<float>(Preset->AtlasRect.W),
-                    Preset->bPermanent ? 1.0f : 0.0f,
-                    static_cast<float>(FVector::DotProduct(Preset->Contact - Preset->Center,
-                        Orientation.RotateVector(FVector::ForwardVector)) * InverseExtent.X)};
-                for (int32 Part = 0; Part < 10; ++Part)
-                {
-                    Tissue[Index]->SetCustomPrimitiveDataFloat(Part + 10, Projection[Part]);
                 }
             }
             Tissue[Index]->SetVisibility(bTissueVisible);

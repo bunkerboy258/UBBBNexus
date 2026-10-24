@@ -7,9 +7,8 @@
 class UMaterialInterface;
 class UTexture2D;
 class UBBBMonsterBloodPresentationDefinition;
-class UAnimSequence;
 
-/** 正式尸群与预览共用的伤口资源 不生成或修改身体拓扑 */
+/** 正式尸群与场景调试靶共用的伤口资源 不生成或修改身体拓扑 */
 UCLASS(BlueprintType, meta=(DisplayName="僵尸伤口表现配置"))
 class ABBB_EVAC_API UBBBMonsterGoreDefinition final : public UDataAsset
 {
@@ -49,12 +48,6 @@ public:
 
     UPROPERTY(EditAnywhere, Category="预算", meta=(DisplayName="每秒伤口更新上限", ClampMin="1", ClampMax="30"))
     float WoundUpdatesPerSecond = 20;
-
-    UPROPERTY(EditAnywhere, Category="预览", meta=(DisplayName="预览动画"))
-    TObjectPtr<UAnimSequence> PreviewAnimation;
-
-    UPROPERTY(EditAnywhere, Category="预览", meta=(DisplayName="自动重置间隔", ClampMin="0", Units="s"))
-    float PreviewResetInterval = 3;
 
     /** @param Id 稳定伤口编号 @return 对应预制伤口或空 */
     const FBBBMonsterGoreWoundDefinition* FindWound(uint8 Id) const;
