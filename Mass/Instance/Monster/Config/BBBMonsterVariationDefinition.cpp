@@ -2,26 +2,7 @@
 
 bool UBBBMonsterVariationDefinition::IsValid() const
 {
-    const auto ValidCycle = [](const FVector& Cycle)
-    {
-        return !Cycle.ContainsNaN() && Cycle.X > 0.01 && Cycle.Y > 0.01 && Cycle.Z > 0.01;
-    };
-    if (MovementCycleSeconds.Num() != 3 || !ValidCycle(IdleCycleSeconds) || !ValidCycle(PursuitWalkCycleSeconds) ||
-        !ValidCycle(SlowWalkCycleSeconds) || !FMath::IsFinite(SlowWalkSampleSpeed) || SlowWalkSampleSpeed <= 0.0f ||
-        !FMath::IsFinite(AlertCycleSeconds) || AlertCycleSeconds <= 0.01f)
-    {
-        return false;
-    }
-    for (const FVector& Cycle : MovementCycleSeconds)
-    {
-        if (!ValidCycle(Cycle))
-        {
-            return false;
-        }
-    }
-    return MinInfection <= MaxInfection && !LocomotionWeights.ContainsNaN()
-        && FMath::IsFinite(LocomotionWeights.X + LocomotionWeights.Y + LocomotionWeights.Z)
-        && LocomotionWeights.GetMin() >= 0.0 && LocomotionWeights.X + LocomotionWeights.Y + LocomotionWeights.Z > 0.0
+    return MinInfection <= MaxInfection
         && FMath::IsFinite(LowInfectionRunnerChance) && LowInfectionRunnerChance >= 0.0f && LowInfectionRunnerChance <= 1.0f
         && FMath::IsFinite(HighInfectionRunnerChance) && HighInfectionRunnerChance >= 0.0f && HighInfectionRunnerChance <= LowInfectionRunnerChance
         && FMath::IsFinite(SpeedVariation) && SpeedVariation >= 0.0f && SpeedVariation <= 0.3f

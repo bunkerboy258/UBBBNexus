@@ -1,18 +1,25 @@
 #pragma once
 
-#include "Engine/DataAsset.h"
+#include "UObject/Object.h"
+#include "BBBMonsterBloodSprayPresentation.h"
 #include "BBBMonsterBloodPresentationDefinition.generated.h"
 
 class UNiagaraDataChannelAsset;
 class UMaterialInterface;
 
 /** 僵尸血粒子与地面血迹静态配置 */
-UCLASS(BlueprintType)
-class ABBB_EVAC_API UBBBMonsterBloodPresentationDefinition final : public UDataAsset
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced, HideDropdown)
+class ABBB_EVAC_API UBBBMonsterBloodPresentationDefinition final : public UObject
 {
     GENERATED_BODY()
 
 public:
+    UPROPERTY(EditAnywhere, Category="血效|空中喷血", meta=(DisplayName="普通命中喷血"))
+    FBBBMonsterBloodSprayPresentation HitSpray;
+
+    UPROPERTY(EditAnywhere, Category="血效|空中喷血", meta=(DisplayName="断肢喷血"))
+    FBBBMonsterBloodSprayPresentation SeveringSpray;
+
     /** 关闭后不写入空中血粒子通道 不影响环境血迹 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "血效|开关", meta = (DisplayName = "启用空中喷血"))
     bool bEnableParticles = true;

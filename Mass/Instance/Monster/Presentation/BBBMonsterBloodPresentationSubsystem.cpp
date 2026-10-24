@@ -120,6 +120,9 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
                     Writer->WriteVector(TEXT("Normal"), Index, Outward);
                     Writer->WriteVector(TEXT("Direction"), Index, Spray);
                     Writer->WriteInt(TEXT("Surface"), Index, Impact.bSevering ? 3 : 2);
+                    const auto& SpraySettings = Impact.bSevering ? Settings.SeveringSpray : Settings.HitSpray;
+                    Writer->WriteVector4(TEXT("SprayScale"), Index, FVector4(SpraySettings.Size, SpraySettings.Speed,
+                        SpraySettings.Lifetime, SpraySettings.Opacity));
                 }
             }
         }

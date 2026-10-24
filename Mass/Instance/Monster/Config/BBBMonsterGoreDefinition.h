@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/DataAsset.h"
+#include "UObject/Object.h"
 #include "BBBMonsterGoreWoundDefinition.h"
 #include "BBBMonsterGoreDefinition.generated.h"
 
@@ -9,8 +9,8 @@ class UTexture2D;
 class UBBBMonsterBloodPresentationDefinition;
 
 /** 正式尸群与场景调试靶共用的伤口资源 不生成或修改身体拓扑 */
-UCLASS(BlueprintType, meta=(DisplayName="僵尸伤口表现配置"))
-class ABBB_EVAC_API UBBBMonsterGoreDefinition final : public UDataAsset
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced, HideDropdown, meta=(DisplayName="身体与伤口分区"))
+class ABBB_EVAC_API UBBBMonsterGoreDefinition final : public UObject
 {
     GENERATED_BODY()
 
@@ -31,8 +31,17 @@ public:
     UPROPERTY(EditAnywhere, EditFixedSize, Category="伤口", meta=(DisplayName="预制伤口", TitleProperty="Name"))
     TArray<FBBBMonsterGoreWoundDefinition> Wounds;
 
-    UPROPERTY(EditAnywhere, Category="血液", meta=(DisplayName="喷血与残留"))
-    TObjectPtr<UBBBMonsterBloodPresentationDefinition> Blood;
+    /** @return 同一表现配置持有的血液分区 不维护第二份引用 */
+    const UBBBMonsterBloodPresentationDefinition* GetBlood() const;
+
+    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="每次命中伤口加深量", ClampMin="0.01", ClampMax="1"))
+    float HitAccumulation = 0.35f;
+
+    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="深伤口阈值", ClampMin="0.01", ClampMax="1"))
+    float DeepWoundThreshold = 0.65f;
+
+    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="邻近命中合并半径倍率", ClampMin="0.5", ClampMax="4"))
+    float MergeRadiusScale = 2;
 
     UPROPERTY(EditAnywhere, Category="血肉外观", meta=(DisplayName="血红颜色"))
     FLinearColor TissueTint = FLinearColor(0.13f, 0.004f, 0.003f);

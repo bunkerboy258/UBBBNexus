@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
@@ -46,12 +47,18 @@ bool UBBBMonsterInitializationProcessor::InitializeBirth(const FGuid& Identity, 
     FBBBMonsterVariationFragment& Variation, FBBBMonsterMovementFragment& Movement, FBBBMonsterBehaviorFragment& Behavior)
 {
     const UBBBMonsterVariationDefinition* Settings = Definition.Variation;
-    if (!Identity.IsValid() || !Settings || !Settings->IsValid())
+    if (!Identity.IsValid() || !Settings || !Settings->IsValid() || !Definition.Presentation)
     {
         return false;
     }
 
     if (Variation.Seed == 0)
+    {
+        return false;
+    }
+    const auto& StyleWeights = Definition.Presentation->Animation.LocomotionWeights;
+    if (StyleWeights.ContainsNaN() || StyleWeights.GetMin() < 0
+        || StyleWeights.X + StyleWeights.Y + StyleWeights.Z <= 0)
     {
         return false;
     }
@@ -63,8 +70,8 @@ bool UBBBMonsterInitializationProcessor::InitializeBirth(const FGuid& Identity, 
     Movement.MaxGait = BirthSample(Variation.Seed, 0x5be0cd19u) < RunnerChance ? EBBBMonsterGait::Sprint : EBBBMonsterGait::Walk;
     const float SpeedNoise = BirthSample(Variation.Seed, 0xa54ff53au) + BirthSample(Variation.Seed, 0x510e527fu) - 1.0f;
     Variation.SpeedScale = 1.0f + SpeedNoise * Settings->SpeedVariation;
-    Variation.PhaseOffset = Settings->bRandomPhase ? BirthSample(Variation.Seed, 0x9b05688cu) : 0.0f;
-    const auto& Weights = Settings->LocomotionWeights;
+    Variation.PhaseOffset = Definition.Presentation->Animation.bRandomPhase ? BirthSample(Variation.Seed, 0x9b05688cu) : 0.0f;
+    const auto& Weights = Definition.Presentation->Animation.LocomotionWeights;
     const double Style = BirthSample(Variation.Seed, 0x3c6ef372u) * (Weights.X + Weights.Y + Weights.Z);
     Variation.LocomotionStyle = Style < Weights.X ? 0 : (Style < Weights.X + Weights.Y ? 1 : 2);
     Movement.WalkSpeed = Definition.WalkSpeed * Variation.SpeedScale;

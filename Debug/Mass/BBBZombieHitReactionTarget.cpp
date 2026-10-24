@@ -18,6 +18,7 @@
 #include "MassVisualizationTrait.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
@@ -111,22 +112,23 @@ bool ABBBZombieHitReactionTarget::ApplyConfiguration()
         return Fail(TEXT("请选择正式僵尸实体模板"));
     }
     const auto* Trait = Cast<UBBBMonsterTrait>(ZombieVersion->FindTrait(UBBBMonsterTrait::StaticClass()));
-    const auto* Visual = Cast<UMassVisualizationTrait>(ZombieVersion->FindTrait(UMassVisualizationTrait::StaticClass()));
-    if (!Trait || !Trait->Definition || !Visual || !Visual->HighResTemplateActor
-        || !Visual->HighResTemplateActor->IsChildOf(ABBBMonsterPresentationActor::StaticClass()))
+    if (!Trait || !Trait->Definition)
     {
         return Fail(TEXT("模板缺少小怪定义或正式高精度表现类"));
     }
-    const auto* Defaults = Cast<ABBBMonsterPresentationActor>(Visual->HighResTemplateActor->GetDefaultObject());
-    auto* SourceMesh = Defaults->GetMonsterMesh();
-    const auto* SourceReaction = Defaults->FindComponentByClass<UBBBMonsterHitReactionComponent>();
-    if (!SourceMesh || !SourceMesh->GetSkeletalMeshAsset() || !SourceReaction)
+    const auto* Settings = bOverridePresentation ? PresentationOverride.Get() : Trait->Definition->Presentation.Get();
+    if (!Settings || !Settings->IsValid())
     {
-        return Fail(TEXT("正式表现类缺少身体或程序化受击组件"));
+        return Fail(TEXT("所选表现配置不完整"));
     }
-    auto* Body = SourceMesh->GetSkeletalMeshAsset();
-    auto* Physics = bOverridePhysics ? PhysicsOverride.Get() : SourceMesh->GetPhysicsAsset();
-    auto* Wounds = bOverrideGore ? GoreOverride.Get() : Trait->Definition->Gore.Get();
+    auto* Wounds = Settings->Gore.Get();
+    auto* Body = Wounds->Body.Get();
+    auto* Physics = Settings->PhysicsAsset.Get();
+    if (bOverridePresentation && (!Trait->Definition->Presentation
+        || Trait->Definition->Presentation->Gore->Body != Body))
+    {
+        return Fail(TEXT("自定义表现身体必须与所选僵尸版本一致"));
+    }
     if (!Wounds || !Wounds->IsReady() || Wounds->Body != Body)
     {
         return Fail(TEXT("伤口配置不完整或不属于所选版本的身体"));
@@ -148,15 +150,12 @@ bool ABBBZombieHitReactionTarget::ApplyConfiguration()
     {
         return Fail(TEXT("测试动画与所选身体骨架不兼容"));
     }
-    if (!TestAnimation && !SourceMesh->GetAnimClass())
+    if (!TestAnimation && !Settings->AnimationClass)
     {
         return Fail(TEXT("正式表现类缺少动画蓝图 请明确选择兼容的测试动画"));
     }
-    TArray<TSoftObjectPtr<UHitReactProfile>> Profiles = SourceReaction->AvailableProfiles;
-    if (bOverrideHitProfiles)
-    {
-        Profiles = {TorsoProfile.Get(), HeadProfile.Get(), ArmsProfile.Get(), LegsProfile.Get()};
-    }
+    TArray<TSoftObjectPtr<UHitReactProfile>> Profiles = {Settings->HitReaction.TorsoProfile.Get(), Settings->HitReaction.HeadProfile.Get(),
+        Settings->HitReaction.ArmsProfile.Get(), Settings->HitReaction.LegsProfile.Get()};
     if (Profiles.Num() != 4)
     {
         return Fail(TEXT("程序化受击必须提供躯干 头部 手臂 腿部四份配置"));
@@ -180,15 +179,12 @@ bool ABBBZombieHitReactionTarget::ApplyConfiguration()
     TargetMesh->SetAllBodiesPhysicsBlendWeight(0);
     TargetMesh->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
     TargetMesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
-    FTransform Relative = SourceMesh->GetRelativeTransform();
+    FTransform Relative = Settings->MeshTransform;
     // 正式演员原点位于胶囊中心 固定靶原点位于地面
     Relative.AddToTranslation(FVector(0, 0, Trait->Definition->CapsuleHalfHeight));
     TargetMesh->SetRelativeTransform(Relative);
-    for (int32 Index = 0; Index < SourceMesh->GetNumMaterials(); ++Index)
-    {
-        TargetMesh->SetMaterial(Index, SourceMesh->GetMaterial(Index));
-    }
     HitReaction->AvailableProfiles = MoveTemp(Profiles);
+    HitReaction->ConfigurePresentation(Settings);
     TargetMesh->AnimationData = FSingleAnimationPlayData();
     TargetMesh->SetAnimInstanceClass(nullptr);
     if (TestAnimation)
@@ -202,7 +198,7 @@ bool ABBBZombieHitReactionTarget::ApplyConfiguration()
     if (!TestAnimation)
     {
         TargetMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-        TargetMesh->SetAnimInstanceClass(SourceMesh->GetAnimClass());
+        TargetMesh->SetAnimInstanceClass(Settings->AnimationClass);
     }
     HitCount = 0;
     LastHitBone = NAME_None;
@@ -217,9 +213,8 @@ bool ABBBZombieHitReactionTarget::ApplyConfiguration()
     {
         HitReaction->Activate(true);
     }
-    ConfigurationStatus = FString::Printf(TEXT("已应用 %s | 物理:%s 受击:%s 血腥:%s | 动画:%s"),
-        *ZombieVersion->GetName(), bOverridePhysics ? TEXT("自定义") : TEXT("正式"),
-        bOverrideHitProfiles ? TEXT("自定义") : TEXT("正式"), bOverrideGore ? TEXT("自定义") : TEXT("正式"),
+    ConfigurationStatus = FString::Printf(TEXT("已应用 %s | 表现:%s | 动画:%s"),
+        *ZombieVersion->GetName(), *Settings->GetName(),
         TestAnimation ? *TestAnimation->GetName() : TEXT("正式待机蓝图"));
     return true;
 }
@@ -232,7 +227,9 @@ void ABBBZombieHitReactionTarget::UpdatePreviewAnimation()
     }
     FBBBMonsterVariationFragment Variation;
     Variation.Seed = 17;
-    AnimationPreview->ApplyVariationFacts(Variation, FMath::Fmod(GetWorld()->GetTimeSeconds() / 3.0f, 1.0f));
+    const auto* Settings = GorePreview->Definition->GetTypedOuter<UBBBMonsterPresentationDefinition>();
+    AnimationPreview->ApplyVariationFacts(Variation, FMath::Fmod(GetWorld()->GetTimeSeconds()
+        / Settings->Animation.IdleCycleSeconds[Variation.Seed % 3], 1.0f));
     AnimationPreview->ApplyPresentationState(EBBBMonsterBehavior::Idle, 0, 0, 0, 0);
 }
 

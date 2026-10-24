@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "Misc/ScopeExit.h"
 #include "HAL/PlatformTime.h"
 #include "Engine/Engine.h"
@@ -38,6 +39,7 @@ bool FBBBMonsterVariationTest::RunTest(const FString& Parameters)
     auto* Rules = NewObject<UBBBMonsterVariationDefinition>();
     auto* Definition = NewObject<UBBBMonsterDefinition>();
     Definition->Variation = Rules;
+    Definition->Presentation = NewObject<UBBBMonsterPresentationDefinition>();
     TestTrue(TEXT("默认共享出生规则有效"), Rules->IsValid());
     FBBBMonsterVariationFragment UnreadyVariation;
     FBBBMonsterMovementFragment UnreadyMovement;
@@ -130,7 +132,7 @@ bool FBBBMonsterVariationTest::RunTest(const FString& Parameters)
     auto& LoopBehavior = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(LoopEntity);
     LoopBehavior.State = EBBBMonsterBehavior::Chase;
     Manager.GetFragmentDataChecked<FMassVelocityFragment>(LoopEntity).Value = FVector(Definition->WalkSpeed * 1.1f, 0.0f, 0.0f);
-    Rules->MovementCycleSeconds[2].X = 4.0;
+    Definition->Presentation->Animation.MovementCycleSeconds[2].X = 4.0;
     auto* SnapshotProcessor = NewObject<UBBBMonsterPresentationStateProcessor>(World);
     SnapshotProcessor->CallInitialize(World, Manager.AsShared());
     const auto SampleLoop = [&Manager, SnapshotProcessor]()

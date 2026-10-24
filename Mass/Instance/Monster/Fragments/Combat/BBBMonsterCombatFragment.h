@@ -31,10 +31,6 @@ struct ABBB_EVAC_API FBBBMonsterCombatFragment final : public FMassFragment
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (ClampMin = "0.01", DisplayName = "攻击恢复时间"))
     float AttackRecovery = 0.45f;
 
-    /** 攻击动画中对应命中判定的归一化位置 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (ClampMin = "0.01", ClampMax = "0.99", DisplayName = "动画命中时间比例"))
-    float AnimationHitFraction = 0.4f;
-
     /** 下次允许攻击的时间 */
     float NextAttackTime = 0.0f;
 

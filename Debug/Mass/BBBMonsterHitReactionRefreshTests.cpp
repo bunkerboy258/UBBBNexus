@@ -9,6 +9,7 @@
 #include "HitReactProfile.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 /** 验证被配置冷却拒绝的连射不丢掉活动混合 接受后同骨骼仅保留一份 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterHitReactionRefreshTest, "UBBB.Mass.ZombieHitReactionRefresh",
@@ -42,6 +43,12 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
         return false;
     }
     auto* Reaction = Actor->FindComponentByClass<UBBBMonsterHitReactionComponent>();
+    auto* Settings = LoadObject<UBBBMonsterPresentationDefinition>(nullptr,
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Michael/DA_BBBZombieMichaelPresentation"));
+    if (!TestTrue(TEXT("受击从表现配置绑定"), Actor->ConfigurePresentation(Settings)))
+    {
+        return false;
+    }
     auto* Profile = NewObject<UHitReactProfile>(World);
     Profile->Cooldown = 100.0f;
     Profile->MaxBlendWeight = 0.6f;

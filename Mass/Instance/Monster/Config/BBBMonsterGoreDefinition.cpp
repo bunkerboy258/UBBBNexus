@@ -1,6 +1,13 @@
 #include "BBBMonsterGoreDefinition.h"
 
 #include "Engine/SkeletalMesh.h"
+#include "BBBMonsterPresentationDefinition.h"
+
+const UBBBMonsterBloodPresentationDefinition* UBBBMonsterGoreDefinition::GetBlood() const
+{
+    const auto* Presentation = GetTypedOuter<UBBBMonsterPresentationDefinition>();
+    return Presentation ? Presentation->Blood.Get() : nullptr;
+}
 
 const FBBBMonsterGoreWoundDefinition* UBBBMonsterGoreDefinition::FindWound(const uint8 Id) const
 {
@@ -12,7 +19,10 @@ const FBBBMonsterGoreWoundDefinition* UBBBMonsterGoreDefinition::FindWound(const
 
 bool UBBBMonsterGoreDefinition::IsReady() const
 {
-    if (!Body || !ProjectionAtlas || !Blood || Materials.Num() != Body->GetMaterials().Num() || Wounds.IsEmpty())
+    if (!Body || !ProjectionAtlas || !GetBlood() || Materials.Num() != Body->GetMaterials().Num() || Wounds.IsEmpty()
+        || !FMath::IsFinite(HitAccumulation) || HitAccumulation < 0.01f || HitAccumulation > 1
+        || !FMath::IsFinite(DeepWoundThreshold) || DeepWoundThreshold < 0.01f || DeepWoundThreshold > 1
+        || !FMath::IsFinite(MergeRadiusScale) || MergeRadiusScale < 0.5f || MergeRadiusScale > 4)
     {
         return false;
     }

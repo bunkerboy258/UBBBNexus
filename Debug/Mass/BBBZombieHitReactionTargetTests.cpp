@@ -28,9 +28,7 @@ bool FBBBZombieHitReactionTargetTest::RunTest(const FString&)
     TestNotNull(TEXT("默认正式版本存在"), Target->ZombieVersion.Get());
     TestNotNull(TEXT("复用伤口表现"), Target->Gore.Get());
     TestNotNull(TEXT("复用正式动画桥接"), Target->AnimationPreview.Get());
-    TestFalse(TEXT("默认不覆盖物理"), Target->bOverridePhysics);
-    TestFalse(TEXT("默认不覆盖部位配置"), Target->bOverrideHitProfiles);
-    TestFalse(TEXT("默认不覆盖伤口"), Target->bOverrideGore);
+    TestFalse(TEXT("默认不覆盖正式表现"), Target->bOverridePresentation);
     TestEqual(TEXT("默认三秒自动恢复"), Target->GorePreview->ResetInterval, 3.0f);
     TestEqual(TEXT("子弹通道阻挡"), Target->TargetMesh->GetCollisionResponseToChannel(ECC_Pawn), ECR_Block);
     const FDamageEvent Damage;
@@ -73,23 +71,19 @@ bool FBBBZombieHitReactionTargetVersionsTest::RunTest(const FString&)
     }
     const auto Version = Target->ZombieVersion;
     const auto Animation = Target->TestAnimation;
-    const bool PhysicsOverride = Target->bOverridePhysics;
-    const bool ProfilesOverride = Target->bOverrideHitProfiles;
-    const bool GoreOverride = Target->bOverrideGore;
+    const bool bOverride = Target->bOverridePresentation;
+    const auto Override = Target->PresentationOverride;
     const FTransform ActorTransform = Target->GetActorTransform();
     ON_SCOPE_EXIT
     {
         Target->ZombieVersion = Version;
         Target->TestAnimation = Animation;
-        Target->bOverridePhysics = PhysicsOverride;
-        Target->bOverrideHitProfiles = ProfilesOverride;
-        Target->bOverrideGore = GoreOverride;
+        Target->bOverridePresentation = bOverride;
+        Target->PresentationOverride = Override;
         Target->ApplyConfiguration();
     };
     Target->TestAnimation = nullptr;
-    Target->bOverridePhysics = false;
-    Target->bOverrideHitProfiles = false;
-    Target->bOverrideGore = false;
+    Target->bOverridePresentation = false;
     const TCHAR* Names[] = {TEXT("Connor"), TEXT("Jiho"), TEXT("Michael"), TEXT("Morita"), TEXT("Renzo"),
         TEXT("Sakurada"), TEXT("Alice"), TEXT("Kiyo"), TEXT("Setsuko"), TEXT("Yuina")};
     for (int32 Index = 0; Index < UE_ARRAY_COUNT(Names); ++Index)
@@ -110,27 +104,14 @@ bool FBBBZombieHitReactionTargetVersionsTest::RunTest(const FString&)
         TestEqual(TEXT("版本切换恢复子弹碰撞"), Target->TargetMesh->GetCollisionEnabled(), ECollisionEnabled::QueryAndPhysics);
         TestEqual(TEXT("命中计数已清空"), Target->HitCount, 0u);
     }
-    Target->bOverridePhysics = true;
-    const auto PreviousPhysics = Target->PhysicsOverride;
-    Target->PhysicsOverride = nullptr;
+    Target->bOverridePresentation = true;
+    Target->PresentationOverride = nullptr;
     TestFalse(TEXT("空物理覆盖明确拒绝"), Target->ApplyConfiguration());
     TestFalse(TEXT("失败后不能继续命中旧版本"), Target->bConfigurationReady);
     TestNull(TEXT("失败后清除旧身体"), Target->TargetMesh->GetSkeletalMeshAsset());
-    Target->PhysicsOverride = PreviousPhysics;
-    Target->bOverridePhysics = false;
+    Target->PresentationOverride = Override;
+    Target->bOverridePresentation = false;
     TestTrue(TEXT("撤销覆盖后可恢复"), Target->ApplyConfiguration());
-    Target->bOverrideGore = true;
-    const auto PreviousGore = Target->GoreOverride;
-    Target->GoreOverride = nullptr;
-    TestFalse(TEXT("空伤口覆盖明确拒绝"), Target->ApplyConfiguration());
-    Target->GoreOverride = PreviousGore;
-    Target->bOverrideGore = false;
-    Target->bOverrideHitProfiles = true;
-    const auto PreviousTorso = Target->TorsoProfile;
-    Target->TorsoProfile = nullptr;
-    TestFalse(TEXT("不完整部位覆盖明确拒绝"), Target->ApplyConfiguration());
-    Target->TorsoProfile = PreviousTorso;
-    Target->bOverrideHitProfiles = false;
     TestTrue(TEXT("最终可恢复正式版本"), Target->ApplyConfiguration());
     return true;
 }

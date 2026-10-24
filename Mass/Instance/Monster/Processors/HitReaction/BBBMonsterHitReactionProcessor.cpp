@@ -1,4 +1,5 @@
 #include "BBBMonsterHitReactionProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
@@ -47,7 +48,7 @@ void UBBBMonsterHitReactionProcessor::Execute(FMassEntityManager&, FMassExecutio
             }
             Hit.PublishedSerial = Hit.Serial;
             const auto* Definition = Definitions[Index].Definition.Get();
-            const auto* Settings = Definition ? Definition->BloodPresentation.Get() : nullptr;
+            const auto* Settings = Definition && Definition->Presentation ? Definition->Presentation->Blood.Get() : nullptr;
             if (Hit.Age <= 0.2f && Settings)
             {
                 Batches.FindOrAdd(Settings).Add({Hit.Position, Hit.Direction, Hit.Normal, Hit.Region, Hit.Serial});

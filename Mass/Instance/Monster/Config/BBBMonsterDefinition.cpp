@@ -1,8 +1,10 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
+#include "BBBMonsterPresentationDefinition.h"
 
 UBBBMonsterDefinition::UBBBMonsterDefinition()
 {
+    Variation = CreateDefaultSubobject<UBBBMonsterVariationDefinition>(TEXT("BirthRules"));
     PatrolNavigation.MidpointMode = EAPSArcMidpointMode::Wavy;
     PatrolNavigation.ArcStrengthRange = FVector2D(0.35, 0.9);
     PatrolNavigation.DirectPathChance = 0.1f;
@@ -54,11 +56,7 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(RunTurnRate) && RunTurnRate > 0.0f
         && FMath::IsFinite(CrawlTurnRate) && CrawlTurnRate > 0.0f
         && FMath::IsFinite(CorpseLifetime) && CorpseLifetime >= 5.0f
-        && FMath::IsFinite(DeathAnimationDuration) && DeathAnimationDuration > 0.0f && DeathAnimationDuration < CorpseLifetime
-        && FMath::IsFinite(CorpseSimulationDuration) && CorpseSimulationDuration >= 0.5f && CorpseSimulationDuration < CorpseLifetime
         && FMath::IsFinite(WalkSpeed) && WalkSpeed > 0.0f
-        && FMath::IsFinite(AnimationStrideScale) && AnimationStrideScale > 0.0f
-        && Variation->SlowWalkSampleSpeed < WalkSpeed
         && FMath::IsFinite(WalkerChaseWalkSpeed) && WalkerChaseWalkSpeed > WalkSpeed && WalkerChaseWalkSpeed < RunSpeed
         && FMath::IsFinite(WalkerRunDistanceMin) && WalkerRunDistanceMin > 0.0f
         && FMath::IsFinite(WalkerRunDistanceMax) && WalkerRunDistanceMax >= WalkerRunDistanceMin
@@ -120,6 +118,5 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AttackDamage) && AttackDamage >= 0.0f
         && FMath::IsFinite(AttackCooldown) && AttackCooldown >= 0.0f
         && FMath::IsFinite(AttackWindup) && AttackWindup > 0.0f
-        && FMath::IsFinite(AttackRecovery) && AttackRecovery > 0.0f
-        && FMath::IsFinite(AnimationHitFraction) && AnimationHitFraction > 0.0f && AnimationHitFraction < 1.0f;
+        && FMath::IsFinite(AttackRecovery) && AttackRecovery > 0.0f;
 }

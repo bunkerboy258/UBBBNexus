@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 #include "BBBMonsterHitReactionComponent.generated.h"
 
+class UBBBMonsterPresentationDefinition;
+
 /** 只消费命中事实的骨骼受力表现 不维护伤害和移动状态 */
 UCLASS(ClassGroup = "Monster", meta = (BlueprintSpawnableComponent))
 class ABBB_EVAC_API UBBBMonsterHitReactionComponent final : public UHitReact
@@ -11,6 +13,8 @@ class ABBB_EVAC_API UBBBMonsterHitReactionComponent final : public UHitReact
     GENERATED_BODY()
 
 public:
+    /** @param Settings 唯一表现配置 @return 无返回值 */
+    void ConfigurePresentation(const UBBBMonsterPresentationDefinition* Settings);
     UBBBMonsterHitReactionComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     /**
@@ -43,6 +47,9 @@ protected:
     virtual void ResetHitReactSystem() override;
 
 private:
+    /** 共享静态配置 不复制每只僵尸的参数 */
+    UPROPERTY(Transient)
+    TObjectPtr<const UBBBMonsterPresentationDefinition> PresentationSettings;
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
     /** 仅自动化验收构造局部受力边界 不增加运行时编辑入口 */
     friend class FBBBMonsterHitReactionRefreshTest;

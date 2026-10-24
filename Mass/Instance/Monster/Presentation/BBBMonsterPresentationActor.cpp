@@ -8,6 +8,8 @@
 #include "BBBMonsterSoundPresentationComponent.h"
 #include "Components/AudioComponent.h"
 #include "BBBMonsterGorePresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 
 ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -36,6 +38,33 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     ContactAudio->bStopWhenOwnerDestroyed = true;
     ContactAudio->bCanPlayMultipleInstances = false;
     ContactAudio->PrimaryComponentTick.bCanEverTick = false;
+}
+
+bool ABBBMonsterPresentationActor::ConfigurePresentation(const UBBBMonsterPresentationDefinition* Settings)
+{
+    if (!Settings)
+    {
+        return false;
+    }
+    if (PresentationSettings == Settings)
+    {
+        return true;
+    }
+    if (!Settings->IsValid())
+    {
+        return false;
+    }
+    HitReaction->Deactivate();
+    MonsterPresentation->ResetCorpsePresentation();
+    Gore->ResetPresentation();
+    MonsterMesh->EmptyOverrideMaterials();
+    MonsterMesh->SetSkeletalMesh(Settings->Gore->Body);
+    MonsterMesh->SetPhysicsAsset(Settings->PhysicsAsset, true);
+    MonsterMesh->SetRelativeTransform(Settings->MeshTransform);
+    MonsterMesh->SetAnimInstanceClass(Settings->AnimationClass);
+    HitReaction->ConfigurePresentation(Settings);
+    PresentationSettings = Settings;
+    return true;
 }
 
 USkeletalMeshComponent* ABBBMonsterPresentationActor::GetMonsterMesh() const

@@ -2,23 +2,41 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor.h"
+#include "Engine/World.h"
 #include "HitReactProfile.h"
 #include "HitReactStatics.h"
 #include "IAnimationBudgetAllocator.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "SkeletalMeshComponentBudgeted.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 UBBBMonsterHitReactionComponent::UBBBMonsterHitReactionComponent(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     bUseFixedSimulationRate = false;
     Cooldown = 0.0f;
-    const TCHAR* ProfileNames[] = {TEXT("HRP_BBBZombieTorso"), TEXT("HRP_BBBZombieHead"), TEXT("HRP_BBBZombieArms"), TEXT("HRP_BBBZombieLegs")};
-    for (const TCHAR* Name : ProfileNames)
+    bAutoActivate = false;
+}
+
+void UBBBMonsterHitReactionComponent::ConfigurePresentation(const UBBBMonsterPresentationDefinition* Settings)
+{
+    if (PresentationSettings == Settings)
     {
-        AvailableProfiles.Add(TSoftObjectPtr<UHitReactProfile>(FSoftObjectPath(FString::Printf(
-            TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/HitReaction/%s.%s"), Name, Name))));
+        return;
+    }
+    Deactivate();
+    ResetPresentation();
+    PresentationSettings = Settings;
+    AvailableProfiles.Reset();
+    if (Settings)
+    {
+        AvailableProfiles = {Settings->HitReaction.TorsoProfile.Get(), Settings->HitReaction.HeadProfile.Get(),
+            Settings->HitReaction.ArmsProfile.Get(), Settings->HitReaction.LegsProfile.Get()};
+    }
+    if (Settings && GetWorld() && GetWorld()->IsGameWorld())
+    {
+        Activate(true);
     }
 }
 
@@ -37,7 +55,7 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
         return;
     }
 
-    if (!bHasInitialized || !bProfilesLoaded)
+    if (!PresentationSettings || !bHasInitialized || !bProfilesLoaded)
     {
         return;
     }
@@ -58,30 +76,23 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 
     int32 ProfileIndex = 0;
-    FName BoneName = TEXT("spine_01");
-    float LinearStrength = 600.0f;
-    float AngularStrength = 1400.0f;
+    const auto& Settings = PresentationSettings->HitReaction;
+    const auto& Region = Settings.ReadRegion(Hit.Region);
+    const FName BoneName = Region.Bone;
+    const float LinearStrength = Region.LinearImpulse;
+    const float AngularStrength = Region.AngularImpulse;
     switch (Hit.Region)
     {
         case EBBBMonsterHitRegion::Head:
             ProfileIndex = 1;
-            BoneName = TEXT("head");
-            LinearStrength = 300.0f;
-            AngularStrength = 2000.0f;
             break;
         case EBBBMonsterHitRegion::LeftArm:
         case EBBBMonsterHitRegion::RightArm:
             ProfileIndex = 2;
-            BoneName = Hit.Region == EBBBMonsterHitRegion::LeftArm ? TEXT("upperarm_l") : TEXT("upperarm_r");
-            LinearStrength = 600.0f;
-            AngularStrength = 2600.0f;
             break;
         case EBBBMonsterHitRegion::LeftLeg:
         case EBBBMonsterHitRegion::RightLeg:
             ProfileIndex = 3;
-            BoneName = Hit.Region == EBBBMonsterHitRegion::LeftLeg ? TEXT("thigh_l") : TEXT("thigh_r");
-            LinearStrength = 260.0f;
-            AngularStrength = 1400.0f;
             break;
         default:
             break;
@@ -98,15 +109,13 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 
     const FVector Direction = Hit.Direction.GetSafeNormal();
-    LinearStrength *= 1.8f;
-    AngularStrength *= 1.4f;
     const FVector Lever = Hit.Position - Mesh->GetBoneLocation(BoneName);
     FVector AngularAxis = FVector::CrossProduct(Lever, Direction).GetSafeNormal();
-    if (ProfileIndex <= 1)
+    if (Region.RotationMode == EBBBMonsterHitRotationMode::BodyDeflection)
     {
         AngularAxis = FVector::CrossProduct(FVector::UpVector, Direction).GetSafeNormal();
     }
-    if (ProfileIndex == 3 || (ProfileIndex == 2 && AngularAxis.IsNearlyZero()))
+    if (Region.RotationMode == EBBBMonsterHitRotationMode::LimbDeflection || AngularAxis.IsNearlyZero())
     {
         AngularAxis = FVector::CrossProduct(Direction, FVector::UpVector).GetSafeNormal();
     }
@@ -121,7 +130,13 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     World.AngularDirection = AngularAxis;
     const FHitReactInputParams Params(AvailableProfiles[ProfileIndex], BoneName, true);
     RequestAnimationUpdate();
-    if (HitReact(Params, Impulse, World, 1.0f))
+    const bool bRepeating = PhysicsBlends.ContainsByPredicate([BoneName](const auto& Blend)
+    {
+        return Blend.SimulatedBoneName == BoneName;
+    });
+    const float Scale = FMath::Clamp(Settings.ImpulseScale * (bRepeating ? Settings.RepeatImpulseScale : 1.0f),
+        0.0f, Settings.MaximumImpulseScale);
+    if (HitReact(Params, Impulse, World, Scale))
     {
         // 连射刷新同一局部混合而不追加同骨骼状态 每次命中保留完整冲击
         int32 KeepIndex = INDEX_NONE;

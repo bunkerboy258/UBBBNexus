@@ -60,3 +60,11 @@ Unreal Engine 5.8 的角色与装备运行时源码 宿主为 E:/BBB_Evac
 主动画图的HandPose_OverrideState只保留姿势输入输出 握姿与两侧权重都在Base内部取得。GetMainAnimationCurveValue显式读取主实例曲线 与GetCharacterGripPose使用同一主实例来源 不增加角色事实写入入口。
 
 2026-10-19 经用户批准恢复完整 FABRIK 握持链路：装备发布 hand_r 空间目标位置与旋转，恢复 LeftHandIKRotation 和 RightHandGripRotationOffset 的配置、快照与只读 getter。静态握姿层仅覆盖手指。UE5.8 完整编译通过；PIE 由用户验收。
+
+## 僵尸逻辑与表现配置
+
+每个 Monster 版本使用 `BBBMonsterDefinition` 逻辑配置与 `BBBMonsterPresentationDefinition` 表现配置。出生感染度与真实速度差异内联于逻辑。身体伤口 动画采样 程序化受击 血液 残肢和声音内联于表现。运行时不再读取旧独立配置或构造函数中的 HRP 软路径。伤口 血液 声音与出生差异分区采用可内联编辑的 UObject 不再是可独立创建的业务数据资产。
+
+程序化受击的六部位冲量与连射倍率 伤口加深阈值与邻近归并 喷血四项有界倍率 以及残肢运动与生命周期参数从共享静态配置读取。伤口固定七槽 残肢池 32 个模拟和 128 个静止上限及既有显示分级不变。正式身体在配置绑定时装配资源 不逐帧重新校验完整资产表。不新增每只僵尸的玩法更新或命中历史。
+
+固定调参靶只提供一个完整表现覆盖入口。独立 `DA_TargetPresentation` 保留原测试参数与物理约束 不自动同步到正式尸群。用户明确 `ok` 后才应用认可的测试表现。完整编译链接及 12 项相关原生检查通过 这不是主观美术质量或压力性能验收。说明见项目 `Docs/ZombieHitReactionTarget.md`。

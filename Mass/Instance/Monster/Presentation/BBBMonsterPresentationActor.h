@@ -10,6 +10,7 @@ class UPhysicalAnimationComponent;
 class UBBBMonsterSoundPresentationComponent;
 class UAudioComponent;
 class UBBBMonsterGorePresentationComponent;
+class UBBBMonsterPresentationDefinition;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
@@ -18,6 +19,8 @@ class ABBB_EVAC_API ABBBMonsterPresentationActor : public AActor
     GENERATED_BODY()
 
 public:
+    /** @param Settings 共享表现配置 @return 是否成功绑定 */
+    bool ConfigurePresentation(const UBBBMonsterPresentationDefinition* Settings);
     /** @return 只还原 Mass 部位损毁的表现组件 */
     UBBBMonsterGorePresentationComponent* GetMonsterGore() const;
 
@@ -46,6 +49,9 @@ public:
     virtual void SetActorHiddenInGame(bool bNewHidden) override;
 
 private:
+    /** 仅在配置或身体关联变化时重新装配资源 */
+    UPROPERTY(Transient)
+    TObjectPtr<const UBBBMonsterPresentationDefinition> PresentationSettings;
     /** 本地断肢与封口表现 */
     UPROPERTY(VisibleAnywhere, Category = "小怪|断肢", meta = (DisplayName = "断肢表现组件"))
     TObjectPtr<UBBBMonsterGorePresentationComponent> Gore;

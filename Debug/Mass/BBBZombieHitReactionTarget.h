@@ -17,6 +17,7 @@ class UPhysicsAsset;
 class UHitReactProfile;
 class UAnimSequence;
 class UBBBMonsterGoreDefinition;
+class UBBBMonsterPresentationDefinition;
 
 /** 仅用于本地受击与血腥调参的固定表现靶 不创建实体或维护玩法生命 */
 UCLASS(meta = (DisplayName = "僵尸程序化受击调参靶"))
@@ -36,34 +37,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "测试僵尸", meta = (DisplayName = "测试动画", ToolTip = "留空使用所选版本的正式待机 轨迹采样时需指定动画序列"))
     TObjectPtr<UAnimSequence> TestAnimation;
 
-    /** 只有启用覆盖才使用测试物理资产 */
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "覆盖物理资产", InlineEditConditionToggle))
-    bool bOverridePhysics = false;
+    /** 用一份完整测试表现配置替代正式表现 不另设分散覆盖 */
+    UPROPERTY(EditAnywhere, Category = "测试僵尸", meta = (DisplayName = "使用自定义表现"))
+    bool bOverridePresentation = false;
 
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "测试物理资产", EditCondition = "bOverridePhysics"))
-    TObjectPtr<UPhysicsAsset> PhysicsOverride;
-
-    /** 四个具名字段避免部位顺序错误 */
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "覆盖程序化受击"))
-    bool bOverrideHitProfiles = false;
-
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "躯干受击", EditCondition = "bOverrideHitProfiles"))
-    TObjectPtr<UHitReactProfile> TorsoProfile;
-
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "头部受击", EditCondition = "bOverrideHitProfiles"))
-    TObjectPtr<UHitReactProfile> HeadProfile;
-
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "手臂受击", EditCondition = "bOverrideHitProfiles"))
-    TObjectPtr<UHitReactProfile> ArmsProfile;
-
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "腿部受击", EditCondition = "bOverrideHitProfiles"))
-    TObjectPtr<UHitReactProfile> LegsProfile;
-
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "覆盖伤口与血液", InlineEditConditionToggle))
-    bool bOverrideGore = false;
-
-    UPROPERTY(EditAnywhere, Category = "测试僵尸|自定义覆盖", meta = (DisplayName = "测试伤口与血液", EditCondition = "bOverrideGore"))
-    TObjectPtr<UBBBMonsterGoreDefinition> GoreOverride;
+    UPROPERTY(EditAnywhere, Category = "测试僵尸", meta = (DisplayName = "自定义表现配置", EditCondition = "bOverridePresentation"))
+    TObjectPtr<UBBBMonsterPresentationDefinition> PresentationOverride;
 
     /** 当前配置失败时隐藏身体并禁止命中 不悄悄使用上一版本 */
     UPROPERTY(Transient, VisibleAnywhere, Category = "测试僵尸", meta = (DisplayName = "配置状态"))

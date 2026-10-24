@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationStateProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
@@ -75,12 +76,12 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
             }
             const float NormalizedSpeed = Velocities[Index].Value.Size2D() / FMath::Max(Variation.SpeedScale, 0.01f);
             const UBBBMonsterDefinition* Definition = Networks[Index].Definition.Get();
-            if (!ensureMsgf(Definition && Definition->Variation && Variation.LocomotionStyle < 3,
+            if (!ensureMsgf(Definition && Definition->Presentation && Variation.LocomotionStyle < 3,
                 TEXT("[BBBMonsterVariation]Initialized snapshot requires cycle configuration")))
             {
                 continue;
             }
-            const UBBBMonsterVariationDefinition& Settings = *Definition->Variation;
+            const auto& Settings = Definition->Presentation->Animation;
             const uint32 IdleIndex = Variation.Seed % 3u;
             float Duration = static_cast<float>(Settings.IdleCycleSeconds[IdleIndex]);
             if (States[Index].State == EBBBMonsterBehavior::Alert)
@@ -118,7 +119,7 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
                 }
             }
             const bool bMovingLoop = States[Index].State == EBBBMonsterBehavior::Patrol || States[Index].State == EBBBMonsterBehavior::Chase;
-            const float StrideScale = bMovingLoop ? Definition->AnimationStrideScale : 1.0f;
+            const float StrideScale = bMovingLoop ? Definition->Presentation->Animation.AnimationStrideScale : 1.0f;
             const float Frequency = (bMovingLoop ? Variation.SpeedScale : 1.0f) / FMath::Max(Duration * StrideScale, 0.01f);
             PresentationState.LoopPhase = FMath::Frac(PresentationState.LoopPhase + DeltaTime * Frequency);
             PresentationState.State = States[Index].State;
@@ -133,13 +134,13 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
             {
                 const FBBBMonsterCombatFragment& Combat = Combats[Index];
                 PresentationState.ActionProgress = Elapsed <= Combat.AttackWindup
-                    ? Combat.AnimationHitFraction * Elapsed / Combat.AttackWindup
-                    : Combat.AnimationHitFraction + (1.0f - Combat.AnimationHitFraction) * (Elapsed - Combat.AttackWindup) / Combat.AttackRecovery;
+                    ? Settings.AnimationHitFraction * Elapsed / Combat.AttackWindup
+                    : Settings.AnimationHitFraction + (1.0f - Settings.AnimationHitFraction) * (Elapsed - Combat.AttackWindup) / Combat.AttackRecovery;
             }
 
             if (States[Index].State == EBBBMonsterBehavior::Dead)
             {
-                PresentationState.ActionProgress = Elapsed / Definition->DeathAnimationDuration;
+                PresentationState.ActionProgress = Elapsed / Definition->Presentation->Animation.DeathAnimationDuration;
             }
 
             PresentationState.ActionProgress = FMath::Clamp(PresentationState.ActionProgress, 0.0f, 1.0f);

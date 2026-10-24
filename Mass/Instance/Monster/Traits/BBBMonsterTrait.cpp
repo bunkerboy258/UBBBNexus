@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "MassEntityTemplateRegistry.h"
 #include "MassCommonFragments.h"
@@ -38,6 +39,14 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     }
 
     if (!ensureMsgf(Settings != nullptr && (BuildContext.IsInspectingData() || Settings->IsValid()), TEXT("Mass 小怪配置不完整 %s"), *GetPathNameSafe(Settings)))
+    {
+        return;
+    }
+    if (!BuildContext.IsInspectingData() && !ensureMsgf(Settings->Presentation && Settings->Presentation->IsValid()
+        && Settings->Presentation->Animation.SlowWalkSampleSpeed < Settings->WalkSpeed
+        && Settings->Presentation->Animation.DeathAnimationDuration < Settings->CorpseLifetime
+        && Settings->Presentation->Animation.CorpseSimulationDuration < Settings->CorpseLifetime,
+        TEXT("Mass 小怪表现配置不完整或与逻辑时序不匹配 %s"), *GetPathNameSafe(Settings)))
     {
         return;
     }
@@ -104,5 +113,4 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Combat.AttackCooldown = Settings->AttackCooldown;
     Combat.AttackWindup = Settings->AttackWindup;
     Combat.AttackRecovery = Settings->AttackRecovery;
-    Combat.AnimationHitFraction = Settings->AnimationHitFraction;
 }

@@ -9,6 +9,7 @@ class USkeletalMeshComponent;
 class USkeletalMesh;
 class UStaticMesh;
 class UBBBMonsterSoundPresentationDefinition;
+class UBBBMonsterPresentationDefinition;
 class UPrimitiveComponent;
 class UPhysicalMaterial;
 class AActor;
@@ -39,7 +40,7 @@ public:
      * @return 是否分配到表现预算
      */
     bool Emit(USkeletalMeshComponent& Source, UStaticMesh& Part, USkeletalMesh& PosePart, FName Bone,
-        const FVector& Direction, const FVector& Velocity, uint32 Seed, UBBBMonsterSoundPresentationDefinition* Sounds);
+        const FVector& Direction, const FVector& Velocity, uint32 Seed, const UBBBMonsterPresentationDefinition& Settings);
 
     /**
      * @param Now	当前世界时间
@@ -63,6 +64,9 @@ public:
     virtual void Deinitialize() override;
 
 private:
+    /** 活动池槽保留共享配置引用 不复制完整资源表 */
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<const UBBBMonsterPresentationDefinition>> PresentationConfigs;
     /** 池内刚体 独立于原僵尸的回收 */
     UPROPERTY(Transient)
     TArray<TObjectPtr<UStaticMeshComponent>> Pieces;

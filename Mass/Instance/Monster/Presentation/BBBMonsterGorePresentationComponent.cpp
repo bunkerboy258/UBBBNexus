@@ -1,6 +1,7 @@
 #include "BBBMonsterGorePresentationComponent.h"
 
 #include "BBBMonsterBloodPresentationSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBMonsterGibPresentationSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
@@ -181,7 +182,7 @@ void UBBBMonsterGorePresentationComponent::UpdateWounds(FBBBMonsterGoreFragment&
         const auto* Existing = Definition.FindWound(Result.Wounds[Index].PresetId);
         const bool bInsideTissue = Existing && Deep && Existing->Id == Deep->Id;
         if (Existing && (bInsideTissue
-            || FVector::DistSquared(Result.Wounds[Index].Center, Center) < FMath::Square(Definition.HitRadius * 2)))
+            || FVector::DistSquared(Result.Wounds[Index].Center, Center) < FMath::Square(Definition.HitRadius * Definition.MergeRadiusScale)))
         {
             SelectedSlot = Index;
             break;
@@ -197,7 +198,7 @@ void UBBBMonsterGorePresentationComponent::UpdateWounds(FBBBMonsterGoreFragment&
     const auto* Existing = Definition.FindWound(Slot.PresetId);
     if (Existing && Existing->Tissue && !Existing->bPermanent)
     {
-        Slot.Strength = FMath::Min(1.0f, Slot.Strength + 0.35f);
+        Slot.Strength = FMath::Min(1.0f, Slot.Strength + Definition.HitAccumulation);
         return;
     }
     Slot.PresetId = static_cast<uint8>(Surface->Id);
@@ -207,14 +208,14 @@ void UBBBMonsterGorePresentationComponent::UpdateWounds(FBBBMonsterGoreFragment&
     const float ProjectionDepth = FMath::Max(Definition.HitRadius,
         static_cast<float>(FMath::Abs(FVector::DotProduct(Center - Reference.GetLocation(), Normal))));
     Slot.RadiusDepth = FVector2D(Definition.HitRadius, ProjectionDepth);
-    Slot.Strength = FMath::Min(1.0f, Slot.Strength + 0.35f);
+    Slot.Strength = FMath::Min(1.0f, Slot.Strength + Definition.HitAccumulation);
     if (Region == 0 && (DestroyedParts & 1u) != 0)
     {
         Slot.Strength = 1;
     }
 
     // 组织模型仅在其预制适配范围内选择 不把任意命中强制移到固定伤口
-    if (Deep && Slot.Strength >= 0.65f)
+    if (Deep && Slot.Strength >= Definition.DeepWoundThreshold)
     {
         Slot.PresetId = static_cast<uint8>(Deep->Id);
         // 缓存配对资源的坐标范围 后续命中按同一创口归并
@@ -341,7 +342,7 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
                 if (auto* Pieces = GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>())
                 {
                     Pieces->Emit(*Body, *Preset->DetachedMesh, *Preset->DetachedSkin, Preset->Bone,
-                        Hit.Direction, Velocity, Seed ^ Hit.Serial, Sounds);
+                        Hit.Direction, Velocity, Seed ^ Hit.Serial, *Definition.GetTypedOuter<UBBBMonsterPresentationDefinition>());
                 }
                 FBBBMonsterBloodImpact Burst;
                 Burst.Position = CurrentCenter(Definition, *Preset, *Body);
@@ -364,7 +365,7 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
     {
         if (auto* Blood = GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>())
         {
-            Blood->Publish(*Definition.Blood, Bursts);
+            Blood->Publish(*Definition.GetBlood(), Bursts);
         }
     }
 }

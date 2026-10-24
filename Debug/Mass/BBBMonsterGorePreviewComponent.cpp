@@ -40,7 +40,7 @@ void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragm
         Destroyed |= 1 << Region;
     }
     const double Now = GetWorld()->GetTimeSeconds();
-    if (Definition->Blood && FMath::IsFinite(Strength) && Strength > 0 && Now >= NextBlood)
+    if (Definition->GetBlood() && FMath::IsFinite(Strength) && Strength > 0 && Now >= NextBlood)
     {
         NextBlood = Now + 1 / FMath::Clamp(Definition->WoundUpdatesPerSecond, 1.0f, 30.0f);
         FBBBMonsterBloodImpact Impact;
@@ -52,7 +52,7 @@ void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragm
         Impact.Source = GetOwner();
         if (auto *Blood = GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>())
         {
-            Blood->Publish(*Definition->Blood, MakeArrayView(&Impact, 1));
+            Blood->Publish(*Definition->GetBlood(), MakeArrayView(&Impact, 1));
         }
     }
     Present();

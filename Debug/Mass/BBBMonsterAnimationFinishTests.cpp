@@ -8,6 +8,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
@@ -21,10 +22,16 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterAnimationFinishTest, "UBBB.Mass.Zomb
 bool FBBBMonsterAnimationFinishTest::RunTest(const FString& Parameters)
 {
     FEditorScriptExecutionGuard ScriptGuard;
-    auto* Rules = NewObject<UBBBMonsterVariationDefinition>();
-    Rules->PursuitWalkCycleSeconds.X = 0;
+    auto* Source = LoadObject<UBBBMonsterPresentationDefinition>(nullptr,
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Connor/DA_BBBZombieConnorPresentation"));
+    if (!TestNotNull(TEXT("独立表现配置"), Source))
+    {
+        return false;
+    }
+    auto* Rules = DuplicateObject<UBBBMonsterPresentationDefinition>(Source, GetTransientPackage());
+    Rules->Animation.PursuitWalkCycleSeconds.X = 0;
     TestFalse(TEXT("零快走循环不得进入相位计算"), Rules->IsValid());
-    Rules->PursuitWalkCycleSeconds.X = 0.766667;
+    Rules->Animation.PursuitWalkCycleSeconds.X = 0.766667;
     TestTrue(TEXT("有效快走循环恢复配置有效性"), Rules->IsValid());
     const auto Initialization = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(false)
         .CreateNavigation(false).CreateAISystem(false).ShouldSimulatePhysics(false);

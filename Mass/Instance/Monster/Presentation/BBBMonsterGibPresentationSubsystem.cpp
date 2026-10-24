@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Actor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSoundPresentationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
@@ -17,7 +18,6 @@ namespace
 {
     constexpr int32 MaximumSimulating = 32;
     constexpr int32 MaximumSettled = 128;
-    constexpr float Lifetime = 30.0f;
 
     float ViewDistanceSquared(const UWorld& World, const FVector& Location)
     {
@@ -70,6 +70,7 @@ void UBBBMonsterGibPresentationSubsystem::ReleaseSlot(const int32 Index)
     StableSince[Index] = -1.0f;
     LandingPlayed[Index] = false;
     SoundConfigs[Index] = nullptr;
+    PresentationConfigs[Index] = nullptr;
 }
 
 int32 UBBBMonsterGibPresentationSubsystem::GetLandedCount() const
@@ -107,7 +108,7 @@ int32 UBBBMonsterGibPresentationSubsystem::FindSettledRecycleSlot() const
 
 bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, UStaticMesh& Part,
     USkeletalMesh& PosePart, const FName Bone, const FVector& Direction, const FVector& Velocity,
-    const uint32 Seed, UBBBMonsterSoundPresentationDefinition* Sounds)
+    const uint32 Seed, const UBBBMonsterPresentationDefinition& Settings)
 {
     UWorld* World = GetWorld();
     if (!World || Direction.ContainsNaN() || Velocity.ContainsNaN() || Part.IsCompiling()
@@ -181,6 +182,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         BornAt.Add(-1.0f);
         StableSince.Add(-1.0f);
         SoundConfigs.Add(nullptr);
+        PresentationConfigs.Add(nullptr);
         LandingPlayed.Add(false);
     }
     if (!ContactMaterial)
@@ -245,49 +247,23 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         return false;
     }
     Piece->SetEnableGravity(true);
-    float Speed = 260.0f;
-    float Lift = 100.0f;
-    float SpinSpeed = 180.0f;
-    float Mass = 11.0f;
-    if (Bone == TEXT("head"))
-    {
-        Speed = 420.0f;
-        Lift = 160.0f;
-        SpinSpeed = 340.0f;
-        Mass = 4.5f;
-    }
-    if (Bone == TEXT("upperarm_l") || Bone == TEXT("upperarm_r"))
-    {
-        Speed = 340.0f;
-        Lift = 130.0f;
-        SpinSpeed = 260.0f;
-        Mass = 3.5f;
-    }
-    if (Bone == TEXT("lowerarm_l") || Bone == TEXT("lowerarm_r"))
-    {
-        Speed = 380;
-        Lift = 120;
-        SpinSpeed = 310;
-        Mass = 1.6f;
-    }
-    if (Bone == TEXT("calf_l") || Bone == TEXT("calf_r"))
-    {
-        Mass = 5;
-    }
+    const auto& Gibs = Settings.Gibs;
+    const auto& PartSettings = Gibs.ReadPart(Bone);
     FRandomStream Random(Seed ^ GetTypeHash(Bone));
     const FVector Forward = Direction.GetSafeNormal(UE_SMALL_NUMBER, Source.GetForwardVector());
     const FVector Side = FVector::CrossProduct(Forward, FVector::UpVector).GetSafeNormal(UE_SMALL_NUMBER,
         BoneWorld.GetUnitAxis(EAxis::Y));
-    Piece->SetMassOverrideInKg(NAME_None, Mass);
-    Piece->SetPhysicsLinearVelocity(Velocity.GetClampedToMaxSize(650.0f)
-        + Forward * Speed * Random.FRandRange(0.9f, 1.1f) + FVector::UpVector * Lift
-        + Side * Random.FRandRange(-45.0f, 45.0f));
-    const FVector Spin = (Side + Forward * Random.FRandRange(-0.35f, 0.35f)).GetSafeNormal() * SpinSpeed;
+    Piece->SetMassOverrideInKg(NAME_None, PartSettings.Mass);
+    Piece->SetPhysicsLinearVelocity((Velocity * Gibs.InheritedVelocityScale).GetClampedToMaxSize(Gibs.MaximumInheritedSpeed)
+        + Forward * PartSettings.Speed * Random.FRandRange(Gibs.SpeedScale.X, Gibs.SpeedScale.Y) + FVector::UpVector * PartSettings.Lift
+        + Side * Random.FRandRange(-Gibs.SideSpeed, Gibs.SideSpeed));
+    const FVector Spin = (Side + Forward * Random.FRandRange(-Gibs.SpinDirectionSpread, Gibs.SpinDirectionSpread)).GetSafeNormal() * PartSettings.Spin;
     Piece->SetPhysicsAngularVelocityInDegrees(Spin);
     Piece->WakeAllRigidBodies();
     BornAt[Slot] = World->GetTimeSeconds();
     StableSince[Slot] = -1.0f;
-    SoundConfigs[Slot] = Sounds;
+    SoundConfigs[Slot] = Settings.Sounds;
+    PresentationConfigs[Slot] = &Settings;
     LandingPlayed[Slot] = false;
     return true;
 }
@@ -329,16 +305,17 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
         }
         auto* Piece = Pieces[Index].Get();
         const float Age = Now - BornAt[Index];
+        const auto& Settings = PresentationConfigs[Index]->Gibs;
         if (Poses[Index]->IsVisible() && ViewDistanceSquared(*GetWorld(), Piece->GetComponentLocation()) > FMath::Square(1400.0f))
         {
             Poses[Index]->SetVisibility(false);
             Piece->SetVisibility(true);
         }
         const bool bVisible = Piece->WasRecentlyRendered(0.2f) || Poses[Index]->WasRecentlyRendered(0.2f);
-        const float Fade = FMath::Clamp((Age - Lifetime) / 5.0f, 0.0f, 1.0f);
+        const float Fade = FMath::Clamp((Age - Settings.Lifetime) / Settings.FadeDuration, 0.0f, 1.0f);
         Piece->SetCustomPrimitiveDataFloat(8, Fade);
         Poses[Index]->SetCustomPrimitiveDataFloat(8, Fade);
-        if (Age >= Lifetime && (!bVisible || Age >= Lifetime + 5.0f))
+        if (Age >= Settings.Lifetime && (!bVisible || Age >= Settings.Lifetime + Settings.FadeDuration))
         {
             Settled -= Piece->IsSimulatingPhysics() ? 0 : 1;
             ReleaseSlot(Index);
@@ -348,8 +325,8 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
         {
             continue;
         }
-        const bool bStable = Piece->GetPhysicsLinearVelocity().SizeSquared() < 225.0f
-            && Piece->GetPhysicsAngularVelocityInDegrees().SizeSquared() < 225.0f;
+        const bool bStable = Piece->GetPhysicsLinearVelocity().SizeSquared() < FMath::Square(Settings.RestLinearSpeed)
+            && Piece->GetPhysicsAngularVelocityInDegrees().SizeSquared() < FMath::Square(Settings.RestAngularSpeed);
         if (!bStable)
         {
             StableSince[Index] = -1.0f;
@@ -363,7 +340,7 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
             ReleaseSlot(Index);
             continue;
         }
-        if (StableSince[Index] >= 0.0f && Now - StableSince[Index] > 0.5f && Age > 1.0f)
+        if (StableSince[Index] >= 0.0f && Now - StableSince[Index] > Settings.RestDuration && Age > 1.0f)
         {
             FHitResult Support;
             const FVector Origin = Piece->Bounds.Origin;
@@ -414,6 +391,7 @@ void UBBBMonsterGibPresentationSubsystem::Deinitialize()
     BornAt.Reset();
     StableSince.Reset();
     SoundConfigs.Reset();
+    PresentationConfigs.Reset();
     LandingPlayed.Reset();
     ContactMaterial = nullptr;
     if (IsValid(PoolActor))

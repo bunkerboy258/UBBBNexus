@@ -1,4 +1,5 @@
 #include "BBBMonsterGoreProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
@@ -50,13 +51,13 @@ void UBBBMonsterGoreProcessor::Execute(FMassEntityManager&, FMassExecutionContex
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             const auto* Definition = Networks[Index].Definition.Get();
-            if (!Definition || !Definition->Gore)
+            if (!Definition || !Definition->Presentation || !Definition->Presentation->Gore)
             {
                 continue;
             }
             auto* Actor = Actors[Index].Get();
             auto* Mesh = Actor ? Actor->FindComponentByClass<USkeletalMeshComponent>() : nullptr;
-            UBBBMonsterGorePresentationComponent::UpdateWounds(Results[Index], *Definition->Gore,
+            UBBBMonsterGorePresentationComponent::UpdateWounds(Results[Index], *Definition->Presentation->Gore,
                 Health[Index].DestroyedParts, Hits[Index], Mesh, Now, bAuthority);
         }
     });

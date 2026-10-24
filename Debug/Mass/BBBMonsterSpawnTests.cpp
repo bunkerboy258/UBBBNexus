@@ -1,5 +1,6 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Misc/AutomationTest.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -60,10 +61,11 @@ bool FBBBMonsterSpawnRandomTest::RunTest(const FString& Parameters)
     auto* Rules = NewObject<UBBBMonsterVariationDefinition>();
     auto* Definition = NewObject<UBBBMonsterDefinition>();
     Definition->Variation = Rules;
+    Definition->Presentation = NewObject<UBBBMonsterPresentationDefinition>();
     Rules->MinInfection = 77;
     Rules->MaxInfection = 77;
-    Rules->LocomotionWeights = FVector(0.0, 0.0, 1.0);
-    Rules->bRandomPhase = false;
+    Definition->Presentation->Animation.LocomotionWeights = FVector(0.0, 0.0, 1.0);
+    Definition->Presentation->Animation.bRandomPhase = false;
     FBBBMonsterVariationFragment A;
     FBBBMonsterVariationFragment B;
     A.Seed = 123;
@@ -77,8 +79,8 @@ bool FBBBMonsterSpawnRandomTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("客机出生初始化"), UBBBMonsterInitializationProcessor::InitializeBirth(FGuid::NewGuid(), *Definition, B, MovementB, BehaviorB));
     TestTrue(TEXT("随机与网络身份解耦"), A.Infection == B.Infection && A.Seed == B.Seed && MovementA.RunSpeed == MovementB.RunSpeed);
     TestTrue(TEXT("固定感染度 风格与初相成立"), A.Infection == 77 && A.LocomotionStyle == 2 && A.PhaseOffset == 0.0f);
-    Rules->LocomotionWeights = FVector::ZeroVector;
-    TestFalse(TEXT("全零风格权重拒绝"), Rules->IsValid());
+    Definition->Presentation->Animation.LocomotionWeights = FVector::ZeroVector;
+    TestFalse(TEXT("全零风格权重拒绝"), UBBBMonsterInitializationProcessor::InitializeBirth(FGuid::NewGuid(), *Definition, A, MovementA, BehaviorA));
     return true;
 }
 

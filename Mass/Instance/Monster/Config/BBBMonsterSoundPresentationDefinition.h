@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/DataAsset.h"
+#include "UObject/Object.h"
 #include "BBBMonsterSoundVoice.h"
 #include "BBBMonsterSoundPresentationDefinition.generated.h"
 
@@ -8,8 +8,8 @@ class USoundAttenuation;
 class USoundConcurrency;
 
 /** 小怪声音的静态素材和发声预算 不产生玩法事实 */
-UCLASS(BlueprintType)
-class ABBB_EVAC_API UBBBMonsterSoundPresentationDefinition final : public UDataAsset
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced, HideDropdown)
+class ABBB_EVAC_API UBBBMonsterSoundPresentationDefinition final : public UObject
 {
     GENERATED_BODY()
 

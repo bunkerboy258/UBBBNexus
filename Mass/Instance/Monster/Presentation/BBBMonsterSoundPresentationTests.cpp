@@ -1,4 +1,5 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopeExit.h"
@@ -153,8 +154,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterSoundAssetsTest, "UBBB.Mass.ZombieAu
 
 bool FBBBMonsterSoundAssetsTest::RunTest(const FString& Parameters)
 {
-    UBBBMonsterSoundPresentationDefinition* Settings = LoadObject<UBBBMonsterSoundPresentationDefinition>(nullptr,
-        TEXT("/Game/_Project/Mass/Monster/Zombie/Shared/Audio/DA_BBBZombieSoundPresentation.DA_BBBZombieSoundPresentation"));
+    const auto* Presentation = LoadObject<UBBBMonsterPresentationDefinition>(nullptr,
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Connor/DA_BBBZombieConnorPresentation"));
+    auto* Settings = Presentation ? Presentation->Sounds.Get() : nullptr;
     if (!TestNotNull(TEXT("持久声音配置"), Settings))
     {
         return false;
@@ -190,7 +192,9 @@ bool FBBBMonsterSoundAssetsTest::RunTest(const FString& Parameters)
         UBBBMonsterDefinition* Definition = LoadObject<UBBBMonsterDefinition>(nullptr, *Path);
         if (TestNotNull(Relative, Definition))
         {
-            TestEqual(Relative + TEXT(" 绑定同一声音配置"), Definition->SoundPresentation.Get(), Settings);
+            TestTrue(Relative + TEXT(" 声音为表现配置的内联分区"),
+                Definition->Presentation->Sounds->GetOuter() == Definition->Presentation);
+            TestTrue(Relative + TEXT(" 声音分区有效"), Definition->Presentation->Sounds->IsValid());
             TestTrue(Relative + TEXT(" 玩法配置仍有效"), Definition->IsValid());
         }
 
