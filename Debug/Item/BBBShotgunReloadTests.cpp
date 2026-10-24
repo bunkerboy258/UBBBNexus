@@ -37,7 +37,7 @@ bool FBBBShotgunReloadTest::RunTest(const FString &Parameters)
     };
 
     UClass *EquipmentClass = LoadClass<ABBBShotgunEquipment>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Shotgun/Shotgun_01/BP_ModernWeapons_Shotgun_01.BP_ModernWeapons_Shotgun_01_C"));
+        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Shotgun/Mossberg_590/BP_ModernWeapons_Shotgun_01.BP_ModernWeapons_Shotgun_01_C"));
     if (!TestNotNull(TEXT("霰弹枪蓝图"), EquipmentClass))
     {
         return false;

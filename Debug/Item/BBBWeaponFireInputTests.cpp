@@ -37,7 +37,7 @@ bool FBBBWeaponClickTest::RunTest(const FString &Parameters)
     auto *Character = World->SpawnActor<ABBBCharacter>();
     auto *Equipment = World->SpawnActor<ABBBPistolEquipment>();
     const auto *SourceDefinition = LoadObject<UBBBPistolDefinition>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Pistol/Pistol_01/DA_ModernWeapons_Pistol_01.DA_ModernWeapons_Pistol_01"));
+        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Pistol/M1911/DA_ModernWeapons_Pistol_01.DA_ModernWeapons_Pistol_01"));
     if (!TestNotNull(TEXT("正式手枪配置"), SourceDefinition))
     {
         return false;
