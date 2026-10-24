@@ -14,6 +14,7 @@ class UPrimitiveComponent;
 class UPhysicalMaterial;
 class AActor;
 struct FHitResult;
+struct FReferenceSkeleton;
 
 /** 世界共享的断肢表现池 不持有伤害事实且不创建独立更新 */
 UCLASS()
@@ -22,6 +23,17 @@ class ABBB_EVAC_API UBBBMonsterGibPresentationSubsystem final : public UWorldSub
     GENERATED_BODY()
 
 public:
+    /**
+     * @param SourceSkeleton	身体骨架
+     * @param ComponentPose	身体当前组件空间姿态
+     * @param PartSkeleton	残肢骨架 不要求与身体排列一致
+     * @param LocalPose	按残肢骨架顺序输出的局部姿态
+     * @return 所有残肢骨骼是否匹配且变换有限
+     */
+    static bool BuildDetachedPose(const FReferenceSkeleton& SourceSkeleton,
+        TConstArrayView<FTransform> ComponentPose, const FReferenceSkeleton& PartSkeleton,
+        TArray<FTransform>& LocalPose);
+
     /** @param WorldType\t实际世界类型 @return 正式世界和隔离的编辑预览均使用同一残肢池 */
     virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override
     {

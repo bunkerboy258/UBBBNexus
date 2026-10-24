@@ -14,6 +14,40 @@
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
+bool UBBBMonsterGibPresentationSubsystem::BuildDetachedPose(const FReferenceSkeleton& SourceSkeleton,
+    TConstArrayView<FTransform> ComponentPose, const FReferenceSkeleton& PartSkeleton,
+    TArray<FTransform>& LocalPose)
+{
+    LocalPose.Reset();
+    if (ComponentPose.Num() != SourceSkeleton.GetNum())
+    {
+        return false;
+    }
+    LocalPose.Reserve(PartSkeleton.GetNum());
+    for (int32 Index = 0; Index < PartSkeleton.GetNum(); ++Index)
+    {
+        const int32 SourceIndex = SourceSkeleton.FindBoneIndex(PartSkeleton.GetBoneName(Index));
+        const int32 Parent = PartSkeleton.GetParentIndex(Index);
+        const int32 SourceParent = Parent == INDEX_NONE ? INDEX_NONE
+            : SourceSkeleton.FindBoneIndex(PartSkeleton.GetBoneName(Parent));
+        if (!ComponentPose.IsValidIndex(SourceIndex)
+            || (Parent != INDEX_NONE && !ComponentPose.IsValidIndex(SourceParent)))
+        {
+            LocalPose.Reset();
+            return false;
+        }
+        const FTransform Local = Parent == INDEX_NONE ? ComponentPose[SourceIndex]
+            : ComponentPose[SourceIndex].GetRelativeTransform(ComponentPose[SourceParent]);
+        if (Local.ContainsNaN())
+        {
+            LocalPose.Reset();
+            return false;
+        }
+        LocalPose.Add(Local);
+    }
+    return true;
+}
+
 namespace
 {
     constexpr int32 MaximumSimulating = 32;
@@ -206,23 +240,12 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         Pose->SetRelativeTransform(Source.GetComponentTransform().GetRelativeTransform(BoneWorld));
         const auto& Captured = Source.GetComponentSpaceTransforms();
         const auto& Skeleton = PosePart.GetRefSkeleton();
-        if (!ensureMsgf(Captured.Num() == Skeleton.GetNum() && Pose->BoneSpaceTransforms.Num() == Captured.Num(),
+        if (!ensureMsgf(Source.GetSkeletalMeshAsset()
+            && BuildDetachedPose(Source.GetSkeletalMeshAsset()->GetRefSkeleton(), Captured, Skeleton, Pose->BoneSpaceTransforms),
             TEXT("[BBBZombieGib]最终姿态和部件骨骼不匹配 Bone=%s"), *Bone.ToString()))
         {
             ReleaseSlot(Slot);
             return false;
-        }
-        for (int32 Index = 0; Index < Captured.Num(); ++Index)
-        {
-            const int32 Parent = Skeleton.GetParentIndex(Index);
-            Pose->BoneSpaceTransforms[Index] = Parent == INDEX_NONE ? Captured[Index]
-                : Captured[Index].GetRelativeTransform(Captured[Parent]);
-            if (Pose->BoneSpaceTransforms[Index].ContainsNaN())
-            {
-                UE_LOG(LogTemp, Error, TEXT("[BBBZombieGib]拒绝非有限姿态 Part=%s BoneIndex=%d"), *PosePart.GetPathName(), Index);
-                ReleaseSlot(Slot);
-                return false;
-            }
         }
         Pose->MarkRefreshTransformDirty();
         Pose->RefreshBoneTransforms();
