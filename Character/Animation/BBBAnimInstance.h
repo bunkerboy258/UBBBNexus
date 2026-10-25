@@ -96,6 +96,10 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源角色旋转"))
     FRotator SourceActorRotation = FRotator::ZeroRotator;
 
+    /** 本帧骨骼网格组件的世界变换 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源网格世界变换"))
+    FTransform SourceMeshWorldTransform = FTransform::Identity;
+
     /** 本帧角色世界速度 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源速度"))
     FVector SourceVelocity = FVector::ZeroVector;
@@ -135,6 +139,14 @@ public:
     /** 本帧行走制动减速度 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源行走制动减速度"))
     float SourceBrakingDecelerationWalking = 0.0f;
+
+    /** 当前移动模式在本帧使用的速度上限 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动速度上限"))
+    float SourceMaxSpeed = 0.0f;
+
+    /** 移动组件制动积分使用的子步间隔 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源制动子步间隔"))
+    float SourceBrakingSubStepTime = 0.0f;
 
     /** 是否使用独立制动摩擦力 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源使用独立制动摩擦力"))

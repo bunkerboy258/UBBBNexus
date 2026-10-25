@@ -209,35 +209,38 @@ void FBBBCharacterLocomotionProcessor::Update(
         RuntimeData.bTraversalControlled = true;
     }
 
-    if (Context.Execution.bIsMirror)
-    {
-        return;
-    }
-
-    if (Traversal.Action != EBBBTraversalAction::None && !Traversal.bAnimationReleased)
+    if (!Context.Execution.bIsMirror
+        && Traversal.Action != EBBBTraversalAction::None && !Traversal.bAnimationReleased)
     {
         return;
     }
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
-    Character.SetActorRotation(FRotator(0.0f, ControlData.FacingWorld.Yaw, 0.0f));
     const bool bWantsCrouch = ControlData.bCrouch;
-    if (bWantsCrouch)
+    if (!Context.Execution.bIsMirror)
+    {
+        Character.SetActorRotation(FRotator(0.0f, ControlData.FacingWorld.Yaw, 0.0f));
+    }
+
+    if (!Context.Execution.bIsMirror && bWantsCrouch)
     {
         Character.Crouch();
     }
 
-    if (!bWantsCrouch)
+    if (!Context.Execution.bIsMirror && !bWantsCrouch)
     {
         Character.UnCrouch();
     }
 
     // 跑步只表示站立移动档位 蹲伏由 CMC 独立维护和复制
-    RuntimeData.bRun = ResolveRun(
-        Character,
-        ControlData,
-        Config,
-        RuntimeData.bRun,
-        Movement.Velocity);
+    if (!Context.Execution.bIsMirror)
+    {
+        RuntimeData.bRun = ResolveRun(
+            Character,
+            ControlData,
+            Config,
+            RuntimeData.bRun,
+            Movement.Velocity);
+    }
 
     // 计算并提交当前方向速度映射
     const float DirectionMap = ResolveDirectionMap(
@@ -258,6 +261,12 @@ void FBBBCharacterLocomotionProcessor::Update(
     Movement.BrakingFriction = FMath::Max(Config.BrakingFriction, 0.0f);
     Movement.BrakingFrictionFactor = FMath::Max(Config.BrakingFrictionFactor, 0.0f);
     Movement.bUseSeparateBrakingFriction = false;
+
+    // 镜像使用已恢复的移动档位更新共同配置 不重新执行输入或产生移动事实
+    if (Context.Execution.bIsMirror)
+    {
+        return;
+    }
 
     // 蹲伏期间不允许同帧跳跃
     if (!bWantsCrouch && ControlData.bJump)

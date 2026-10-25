@@ -29,6 +29,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     // 将角色运行事实复制到动画实例供动画图安全读取
     SourceActorLocation = FactState.ActorLocation;
     SourceActorRotation = FactState.ActorRotation;
+    SourceMeshWorldTransform = FactState.MeshWorldTransform;
     SourceVelocity = FactState.Velocity;
     SourceLastUpdateVelocity = FactState.LastUpdateVelocity;
     SourceAcceleration = FactState.Acceleration;
@@ -41,6 +42,8 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceBrakingFriction = FactState.BrakingFriction;
     SourceBrakingFrictionFactor = FactState.BrakingFrictionFactor;
     SourceBrakingDecelerationWalking = FactState.BrakingDecelerationWalking;
+    SourceMaxSpeed = FactState.MaxSpeed;
+    SourceBrakingSubStepTime = FactState.BrakingSubStepTime;
     bSourceUseSeparateBrakingFriction = FactState.bUseSeparateBrakingFriction;
     SourceGravityZ = FactState.GravityZ;
 

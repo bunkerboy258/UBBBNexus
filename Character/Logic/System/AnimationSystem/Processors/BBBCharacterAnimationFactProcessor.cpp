@@ -114,6 +114,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
 
     FactState.ActorLocation = Character.GetActorLocation();
     FactState.ActorRotation = Character.GetActorRotation();
+    FactState.MeshWorldTransform = CharacterMesh->GetComponentTransform();
     FactState.Velocity = Movement->Velocity;
     FactState.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
     // 镜像 CMC 不保证保留控制者加速度 表现只读取已经还原的原始移动事实
@@ -129,6 +130,8 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.BrakingFriction = Movement->BrakingFriction;
     FactState.BrakingFrictionFactor = Movement->BrakingFrictionFactor;
     FactState.BrakingDecelerationWalking = Movement->BrakingDecelerationWalking;
+    FactState.MaxSpeed = Movement->GetMaxSpeed();
+    FactState.BrakingSubStepTime = Movement->BrakingSubStepTime;
     FactState.GravityZ = Movement->GetGravityZ();
     FactState.GroundDistance = GroundDistance;
     FactState.bUseSeparateBrakingFriction = Movement->bUseSeparateBrakingFriction;

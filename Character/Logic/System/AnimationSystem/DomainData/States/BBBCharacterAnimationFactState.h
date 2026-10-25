@@ -70,6 +70,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FRotator ActorRotation = FRotator::ZeroRotator;
 
+    /** 骨骼网格组件世界变换 */
+    UPROPERTY(Transient)
+    FTransform MeshWorldTransform = FTransform::Identity;
+
     /** 角色当前速度 */
     UPROPERTY(Transient)
     FVector Velocity = FVector::ZeroVector;
@@ -109,6 +113,14 @@ struct FBBBCharacterAnimationFactState final
     /** 行走制动减速度 */
     UPROPERTY(Transient)
     float BrakingDecelerationWalking = 0.0f;
+
+    /** 当前移动模式使用的速度上限 */
+    UPROPERTY(Transient)
+    float MaxSpeed = 0.0f;
+
+    /** 移动组件制动积分使用的子步间隔 */
+    UPROPERTY(Transient)
+    float BrakingSubStepTime = 0.0f;
 
     /** 当前重力加速度 */
     UPROPERTY(Transient)
