@@ -126,10 +126,6 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
     {
         return;
     }
-    if (Character->RuntimeData.Traversal.ReadTraversalState().Action != EBBBTraversalAction::None)
-    {
-        return;
-    }
     if (ABBBPlayerController *Controller = Cast<ABBBPlayerController>(GetOwner()))
     {
         int32 Start = 0;
@@ -145,10 +141,6 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
 void UBBBPlayerInputSystem::SubmitReload()
 {
     if (!bInputEnabled || !Character.IsValid())
-    {
-        return;
-    }
-    if (Character->RuntimeData.Traversal.ReadTraversalState().Action != EBBBTraversalAction::None)
     {
         return;
     }
@@ -412,7 +404,7 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     Character->SubmitInput(FBBBCharacterFireIntentLocalControlPacket{bFire});
 
     // 主行为同时保留连续按住与采样间隔中的独立点击
-    if ((bFire || FirePressCount > 0) && Character->RuntimeData.Traversal.ReadTraversalState().Action == EBBBTraversalAction::None)
+    if (bFire || FirePressCount > 0)
     {
         Character->SubmitInput(FBBBCharacterInteractionPrimaryLocalControlPacket{FirePressCount});
     }

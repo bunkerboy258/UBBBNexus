@@ -26,6 +26,7 @@ struct FBBBProjectileSpawnLocalControlPacket;
 struct FBBBMonsterDamageLocalControlPacket;
 struct FBBBMonsterDamageRemoteMessagePacket;
 struct FBBBMonsterDamageContribution;
+struct FBBBMonsterDestructionContribution;
 struct FBBBMonsterBodyPartDefinition;
 struct FBBBMonsterStateAuthorityFactPacket;
 struct FBBBMonsterHitReactionLocalControlPacket;
@@ -119,6 +120,10 @@ public:
      * @return 是否取得有效配置
      */
     bool QueryMonsterBodyPart(FMassEntityHandle Entity, uint8 Part, FBBBMonsterBodyPartDefinition& Result) const;
+
+    /** @param Entity 目标实体 @param Position 世界接触点 @param Direction 入射方向 @param Strength 已成立强度 @param Result 本玩家当前贡献 @return 是否选定毁伤区域 */
+    bool QueryMonsterDestruction(FMassEntityHandle Entity, const FVector& Position, const FVector& Direction,
+        float Strength, FBBBMonsterDestructionContribution& Result) const;
 
     /**
      * @param Entity\t目标实体

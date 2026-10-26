@@ -241,11 +241,11 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     const uint8 LostParts = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts;
                     if (Definition->Presentation->Gore)
                     {
-                        const auto& Wounds = ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>()[Index].Wounds;
+                        const auto& Wounds = ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>()[Index].DismembermentPresets;
                         for (int32 WoundIndex = 0; WoundIndex < 5; ++WoundIndex)
                         {
-                            const auto* Part = Definition->Presentation->Gore->FindWound(Wounds[WoundIndex].PresetId);
-                            if (Part && Part->bPermanent && Part->DetachedSkin
+                            const auto* Part = Definition->Presentation->Gore->Dismemberment->Find(Wounds[WoundIndex]);
+                            if (Part && Part->DetachedSkin
                                 && MonsterActor->GetMonsterMesh()->IsPhysicsStateCreated()
                                 && MonsterActor->GetMonsterMesh()->bHasValidBodies
                                 && (LostParts & (1u << static_cast<uint8>(Part->Region))) != 0)

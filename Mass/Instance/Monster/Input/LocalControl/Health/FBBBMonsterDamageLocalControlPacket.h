@@ -26,7 +26,7 @@ struct FBBBMonsterDamageLocalControlPacket final
         return Contributions.ContainsByPredicate([&State](const auto& Value)
         {
             const auto* Current = State.Contributions.Find(Value.PlayerId);
-            return Current == nullptr || Value.Parts.Exceeds(Current->Parts);
+            return Current == nullptr || Value.Parts.Exceeds(Current->Parts) || Value.Destruction.Exceeds(Current->Destruction);
         });
     }
 

@@ -3,86 +3,136 @@
 #if WITH_DEV_AUTOMATION_TESTS
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDestructionSystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDismembermentSystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/AuthorityFact/Network/FBBBMonsterStateAuthorityFactPacket.h"
+#include "Engine/SkeletalMesh.h"
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterUnifiedWoundLifetimeTest,
-    "BBB.Monster.Gore.UnifiedWoundLifetime", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterDestructionMergeTest,
+    "BBB.Monster.Gore.DestructionContributionConvergence", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FBBBMonsterUnifiedWoundLifetimeTest::RunTest(const FString&)
+bool FBBBMonsterDestructionMergeTest::RunTest(const FString&)
+{
+    FBBBMonsterDamageContribution First;
+    First.PlayerId = 1;
+    First.LastHitTime = 10;
+    First.Parts.Torso = 20;
+    for (int32 Index = 0; Index < 8; ++Index)
+    {
+        First.Destruction.Add(Index, 0.35f);
+    }
+    auto Later = First;
+    Later.LastHitTime = 11;
+    Later.Parts.Torso = 40;
+    Later.Destruction.Add(0, 0.35f);
+    auto Merged = First;
+    Merged.Merge(Later);
+    Merged.Merge(First);
+    Merged.Merge(Later);
+    TestTrue(TEXT("重复和迟到快照收敛到当前结果"), Merged == Later);
+    auto Opposite = Later;
+    Opposite.Merge(First);
+    TestTrue(TEXT("合并顺序保持同一结果"), Opposite == Merged);
+
+    FBBBMonsterDamageFragment Damage;
+    Damage.Contributions.Add(1, Merged);
+    FBBBMonsterDamageContribution Second;
+    Second.PlayerId = 2;
+    Second.Destruction.Add(0, 0.5f);
+    Second.Destruction.Add(7, 0.5f);
+    Damage.Contributions.Add(2, Second);
+    FBBBMonsterGoreFragment State;
+    FBBBMonsterDestructionSystem::Resolve(Damage, State);
+    TestEqual(TEXT("多人共同命中封顶"), State.DestructionStrengths[0], static_cast<uint8>(255));
+    TestTrue(TEXT("八个创口互相独立"), State.DestructionStrengths[7] > State.DestructionStrengths[6]);
+    const auto Before = State;
+    FBBBMonsterDestructionSystem::Resolve(Damage, State);
+    TestTrue(TEXT("还原当前字典不会重复加深"), FMemory::Memcmp(Before.DestructionStrengths,
+        State.DestructionStrengths, sizeof(State.DestructionStrengths)) == 0);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterDestructionSelectionTest,
+    "BBB.Monster.Gore.DestructionFrontBackSelection", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBMonsterDestructionSelectionTest::RunTest(const FString&)
+{
+    auto* Definition = NewObject<UBBBMonsterGoreDefinition>();
+    Definition->Body = NewObject<USkeletalMesh>();
+    for (int32 Index = 0; Index < 8; ++Index)
+    {
+        auto& Region = Definition->Destruction->Regions.AddDefaulted_GetRef();
+        const bool bFront = Index < 4;
+        const float X = Index % 2 == 0 ? 10 : -10;
+        const float Z = Index % 4 < 2 ? 130 : 105;
+        Region.Contact = FVector(X, bFront ? 10 : -10, Z);
+        Region.Rotation = FRotationMatrix::MakeFromXZ(bFront ? -FVector::ForwardVector : FVector::ForwardVector,
+            bFront ? FVector::RightVector : -FVector::RightVector).Rotator();
+        Region.Extent = FVector(26, 28, 12);
+    }
+    for (int32 Index = 0; Index < 8; ++Index)
+    {
+        const auto& Region = Definition->Destruction->Regions[Index];
+        const FVector Normal = Region.Rotation.RotateVector(FVector::UpVector);
+        TestEqual(TEXT("正背面与上下区按真实入射方向匹配"), FBBBMonsterDestructionSystem::Select(*Definition,
+            Region.Contact + Normal * 5, -Normal, FTransform::Identity, nullptr), Index);
+    }
+    TestEqual(TEXT("无效方向拒绝选区"), FBBBMonsterDestructionSystem::Select(*Definition,
+        FVector::ZeroVector, FVector::ZeroVector, FTransform::Identity, nullptr), INDEX_NONE);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterGoreResultRestoreTest,
+    "BBB.Monster.Gore.CurrentResultRestore", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FBBBMonsterGoreResultRestoreTest::RunTest(const FString&)
 {
     auto* Definition = NewObject<UBBBMonsterGoreDefinition>();
     for (int32 Region = 1; Region < 6; ++Region)
     {
-        auto& Preset = Definition->Wounds.AddDefaulted_GetRef();
-        Preset.Id = Region + 10;
-        Preset.Region = static_cast<EBBBMonsterHitRegion>(Region);
-        Preset.bPermanent = true;
+        auto& Part = Definition->Dismemberment->Parts.AddDefaulted_GetRef();
+        Part.Id = Region + 10;
+        Part.Region = static_cast<EBBBMonsterHitRegion>(Region);
     }
     FBBBMonsterGoreFragment State;
     FBBBMonsterHitReactionFragment Hit;
-    UBBBMonsterGorePresentationComponent::UpdateWounds(State, *Definition, 0x3e, Hit, nullptr, 1, true);
+    FBBBMonsterDismembermentSystem::Resolve(State, *Definition, 0x3e, Hit, nullptr);
+    FBBBMonsterDismembermentSystem::Resolve(State, *Definition, 0, Hit, nullptr);
     for (int32 Index = 0; Index < 5; ++Index)
     {
-        TestEqual(TEXT("无显示载体也可选择永久伤口"), State.Wounds[Index].PresetId, static_cast<uint8>(Index + 11));
-        TestEqual(TEXT("永久伤口权重"), State.Wounds[Index].Strength, 1.0f);
+        TestEqual(TEXT("五个断点持续保留"), State.DismembermentPresets[Index], static_cast<uint8>(Index + 11));
     }
-    TestEqual(TEXT("普通伤口预算仍为空"), State.Wounds[5].PresetId, static_cast<uint8>(0));
-    TestEqual(TEXT("总预算固定七处"), static_cast<int32>(UE_ARRAY_COUNT(State.Wounds)), 7);
-
-    UBBBMonsterGorePresentationComponent::UpdateWounds(State, *Definition, 0, Hit, nullptr, 2, true);
-    TestEqual(TEXT("后续空命中不恢复已断开的肢体"), State.Wounds[1].PresetId, static_cast<uint8>(12));
-
-    FBBBMonsterGoreFragment Remote;
-    UBBBMonsterGorePresentationComponent::UpdateWounds(Remote, *Definition, 0x3e, Hit, nullptr, 1, false);
-    TestEqual(TEXT("镜像不自行选择永久外观"), Remote.Wounds[0].PresetId, static_cast<uint8>(0));
-
-    State = FBBBMonsterGoreFragment();
-    for (const auto& Wound : State.Wounds)
-    {
-        TestEqual(TEXT("新一代清除全部表现"), Wound.PresetId, static_cast<uint8>(0));
-    }
-    return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterUnifiedWoundRestoreTest,
-    "BBB.Monster.Gore.CurrentResultRestore", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-
-bool FBBBMonsterUnifiedWoundRestoreTest::RunTest(const FString&)
-{
     FBBBMonsterStateAuthorityFactPacket Packet;
     Packet.InstanceId = FGuid::NewGuid();
     Packet.Revision = 2;
-    const uint8 Presets[] = {10, 21, 30, 41, 50};
-    FMemory::Memcpy(Packet.WoundPresets, Presets, sizeof(Presets));
+    FMemory::Memcpy(Packet.DismembermentPresets, State.DismembermentPresets, sizeof(Packet.DismembermentPresets));
     FBBBMonsterNetworkFragment Network;
     FTransformFragment Position;
     FMassVelocityFragment Velocity;
     FBBBMonsterBehaviorFragment Behavior;
-    FBBBMonsterGoreFragment Gore;
-    Gore.Wounds[5].PresetId = 2;
-    Gore.Wounds[6].PresetId = 3;
-    TestTrue(TEXT("当前完整外观结果可还原"), Packet.IsValid() && Packet.CanApply(Network));
-    Packet.Apply(Network, Position, Velocity, Behavior, Gore);
-    for (int32 Index = 0; Index < 5; ++Index)
-    {
-        TestEqual(TEXT("五处永久伤口身份不依赖命中重播"), Gore.Wounds[Index].PresetId, Presets[Index]);
-        TestEqual(TEXT("还原永久权重"), Gore.Wounds[Index].Strength, 1.0f);
-    }
-    TestEqual(TEXT("本地短时创口不被远端覆盖"), Gore.Wounds[5].PresetId, static_cast<uint8>(2));
-    TestEqual(TEXT("第二处本地创口不被远端覆盖"), Gore.Wounds[6].PresetId, static_cast<uint8>(3));
-    TestFalse(TEXT("重复版本不重复应用"), Packet.CanApply(Network));
+    FBBBMonsterGoreFragment Remote;
+    Remote.DestructionStrengths[7] = 200;
+    Packet.Apply(Network, Position, Velocity, Behavior, Remote);
+    TestTrue(TEXT("五个断点直接还原"), FMemory::Memcmp(State.DismembermentPresets,
+        Remote.DismembermentPresets, sizeof(State.DismembermentPresets)) == 0);
+    TestEqual(TEXT("行动快照保持独立毁伤贡献结果"), Remote.DestructionStrengths[7], static_cast<uint8>(200));
+    TestFalse(TEXT("重复版本被入口拒绝"), Packet.CanApply(Network));
     Packet.Revision = 1;
-    TestFalse(TEXT("旧版本不得回退外观"), Packet.CanApply(Network));
-    Packet.Revision = 3;
+    TestFalse(TEXT("迟到版本被入口拒绝"), Packet.CanApply(Network));
     Packet.InstanceId = FGuid::NewGuid();
-    TestFalse(TEXT("旧实例消息不得进入新实例"), Packet.CanApply(Network));
-    Packet.InstanceId = Network.InstanceId;
-    Behavior.State = EBBBMonsterBehavior::Dead;
-    Packet.Behavior = EBBBMonsterBehavior::Chase;
-    Packet.Apply(Network, Position, Velocity, Behavior, Gore);
-    TestEqual(TEXT("行动消息不能复活本地死亡"), Behavior.State, EBBBMonsterBehavior::Dead);
+    Packet.Revision = 3;
+    TestFalse(TEXT("跨代结果被入口拒绝"), Packet.CanApply(Network));
+    Remote = FBBBMonsterGoreFragment();
+    for (const auto Value : Remote.DestructionStrengths)
+    {
+        TestEqual(TEXT("复用后八区清零"), Value, static_cast<uint8>(0));
+    }
+    for (const auto Value : Remote.DismembermentPresets)
+    {
+        TestEqual(TEXT("复用后五个断点清零"), Value, static_cast<uint8>(0));
+    }
     return true;
 }
 #endif

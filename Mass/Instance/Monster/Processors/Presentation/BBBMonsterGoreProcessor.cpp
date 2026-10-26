@@ -1,4 +1,7 @@
 #include "BBBMonsterGoreProcessor.h"
+#include "BBBMonsterDestructionSystem.h"
+#include "BBBMonsterDismembermentSystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
@@ -31,6 +34,7 @@ void UBBBMonsterGoreProcessor::ConfigureQueries(const TSharedRef<FMassEntityMana
 {
     Query.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadWrite);
     Query.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
+    Query.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadOnly);
     Query.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadOnly);
     Query.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     Query.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly);
@@ -39,12 +43,12 @@ void UBBBMonsterGoreProcessor::ConfigureQueries(const TSharedRef<FMassEntityMana
 
 void UBBBMonsterGoreProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
-    const float Now = Context.GetWorld()->GetTimeSeconds();
     const bool bAuthority = Context.GetWorld()->GetNetMode() != NM_Client;
-    Query.ForEachEntityChunk(Context, [Now, bAuthority](FMassExecutionContext& Chunk)
+    Query.ForEachEntityChunk(Context, [bAuthority](FMassExecutionContext& Chunk)
     {
         auto Results = Chunk.GetMutableFragmentView<FBBBMonsterGoreFragment>();
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
+        const auto Damage = Chunk.GetFragmentView<FBBBMonsterDamageFragment>();
         const auto Hits = Chunk.GetFragmentView<FBBBMonsterHitReactionFragment>();
         const auto Networks = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
@@ -57,8 +61,12 @@ void UBBBMonsterGoreProcessor::Execute(FMassEntityManager&, FMassExecutionContex
             }
             auto* Actor = Actors[Index].Get();
             auto* Mesh = Actor ? Actor->FindComponentByClass<USkeletalMeshComponent>() : nullptr;
-            UBBBMonsterGorePresentationComponent::UpdateWounds(Results[Index], *Definition->Presentation->Gore,
-                Health[Index].DestroyedParts, Hits[Index], Mesh, Now, bAuthority);
+            FBBBMonsterDestructionSystem::Resolve(Damage[Index], Results[Index]);
+            if (bAuthority)
+            {
+                FBBBMonsterDismembermentSystem::Resolve(Results[Index], *Definition->Presentation->Gore,
+                    Health[Index].DestroyedParts, Hits[Index], Mesh);
+            }
         }
     });
 }

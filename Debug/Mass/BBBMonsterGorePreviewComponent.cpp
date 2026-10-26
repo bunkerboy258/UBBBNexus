@@ -1,6 +1,9 @@
 #include "BBBMonsterGorePreviewComponent.h"
 
 #include "BBBZombieHitReactionTarget.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDestructionSystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDismembermentSystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDestructionContribution.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
@@ -35,6 +38,16 @@ void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragm
         return;
     }
     CurrentHit = Hit;
+    auto* Target = Cast<ABBBZombieHitReactionTarget>(GetOwner());
+    if (Region == 0 && Target && Target->TargetMesh && Strength > 0)
+    {
+        FBBBMonsterDestructionContribution Contribution;
+        FMemory::Memcpy(Contribution.Regions, Result.DestructionStrengths, sizeof(Contribution.Regions));
+        const int32 Zone = FBBBMonsterDestructionSystem::Select(*Definition, Hit.Position, Hit.Direction,
+            Target->TargetMesh->GetComponentTransform(), Target->TargetMesh);
+        Contribution.Add(Zone, Strength * Definition->Destruction->HitAccumulation);
+        FMemory::Memcpy(Result.DestructionStrengths, Contribution.Regions, sizeof(Contribution.Regions));
+    }
     if (bAllowSevering && Region > 0 && ++RegionHits[Region] >= FMath::Max(1, HitsToSever))
     {
         Destroyed |= 1 << Region;
@@ -63,8 +76,7 @@ void UBBBMonsterGorePreviewComponent::Present()
     auto *Target = Cast<ABBBZombieHitReactionTarget>(GetOwner());
     if (Target && Target->bConfigurationReady && GetWorld()->IsGameWorld() && Definition && Definition->IsReady())
     {
-        UBBBMonsterGorePresentationComponent::UpdateWounds(Result, *Definition, Destroyed, CurrentHit, Target->TargetMesh,
-                                                      GetWorld()->GetTimeSeconds(), true);
+        FBBBMonsterDismembermentSystem::Resolve(Result, *Definition, Destroyed, CurrentHit, Target->TargetMesh);
         Target->Gore->ResidueSource = Target;
         Target->Gore->Apply(*Definition, Result, CurrentHit, FVector::ZeroVector, 17, false);
     }

@@ -25,7 +25,7 @@ struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
 
     /** 五处当前永久伤口的资源身份 不复制残肢物理或伤害历史 */
     UPROPERTY()
-    uint8 WoundPresets[5] = {};
+    uint8 DismembermentPresets[5] = {};
 
     UPROPERTY()
     TObjectPtr<UBBBMonsterDefinition> Definition;

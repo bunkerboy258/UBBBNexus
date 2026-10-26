@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBMonsterPartDamage.h"
 #include "BBBMonsterStaggerContribution.h"
+#include "BBBMonsterDestructionContribution.h"
 #include "BBBMonsterDamageContribution.generated.h"
 
 /** 一个玩家对一代小怪已经造成的累计伤害 不是单次命中事件 */
@@ -19,6 +20,10 @@ struct FBBBMonsterDamageContribution final
     /** 累计有效伤害 只增不减 */
     UPROPERTY()
     FBBBMonsterPartDamage Parts;
+
+    /** 同一有效命中成立的八区毁伤贡献 */
+    UPROPERTY()
+    FBBBMonsterDestructionContribution Destruction;
 
     /** 最近有效命中的服务器世界时间 不保存中间命中 */
     UPROPERTY()
@@ -52,7 +57,7 @@ struct FBBBMonsterDamageContribution final
         return PlayerId == Other.PlayerId && Parts == Other.Parts
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
             && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition
-            && Stagger == Other.Stagger;
+            && Stagger == Other.Stagger && Destruction == Other.Destruction;
     }
 
     /**
@@ -65,6 +70,8 @@ struct FBBBMonsterDamageContribution final
         Combined.MergeMax(Other.Parts);
         FBBBMonsterStaggerContribution CombinedStagger = Stagger;
         CombinedStagger.Merge(Other.Stagger);
+        FBBBMonsterDestructionContribution CombinedDestruction = Destruction;
+        CombinedDestruction.MergeMax(Other.Destruction);
         if (PlayerId == INDEX_NONE || Other.LastHitTime > LastHitTime
             || (Other.LastHitTime == LastHitTime && (Other.LastHitRegion > LastHitRegion
                 || (Other.LastHitRegion == LastHitRegion && Other.Parts.Exceeds(Parts)))))
@@ -73,5 +80,6 @@ struct FBBBMonsterDamageContribution final
         }
         Parts = Combined;
         Stagger = CombinedStagger;
+        Destruction = CombinedDestruction;
     }
 };

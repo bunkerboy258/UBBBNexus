@@ -66,7 +66,7 @@ bool FBBBMonsterDetachedPoseOrderTest::RunTest(const FString&)
             const int32 Parent = BodySkeleton.GetParentIndex(Index);
             Current.Add(Parent == INDEX_NONE ? Bone : Bone * Current[Parent]);
         }
-        for (const auto& Wound : Definition->Gore->Wounds)
+        for (const auto& Wound : Definition->Gore->Dismemberment->Parts)
         {
             if (!Wound.DetachedSkin)
             {

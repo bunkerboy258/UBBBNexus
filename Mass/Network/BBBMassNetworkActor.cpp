@@ -43,7 +43,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
     }
 
     const bool bDamageChanged = Existing->Contributions != State.Contributions;
-    const bool bGoreChanged = FMemory::Memcmp(Existing->WoundPresets, State.WoundPresets, sizeof(State.WoundPresets)) != 0;
+    const bool bGoreChanged = FMemory::Memcmp(Existing->DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets)) != 0;
     const bool bActionChanged = bUpdateAction && (Existing->InstanceId != State.InstanceId
         || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
         || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
@@ -56,7 +56,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
 
     Existing->InstanceId = State.InstanceId;
     Existing->BirthSeed = State.BirthSeed;
-    FMemory::Memcpy(Existing->WoundPresets, State.WoundPresets, sizeof(State.WoundPresets));
+    FMemory::Memcpy(Existing->DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets));
     Existing->Definition = State.Definition;
     if (bUpdateAction)
     {
@@ -105,7 +105,8 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
 bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution)
 {
     const auto* Submitted = SubmittedDamage.Find(InstanceId);
-    if (Contribution.Parts.Sum() <= 0.0 || (Submitted != nullptr && !Contribution.Parts.Exceeds(*Submitted)))
+    if (Contribution.Parts.Sum() <= 0.0 || (Submitted != nullptr
+        && !Contribution.Parts.Exceeds(Submitted->Parts) && !Contribution.Destruction.Exceeds(Submitted->Destruction)))
     {
         return true;
     }
@@ -118,7 +119,7 @@ bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBB
         return false;
     }
     Connection->ServerReportDamage(InstanceId, Contribution);
-    SubmittedDamage.Add(InstanceId, Contribution.Parts);
+    SubmittedDamage.Add(InstanceId, Contribution);
     return true;
 }
 
@@ -211,7 +212,7 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         FBBBMonsterStateAuthorityFactPacket Packet;
         Packet.InstanceId = Item.InstanceId;
         Packet.BirthSeed = Item.BirthSeed;
-        FMemory::Memcpy(Packet.WoundPresets, Item.WoundPresets, sizeof(Item.WoundPresets));
+        FMemory::Memcpy(Packet.DismembermentPresets, Item.DismembermentPresets, sizeof(Item.DismembermentPresets));
         Packet.Revision = Item.Revision;
         Packet.Transform = FTransform(Item.Rotation, Item.Location);
         Packet.Velocity = Item.Velocity;

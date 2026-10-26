@@ -2,14 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
-#include "BBBMonsterGoreWoundDefinition.generated.h"
+#include "BBBMonsterDismembermentPartDefinition.generated.h"
 
 class USkeletalMesh;
 class UStaticMesh;
 
-/** 普通创口与断肢共用的投影定义 不编码身体分段标签 */
+/** 断肢开口与配对组织的制作参数 */
 USTRUCT(BlueprintType)
-struct FBBBMonsterGoreWoundDefinition final
+struct FBBBMonsterDismembermentPartDefinition final
 {
     GENERATED_BODY()
 
@@ -23,10 +23,6 @@ struct FBBBMonsterGoreWoundDefinition final
     /** 仅选择预设 不参与身体像素裁剪 */
     UPROPERTY(EditAnywhere, Category="伤口", meta=(DisplayName="适用部位"))
     EBBBMonsterHitRegion Region = EBBBMonsterHitRegion::Torso;
-
-    /** 由已有部位损毁结果选择 普通伤口不得挤占 */
-    UPROPERTY(EditAnywhere, Category="伤口", meta=(DisplayName="永久破损"))
-    bool bPermanent = false;
 
     /** 用于适配和随动 不表示隐藏此骨骼以下身体 */
     UPROPERTY(EditAnywhere, Category="适配", meta=(DisplayName="参考骨骼"))
@@ -49,10 +45,6 @@ struct FBBBMonsterGoreWoundDefinition final
     /** 配套遮罩图集中的偏移与尺寸 */
     UPROPERTY(EditAnywhere, Category="投影", meta=(DisplayName="遮罩图集区域"))
     FVector4 AtlasRect = FVector4(0, 0, 1, 1);
-
-    /** 零只显示血层 一同时裁剪身体 */
-    UPROPERTY(EditAnywhere, Category="投影", meta=(DisplayName="身体裁剪强度", ClampMin="0", ClampMax="1"))
-    float Cutout = 1;
 
     UPROPERTY(EditAnywhere, Category="投影", meta=(DisplayName="血层强度", ClampMin="0", ClampMax="1"))
     float BloodStrength = 1;

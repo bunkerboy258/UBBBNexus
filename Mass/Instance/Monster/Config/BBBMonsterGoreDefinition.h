@@ -1,47 +1,38 @@
 #pragma once
 
 #include "UObject/Object.h"
-#include "BBBMonsterGoreWoundDefinition.h"
+#include "BBBMonsterDestructionDefinition.h"
+#include "BBBMonsterDismembermentDefinition.h"
 #include "BBBMonsterGoreDefinition.generated.h"
 
 class UMaterialInterface;
 class UTexture2D;
 class UBBBMonsterBloodPresentationDefinition;
 
-/** 正式尸群与场景调试靶共用的伤口资源 不生成或修改身体拓扑 */
-UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced, HideDropdown, meta=(DisplayName="身体与伤口分区"))
+/** 二级破坏的共享身体资源 毁伤与断肢使用同一呈现入口 */
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced, HideDropdown, meta=(DisplayName="身体二级破坏"))
 class ABBB_EVAC_API UBBBMonsterGoreDefinition final : public UObject
 {
     GENERATED_BODY()
 
 public:
-    /** 原有完整身体 不写入断肢标签 */
+    /** @return 创建两个同级资源分区 */
+    UBBBMonsterGoreDefinition();
+
     UPROPERTY(EditAnywhere, Category="外观", meta=(DisplayName="完整身体"))
     TObjectPtr<USkeletalMesh> Body;
 
-    /** 红通道控制破口 绿通道控制血迹 蓝通道控制局部湿润 */
-    UPROPERTY(EditAnywhere, Category="投影", meta=(DisplayName="伤口遮罩图集"))
+    UPROPERTY(EditAnywhere, Category="外观", meta=(DisplayName="断点遮罩图集"))
     TObjectPtr<UTexture2D> ProjectionAtlas;
 
-    /** 与原身体材质槽对应的共享投影材质 */
-    UPROPERTY(EditAnywhere, Category="外观", meta=(DisplayName="伤口身体材质"))
+    UPROPERTY(EditAnywhere, Category="外观", meta=(DisplayName="受损身体材质"))
     TArray<TObjectPtr<UMaterialInterface>> Materials;
 
-    /** 所有普通伤口和永久破损共用同一资源定义 */
-    UPROPERTY(EditAnywhere, EditFixedSize, Category="伤口", meta=(DisplayName="预制伤口", TitleProperty="Name"))
-    TArray<FBBBMonsterGoreWoundDefinition> Wounds;
+    UPROPERTY(VisibleAnywhere, Instanced, Category="破坏", meta=(DisplayName="毁伤系统", ShowOnlyInnerProperties))
+    TObjectPtr<UBBBMonsterDestructionDefinition> Destruction;
 
-    /** @return 同一表现配置持有的血液分区 不维护第二份引用 */
-    const UBBBMonsterBloodPresentationDefinition* GetBlood() const;
-
-    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="每次命中伤口加深量", ClampMin="0.01", ClampMax="1"))
-    float HitAccumulation = 0.35f;
-
-    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="深伤口阈值", ClampMin="0.01", ClampMax="1"))
-    float DeepWoundThreshold = 0.65f;
-
-    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="邻近命中合并半径倍率", ClampMin="0.5", ClampMax="4"))
-    float MergeRadiusScale = 2;
+    UPROPERTY(VisibleAnywhere, Instanced, Category="破坏", meta=(DisplayName="断肢系统", ShowOnlyInnerProperties))
+    TObjectPtr<UBBBMonsterDismembermentDefinition> Dismemberment;
 
     UPROPERTY(EditAnywhere, Category="血肉外观", meta=(DisplayName="血红颜色"))
     FLinearColor TissueTint = FLinearColor(0.13f, 0.004f, 0.003f);
@@ -52,15 +43,12 @@ public:
     UPROPERTY(EditAnywhere, Category="血肉外观", meta=(DisplayName="湿润程度", ClampMin="0", ClampMax="1"))
     float Wetness = 0.8f;
 
-    UPROPERTY(EditAnywhere, Category="命中表现", meta=(DisplayName="基础伤口半径", ClampMin="0.2", ClampMax="8", Units="cm"))
-    float HitRadius = 1.8f;
-
-    UPROPERTY(EditAnywhere, Category="预算", meta=(DisplayName="每秒伤口更新上限", ClampMin="1", ClampMax="30"))
+    UPROPERTY(EditAnywhere, Category="预算", meta=(DisplayName="每秒喷血上限", ClampMin="1", ClampMax="30"))
     float WoundUpdatesPerSecond = 20;
 
-    /** @param Id 稳定伤口编号 @return 对应预制伤口或空 */
-    const FBBBMonsterGoreWoundDefinition* FindWound(uint8 Id) const;
+    /** @return 同一表现配置持有的血液分区 */
+    const UBBBMonsterBloodPresentationDefinition* GetBlood() const;
 
-    /** @return 资源引用与编号是否完整 不以制作标志代替验证 */
+    /** @return 身体 八区毁伤与断点资源是否完整 */
     bool IsReady() const;
 };

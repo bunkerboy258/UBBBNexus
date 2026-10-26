@@ -1,24 +1,17 @@
 #pragma once
 
 #include "MassEntityTypes.h"
-#include "BBBMonsterGoreWound.h"
 #include "BBBMonsterGoreFragment.generated.h"
 
-/** 唯一当前伤口集合 前五处持久破损 后两处普通创口 全部由同一内核呈现 */
+/** 当前二级破坏结果 毁伤八区与五个断肢身份各自持久保存 */
 USTRUCT()
 struct ABBB_EVAC_API FBBBMonsterGoreFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
-    /** 固定容量不随射击增长 不另存断肢位域 */
-    FBBBMonsterGoreWound Wounds[7];
+    /** 顺序对应头 左臂 右臂 左腿 右腿 */
+    uint8 DismembermentPresets[5] = {};
 
-    /** 已消费当前命中序号 */
-    uint32 ConsumedSerial = 0;
-
-    /** 普通伤口更新预算 不影响程序化受击 */
-    float NextWoundTime = 0;
-
-    /** 普通伤口轮换位置 不覆盖永久破损 */
-    uint8 NextSurfaceSlot = 0;
+    /** 由全部玩家的当前贡献推导 255 表示完全毁伤 */
+    uint8 DestructionStrengths[8] = {};
 };

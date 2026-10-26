@@ -18,7 +18,7 @@ struct FBBBMonsterStateAuthorityFactPacket final
     uint32 BirthSeed = 0;
     uint32 Revision = 0;
     /** 只还原当前伤口资源身份 不确认生命损毁 */
-    uint8 WoundPresets[5] = {};
+    uint8 DismembermentPresets[5] = {};
     FTransform Transform = FTransform::Identity;
     FVector Velocity = FVector::ZeroVector;
     EBBBMonsterBehavior Behavior = EBBBMonsterBehavior::Idle;
@@ -55,8 +55,7 @@ struct FBBBMonsterStateAuthorityFactPacket final
         Network.ReceivedRevision = Revision;
         for (int32 Index = 0; Index < 5; ++Index)
         {
-            Gore.Wounds[Index].PresetId = WoundPresets[Index];
-            Gore.Wounds[Index].Strength = WoundPresets[Index] != 0 ? 1.0f : 0.0f;
+            Gore.DismembermentPresets[Index] = DismembermentPresets[Index];
         }
         if (State.State == EBBBMonsterBehavior::Dead)
         {

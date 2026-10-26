@@ -77,6 +77,10 @@ namespace
         }
         const double Effective = Data.Damage * (1.0 - Definition.Durability) + Data.DurableDamage * Definition.Durability;
         Current.Parts.Add(static_cast<EBBBMonsterHitRegion>(Part), Effective);
+        if (Effective > 0 && Part == static_cast<uint8>(EBBBMonsterHitRegion::Torso))
+        {
+            Mass.QueryMonsterDestruction(Target, Position, Direction, Data.WoundStrength, Current.Destruction);
+        }
         const auto* GameState = World.GetGameState();
         Current.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
         Current.LastHitRegion = HitRegion;

@@ -118,7 +118,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             Item.BirthSeed = Variation[Index].Seed;
             for (int32 WoundIndex = 0; WoundIndex < 5; ++WoundIndex)
             {
-                Item.WoundPresets[WoundIndex] = Gore[Index].Wounds[WoundIndex].PresetId;
+                Item.DismembermentPresets[WoundIndex] = Gore[Index].DismembermentPresets[WoundIndex];
             }
             Item.Definition = Network[Index].Definition.Get();
             Item.Location = Transforms[Index].GetTransform().GetLocation();

@@ -24,22 +24,8 @@ public:
     TWeakObjectPtr<AActor> ResidueSource;
 
     /**
-     * @param Result 当前有限表现状态
-     * @param Definition 共享预制伤口配置
-     * @param DestroyedParts 已成立的部位损毁
-     * @param Hit 当前命中 不保存历史
-     * @param Mesh 可选的姿态载体
-     * @param Now 世界时间
-     * @param bAuthority 是否允许选择永久外观
-     * @return 无
-     */
-    static void UpdateWounds(FBBBMonsterGoreFragment& Result, const UBBBMonsterGoreDefinition& Definition,
-        uint8 DestroyedParts, const FBBBMonsterHitReactionFragment& Hit, USkeletalMeshComponent* Mesh,
-        float Now, bool bAuthority);
-
-    /**
      * @param Definition 共享伤口配置
-     * @param Facts 当前七处伤口
+     * @param Facts 当前八区毁伤和五处断肢
      * @param Hit 当前命中
      * @param Velocity 已成立速度
      * @param Seed 稳定出生种子
@@ -65,7 +51,7 @@ private:
     TObjectPtr<USkeletalMeshComponent> Body;
 
     UPROPERTY(Transient)
-    TObjectPtr<USkeletalMeshComponent> Tissue[7];
+    TObjectPtr<USkeletalMeshComponent> Tissue[6];
 
     UPROPERTY(Transient)
     TObjectPtr<const UBBBMonsterGoreDefinition> AppliedDefinition;
@@ -74,7 +60,7 @@ private:
     TArray<TObjectPtr<UMaterialInterface>> OriginalMaterials;
 
     /** 仅去重短时掉落 不作为损毁事实 */
-    uint8 AppliedPresets[7] = {};
+    uint8 AppliedPresets[5] = {};
     bool bUsingDamageMaterials = false;
 
     /** @param Definition 共享配置 @return 是否准备完成 */
