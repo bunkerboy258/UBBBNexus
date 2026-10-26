@@ -34,19 +34,17 @@ void FBBBCharacterTraversalPlaybackProcessor::Update(FBBBCharacterAnimationUpdat
         Playback.Position = Instance->GetPosition();
     }
     Playback.bPlaying = Instance && Instance->IsPlaying() && !Instance->IsStopped();
-    Playback.bExitWindowReached = Playback.LastWarpEndTime > 0.0f
-        && Playback.Position >= Playback.LastWarpEndTime;
 
     if (!Traversal.bEndRequested || Playback.bRootMotionReleased)
     {
         return;
     }
 
-    // 位移立即退出 尾姿不再推进 混合权重交给主状态机
+    // 位移立即退出 专用蒙太奇按自身淡出时间交还姿势
     if (Instance)
     {
         Instance->PushDisableRootMotion();
-        Instance->Pause();
+        Context.AnimationInstance.Montage_Stop(Playback.Montage->BlendOut.GetBlendTime(), Playback.Montage);
     }
     Playback.bPlaying = false;
     Playback.bRootMotionReleased = true;

@@ -12,6 +12,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Chooser.h"
 
 namespace
 {
@@ -36,6 +37,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     const FBBBAimState &AimState = RuntimeData.Aim.ReadAimState();
+    UClass* LayerClass = RuntimeData.Animation.ReadAnimationLayerState().LinkedAnimationLayerClass.Get();
+    const UBBBAnimInstance* LayerDefaults = LayerClass ? LayerClass->GetDefaultObject<UBBBAnimInstance>() : nullptr;
+    FactState.LocomotionDatabaseChooser = LayerDefaults ? LayerDefaults->LocomotionDatabaseChooser.Get() : nullptr;
     FactState.LifePhase = RuntimeData.Life.ReadLifeState().Phase;
     FactState.bRescueHelping = RuntimeData.Life.ReadRescueState().bHelping;
     const auto &LifeAnimation = RuntimeData.Animation.ReadLifeAnimationState();
@@ -124,6 +128,11 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.MovementInput = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
         ? RuntimeData.Locomotion.ReadLocomotionState().RestoredMovementInput
         : RuntimeData.Parse.ReadControlState().MoveWorld;
+    FactState.MaxAcceleration = Movement->GetMaxAcceleration();
+    FactState.FacingWorld = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
+        ? Character.GetActorRotation()
+        : RuntimeData.Parse.ReadControlState().FacingWorld;
+    FactState.ControlRotation = Character.GetControlRotation();
     FactState.bIsRunning = RuntimeData.Locomotion.ReadLocomotionState().bRun;
     FactState.MovementMode = Movement->MovementMode;
     FactState.GroundFriction = Movement->GroundFriction;

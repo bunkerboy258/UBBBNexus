@@ -14,6 +14,7 @@ class FBBBCharacterAnimationSystem;
 class UBBBEquipmentAnimInstance;
 class UAnimMontage;
 class UAnimSequence;
+class UChooserTable;
 
 namespace BBBCharacterMontageSlots
 {
@@ -41,6 +42,14 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationFactProcessor;
 
 public:
+    /** 当前动画层提供的不可变搜索库选择配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|运动匹配", meta = (DisplayName = "基础运动搜索配置"))
+    TObjectPtr<UChooserTable> LocomotionDatabaseChooser = nullptr;
+
+    /** 已链接动画层的搜索配置事实 候选库由工作线程的蓝图制造 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
+    TObjectPtr<UChooserTable> SourceLocomotionDatabaseChooser = nullptr;
+
     /** 本帧生命阶段 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段"))
     EBBBCharacterLifePhase SourceLifePhase = EBBBCharacterLifePhase::Alive;
@@ -57,7 +66,7 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
     EBBBTraversalAction SourceTraversalAction = EBBBTraversalAction::None;
 
-    /** 根运动已释放 姿势过渡仍由状态机完成 */
+    /** 根运动已释放 后置专用蒙太奇仍可保留淡出贡献 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
     bool bSourceTraversalControlReleased = false;
 
@@ -111,6 +120,18 @@ public:
     /** 本帧角色世界加速度 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源加速度"))
     FVector SourceAcceleration = FVector::ZeroVector;
+
+    /** 移动组件当前允许的最大加速度 与当前输入幅度无关 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
+    float SourceMaxAcceleration = 0.0f;
+
+    /** 已解析的世界朝向输入 镜像读取已经还原的角色朝向 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
+    FRotator SourceFacingWorld = FRotator::ZeroRotator;
+
+    /** 引擎控制器当前的完整观察旋转 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
+    FRotator SourceControlRotation = FRotator::ZeroRotator;
 
     /** 本帧已解析的持续移动输入 根运动期间仍保留输入意图 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动输入"))

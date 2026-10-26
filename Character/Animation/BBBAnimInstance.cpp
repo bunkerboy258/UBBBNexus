@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Chooser.h"
 
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 {
@@ -22,6 +23,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFactState &FactState)
 {
     SourceLifePhase = FactState.LifePhase;
+    SourceLocomotionDatabaseChooser = FactState.LocomotionDatabaseChooser;
     bSourceRescueHelping = FactState.bRescueHelping;
     SourceDownedEntryElapsed = FactState.DownedEntryElapsed;
     SourceTraversalAction = FactState.TraversalAction;
@@ -33,6 +35,9 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceVelocity = FactState.Velocity;
     SourceLastUpdateVelocity = FactState.LastUpdateVelocity;
     SourceAcceleration = FactState.Acceleration;
+    SourceMaxAcceleration = FactState.MaxAcceleration;
+    SourceFacingWorld = FactState.FacingWorld;
+    SourceControlRotation = FactState.ControlRotation;
     SourceMovementInput = FactState.MovementInput;
     SourceRecoilAngles = FactState.RecoilAngles;
     SourceMovementMode = FactState.MovementMode;

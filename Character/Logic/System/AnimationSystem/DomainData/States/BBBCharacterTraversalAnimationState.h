@@ -20,12 +20,6 @@ struct FBBBCharacterTraversalAnimationState final
     /** 实例序号用于区分同一动画的连续两次播放 */
     int32 MontageInstanceId = INDEX_NONE;
 
-    /** 最后一个攀爬校正窗口的结束位置 */
-    float LastWarpEndTime = 0.0f;
-
-    /** 手部接触校正完成后才允许翻越在障碍背面转为自由下落 */
-    float ContactWarpEndTime = 0.0f;
-
     /** 当前实际播放位置 */
     float Position = 0.0f;
 
@@ -37,6 +31,4 @@ struct FBBBCharacterTraversalAnimationState final
     /** 本动作已经不再贡献根运动 */
     bool bRootMotionReleased = false;
 
-    /** 最后一个攀爬校正窗口已经完成 */
-    bool bExitWindowReached = false;
 };

@@ -9,12 +9,17 @@
 #include "BBBCharacterAnimationFactState.generated.h"
 
 class UAnimSequence;
+class UChooserTable;
 
 /** 游戏线程维护并提交给动画实例的角色动画事实状态 */
 USTRUCT()
 struct FBBBCharacterAnimationFactState final
 {
     GENERATED_BODY()
+    /** 已成立的动画层配置引用 不包含候选库选择结果 */
+    UPROPERTY(Transient)
+    TObjectPtr<UChooserTable> LocomotionDatabaseChooser = nullptr;
+
     /** 当前实际持有物品的静态类别 */
     EBBBItemType ItemType = EBBBItemType::Misc;
 
@@ -85,6 +90,18 @@ struct FBBBCharacterAnimationFactState final
     /** 移动组件当前加速度 */
     UPROPERTY(Transient)
     FVector Acceleration = FVector::ZeroVector;
+
+    /** 移动组件当前允许的最大加速度 */
+    UPROPERTY(Transient)
+    float MaxAcceleration = 0.0f;
+
+    /** 已解析或还原的世界朝向事实 */
+    UPROPERTY(Transient)
+    FRotator FacingWorld = FRotator::ZeroRotator;
+
+    /** 控制器当前观察旋转 */
+    UPROPERTY(Transient)
+    FRotator ControlRotation = FRotator::ZeroRotator;
 
     /** 已解析或还原的持续移动输入 不表示 CMC 的实际加速度 */
     UPROPERTY(Transient)

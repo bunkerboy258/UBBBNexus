@@ -3,8 +3,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "Animation/AnimMontage.h"
-#include "AnimNotifyState_MotionWarping.h"
-#include "RootMotionModifier.h"
 
 void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpdateContext &Context) const
 {
@@ -12,10 +10,10 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
     FBBBCharacterTraversalAnimationState &Dispatch = Context.RuntimeData.Animation.TraversalAnimationState;
     UBBBAnimInstance *Layer = Cast<UBBBAnimInstance>(Context.AnimationInstance.GetLinkedAnimLayerInstanceByClass(
         Context.AnimationLayerState.LinkedAnimationLayerClass));
-    const float PoseWeight = Layer ? Layer->GetSlotNodeGlobalWeight(BBBCharacterMontageSlots::Traversal) : 0.0f;
+    const float PoseWeight = Context.AnimationInstance.GetSlotMontageGlobalWeight(BBBCharacterMontageSlots::Traversal);
     Dispatch.bPoseActive = PoseWeight > KINDA_SMALL_NUMBER;
 
-    // 控制权交接不推进尾姿 等状态混合结束后再清除播放实例
+    // 专用槽淡出结束后清除本动作的播放引用
     if (Dispatch.bRootMotionReleased && !Dispatch.bPoseActive && Dispatch.Montage)
     {
         Context.AnimationInstance.RegisterMontageContribution(BBBCharacterMontageSlots::Traversal, nullptr);
@@ -36,10 +34,7 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
     Dispatch.MontageInstanceId = INDEX_NONE;
     Dispatch.bPlaying = false;
     Dispatch.bRootMotionReleased = false;
-    Dispatch.bExitWindowReached = false;
     Dispatch.Position = 0.0f;
-    Dispatch.LastWarpEndTime = 0.0f;
-    Dispatch.ContactWarpEndTime = 0.0f;
 
     if (!Montage || Montage->SlotAnimTracks.Num() != 1
         || Montage->SlotAnimTracks[0].SlotName != BBBCharacterMontageSlots::Traversal)
@@ -61,18 +56,4 @@ void FBBBCharacterTraversalAnimationProcessor::Update(FBBBCharacterAnimationUpda
     Context.AnimationMontageState.TraversalMontageRequest = Montage;
     Context.AnimationMontageState.bTraversalMontageRequestPending = true;
 
-    // 退出窗口读取实际元数据 不依赖通知在本地视野内触发
-    for (const FAnimNotifyEvent &Notify : Montage->Notifies)
-    {
-        const UAnimNotifyState_MotionWarping *Window = Cast<UAnimNotifyState_MotionWarping>(Notify.NotifyStateClass);
-        const URootMotionModifier_Warp *Warp = Window ? Cast<URootMotionModifier_Warp>(Window->RootMotionModifier) : nullptr;
-        if (Warp && (Warp->WarpTargetName == TEXT("TraversalContact") || Warp->WarpTargetName == TEXT("TraversalEnd")))
-        {
-            Dispatch.LastWarpEndTime = FMath::Max(Dispatch.LastWarpEndTime, Notify.GetEndTriggerTime());
-        }
-        if (Warp && Warp->WarpTargetName == TEXT("TraversalContact"))
-        {
-            Dispatch.ContactWarpEndTime = FMath::Max(Dispatch.ContactWarpEndTime, Notify.GetEndTriggerTime());
-        }
-    }
 }
