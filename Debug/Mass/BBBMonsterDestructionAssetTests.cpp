@@ -8,7 +8,7 @@
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "Rendering/SkeletalMeshLODRenderData.h"
 
-/** 检查真实交付资产的八区资源 骨架单位 分区颜色和细节分级 */
+/** 检查真实交付资产的八区资源 骨架单位 腔壁标记 烘焙 UV 和细节分级 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterDestructionAssetTest,
     "BBB.Monster.Gore.DestructionAssetContract", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
@@ -58,20 +58,24 @@ bool FBBBMonsterDestructionAssetTest::RunTest(const FString&)
             bool Owners[9] = {};
             int32 InvalidOwners = 0;
             int32 InvalidKinds = 0;
+            bool bHasLining = false;
             for (uint32 Index = 0; Index < Colors.GetNumVertices(); ++Index)
             {
                 const FColor Color = Colors.VertexColor(Index);
                 const int32 Owner = FMath::RoundToInt(Color.R * 8.0f / 255);
-                const int32 Kind = FMath::RoundToInt(Color.G * 3.0f / 255);
                 InvalidOwners += FMath::Abs(Color.R - Owner * 255.0f / 8) >= 1.1f ? 1 : 0;
-                InvalidKinds += FMath::Abs(Color.G - Kind * 85.0f) >= 1.1f ? 1 : 0;
+                InvalidKinds += Color.G != 0 && Color.G != 255 ? 1 : 0;
+                bHasLining |= Color.G == 255 && Owner == 0;
                 if (Owner >= 0 && Owner <= 8)
                 {
                     Owners[Owner] = true;
                 }
             }
             TestEqual(*(Name + TEXT(" 肉壁归属编码错误数")), InvalidOwners, 0);
-            TestEqual(*(Name + TEXT(" 组织图集编码错误数")), InvalidKinds, 0);
+            TestEqual(*(Name + TEXT(" 腔壁标记编码错误数")), InvalidKinds, 0);
+            TestTrue(TEXT("深层腔壁单独标记"), bHasLining);
+            TestEqual(TEXT("烘焙图集使用一个 UV 通道"), LOD.GetNumTexCoords(), 1u);
+            TestTrue(TEXT("最高档组织在四万三角面预算内"), LOD.GetTotalFaces() > 0 && LOD.GetTotalFaces() <= 40000);
             for (const bool bPresent : Owners)
             {
                 TestTrue(TEXT("共享内部和八处肉壁均保留"), bPresent);
