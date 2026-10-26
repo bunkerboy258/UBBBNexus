@@ -10,7 +10,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/BBBCharacterNetworkDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/BBBCharacterParseDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/BBBCharacterItemDomainState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/BBBCharacterTraversalDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/BBBCharacterLifeDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/BBBCharacterAppearanceDomainState.h"
 #include "BBBCharacterRuntimeData.generated.h"
@@ -36,10 +35,6 @@ struct FBBBCharacterRuntimeData final
     /** 角色移动状态 */
     UPROPERTY(Transient)
     FBBBCharacterLocomotionDomainState Locomotion;
-
-    /** 独立维护攀爬检测与动作交接 */
-    UPROPERTY(Transient)
-    FBBBCharacterTraversalDomainState Traversal;
 
     /** 角色生命和独立受击事实 */
     UPROPERTY(Transient)

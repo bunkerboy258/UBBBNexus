@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterRecoilState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterTraversalAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterLifeAnimationState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
 
@@ -53,11 +52,6 @@ public:
         return AnimationMontageState;
     }
 
-    /** @return 蓝图翻越请求的派发状态 */
-    const FBBBCharacterTraversalAnimationState &ReadTraversalAnimationState() const
-    {
-        return TraversalAnimationState;
-    }
 
 private:
     friend class FBBBCharacterLifeAnimationProcessor;
@@ -65,11 +59,6 @@ private:
     UPROPERTY(Transient)
     FBBBCharacterLifeAnimationState LifeAnimationState;
 
-    friend class FBBBCharacterTraversalAnimationProcessor;
-    friend class FBBBCharacterTraversalPlaybackProcessor;
-    /** 蓝图动画选择请求的生命周期 */
-    UPROPERTY(Transient)
-    FBBBCharacterTraversalAnimationState TraversalAnimationState;
     friend class FBBBCharacterRecoilProcessor;
 
     /** 角色后坐力轨迹状态 */

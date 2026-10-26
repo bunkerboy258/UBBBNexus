@@ -7,9 +7,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLifeMovementProcessor.h"
 
 class ACharacter;
-class UMotionWarpingComponent;
 struct FBBBCharacterRuntimeData;
-struct FBBBTraversalConfig;
 class UCharacterMovementComponent;
 class UCurveFloat;
 class FBBBCharacterInitializer;

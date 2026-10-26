@@ -3,7 +3,6 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
-#include "MotionWarpingComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Network/BBBEquipmentNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Initialization/BBBCharacterInitializer.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Shutdown/BBBCharacterShutdown.h"
@@ -20,7 +19,6 @@ ABBBCharacter::ABBBCharacter()
 {
     HitReaction = CreateDefaultSubobject<UBBBCharacterHitReactionComponent>(TEXT("HitReaction"));
     PhysicalAnimation = CreateDefaultSubobject<UBBBCharacterPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
-    MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
     EquipmentNetworkComponent = CreateDefaultSubobject<UBBBEquipmentNetworkComponent>(TEXT("EquipmentNetwork"));
 
     //启用帧更新

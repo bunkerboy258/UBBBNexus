@@ -80,11 +80,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         Config.Locomotion,
         Character.RuntimeData);
 
-    Character.TraversalSystem.Initialize(
-        Character,
-        Character.RuntimeData,
-        Config.Traversal,
-        *Character.MotionWarping);
+    Character.TraversalSystem.Initialize();
     
     Character.ItemSystem.Initialize(Character, Character.RuntimeData, Config.Item);
     Character.AppearanceSystem.Initialize(Character, Character.RuntimeData, Config.Appearance);

@@ -1,10 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterUseRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterUseAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalEndAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalStartAuthorityFactPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalEndRemoteMessagePacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalStartRemoteMessagePacket.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
@@ -64,12 +60,6 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionGeneration, COND_SimulatedOnly);
 
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalId, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalAction, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalContact, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalEnd, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalExitVelocity, COND_SimulatedOnly);
-    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedTraversalStartTime, COND_SimulatedOnly);
 
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescuePartner, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRescueOperation, COND_SimulatedOnly);
@@ -227,66 +217,6 @@ bool UBBBCharacterNetworkComponent::IsOwnerAuthority() const
 APawn *UBBBCharacterNetworkComponent::GetOwnerPawn() const
 {
     return Cast<APawn>(GetOwner());
-}
-
-void UBBBCharacterNetworkComponent::ReplicateTraversal(uint32 Id, EBBBTraversalAction Action,
-    const FTransform &Contact, const FTransform &End, const float Position, const FVector &ExitVelocity)
-{
-    if (!IsOwnerAuthority() || Id == 0)
-    {
-        return;
-    }
-
-    if (Action != EBBBTraversalAction::None && Id != ReplicatedTraversalId)
-    {
-        ReplicatedTraversalStartTime = GetWorld()->GetTimeSeconds() - Position;
-    }
-    ReplicatedTraversalId = Id;
-    ReplicatedTraversalAction = Action;
-    ReplicatedTraversalContact = Contact;
-    ReplicatedTraversalEnd = End;
-    ReplicatedTraversalExitVelocity = ExitVelocity;
-    GetOwner()->ForceNetUpdate();
-}
-
-void UBBBCharacterNetworkComponent::ServerSubmitTraversal_Implementation(uint32 Id,
-    EBBBTraversalAction Action, FTransform Contact, FTransform End, const float Position, FVector_NetQuantize10 ExitVelocity)
-{
-    if (!Character || !IsOwnerAuthority() || Id == 0 || !Contact.IsValid() || !End.IsValid()
-        || Action > EBBBTraversalAction::ClimbHigh || !FMath::IsFinite(Position) || Position < 0.0f
-        || ExitVelocity.ContainsNaN() || ExitVelocity.GetAbsMax() > 10000.0)
-    {
-        return;
-    }
-    if (Action == EBBBTraversalAction::None)
-    {
-        Character->SubmitInput(FBBBTraversalEndRemoteMessagePacket{{Id}, {FVector(ExitVelocity)}});
-        return;
-    }
-    Character->SubmitInput(FBBBTraversalStartRemoteMessagePacket{{Id}, {Action}, {Contact}, {End}, {Position}});
-}
-
-void UBBBCharacterNetworkComponent::OnRep_Traversal()
-{
-    if (!Character)
-    {
-        Character = Cast<ABBBCharacter>(GetOwner());
-    }
-    if (!Character || IsOwnerAuthority() || Character->IsLocallyControlled() || ReplicatedTraversalId == 0)
-    {
-        return;
-    }
-    if (ReplicatedTraversalAction == EBBBTraversalAction::None)
-    {
-        Character->SubmitInput(FBBBTraversalEndAuthorityFactPacket{{ReplicatedTraversalId}, {FVector(ReplicatedTraversalExitVelocity)}});
-        return;
-    }
-
-    const AGameStateBase *GameState = GetWorld()->GetGameState();
-    const float ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
-    const float Position = FMath::Max(0.0f, ServerTime - ReplicatedTraversalStartTime);
-    Character->SubmitInput(FBBBTraversalStartAuthorityFactPacket{
-        {ReplicatedTraversalId}, {ReplicatedTraversalAction}, {ReplicatedTraversalContact}, {ReplicatedTraversalEnd}, {Position}});
 }
 
 void UBBBCharacterNetworkComponent::ReplicateInteraction(const FName EquipmentId, const uint64 Generation)

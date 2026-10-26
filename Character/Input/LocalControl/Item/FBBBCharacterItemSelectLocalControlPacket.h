@@ -2,7 +2,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
@@ -34,7 +33,7 @@ struct FBBBCharacterItemSelectLocalControlPacket final
     {
         return (Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin)
             && !Context.InteractionUse.bBusy && Context.InteractionUse.bSwitchAllowed
-            && !Context.Traversal.bTraversing && !Context.bIsMirror;
+            && !Context.bIsMirror;
     }
 
     /** @param Context	本次输入上下文 @return 无 */

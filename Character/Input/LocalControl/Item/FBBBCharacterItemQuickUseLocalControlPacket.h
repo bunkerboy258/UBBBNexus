@@ -2,7 +2,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/States/BBBCharacterItemOperationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionUseState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionInputState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 
 /** 请求立即使用当前投掷物 */
@@ -17,7 +16,7 @@ struct FBBBCharacterItemQuickUseLocalControlPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
         return !Context.bIsMirror && Context.Life.bActionsAllowed && !Context.RescueInputs.bBegin &&
-               !Context.Traversal.bTraversing && Context.InteractionUse.bQuickUseAllowed &&
+               Context.InteractionUse.bQuickUseAllowed &&
                !Context.InteractionUse.bBusy && !Context.InteractionInputs.bQuickMelee;
     }
     /** @param Context	角色输入上下文 @return 无 */

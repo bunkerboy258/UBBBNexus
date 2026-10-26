@@ -48,8 +48,4 @@ void FBBBCharacterAnimationMontageProcessor::Update(
         MontageState.AdditiveHitReactMontageRequest,
         MontageState.bAdditiveHitReactMontageRequestPending,
         BBBCharacterMontageSlots::AdditiveHitReact);
-    ConsumeRequest(
-        MontageState.TraversalMontageRequest,
-        MontageState.bTraversalMontageRequestPending,
-        BBBCharacterMontageSlots::Traversal);
 }

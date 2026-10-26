@@ -61,11 +61,6 @@ void FBBBCharacterRescueCandidateProcessor::Update(FBBBCharacterLifeUpdateContex
             Candidate.bRecoverCrouched = Candidate.bCanRecover;
         }
     }
-    if (Phase == EBBBCharacterLifePhase::Alive &&
-        Context.Data.Traversal.ReadTraversalState().Action != EBBBTraversalAction::None)
-    {
-        return;
-    }
     float Nearest = FMath::Square(FMath::Max(1.0f, Context.Config.RescueDistance));
     for (TActorIterator<ABBBCharacter> It(World); It; ++It)
     {

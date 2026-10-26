@@ -34,7 +34,6 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCrouchLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Camera/FBBBCameraLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyMontageLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBTraversalMontageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBFullBodyAdditivePreAimMontageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyAdditiveMontageLocalControlPacket.h"
@@ -55,13 +54,9 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBAdditiveHitReactMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemSelectLocalControlPacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalStartRemoteMessagePacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Traversal/FBBBTraversalEndRemoteMessagePacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalStartAuthorityFactPacket.h"
 
-#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Traversal/FBBBTraversalEndAuthorityFactPacket.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionBeginActionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionEndActionLocalControlPacket.h"
@@ -130,14 +125,6 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBCharacterInteractionBeginContactLocalControlPacket> EquipmentBeginContact;
     /** 装备EndContact通知输入槽 */
     TBBBCharacterInputSlot<FBBBCharacterInteractionEndContactLocalControlPacket> EquipmentEndContact;
-    /** 翻越StartRemoteMessage输入槽位 */
-    TBBBCharacterInputSlot<FBBBTraversalStartRemoteMessagePacket> TraversalStartRemoteMessage;
-    /** 翻越EndRemoteMessage输入槽位 */
-    TBBBCharacterInputSlot<FBBBTraversalEndRemoteMessagePacket> TraversalEndRemoteMessage;
-    /** 翻越StartAuthorityFact输入槽位 */
-    TBBBCharacterInputSlot<FBBBTraversalStartAuthorityFactPacket> TraversalStartAuthorityFact;
-    /** 翻越EndAuthorityFact输入槽位 */
-    TBBBCharacterInputSlot<FBBBTraversalEndAuthorityFactPacket> TraversalEndAuthorityFact;
     /** 瞄准状态输入槽位 */
     TBBBCharacterInputSlot<FBBBAimStateAuthorityFactPacket> AimState;
     /** 跑步状态输入槽位 */
@@ -169,8 +156,6 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBJumpLocalControlPacket> Jump;
     /** 全身蒙太奇输入槽位 */
     TBBBCharacterInputSlot<FBBBFullBodyMontageLocalControlPacket> FullBodyMontage;
-    /** 攀爬状态专用蒙太奇输入槽位 */
-    TBBBCharacterInputSlot<FBBBTraversalMontageLocalControlPacket> TraversalMontage;
     /** 权威全身蒙太奇输入槽位 */
     TBBBCharacterInputSlot<FBBBFullBodyMontageAuthorityFactPacket> AuthorityFullBodyMontage;
     /** 上半身蒙太奇输入槽位 */

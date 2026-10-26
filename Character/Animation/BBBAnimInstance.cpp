@@ -25,9 +25,8 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceLifePhase = FactState.LifePhase;
     SourceLocomotionDatabaseChooser = FactState.LocomotionDatabaseChooser;
     bSourceRescueHelping = FactState.bRescueHelping;
-    SourceDownedEntryElapsed = FactState.DownedEntryElapsed;
-    SourceTraversalAction = FactState.TraversalAction;
-    bSourceTraversalControlReleased = FactState.bTraversalControlReleased;
+    SourcePreviousLifePhase = FactState.PreviousLifePhase;
+    SourceLifePhaseElapsed = FactState.LifePhaseElapsed;
     // 将角色运行事实复制到动画实例供动画图安全读取
     SourceActorLocation = FactState.ActorLocation;
     SourceActorRotation = FactState.ActorRotation;
@@ -69,26 +68,24 @@ void UBBBAnimInstance::PublishAnimationFacts(
 
 //------------------------------------------------------------------------------
 
-TStaticArray<TObjectPtr<UAnimMontage> *, 6> UBBBAnimInstance::GetMontageContributions()
+TStaticArray<TObjectPtr<UAnimMontage> *, 5> UBBBAnimInstance::GetMontageContributions()
 {
     return {
         &FullBodyMontageContribution,
         &UpperBodyMontageContribution,
         &FullBodyAdditivePreAimMontageContribution,
         &UpperBodyAdditiveMontageContribution,
-        &AdditiveHitReactMontageContribution,
-        &TraversalMontageContribution};
+        &AdditiveHitReactMontageContribution};
 }
 
-TStaticArray<const TObjectPtr<UAnimMontage> *, 6> UBBBAnimInstance::GetMontageContributions() const
+TStaticArray<const TObjectPtr<UAnimMontage> *, 5> UBBBAnimInstance::GetMontageContributions() const
 {
     return {
         &FullBodyMontageContribution,
         &UpperBodyMontageContribution,
         &FullBodyAdditivePreAimMontageContribution,
         &UpperBodyAdditiveMontageContribution,
-        &AdditiveHitReactMontageContribution,
-        &TraversalMontageContribution};
+        &AdditiveHitReactMontageContribution};
 }
 
 TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const FName SlotName)
@@ -118,10 +115,6 @@ TObjectPtr<UAnimMontage> *UBBBAnimInstance::FindMontageContribution(const FName 
         return &AdditiveHitReactMontageContribution;
     }
 
-    if (SlotName == BBBCharacterMontageSlots::Traversal)
-    {
-        return &TraversalMontageContribution;
-    }
 
     return nullptr;
 }

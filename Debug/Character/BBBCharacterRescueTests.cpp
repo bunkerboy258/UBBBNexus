@@ -22,6 +22,7 @@
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/ScopeExit.h"
+#include "UObject/UnrealType.h"
 
 /** 用隔离世界中的真实角色和输入验证救援闭环 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBCharacterRescueTest, "BBB.Character.Rescue",
@@ -145,9 +146,11 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
         TestTrue(TEXT("延迟动画更新收到帮扶事实"), HelperAnimation->bSourceRescueHelping);
         Helper->GetMesh()->TickAnimation(0.1f, false);
         Helper->GetMesh()->RefreshBoneTransforms();
-        const int32 Machine = HelperAnimation->GetStateMachineIndex(TEXT("LocomotionSM"));
-        TestTrue(TEXT("生产移动状态机进入帮扶"), Machine != INDEX_NONE &&
-            HelperAnimation->GetCurrentStateName(Machine) == TEXT("Rescue"));
+        const FBoolProperty* Crouch = FindFProperty<FBoolProperty>(HelperAnimation->GetClass(), TEXT("IsCrouching"));
+        const FBoolProperty* EquipmentPose = FindFProperty<FBoolProperty>(HelperAnimation->GetClass(), TEXT("bApplyEquipmentPose"));
+        TestTrue(TEXT("帮扶在工作线程选择蹲姿"), Crouch && Crouch->GetPropertyValue_InContainer(HelperAnimation));
+        TestTrue(TEXT("帮扶基础姿态不被装备修正覆盖"), EquipmentPose && !EquipmentPose->GetPropertyValue_InContainer(HelperAnimation));
+        TestEqual(TEXT("基础姿态不再使用旧移动状态机"), HelperAnimation->GetStateMachineIndex(TEXT("LocomotionSM")), INDEX_NONE);
     }
 
     TestFalse(TEXT("帮扶期间装备收起"), Helper->IsItemUsable());
@@ -167,7 +170,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("帮扶期间拒绝物品选择"), Helper->GetHeldEquipment() == Equipment);
     TestFalse(TEXT("帮扶期间拒绝跳跃"), Helper->bPressedJump);
     TestTrue(TEXT("被救者移动输入不取消"), Target->IsRescueReceiving());
-    TestTrue(TEXT("被救者暂停爬行"), Target->GetVelocity().IsNearlyZero());
+    TestTrue(TEXT("被救者静止等待"), Target->GetVelocity().IsNearlyZero());
     Helper->SubmitInput(FBBBCharacterRescueCancelLocalControlPacket{});
     Step();
     Step();
@@ -197,6 +200,11 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
         Step();
     }
     TestTrue(TEXT("救援完成恢复正常生命阶段"), Target->GetLifePhase() == EBBBCharacterLifePhase::Alive);
+    if (const auto* Animation = Cast<UBBBAnimInstance>(Target->GetMesh()->GetAnimInstance()))
+    {
+        TestTrue(TEXT("起身来源上一阶段为倒地"), Animation->SourcePreviousLifePhase == EBBBCharacterLifePhase::Downed);
+        TestTrue(TEXT("阶段经过时间由角色事实发布"), Animation->SourceLifePhaseElapsed >= 0.0f);
+    }
     TestEqual(TEXT("救援恢复生命"), Target->GetHealth(), 100.0f);
     TestFalse(TEXT("成功释放双方"), Helper->IsRescueHelping() || Target->IsRescueReceiving());
     TestTrue(TEXT("成功立即开放操作"), Target->RuntimeData.Life.ReadLifeState().bActionsAllowed);

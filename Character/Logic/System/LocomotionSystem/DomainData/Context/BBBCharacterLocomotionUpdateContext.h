@@ -7,9 +7,6 @@ struct FBBBCharacterControlState;
 struct FBBBCharacterLocomotionConfig;
 struct FBBBCharacterLocomotionState;
 
-class UMotionWarpingComponent;
-struct FBBBTraversalConfig;
-struct FBBBCharacterTraversalState;
 struct FBBBCharacterWorldState;
 struct FBBBCharacterNetworkIdentityState;
 struct FBBBCharacterAnimationFactState;
@@ -37,8 +34,6 @@ struct FBBBCharacterLocomotionUpdateContext final
 
     /** 横移方向速度曲线 */
     const UCurveFloat &StrafeSpeedMapCurve;
-    /** 攀爬系统已经成立的动作与交接结果 */
-    const FBBBCharacterTraversalState &Traversal;
     /** 主管线已经裁决的执行模式 */
     const FBBBCharacterNetworkIdentityState &Execution;
     /** 上次动画更新发布的播放事实 */

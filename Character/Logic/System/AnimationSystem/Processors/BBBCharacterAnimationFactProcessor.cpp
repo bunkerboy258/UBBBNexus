@@ -43,9 +43,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.LifePhase = RuntimeData.Life.ReadLifeState().Phase;
     FactState.bRescueHelping = RuntimeData.Life.ReadRescueState().bHelping;
     const auto &LifeAnimation = RuntimeData.Animation.ReadLifeAnimationState();
-    FactState.DownedEntryElapsed = FactState.LifePhase == EBBBCharacterLifePhase::Downed
-        && LifeAnimation.DownedEntryStartTime >= 0.0
-        ? static_cast<float>(FMath::Max(Context.WorldState.WorldTimeSeconds - LifeAnimation.DownedEntryStartTime, 0.0))
+    FactState.PreviousLifePhase = LifeAnimation.PreviousPhase;
+    FactState.LifePhaseElapsed = LifeAnimation.PhaseStartTime >= 0.0
+        ? static_cast<float>(FMath::Max(Context.WorldState.WorldTimeSeconds - LifeAnimation.PhaseStartTime, 0.0))
         : -1.0f;
     const UBBBItemDefinition *ItemDefinition = Character.GetHeldItemDefinition();
     FactState.ItemType = ItemDefinition ? ItemDefinition->ItemType : EBBBItemType::Misc;
@@ -107,10 +107,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
         }
     }
 
-    const FBBBCharacterTraversalState &Traversal = RuntimeData.Traversal.ReadTraversalState();
-    const FBBBCharacterTraversalAnimationState &Playback = RuntimeData.Animation.ReadTraversalAnimationState();
-    FactState.TraversalAction = Traversal.Action;
-    FactState.bTraversalControlReleased = Playback.LastActionId == Traversal.ActionId && Playback.bRootMotionReleased;
     FactState.bFullBodyPlaying = Context.AnimationInstance.FullBodyMontageContribution
         && Context.AnimationInstance.Montage_IsPlaying(Context.AnimationInstance.FullBodyMontageContribution);
     FactState.bIsAiming = AimState.bIsAiming;

@@ -136,10 +136,9 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     Character->SubmitInput(FBBBCrouchLocalControlPacket{true});
     Step();
     TestEqual(TEXT("没有自动回血或自动流血"), Character->GetHealth(), 250.0f);
-    TestTrue(TEXT("斜向速度不超过六十"), Character->GetVelocity().Size2D() <= 60.1f);
-    TestTrue(TEXT("倒地确实能够缓慢移动"), Character->GetVelocity().Size2D() > 1.0f);
-    TestTrue(TEXT("身体转向不超过每秒九十度"),
-             FMath::Abs(FMath::FindDeltaAngleDegrees(Yaw, Character->GetActorRotation().Yaw)) <= 9.1f);
+    TestTrue(TEXT("倒地等待救援时不产生水平移动"), Character->GetVelocity().Size2D() <= 0.1f);
+    TestTrue(TEXT("倒地观察输入不旋转身体"),
+             FMath::IsNearlyZero(FMath::FindDeltaAngleDegrees(Yaw, Character->GetActorRotation().Yaw), 0.1f));
     TestFalse(TEXT("倒地不能奔跑"), Character->RuntimeData.Locomotion.ReadLocomotionState().bRun);
     TestFalse(TEXT("倒地不能蹲伏"), Character->bIsCrouched);
     TestEqual(TEXT("低顶蹲伏倒地后应用独立胶囊"), Character->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(),

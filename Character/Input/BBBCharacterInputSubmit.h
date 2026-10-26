@@ -38,7 +38,6 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCrouchLocalControlPacket, Crouch)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterAimLocalControlPacket, Aim)
 BBB_CHARACTER_INPUT_SLOT(FBBBJumpLocalControlPacket, Jump)
 BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontageLocalControlPacket, FullBodyMontage)
-BBB_CHARACTER_INPUT_SLOT(FBBBTraversalMontageLocalControlPacket, TraversalMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBFullBodyMontageAuthorityFactPacket, AuthorityFullBodyMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontageLocalControlPacket, UpperBodyMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBUpperBodyMontageAuthorityFactPacket, AuthorityUpperBodyMontage)
@@ -50,13 +49,9 @@ BBB_CHARACTER_INPUT_SLOT(FBBBAdditiveHitReactMontageLocalControlPacket, Additive
 BBB_CHARACTER_INPUT_SLOT(FBBBAdditiveHitReactMontageAuthorityFactPacket, AuthorityAdditiveHitReactMontage)
 BBB_CHARACTER_INPUT_SLOT(FBBBCameraLocalControlPacket, Camera)
 
-BBB_CHARACTER_INPUT_SLOT(FBBBTraversalStartRemoteMessagePacket, TraversalStartRemoteMessage)
 
-BBB_CHARACTER_INPUT_SLOT(FBBBTraversalEndRemoteMessagePacket, TraversalEndRemoteMessage)
 
-BBB_CHARACTER_INPUT_SLOT(FBBBTraversalStartAuthorityFactPacket, TraversalStartAuthorityFact)
 
-BBB_CHARACTER_INPUT_SLOT(FBBBTraversalEndAuthorityFactPacket, TraversalEndAuthorityFact)
 
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionBeginActionLocalControlPacket, EquipmentBeginAction)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionEndActionLocalControlPacket, EquipmentEndAction)
@@ -156,22 +151,6 @@ namespace BBBCharacterInput
             {
                 Slot.Data.Sequences.Append(Packet.Sequences);
             }
-        }
-        // 保留同帧全部交接结果 输入解析再按动作标识拒绝过期结果
-        if constexpr (std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket>
-            || std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket>)
-        {
-            Slot.Data.ActionIds.Append(Packet.ActionIds);
-            Slot.Data.Actions.Append(Packet.Actions);
-            Slot.Data.Contacts.Append(Packet.Contacts);
-            Slot.Data.Ends.Append(Packet.Ends);
-            Slot.Data.Positions.Append(Packet.Positions);
-        }
-        if constexpr (std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket>
-            || std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket>)
-        {
-            Slot.Data.ActionIds.Append(Packet.ActionIds);
-            Slot.Data.ExitVelocities.Append(Packet.ExitVelocities);
         }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionSelectionAuthorityFactPacket>
             || std::is_same_v<FPacket, FBBBCharacterInteractionSelectionRemoteMessagePacket>)
@@ -378,10 +357,6 @@ namespace BBBCharacterInput
                       !std::is_same_v<FPacket, FBBBCharacterLifeRemoteMessagePacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket> &&
-                      !std::is_same_v<FPacket, FBBBTraversalStartRemoteMessagePacket> &&
-                      !std::is_same_v<FPacket, FBBBTraversalStartAuthorityFactPacket> &&
-                      !std::is_same_v<FPacket, FBBBTraversalEndRemoteMessagePacket> &&
-                      !std::is_same_v<FPacket, FBBBTraversalEndAuthorityFactPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionSelectionRemoteMessagePacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterItemAddLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket> &&

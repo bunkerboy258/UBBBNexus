@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Interaction/BBBCharacterInteractionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBLocomotionConfig.h"
-#include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Network/BBBNetworkConfig.h"
 #include "Engine/DataAsset.h"
 #include "BBBWork/UBBBNexus/Character/Config/Item/BBBCharacterItemConfig.h"
@@ -56,9 +55,6 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "移动配置"))
     FBBBCharacterLocomotionConfig Locomotion;
 
-    /** 独立的翻越探测和执行配置 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "翻越配置"))
-    FBBBTraversalConfig Traversal;
 
     /** 角色瞄准动画配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "瞄准动画"))

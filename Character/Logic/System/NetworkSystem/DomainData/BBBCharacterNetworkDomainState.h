@@ -8,7 +8,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBRunNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAccelerationNetworkObservationState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBTraversalNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueInboxState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterAppearanceNetworkObservationState.h"
@@ -58,11 +57,6 @@ public:
         return AccelerationObservationState;
     }
 
-    /** @return 翻越网络观察基准 */
-    const FBBBTraversalNetworkObservationState &ReadTraversalNetworkObservationState() const
-    {
-        return TraversalObservationState;
-    }
 
     /** @return 实际持有关系的网络发送基准 */
     const FBBBCharacterInteractionNetworkObservationState &ReadCharacterInteractionNetworkObservationState() const
@@ -112,10 +106,6 @@ private:
     friend class FBBBCharacterInteractionObservationProcessor;
     FBBBCharacterInteractionNetworkObservationState InteractionObservationState;
 
-    friend class FBBBTraversalObservationProcessor;
-    /** 翻越独立离散同步生命周期 */
-    UPROPERTY(Transient)
-    FBBBTraversalNetworkObservationState TraversalObservationState;
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
     friend class FBBBCharacterNetworkSystem;

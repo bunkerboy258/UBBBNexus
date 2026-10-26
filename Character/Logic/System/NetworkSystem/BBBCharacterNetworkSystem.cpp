@@ -36,8 +36,6 @@ void FBBBCharacterNetworkSystem::Update()
         RuntimeData->Locomotion.ReadLocomotionState(),
         *NetworkConfig,
         *NetworkComponent,
-        RuntimeData->Network.TraversalObservationState,
-        RuntimeData->Traversal.ReadTraversalState(),
         RuntimeData->Network.InteractionObservationState,
         RuntimeData->Interaction.ReadInteractionSelectionState(),
         *RuntimeData};
@@ -47,7 +45,6 @@ void FBBBCharacterNetworkSystem::Update()
     DamageObservationProcessor.Update(Context);
     LifeObservationProcessor.Update(Context);
     RescueObservationProcessor.Update(Context);
-    TraversalObservationProcessor.Update(Context);
     if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
     {
         return;

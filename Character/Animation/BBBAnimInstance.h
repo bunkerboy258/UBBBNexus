@@ -4,7 +4,6 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
-#include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBAnimInstance.generated.h"
 
 class FBBBCharacterAnimationActionProcessor;
@@ -23,7 +22,6 @@ namespace BBBCharacterMontageSlots
     inline const FName FullBodyAdditivePreAim(TEXT("FullBodyAdditivePreAim"));
     inline const FName UpperBodyAdditive(TEXT("UpperBodyAdditive"));
     inline const FName AdditiveHitReact(TEXT("AdditiveHitReact"));
-    inline const FName Traversal(TEXT("Traversal"));
 }
 
 /** 角色动画事实快照 蓝图读取与已批准蒙太奇执行入口 */
@@ -36,8 +34,6 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationLayerProcessor;
     friend class FBBBCharacterAnimationMontageProcessor;
     friend class FBBBCharacterAnimationSystem;
-    friend class FBBBCharacterTraversalAnimationProcessor;
-    friend class FBBBCharacterTraversalPlaybackProcessor;
     friend class FBBBCharacterLifeAnimationProcessor;
     friend class FBBBCharacterAnimationFactProcessor;
 
@@ -58,17 +54,15 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|救援", meta = (DisplayName = "正在半蹲帮扶"))
     bool bSourceRescueHelping = false;
 
-    /** 本次倒地入场的经过秒数 负值表示直接展示持续倒地姿态 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源倒地入场时间"))
-    float SourceDownedEntryElapsed = -1.0f;
+    /** 本次生命阶段变化前已经应用的阶段 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源上一生命阶段"))
+    EBBBCharacterLifePhase SourcePreviousLifePhase = EBBBCharacterLifePhase::Alive;
 
-    /** 已成立的攀爬类别 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
-    EBBBTraversalAction SourceTraversalAction = EBBBTraversalAction::None;
+    /** 本次生命阶段变化的经过秒数 负值表示没有变化记录 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段经过时间"))
+    float SourceLifePhaseElapsed = -1.0f;
 
-    /** 根运动已释放 后置专用蒙太奇仍可保留淡出贡献 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实")
-    bool bSourceTraversalControlReleased = false;
+
 
     /** @return 实际持有装备的类型快照是否为步枪 */
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (BlueprintThreadSafe, DisplayName = "是步枪"))
@@ -77,17 +71,7 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceEquipmentType == EBBBEquipmentType::Rifle;
     }
 
-    /** @return 角色是否正在翻越 用于临时关闭地面与握持修正 */
-    UFUNCTION(BlueprintPure, Category = "BBB|移动", meta = (BlueprintThreadSafe))
-    bool IsTraversing() const
-    {
-        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return Main->SourceTraversalAction != EBBBTraversalAction::None && !Main->bSourceTraversalControlReleased;
-    }
 
-    /** @param Action 已确认的攀爬类别 @return 基础继承层配置的根运动蒙太奇 */
-    UFUNCTION(BlueprintImplementableEvent, BlueprintPure, Category = "BBB|翻越", meta = (BlueprintThreadSafe))
-    UAnimMontage *SelectTraversalMontage(EBBBTraversalAction Action) const;
 
     /** @return 当前动画层配置的手雷投掷动作 */
     UFUNCTION(BlueprintImplementableEvent, BlueprintPure, Category = "BBB|投掷", meta = (BlueprintThreadSafe))
@@ -347,10 +331,10 @@ private:
     void PublishAnimationFacts(const FBBBCharacterAnimationFactState &FactState);
 
     /** @return 全部固定槽位蒙太奇贡献 */
-    TStaticArray<TObjectPtr<UAnimMontage> *, 6> GetMontageContributions();
+    TStaticArray<TObjectPtr<UAnimMontage> *, 5> GetMontageContributions();
 
     /** @return 全部固定槽位蒙太奇贡献 */
-    TStaticArray<const TObjectPtr<UAnimMontage> *, 6> GetMontageContributions() const;
+    TStaticArray<const TObjectPtr<UAnimMontage> *, 5> GetMontageContributions() const;
 
     /**
      * 查找固定槽位蒙太奇贡献
@@ -416,7 +400,4 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UAnimMontage> AdditiveHitReactMontageContribution = nullptr;
 
-    /** 攀爬状态专用槽位 */
-    UPROPERTY(Transient)
-    TObjectPtr<UAnimMontage> TraversalMontageContribution = nullptr;
 };

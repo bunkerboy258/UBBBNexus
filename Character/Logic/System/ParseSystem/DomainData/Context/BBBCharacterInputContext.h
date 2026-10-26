@@ -12,7 +12,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
 
 struct FBBBCharacterAnimationMontageState;
-struct FBBBCharacterTraversalState;
 struct FBBBCharacterInteractionSelectionState;
 struct FBBBCharacterInteractionInputState;
 struct FBBBCharacterItemOperationState;
@@ -55,8 +54,6 @@ struct FBBBCharacterInputContext final
 
     /** 输入解析时可读取的角色动画事实 */
     const FBBBCharacterAnimationFactState &AnimationFacts;
-    /** 解析器批准的翻越事实 */
-    FBBBCharacterTraversalState &Traversal;
 
     /** 待转交给装备的动画通知 */
     FBBBCharacterInteractionInputState &InteractionInputs;

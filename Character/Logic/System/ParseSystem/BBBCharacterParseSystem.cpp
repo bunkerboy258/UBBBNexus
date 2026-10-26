@@ -23,7 +23,6 @@ void FBBBCharacterParseSystem::Update() const
                                       Data->External.ReadNetworkIdentityState().bIsMirror,
                                       Data->Parse.CameraState,
                                       Data->Animation.ReadAnimationFactState(),
-                                      Data->Traversal.TraversalState,
                                       Data->Interaction.InteractionInputState,
                                       Data->Life.LifeInputState,
                                       Data->Life.ReadLifeState(),

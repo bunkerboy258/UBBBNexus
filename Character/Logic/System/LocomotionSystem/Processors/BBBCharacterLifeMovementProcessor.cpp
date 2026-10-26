@@ -32,8 +32,6 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
         Movement.CurrentRootMotion.Clear();
         Movement.RootMotionParams.Clear();
         State.bRun = false;
-        State.bTraversalControlled = false;
-        State.TraversalEntrySpeed = 0.0f;
         UCapsuleComponent *Capsule = Character.GetCapsuleComponent();
         if (Phase == EBBBCharacterLifePhase::Downed)
         {
@@ -97,26 +95,12 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
         return;
     }
 
-    Movement.MaxWalkSpeed = FMath::Max(0.0f, Config.DownedSpeed);
-    Movement.MaxWalkSpeedCrouched = Movement.MaxWalkSpeed;
+    Movement.MaxWalkSpeed = 0.0f;
+    Movement.MaxWalkSpeedCrouched = 0.0f;
     Movement.MinAnalogWalkSpeed = 0.0f;
-    Movement.MaxStepHeight = FMath::Min(Config.MaxStepHeight, 15.0f);
-    Movement.Velocity = Movement.Velocity.GetClampedToMaxSize2D(Movement.MaxWalkSpeed);
-    if (Context.Execution.bIsMirror)
-    {
-        return;
-    }
-
-    if (Context.Data.Life.ReadRescueState().bReceiving)
-    {
-        return;
-    }
-
-    const float YawDelta =
-        FMath::FindDeltaAngleDegrees(Character.GetActorRotation().Yaw, Context.ControlState.FacingWorld.Yaw);
-    const float Limit = Config.DownedTurnSpeed * Context.DeltaSeconds;
-    Character.SetActorRotation(
-        FRotator(0, Character.GetActorRotation().Yaw + FMath::Clamp(YawDelta, -Limit, Limit), 0));
-    const FVector Intent = Context.ControlState.MoveWorld.GetClampedToMaxSize2D(1.0f);
-    Character.AddMovementInput(Intent.GetSafeNormal2D(), Intent.Size2D());
+    Movement.MaxAcceleration = 0.0f;
+    Movement.Velocity.X = 0.0f;
+    Movement.Velocity.Y = 0.0f;
+    Character.StopJumping();
+    Character.ConsumeMovementInputVector();
 }

@@ -40,7 +40,6 @@ void FBBBCharacterLocomotionSystem::Update()
         *ControlData,
         *Config,
         *StrafeSpeedMapCurve,
-        CharacterData->Traversal.ReadTraversalState(),
         CharacterData->External.ReadNetworkIdentityState(),
         CharacterData->Animation.ReadAnimationFactState(),
         CharacterData->Life.ReadLifeState(),

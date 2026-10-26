@@ -2,7 +2,6 @@
 #include "BBBWork/UBBBNexus/Item/BBBItemType.h"
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBTraversalAction.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentType.h"
@@ -31,9 +30,13 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bRescueHelping = false;
 
-    /** 本次倒地入场的经过秒数 负值表示无需播放入场 */
+    /** 本次变化前已经成立的生命阶段 */
     UPROPERTY(Transient)
-    float DownedEntryElapsed = -1.0f;
+    EBBBCharacterLifePhase PreviousLifePhase = EBBBCharacterLifePhase::Alive;
+
+    /** 最近生命阶段变化的经过秒数 负值表示没有变化记录 */
+    UPROPERTY(Transient)
+    float LifePhaseElapsed = -1.0f;
 
     /** 实际持有装备的配置类别 空手时为无 */
     UPROPERTY(Transient)
@@ -55,13 +58,7 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FRotator RightHandGripRotationOffset = FRotator::ZeroRotator;
 
-    /** 本帧已经成立的攀爬类别 */
-    UPROPERTY(Transient)
-    EBBBTraversalAction TraversalAction = EBBBTraversalAction::None;
 
-    /** 本帧攀爬根运动是否已停止贡献 */
-    UPROPERTY(Transient)
-    bool bTraversalControlReleased = false;
 
     /** 上次动画采集时全身槽位是否仍在播放 */
     UPROPERTY(Transient)

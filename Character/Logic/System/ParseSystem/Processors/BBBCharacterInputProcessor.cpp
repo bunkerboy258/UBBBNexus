@@ -68,14 +68,9 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.Crouch, Context);
     Process(InputState.Aim, Context);
 
-    Process(InputState.TraversalStartRemoteMessage, Context);
-    Process(InputState.TraversalEndRemoteMessage, Context);
-    Process(InputState.TraversalStartAuthorityFact, Context);
-    Process(InputState.TraversalEndAuthorityFact, Context);
     Process(InputState.Jump, Context);
 
     Process(InputState.FullBodyMontage, Context);
-    Process(InputState.TraversalMontage, Context);
     Process(InputState.AuthorityFullBodyMontage, Context);
     Process(InputState.UpperBodyMontage, Context);
     Process(InputState.AuthorityUpperBodyMontage, Context);

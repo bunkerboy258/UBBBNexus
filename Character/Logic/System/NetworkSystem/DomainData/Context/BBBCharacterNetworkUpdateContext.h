@@ -4,8 +4,6 @@ struct FBBBCharacterInteractionNetworkObservationState;
 struct FBBBCharacterInteractionSelectionState;
 
 class UBBBCharacterNetworkComponent;
-struct FBBBTraversalNetworkObservationState;
-struct FBBBCharacterTraversalState;
 struct FBBBAimNetworkObservationState;
 struct FBBBAimState;
 struct FBBBCharacterLocomotionState;
@@ -41,10 +39,6 @@ struct FBBBCharacterNetworkUpdateContext final
 
     /** 角色网络传输组件 */
     UBBBCharacterNetworkComponent &NetworkComponent;
-    /** 翻越网络观察基准 */
-    FBBBTraversalNetworkObservationState &TraversalObservation;
-    /** 控制者已经确定的翻越事实 */
-    const FBBBCharacterTraversalState &Traversal;
     /** 实际持有关系的发送基准 */
     FBBBCharacterInteractionNetworkObservationState &InteractionObservation;
 

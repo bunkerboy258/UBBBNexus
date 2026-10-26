@@ -1,5 +1,4 @@
 #pragma once
-#include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/DomainData/States/BBBCharacterTraversalState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/States/BBBCharacterInteractionInputState.h"
 /** 角色动画向当前装备贡献BeginAction通知 */
@@ -21,7 +20,7 @@ struct FBBBCharacterInteractionBeginActionLocalControlPacket final
     /** @param Context 角色输入上下文 @return 是否可写入待转交通知 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.Traversal.bTraversing && IsValid();
+        return IsValid();
     }
     /** @param Context 角色输入上下文 @return 无 */
     void Apply(FBBBCharacterInputContext &Context) const

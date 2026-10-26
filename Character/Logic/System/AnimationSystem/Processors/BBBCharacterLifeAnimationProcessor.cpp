@@ -13,15 +13,18 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
         return;
     }
 
-    State.AppliedPhase = Life.Phase;
+    if (State.AppliedPhase != Life.Phase)
+    {
+        State.PreviousPhase = State.AppliedPhase;
+        State.AppliedPhase = Life.Phase;
+        State.PhaseStartTime = Context.WorldState.WorldTimeSeconds;
+    }
     State.bAppliedRescueHelping = bHelping;
-    State.DownedEntryStartTime = -1.0;
     if (Life.Phase == EBBBCharacterLifePhase::Alive && !bHelping)
     {
         return;
     }
 
-    Context.AnimationInstance.Montage_Stop(0.0f);
     Context.AnimationInstance.ClearMontageContributions();
     auto &Requests = Context.AnimationMontageState;
     Requests.FullBodyMontageRequest = nullptr;
@@ -34,13 +37,5 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
     Requests.bUpperBodyAdditiveMontageRequestPending = false;
     Requests.AdditiveHitReactMontageRequest = nullptr;
     Requests.bAdditiveHitReactMontageRequestPending = false;
-    Requests.TraversalMontageRequest = nullptr;
-    Requests.bTraversalMontageRequestPending = false;
 
-    const auto &Hit = Context.RuntimeData.Life.ReadHitState();
-    const double HitAge = Context.WorldState.WorldTimeSeconds - Hit.Time;
-    if (Life.Phase == EBBBCharacterLifePhase::Downed && Hit.Serial != 0 && HitAge >= 0.0 && HitAge <= 0.25)
-    {
-        State.DownedEntryStartTime = Hit.Time;
-    }
 }

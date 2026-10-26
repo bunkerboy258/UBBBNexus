@@ -26,7 +26,6 @@ class UBBBConsumable;
 class UBBBItemDefinition;
 class ABBBPlayerCameraSystem;
 class ABBBEquipment;
-class UMotionWarpingComponent;
 class UBBBCharacterHitReactionComponent;
 class UPhysicalAnimationComponent;
 
@@ -134,8 +133,7 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|装备", meta = (DisplayName = "装备可使用"))
     bool IsItemUsable() const
     {
-        return RuntimeData.Life.ReadLifeState().bActionsAllowed
-            && !RuntimeData.Traversal.ReadTraversalState().bTraversing;
+        return RuntimeData.Life.ReadLifeState().bActionsAllowed;
     }
 
     /**
@@ -285,10 +283,6 @@ private:
     TObjectPtr<UPhysicalAnimationComponent> PhysicalAnimation;
     /** 角色物理表现调度器 */
     FBBBCharacterPhysicalPresentationSystem PhysicalPresentationSystem;
-    /** 官方角色根运动校正组件 */
-    UPROPERTY(VisibleAnywhere, Category = "BBB|翻越")
-    TObjectPtr<UMotionWarpingComponent> MotionWarping;
-
     FBBBCharacterAimSystem AimSystem;
 
     FBBBCharacterLocomotionSystem LocomotionSystem;
