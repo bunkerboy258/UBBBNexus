@@ -113,6 +113,16 @@ void FBBBCharacterRescueTargetProcessor::Update(FBBBCharacterLifeUpdateContext &
     if (State.bReceiving)
     {
         State.Progress = FMath::Clamp(float((Now - State.StartTime) / State.Duration), 0.0f, 1.0f);
-        State.bCompletionPending = Now - State.StartTime >= State.Duration;
+        for (int32 Index = 0; Index < Input.CompletionOperations.Num(); ++Index)
+        {
+            if (Input.CompletionOperations[Index] == State.OperationId
+                && Input.CompletionRounds.IsValidIndex(Index)
+                && Input.CompletionRounds[Index] == State.DownedRevision)
+            {
+                State.bCompletionPending = true;
+            }
+        }
     }
+    Input.CompletionOperations.Reset();
+    Input.CompletionRounds.Reset();
 }

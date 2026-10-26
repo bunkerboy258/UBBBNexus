@@ -15,9 +15,9 @@ struct FBBBCharacterLifeAnimationState final
     /** 最近应用的半蹲帮扶事实 */
     bool bAppliedRescueHelping = false;
 
-    /** 最近阶段变化前已经应用的生命阶段 */
-    EBBBCharacterLifePhase PreviousPhase = EBBBCharacterLifePhase::Alive;
+    /** 最近应用的接受救援事实 */
+    bool bAppliedRescueReceiving = false;
 
-    /** 最近阶段变化的世界时间 负值表示没有变化记录 */
-    double PhaseStartTime = -1.0;
+    /** 最近应用的救援操作 用于区分没有空帧间隔的重新救援 */
+    uint64 AppliedRescueOperation = 0;
 };

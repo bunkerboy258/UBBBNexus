@@ -16,6 +16,12 @@ struct FBBBCharacterRescueInputState final
     /** 本帧释放救援键 */
     bool bCancel = false;
 
+    /** 接受救援动作自然完成时通知提交的操作标识 */
+    TArray<uint64> CompletionOperations;
+
+    /** 完成通知对应的倒地轮次 */
+    TArray<uint64> CompletionRounds;
+
     /** 请求来源 */
     TArray<TWeakObjectPtr<APawn>> RequestSources;
 

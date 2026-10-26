@@ -64,6 +64,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionEndContactLocalControlPacket.h"
 
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueBeginLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCompleteLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCancelLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueRequestLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterRescueRequestRemoteMessagePacket.h"
@@ -179,6 +180,8 @@ struct FBBBCharacterInputState final
 
 
     TBBBCharacterInputSlot<FBBBCharacterRescueBeginLocalControlPacket> RescueBeginLocalControl;
+    /** 接受救援动作完成的输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterRescueCompleteLocalControlPacket> RescueCompleteLocalControl;
     /** 救援输入固定槽位 */
     TBBBCharacterInputSlot<FBBBCharacterRescueCancelLocalControlPacket> RescueCancelLocalControl;
     /** 救援输入固定槽位 */

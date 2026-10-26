@@ -41,12 +41,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const UBBBAnimInstance* LayerDefaults = LayerClass ? LayerClass->GetDefaultObject<UBBBAnimInstance>() : nullptr;
     FactState.LocomotionDatabaseChooser = LayerDefaults ? LayerDefaults->LocomotionDatabaseChooser.Get() : nullptr;
     FactState.LifePhase = RuntimeData.Life.ReadLifeState().Phase;
-    FactState.bRescueHelping = RuntimeData.Life.ReadRescueState().bHelping;
-    const auto &LifeAnimation = RuntimeData.Animation.ReadLifeAnimationState();
-    FactState.PreviousLifePhase = LifeAnimation.PreviousPhase;
-    FactState.LifePhaseElapsed = LifeAnimation.PhaseStartTime >= 0.0
-        ? static_cast<float>(FMath::Max(Context.WorldState.WorldTimeSeconds - LifeAnimation.PhaseStartTime, 0.0))
-        : -1.0f;
     const UBBBItemDefinition *ItemDefinition = Character.GetHeldItemDefinition();
     FactState.ItemType = ItemDefinition ? ItemDefinition->ItemType : EBBBItemType::Misc;
     const ABBBEquipment *Equipment = Character.GetHeldEquipment();

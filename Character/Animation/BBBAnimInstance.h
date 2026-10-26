@@ -50,18 +50,6 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段"))
     EBBBCharacterLifePhase SourceLifePhase = EBBBCharacterLifePhase::Alive;
 
-    /** 本角色已成立的半蹲帮扶事实 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|救援", meta = (DisplayName = "正在半蹲帮扶"))
-    bool bSourceRescueHelping = false;
-
-    /** 本次生命阶段变化前已经应用的阶段 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源上一生命阶段"))
-    EBBBCharacterLifePhase SourcePreviousLifePhase = EBBBCharacterLifePhase::Alive;
-
-    /** 本次生命阶段变化的经过秒数 负值表示没有变化记录 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源生命阶段经过时间"))
-    float SourceLifePhaseElapsed = -1.0f;
-
 
 
     /** @return 实际持有装备的类型快照是否为步枪 */

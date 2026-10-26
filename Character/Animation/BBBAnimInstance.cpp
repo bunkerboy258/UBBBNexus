@@ -24,9 +24,6 @@ void UBBBAnimInstance::PublishAnimationFacts(
 {
     SourceLifePhase = FactState.LifePhase;
     SourceLocomotionDatabaseChooser = FactState.LocomotionDatabaseChooser;
-    bSourceRescueHelping = FactState.bRescueHelping;
-    SourcePreviousLifePhase = FactState.PreviousLifePhase;
-    SourceLifePhaseElapsed = FactState.LifePhaseElapsed;
     // 将角色运行事实复制到动画实例供动画图安全读取
     SourceActorLocation = FactState.ActorLocation;
     SourceActorRotation = FactState.ActorRotation;

@@ -26,18 +26,6 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     EBBBCharacterLifePhase LifePhase = EBBBCharacterLifePhase::Alive;
 
-    /** 本角色已成立的帮扶事实 */
-    UPROPERTY(Transient)
-    bool bRescueHelping = false;
-
-    /** 本次变化前已经成立的生命阶段 */
-    UPROPERTY(Transient)
-    EBBBCharacterLifePhase PreviousLifePhase = EBBBCharacterLifePhase::Alive;
-
-    /** 最近生命阶段变化的经过秒数 负值表示没有变化记录 */
-    UPROPERTY(Transient)
-    float LifePhaseElapsed = -1.0f;
-
     /** 实际持有装备的配置类别 空手时为无 */
     UPROPERTY(Transient)
     EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;

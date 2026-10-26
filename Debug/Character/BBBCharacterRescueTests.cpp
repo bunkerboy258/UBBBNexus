@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueBeginLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCancelLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueCompleteLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Life/FBBBCharacterRescueEndLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterRescueSnapshotAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
@@ -143,13 +144,11 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     auto* HelperAnimation = Cast<UBBBAnimInstance>(Helper->GetMesh()->GetAnimInstance());
     if (TestNotNull(TEXT("生产救援动画实例"), HelperAnimation))
     {
-        TestTrue(TEXT("延迟动画更新收到帮扶事实"), HelperAnimation->bSourceRescueHelping);
+        TestTrue(TEXT("帮扶使用配置的全身蒙太奇"), HelperAnimation->Montage_IsActive(Helper->GetCharacterConfig().Animation.HelpRescueMontage));
         Helper->GetMesh()->TickAnimation(0.1f, false);
         Helper->GetMesh()->RefreshBoneTransforms();
-        const FBoolProperty* Crouch = FindFProperty<FBoolProperty>(HelperAnimation->GetClass(), TEXT("IsCrouching"));
         const FBoolProperty* EquipmentPose = FindFProperty<FBoolProperty>(HelperAnimation->GetClass(), TEXT("bApplyEquipmentPose"));
-        TestTrue(TEXT("帮扶在工作线程选择蹲姿"), Crouch && Crouch->GetPropertyValue_InContainer(HelperAnimation));
-        TestTrue(TEXT("帮扶基础姿态不被装备修正覆盖"), EquipmentPose && !EquipmentPose->GetPropertyValue_InContainer(HelperAnimation));
+        TestNull(TEXT("帮扶不再拥有独立基础姿态混合开关"), EquipmentPose);
         TestEqual(TEXT("基础姿态不再使用旧移动状态机"), HelperAnimation->GetStateMachineIndex(TEXT("LocomotionSM")), INDEX_NONE);
     }
 
@@ -195,16 +194,26 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("第二救援者不能抢占"), Target->GetRescuePartner() == Helper);
     const uint64 OldOperation = Helper->GetRescueOperationId();
     const uint64 OldRound = Target->GetDownedRevision();
+    Target->GetMesh()->SetComponentTickEnabled(false);
     for (int32 Index = 0; Index < 35; ++Index)
     {
         Step();
     }
-    TestTrue(TEXT("救援完成恢复正常生命阶段"), Target->GetLifePhase() == EBBBCharacterLifePhase::Alive);
+    TestTrue(TEXT("没有动画通知时计时结束仍保持倒地"), Target->GetLifePhase() == EBBBCharacterLifePhase::Downed);
+    Target->SubmitInput(FBBBCharacterRescueCompleteLocalControlPacket{OldOperation, OldRound});
+    Step();
+    Step();
+    Target->GetMesh()->SetComponentTickEnabled(true);
+    TestTrue(TEXT("完成输入经内部管线恢复正常生命阶段"), Target->GetLifePhase() == EBBBCharacterLifePhase::Alive);
     if (const auto* Animation = Cast<UBBBAnimInstance>(Target->GetMesh()->GetAnimInstance()))
     {
-        TestTrue(TEXT("起身来源上一阶段为倒地"), Animation->SourcePreviousLifePhase == EBBBCharacterLifePhase::Downed);
-        TestTrue(TEXT("阶段经过时间由角色事实发布"), Animation->SourceLifePhaseElapsed >= 0.0f);
+        TestTrue(TEXT("获救后播放站立起身蒙太奇"), Animation->Montage_IsActive(Target->GetCharacterConfig().Animation.RecoverStandMontage));
+        TestNull(TEXT("不再发布生命阶段采样计时"), FindFProperty<FProperty>(Animation->GetClass(), TEXT("SourceLifePhaseElapsed")));
     }
+    const uint64 CompletedRevision = Target->RuntimeData.Life.ReadLifeState().Revision;
+    Target->SubmitInput(FBBBCharacterRescueCompleteLocalControlPacket{OldOperation, OldRound});
+    Step();
+    TestEqual(TEXT("重复完成输入不重复复活"), Target->RuntimeData.Life.ReadLifeState().Revision, CompletedRevision);
     TestEqual(TEXT("救援恢复生命"), Target->GetHealth(), 100.0f);
     TestFalse(TEXT("成功释放双方"), Helper->IsRescueHelping() || Target->IsRescueReceiving());
     TestTrue(TEXT("成功立即开放操作"), Target->RuntimeData.Life.ReadLifeState().bActionsAllowed);
@@ -220,8 +229,10 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("重新倒地使用新轮次"), Target->GetDownedRevision() > OldRound);
     Begin();
     Target->SubmitInput(FBBBCharacterRescueEndLocalControlPacket{{Helper}, {OldOperation}, {OldRound}});
+    Target->SubmitInput(FBBBCharacterRescueCompleteLocalControlPacket{OldOperation, OldRound});
     Step();
     TestTrue(TEXT("旧取消不影响新救援"), Target->IsRescueReceiving());
+    TestTrue(TEXT("旧完成通知不影响新倒地轮次"), Target->GetLifePhase() == EBBBCharacterLifePhase::Downed);
     Helper->SubmitInput(FBBBCharacterMovementLocalControlPacket{FVector::RightVector, FRotator::ZeroRotator});
     Step();
     Step();
@@ -306,6 +317,9 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Step();
     TestTrue(TEXT("旧镜像结果不能覆盖新状态"), Mirror->IsRescueReceiving());
     TestEqual(TEXT("镜像计时不产生治疗"), Mirror->GetHealth(), 300.0f);
+    Mirror->SubmitInput(FBBBCharacterRescueCompleteLocalControlPacket{1, 20});
+    Step();
+    TestEqual(TEXT("镜像完成通知不能生成治疗事实"), Mirror->GetHealth(), 300.0f);
     Mirror->SubmitInput(FBBBCharacterRescueSnapshotAuthorityFactPacket{{Helper}, {2}, {20}, {11},
         {true}, {false}, {false}, {2.0f}, {3.0f}, {NAME_None}});
     Step();

@@ -10,6 +10,7 @@ void FBBBCharacterInputProcessor::Update(
 
     Process(InputState.RescueBeginLocalControl, Context);
     Process(InputState.RescueCancelLocalControl, Context);
+    Process(InputState.RescueCompleteLocalControl, Context);
     Process(InputState.RescueRequestLocalControl, Context);
     Process(InputState.RescueRequestRemoteMessage, Context);
     Process(InputState.RescueEndLocalControl, Context);
