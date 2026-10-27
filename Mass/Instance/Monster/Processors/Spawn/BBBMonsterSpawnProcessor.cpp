@@ -20,6 +20,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnData.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnInitializationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 
@@ -43,23 +44,27 @@ namespace
 
     void ReadLivePositions(FMassEntityManager& Manager, TArray<FVector>& Occupied)
     {
-        FMassEntityQuery Query;
+        FMassEntityQuery Query(Manager.AsShared());
         Query.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
         Query.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
         Query.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
         Query.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
-        FMassExecutionContext Context(Manager);
+        Query.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
+        /** 延迟创建期间只读遍历 不在查询析构时嵌套冲刷当前创建命令 */
+        FMassExecutionContext Context(Manager, 0.0f, false);
         Query.ForEachEntityChunk(Context, [&Occupied](FMassExecutionContext& Chunk)
         {
             const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
             const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
             const auto Movement = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+            const auto Ground = Chunk.GetFragmentView<FBBBMonsterGroundFragment>();
             for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
             {
                 if (Health[Index].CurrentHealth > 0.0f)
                 {
-                    Occupied.Add(Transforms[Index].GetTransform().GetLocation()
-                        - FVector::UpVector * Movement[Index].CapsuleHalfHeight);
+                    const float HalfHeight = Ground[Index].CapsuleHalfHeight > 0.0f
+                        ? Ground[Index].CapsuleHalfHeight : Movement[Index].CapsuleHalfHeight;
+                    Occupied.Add(Transforms[Index].GetTransform().GetLocation() - FVector::UpVector * HalfHeight);
                 }
             }
         });
@@ -201,6 +206,7 @@ void UBBBMonsterSpawnProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefinition& Definition,
@@ -359,11 +365,14 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
         const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Movement = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+        const auto Ground = Chunk.GetFragmentView<FBBBMonsterGroundFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (Health[Index].CurrentHealth > 0.0f)
             {
-                Occupied.Add(Transforms[Index].GetTransform().GetLocation() - FVector(0.0, 0.0, Movement[Index].CapsuleHalfHeight));
+                const float HalfHeight = Ground[Index].CapsuleHalfHeight > 0.0f
+                    ? Ground[Index].CapsuleHalfHeight : Movement[Index].CapsuleHalfHeight;
+                Occupied.Add(Transforms[Index].GetTransform().GetLocation() - FVector::UpVector * HalfHeight);
             }
         }
     });
