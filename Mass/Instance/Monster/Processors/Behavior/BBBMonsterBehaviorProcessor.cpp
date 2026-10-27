@@ -124,8 +124,12 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 if (DeathEvents[Index].DestroyAtTime <= 0.0f)
                 {
                     EnterState(EBBBMonsterBehavior::Dead);
+                    if (bRemote && Network[Index].bHasDeathTime)
+                    {
+                        State.StateEnteredTime = FMath::Min(WorldTime, Network[Index].DeathStartedAt);
+                    }
                     DeathEvents[Index].InitialVelocity = Velocities[Index].Value.GetClampedToMaxSize(650.0f);
-                    DeathEvents[Index].DestroyAtTime = WorldTime + Health.CorpseLifetime;
+                    DeathEvents[Index].DestroyAtTime = FMath::Max(WorldTime, State.StateEnteredTime + Health.CorpseLifetime);
                     UE_LOG(LogTemp, Log, TEXT("[UBBBM]Monster dead Entity=%d DestroyAt=%.3f"), ChunkContext.GetEntity(Index).Index, DeathEvents[Index].DestroyAtTime);
                 }
 

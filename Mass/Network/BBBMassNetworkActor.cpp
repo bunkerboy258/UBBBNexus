@@ -48,7 +48,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
         || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
         || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
         || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
-        || Existing->StateEnteredTime != State.StateEnteredTime);
+        || Existing->StateEnteredTime != State.StateEnteredTime || Existing->CrawlStartedAt != State.CrawlStartedAt);
     if (!bDamageChanged && !bActionChanged && !bGoreChanged)
     {
         return;
@@ -66,6 +66,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
         Existing->Behavior = State.Behavior;
         Existing->ActionId = State.ActionId;
         Existing->StateEnteredTime = State.StateEnteredTime;
+        Existing->CrawlStartedAt = State.CrawlStartedAt;
     }
     Existing->Contributions = State.Contributions;
     ++Existing->Revision;
@@ -135,6 +136,7 @@ void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,
 void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
     const TArray<FBBBMonsterDamageContribution>& Contributions)
 {
+    PruneCaches();
     if (Retired.Contains(InstanceId))
     {
         return;
@@ -145,11 +147,17 @@ void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
     const FMassEntityHandle Entity = FindEntity(InstanceId);
     if (!Mass->QueryDamage(Entity, Packet.Contributions))
     {
+        /** 完整复制快照仍会还原当前贡献 暂存不能随短命实体无限增长 */
+        if (!PendingDamageSnapshots.Contains(InstanceId) && PendingDamageSnapshots.Num() >= 512)
+        {
+            return;
+        }
         auto& Pending = PendingDamageSnapshots.FindOrAdd(InstanceId);
-        Pending.InstanceId = InstanceId;
+        Pending.Packet.InstanceId = InstanceId;
+        Pending.UpdatedAt = GetWorld()->GetTimeSeconds();
         for (const auto& Value : Contributions)
         {
-            Pending.Include(Value);
+            Pending.Packet.Include(Value);
         }
         return;
     }
@@ -163,8 +171,38 @@ void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
     }
 }
 
+void ABBBMassNetworkActor::PruneCaches()
+{
+    const float Now = GetWorld()->GetTimeSeconds();
+    if (Now < NextCachePruneTime)
+    {
+        return;
+    }
+    NextCachePruneTime = Now + 1.0f;
+    TSet<FGuid> Present;
+    for (const auto& Item : Monsters.Items)
+    {
+        Present.Add(Item.InstanceId);
+    }
+    for (auto It = PendingDamageSnapshots.CreateIterator(); It; ++It)
+    {
+        if (!Present.Contains(It.Key()) && Now - It.Value().UpdatedAt >= 30.0f)
+        {
+            It.RemoveCurrent();
+        }
+    }
+    for (auto It = Retired.CreateIterator(); It; ++It)
+    {
+        if (!Present.Contains(It.Key()) && (Now - It.Value() >= 120.0f || Retired.Num() > 2048))
+        {
+            It.RemoveCurrent();
+        }
+    }
+}
+
 void ABBBMassNetworkActor::OnRep_Monsters()
 {
+    PruneCaches();
     UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
     UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
     if (!ensureMsgf(Mass != nullptr && Entities != nullptr, TEXT("Mass 网络还原缺少世界依赖")))
@@ -188,7 +226,7 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         FMassEntityHandle Entity = FindEntity(Item.InstanceId);
         if (Entity.IsSet() && !Manager.IsEntityValid(Entity))
         {
-            Retired.Add(Item.InstanceId);
+            Retired.Add(Item.InstanceId, GetWorld()->GetTimeSeconds());
             PendingDamageSnapshots.Remove(Item.InstanceId);
             continue;
         }
@@ -221,12 +259,16 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         const AGameStateBase* GameState = GetWorld()->GetGameState();
         const double ServerTime = GameState != nullptr ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
         Packet.StateEnteredTime = GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.StateEnteredTime);
+        Packet.CrawlStartedAt = Item.CrawlStartedAt >= 0.0f
+            ? GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.CrawlStartedAt) : -1.0f;
+        Packet.bHasCrawlTime = Item.CrawlStartedAt >= 0.0f;
         Mass->SubmitInput(Entity, MoveTemp(Packet));
         RouteDamage(Item.InstanceId, Item.Contributions);
         if (const auto* Pending = PendingDamageSnapshots.Find(Item.InstanceId))
         {
-            RouteDamage(Item.InstanceId, Pending->Contributions);
+            const auto Contributions = Pending->Packet.Contributions;
             PendingDamageSnapshots.Remove(Item.InstanceId);
+            RouteDamage(Item.InstanceId, Contributions);
         }
     }
 
@@ -237,7 +279,7 @@ void ABBBMassNetworkActor::OnRep_Monsters()
             continue;
         }
 
-        Retired.Add(It.Key());
+        Retired.Add(It.Key(), GetWorld()->GetTimeSeconds());
         SubmittedDamage.Remove(It.Key());
         PendingDamageSnapshots.Remove(It.Key());
         if (Manager.IsEntityValid(It.Value()))

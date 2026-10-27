@@ -32,4 +32,16 @@ struct ABBB_EVAC_API FBBBMonsterAvoidanceFragment final : public FMassFragment
 
     /** 当前帧计算出的避让强度 */
     float SeparationStrength = 0.0f;
+
+    /** 同一邻居的单次让行等待上限 */
+    float CrowdWaitDuration = 0.75f;
+
+    /** 当前确实挡住前方空间的邻居身份 */
+    FMassEntityHandle YieldBlocker;
+
+    /** 对该邻居开始让行的时刻 不因每帧再次看到而延长 */
+    float YieldStartedAt = -1.0f;
+
+    /** 当前是有界同伴等待 不是路径失败 */
+    bool bWaitingForNeighbor = false;
 };

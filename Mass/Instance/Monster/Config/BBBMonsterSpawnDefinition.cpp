@@ -10,6 +10,8 @@ bool UBBBMonsterSpawnDefinition::Validate(FString& Error) const
     }
     if (CandidateCount < 1 || CandidateCount > 512 || CandidatesPerFrame < 1 || CandidatesPerFrame > 64
         || CreatesPerFrame < 1 || CreatesPerFrame > 64 || MaxObservers < 1 || MaxObservers > 16
+        || WorldMaxAlive < 1 || WorldMaxAlive > 4096
+        || !FMath::IsFinite(TimeBudgetMs) || TimeBudgetMs < 0.1f || TimeBudgetMs > 16.0f
         || !FMath::IsFinite(MinPlayerDistance) || MinPlayerDistance < 0.0f
         || !FMath::IsFinite(MinSpacing) || MinSpacing <= 0.0f
         || !FMath::IsFinite(GroundTraceDistance) || GroundTraceDistance <= 0.0f || !FMath::IsFinite(FixedYaw))

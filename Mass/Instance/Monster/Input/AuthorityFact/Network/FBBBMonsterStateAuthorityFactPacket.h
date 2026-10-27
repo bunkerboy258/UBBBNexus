@@ -24,6 +24,10 @@ struct FBBBMonsterStateAuthorityFactPacket final
     EBBBMonsterBehavior Behavior = EBBBMonsterBehavior::Idle;
     uint32 ActionId = 0;
     float StateEnteredTime = 0.0f;
+    /** 已转换到本机时间的当前爬行进度起点 */
+    float CrawlStartedAt = -1.0f;
+    /** 已有爬行时刻 本机刚加入时起点可以早于零 */
+    bool bHasCrawlTime = false;
 
     /** @return 当前事实是否有效 */
     bool IsValid() const
@@ -31,6 +35,7 @@ struct FBBBMonsterStateAuthorityFactPacket final
         return InstanceId.IsValid() && Revision > 0
             && !Transform.ContainsNaN() && !Velocity.ContainsNaN()
             && FMath::IsFinite(StateEnteredTime)
+            && FMath::IsFinite(CrawlStartedAt)
             && Behavior <= EBBBMonsterBehavior::Dead;
     }
 
@@ -53,6 +58,13 @@ struct FBBBMonsterStateAuthorityFactPacket final
     {
         Network.InstanceId = InstanceId;
         Network.ReceivedRevision = Revision;
+        Network.CrawlStartedAt = CrawlStartedAt;
+        Network.bHasCrawlTime = bHasCrawlTime;
+        if (Behavior == EBBBMonsterBehavior::Dead)
+        {
+            Network.DeathStartedAt = StateEnteredTime;
+            Network.bHasDeathTime = true;
+        }
         for (int32 Index = 0; Index < 5; ++Index)
         {
             Gore.DismembermentPresets[Index] = DismembermentPresets[Index];

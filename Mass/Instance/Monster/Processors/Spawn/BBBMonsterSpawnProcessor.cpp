@@ -2,6 +2,7 @@
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
 #include "MassCommands.h"
+#include "HAL/PlatformTime.h"
 #include "NavigationSystem.h"
 #include "NavigationData.h"
 #include "NavigationPath.h"
@@ -13,12 +14,108 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnPoolDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnData.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Spawn/BBBMonsterSpawnInitializationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+
+namespace
+{
+    void ReadObservers(UWorld& World, TArray<FVector>& Observers, TArray<FVector>& Directions)
+    {
+        for (auto It = World.GetPlayerControllerIterator(); It; ++It)
+        {
+            auto* Controller = It->Get();
+            if (Controller && Controller->GetPawn() && Controller->GetPawn()->CanBeDamaged())
+            {
+                FVector Position;
+                FRotator Rotation;
+                Controller->GetPlayerViewPoint(Position, Rotation);
+                Observers.Add(Position);
+                Directions.Add(Rotation.Vector());
+            }
+        }
+    }
+
+    void ReadLivePositions(FMassEntityManager& Manager, TArray<FVector>& Occupied)
+    {
+        FMassEntityQuery Query;
+        Query.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
+        Query.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+        Query.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
+        Query.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
+        FMassExecutionContext Context(Manager);
+        Query.ForEachEntityChunk(Context, [&Occupied](FMassExecutionContext& Chunk)
+        {
+            const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
+            const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
+            const auto Movement = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+            for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
+            {
+                if (Health[Index].CurrentHealth > 0.0f)
+                {
+                    Occupied.Add(Transforms[Index].GetTransform().GetLocation()
+                        - FVector::UpVector * Movement[Index].CapsuleHalfHeight);
+                }
+            }
+        });
+    }
+
+    bool CanCreateNow(UWorld& World, const UBBBMonsterSpawnDefinition& Definition, const UBBBMonsterDefinition& Monster,
+        const FTransform& Transform, const TArray<FBBBMonsterSpawnRegionDefinition>& Regions,
+        const TArray<FVector>& Observers, const TArray<FVector>& Directions, const TArray<FVector>& Occupied)
+    {
+        const FVector Center = Transform.GetLocation();
+        const FVector Feet = Center - FVector::UpVector * (Monster.CapsuleHalfHeight + 2.0f);
+        if (Observers.IsEmpty() || Observers.Num() > Definition.MaxObservers || !Regions.ContainsByPredicate([&Feet](const auto& Region)
+        {
+            return Region.Contains(Feet);
+        }))
+        {
+            return false;
+        }
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMonsterSpawnCommit), false);
+        if (World.OverlapBlockingTestByChannel(Center, FQuat::Identity, ECC_Pawn,
+            FCollisionShape::MakeCapsule(Monster.CollisionRadius, Monster.CapsuleHalfHeight), Params))
+        {
+            return false;
+        }
+        FHitResult Floor;
+        if (!World.LineTraceSingleByChannel(Floor, Feet + FVector::UpVector * 10.0f,
+            Feet - FVector::UpVector * 15.0f, ECC_Pawn, Params)
+            || Floor.ImpactNormal.Z < FMath::Cos(FMath::DegreesToRadians(Monster.MaxWalkableSlopeAngle)))
+        {
+            return false;
+        }
+        const float Spacing = FMath::Max(Definition.MinSpacing, Monster.CollisionRadius * 2.0f);
+        if (Occupied.ContainsByPredicate([&Feet, Spacing](const FVector& Other)
+        {
+            return FVector::DistSquared(Feet, Other) < FMath::Square(Spacing);
+        }))
+        {
+            return false;
+        }
+        for (int32 Index = 0; Index < Observers.Num(); ++Index)
+        {
+            if (FVector::DistSquared(Feet, Observers[Index]) < FMath::Square(Definition.MinPlayerDistance))
+            {
+                return false;
+            }
+            FHitResult Blocker;
+            if (Definition.bAvoidVisible && Directions.IsValidIndex(Index)
+                && FVector::DotProduct((Center - Observers[Index]).GetSafeNormal(), Directions[Index]) >= 0.5f
+                && !World.LineTraceSingleByChannel(Blocker, Observers[Index], Center, ECC_Visibility, Params))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 
 UBBBMonsterSpawnProcessor::UBBBMonsterSpawnProcessor()
     : SpawnQuery(*this), MonsterQuery(*this)
@@ -99,6 +196,7 @@ void UBBBMonsterSpawnProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
 {
     SpawnQuery.AddRequirement<FBBBMonsterSpawnFragment>(EMassFragmentAccess::ReadWrite);
     SpawnQuery.AddRequirement<FBBBMonsterSpawnInputFragment>(EMassFragmentAccess::ReadWrite);
+    SpawnQuery.AddRequirement<FBBBMonsterDirectorFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
@@ -249,23 +347,12 @@ void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefi
     }
 }
 
-void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
+void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
     UWorld* World = Context.GetWorld();
     TArray<FVector> Observers;
     TArray<FVector> Directions;
-    for (auto It = World->GetPlayerControllerIterator(); It; ++It)
-    {
-        auto* Controller = It->Get();
-        if (Controller && Controller->GetPawn() && Controller->GetPawn()->CanBeDamaged())
-        {
-            FVector Position;
-            FRotator Rotation;
-            Controller->GetPlayerViewPoint(Position, Rotation);
-            Observers.Add(Position);
-            Directions.Add(Rotation.Vector());
-        }
-    }
+    ReadObservers(*World, Observers, Directions);
     TArray<FVector> Occupied;
     MonsterQuery.ForEachEntityChunk(Context, [&Occupied](FMassExecutionContext& Chunk)
     {
@@ -282,10 +369,17 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager&, FMassExecutionConte
     });
     int32 CandidateBudget = 64;
     int32 CreateBudget = 64;
-    SpawnQuery.ForEachEntityChunk(Context, [&Occupied, &CandidateBudget, &CreateBudget](FMassExecutionContext& Chunk)
+    const int32 WorldAlive = Occupied.Num();
+    int32 WorldLimit = MAX_int32;
+    int32 PendingPoints = 0;
+    float TimeBudgetMs = 16.0f;
+    TArray<FMassEntityHandle> SpawnOrder;
+    SpawnQuery.ForEachEntityChunk(Context, [&Occupied, &CandidateBudget, &CreateBudget,
+        &WorldLimit, &PendingPoints, &TimeBudgetMs, &SpawnOrder](FMassExecutionContext& Chunk)
     {
         auto States = Chunk.GetMutableFragmentView<FBBBMonsterSpawnFragment>();
         auto Inputs = Chunk.GetMutableFragmentView<FBBBMonsterSpawnInputFragment>();
+        const auto Directors = Chunk.GetFragmentView<FBBBMonsterDirectorFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& State = States[Index];
@@ -306,139 +400,194 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager&, FMassExecutionConte
             Consume(Input.Resume);
             Consume(Input.Pause);
             Consume(Input.Stop);
+            if (!Directors.IsEmpty() && Directors[Index].Definition.IsValid()
+                && Directors[Index].Phase != EBBBMonsterDirectorPhase::Inactive
+                && Directors[Index].Phase != EBBBMonsterDirectorPhase::Stopped
+                && Directors[Index].Phase != EBBBMonsterDirectorPhase::Completed)
+            {
+                WorldLimit = FMath::Min(WorldLimit, Directors[Index].Definition->WorldMaxAlive);
+            }
+            if (State.bActive && State.Definition.IsValid())
+            {
+                WorldLimit = FMath::Min(WorldLimit, State.Definition->WorldMaxAlive);
+                PendingPoints += State.Points.Num();
+                for (const auto& Point : State.Points)
+                {
+                    if (const auto* Monster = Point.Definition.Get())
+                    {
+                        Occupied.Add(Point.Transform.GetLocation() - FVector::UpVector * Monster->CapsuleHalfHeight);
+                    }
+                }
+            }
             if (State.bActive && !State.bPaused)
             {
                 if (const auto* Definition = State.Definition.Get())
                 {
                     CandidateBudget = FMath::Min(CandidateBudget, Definition->CandidatesPerFrame);
                     CreateBudget = FMath::Min(CreateBudget, Definition->CreatesPerFrame);
+                    TimeBudgetMs = FMath::Min(TimeBudgetMs, Definition->TimeBudgetMs);
                 }
-                for (const auto& Point : State.Points)
-                {
-                    if (const auto* Monster = Point.Definition.Get())
-                    {
-                        Occupied.Add(Point.Transform.GetLocation() - FVector(0.0, 0.0, Monster->CapsuleHalfHeight));
-                    }
-                }
+                SpawnOrder.Add(Chunk.GetEntity(Index));
             }
         }
     });
-    SpawnQuery.ForEachEntityChunk(Context, [World, &Observers, &Directions, &Occupied, &CandidateBudget, &CreateBudget](FMassExecutionContext& Chunk)
+    int32 SelectionSlots = FMath::Max(0, WorldLimit - WorldAlive - PendingPoints);
+    CreateBudget = FMath::Min(CreateBudget, FMath::Max(0, WorldLimit - WorldAlive));
+    const double StartedAt = FPlatformTime::Seconds();
+    const int32 FirstJob = SpawnOrder.IsEmpty() ? 0 : NextSpawnIndex % SpawnOrder.Num();
+    for (int32 Offset = 0; Offset < SpawnOrder.Num(); ++Offset)
     {
-        auto States = Chunk.GetMutableFragmentView<FBBBMonsterSpawnFragment>();
-        for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
+        const int32 JobIndex = (FirstJob + Offset) % SpawnOrder.Num();
+        const FMassEntityHandle Entity = SpawnOrder[JobIndex];
+        auto& State = EntityManager.GetFragmentDataChecked<FBBBMonsterSpawnFragment>(Entity);
+        const auto* Definition = State.Definition.Get();
+        if (!State.bActive || State.bPaused || State.bCreating || !Definition)
         {
-            auto& State = States[Index];
-            const auto* Definition = State.Definition.Get();
-            if (!State.bActive || State.bPaused || State.bCreating || !Definition)
-            {
-                continue;
-            }
-            while (CandidateBudget > 0 && State.Accepted < State.Requested && State.Cursor < Definition->CandidateCount)
-            {
-                --CandidateBudget;
-                const int32 CandidateIndex = State.Cursor++;
-                const FVector Location = Candidate(State.Regions, State.Seed, CandidateIndex);
-                TArray<FVector> Selected;
-                TArray<FVector> Rejected;
-                TArray<FString> Reasons;
-                Filter(*World, *Definition, State.Regions, {Location}, Observers, Directions, Occupied, 1, Selected, Rejected, Reasons);
-                if (Selected.IsEmpty())
-                {
-                    ++State.Rejections.FindOrAdd(Reasons.IsEmpty() ? TEXT("没有合格候选点") : Reasons[0]);
-                    continue;
-                }
-                auto* Monster = SelectDefinition(*Definition, State.Seed, CandidateIndex);
-                if (!Monster)
-                {
-                    ++State.Rejections.FindOrAdd(TEXT("模板权重无效"));
-                    continue;
-                }
-                FRandomStream Heading(RandomBits(State.Seed, CandidateIndex, 0x306u));
-                const float Yaw = Definition->bRandomYaw ? Heading.FRandRange(-180.0f, 180.0f) : Definition->FixedYaw;
-                auto& Point = State.Points.AddDefaulted_GetRef();
-                Point.Definition = Monster;
-                Point.Seed = RandomBits(State.Seed, CandidateIndex, 0x407u);
-                Point.Transform = FTransform(FRotator(0.0f, Yaw, 0.0f), Selected[0] + FVector(0.0, 0.0, Monster->CapsuleHalfHeight + 2.0f));
-                Occupied.Add(Selected[0]);
-                ++State.Accepted;
-            }
-            const bool bSelectionDone = State.Accepted >= State.Requested || State.Cursor >= Definition->CandidateCount;
-            if (State.Points.IsEmpty() && bSelectionDone)
-            {
-                State.bActive = false;
-                State.Reason = FString::Printf(TEXT("实际生成 %d 只 检查 %d 点"), State.Created, State.Cursor);
-                for (const auto& Reason : State.Rejections)
-                {
-                    State.Reason += FString::Printf(TEXT(" %s:%d"), *Reason.Key, Reason.Value);
-                }
-                continue;
-            }
-            if (CreateBudget == 0 || State.Points.IsEmpty())
-            {
-                continue;
-            }
-            const int32 Count = FMath::Min(CreateBudget, State.Points.Num());
-            CreateBudget -= Count;
-            TArray<FBBBMonsterSpawnPoint> Points;
-            Points.Append(State.Points.GetData(), Count);
-            State.Points.RemoveAt(0, Count);
-            State.bCreating = true;
-            const auto Entity = Chunk.GetEntity(Index);
-            const FGuid OwnerId = State.OwnerId;
-            const uint32 RequestId = State.RequestId;
-            const uint32 Generation = State.Generation;
-            const int32 StageIndex = State.StageIndex;
-            const TWeakObjectPtr<UWorld> WeakWorld = World;
-            Chunk.Defer().PushCommand<FMassDeferredCreateCommand>([WeakWorld, Entity, OwnerId, RequestId, Generation, StageIndex, Points](FMassEntityManager& Manager)
-            {
-                UWorld* CurrentWorld = WeakWorld.Get();
-                if (!CurrentWorld || !Manager.IsEntityValid(Entity))
-                {
-                    return;
-                }
-                auto* Current = Manager.GetFragmentDataPtr<FBBBMonsterSpawnFragment>(Entity);
-                if (!Current || Current->OwnerId != OwnerId || Current->RequestId != RequestId)
-                {
-                    return;
-                }
-                if (!Current->bActive || Current->bPaused)
-                {
-                    Current->bCreating = false;
-                    Current->Points.Insert(Points.GetData(), Points.Num(), 0);
-                    return;
-                }
-                int32 CreatedCount = 0;
-                TMap<UBBBMonsterDefinition*, FBBBMonsterSpawnData> Batches;
-                for (const auto& Point : Points)
-                {
-                    auto* Monster = Point.Definition.Get();
-                    if (!Monster || !Monster->EntityConfig)
-                    {
-                        continue;
-                    }
-                    auto& Batch = Batches.FindOrAdd(Monster);
-                    Batch.DirectorId = OwnerId;
-                    Batch.Generation = Generation;
-                    Batch.StageIndex = StageIndex;
-                    Batch.Transforms.Add(Point.Transform);
-                    Batch.Seeds.Add(Point.Seed);
-                }
-                for (const auto& Batch : Batches)
-                {
-                    TArray<FMassEntityHandle> Created;
-                    CurrentWorld->GetSubsystem<UBBBMassSubsystem>()->CreateEntities(*Batch.Key->EntityConfig,
-                        Batch.Value.Transforms.Num(), FConstStructView::Make(Batch.Value),
-                        UBBBMonsterSpawnInitializationProcessor::StaticClass(), Created);
-                    CreatedCount += Created.Num();
-                }
-                Current = Manager.GetFragmentDataPtr<FBBBMonsterSpawnFragment>(Entity);
-                if (Current && Current->OwnerId == OwnerId && Current->RequestId == RequestId)
-                {
-                    Current->Created += CreatedCount;
-                    Current->bCreating = false;
-                }
-            });
+            continue;
         }
-    });
+        while (CandidateBudget > 0 && SelectionSlots > 0 && State.Accepted < State.Requested
+            && State.Cursor < Definition->CandidateCount
+            && (FPlatformTime::Seconds() - StartedAt) * 1000.0 < TimeBudgetMs)
+        {
+            --CandidateBudget;
+            const int32 CandidateIndex = State.Cursor++;
+            const FVector Location = Candidate(State.Regions, State.Seed, CandidateIndex);
+            TArray<FVector> Selected;
+            TArray<FVector> Rejected;
+            TArray<FString> Reasons;
+            Filter(*World, *Definition, State.Regions, {Location}, Observers, Directions, Occupied, 1, Selected, Rejected, Reasons);
+            if (Selected.IsEmpty())
+            {
+                ++State.Rejections.FindOrAdd(Reasons.IsEmpty() ? TEXT("没有合格候选点") : Reasons[0]);
+                continue;
+            }
+            auto* Monster = SelectDefinition(*Definition, State.Seed, CandidateIndex);
+            if (!Monster)
+            {
+                ++State.Rejections.FindOrAdd(TEXT("模板权重无效"));
+                continue;
+            }
+            FRandomStream Heading(RandomBits(State.Seed, CandidateIndex, 0x306u));
+            const float Yaw = Definition->bRandomYaw ? Heading.FRandRange(-180.0f, 180.0f) : Definition->FixedYaw;
+            auto& Point = State.Points.AddDefaulted_GetRef();
+            Point.Definition = Monster;
+            Point.Seed = RandomBits(State.Seed, CandidateIndex, 0x407u);
+            Point.Transform = FTransform(FRotator(0.0f, Yaw, 0.0f), Selected[0] + FVector(0.0, 0.0, Monster->CapsuleHalfHeight + 2.0f));
+            Occupied.Add(Selected[0]);
+            ++State.Accepted;
+            --SelectionSlots;
+        }
+        const bool bSelectionDone = State.Accepted >= State.Requested || State.Cursor >= Definition->CandidateCount;
+        if (State.Points.IsEmpty() && bSelectionDone)
+        {
+            State.bActive = false;
+            State.Reason = FString::Printf(TEXT("实际生成 %d 只 检查 %d 点"), State.Created, State.Cursor);
+            for (const auto& Reason : State.Rejections)
+            {
+                State.Reason += FString::Printf(TEXT(" %s:%d"), *Reason.Key, Reason.Value);
+            }
+            continue;
+        }
+        if (CreateBudget == 0 || State.Points.IsEmpty())
+        {
+            if (SelectionSlots == 0)
+            {
+                State.Reason = TEXT("等待共享世界存活额度");
+            }
+            continue;
+        }
+        const int32 Count = FMath::Min(CreateBudget, State.Points.Num());
+        CreateBudget -= Count;
+        TArray<FBBBMonsterSpawnPoint> Points;
+        Points.Append(State.Points.GetData(), Count);
+        State.Points.RemoveAt(0, Count);
+        State.bCreating = true;
+        const FGuid OwnerId = State.OwnerId;
+        const uint32 RequestId = State.RequestId;
+        const uint32 Generation = State.Generation;
+        const int32 StageIndex = State.StageIndex;
+        const TWeakObjectPtr<UWorld> WeakWorld = World;
+        Context.Defer().PushCommand<FMassDeferredCreateCommand>([WeakWorld, Entity, OwnerId, RequestId, Generation, StageIndex, Points, WorldLimit](FMassEntityManager& Manager)
+        {
+            UWorld* CurrentWorld = WeakWorld.Get();
+            if (!CurrentWorld || !Manager.IsEntityValid(Entity))
+            {
+                return;
+            }
+            auto* Current = Manager.GetFragmentDataPtr<FBBBMonsterSpawnFragment>(Entity);
+            if (!Current || Current->OwnerId != OwnerId || Current->RequestId != RequestId)
+            {
+                return;
+            }
+            if (!Current->bActive || Current->bPaused)
+            {
+                Current->bCreating = false;
+                Current->Points.Insert(Points.GetData(), Points.Num(), 0);
+                return;
+            }
+            int32 CreatedCount = 0;
+            int32 RejectedCount = 0;
+            TArray<FVector> CurrentObservers;
+            TArray<FVector> CurrentDirections;
+            TArray<FVector> CurrentOccupied;
+            ReadObservers(*CurrentWorld, CurrentObservers, CurrentDirections);
+            ReadLivePositions(Manager, CurrentOccupied);
+            int32 Capacity = FMath::Max(0, WorldLimit - CurrentOccupied.Num());
+            const auto* SpawnDefinition = Current->Definition.Get();
+            if (!SpawnDefinition)
+            {
+                Current->Accepted = FMath::Max(Current->Created, Current->Accepted - Points.Num());
+                Current->bCreating = false;
+                return;
+            }
+            TMap<UBBBMonsterDefinition*, FBBBMonsterSpawnData> Batches;
+            for (const auto& Point : Points)
+            {
+                auto* Monster = Point.Definition.Get();
+                if (!Monster || !Monster->EntityConfig || !CanCreateNow(*CurrentWorld, *SpawnDefinition, *Monster,
+                    Point.Transform, Current->Regions, CurrentObservers, CurrentDirections, CurrentOccupied))
+                {
+                    ++RejectedCount;
+                    continue;
+                }
+                if (Capacity <= 0)
+                {
+                    Current->Points.Add(Point);
+                    continue;
+                }
+                --Capacity;
+                CurrentOccupied.Add(Point.Transform.GetLocation() - FVector::UpVector * Monster->CapsuleHalfHeight);
+                auto& Batch = Batches.FindOrAdd(Monster);
+                Batch.DirectorId = OwnerId;
+                Batch.Generation = Generation;
+                Batch.StageIndex = StageIndex;
+                Batch.Transforms.Add(Point.Transform);
+                Batch.Seeds.Add(Point.Seed);
+            }
+            for (const auto& Batch : Batches)
+            {
+                TArray<FMassEntityHandle> Created;
+                CurrentWorld->GetSubsystem<UBBBMassSubsystem>()->CreateEntities(*Batch.Key->EntityConfig,
+                    Batch.Value.Transforms.Num(), FConstStructView::Make(Batch.Value),
+                    UBBBMonsterSpawnInitializationProcessor::StaticClass(), Created);
+                CreatedCount += Created.Num();
+                RejectedCount += FMath::Max(0, Batch.Value.Transforms.Num() - Created.Num());
+            }
+            Current = Manager.GetFragmentDataPtr<FBBBMonsterSpawnFragment>(Entity);
+            if (Current && Current->OwnerId == OwnerId && Current->RequestId == RequestId)
+            {
+                Current->Created += CreatedCount;
+                Current->Accepted = FMath::Max(Current->Created, Current->Accepted - RejectedCount);
+                if (RejectedCount > 0)
+                {
+                    Current->Rejections.FindOrAdd(TEXT("创建前安全复核失效")) += RejectedCount;
+                }
+                Current->bCreating = false;
+            }
+        });
+    }
+    if (!SpawnOrder.IsEmpty())
+    {
+        NextSpawnIndex = (FirstJob + 1) % SpawnOrder.Num();
+    }
 }

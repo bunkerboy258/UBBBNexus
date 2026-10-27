@@ -145,7 +145,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 continue;
             }
-            const float Delta = Sense.LastSenseTime < 0.0f ? FrameDelta : FMath::Min(Now - Sense.LastSenseTime, 0.25f);
+            const float Delta = FMath::Max(0.0f, Sense.LastSenseTime < 0.0f ? FrameDelta : Now - Sense.LastSenseTime);
             Sense.LastSenseTime = Now;
             Sense.NextSenseTime = Now + 0.1f;
             NextSenseEntityIndex = (CurrentIndex + 1) % EntityCount;
@@ -169,6 +169,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                     Found = &Sense.Contacts.Last();
                 }
                 auto& Contact = *Found;
+                const bool bContinuous = Contact.bVisible && Delta <= FMath::Max(0.5f, Settings->SightConfirmMax);
                 Contact.bVisible = false;
                 const FVector PlayerLocation = Player->GetActorLocation();
                 const float Distance = FVector::Distance(Location, PlayerLocation);
@@ -207,7 +208,13 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                     const float Motion = FMath::Clamp(static_cast<float>(Player->GetVelocity().Size2D()) / 600.0f, 0.0f, 1.0f);
                     const float Difficulty = FMath::Clamp(Distance / FMath::Max(Sense.SightRange, 1.0f) + (1.0f - Exposure) * 0.35f - Motion * 0.2f, 0.0f, 1.0f);
                     const float ConfirmDuration = FMath::Lerp(Settings->SightConfirmMin, Settings->SightConfirmMax, Difficulty);
-                    Contact.Awareness = FMath::Min(1.0f, Contact.Awareness + FMath::Max(Delta, 0.0f) / ConfirmDuration);
+                    /** 连续采样使用真实间隔 长时间未观察不能凭最后一帧补算可见历史 */
+                    const float VisibleDelta = bContinuous ? Delta : FMath::Min(FrameDelta, 0.1f);
+                    if (!Contact.bConfirmed && Delta > FMath::Max(0.5f, Settings->SightConfirmMax))
+                    {
+                        Contact.Awareness = 0.0f;
+                    }
+                    Contact.Awareness = FMath::Min(1.0f, Contact.Awareness + FMath::Max(VisibleDelta, 0.0f) / ConfirmDuration);
                     Contact.bConfirmed = Contact.bConfirmed || Contact.Awareness >= 1.0f;
                     if (Contact.bConfirmed)
                     {

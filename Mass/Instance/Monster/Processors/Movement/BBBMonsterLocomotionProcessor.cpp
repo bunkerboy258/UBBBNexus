@@ -100,6 +100,8 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
     const FVector& HorizontalDelta, const float DeltaSeconds)
 {
+    Ground.RequestedDistance = 0.0f;
+    Ground.MovedDistance = 0.0f;
     if (!ensureMsgf(FMath::IsFinite(DeltaSeconds) && DeltaSeconds >= 0.0f && !Location.ContainsNaN() &&
         !Velocity.ContainsNaN() && !HorizontalDelta.ContainsNaN() && Movement.CapsuleRadius > 0.0f &&
         Movement.CapsuleHalfHeight >= Movement.CapsuleRadius && Movement.WalkableFloorZ > 0.0f,
@@ -181,12 +183,21 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         FindSupport(Location, SupportDistance, Ground.SupportNormal))
     {
         Velocity = FVector::ZeroVector;
+        Ground.UnsimulatedSeconds = 0.0f;
         return;
     }
 
-    const int32 Steps = FMath::Max(1, FMath::CeilToInt(DeltaSeconds / (1.0f / 60.0f)));
-    const float StepSeconds = DeltaSeconds / Steps;
-    const FVector HorizontalStep = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f) / Steps;
+    /** 长帧仅保留有限欠账 单轮至多八步 不用大步长穿越障碍 */
+    constexpr int32 MaximumSteps = 8;
+    constexpr float FixedStep = 1.0f / 60.0f;
+    const float AvailableSeconds = DeltaSeconds + Ground.UnsimulatedSeconds;
+    const float SimulationSeconds = FMath::Min(AvailableSeconds, MaximumSteps * FixedStep);
+    Ground.UnsimulatedSeconds = FMath::Clamp(AvailableSeconds - SimulationSeconds, 0.0f, 0.25f);
+    const int32 Steps = FMath::Clamp(FMath::CeilToInt(SimulationSeconds / FixedStep), 1, MaximumSteps);
+    const float StepSeconds = SimulationSeconds / Steps;
+    const FVector BoundedHorizontal = HorizontalDelta * FMath::Min(1.0f, SimulationSeconds / DeltaSeconds);
+    Ground.RequestedDistance = BoundedHorizontal.Size2D();
+    const FVector HorizontalStep = FVector(BoundedHorizontal.X, BoundedHorizontal.Y, 0.0f) / Steps;
     const FVector FrameStart = Location;
     for (int32 Step = 0; Step < Steps; ++Step)
     {
@@ -266,8 +277,9 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
             Ground.SupportNormal = FVector::UpVector;
         }
     }
-    Velocity.X = (Location.X - FrameStart.X) / DeltaSeconds;
-    Velocity.Y = (Location.Y - FrameStart.Y) / DeltaSeconds;
+    Ground.MovedDistance = FVector::Dist2D(Location, FrameStart);
+    Velocity.X = (Location.X - FrameStart.X) / SimulationSeconds;
+    Velocity.Y = (Location.Y - FrameStart.Y) / SimulationSeconds;
 }
 
 void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
@@ -346,7 +358,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
-            const bool bMayMove = !bChangingPosture && !Injury.IsStaggering(Now) && (bPatrol || bChase) && Path.bHasPath &&
+            const bool bMayMove = !bChangingPosture && !Injury.IsStaggering(Now) && !Avoidance[Index].bWaitingForNeighbor
+                && (bPatrol || bChase) && Path.bHasPath &&
                 Path.PathPoints.IsValidIndex(Path.PathPointIndex) && Path.TailDistances.IsValidIndex(Path.PathPointIndex);
             if (!bMayMove)
             {
@@ -354,9 +367,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             if (bMayMove && Grounds[Index].bGrounded)
             {
-                const FVector ToPoint = Path.PathPoints[Path.PathPointIndex] - Location;
+                const FVector ToPoint = (Path.bHasFollowTarget ? Path.FollowTarget : Path.PathPoints[Path.PathPointIndex]) - Location;
                 const float PointDistance = ToPoint.Size2D();
-                const float Remaining = FMath::Max(PointDistance + Path.TailDistances[Path.PathPointIndex] - (bPatrol ? 15.0f : 0.0f), 0.0f);
+                const float Remaining = FMath::Max((Path.RemainingDistance > 0.0f ? Path.RemainingDistance
+                    : PointDistance + Path.TailDistances[Path.PathPointIndex]) - (bPatrol ? 15.0f : 0.0f), 0.0f);
                 Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
                 const float WalkingSpeed = bChase && Movement.MaxGait == EBBBMonsterGait::Walk
                     ? Movement.WalkerChaseWalkSpeed : Movement.WalkSpeed;
@@ -416,6 +430,14 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 continue;
             }
             Transform.SetLocation(Location);
+            if (Grounds[Index].bGrounded)
+            {
+                Grounds[Index].UnsupportedSince = -1.0f;
+            }
+            if (!Grounds[Index].bGrounded && Grounds[Index].UnsupportedSince < 0.0f)
+            {
+                Grounds[Index].UnsupportedSince = Now;
+            }
             if (bPreviouslyGrounded != Grounds[Index].bGrounded)
             {
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Ground Entity=%d Supported=%d Z=%.2f VerticalSpeed=%.2f"),

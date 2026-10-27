@@ -64,4 +64,7 @@ protected:
 private:
     FMassEntityQuery SpawnQuery;
     FMassEntityQuery MonsterQuery;
+
+    /** 多个入口按帧轮转 避免固定顺序持续占用候选预算 */
+    int32 NextSpawnIndex = 0;
 };

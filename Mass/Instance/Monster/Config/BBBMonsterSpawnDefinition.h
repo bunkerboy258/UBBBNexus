@@ -26,6 +26,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "预算", meta = (DisplayName = "每帧创建上限", ClampMin = "1", ClampMax = "64"))
     int32 CreatesPerFrame = 8;
 
+    /** 普通入口和导演共用世界存活额度 多个活动入口取最严格上限 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "预算", meta = (DisplayName = "世界存活上限", ClampMin = "1", ClampMax = "4096"))
+    int32 WorldMaxAlive = 80;
+
+    /** 候选检查共享的软时间预算 单次同步可达性查询无法中断 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "预算", meta = (DisplayName = "每帧选点时间预算", Units = "ms", ClampMin = "0.1", ClampMax = "16"))
+    float TimeBudgetMs = 1.0f;
+
     /** 单个候选最多检查的玩家数 同时限制路径和射线查询数量 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "预算", meta = (DisplayName = "玩家检查上限", ClampMin = "1", ClampMax = "16"))
     int32 MaxObservers = 8;

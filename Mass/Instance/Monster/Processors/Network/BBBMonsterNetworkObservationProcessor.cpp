@@ -15,6 +15,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 
 UBBBMonsterNetworkObservationProcessor::UBBBMonsterNetworkObservationProcessor()
     : EntityQuery(*this)
@@ -37,6 +38,7 @@ void UBBBMonsterNetworkObservationProcessor::ConfigureQueries(const TSharedRef<F
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
 }
 
 void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -99,6 +101,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
         auto Network = Chunk.GetMutableFragmentView<FBBBMonsterNetworkFragment>();
         const auto Variation = Chunk.GetFragmentView<FBBBMonsterVariationFragment>();
         const auto Gore = Chunk.GetFragmentView<FBBBMonsterGoreFragment>();
+        const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (!bHost)
@@ -127,6 +130,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             Item.Behavior = Behavior[Index].State;
             Item.ActionId = Behavior[Index].ActionId;
             Item.StateEnteredTime = Behavior[Index].StateEnteredTime;
+            Item.CrawlStartedAt = Mobility[Index].bCrawling ? Mobility[Index].CrawlStartedAt : -1.0f;
             for (const auto& Value : Damage[Index].Contributions)
             {
                 Item.Contributions.Add(Value.Value);

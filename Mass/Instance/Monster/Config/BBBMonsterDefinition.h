@@ -291,6 +291,30 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (ClampMin = "0.1", DisplayName = "不可达重试间隔"))
     float NavigationRetryDuration = 4.0f;
 
+    /** 按实际速度向路线前方观察的时间 不按靠近玩家距离减速 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "前瞻时间", Units = "s", ClampMin = "0.05", ClampMax = "1.0"))
+    float NavigationLookAheadTime = 0.35f;
+
+    /** 前瞻不能无限跨过转角 局部净空检查仍是必要条件 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "前瞻距离上限", Units = "cm", ClampMin = "30", ClampMax = "400"))
+    float NavigationLookAheadDistance = 180.0f;
+
+    /** 有局部预算时更新前方障碍与绕行目标的最短间隔 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "局部检查间隔", Units = "s", ClampMin = "0.05", ClampMax = "0.5"))
+    float NavigationFollowInterval = 0.15f;
+
+    /** 塑形路线超过同条件基础路线的比例时使用本次基础结果 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "塑形绕行比例上限", ClampMin = "1.0", ClampMax = "3.0"))
+    float NavigationMaxDetourRatio = 1.35f;
+
+    /** 同一前方邻居只短时等待一次 超时后允许绕行和脱困 零为关闭 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (DisplayName = "同伴让行等待时间", Units = "s", ClampMin = "0", ClampMax = "3"))
+    float NavigationCrowdWaitDuration = 0.75f;
+
+    /** 活体持续坠落且无法恢复支撑时结束该实体 不生成玩家击杀贡献 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "死亡与回收", meta = (DisplayName = "失去支撑回收时间", Units = "s", ClampMin = "5", ClampMax = "120"))
+    float UnsupportedLifetime = 20.0f;
+
     /** 仅在目标附近安排有限包围位置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (ClampMin = "1.0", DisplayName = "包围接近启用距离"))
     float EncircleRange = 650.0f;
@@ -346,4 +370,9 @@ public:
 
     /** @return 参数是否合法 */
     bool IsValid() const;
+
+#if WITH_EDITOR
+    /** @param Context	资产校验说明 @return 逻辑参数与模板引用是否有效 */
+    virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
+#endif
 };

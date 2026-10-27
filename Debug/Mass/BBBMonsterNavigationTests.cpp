@@ -291,7 +291,6 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     Injury.StaggerEndsAt = 0.0f;
     World->TimeSeconds = 5.0;
     Path.ProgressTime = 1.0f;
-    Path.ProgressPosition = FVector(-1800.0f, 0.0f, 90.0f);
     Run(Navigation);
     TestEqual(TEXT("无进展首先重算路径"), Path.FailureCount, 1);
     World->TimeSeconds = 10.0;

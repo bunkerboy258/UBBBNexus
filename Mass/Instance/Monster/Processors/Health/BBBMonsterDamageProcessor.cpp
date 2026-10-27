@@ -198,7 +198,8 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             if (!Motion.bCrawling && (Destroyed & LegMask) != 0)
             {
                 Motion.bCrawling = true;
-                Motion.CrawlStartedAt = Now;
+                Motion.CrawlStartedAt = Network[Index].bHasCrawlTime
+                    ? FMath::Min(Now, Network[Index].CrawlStartedAt) : Now;
                 Motion.StaggerStartedAt = Now;
                 Motion.StaggerEndsAt = Now;
                 Motion.HitStopEndsAt = Now;

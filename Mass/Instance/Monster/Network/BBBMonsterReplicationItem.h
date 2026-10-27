@@ -48,6 +48,10 @@ struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
     UPROPERTY()
     float StateEnteredTime = 0.0f;
 
+    /** 当前爬行转换的服务器时间 未爬行时为负 不复制命中过程 */
+    UPROPERTY()
+    float CrawlStartedAt = -1.0f;
+
     UPROPERTY()
     TArray<FBBBMonsterDamageContribution> Contributions;
 };

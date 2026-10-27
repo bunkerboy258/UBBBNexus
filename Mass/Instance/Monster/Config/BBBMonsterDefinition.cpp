@@ -1,6 +1,11 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
 #include "BBBMonsterPresentationDefinition.h"
+#include "MassEntityConfigAsset.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
+#if WITH_EDITOR
+#include "Misc/DataValidation.h"
+#endif
 
 UBBBMonsterDefinition::UBBBMonsterDefinition()
 {
@@ -46,7 +51,9 @@ const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EB
 
 bool UBBBMonsterDefinition::IsValid() const
 {
+    const auto* Trait = EntityConfig ? Cast<UBBBMonsterTrait>(EntityConfig->FindTrait(UBBBMonsterTrait::StaticClass())) : nullptr;
     return EntityConfig != nullptr
+        && Trait && Trait->Definition == this
         && Variation != nullptr && Variation->IsValid()
         && FMath::IsFinite(MaxHealth) && MaxHealth > 0.0f
         && TorsoPart.IsValid() && HeadPart.IsValid() && LeftArmPart.IsValid() && RightArmPart.IsValid()
@@ -105,6 +112,12 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(NavigationFullShapeDistance) && NavigationFullShapeDistance > EncircleRange
         && FMath::IsFinite(NavigationStuckDuration) && NavigationStuckDuration > 0.0f
         && FMath::IsFinite(NavigationRetryDuration) && NavigationRetryDuration > 0.0f
+        && FMath::IsFinite(NavigationLookAheadTime) && NavigationLookAheadTime >= 0.05f && NavigationLookAheadTime <= 1.0f
+        && FMath::IsFinite(NavigationLookAheadDistance) && NavigationLookAheadDistance >= 30.0f && NavigationLookAheadDistance <= 400.0f
+        && FMath::IsFinite(NavigationFollowInterval) && NavigationFollowInterval >= 0.05f && NavigationFollowInterval <= 0.5f
+        && FMath::IsFinite(NavigationMaxDetourRatio) && NavigationMaxDetourRatio >= 1.0f && NavigationMaxDetourRatio <= 3.0f
+        && FMath::IsFinite(NavigationCrowdWaitDuration) && NavigationCrowdWaitDuration >= 0.0f && NavigationCrowdWaitDuration <= 3.0f
+        && FMath::IsFinite(UnsupportedLifetime) && UnsupportedLifetime >= 5.0f && UnsupportedLifetime <= 120.0f
         && FMath::IsFinite(EncircleRange) && EncircleRange > 0.0f
         && NavigationFailureLimit >= 1 && NavigationFailureLimit <= 10
         && FMath::IsFinite(CollisionRadius) && CollisionRadius > 0.0f
@@ -120,3 +133,23 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AttackWindup) && AttackWindup > 0.0f
         && FMath::IsFinite(AttackRecovery) && AttackRecovery > 0.0f;
 }
+
+#if WITH_EDITOR
+EDataValidationResult UBBBMonsterDefinition::IsDataValid(FDataValidationContext& Context) const
+{
+    if (!IsValid())
+    {
+        Context.AddError(FText::FromString(TEXT("僵尸逻辑参数无效 或实体模板没有通过僵尸 Trait 指回本配置")));
+        return EDataValidationResult::Invalid;
+    }
+    if (!Presentation || !Presentation->IsValid()
+        || Presentation->Animation.SlowWalkSampleSpeed >= WalkSpeed
+        || Presentation->Animation.DeathAnimationDuration >= CorpseLifetime
+        || Presentation->Animation.CorpseSimulationDuration >= CorpseLifetime)
+    {
+        Context.AddError(FText::FromString(TEXT("表现配置缺失 或移动采样与尸体时序不匹配")));
+        return EDataValidationResult::Invalid;
+    }
+    return EDataValidationResult::Valid;
+}
+#endif

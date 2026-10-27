@@ -5,6 +5,7 @@
 #include "Mass/EntityHandle.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterReplicationArray.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
+#include "BBBMassPendingDamageSnapshot.h"
 #include "BBBMassNetworkActor.generated.h"
 
 /** 世界级 Mass 当前结果传输载体 不执行生命裁决 */
@@ -50,6 +51,9 @@ private:
 
     void RouteDamage(const FGuid& InstanceId, const TArray<FBBBMonsterDamageContribution>& Contributions);
 
+    /** 清理已经离开当前复制集合的暂存与退役身份 不撤销现存实体的退役保护 */
+    void PruneCaches();
+
     UPROPERTY(ReplicatedUsing = OnRep_Monsters)
     FBBBMonsterReplicationArray Monsters;
 
@@ -59,6 +63,9 @@ private:
     TMap<FGuid, FBBBMonsterDamageContribution> SubmittedDamage;
 
     /** 可靠字典早于出生属性到达时暂存当前结果 不保存消息历史 */
-    TMap<FGuid, FBBBMonsterDamageRemoteMessagePacket> PendingDamageSnapshots;
-    TSet<FGuid> Retired;
+    TMap<FGuid, FBBBMassPendingDamageSnapshot> PendingDamageSnapshots;
+    TMap<FGuid, float> Retired;
+
+    /** 有网络活动时至多每秒整理一次缓存 */
+    float NextCachePruneTime = 0.0f;
 };

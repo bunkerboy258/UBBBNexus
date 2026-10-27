@@ -26,4 +26,7 @@ protected:
 private:
     /** 查询全部小怪实体的 Mass 查询器 */
     FMassEntityQuery MonsterQuery;
+
+    /** 局部探测按实体轮次分摊 避免固定遍历顺序饥饿 */
+    uint32 FollowUpdateSerial = 0;
 };

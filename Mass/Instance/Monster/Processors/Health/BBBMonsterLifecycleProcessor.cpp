@@ -7,6 +7,13 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDeathFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "MassExecutionContext.h"
+#include "MassCommonFragments.h"
+#include "MassMovementFragments.h"
+#include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 
 UBBBMonsterLifecycleProcessor::UBBBMonsterLifecycleProcessor()
@@ -26,6 +33,10 @@ void UBBBMonsterLifecycleProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -41,18 +52,38 @@ void UBBBMonsterLifecycleProcessor::Execute(FMassEntityManager& EntityManager, F
 
     const float WorldTime = World->GetTimeSeconds();
     const bool bStandalone = World->GetNetMode() == NM_Standalone;
+    const bool bHost = World->GetNetMode() != NM_Client;
+    const float KillZ = World->GetWorldSettings() ? World->GetWorldSettings()->KillZ : -HALF_WORLD_MAX;
 
     // 维护受伤硬直恢复和死亡实体延迟回收
-    MonsterQuery.ForEachEntityChunk(Context, [WorldTime, bStandalone](FMassExecutionContext& ChunkContext)
+    MonsterQuery.ForEachEntityChunk(Context, [WorldTime, bStandalone, bHost, KillZ](FMassExecutionContext& ChunkContext)
     {
         TConstArrayView<FBBBMonsterDeathFragment> DeathEvents = ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>();
         TConstArrayView<FBBBMonsterBehaviorFragment> States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Network = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
+        const auto Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();
+        const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
+        const auto Health = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
             const FBBBMonsterDeathFragment& DeathEvent = DeathEvents[Index];
             const FBBBMonsterBehaviorFragment& State = States[Index];
+
+            const auto* Definition = Network[Index].Definition.Get();
+            const bool bOutOfWorld = Transforms[Index].GetTransform().GetLocation().Z < KillZ;
+            const bool bUnsupported = Definition && !Grounds[Index].bGrounded && Grounds[Index].UnsupportedSince >= 0.0f
+                && WorldTime - Grounds[Index].UnsupportedSince >= Definition->UnsupportedLifetime
+                && Velocities[Index].Value.Z < 0.0f;
+            if (bHost && Health[Index].CurrentHealth > 0.0f && (bOutOfWorld || bUnsupported))
+            {
+                /** 异常离场不是战斗死亡 不伪造任何玩家伤害贡献 */
+                UE_LOG(LogTemp, Warning, TEXT("[BBBMonsterRetire] Entity=%d Reason=%s"),
+                    ChunkContext.GetEntity(Index).Index, bOutOfWorld ? TEXT("越过世界下界") : TEXT("持续失去支撑"));
+                ChunkContext.Defer().DestroyEntity(ChunkContext.GetEntity(Index));
+                continue;
+            }
 
             if (State.State == EBBBMonsterBehavior::Dead && DeathEvent.DestroyAtTime >= 0.0f
                 && WorldTime >= DeathEvent.DestroyAtTime && (bStandalone || Network[Index].bDamageSubmitted))

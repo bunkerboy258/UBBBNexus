@@ -9,10 +9,13 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
+#include "BBBMonsterPathFollowing.h"
+#include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "MassActorSubsystem.h"
 #include "MassCommonFragments.h"
@@ -33,6 +36,10 @@ DECLARE_DWORD_COUNTER_STAT(TEXT("本帧 APS 调用"), STAT_BBBNavigationQueries,
 DECLARE_DWORD_COUNTER_STAT(TEXT("本帧接受路径点"), STAT_BBBNavigationPoints, STATGROUP_BBBMonsterNavigation);
 DECLARE_FLOAT_COUNTER_STAT(TEXT("请求处理毫秒"), STAT_BBBNavigationRequestMs, STATGROUP_BBBMonsterNavigation);
 DECLARE_FLOAT_COUNTER_STAT(TEXT("最长等待秒数"), STAT_BBBNavigationWait, STATGROUP_BBBMonsterNavigation);
+DECLARE_DWORD_COUNTER_STAT(TEXT("本帧局部检查"), STAT_BBBNavigationLocalChecks, STATGROUP_BBBMonsterNavigation);
+DECLARE_DWORD_COUNTER_STAT(TEXT("本帧参考查询"), STAT_BBBNavigationReferences, STATGROUP_BBBMonsterNavigation);
+DECLARE_DWORD_COUNTER_STAT(TEXT("本帧无进展重算"), STAT_BBBNavigationNoProgress, STATGROUP_BBBMonsterNavigation);
+DECLARE_FLOAT_COUNTER_STAT(TEXT("局部检查毫秒"), STAT_BBBNavigationLocalMs, STATGROUP_BBBMonsterNavigation);
 
 namespace
 {
@@ -49,6 +56,9 @@ namespace
         Path.TailDistances.Reset();
         Path.PathPointIndex = 1;
         Path.RequestSince = -1.0f;
+        Path.bHasFollowTarget = false;
+        Path.bLocalBlocked = false;
+        Path.RemainingDistance = 0.0f;
     }
 
     void ExcludeGoal(FBBBMonsterNavigationFragment& Path, const FBBBMonsterTargetFragment& Target,
@@ -58,6 +68,18 @@ namespace
         Path.ExcludedPosition = Target.TargetLocation;
         Path.ExcludedUntil = WorldTime + Definition.NavigationRetryDuration;
         Path.RequestSince = -1.0f;
+        Path.Condition = EBBBMonsterNavigationCondition::Unreachable;
+    }
+
+    float MeasurePath(const FNavigationPath& Path)
+    {
+        float Length = 0.0f;
+        const auto& Points = Path.GetPathPoints();
+        for (int32 Index = 1; Index < Points.Num(); ++Index)
+        {
+            Length += FVector::Distance(Points[Index - 1].Location, Points[Index].Location);
+        }
+        return Length;
     }
 }
 
@@ -76,8 +98,10 @@ UBBBMonsterNavigationProcessor::UBBBMonsterNavigationProcessor()
 void UBBBMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
@@ -97,6 +121,10 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     SET_DWORD_STAT(STAT_BBBNavigationPoints, 0);
     SET_FLOAT_STAT(STAT_BBBNavigationRequestMs, 0.0f);
     SET_FLOAT_STAT(STAT_BBBNavigationWait, 0.0f);
+    SET_DWORD_STAT(STAT_BBBNavigationLocalChecks, 0);
+    SET_DWORD_STAT(STAT_BBBNavigationReferences, 0);
+    SET_DWORD_STAT(STAT_BBBNavigationNoProgress, 0);
+    SET_FLOAT_STAT(STAT_BBBNavigationLocalMs, 0.0f);
 
     UWorld* World = Context.GetWorld();
     if (!World || World->GetNetMode() == NM_Client || MonsterQuery.GetNumMatchingEntities() == 0)
@@ -109,6 +137,15 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     if (!ensureMsgf(RouteData && RouteData->PathAlgorithm == EAPSPathAlgorithm::APS_LowLevelArc && Budget->IsValid(),
         TEXT("[BBBNavigation]需要 APS LowLevelArc 导航数据和有效的寻路预算 请重建 Zombie 导航网格")))
     {
+        MonsterQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& Chunk)
+        {
+            for (auto& Path : Chunk.GetMutableFragmentView<FBBBMonsterNavigationFragment>())
+            {
+                ClearPath(Path);
+                Path.Condition = EBBBMonsterNavigationCondition::WaitingForPath;
+                Path.LastRepathCondition = Path.Condition;
+            }
+        });
         return;
     }
 
@@ -134,8 +171,13 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     });
 
     TArray<TPair<FMassEntityHandle, float>> Requests;
+    TArray<FMassEntityHandle> FollowRequests;
     float LongestWait = 0.0f;
-    MonsterQuery.ForEachEntityChunk(Context, [World, WorldTime, RouteData, &Requests, &LongestWait, &OccupiedSlots](FMassExecutionContext& Chunk)
+    int32 LocalChecks = 0;
+    int32 NoProgressCount = 0;
+    const float QualityDelta = FMath::Clamp(Context.GetDeltaTimeSeconds(), 0.0f, 0.25f);
+    MonsterQuery.ForEachEntityChunk(Context, [World, WorldTime, RouteData, &Requests, &LongestWait, &OccupiedSlots,
+        &FollowRequests, &NoProgressCount, QualityDelta](FMassExecutionContext& Chunk)
     {
         const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
         const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
@@ -143,6 +185,8 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Networks = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Grounds = Chunk.GetFragmentView<FBBBMonsterGroundFragment>();
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Movement = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+        const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         auto Paths = Chunk.GetMutableFragmentView<FBBBMonsterNavigationFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
@@ -173,11 +217,14 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 Path.ActionId = State.ActionId;
                 Path.FailureCount = 0;
                 Path.ProgressTime = WorldTime;
-                Path.ProgressPosition = Location;
+                Path.ProgressDistance = 0.0f;
                 Path.NextPathRefreshTime = 0.0f;
                 Path.RequestSince = -1.0f;
                 Path.bReachedDestination = false;
                 Path.bWaitingForSpace = false;
+                Path.BlockedDuration = 0.0f;
+                Path.Condition = EBBBMonsterNavigationCondition::WaitingForPath;
+                Path.LastRepathCondition = Path.Condition;
             }
             const bool bEncircle = bChase && Target.bTargetVisible && Target.TargetActor.IsValid() &&
                 FVector::DistSquared(Location, Target.TargetLocation) < FMath::Square(Definition->EncircleRange) &&
@@ -193,32 +240,78 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 Path.RequestSince = -1.0f;
                 Path.bWaitingForSpace = false;
                 ReleaseSlot();
+                Path.Condition = Path.ExcludedUntil > WorldTime ? EBBBMonsterNavigationCondition::Unreachable
+                    : EBBBMonsterNavigationCondition::Suspended;
                 continue;
+            }
+            if (Path.bHasPath && Path.bCrawlingPath != Mobility[Index].bCrawling)
+            {
+                ClearPath(Path);
+                Path.LastRepathCondition = EBBBMonsterNavigationCondition::PostureChanged;
+                Path.NextPathRefreshTime = 0.0f;
             }
             if (Path.bHasPath && (!Path.NativePath.IsValid() || !Path.NativePath->IsUpToDate() || !Path.NativePath->IsValid()))
             {
                 ClearPath(Path);
+                Path.LastRepathCondition = EBBBMonsterNavigationCondition::PathInvalidated;
                 Path.NextPathRefreshTime = 0.0f;
             }
 
             const bool bPostureChange = Mobility[Index].bCrawling && WorldTime < Mobility[Index].CrawlStartedAt + Definition->CrawlTransitionDuration;
             const bool bMovementSuspended = !Grounds[Index].bGrounded || Mobility[Index].IsStaggering(WorldTime) ||
                 WorldTime < Mobility[Index].HitStopEndsAt || bPostureChange;
-            const bool bPaused = bMovementSuspended || Path.bWaitingForSpace || !Path.bHasPath;
-            if (bPaused || Path.ProgressTime < 0.0f || FVector::DistSquared2D(Location, Path.ProgressPosition) > FMath::Square(35.0f))
+            const bool bNeighborWait = Avoidance[Index].bWaitingForNeighbor;
+            const bool bPaused = bMovementSuspended || bNeighborWait || Path.bWaitingForSpace || !Path.bHasPath;
+            FBBBMonsterMovementFragment Geometry = Movement[Index];
+            Geometry.CapsuleHalfHeight = Grounds[Index].CapsuleHalfHeight > 0.0f
+                ? Grounds[Index].CapsuleHalfHeight : Geometry.CapsuleHalfHeight;
+            if (Mobility[Index].bCrawling)
             {
-                if (!bPaused && bChase &&
-                    FVector::Dist2D(Location, Target.TargetLocation) + 15.0f < FVector::Dist2D(Path.ProgressPosition, Target.TargetLocation))
+                Geometry.MaxStepHeight = Definition->CrawlMaxStepHeight;
+            }
+            const FVector Feet = Location - FVector::UpVector * Geometry.CapsuleHalfHeight;
+            Path.Condition = Path.bLocalBlocked ? EBBBMonsterNavigationCondition::Blocked : EBBBMonsterNavigationCondition::Following;
+            const float PreviousRemaining = Path.RemainingDistance;
+            const bool bArrived = FBBBMonsterPathFollowing::UpdateProgress(Path, Feet, Geometry.MaxStepHeight, Grounds[Index].bGrounded);
+            if (!bPaused)
+            {
+                Path.ProgressDistance += PreviousRemaining - Path.RemainingDistance;
+            }
+            Path.MotionEfficiency = Grounds[Index].RequestedDistance > 1.0f
+                ? FMath::Clamp(Grounds[Index].MovedDistance / Grounds[Index].RequestedDistance, 0.0f, 1.0f) : 1.0f;
+            if (!bPaused && Grounds[Index].RequestedDistance > 1.0f && Path.MotionEfficiency < 0.1f
+                && Path.Condition == EBBBMonsterNavigationCondition::Following)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::Blocked;
+            }
+            if (bMovementSuspended || bNeighborWait || Path.bWaitingForSpace || Grounds[Index].MovedDistance > 2.0f)
+            {
+                Path.BlockedDuration = 0.0f;
+            }
+            if (!bPaused && Path.Condition == EBBBMonsterNavigationCondition::Blocked)
+            {
+                Path.BlockedDuration += QualityDelta;
+            }
+            if (bPaused || Path.ProgressTime < 0.0f || Path.ProgressDistance >= 35.0f)
+            {
+                if (!bPaused && Path.ProgressDistance >= 35.0f)
                 {
                     Path.FailureCount = 0;
                 }
                 Path.ProgressTime = WorldTime;
-                Path.ProgressPosition = Location;
+                Path.ProgressDistance = 0.0f;
             }
-            if (!bPaused && WorldTime - Path.ProgressTime >= Definition->NavigationStuckDuration)
+            if (!bPaused && (WorldTime - Path.ProgressTime >= Definition->NavigationStuckDuration
+                || Path.BlockedDuration >= Definition->NavigationStuckDuration))
             {
                 ++Path.FailureCount;
+                ++NoProgressCount;
+                Path.Condition = Path.Condition == EBBBMonsterNavigationCondition::Following
+                    ? EBBBMonsterNavigationCondition::NoProgress : Path.Condition;
+                Path.LastRepathCondition = Path.Condition;
                 Path.ProgressTime = WorldTime;
+                Path.ProgressDistance = 0.0f;
+                Path.BlockedDuration = 0.0f;
                 ClearPath(Path);
                 Path.NextPathRefreshTime = 0.0f;
                 if (bChase && Path.FailureCount >= Definition->NavigationFailureLimit)
@@ -228,20 +321,10 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                     continue;
                 }
             }
-            while (Path.bHasPath && Path.PathPointIndex < Path.PathPoints.Num() - 1 &&
-                FVector::DistSquared2D(Location, Path.PathPoints[Path.PathPointIndex]) <= FMath::Square(15.0f))
-            {
-                const FVector Start(Location.X, Location.Y, Path.PathPoints[Path.PathPointIndex].Z);
-                FVector Hit;
-                if (RouteData->Raycast(Start, Path.PathPoints[Path.PathPointIndex + 1], Hit, RouteData->GetDefaultQueryFilter()))
-                {
-                    break;
-                }
-                ++Path.PathPointIndex;
-            }
-            if (Path.bHasPath && FVector::DistSquared2D(Location, Path.Destination) <= FMath::Square(15.0f))
+            if (Path.bHasPath && bArrived)
             {
                 ClearPath(Path);
+                Path.Condition = EBBBMonsterNavigationCondition::Arrived;
                 Path.bReachedDestination = bPatrol || (!Target.bTargetVisible && !Path.bPartialPath);
                 if (bChase && Path.bPartialPath)
                 {
@@ -256,6 +339,30 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 continue;
             }
 
+            if (bMovementSuspended)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::Suspended;
+            }
+            if (Path.bWaitingForSpace)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::WaitingForSpace;
+            }
+            if (bNeighborWait)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::WaitingForNeighbor;
+            }
+            if (Path.bHasPath && !bPaused && WorldTime >= Path.NextFollowRefreshTime)
+            {
+                FollowRequests.Add(Chunk.GetEntity(Index));
+            }
+            if (Path.bHasPath && Path.OffPathDistance > Geometry.CapsuleRadius * 3.0f && !bMovementSuspended)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::OffPath;
+                Path.LastRepathCondition = Path.Condition;
+                ClearPath(Path);
+                Path.NextPathRefreshTime = WorldTime;
+            }
+
             if (NavigationDebugEntity.GetValueOnGameThread() == Chunk.GetEntity(Index).Index)
             {
                 for (int32 Point = 1; Point < Path.PathPoints.Num(); ++Point)
@@ -263,10 +370,27 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                     DrawDebugLine(World, Path.PathPoints[Point - 1] + FVector(0.0, 0.0, 8.0),
                         Path.PathPoints[Point] + FVector(0.0, 0.0, 8.0), Path.bPartialPath ? FColor::Orange : FColor::Cyan);
                 }
+                DrawDebugSphere(World, Path.FollowTarget + FVector::UpVector * 8.0f, 8.0f, 8, FColor::Yellow);
+                DrawDebugString(World, Location + FVector::UpVector * 110.0f,
+                    FString::Printf(TEXT("%s Remaining=%.0f Offset=%.0f Motion=%.2f Detour=%.2f Repath=%u Reverse=%u Wait=%.2f Last=%s"),
+                        *StaticEnum<EBBBMonsterNavigationCondition>()->GetDisplayNameTextByValue(static_cast<int64>(Path.Condition)).ToString(),
+                        Path.RemainingDistance, Path.OffPathDistance, Path.MotionEfficiency, Path.DetourRatio,
+                        Path.RepathCount, Path.DirectionReversals,
+                        Path.RequestSince < 0.0f ? 0.0f : WorldTime - Path.RequestSince,
+                        *StaticEnum<EBBBMonsterNavigationCondition>()->GetDisplayNameTextByValue(static_cast<int64>(Path.LastRepathCondition)).ToString()),
+                    nullptr, FColor::White, 0.0f, true);
             }
             const float Distance = FVector::Dist2D(Location, Target.TargetLocation);
             const bool bFar = Distance >= Definition->NavigationFarDistance;
             const float MoveThreshold = bFar ? Definition->NavigationFarGoalThreshold : Definition->NavigationNearGoalThreshold;
+            if (bChase && Path.bHasPath && FVector::DistSquared(Target.TargetLocation, Path.RequestedGoal) >= FMath::Square(MoveThreshold))
+            {
+                Path.LastRepathCondition = EBBBMonsterNavigationCondition::TargetMoved;
+            }
+            if (bChase && Path.bHasPath && WorldTime - Path.LastPathTime >= Definition->NavigationMaxPathAge)
+            {
+                Path.LastRepathCondition = EBBBMonsterNavigationCondition::PathExpired;
+            }
             const bool bNeedsPath = !Path.bHasPath || (bChase &&
                 (FVector::DistSquared(Target.TargetLocation, Path.RequestedGoal) >= FMath::Square(MoveThreshold) ||
                     WorldTime - Path.LastPathTime >= Definition->NavigationMaxPathAge || (bEncircle && Path.ApproachSlot == INDEX_NONE)));
@@ -279,11 +403,64 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 Path.RequestSince = WorldTime;
             }
+            if (!Path.bHasPath && Path.Condition == EBBBMonsterNavigationCondition::Following)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::WaitingForPath;
+            }
             const float Wait = FMath::Max(WorldTime - Path.RequestSince, 0.0f);
             LongestWait = FMath::Max(LongestWait, Wait);
             Requests.Emplace(Chunk.GetEntity(Index), Wait + (Path.bHasPath ? 0.0f : 2.0f));
         }
     });
+
+    const double FollowStartedAt = FPlatformTime::Seconds();
+    const int32 FirstFollow = FollowRequests.IsEmpty() ? 0 : FollowUpdateSerial % FollowRequests.Num();
+    for (int32 Offset = 0; Offset < FollowRequests.Num(); ++Offset)
+    {
+        if (LocalChecks >= Budget->MaxLocalChecksPerFrame ||
+            (LocalChecks > 0 && (FPlatformTime::Seconds() - FollowStartedAt) * 1000.0 >= Budget->LocalTimeBudgetMs))
+        {
+            break;
+        }
+        const int32 FollowIndex = (FirstFollow + Offset) % FollowRequests.Num();
+        FollowUpdateSerial = FollowIndex + 1;
+        const auto Entity = FollowRequests[FollowIndex];
+        auto& Path = EntityManager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
+        if (!Path.bHasPath)
+        {
+            continue;
+        }
+        const auto& Ground = EntityManager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity);
+        const auto& Mobility = EntityManager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
+        const auto& Definition = *EntityManager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition;
+        auto Geometry = EntityManager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Entity);
+        Geometry.CapsuleHalfHeight = Ground.CapsuleHalfHeight > 0.0f ? Ground.CapsuleHalfHeight : Geometry.CapsuleHalfHeight;
+        Geometry.MaxStepHeight = Mobility.bCrawling ? Definition.CrawlMaxStepHeight : Geometry.MaxStepHeight;
+        const FVector Feet = EntityManager.GetFragmentDataChecked<FTransformFragment>(Entity).GetTransform().GetLocation()
+            - FVector::UpVector * Geometry.CapsuleHalfHeight;
+        const auto& Velocity = EntityManager.GetFragmentDataChecked<FMassVelocityFragment>(Entity).Value;
+        const float LookAhead = FMath::Clamp(Velocity.Size2D() * Definition.NavigationLookAheadTime,
+            30.0f, Definition.NavigationLookAheadDistance);
+        if (Path.AvoidanceSide == 0)
+        {
+            Path.AvoidanceSide = (EntityManager.GetFragmentDataChecked<FBBBMonsterVariationFragment>(Entity).Seed & 1u) == 0 ? -1 : 1;
+        }
+        const auto* Actor = EntityManager.GetFragmentDataPtr<FMassActorFragment>(Entity);
+        FBBBMonsterPathFollowing::RefreshTarget(*World, *RouteData, Path, Feet, Geometry, LookAhead,
+            Actor ? Actor->Get() : nullptr, WorldTime);
+        Path.NextFollowRefreshTime = WorldTime + Definition.NavigationFollowInterval;
+        ++LocalChecks;
+        const FVector Direction = (Path.FollowTarget - Feet).GetSafeNormal2D();
+        if (!Direction.IsNearlyZero() && !Path.LastFollowDirection.IsNearlyZero()
+            && FVector::DotProduct(Direction, Path.LastFollowDirection) < -0.25f)
+        {
+            ++Path.DirectionReversals;
+        }
+        Path.LastFollowDirection = Direction;
+    }
+    SET_DWORD_STAT(STAT_BBBNavigationLocalChecks, LocalChecks);
+    SET_FLOAT_STAT(STAT_BBBNavigationLocalMs, static_cast<float>((FPlatformTime::Seconds() - FollowStartedAt) * 1000.0));
+    SET_DWORD_STAT(STAT_BBBNavigationNoProgress, NoProgressCount);
 
     SET_DWORD_STAT(STAT_BBBNavigationPending, Requests.Num());
     SET_FLOAT_STAT(STAT_BBBNavigationWait, LongestWait);
@@ -306,9 +483,10 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     int32 Submitted = 0;
     int32 QueryCount = 0;
     int32 AcceptedPoints = 0;
+    int32 ReferenceQueries = 0;
     for (const auto& Request : Requests)
     {
-        if (Submitted >= Budget->MaxRequestsPerFrame ||
+        if (Submitted >= Budget->MaxRequestsPerFrame || QueryCount >= Budget->MaxRequestsPerFrame ||
             (Submitted > 0 && (FPlatformTime::Seconds() - RequestStart) * 1000.0 >= Budget->TimeBudgetMs))
         {
             break;
@@ -316,6 +494,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         ++Submitted;
         const FMassEntityHandle Entity = Request.Key;
         auto& Path = EntityManager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
+        ++Path.RepathCount;
         const auto& Target = EntityManager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Entity);
         const auto& State = EntityManager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity);
         const auto& Movement = EntityManager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Entity);
@@ -393,6 +572,8 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 Path.bWaitingForSpace = ValidSlots > 0;
                 ClearPath(Path);
+                Path.Condition = Path.bWaitingForSpace ? EBBBMonsterNavigationCondition::WaitingForSpace
+                    : EBBBMonsterNavigationCondition::Blocked;
                 Path.ProgressTime = WorldTime;
                 if (!Path.bWaitingForSpace)
                 {
@@ -450,7 +631,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         Path.LastQueryMs = static_cast<float>((FPlatformTime::Seconds() - QueryStart) * 1000.0);
         QueryOwner->ResetParameters();
         ++QueryCount;
-        const auto NativePath = Result.Path;
+        auto NativePath = Result.Path;
         if (NativePath.IsValid())
         {
             NativePath->EnableRecalculationOnInvalidation(false);
@@ -464,12 +645,44 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         // APS 低层模式可能缺少部分路径标记 必须同时核验实际终点
         const bool bPartial = bValid && (NativePath->IsPartial() || bProjectionMismatch ||
             FVector::DistSquared(NativePath->GetPathPoints().Last().Location, QueryEnd) > FMath::Square(15.0f));
-        const bool bUsefulPartial = bValid && FVector::Dist2D(Location, Goal) -
-            FVector::Dist2D(NativePath->GetPathPoints().Last().Location, Goal) >= 50.0f;
+        const bool bUsefulPartial = bValid && FVector::Dist2D(Start.Location,
+            NativePath->GetPathPoints().Last().Location) >= 50.0f;
+        Path.DetourRatio = 0.0f;
+        if (bValid && !bPartial && !bFar && FMath::Abs(Path.ArcStrength) + FMath::Abs(Path.LaneOffset) > 0.01f
+            && WorldTime >= Path.NextReferenceTime && ReferenceQueries < Budget->MaxReferenceQueriesPerFrame
+            && QueryCount < Budget->MaxRequestsPerFrame
+            && (FPlatformTime::Seconds() - RequestStart) * 1000.0 < Budget->TimeBudgetMs)
+        {
+            QueryOwner->SetParameters(0.0f, Profile.NumMidPoints, Profile.MidpointMode, 0.0f);
+            const auto Reference = NavigationSystem->FindPathSync(Query);
+            QueryOwner->ResetParameters();
+            ++QueryCount;
+            ++ReferenceQueries;
+            Path.NextReferenceTime = WorldTime + 5.0f;
+            if (Reference.IsSuccessful() && Reference.Path.IsValid() && Reference.Path->IsValid()
+                && !Reference.Path->IsPartial() && Reference.Path->GetPathPoints().Num() >= 2
+                && !Reference.Path->GetPathPoints().ContainsByPredicate([](const FNavPathPoint& Point)
+                {
+                    return Point.Location.ContainsNaN();
+                }) && FVector::DistSquared(Reference.Path->GetPathPoints().Last().Location, QueryEnd) <= FMath::Square(15.0f))
+            {
+                Path.DetourRatio = MeasurePath(*NativePath) / FMath::Max(MeasurePath(*Reference.Path), 1.0f);
+                if (Path.DetourRatio > Definition.NavigationMaxDetourRatio)
+                {
+                    NativePath = Reference.Path;
+                    NativePath->EnableRecalculationOnInvalidation(false);
+                    Path.ArcStrength = 0.0f;
+                    Path.LaneOffset = 0.0f;
+                    Path.DetourRatio = 1.0f;
+                    Path.LastRepathCondition = EBBBMonsterNavigationCondition::DetourLimited;
+                }
+            }
+        }
         if (NavigationLogRequests.GetValueOnGameThread() != 0)
         {
-            UE_LOG(LogTemp, Log, TEXT("[BBBNavigation]实体=%d APS毫秒=%.3f 弧度=%.3f 偏移=%.1f 有效=%d 部分路径=%d"),
-                Entity.Index, Path.LastQueryMs, Path.ArcStrength, Path.LaneOffset, bValid, bPartial);
+            UE_LOG(LogTemp, Log, TEXT("[BBBNavigation]实体=%d APS毫秒=%.3f 弧度=%.3f 偏移=%.1f 有效=%d 部分路径=%d 原因=%s"),
+                Entity.Index, Path.LastQueryMs, Path.ArcStrength, Path.LaneOffset, bValid, bPartial,
+                *StaticEnum<EBBBMonsterNavigationCondition>()->GetDisplayNameTextByValue(static_cast<int64>(Path.LastRepathCondition)).ToString());
         }
         if (!bValid || (bPartial && (!bChase || !bUsefulPartial)))
         {
@@ -486,7 +699,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         Path.TailDistances.SetNumZeroed(Path.PathPoints.Num());
         for (int32 Point = Path.PathPoints.Num() - 2; Point >= 0; --Point)
         {
-            Path.TailDistances[Point] = Path.TailDistances[Point + 1] + FVector::Dist2D(Path.PathPoints[Point], Path.PathPoints[Point + 1]);
+            Path.TailDistances[Point] = Path.TailDistances[Point + 1] + FVector::Distance(Path.PathPoints[Point], Path.PathPoints[Point + 1]);
         }
         Path.PathPointIndex = 1;
         Path.Destination = Path.PathPoints.Last();
@@ -495,9 +708,15 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         Path.bHasPath = true;
         Path.bPartialPath = bPartial;
         Path.bReachedDestination = false;
+        Path.bCrawlingPath = EntityManager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity).bCrawling;
+        Path.bHasFollowTarget = false;
+        Path.RemainingDistance = Path.TailDistances[0];
+        Path.OffPathDistance = 0.0f;
+        Path.Condition = EBBBMonsterNavigationCondition::Following;
     }
     SET_DWORD_STAT(STAT_BBBNavigationSubmitted, Submitted);
     SET_DWORD_STAT(STAT_BBBNavigationQueries, QueryCount);
     SET_DWORD_STAT(STAT_BBBNavigationPoints, AcceptedPoints);
+    SET_DWORD_STAT(STAT_BBBNavigationReferences, ReferenceQueries);
     SET_FLOAT_STAT(STAT_BBBNavigationRequestMs, static_cast<float>((FPlatformTime::Seconds() - RequestStart) * 1000.0));
 }

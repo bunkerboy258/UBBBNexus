@@ -5,8 +5,10 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
+#include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
 
 UBBBMonsterAvoidanceProcessor::UBBBMonsterAvoidanceProcessor()
@@ -24,6 +26,7 @@ void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -43,7 +46,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
         }
     });
 
-    TMap<FIntPoint, TArray<FVector>> SpatialBuckets;
+    TMap<FIntPoint, TArray<TTuple<FMassEntityHandle, FVector, FVector>>> SpatialBuckets;
 
     // 第一遍遍历建立二维空间桶
     MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
@@ -51,6 +54,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
 
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        const auto Paths = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
 
         for (int32 Index = 0; Index < Transforms.Num(); ++Index)
         {
@@ -63,16 +67,21 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
             const FIntPoint Cell(
                 FMath::FloorToInt(Location.X / CellSize),
                 FMath::FloorToInt(Location.Y / CellSize));
-            SpatialBuckets.FindOrAdd(Cell).Add(Location);
+            const auto& Path = Paths[Index];
+            const FVector Goal = Path.bHasFollowTarget ? Path.FollowTarget
+                : Path.PathPoints.IsValidIndex(Path.PathPointIndex) ? Path.PathPoints[Path.PathPointIndex] : Location;
+            SpatialBuckets.FindOrAdd(Cell).Emplace(ChunkContext.GetEntity(Index), Location, (Goal - Location).GetSafeNormal2D());
         }
     });
 
-    // 第二遍遍历计算分离方向并修正位置
-    MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
+    // 第二遍遍历只写入分离意图和有限让行 不直接修改位置
+    const float Now = Context.GetWorld()->GetTimeSeconds();
+    MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize, Now](FMassExecutionContext& ChunkContext)
     {
         const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
         TArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetMutableFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        const auto Paths = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
@@ -81,6 +90,9 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
             {
                 Avoidances[Index].SeparationDirection = FVector::ZeroVector;
                 Avoidances[Index].SeparationStrength = 0.0f;
+                Avoidances[Index].bWaitingForNeighbor = false;
+                Avoidances[Index].YieldBlocker.Reset();
+                Avoidances[Index].YieldStartedAt = -1.0f;
                 continue;
             }
 
@@ -92,21 +104,35 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                 FMath::FloorToInt(Location.X / CellSize),
                 FMath::FloorToInt(Location.Y / CellSize));
             FVector Separation = FVector::ZeroVector;
+            const auto& Path = Paths[Index];
+            const FVector Goal = Path.bHasFollowTarget ? Path.FollowTarget
+                : Path.PathPoints.IsValidIndex(Path.PathPointIndex) ? Path.PathPoints[Path.PathPointIndex] : Location;
+            const FVector DesiredDirection = (Goal - Location).GetSafeNormal2D();
+            FMassEntityHandle Blocker;
+            double BlockerDistance = MAX_dbl;
 
             // 只检查当前实体周边的相邻空间桶
             for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
             {
                 for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
                 {
-                    const TArray<FVector>* Neighbors = SpatialBuckets.Find(CenterCell + FIntPoint(OffsetX, OffsetY));
+                    const auto* Neighbors = SpatialBuckets.Find(CenterCell + FIntPoint(OffsetX, OffsetY));
 
                     if (Neighbors == nullptr)
                     {
                         continue;
                     }
 
-                    for (const FVector& NeighborLocation : *Neighbors)
+                    for (const auto& Neighbor : *Neighbors)
                     {
+                        const auto NeighborEntity = Neighbor.Get<0>();
+                        const FVector& NeighborLocation = Neighbor.Get<1>();
+                        const FVector& NeighborDirection = Neighbor.Get<2>();
+                        /** 二维分桶只负责候选检索 不把上下楼层当成身体重叠 */
+                        if (FMath::Abs(Location.Z - NeighborLocation.Z) > Settings.CollisionRadius * 2.0f)
+                        {
+                            continue;
+                        }
                         FVector AwayFromNeighbor = Location - NeighborLocation;
                         AwayFromNeighbor.Z = 0.0f;
                         const double DistanceSquared = AwayFromNeighbor.SizeSquared();
@@ -118,13 +144,31 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
 
                         const double Distance = FMath::Sqrt(DistanceSquared);
                         Separation += AwayFromNeighbor / Distance * (1.0f - Distance / PersonalSpace);
+                        const float ForwardDistance = FVector::DotProduct(-AwayFromNeighbor, DesiredDirection);
+                        const double LateralSquared = FMath::Max(0.0, DistanceSquared - FMath::Square(ForwardDistance));
+                        const bool bYieldPriority = NeighborDirection.IsNearlyZero()
+                            || FVector::DotProduct(DesiredDirection, NeighborDirection) > 0.5f
+                            || NeighborEntity.Index < ChunkContext.GetEntity(Index).Index;
+                        if (bYieldPriority && ForwardDistance > 0.0f && Distance < Settings.CollisionRadius * 2.1f
+                            && LateralSquared < FMath::Square(Settings.CollisionRadius * 1.2f) && DistanceSquared < BlockerDistance)
+                        {
+                            Blocker = NeighborEntity;
+                            BlockerDistance = DistanceSquared;
+                        }
                     }
                 }
             }
 
             Avoidances[Index].SeparationStrength = Separation.Size();
             Avoidances[Index].SeparationDirection = Separation.GetSafeNormal();
-
+            auto& Result = Avoidances[Index];
+            if (Blocker != Result.YieldBlocker)
+            {
+                Result.YieldBlocker = Blocker;
+                Result.YieldStartedAt = Blocker.IsSet() ? Now : -1.0f;
+            }
+            Result.bWaitingForNeighbor = Blocker.IsSet() && Result.YieldStartedAt >= 0.0f
+                && Now - Result.YieldStartedAt < Result.CrowdWaitDuration;
         }
     });
 }
