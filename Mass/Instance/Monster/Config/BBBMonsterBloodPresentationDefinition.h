@@ -17,6 +17,10 @@ public:
     UPROPERTY(EditAnywhere, Category="血效|空中喷血", meta=(DisplayName="普通命中喷血"))
     FBBBMonsterBloodSprayPresentation HitSpray;
 
+    /** 创口第一次打开时使用的额外喷血倍率 */
+    UPROPERTY(EditAnywhere, Category="血效|空中喷血", meta=(DisplayName="创口打开喷血"))
+    FBBBMonsterBloodSprayPresentation WoundSpray;
+
     UPROPERTY(EditAnywhere, Category="血效|空中喷血", meta=(DisplayName="断肢喷血"))
     FBBBMonsterBloodSprayPresentation SeveringSpray;
 

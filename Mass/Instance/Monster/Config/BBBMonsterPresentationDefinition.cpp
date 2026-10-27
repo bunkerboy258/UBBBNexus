@@ -69,7 +69,7 @@ UBBBMonsterPresentationDefinition::UBBBMonsterPresentationDefinition()
 bool UBBBMonsterPresentationDefinition::IsValid() const
 {
     if (!Gore || !Gore->IsReady() || Gore->GetOuter() != this || !Blood || Blood->GetOuter() != this
-        || !Blood->HitSpray.IsValid() || !Blood->SeveringSpray.IsValid()
+        || !Blood->HitSpray.IsValid() || !Blood->WoundSpray.IsValid() || !Blood->SeveringSpray.IsValid()
         || !Sounds || Sounds->GetOuter() != this || !Sounds->IsValid() || !PhysicsAsset || !AnimationClass
         || MeshTransform.ContainsNaN() || HitReaction.ImpulseScale < 0 || !FMath::IsFinite(HitReaction.ImpulseScale)
         || HitReaction.ImpulseScale > 4 || !FMath::IsFinite(HitReaction.RepeatImpulseScale)

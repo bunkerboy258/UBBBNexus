@@ -55,6 +55,8 @@ bool FBBBMonsterSoundFactsTest::RunTest(const FString& Parameters)
     Settings->Footsteps.Add(Wave);
     Settings->CrawlFriction.Add(Wave);
     Settings->Landings.Add(Wave);
+    Settings->FleshImpacts.Add(Wave);
+    Settings->HeadImpacts.Add(Wave);
     Settings->Severings.Add(Wave);
     FBBBMonsterSoundVoice Voice;
     Voice.Name = TEXT("TestVoice");

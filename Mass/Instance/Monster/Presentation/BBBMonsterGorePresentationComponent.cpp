@@ -74,7 +74,7 @@ bool UBBBMonsterGorePresentationComponent::Prepare(const UBBBMonsterGoreDefiniti
 
 void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition& Definition,
     const FBBBMonsterGoreFragment& Facts, const FBBBMonsterHitReactionFragment& Hit,
-    const FVector& Velocity, const uint32 Seed, const bool bRestore, UBBBMonsterSoundPresentationDefinition* Sounds)
+    const FVector& Velocity, const uint32 Seed, const bool bRestore)
 {
     if (!Prepare(Definition))
     {
@@ -82,6 +82,7 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
     }
     bool bDamaged = false;
     bool bOpenTorso = false;
+    bool bNewTorsoOpening = false;
     for (int32 Index = 0; Index < 5; ++Index)
     {
         bDamaged |= Facts.DismembermentPresets[Index] != 0;
@@ -90,6 +91,10 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
     for (int32 Index = 0; Index < 8; ++Index)
     {
         const float Strength = Facts.DestructionStrengths[Index] / 255.0f;
+        const auto& Data = Body->GetCustomPrimitiveData().Data;
+        const float Previous = Data.IsValidIndex(10 + Index) ? Data[10 + Index] : 0.0f;
+        bNewTorsoOpening |= Previous < Definition.Destruction->OpeningThreshold
+            && Strength >= Definition.Destruction->OpeningThreshold;
         bDamaged |= Strength > 0;
         bOpenTorso |= Strength >= Definition.Destruction->OpeningThreshold;
         Write(*Body, 10 + Index, Strength);
@@ -103,6 +108,19 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
         bUsingDamageMaterials = bDamaged;
     }
     TArray<FBBBMonsterBloodImpact, TInlineAllocator<5>> Bursts;
+    if (bNewTorsoOpening && !bRestore && Hit.Serial != 0 && Hit.Age >= 0.0f && Hit.Age <= 0.25f
+        && Hit.Region == EBBBMonsterHitRegion::Torso)
+    {
+        FBBBMonsterBloodImpact Burst;
+        Burst.Position = Hit.Position;
+        Burst.Direction = Hit.Direction;
+        Burst.Normal = Hit.Normal;
+        Burst.Region = Hit.Region;
+        Burst.Seed = Seed ^ Hit.Serial;
+        Burst.bWoundOpening = true;
+        Burst.Source = ResidueSource;
+        Bursts.Add(Burst);
+    }
     for (int32 Index = 0; Index < 6; ++Index)
     {
         const auto* Part = Index < 5 ? Definition.Dismemberment->Find(Facts.DismembermentPresets[Index]) : nullptr;

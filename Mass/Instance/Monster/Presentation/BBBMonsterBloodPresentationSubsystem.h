@@ -6,6 +6,8 @@
 #include "BBBMonsterBloodResidue.h"
 #include "BBBMonsterBloodPresentationSubsystem.generated.h"
 
+struct FHitResult;
+
 class UBBBMonsterBloodPresentationDefinition;
 class UDecalComponent;
 

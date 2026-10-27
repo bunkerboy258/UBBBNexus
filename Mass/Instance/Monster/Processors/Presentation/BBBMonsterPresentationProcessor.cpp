@@ -209,7 +209,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
                     PresentationState.State == EBBBMonsterBehavior::Dead
                         ? ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity : Velocities[Index].Value,
-                    ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed, bNewActor, Definition->Presentation->Sounds);
+                    ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed, bNewActor);
             }
             Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);
             if (Definition)

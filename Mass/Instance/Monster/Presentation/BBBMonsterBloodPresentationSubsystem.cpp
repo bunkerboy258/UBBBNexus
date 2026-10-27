@@ -1,6 +1,8 @@
 #include "BBBMonsterBloodPresentationSubsystem.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBloodPresentationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSoundPresentationDefinition.h"
 #include "Components/DecalComponent.h"
 #include "Engine/World.h"
 #include "Engine/Texture2D.h"
@@ -9,6 +11,9 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 #include "Math/RotationMatrix.h"
 #include "NiagaraDataChannel.h"
 #include "NiagaraDataChannelAccessor.h"
@@ -70,6 +75,28 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
     {
         return;
     }
+    const auto* Presentation = Settings.GetTypedOuter<UBBBMonsterPresentationDefinition>();
+    const auto* Sounds = Presentation ? Presentation->Sounds.Get() : nullptr;
+    if (Sounds && Sounds->Attenuation && Sounds->ContactConcurrency)
+    {
+        for (const FBBBMonsterBloodImpact& Impact : Impacts)
+        {
+            if (Impact.bDripOnly || !UGameplayStatics::AreAnyListenersWithinRange(World, Impact.Position, Sounds->AudibleDistance))
+            {
+                continue;
+            }
+            const bool bTear = Impact.bSevering || Impact.bWoundOpening;
+            const auto& Pool = bTear ? Sounds->Severings
+                : Impact.Region == EBBBMonsterHitRegion::Head ? Sounds->HeadImpacts : Sounds->FleshImpacts;
+            if (!ensureMsgf(!Pool.IsEmpty(), TEXT("[BBBMonsterBlood]命中声音池为空")))
+            {
+                continue;
+            }
+            FRandomStream Random(static_cast<int32>(HashCombineFast(Impact.Seed, GetTypeHash(Impact.Position))));
+            UGameplayStatics::PlaySoundAtLocation(World, Pool[Random.RandRange(0, Pool.Num() - 1)], Impact.Position,
+                bTear ? 1.0f : 0.8f, Random.FRandRange(0.95f, 1.05f), 0.0f, Sounds->Attenuation, Sounds->ContactConcurrency);
+        }
+    }
     bool bHasSpray = false;
     for (const auto& Impact : Impacts)
     {
@@ -87,6 +114,17 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         if (!ensureMsgf(Channel && Handler, TEXT("[BBBMonsterBlood]通道处理器缺失")))
         {
             return;
+        }
+        TArray<FVector, TInlineAllocator<2>> LocalViews;
+        for (auto It = World->GetPlayerControllerIterator(); It; ++It)
+        {
+            if (const APlayerController* Controller = It->Get(); Controller && Controller->IsLocalController())
+            {
+                FVector Location;
+                FRotator Rotation;
+                Controller->GetPlayerViewPoint(Location, Rotation);
+                LocalViews.Add(Location);
+            }
         }
         TMap<FNiagaraDataChannelData*, TArray<int32>> Batches;
         for (int32 Index = 0; Index < Impacts.Num(); ++Index)
@@ -119,9 +157,22 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
                     const FVector Spray = BloodDirection(Settings, Impact);
                     Writer->WriteVector(TEXT("Normal"), Index, Outward);
                     Writer->WriteVector(TEXT("Direction"), Index, Spray);
-                    Writer->WriteInt(TEXT("Surface"), Index, Impact.bSevering ? 3 : 2);
-                    const auto& SpraySettings = Impact.bSevering ? Settings.SeveringSpray : Settings.HitSpray;
-                    Writer->WriteVector4(TEXT("SprayScale"), Index, FVector4(SpraySettings.Size, SpraySettings.Speed,
+                    Writer->WriteInt(TEXT("Surface"), Index, Impact.bWoundOpening ? 4 : Impact.bSevering ? 3 : 2);
+                    bool bNearFlesh = World->WorldType == EWorldType::EditorPreview;
+                    for (const FVector& View : LocalViews)
+                    {
+                        bNearFlesh |= FVector::DistSquared(View, Impact.Position) <= FMath::Square(1500.0);
+                    }
+                    Writer->WriteInt(TEXT("NearFlesh"), Index, bNearFlesh ? 1 : 0);
+                    const auto& SpraySettings = Impact.bWoundOpening ? Settings.WoundSpray
+                        : Impact.bSevering ? Settings.SeveringSpray : Settings.HitSpray;
+                    const bool bHeadSevering = Impact.bSevering && Impact.Region == EBBBMonsterHitRegion::Head;
+                    const bool bLegSevering = Impact.bSevering && (Impact.Region == EBBBMonsterHitRegion::LeftLeg
+                        || Impact.Region == EBBBMonsterHitRegion::RightLeg);
+                    const float SizeScale = bHeadSevering ? 1.15f : bLegSevering ? 1.1f : 1.0f;
+                    const float SpeedScale = bHeadSevering ? 1.1f : bLegSevering ? 0.9f : 1.0f;
+                    Writer->WriteVector4(TEXT("SprayScale"), Index, FVector4(FMath::Min(SpraySettings.Size * SizeScale, 3.0f),
+                        FMath::Min(SpraySettings.Speed * SpeedScale, 3.0f),
                         SpraySettings.Lifetime, SpraySettings.Opacity));
                 }
             }

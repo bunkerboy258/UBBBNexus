@@ -30,7 +30,7 @@ public:
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "动作发声并发"))
     TObjectPtr<USoundConcurrency> ActionConcurrency;
 
-    /** 近距离脚步与地面摩擦的共享并发 */
+    /** 脚步 地面摩擦与血肉接触的共享并发 */
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "接触发声并发"))
     TObjectPtr<USoundConcurrency> ContactConcurrency;
 
@@ -46,7 +46,15 @@ public:
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "落地素材"))
     TArray<TObjectPtr<USoundBase>> Landings;
 
-    /** 本轮部位损毁只播放一次的短促撕裂与骨裂 共享动作声音并发 */
+    /** 普通命中时的短促肉体撞击声 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "肉体命中素材"))
+    TArray<TObjectPtr<USoundBase>> FleshImpacts;
+
+    /** 头部命中时的短促撞击声 */
+    UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "头部命中素材"))
+    TArray<TObjectPtr<USoundBase>> HeadImpacts;
+
+    /** 本轮部位损毁只播放一次的短促撕裂与骨裂 共享接触声音并发 */
     UPROPERTY(EditAnywhere, Category = "小怪|声音", meta = (DisplayName = "断肢素材"))
     TArray<TObjectPtr<USoundBase>> Severings;
 
