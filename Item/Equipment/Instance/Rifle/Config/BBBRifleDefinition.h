@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/Handling/BBBRifleHandlingSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/Handling/BBBRifleAirborneModifiers.h"
@@ -61,9 +62,13 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "开火与装填", meta = (DisplayPriority = "5", DisplayName = "弹丸配置", ToolTip = "决定每次开火的弹丸数量 散射 弹道 伤害与表现 从本机枪口位置和 X 正轴发射"))
     TObjectPtr<UBBBProjectileDefinition> ProjectileDefinition = nullptr;
 
-    /** 各发之后的累计姿态目标 不含起始零点 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "后坐力轨迹", meta = (DisplayName = "逐发轨迹 (度)", ToolTip = "元素 0 对应第一发 X 向上 Y 向右 为累计角度而非单发增量 点数必须等于弹药容量"))
-    TArray<FVector2D> RecoilPattern;
+    /** 以连续射击进度为横轴的垂直姿态角度 */
+    UPROPERTY(EditDefaultsOnly, Category = "后坐力轨迹", meta = (DisplayName = "垂直轨迹 (度)", ToolTip = "横轴为实际发数进度 0 是第一枪开始 1 是第二枪开始 纵轴单位度 正值向上 曲线在开火间隔内连续求值"))
+    FRuntimeFloatCurve RecoilPitchCurve;
+
+    /** 以连续射击进度为横轴的水平姿态角度 */
+    UPROPERTY(EditDefaultsOnly, Category = "后坐力轨迹", meta = (DisplayName = "水平轨迹 (度)", ToolTip = "横轴为实际发数进度 0 是第一枪开始 1 是第二枪开始 纵轴单位度 正值向右 曲线在开火间隔内连续求值"))
+    FRuntimeFloatCurve RecoilYawCurve;
 
     /** 停火后二维姿态角向零靠近的恒定速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "后坐力轨迹", meta = (ClampMin = "0.01", DisplayName = "停火回落速度 (度/秒)", ToolTip = "停火立即回落 二维角度向量每秒缩短此角度 越大回落越快 与 AO 输入平滑和镜头回正独立"))

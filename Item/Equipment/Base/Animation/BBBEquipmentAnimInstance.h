@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Curves/CurveFloat.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimationFacts.h"
 #include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBEquipmentAnimInstance.generated.h"
@@ -246,10 +247,22 @@ public:
         return 1.0f;
     }
 
-    /** @return 游戏线程只读的逐发累计角度 不向动画工作线程复制数组 */
-    TConstArrayView<FVector2D> GetRecoilPattern() const
+    /** @return 游戏线程只读的垂直后坐力曲线 */
+    const FRichCurve &GetRecoilPitchCurve() const
     {
-        return RecoilPattern;
+        return RecoilPitchCurve;
+    }
+
+    /** @return 游戏线程只读的水平后坐力曲线 */
+    const FRichCurve &GetRecoilYawCurve() const
+    {
+        return RecoilYawCurve;
+    }
+
+    /** @return 连续两枪的配置间隔 单位秒 */
+    float GetRecoilFireInterval() const
+    {
+        return RecoilFireInterval;
     }
 
     /** @return 停火回落角速度 单位度每秒 */
@@ -307,7 +320,9 @@ private:
 
     /**
      * 发布轨迹配置与基本射击许可快照
-     * @param Pattern 累计角度数组
+     * @param PitchCurve 垂直角度曲线
+     * @param YawCurve 水平角度曲线
+     * @param FireInterval 两枪间隔 单位秒
      * @param ReturnSpeed 回落角速度
      * @param HipScale 腰射倍率
      * @param AimScale 瞄准倍率
@@ -318,15 +333,18 @@ private:
      * @param bRefresh 装备时刷新配置副本
      * @return 无
      */
-    void PublishRecoilFacts(const TArray<FVector2D> &Pattern, float ReturnSpeed,
+    void PublishRecoilFacts(const FRuntimeFloatCurve &PitchCurve, const FRuntimeFloatCurve &YawCurve,
+        float FireInterval, float ReturnSpeed,
         float HipScale, float AimScale, float CrouchedScale, float AirborneScale,
         bool bAutomatic, bool bCanSustain, bool bRefresh)
     {
         if (bRefresh || !bRecoilProfileInitialized)
         {
-            RecoilPattern = Pattern;
+            RecoilPitchCurve = *PitchCurve.GetRichCurveConst();
+            RecoilYawCurve = *YawCurve.GetRichCurveConst();
             bRecoilProfileInitialized = true;
         }
+        RecoilFireInterval = FireInterval;
         RecoilReturnSpeed = ReturnSpeed;
         HipRecoilScale = HipScale;
         AimRecoilScale = AimScale;
@@ -336,8 +354,12 @@ private:
         bCanSustainRecoil = bCanSustain;
     }
 
-    /** 游戏线程消费的静态轨迹副本 */
-    TArray<FVector2D> RecoilPattern;
+    /** 游戏线程消费的垂直轨迹副本 */
+    FRichCurve RecoilPitchCurve;
+    /** 游戏线程消费的水平轨迹副本 */
+    FRichCurve RecoilYawCurve;
+    /** 连续两枪的配置间隔 单位秒 */
+    float RecoilFireInterval = 0.2f;
     /** 停火回落角速度 */
     float RecoilReturnSpeed = 12.0f;
     /** 当前姿态幅度倍率 */
