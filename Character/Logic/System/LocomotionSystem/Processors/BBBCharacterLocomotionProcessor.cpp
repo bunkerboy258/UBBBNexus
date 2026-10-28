@@ -125,17 +125,26 @@ void FBBBCharacterLocomotionProcessor::Update(
     const FBBBCharacterControlState &ControlData = Context.ControlState;
     const FBBBCharacterLocomotionConfig &Config = Context.Config;
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
+    // 镜像使用 CMC 已接收的控制朝向还原旋转 地面保持即时到达 空中保留追向速率
+    Movement.bUseControllerDesiredRotation = Context.Execution.bIsMirror;
+    Movement.RotationRate.Yaw = 360.0f;
+    if (Context.Execution.bIsMirror && Movement.IsMovingOnGround())
+    {
+        Movement.RotationRate.Yaw = -1.0f;
+    }
+
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
     const bool bWantsCrouch = ControlData.bCrouch;
     if (!Context.Execution.bIsMirror)
     {
-        // 使用移动组件的转速沿最短角追向输入目标 不让镜头瞬间拖转胶囊
-        const float YawStep = FMath::Max(Movement.RotationRate.Yaw, 0.0f)
-            * FMath::Max(Context.DeltaSeconds, 0.0f);
-        const float Yaw = FMath::FixedTurn(
-            Character.GetActorRotation().Yaw,
-            ControlData.FacingWorld.Yaw,
-            YawStep);
+        // 地面保持完整目标朝向差 视觉转身由 MM 与根骨偏移完成 空中保留原有追向速率
+        float Yaw = ControlData.FacingWorld.Yaw;
+        if (!Movement.IsMovingOnGround())
+        {
+            const float YawStep = FMath::Max(Movement.RotationRate.Yaw, 0.0f)
+                * FMath::Max(Context.DeltaSeconds, 0.0f);
+            Yaw = FMath::FixedTurn(Character.GetActorRotation().Yaw, Yaw, YawStep);
+        }
         Character.SetActorRotation(FRotator(0.0f, Yaw, 0.0f));
     }
 
