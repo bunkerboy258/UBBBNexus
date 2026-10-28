@@ -40,8 +40,9 @@ bool CanRun(
     }
 
     const float DirectionYaw = WorldMoveDirection.Rotation().Yaw;
+    // 跑步资格按输入目标朝向裁决 避免胶囊转向滞后造成档位切换
     const float DirectionDelta = FMath::Abs(FMath::FindDeltaAngleDegrees(
-        Character.GetActorRotation().Yaw,
+        ControlData.FacingWorld.Yaw,
         DirectionYaw));
     return DirectionDelta < Config.RunDirectionLimit;
 }
@@ -128,7 +129,14 @@ void FBBBCharacterLocomotionProcessor::Update(
     const bool bWantsCrouch = ControlData.bCrouch;
     if (!Context.Execution.bIsMirror)
     {
-        Character.SetActorRotation(FRotator(0.0f, ControlData.FacingWorld.Yaw, 0.0f));
+        // 使用移动组件的转速沿最短角追向输入目标 不让镜头瞬间拖转胶囊
+        const float YawStep = FMath::Max(Movement.RotationRate.Yaw, 0.0f)
+            * FMath::Max(Context.DeltaSeconds, 0.0f);
+        const float Yaw = FMath::FixedTurn(
+            Character.GetActorRotation().Yaw,
+            ControlData.FacingWorld.Yaw,
+            YawStep);
+        Character.SetActorRotation(FRotator(0.0f, Yaw, 0.0f));
     }
 
     if (!Context.Execution.bIsMirror && bWantsCrouch)

@@ -138,7 +138,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Movement->JumpZVelocity = Config.Locomotion.JumpZVelocity;
     Movement->bOrientRotationToMovement = false;
     Movement->bUseControllerDesiredRotation = false;
-    Movement->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+    Movement->RotationRate = FRotator(0.0f, 360.0f, 0.0f);
 
     Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
     Movement->SetCrouchedHalfHeight(FMath::Max(Config.Locomotion.CrouchedHalfHeight, 1.0f));
