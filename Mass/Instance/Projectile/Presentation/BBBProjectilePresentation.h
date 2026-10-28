@@ -10,7 +10,7 @@ struct FBBBProjectileMotionFragment;
 struct FBBBProjectilePresentationFragment;
 
 /** 批量光效数据通道桥接 不持有子弹玩法状态 */
-struct FBBBProjectilePresentation final
+struct ABBB_EVAC_API FBBBProjectilePresentation final
 {
     /**
      * @param World	当前世界
