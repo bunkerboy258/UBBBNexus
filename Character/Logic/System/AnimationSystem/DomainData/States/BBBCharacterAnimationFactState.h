@@ -92,6 +92,14 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     FVector MovementInput = FVector::ZeroVector;
 
+    /** 移动输入方向附近的第一处阻挡面世界法线 未命中时为零 */
+    UPROPERTY(Transient)
+    FVector BlockingSurfaceNormal = FVector::ZeroVector;
+
+    /** 沿第一阻挡面移动时附近的第二处阻挡面世界法线 未命中时为零 */
+    UPROPERTY(Transient)
+    FVector SecondaryBlockingSurfaceNormal = FVector::ZeroVector;
+
     /** 角色当前是否跑步 */
     UPROPERTY(Transient)
     bool bIsRunning = false;

@@ -109,6 +109,14 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动输入"))
     FVector SourceMovementInput = FVector::ZeroVector;
 
+    /** 移动输入方向附近的第一处阻挡面世界法线 未命中时为零 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源阻挡面法线"))
+    FVector SourceBlockingSurfaceNormal = FVector::ZeroVector;
+
+    /** 沿第一阻挡面移动时附近的第二处阻挡面世界法线 未命中时为零 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源第二阻挡面法线"))
+    FVector SourceSecondaryBlockingSurfaceNormal = FVector::ZeroVector;
+
     /** 本帧后坐力姿势驱动角 X 向上 Y 向右 单位为度 不代表实际枪口误差 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源后坐力角度"))
     FVector2D SourceRecoilAngles = FVector2D::ZeroVector;

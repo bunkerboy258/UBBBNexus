@@ -17,6 +17,9 @@
 namespace
 {
 constexpr float GroundTraceDistance = 100000.0f;
+constexpr float ObstacleTraceDistance = 3.0f;
+constexpr float ObstacleRadiusInset = 0.25f;
+constexpr float ObstacleHeightInset = 1.0f;
 }
 
 void FBBBCharacterAnimationFactProcessor::Update(
@@ -118,6 +121,57 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.MovementInput = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
         ? RuntimeData.Locomotion.ReadLocomotionState().RestoredMovementInput
         : RuntimeData.Parse.ReadControlState().MoveWorld;
+    FactState.BlockingSurfaceNormal = FVector::ZeroVector;
+    FactState.SecondaryBlockingSurfaceNormal = FVector::ZeroVector;
+
+    const FVector InputDirection = FactState.MovementInput.GetSafeNormal2D();
+    if (Movement->IsMovingOnGround() && !InputDirection.IsNearlyZero())
+    {
+        FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(BBBAnimationBlockingSurface), false, &Character);
+        FCollisionResponseParams ResponseParams;
+        Movement->InitCollisionParams(QueryParams, ResponseParams);
+        QueryParams.AddIgnoredActors(Capsule->GetMoveIgnoreActors());
+        for (const UPrimitiveComponent *Ignored : Capsule->GetMoveIgnoreComponents())
+        {
+            QueryParams.AddIgnoredComponent(Ignored);
+        }
+
+        const FVector Start = Capsule->GetComponentLocation();
+        const float Radius = FMath::Max(Capsule->GetScaledCapsuleRadius() - ObstacleRadiusInset, 1.0f);
+        const float HalfHeight = FMath::Max(Capsule->GetScaledCapsuleHalfHeight() - ObstacleHeightInset, Radius);
+        const FCollisionShape Shape = FCollisionShape::MakeCapsule(Radius, HalfHeight);
+        const auto ReadBlockingNormal = [&](const FVector &Direction)
+        {
+            FHitResult Hit;
+            if (!World->SweepSingleByChannel(Hit, Start, Start + Direction * ObstacleTraceDistance,
+                Capsule->GetComponentQuat(), Capsule->GetCollisionObjectType(), Shape, QueryParams, ResponseParams)
+                || !Hit.bBlockingHit || Hit.bStartPenetrating
+                || Hit.ImpactNormal.Z >= Movement->GetWalkableFloorZ()
+                || Hit.ImpactPoint.Z <= Start.Z - Capsule->GetScaledCapsuleHalfHeight() + Movement->MaxStepHeight)
+            {
+                return FVector::ZeroVector;
+            }
+
+            const FVector Normal = Hit.ImpactNormal.GetSafeNormal2D();
+            if (FVector::DotProduct(Direction, Normal) >= -0.01f)
+            {
+                return FVector::ZeroVector;
+            }
+
+            return Normal;
+        };
+
+        FactState.BlockingSurfaceNormal = ReadBlockingNormal(InputDirection);
+        if (!FactState.BlockingSurfaceNormal.IsNearlyZero())
+        {
+            const FVector Tangent = FVector::VectorPlaneProject(InputDirection, FactState.BlockingSurfaceNormal).GetSafeNormal2D();
+            if (!Tangent.IsNearlyZero())
+            {
+                FactState.SecondaryBlockingSurfaceNormal = ReadBlockingNormal(Tangent);
+            }
+        }
+    }
+
     FactState.MaxAcceleration = Movement->GetMaxAcceleration();
     FactState.FacingWorld = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
         ? Character.GetActorRotation()

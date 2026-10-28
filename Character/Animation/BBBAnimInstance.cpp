@@ -35,6 +35,8 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceFacingWorld = FactState.FacingWorld;
     SourceControlRotation = FactState.ControlRotation;
     SourceMovementInput = FactState.MovementInput;
+    SourceBlockingSurfaceNormal = FactState.BlockingSurfaceNormal;
+    SourceSecondaryBlockingSurfaceNormal = FactState.SecondaryBlockingSurfaceNormal;
     SourceRecoilAngles = FactState.RecoilAngles;
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
