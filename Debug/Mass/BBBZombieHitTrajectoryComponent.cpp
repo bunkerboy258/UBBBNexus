@@ -1,9 +1,13 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitTrajectoryComponent.h"
 
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimSequence.h"
+#include "MassEntityConfigAsset.h"
+#include "Misc/PackageName.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
+#include "Engine/SkeletalMesh.h"
 #include "HAL/FileManager.h"
 #include "HitReactProfile.h"
 #include "Kismet/GameplayStatics.h"
@@ -17,6 +21,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitReactionTarget.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/BBBMonsterGorePreviewComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPhysicalAnimationComponent.h"
 
@@ -51,6 +56,200 @@ UBBBZombieHitTrajectoryComponent::UBBBZombieHitTrajectoryComponent()
     PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 }
 
+bool UBBBZombieHitTrajectoryComponent::ApplyPhysicsTuning(UPhysicsAsset* Asset,
+    USkeletalMesh* Mesh, const TSharedPtr<FJsonObject>& Tune)
+{
+    using namespace BBBZombieTrajectory;
+    if (!Asset || !Mesh || !Tune.IsValid() || Tune->HasField(TEXT("neutralFrames")))
+    {
+        return false;
+    }
+    for (const auto& Field : Tune->Values)
+    {
+        double Value = 0;
+        if (Field.Value->TryGetNumber(Value) && (!FMath::IsFinite(Value) || Value < 0 || Value > 10000))
+        {
+            return false;
+        }
+    }
+    for (USkeletalBodySetup* Body : Asset->SkeletalBodySetups)
+    {
+        const FString Bone = Body->BoneName.ToString();
+        auto* Profile = Body->FindPhysicalAnimationProfile(TEXT("BBBHitReact"));
+        if (Profile)
+        {
+            auto& Data = Profile->PhysicalAnimationData;
+            double Factor = Bone.Contains(TEXT("thigh")) || Bone.Contains(TEXT("calf")) || Bone.Contains(TEXT("foot")) ? .5 : 1;
+            if (Bone == TEXT("head"))
+            {
+                Factor = .65;
+            }
+            Data.OrientationStrength = Number(Tune, TEXT("orientation"), Data.OrientationStrength / Factor) * Factor;
+            const double DampingFactor = Factor == .5 ? .75 : 1;
+            Data.AngularVelocityStrength = Number(Tune, TEXT("driveDamping"), Data.AngularVelocityStrength / DampingFactor) * DampingFactor;
+        }
+        Body->DefaultInstance.LinearDamping = Number(Tune, TEXT("linearDamping"), Body->DefaultInstance.LinearDamping);
+        Body->DefaultInstance.AngularDamping = Number(Tune, TEXT("angularDamping"), Body->DefaultInstance.AngularDamping);
+        Body->DefaultInstance.bEnableGravity = false;
+        Body->DefaultInstance.SetOverrideIterationCounts(true);
+        Body->DefaultInstance.SetPositionSolverIterationCount(Number(Tune, TEXT("positionIterations"), 16));
+        Body->DefaultInstance.SetVelocitySolverIterationCount(Number(Tune, TEXT("velocityIterations"), 4));
+        Body->DefaultInstance.SetProjectionSolverIterationCount(Number(Tune, TEXT("projectionIterations"), 2));
+        Body->DefaultInstance.InertiaTensorScale = FVector(Number(Tune, TEXT("inertiaScale"), 1));
+        Body->DefaultInstance.bOverrideMaxAngularVelocity = true;
+        Body->DefaultInstance.MaxAngularVelocity = Number(Tune, TEXT("maxAngularVelocity"), 1200);
+    }
+    const FReferenceSkeleton& Skeleton = Mesh->GetRefSkeleton();
+    TArray<FTransform> ReferencePoses = Skeleton.GetRefBonePose();
+    for (int32 Index = 1; Index < ReferencePoses.Num(); ++Index)
+    {
+        ReferencePoses[Index] *= ReferencePoses[Skeleton.GetParentIndex(Index)];
+    }
+    const TArray<TSharedPtr<FJsonValue>>* AnchorBones = nullptr;
+    Tune->TryGetArrayField(TEXT("anchorBones"), AnchorBones);
+    for (UPhysicsConstraintTemplate* Joint : Asset->ConstraintSetup)
+    {
+        auto& C = Joint->DefaultInstance;
+        const FString Bone = C.ConstraintBone1.ToString();
+        if (AnchorBones && AnchorBones->ContainsByPredicate([&Bone](const auto& Value)
+            {
+                return Value->AsString() == Bone;
+            }))
+        {
+            const int32 Child = Skeleton.FindBoneIndex(C.ConstraintBone1);
+            const int32 Parent = Skeleton.FindBoneIndex(C.ConstraintBone2);
+            if (Child != INDEX_NONE && Parent != INDEX_NONE)
+            {
+                FTransform ChildFrame = C.GetRefFrame(EConstraintFrame::Frame1);
+                ChildFrame.SetLocation(FVector::ZeroVector);
+                C.SetRefFrame(EConstraintFrame::Frame1, ChildFrame);
+                C.SetRefFrame(EConstraintFrame::Frame2,
+                    (ChildFrame * ReferencePoses[Child]).GetRelativeTransform(ReferencePoses[Parent]));
+            }
+        }
+        const TSharedPtr<FJsonObject>* Limits = nullptr;
+        if (Tune->TryGetObjectField(TEXT("limits"), Limits))
+        {
+            FString Group = TEXT("hand");
+            if (Bone.Contains(TEXT("spine")))
+            {
+                Group = TEXT("spine");
+            }
+            if (Bone == TEXT("head"))
+            {
+                Group = TEXT("head");
+            }
+            if (Bone.Contains(TEXT("upperarm")))
+            {
+                Group = TEXT("upperarm");
+            }
+            if (Bone.Contains(TEXT("lowerarm")))
+            {
+                Group = TEXT("lowerarm");
+            }
+            if (Bone.Contains(TEXT("thigh")))
+            {
+                Group = TEXT("thigh");
+            }
+            if (Bone.Contains(TEXT("calf")))
+            {
+                Group = TEXT("calf");
+            }
+            if (Bone.Contains(TEXT("foot")))
+            {
+                Group = TEXT("foot");
+            }
+            if ((*Limits)->HasField(Bone))
+            {
+                Group = Bone;
+            }
+            const TArray<TSharedPtr<FJsonValue>>* Angles = nullptr;
+            if ((*Limits)->TryGetArrayField(Group, Angles) && Angles->Num() == 3)
+            {
+                C.SetAngularSwing1Limit(ACM_Limited, (*Angles)[0]->AsNumber());
+                C.SetAngularSwing2Limit(ACM_Limited, (*Angles)[1]->AsNumber());
+                C.SetAngularTwistLimit(ACM_Limited, (*Angles)[2]->AsNumber());
+            }
+        }
+        C.SetLinearLimits(LCM_Locked, LCM_Locked, LCM_Locked, 0);
+        C.ProfileInstance.bDisableCollision = true;
+        C.ProfileInstance.bParentDominates = Tune->HasField(TEXT("parentDominates")) && Tune->GetBoolField(TEXT("parentDominates"));
+        C.ProfileInstance.bUseLinearJointSolver = !Tune->HasField(TEXT("linearSolver")) || Tune->GetBoolField(TEXT("linearSolver"));
+        C.ProfileInstance.ConeLimit.bSoftConstraint = false;
+        C.ProfileInstance.TwistLimit.bSoftConstraint = false;
+        C.SetProjectionParams(true, Number(Tune, TEXT("linearProjection"), .8),
+            Number(Tune, TEXT("angularProjection"), .2), Number(Tune, TEXT("linearTolerance"), .1),
+            Number(Tune, TEXT("angularTolerance"), 1));
+#if WITH_EDITOR
+        Joint->SetDefaultProfile(C);
+#endif
+    }
+    return true;
+}
+
+//--------------
+bool UBBBZombieHitTrajectoryComponent::ApplyProfileTuning(UHitReactProfile* Profile, const TSharedPtr<FJsonObject>& Tune)
+{
+    using namespace BBBZombieTrajectory;
+    if (!Profile || !Tune.IsValid())
+    {
+        return false;
+    }
+    const TPair<const TCHAR*, double> Fields[] = {{TEXT("weight"), 1}, {TEXT("rate"), 120},
+        {TEXT("in"), 1}, {TEXT("hold"), 1}, {TEXT("out"), 1}, {TEXT("subsequent"), 1}};
+    for (const auto& Field : Fields)
+    {
+        if (Tune->HasField(Field.Key))
+        {
+            double Value = 0;
+            if (!Tune->TryGetNumberField(Field.Key, Value) || !FMath::IsFinite(Value) || Value < 0 || Value > Field.Value)
+            {
+                return false;
+            }
+        }
+    }
+    const TSharedPtr<FJsonObject>* BoneWeights = nullptr;
+    if (Tune->HasField(TEXT("boneWeights")))
+    {
+        if (!Tune->TryGetObjectField(TEXT("boneWeights"), BoneWeights) || (*BoneWeights)->Values.Num() > 64)
+        {
+            return false;
+        }
+        for (const auto& Pair : (*BoneWeights)->Values)
+        {
+            double Value = 0;
+            if (Pair.Key.IsEmpty() || !Pair.Value->TryGetNumber(Value) || !FMath::IsFinite(Value) || Value < 0 || Value > 1)
+            {
+                return false;
+            }
+        }
+    }
+    Profile->MaxBlendWeight = Number(Tune, TEXT("weight"), Profile->MaxBlendWeight);
+    Profile->BoneBlendRate = Number(Tune, TEXT("rate"), Profile->BoneBlendRate);
+    Profile->BlendParams.BlendIn.BlendTime = Number(Tune, TEXT("in"), Profile->BlendParams.BlendIn.BlendTime);
+    Profile->BlendParams.BlendHoldTime = Number(Tune, TEXT("hold"), Profile->BlendParams.BlendHoldTime);
+    Profile->BlendParams.BlendOut.BlendTime = Number(Tune, TEXT("out"), Profile->BlendParams.BlendOut.BlendTime);
+    if (Tune->HasField(TEXT("subsequent")))
+    {
+        Profile->SubsequentImpulseScalars = {FHitReactSubsequentImpulse(.2f, Number(Tune, TEXT("subsequent"), 1))};
+    }
+    if (Tune->HasField(TEXT("cleanOverrides")) && Tune->GetBoolField(TEXT("cleanOverrides")))
+    {
+        Profile->BoneOverrides.Reset();
+    }
+    if (BoneWeights)
+    {
+        for (const auto& Pair : (*BoneWeights)->Values)
+        {
+            FHitReactBoneOverride Override;
+            Override.BlendWeightScalar = Pair.Value->AsNumber();
+            Profile->BoneOverrides.Add(FName(*Pair.Key), Override);
+        }
+    }
+    return true;
+}
+
+//--------------
 FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
 {
     using namespace BBBZombieTrajectory;
@@ -95,6 +294,14 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     {
         return TEXT("拒绝 试验标识或采样范围无效");
     }
+    FString VariantPath;
+    FString AnimationPath;
+    if (!Request->TryGetStringField(TEXT("variant"), VariantPath) || !Request->TryGetStringField(TEXT("animation"), AnimationPath)
+        || !Target->ZombieVersion || FPackageName::ObjectPathToPackageName(VariantPath) != Target->ZombieVersion->GetOutermost()->GetName()
+        || FPackageName::ObjectPathToPackageName(AnimationPath) != Target->TestAnimation->GetOutermost()->GetName())
+    {
+        return TEXT("拒绝 请求版本或动画与调参靶实际配置不符");
+    }
     OutputPath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("temp/ZombieHitTrajectory20261016"), Id + TEXT(".json"));
     if (FPaths::FileExists(OutputPath))
     {
@@ -102,7 +309,7 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     }
 
     Target->HitReaction->ResetPresentation();
-    auto* Animation = Target->TargetMesh->AnimationData.AnimToPlay.Get();
+    auto* Animation = Target->TestAnimation.Get();
     const float Phase = Number(Request, TEXT("phase"), 0);
     Target->TargetMesh->bPauseAnims = false;
     Target->TargetMesh->PlayAnimation(Animation, true);
@@ -118,86 +325,19 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     }
     ProbePhysics = DuplicateObject<UPhysicsAsset>(SourcePhysics, this,
         MakeUniqueObjectName(this, UPhysicsAsset::StaticClass(), TEXT("ProbePhysics")));
+    SourceIterations = FIntVector(Target->TargetMesh->BodyInstance.GetPositionSolverIterationCount(),
+        Target->TargetMesh->BodyInstance.GetVelocitySolverIterationCount(),
+        Target->TargetMesh->BodyInstance.GetProjectionSolverIterationCount());
     const TSharedPtr<FJsonObject>* TunePtr = nullptr;
-    if (Request->TryGetObjectField(TEXT("tune"), TunePtr))
+    if (Request->TryGetObjectField(TEXT("tune"), TunePtr)
+        && (!(*TunePtr)->HasField(TEXT("physics")) || (*TunePtr)->GetBoolField(TEXT("physics"))))
     {
         const auto& Tune = *TunePtr;
-        for (USkeletalBodySetup* Body : ProbePhysics->SkeletalBodySetups)
+        if (!ApplyPhysicsTuning(ProbePhysics, Target->TargetMesh->GetSkeletalMeshAsset(), Tune))
         {
-            const FString Bone = Body->BoneName.ToString();
-            auto* Profile = Body->FindPhysicalAnimationProfile(TEXT("BBBHitReact"));
-            if (Profile)
-            {
-                auto& Data = Profile->PhysicalAnimationData;
-                double Factor = Bone.Contains(TEXT("thigh")) || Bone.Contains(TEXT("calf")) || Bone.Contains(TEXT("foot")) ? .5 : 1;
-                if (Bone == TEXT("head"))
-                {
-                    Factor = .65;
-                }
-                Data.OrientationStrength = Number(Tune, TEXT("orientation"), Data.OrientationStrength / Factor) * Factor;
-                const double DampingFactor = Factor == .5 ? .75 : 1;
-                Data.AngularVelocityStrength = Number(Tune, TEXT("driveDamping"), Data.AngularVelocityStrength / DampingFactor) * DampingFactor;
-            }
-            Body->DefaultInstance.LinearDamping = Number(Tune, TEXT("linearDamping"), Body->DefaultInstance.LinearDamping);
-            Body->DefaultInstance.AngularDamping = Number(Tune, TEXT("angularDamping"), Body->DefaultInstance.AngularDamping);
-            Body->DefaultInstance.bEnableGravity = false;
-            Body->DefaultInstance.SetOverrideIterationCounts(true);
-            Body->DefaultInstance.SetPositionSolverIterationCount(Number(Tune, TEXT("positionIterations"), 16));
-            Body->DefaultInstance.SetVelocitySolverIterationCount(Number(Tune, TEXT("velocityIterations"), 4));
-            Body->DefaultInstance.SetProjectionSolverIterationCount(Number(Tune, TEXT("projectionIterations"), 2));
-            Body->DefaultInstance.InertiaTensorScale = FVector(Number(Tune, TEXT("inertiaScale"), 1));
-            Body->DefaultInstance.bOverrideMaxAngularVelocity = true;
-            Body->DefaultInstance.MaxAngularVelocity = Number(Tune, TEXT("maxAngularVelocity"), 1200);
-        }
-        for (UPhysicsConstraintTemplate* Joint : ProbePhysics->ConstraintSetup)
-        {
-            auto& C = Joint->DefaultInstance;
-            const FString Bone = C.ConstraintBone1.ToString();
-            if (Tune->HasField(TEXT("neutralFrames")) && Tune->GetBoolField(TEXT("neutralFrames")))
-            {
-                const FTransform ChildPose = Target->TargetMesh->GetSocketTransform(C.ConstraintBone1, RTS_World);
-                const FTransform ParentPose = Target->TargetMesh->GetSocketTransform(C.ConstraintBone2, RTS_World);
-                C.SetRefFrame(EConstraintFrame::Frame2,
-                    (C.GetRefFrame(EConstraintFrame::Frame1) * ChildPose).GetRelativeTransform(ParentPose));
-            }
-            const TSharedPtr<FJsonObject>* Limits = nullptr;
-            if (Tune->TryGetObjectField(TEXT("limits"), Limits))
-            {
-                FString Group = TEXT("hand");
-                if (Bone.Contains(TEXT("spine"))) { Group = TEXT("spine"); }
-                if (Bone == TEXT("head")) { Group = TEXT("head"); }
-                if (Bone.Contains(TEXT("upperarm"))) { Group = TEXT("upperarm"); }
-                if (Bone.Contains(TEXT("lowerarm"))) { Group = TEXT("lowerarm"); }
-                if (Bone.Contains(TEXT("thigh"))) { Group = TEXT("thigh"); }
-                if (Bone.Contains(TEXT("calf"))) { Group = TEXT("calf"); }
-                if (Bone.Contains(TEXT("foot"))) { Group = TEXT("foot"); }
-                if ((*Limits)->HasField(Bone))
-                {
-                    Group = Bone;
-                }
-                const TArray<TSharedPtr<FJsonValue>>* Angles = nullptr;
-                if ((*Limits)->TryGetArrayField(Group, Angles) && Angles->Num() == 3)
-                {
-                    C.SetAngularSwing1Limit(ACM_Limited, (*Angles)[0]->AsNumber());
-                    C.SetAngularSwing2Limit(ACM_Limited, (*Angles)[1]->AsNumber());
-                    C.SetAngularTwistLimit(ACM_Limited, (*Angles)[2]->AsNumber());
-                }
-            }
-            C.SetLinearLimits(LCM_Locked, LCM_Locked, LCM_Locked, 0);
-            C.ProfileInstance.bDisableCollision = true;
-            C.ProfileInstance.bParentDominates = Tune->HasField(TEXT("parentDominates")) && Tune->GetBoolField(TEXT("parentDominates"));
-            C.ProfileInstance.bUseLinearJointSolver = !Tune->HasField(TEXT("linearSolver")) || Tune->GetBoolField(TEXT("linearSolver"));
-            C.ProfileInstance.ConeLimit.bSoftConstraint = false;
-            C.ProfileInstance.TwistLimit.bSoftConstraint = false;
-            C.SetProjectionParams(true, Number(Tune, TEXT("linearProjection"), .8),
-                Number(Tune, TEXT("angularProjection"), .2), Number(Tune, TEXT("linearTolerance"), .1),
-                Number(Tune, TEXT("angularTolerance"), 1));
-#if WITH_EDITOR
-            Joint->SetDefaultProfile(C);
-#endif
+            return TEXT("拒绝 物理调参配置无效");
         }
     }
-    Target->TargetMesh->SetPhysicsAsset(ProbePhysics, true);
     ProbeProfiles.Reset();
     for (UHitReactProfile* Source : SourceProfiles)
     {
@@ -205,24 +345,26 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
             MakeUniqueObjectName(this, UHitReactProfile::StaticClass(), TEXT("ProbeProfile")));
         if (TunePtr)
         {
-            const auto& Tune = *TunePtr;
-            Profile->MaxBlendWeight = Number(Tune, TEXT("weight"), Profile->MaxBlendWeight);
-            Profile->BoneBlendRate = Number(Tune, TEXT("rate"), Profile->BoneBlendRate);
-            Profile->BlendParams.BlendIn.BlendTime = Number(Tune, TEXT("in"), Profile->BlendParams.BlendIn.BlendTime);
-            Profile->BlendParams.BlendHoldTime = Number(Tune, TEXT("hold"), Profile->BlendParams.BlendHoldTime);
-            Profile->BlendParams.BlendOut.BlendTime = Number(Tune, TEXT("out"), Profile->BlendParams.BlendOut.BlendTime);
-            if (Tune->HasField(TEXT("subsequent")))
+            if (!ApplyProfileTuning(Profile, *TunePtr))
             {
-                Profile->SubsequentImpulseScalars = {FHitReactSubsequentImpulse(.2f,
-                    Number(Tune, TEXT("subsequent"), 1))};
-            }
-            if (Tune->HasField(TEXT("cleanOverrides")) && Tune->GetBoolField(TEXT("cleanOverrides")))
-            {
-                Profile->BoneOverrides.Reset();
+                return TEXT("拒绝 混合配置无效");
             }
         }
         ProbeProfiles.Add(Profile);
     }
+    if (TunePtr && (*TunePtr)->HasField(TEXT("componentIterations")) && (*TunePtr)->GetBoolField(TEXT("componentIterations")))
+    {
+        Target->TargetMesh->BodyInstance.SetOverrideIterationCounts(true);
+        Target->TargetMesh->BodyInstance.SetPositionSolverIterationCount(Number(*TunePtr, TEXT("positionIterations"), 32));
+        Target->TargetMesh->BodyInstance.SetVelocitySolverIterationCount(Number(*TunePtr, TEXT("velocityIterations"), 8));
+        Target->TargetMesh->BodyInstance.SetProjectionSolverIterationCount(Number(*TunePtr, TEXT("projectionIterations"), 4));
+    }
+    Target->TargetMesh->SetPhysicsAsset(ProbePhysics, true);
+    bSourceAllowSevering = Target->GorePreview->bAllowSevering;
+    SourceResetInterval = Target->GorePreview->ResetInterval;
+    Target->GorePreview->bAllowSevering = false;
+    Target->GorePreview->ResetInterval = 0;
+    Target->GorePreview->ResetTarget();
     Target->HitReaction->AvailableProfiles.Reset();
     for (UHitReactProfile* Profile : ProbeProfiles)
     {
@@ -244,12 +386,24 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     ReferenceMesh->SetHiddenInGame(true);
     ReferenceMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     ReferenceMesh->RegisterComponent();
+    Target->TargetMesh->bPauseAnims = false;
+    Target->TargetMesh->PlayAnimation(Animation, true);
     ReferenceMesh->PlayAnimation(Animation, true);
     Target->TargetMesh->SetPosition(Phase, false);
     ReferenceMesh->SetPosition(Phase, false);
+    Target->TargetMesh->TickAnimation(0, false);
+    ReferenceMesh->TickAnimation(0, false);
+    Target->TargetMesh->RefreshBoneTransforms();
+    ReferenceMesh->RefreshBoneTransforms();
     const bool bFrozen = Request->HasField(TEXT("frozen")) && Request->GetBoolField(TEXT("frozen"));
-    Target->TargetMesh->bPauseAnims = bFrozen;
-    ReferenceMesh->bPauseAnims = bFrozen;
+    if (UAnimSingleNodeInstance* Instance = Target->TargetMesh->GetSingleNodeInstance())
+    {
+        Instance->SetPlaying(!bFrozen);
+    }
+    if (UAnimSingleNodeInstance* Instance = ReferenceMesh->GetSingleNodeInstance())
+    {
+        Instance->SetPlaying(!bFrozen);
+    }
     Target->TargetMesh->SetForcedLOD(1);
     ReferenceMesh->SetForcedLOD(1);
     AddTickPrerequisiteComponent(Target->TargetMesh);
@@ -262,6 +416,9 @@ FString UBBBZombieHitTrajectoryComponent::Start(const FString& RequestJson)
     Report->SetObjectField(TEXT("request"), Request);
     Report->SetStringField(TEXT("path"), FPaths::ConvertRelativePathToFull(OutputPath));
     Report->SetStringField(TEXT("samplingPhase"), TEXT("PostUpdateWork"));
+    Report->SetStringField(TEXT("actualVariant"), Target->ZombieVersion->GetPathName());
+    Report->SetStringField(TEXT("actualAnimation"), Target->TestAnimation->GetPathName());
+    Report->SetBoolField(TEXT("severingDisabled"), true);
     Report->SetArrayField(TEXT("samples"), {});
     Report->SetArrayField(TEXT("shots"), {});
     TArray<TSharedPtr<FJsonValue>> Configuration;
@@ -316,6 +473,30 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
     {
         return;
     }
+    if (Report->GetArrayField(TEXT("samples")).IsEmpty())
+    {
+        Report->SetBoolField(TEXT("targetSingleNode"), Mesh->GetSingleNodeInstance() != nullptr);
+        Report->SetBoolField(TEXT("referenceSingleNode"), ReferenceMesh->GetSingleNodeInstance() != nullptr);
+        double InitialAngle = 0;
+        double InitialDistance = 0;
+        for (const USkeletalBodySetup* Body : ProbePhysics->SkeletalBodySetups)
+        {
+            const FTransform TargetPose = Mesh->GetSocketTransform(Body->BoneName, RTS_World);
+            const FTransform ReferencePose = ReferenceMesh->GetSocketTransform(Body->BoneName, RTS_World);
+            InitialAngle = FMath::Max(InitialAngle, FMath::RadiansToDegrees(
+                TargetPose.GetRotation().AngularDistance(ReferencePose.GetRotation())));
+            InitialDistance = FMath::Max(InitialDistance,
+                FVector::Distance(TargetPose.GetLocation(), ReferencePose.GetLocation()));
+        }
+        Report->SetNumberField(TEXT("initialPoseAngle"), InitialAngle);
+        Report->SetNumberField(TEXT("initialPoseDistance"), InitialDistance);
+        if (!Mesh->GetSingleNodeInstance() || !ReferenceMesh->GetSingleNodeInstance()
+            || InitialAngle > 0.1 || InitialDistance > 0.05)
+        {
+            Complete(TEXT("目标与参考骨架的初始姿势不一致"));
+            return;
+        }
+    }
     const int32 Shots = Number(Request, TEXT("shots"), 1);
     const double Interval = Number(Request, TEXT("interval"), .1);
     bool bNewHit = false;
@@ -329,11 +510,20 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
         const FBodyInstance* AimBody = Mesh->GetBodyInstance(Bones[Region]);
         const FVector Position = AimBody ? AimBody->GetCOMPosition() : Mesh->GetBoneLocation(Bones[Region]);
         FHitResult Hit;
-        const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Position - Direction * 200, Position + Direction * 30, ECC_Pawn);
         const uint32 Before = Target->HitCount;
-        if (bHit && Hit.GetActor() == Target)
+        const bool bCommand = Request->HasField(TEXT("command")) && Request->GetBoolField(TEXT("command"));
+        if (!bCommand)
         {
-            UGameplayStatics::ApplyPointDamage(Target, 10, Direction, Hit, nullptr, nullptr, nullptr);
+            const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Position - Direction * 200, Position + Direction * 30, ECC_Pawn);
+            if (bHit && Hit.GetActor() == Target)
+            {
+                UGameplayStatics::ApplyPointDamage(Target, 10, Direction, Hit, nullptr, nullptr, nullptr);
+            }
+        }
+        if (bCommand)
+        {
+            Target->PreviewHit(Region, Direction, 1.0f);
+            Hit.BoneName = Target->LastHitBone;
         }
         auto Row = MakeShared<FJsonObject>();
         Row->SetNumberField(TEXT("time"), Time);
@@ -349,13 +539,25 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
     auto Sample = MakeShared<FJsonObject>();
     Sample->SetNumberField(TEXT("time"), Time);
     Sample->SetNumberField(TEXT("dt"), DeltaTime);
+    Sample->SetNumberField(TEXT("targetAnimationTime"), Mesh->GetSingleNodeInstance()->GetCurrentTime());
+    Sample->SetNumberField(TEXT("referenceAnimationTime"), ReferenceMesh->GetSingleNodeInstance()->GetCurrentTime());
     Sample->SetArrayField(TEXT("root"), Vector(Target->GetActorLocation()));
     Sample->SetNumberField(TEXT("serial"), Target->HitReaction->GetObservedHitSerial());
     Sample->SetNumberField(TEXT("blends"), Target->HitReaction->GetPhysicsBlends().Num());
     auto Bones = MakeShared<FJsonObject>();
-    for (USkeletalBodySetup* Setup : ProbePhysics->SkeletalBodySetups)
+    TArray<FName> SampleBones;
+    for (const USkeletalBodySetup* Setup : ProbePhysics->SkeletalBodySetups)
     {
-        const FName Name = Setup->BoneName;
+        SampleBones.AddUnique(Setup->BoneName);
+    }
+    // 女性物理资产不包含前臂刚体 仍采样实际蒙皮骨骼的最终姿态
+    const FName PrimaryBones[] = {TEXT("spine_03"), TEXT("head"), TEXT("lowerarm_l"), TEXT("lowerarm_r"), TEXT("calf_l"), TEXT("calf_r")};
+    for (const FName Name : PrimaryBones)
+    {
+        SampleBones.AddUnique(Name);
+    }
+    for (const FName Name : SampleBones)
+    {
         const FTransform Bone = Mesh->GetSocketTransform(Name, RTS_World);
         const FTransform Reference = ReferenceMesh->GetSocketTransform(Name, RTS_World);
         auto Row = MakeShared<FJsonObject>();
@@ -374,6 +576,10 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
             Row->SetArrayField(TEXT("bq"), Quat(Pose.GetRotation()));
             Row->SetArrayField(TEXT("v"), Vector(Body->GetUnrealWorldVelocity()));
             Row->SetArrayField(TEXT("w"), Vector(Body->GetUnrealWorldAngularVelocityInRadians()));
+            Row->SetNumberField(TEXT("positionIterations"), Body->GetPositionSolverIterationCount());
+            Row->SetNumberField(TEXT("velocityIterations"), Body->GetVelocitySolverIterationCount());
+            Row->SetNumberField(TEXT("projectionIterations"), Body->GetProjectionSolverIterationCount());
+            Row->SetNumberField(TEXT("maxAngularVelocity"), FMath::RadiansToDegrees(Body->GetMaxAngularVelocityInRadians()));
             Row->SetNumberField(TEXT("weight"), Body->PhysicsBlendWeight);
             Row->SetBoolField(TEXT("sim"), Body->IsInstanceSimulatingPhysics());
         }
@@ -381,9 +587,14 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
     }
     Sample->SetObjectField(TEXT("bones"), Bones);
     TArray<TSharedPtr<FJsonValue>> Joints;
-    for (UPhysicsConstraintTemplate* Setup : ProbePhysics->ConstraintSetup)
+    for (int32 JointIndex = 0; JointIndex < ProbePhysics->ConstraintSetup.Num(); ++JointIndex)
     {
-        const auto& Definition = Setup->DefaultInstance;
+        const FConstraintInstance* Joint = Mesh->GetConstraintInstanceByIndex(JointIndex);
+        if (!Joint)
+        {
+            continue;
+        }
+        const auto& Definition = *Joint;
         const auto* Child = Mesh->GetBodyInstance(Definition.ConstraintBone1);
         const auto* Parent = Mesh->GetBodyInstance(Definition.ConstraintBone2);
         if (!Child || !Parent)
@@ -426,6 +637,13 @@ void UBBBZombieHitTrajectoryComponent::Complete(const FString& Error)
     {
         Target->HitReaction->ResetPresentation();
         Target->HitReaction->Deactivate();
+        Target->TargetMesh->BodyInstance.SetOverrideIterationCounts(SourceIterations.X >= 0);
+        if (SourceIterations.X >= 0)
+        {
+            Target->TargetMesh->BodyInstance.SetPositionSolverIterationCount(SourceIterations.X);
+            Target->TargetMesh->BodyInstance.SetVelocitySolverIterationCount(SourceIterations.Y);
+            Target->TargetMesh->BodyInstance.SetProjectionSolverIterationCount(SourceIterations.Z);
+        }
         Target->TargetMesh->SetPhysicsAsset(SourcePhysics, true);
         Target->HitReaction->AvailableProfiles.Reset();
         for (UHitReactProfile* Profile : SourceProfiles)
@@ -433,6 +651,9 @@ void UBBBZombieHitTrajectoryComponent::Complete(const FString& Error)
             Target->HitReaction->AvailableProfiles.Add(Profile);
         }
         Target->HitReaction->Activate(true);
+        Target->GorePreview->bAllowSevering = bSourceAllowSevering;
+        Target->GorePreview->ResetInterval = SourceResetInterval;
+        Target->GorePreview->ResetTarget();
     }
     Report->SetStringField(TEXT("status"), Error.IsEmpty() ? TEXT("completed") : TEXT("failed"));
     Report->SetStringField(TEXT("error"), Error);

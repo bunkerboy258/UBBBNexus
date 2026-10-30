@@ -6,6 +6,7 @@
 
 class ABBBZombieHitReactionTarget;
 class USkeletalMeshComponent;
+class USkeletalMesh;
 class UPhysicsAsset;
 class UHitReactProfile;
 class FJsonObject;
@@ -22,6 +23,14 @@ public:
     FString Start(const FString& RequestJson);
     /** @return 当前试验状态与报告路径 */
     FString Status() const;
+    /** @param Asset 物理资产 @param Mesh 参考骨架 @param Tune 有界物理配置 @return 是否完整应用 */
+    static bool ApplyPhysicsTuning(UPhysicsAsset* Asset, USkeletalMesh* Mesh, const TSharedPtr<FJsonObject>& Tune);
+    /**
+     * @param Profile	局部受击配置
+     * @param Tune	有界混合与骨骼权重
+     * @return 是否完整应用
+     */
+    static bool ApplyProfileTuning(UHitReactProfile* Profile, const TSharedPtr<FJsonObject>& Tune);
     //~ Begin UActorComponent Interface
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -48,6 +57,11 @@ private:
     /** 当前诊断结果 不保留已结束试验的运行状态 */
     TSharedPtr<FJsonObject> Report;
     TSharedPtr<FJsonObject> Request;
+    /** 调参前的组件求解覆盖 结束后完整恢复 */
+    FIntVector SourceIterations = FIntVector(-1);
+    /** 普通受击诊断隔离断肢与自动重置 结束后恢复原配置 */
+    bool bSourceAllowSevering = false;
+    float SourceResetInterval = 0;
     double StartSeconds = 0.0;
     int32 Fired = 0;
     FString OutputPath;

@@ -53,6 +53,9 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
     Profile->Cooldown = 100.0f;
     Profile->MaxBlendWeight = 0.6f;
     Profile->SubsequentImpulseScalars.Reset();
+    Profile->BlendParams.BlendIn.BlendTime = .2f;
+    Profile->BlendParams.BlendHoldTime = .1f;
+    Profile->BlendParams.BlendOut.BlendTime = .2f;
     Reaction->Mesh = Actor->GetMonsterMesh();
     Reaction->Mesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
     Reaction->bHasInitialized = true;
@@ -66,6 +69,7 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
     auto& Blend = Reaction->PhysicsBlends.Add_GetRef({});
     Blend.HitReact(Reaction->Mesh, Profile, TEXT("spine_01"), {}, {});
     Blend.Tick(0.1f);
+    const float InitialAlpha = Blend.PhysicsState.GetBlendStateAlpha();
     FBBBMonsterHitReactionFragment Hit;
     Hit.Serial = 1;
     Hit.Age = 0.0f;
@@ -80,7 +84,20 @@ bool FBBBMonsterHitReactionRefreshTest::RunTest(const FString&)
     Reaction->ApplyHitFacts(Hit, true);
     TestTrue(TEXT("踉跄姿态仍允许叠加物理冲击"), Reaction->bHasAppliedReaction);
     TestEqual(TEXT("已接受连射只保留一个同骨骼混合"), Reaction->GetPhysicsBlends().Num(), 1);
-    TestTrue(TEXT("接受连射刷新当前物理混合"), FMath::IsNearlyZero(Reaction->GetPhysicsBlends()[0].PhysicsState.GetElapsedTime()));
+    TestTrue(TEXT("接受连射从当前权重续接"), FMath::IsNearlyEqual(
+        Reaction->GetPhysicsBlends()[0].PhysicsState.GetBlendStateAlpha(), InitialAlpha, .001f));
+    Reaction->PhysicsBlends[0].PhysicsState.SetElapsedTime(.25f);
+    Hit.Serial = 3;
+    Reaction->ApplyHitFacts(Hit, true);
+    TestEqual(TEXT("保持阶段连射仍只保留一份混合"), Reaction->GetPhysicsBlends().Num(), 1);
+    TestTrue(TEXT("保持阶段连射延长完整保持而不重放淡入"), FMath::IsNearlyEqual(
+        Reaction->GetPhysicsBlends()[0].PhysicsState.GetElapsedTime(), .2f));
+    Reaction->PhysicsBlends[0].PhysicsState.SetElapsedTime(.4f);
+    const float OutAlpha = 1.0f - Reaction->PhysicsBlends[0].PhysicsState.GetBlendStateAlpha();
+    Hit.Serial = 4;
+    Reaction->ApplyHitFacts(Hit, true);
+    TestTrue(TEXT("恢复阶段重新命中保持权重连续"), FMath::IsNearlyEqual(
+        Reaction->GetPhysicsBlends()[0].PhysicsState.GetBlendStateAlpha(), OutAlpha, .001f));
     Reaction->ResetPresentation();
     TestEqual(TEXT("复用清除全部局部受力"), Reaction->GetPhysicsBlends().Num(), 0);
     return true;

@@ -62,9 +62,15 @@ private:
     /** 本轮已经施加物理反应 结束时必须完成清理 */
     bool bHasAppliedReaction = false;
 
+    /** 本帧首次启用的局部链 物理前对齐当前动画框架 */
+    FName PendingAnchorRoot;
+
     /** 最近接收的存活事实 */
     bool bPresentationAlive = true;
 
     /** 只在活动受击期间请求完整骨骼更新 */
     void RequestAnimationUpdate() const;
+
+    /** @return 在活动局部链上保持相对当前动画的关节范围 无返回值 */
+    void UpdateJointFrames();
 };

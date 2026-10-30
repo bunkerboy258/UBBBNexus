@@ -19,6 +19,10 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("MonsterRoot"));
     SetRootComponent(Root);
     MonsterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MonsterMesh"));
+    MonsterMesh->BodyInstance.SetOverrideIterationCounts(true);
+    MonsterMesh->BodyInstance.SetPositionSolverIterationCount(32);
+    MonsterMesh->BodyInstance.SetVelocitySolverIterationCount(8);
+    MonsterMesh->BodyInstance.SetProjectionSolverIterationCount(8);
     MonsterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     MonsterMesh->SetGenerateOverlapEvents(false);
     MonsterMesh->SetCollisionResponseToAllChannels(ECR_Ignore);

@@ -39,11 +39,10 @@ ABBBZombieHitReactionTarget::ABBBZombieHitReactionTarget()
     TargetMesh->SetCollisionObjectType(ECC_Pawn);
     TargetMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     TargetMesh->SetCollisionResponseToAllChannels(ECR_Block);
-    // 网格组件持有整条局部物理链的求解覆盖 避免只改刚体模板而未实际生效
     TargetMesh->BodyInstance.SetOverrideIterationCounts(true);
     TargetMesh->BodyInstance.SetPositionSolverIterationCount(32);
     TargetMesh->BodyInstance.SetVelocitySolverIterationCount(8);
-    TargetMesh->BodyInstance.SetProjectionSolverIterationCount(4);
+    TargetMesh->BodyInstance.SetProjectionSolverIterationCount(8);
     // 正式子弹使用 Pawn 查询通道 必须阻挡才能收到标准点命中
     TargetMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
     TargetMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -186,7 +185,6 @@ bool ABBBZombieHitReactionTarget::ApplyConfiguration()
     HitReaction->AvailableProfiles = MoveTemp(Profiles);
     HitReaction->ConfigurePresentation(Settings);
     TargetMesh->AnimationData = FSingleAnimationPlayData();
-    TargetMesh->SetAnimInstanceClass(nullptr);
     if (TestAnimation)
     {
         TargetMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
@@ -241,6 +239,38 @@ FString ABBBZombieHitReactionTarget::StartHitTrajectory(const FString& RequestJs
 FString ABBBZombieHitReactionTarget::GetHitTrajectoryStatus() const
 {
     return Trajectory->Status();
+}
+
+bool ABBBZombieHitReactionTarget::PreviewHit(const int32 Region, FVector Direction, const float WoundStrength)
+{
+    if (!bConfigurationReady || !GetWorld() || !GetWorld()->IsGameWorld() || Region < 0 || Region >= 6
+        || Direction.ContainsNaN() || !Direction.Normalize() || !FMath::IsFinite(WoundStrength)
+        || WoundStrength <= 0.0f || WoundStrength > 10.0f)
+    {
+        return false;
+    }
+    const FName Bones[] = {TEXT("spine_01"), TEXT("head"), TEXT("upperarm_l"),
+        TEXT("upperarm_r"), TEXT("thigh_l"), TEXT("thigh_r")};
+    if (TargetMesh->GetBoneIndex(Bones[Region]) == INDEX_NONE)
+    {
+        return false;
+    }
+
+    const FVector Center = TargetMesh->GetBoneLocation(Bones[Region]);
+    FVector ImpactPoint;
+    if (TargetMesh->GetClosestPointOnCollision(Center - Direction * 100.0f, ImpactPoint, Bones[Region]) <= 0.0f)
+    {
+        return false;
+    }
+    FBBBProjectilePointDamageEvent Event;
+    Event.Damage = 1.0f;
+    Event.WoundStrength = WoundStrength;
+    Event.ShotDirection = Direction;
+    Event.HitInfo = FHitResult(this, TargetMesh, ImpactPoint, -Direction);
+    Event.HitInfo.BoneName = Bones[Region];
+    const uint32 Before = HitCount;
+    TakeDamage(1.0f, Event, nullptr, this);
+    return HitCount != Before && static_cast<int32>(LastHitRegion) == Region;
 }
 
 float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FDamageEvent& DamageEvent,

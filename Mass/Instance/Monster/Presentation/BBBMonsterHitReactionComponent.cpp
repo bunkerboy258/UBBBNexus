@@ -8,6 +8,9 @@
 #include "IAnimationBudgetAllocator.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsConstraintTemplate.h"
+#include "PhysicsEngine/BodyInstance.h"
+#include "Engine/SkeletalMesh.h"
 #include "SkeletalMeshComponentBudgeted.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
@@ -130,15 +133,30 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     World.AngularDirection = AngularAxis;
     const FHitReactInputParams Params(AvailableProfiles[ProfileIndex], BoneName, true);
     RequestAnimationUpdate();
-    const bool bRepeating = PhysicsBlends.ContainsByPredicate([BoneName](const auto& Blend)
+    const auto* PreviousBlend = PhysicsBlends.FindByPredicate([BoneName](const auto& Blend)
     {
-        return Blend.SimulatedBoneName == BoneName;
+        return Blend.SimulatedBoneName == BoneName && Blend.PhysicsState.IsActive();
     });
+    const bool bRepeating = PreviousBlend != nullptr;
+    float PreviousAlpha = 0;
+    if (PreviousBlend)
+    {
+        const auto& State = PreviousBlend->PhysicsState;
+        PreviousAlpha = State.GetBlendStateAlpha();
+        if (State.GetBlendState() == EHitReactBlendState::BlendHold)
+        {
+            PreviousAlpha = 1.0f;
+        }
+        if (State.GetBlendState() == EHitReactBlendState::BlendOut)
+        {
+            PreviousAlpha = 1.0f - PreviousAlpha;
+        }
+    }
     const float Scale = FMath::Clamp(Settings.ImpulseScale * (bRepeating ? Settings.RepeatImpulseScale : 1.0f),
         0.0f, Settings.MaximumImpulseScale);
     if (HitReact(Params, Impulse, World, Scale))
     {
-        // 连射刷新同一局部混合而不追加同骨骼状态 每次命中保留完整冲击
+        // 连射保留当前局部混合 同骨骼只保留一个状态 冲量按连射配置缩放
         int32 KeepIndex = INDEX_NONE;
         float MinimumAge = MAX_flt;
         for (int32 Index = 0; Index < PhysicsBlends.Num(); ++Index)
@@ -150,12 +168,40 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
                 KeepIndex = Index;
             }
         }
+        if (bRepeating && PhysicsBlends.IsValidIndex(KeepIndex))
+        {
+            auto& State = PhysicsBlends[KeepIndex].PhysicsState;
+            float Low = 0;
+            float High = 1;
+            for (int32 Iteration = 0; Iteration < 12; ++Iteration)
+            {
+                const float Middle = (Low + High) * .5f;
+                if (State.Params.BlendIn.Ease(Middle) < PreviousAlpha)
+                {
+                    Low = Middle;
+                }
+                else
+                {
+                    High = Middle;
+                }
+            }
+            float NormalizedTime = (Low + High) * .5f;
+            if (PreviousAlpha >= 1.0f - SMALL_NUMBER)
+            {
+                NormalizedTime = 1.0f;
+            }
+            State.SetElapsedTime(State.Params.BlendIn.BlendTime * NormalizedTime);
+        }
         for (int32 Index = PhysicsBlends.Num() - 1; Index >= 0; --Index)
         {
             if (Index != KeepIndex && PhysicsBlends[Index].SimulatedBoneName == BoneName)
             {
                 PhysicsBlends.RemoveAt(Index);
             }
+        }
+        if (!bRepeating)
+        {
+            PendingAnchorRoot = BoneName;
         }
         bHasAppliedReaction = true;
         if (IsValid(PhysicalAnimation))
@@ -164,7 +210,7 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
             PhysicalAnimation->SetComponentTickEnabled(true);
         }
         UE_LOG(LogTemp, Verbose, TEXT("[BBBHitReact]命中编号=%u 部位=%s LOD=%d 直线=%.1f 旋转=%.1f 力度=%.2f"),
-            Hit.Serial, *BoneName.ToString(), Mesh->GetPredictedLODLevel(), LinearStrength, AngularStrength, 1.0f);
+            Hit.Serial, *BoneName.ToString(), Mesh->GetPredictedLODLevel(), LinearStrength, AngularStrength, Scale);
     }
 }
 
@@ -193,6 +239,7 @@ void UBBBMonsterHitReactionComponent::TickComponent(const float DeltaTime, const
         return;
     }
 
+    UpdateJointFrames();
     const bool bWasReacting = !PhysicsBlends.IsEmpty();
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     if (!PhysicsBlends.IsEmpty())
@@ -206,19 +253,89 @@ void UBBBMonsterHitReactionComponent::TickComponent(const float DeltaTime, const
     }
 }
 
+void UBBBMonsterHitReactionComponent::UpdateJointFrames()
+{
+    if (!IsValid(Mesh) || !Mesh->GetPhysicsAsset() || (PendingAnchorRoot.IsNone() && PhysicsBlends.IsEmpty()))
+    {
+        return;
+    }
+    const auto LocalPose = Mesh->GetBoneSpaceTransformsView();
+    const FReferenceSkeleton& Skeleton = Mesh->GetSkeletalMeshAsset()->GetRefSkeleton();
+    if (LocalPose.Num() < Skeleton.GetNum())
+    {
+        return;
+    }
+    TArray<FTransform, TInlineAllocator<128>> AnimatedPose;
+    AnimatedPose.Append(LocalPose.GetData(), Skeleton.GetNum());
+    for (int32 Index = 1; Index < AnimatedPose.Num(); ++Index)
+    {
+        AnimatedPose[Index] *= AnimatedPose[Skeleton.GetParentIndex(Index)];
+    }
+    const UPhysicsAsset* Asset = Mesh->GetPhysicsAsset();
+    for (int32 Index = 0; Index < Asset->ConstraintSetup.Num(); ++Index)
+    {
+        FConstraintInstance* Joint = Mesh->GetConstraintInstanceByIndex(Index);
+        if (!Joint)
+        {
+            continue;
+        }
+        const int32 ChildIndex = Skeleton.FindBoneIndex(Joint->ConstraintBone1);
+        const int32 ParentIndex = Skeleton.FindBoneIndex(Joint->ConstraintBone2);
+        if (ChildIndex == INDEX_NONE || ParentIndex == INDEX_NONE)
+        {
+            continue;
+        }
+        const auto AffectsChild = [&Skeleton, ChildIndex](const FName Root)
+        {
+            const int32 RootIndex = Skeleton.FindBoneIndex(Root);
+            return RootIndex != INDEX_NONE && (ChildIndex == RootIndex || Skeleton.BoneIsChildOf(ChildIndex, RootIndex));
+        };
+        const bool bAffected = AffectsChild(PendingAnchorRoot) || PhysicsBlends.ContainsByPredicate([&AffectsChild](const auto& Blend)
+        {
+            return AffectsChild(Blend.SimulatedBoneName);
+        });
+        if (!bAffected)
+        {
+            continue;
+        }
+        // 局部物理相对当前动画活动 避免把弯腰和挥臂本身当作关节越限
+        FTransform ChildFrame = Asset->ConstraintSetup[Index]->DefaultInstance.GetRefFrame(EConstraintFrame::Frame1);
+        ChildFrame.SetLocation(FVector::ZeroVector);
+        FTransform ParentFrame = (ChildFrame * AnimatedPose[ChildIndex]).GetRelativeTransform(AnimatedPose[ParentIndex]);
+        ParentFrame.SetScale3D(FVector::OneVector);
+        Joint->SetRefFrame(EConstraintFrame::Frame1, ChildFrame);
+        Joint->SetRefFrame(EConstraintFrame::Frame2, ParentFrame);
+    }
+    PendingAnchorRoot = NAME_None;
+}
+
 void UBBBMonsterHitReactionComponent::ResetHitReactSystem()
 {
     if (IsValid(PhysicalAnimation))
     {
         PhysicalAnimation->SetComponentTickEnabled(false);
     }
+    PendingAnchorRoot = NAME_None;
     const bool bHadReaction = bHasAppliedReaction || !PhysicsBlends.IsEmpty() || PendingImpulse.IsValid() || bCollisionEnabledChanged || bPhysicalAnimationProfileChanged || bConstraintProfileChanged;
     if (bHadReaction && IsValid(Mesh))
     {
+        Mesh->GetBoneSpaceTransformsView();
         Mesh->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
         Mesh->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
         Mesh->SetAllBodiesPhysicsBlendWeight(0.0f);
         Mesh->SetAllBodiesSimulatePhysics(false);
+        if (const UPhysicsAsset* Asset = Mesh->GetPhysicsAsset())
+        {
+            for (int32 Index = 0; Index < Asset->ConstraintSetup.Num(); ++Index)
+            {
+                if (FConstraintInstance* Joint = Mesh->GetConstraintInstanceByIndex(Index))
+                {
+                    const auto& Definition = Asset->ConstraintSetup[Index]->DefaultInstance;
+                    Joint->SetRefFrame(EConstraintFrame::Frame1, Definition.GetRefFrame(EConstraintFrame::Frame1));
+                    Joint->SetRefFrame(EConstraintFrame::Frame2, Definition.GetRefFrame(EConstraintFrame::Frame2));
+                }
+            }
+        }
         Mesh->SetConstraintProfileForAll(NAME_None);
         if (IsValid(PhysicalAnimation))
         {
@@ -230,6 +347,11 @@ void UBBBMonsterHitReactionComponent::ResetHitReactSystem()
             Mesh->SetCollisionEnabled(DefaultCollisionEnabled);
         }
         UHitReactStatics::FinalizeMeshPhysics(Mesh);
+        if (Mesh->IsRegistered() && Mesh->GetSkeletalMeshAsset())
+        {
+            // 停用物理结束阶段后立即发布当前动画姿势 避免读缓冲残留上一帧
+            Mesh->RefreshBoneTransforms();
+        }
     }
 
     PhysicsBlends.Reset();

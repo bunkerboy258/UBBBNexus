@@ -56,6 +56,15 @@ public:
     UFUNCTION(CallInEditor, BlueprintCallable, Category = "测试僵尸", meta = (DisplayName = "应用版本与覆盖"))
     bool ApplyConfiguration();
 
+    /**
+     * @param Region	零至五的命中部位
+     * @param Direction	世界受力方向
+     * @param WoundStrength	独立于物理受力的血效强度
+     * @return 是否通过正式点命中入口消费本次预览命中
+     */
+    UFUNCTION(BlueprintCallable, Category = "受击调参", meta = (DisplayName = "指令预览命中"))
+    bool PreviewHit(int32 Region, FVector Direction, float WoundStrength = 1.0f);
+
     /** @return 更新正式动画蓝图需要的本地预览快照 无返回值 */
     void UpdatePreviewAnimation();
 
