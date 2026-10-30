@@ -26,6 +26,7 @@ void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
         && (SocketName.IsNone() || MeshComp->DoesSocketExist(SocketName))
         && !RelativeTransform.ContainsNaN() && Scale.X > 0.0 && Scale.Y > 0.0 && Scale.Z > 0.0
         && !LinearVelocity.ContainsNaN() && !AngularVelocityDegrees.ContainsNaN()
+        && FMath::IsFinite(VelocitySpreadDegrees) && VelocitySpreadDegrees >= 0.0f && VelocitySpreadDegrees <= 90.0f
         && FMath::IsFinite(LifeSeconds) && LifeSeconds > 0.0f
         && BodySetup && BodySetup->AggGeom.GetElementCount() > 0,
         TEXT("装备生成物体通知缺少有效网格 插槽 简单碰撞 变换 速度或存在时间 %s"), *GetPathName()))
@@ -43,7 +44,12 @@ void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
     // 只读取直接目标装备发布的移动速度 避免跨对象访问持有角色
     const AActor *Equipment = MeshComp->GetOwner();
     const FVector InheritedVelocity = IsValid(Equipment) ? Equipment->GetVelocity() : FVector::ZeroVector;
-    const FVector WorldLinearVelocity = SocketTransform.TransformVectorNoScale(LinearVelocity) + InheritedVelocity;
+    FVector LocalLinearVelocity = LinearVelocity;
+    if (VelocitySpreadDegrees > 0.0f && !LinearVelocity.IsNearlyZero())
+    {
+        LocalLinearVelocity = FMath::VRandCone(LinearVelocity.GetSafeNormal(), FMath::DegreesToRadians(VelocitySpreadDegrees)) * LinearVelocity.Size();
+    }
+    const FVector WorldLinearVelocity = SocketTransform.TransformVectorNoScale(LocalLinearVelocity) + InheritedVelocity;
     FActorSpawnParameters Parameters;
     Parameters.ObjectFlags |= RF_Transient;
     Parameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

@@ -29,6 +29,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备|物体", meta = (DisplayName = "初始线速度", ToolTip = "单位厘米每秒 方向使用生成插槽的局部坐标 不受物体缩放影响 生成时继承持有角色的世界移动速度"))
     FVector LinearVelocity = FVector::ZeroVector;
 
+    /** 抛出方向相对初始线速度的最大随机偏转角度 单位度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备|物体", meta = (ClampMin = "0", ClampMax = "90", DisplayName = "抛出方向随机角度", ToolTip = "单位度 在初始线速度方向周围随机偏转的最大角度 零表示方向固定 不改变速度大小"))
+    float VelocitySpreadDegrees = 0.0f;
+
     /** 插槽局部坐标中的初始旋转速度 单位度每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|装备|物体", meta = (DisplayName = "初始旋转速度", ToolTip = "单位度每秒 三个分量分别绕生成插槽的 X Y Z 轴旋转"))
     FVector AngularVelocityDegrees = FVector::ZeroVector;
