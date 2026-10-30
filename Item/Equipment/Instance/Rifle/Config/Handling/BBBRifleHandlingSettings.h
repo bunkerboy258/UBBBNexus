@@ -18,7 +18,7 @@ struct FBBBRifleHandlingSettings
     float RecoilScale = 1.0f;
 
     /** 向后受力动画的混合强度 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "后向震动", meta = (DisplayPriority = "5", ClampMin = "0.0", ClampMax = "1.0", DisplayName = "后向震动权重", ToolTip = "无单位 0 无震动 1 为专属动画完整幅度 越大震动越强 每枪重播 换弹时关闭"))
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "后向震动", meta = (DisplayPriority = "5", ClampMin = "0.0", ClampMax = "2.0", DisplayName = "后向震动权重", ToolTip = "无单位 0 无震动 1 为专属动画完整幅度 越大震动越强 每枪重播 换弹时关闭"))
     float BackwardRecoilAlpha = 0.45f;
 
     /** 连续持枪摇摆的上下与左右幅度 */
