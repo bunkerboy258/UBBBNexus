@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BBBMonsterGibPartPresentation.h"
+#include "BBBMonsterFleshPresentation.h"
 #include "BBBMonsterGibPresentation.generated.h"
 
 /** 残肢运动和生命周期 世界级预算不在此扩大 */
@@ -10,6 +11,9 @@ struct FBBBMonsterGibPresentation final
     GENERATED_BODY()
 
     FBBBMonsterGibPresentation();
+
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "命中碎肉"))
+    FBBBMonsterFleshPresentation Flesh;
 
     UPROPERTY(EditAnywhere, meta = (DisplayName = "默认残肢"))
     FBBBMonsterGibPartPresentation DefaultPart;

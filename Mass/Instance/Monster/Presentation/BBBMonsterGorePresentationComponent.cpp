@@ -74,7 +74,7 @@ bool UBBBMonsterGorePresentationComponent::Prepare(const UBBBMonsterGoreDefiniti
 
 void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition& Definition,
     const FBBBMonsterGoreFragment& Facts, const FBBBMonsterHitReactionFragment& Hit,
-    const FVector& Velocity, const uint32 Seed, const bool bRestore)
+    const FVector& Velocity, const uint32 Seed, const FGuid& InstanceId, const bool bRestore)
 {
     if (!Prepare(Definition))
     {
@@ -119,6 +119,7 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
         Burst.Seed = Seed ^ Hit.Serial;
         Burst.bWoundOpening = true;
         Burst.Source = ResidueSource;
+        Burst.InstanceId = InstanceId;
         Bursts.Add(Burst);
     }
     for (int32 Index = 0; Index < 6; ++Index)
@@ -179,6 +180,7 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
                 Burst.Seed = Seed ^ Hit.Serial ^ Index * 7919u;
                 Burst.bSevering = true;
                 Burst.Source = ResidueSource;
+                Burst.InstanceId = InstanceId;
                 Bursts.Add(Burst);
             }
             if (Part->DetachedSkin && Body->IsPhysicsStateCreated() && Body->bHasValidBodies)

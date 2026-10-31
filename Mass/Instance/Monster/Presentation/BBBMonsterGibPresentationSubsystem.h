@@ -15,6 +15,7 @@ class UPhysicalMaterial;
 class AActor;
 struct FHitResult;
 struct FReferenceSkeleton;
+struct FBBBMonsterBloodImpact;
 
 /** 世界共享的断肢表现池 不持有伤害事实且不创建独立更新 */
 UCLASS()
@@ -23,6 +24,25 @@ class ABBB_EVAC_API UBBBMonsterGibPresentationSubsystem final : public UWorldSub
     GENERATED_BODY()
 
 public:
+    /**
+     * @param Impact	当前命中接触及表现来源
+     * @param Settings	共享外观与碎肉参数
+     * @return 实际生成的小肉块数量
+     */
+    int32 EmitFlesh(const FBBBMonsterBloodImpact& Impact, const UBBBMonsterPresentationDefinition& Settings);
+
+    /** @return 当前活动的小肉块数量 */
+    int32 GetFleshCount() const;
+
+    /** @param Out	当前活动的小肉块组件 @return 只读采样用列表 无返回值 */
+    void GetFleshPieces(TArray<UStaticMeshComponent*>& Out) const;
+
+    /**
+     * @param Source	明确的调试来源
+     * @return 清理该来源的小肉块 无返回值
+     */
+    void ClearFleshForSource(const AActor& Source);
+
     /**
      * @param SourceSkeleton	身体骨架
      * @param ComponentPose	身体当前组件空间姿态
@@ -76,6 +96,23 @@ public:
     virtual void Deinitialize() override;
 
 private:
+    /** 池槽是否属于小肉块 */
+    TArray<bool> FleshPieces;
+    /** 严重毁伤碎肉使用更长间隔 防止一次连射重复堆叠 */
+    TArray<bool> MajorFleshPieces;
+    /** 首次落地时间 未落地为负值 */
+    TArray<float> LandedAt;
+    /** 碎肉来源的实体出生身份 */
+    TArray<FGuid> FleshInstances;
+    /** 调试来源只作限频与隔离清理 */
+    TArray<TWeakObjectPtr<AActor>> FleshSources;
+
+    /**
+     * @param bFlesh	是否申请小肉块槽位
+     * @return 可复用槽位或负一
+     */
+    int32 AcquireSlot(bool bFlesh);
+
     /** 活动池槽保留共享配置引用 不复制完整资源表 */
     UPROPERTY(Transient)
     TArray<TObjectPtr<const UBBBMonsterPresentationDefinition>> PresentationConfigs;

@@ -22,4 +22,7 @@ struct FBBBMonsterBloodImpact final
     bool bDripOnly = false;
     /** 可选的本地调试来源 仅用于隔离清理 不参与玩法 */
     TWeakObjectPtr<AActor> Source;
+
+    /** 正式实体的出生身份 仅用于短时表现限频 */
+    FGuid InstanceId;
 };

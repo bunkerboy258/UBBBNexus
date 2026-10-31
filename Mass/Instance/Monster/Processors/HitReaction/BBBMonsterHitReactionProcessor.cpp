@@ -51,7 +51,8 @@ void UBBBMonsterHitReactionProcessor::Execute(FMassEntityManager&, FMassExecutio
             const auto* Settings = Definition && Definition->Presentation ? Definition->Presentation->Blood.Get() : nullptr;
             if (Hit.Age <= 0.2f && Settings)
             {
-                Batches.FindOrAdd(Settings).Add({Hit.Position, Hit.Direction, Hit.Normal, Hit.Region, Hit.Serial});
+                auto& Impact = Batches.FindOrAdd(Settings).Add_GetRef({Hit.Position, Hit.Direction, Hit.Normal, Hit.Region, Hit.Serial});
+                Impact.InstanceId = Definitions[Index].InstanceId;
             }
         }
     });

@@ -1,4 +1,5 @@
 #include "BBBMonsterBloodPresentationSubsystem.h"
+#include "BBBMonsterGibPresentationSubsystem.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBloodPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
@@ -76,6 +77,14 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         return;
     }
     const auto* Presentation = Settings.GetTypedOuter<UBBBMonsterPresentationDefinition>();
+    if (Presentation)
+    {
+        auto* Pieces = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>();
+        for (const auto& Impact : Impacts)
+        {
+            Pieces->EmitFlesh(Impact, *Presentation);
+        }
+    }
     const auto* Sounds = Presentation ? Presentation->Sounds.Get() : nullptr;
     if (Sounds && Sounds->Attenuation && Sounds->ContactConcurrency)
     {
@@ -115,17 +124,6 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         {
             return;
         }
-        TArray<FVector, TInlineAllocator<2>> LocalViews;
-        for (auto It = World->GetPlayerControllerIterator(); It; ++It)
-        {
-            if (const APlayerController* Controller = It->Get(); Controller && Controller->IsLocalController())
-            {
-                FVector Location;
-                FRotator Rotation;
-                Controller->GetPlayerViewPoint(Location, Rotation);
-                LocalViews.Add(Location);
-            }
-        }
         TMap<FNiagaraDataChannelData*, TArray<int32>> Batches;
         for (int32 Index = 0; Index < Impacts.Num(); ++Index)
         {
@@ -158,12 +156,6 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
                     Writer->WriteVector(TEXT("Normal"), Index, Outward);
                     Writer->WriteVector(TEXT("Direction"), Index, Spray);
                     Writer->WriteInt(TEXT("Surface"), Index, Impact.bWoundOpening ? 4 : Impact.bSevering ? 3 : 2);
-                    bool bNearFlesh = World->WorldType == EWorldType::EditorPreview;
-                    for (const FVector& View : LocalViews)
-                    {
-                        bNearFlesh |= FVector::DistSquared(View, Impact.Position) <= FMath::Square(1500.0);
-                    }
-                    Writer->WriteInt(TEXT("NearFlesh"), Index, bNearFlesh ? 1 : 0);
                     const auto& SpraySettings = Impact.bWoundOpening ? Settings.WoundSpray
                         : Impact.bSevering ? Settings.SeveringSpray : Settings.HitSpray;
                     const bool bHeadSevering = Impact.bSevering && Impact.Region == EBBBMonsterHitRegion::Head;

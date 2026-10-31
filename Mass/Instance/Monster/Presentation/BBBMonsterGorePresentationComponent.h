@@ -28,11 +28,12 @@ public:
      * @param Hit 当前命中
      * @param Velocity 已成立速度
      * @param Seed 稳定出生种子
+     * @param InstanceId	当前实体出生身份 用于碎肉限频
      * @param bRestore 是否只还原当前外观
      * @return 无
      */
     void Apply(const UBBBMonsterGoreDefinition& Definition, const FBBBMonsterGoreFragment& Facts,
-        const FBBBMonsterHitReactionFragment& Hit, const FVector& Velocity, uint32 Seed, bool bRestore);
+        const FBBBMonsterHitReactionFragment& Hit, const FVector& Velocity, uint32 Seed, const FGuid& InstanceId, bool bRestore);
 
     /** @return 清除载体参数 不改变实体伤口 */
     void ResetPresentation();
