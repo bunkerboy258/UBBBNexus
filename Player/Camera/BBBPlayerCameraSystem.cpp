@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Player/Camera/Processors/BBBPlayerCameraImpulseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -51,6 +52,12 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
     CameraRelativeLocation.Y = 0.0f;
     Camera->SetRelativeLocation(CameraRelativeLocation);
     Camera->SetFieldOfView(HipFieldOfView);
+    ensureMsgf(FMath::IsFinite(StanceHeightBlendDuration) && StanceHeightBlendDuration > 0.0f,
+        TEXT("[BBBCamera]站蹲高度过渡时间必须为有限正数"));
+    SmoothedCapsuleHalfHeight = InCharacter.GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    CapsuleHeightBlendStart = SmoothedCapsuleHalfHeight;
+    CapsuleHeightBlendTarget = SmoothedCapsuleHalfHeight;
+    CapsuleHeightBlendElapsed = 0.0f;
     SetActorLocationAndRotation(InCharacter.GetActorLocation(), InController.GetControlRotation());
 }
 

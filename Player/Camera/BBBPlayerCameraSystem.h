@@ -74,6 +74,17 @@ private:
     /** 瞄准距离切换速度 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (ClampMin = "0.1", DisplayName = "瞄准相机臂插值速度"))
     float AimBoomInterpSpeed = 12.0f;
+    /** 胶囊高度变化的镜头过渡时间 单位秒 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.01", DisplayName = "站蹲高度过渡时间"))
+    float StanceHeightBlendDuration = 0.2f;
+    /** 当前平滑后的胶囊参考高度 */
+    float SmoothedCapsuleHalfHeight = 0.0f;
+    /** 本次高度过渡起点 */
+    float CapsuleHeightBlendStart = 0.0f;
+    /** 实际胶囊提供的高度目标 */
+    float CapsuleHeightBlendTarget = 0.0f;
+    /** 当前高度过渡已经经过的时间 */
+    float CapsuleHeightBlendElapsed = 0.0f;
     TWeakObjectPtr<ABBBCharacter> Character;
     TWeakObjectPtr<APlayerController> Controller;
     /** 当前等待消费的累计相机冲击 */
