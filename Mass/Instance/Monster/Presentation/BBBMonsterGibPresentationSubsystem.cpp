@@ -434,11 +434,14 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
         Pose->MarkRefreshTransformDirty();
         Pose->RefreshBoneTransforms();
     }
-    for (int32 Index = 0; Index < 36; ++Index)
+    for (int32 Index = 0; Index < 18; ++Index)
     {
         const float Value = Source.GetCustomPrimitiveData().Data.IsValidIndex(Index) ? Source.GetCustomPrimitiveData().Data[Index] : 0.0f;
-        Piece->SetCustomPrimitiveDataFloat(Index, Value);
-        Pose->SetCustomPrimitiveDataFloat(Index, Value);
+        if (Index != 8 && Index != 9)
+        {
+            Piece->SetCustomPrimitiveDataFloat(Index, Value);
+            Pose->SetCustomPrimitiveDataFloat(Index, Value);
+        }
     }
     Piece->SetCustomPrimitiveDataFloat(8, 0.0f);
     Pose->SetCustomPrimitiveDataFloat(8, 0.0f);
@@ -530,10 +533,14 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
         const float Lifetime = bFlesh ? FMath::Clamp(Settings.Flesh.Lifetime, 1.0f, 60.0f) : Settings.Lifetime;
         const float FadeDuration = bFlesh ? FMath::Max(Settings.Flesh.FadeDuration, 0.1f) : Settings.FadeDuration;
         const float Fade = FMath::Clamp((RetainedAge - Lifetime) / FadeDuration, 0.0f, 1.0f);
-        Piece->SetCustomPrimitiveDataFloat(8, Fade);
-        if (Poses[Index])
+        if (!FMath::IsNearlyEqual(Piece->GetCustomPrimitiveData().Data.IsValidIndex(8)
+            ? Piece->GetCustomPrimitiveData().Data[8] : 0.0f, Fade))
         {
-            Poses[Index]->SetCustomPrimitiveDataFloat(8, Fade);
+            Piece->SetCustomPrimitiveDataFloat(8, Fade);
+            if (Poses[Index])
+            {
+                Poses[Index]->SetCustomPrimitiveDataFloat(8, Fade);
+            }
         }
         if ((bFlesh ? RetainedAge >= Lifetime + FadeDuration
                 : RetainedAge >= Lifetime && (!bVisible || RetainedAge >= Lifetime + FadeDuration))

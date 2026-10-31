@@ -12,6 +12,9 @@ struct ABBB_EVAC_API FBBBMonsterGoreFragment final : public FMassFragment
     /** 顺序对应头 左臂 右臂 左腿 右腿 */
     uint8 DismembermentPresets[5] = {};
 
+    /** 只防止同一次命中连续推进两个断点 不作为网络伤害事实 */
+    uint32 DismembermentHitSerials[5] = {};
+
     /** 由全部玩家的当前贡献推导 255 表示完全毁伤 */
     uint8 DestructionStrengths[8] = {};
 };

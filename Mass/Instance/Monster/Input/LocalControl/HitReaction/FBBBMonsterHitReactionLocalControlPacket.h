@@ -25,11 +25,11 @@ struct FBBBMonsterHitReactionLocalControlPacket final
 
     /**
      * @param Health	目标当前生命
-     * @return 死亡目标不接收迟到表现
+     * @return 当前代实体的活体或尸体是否仍可接收命中
      */
     bool CanApply(const FBBBMonsterHealthFragment& Health) const
     {
-        return Health.CurrentHealth > 0.0f;
+        return FMath::IsFinite(Health.CurrentHealth) && Health.CurrentHealth >= 0.0f;
     }
 
     /**

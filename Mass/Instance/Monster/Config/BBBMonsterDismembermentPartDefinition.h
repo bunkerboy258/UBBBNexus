@@ -59,4 +59,11 @@ struct FBBBMonsterDismembermentPartDefinition final
 
     UPROPERTY(EditAnywhere, Category="掉落", meta=(DisplayName="物理掉落件"))
     TObjectPtr<UStaticMesh> DetachedMesh;
+
+    /** 远端已经脱落后再次近端离断使用的封闭剩余段 */
+    UPROPERTY(EditAnywhere, Category="掉落", meta=(DisplayName="剩余段蒙皮掉落件"))
+    TObjectPtr<USkeletalMesh> RemainingSkin;
+
+    UPROPERTY(EditAnywhere, Category="掉落", meta=(DisplayName="剩余段物理掉落件"))
+    TObjectPtr<UStaticMesh> RemainingMesh;
 };

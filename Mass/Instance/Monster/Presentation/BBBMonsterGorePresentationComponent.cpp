@@ -165,12 +165,20 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
         }
         if (Part && AppliedPresets[Index] != Part->Id)
         {
-            if (!bRestore && Hit.Age <= 0.25f && Part->DetachedSkin && Part->DetachedMesh)
+            const auto* Previous = Definition.Dismemberment->Find(AppliedPresets[Index]);
+            auto* DetachedSkin = Previous ? Part->RemainingSkin.Get() : Part->DetachedSkin.Get();
+            auto* DetachedMesh = Previous ? Part->RemainingMesh.Get() : Part->DetachedMesh.Get();
+            if (!bRestore && Hit.Serial != 0 && Hit.Age <= 0.25f && DetachedSkin && DetachedMesh)
             {
                 if (auto* Pieces = GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>())
                 {
-                    Pieces->Emit(*Body, *Part->DetachedMesh, *Part->DetachedSkin, Part->Bone,
-                        Hit.Direction, Velocity, Seed ^ Hit.Serial, *Definition.GetTypedOuter<UBBBMonsterPresentationDefinition>());
+                    FVector InheritedVelocity = Velocity;
+                    if (Body->IsSimulatingPhysics())
+                    {
+                        InheritedVelocity = Body->GetPhysicsLinearVelocity(Part->Bone);
+                    }
+                    Pieces->Emit(*Body, *DetachedMesh, *DetachedSkin, Part->Bone,
+                        Hit.Direction, InheritedVelocity, Seed ^ Hit.Serial, *Definition.GetTypedOuter<UBBBMonsterPresentationDefinition>());
                 }
                 FBBBMonsterBloodImpact Burst;
                 Burst.Position = CurrentContact(Definition, *Part, *Body);

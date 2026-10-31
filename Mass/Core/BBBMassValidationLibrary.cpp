@@ -48,6 +48,12 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "GameFramework/PlayerState.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
+#include "Engine/SkeletalMesh.h"
 
 namespace
 {
@@ -395,6 +401,63 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("corpseDestroyAt"), Death ? Death->DestroyAtTime : -1.0f);
             Sample->SetNumberField(TEXT("corpsePelvisZ"), CorpseMesh ? CorpseMesh->GetSocketLocation(TEXT("pelvis")).Z : 0.0f);
             Sample->SetBoolField(TEXT("corpseMeshTick"), CorpseMesh && CorpseMesh->IsComponentTickEnabled());
+            const auto* Gore = Manager.GetFragmentDataPtr<FBBBMonsterGoreFragment>(Entity);
+            const auto* LatestHitFacts = Manager.GetFragmentDataPtr<FBBBMonsterHitReactionFragment>(Entity);
+            Sample->SetNumberField(TEXT("hitSerial"), LatestHitFacts ? LatestHitFacts->Serial : 0);
+            Sample->SetNumberField(TEXT("hitAge"), LatestHitFacts ? LatestHitFacts->Age : -1);
+            TArray<TSharedPtr<FJsonValue>> Strengths;
+            TArray<TSharedPtr<FJsonValue>> Presets;
+            if (Gore)
+            {
+                for (const auto Strength : Gore->DestructionStrengths)
+                {
+                    Strengths.Add(MakeShared<FJsonValueNumber>(Strength));
+                }
+                for (const auto Preset : Gore->DismembermentPresets)
+                {
+                    Presets.Add(MakeShared<FJsonValueNumber>(Preset));
+                }
+            }
+            Sample->SetArrayField(TEXT("destructionStrengths"), Strengths);
+            Sample->SetArrayField(TEXT("dismembermentPresets"), Presets);
+            const auto* Settings = Network && Network->Definition.IsValid() ? Network->Definition->Presentation.Get() : nullptr;
+            const auto* Wounds = Settings ? Settings->Gore.Get() : nullptr;
+            TArray<TSharedPtr<FJsonValue>> Contacts;
+            if (Wounds && Wounds->Body && Wounds->Destruction && Wounds->Dismemberment && CorpseMesh)
+            {
+                const auto& Reference = Wounds->Body->GetRefSkeleton();
+                const auto Append = [&Reference, CorpseMesh, &Contacts](int32 Id, FName Bone, const FVector& Contact, const FRotator& Rotation)
+                {
+                    const int32 Index = Reference.FindBoneIndex(Bone);
+                    if (Index == INDEX_NONE || CorpseMesh->GetBoneIndex(Bone) == INDEX_NONE)
+                    {
+                        return;
+                    }
+                    FTransform Rest = Reference.GetRefBonePose()[Index];
+                    for (int32 Parent = Reference.GetParentIndex(Index); Parent != INDEX_NONE; Parent = Reference.GetParentIndex(Parent))
+                    {
+                        Rest *= Reference.GetRefBonePose()[Parent];
+                    }
+                    const FTransform Current = CorpseMesh->GetSocketTransform(Bone);
+                    const FVector Point = Current.TransformPosition(Rest.InverseTransformPosition(Contact));
+                    const FVector Normal = Current.TransformVectorNoScale(Rest.InverseTransformVectorNoScale(Rotation.RotateVector(FVector::UpVector))).GetSafeNormal();
+                    auto Value = MakeShared<FJsonObject>();
+                    Value->SetNumberField(TEXT("id"), Id);
+                    Value->SetStringField(TEXT("position"), Point.ToString());
+                    Value->SetStringField(TEXT("normal"), Normal.ToString());
+                    Contacts.Add(MakeShared<FJsonValueObject>(Value));
+                };
+                for (int32 Region = 0; Region < Wounds->Destruction->Regions.Num(); ++Region)
+                {
+                    const auto& Value = Wounds->Destruction->Regions[Region];
+                    Append(Region + 1, Value.Bone, Value.Contact, Value.Rotation);
+                }
+                for (const auto& Part : Wounds->Dismemberment->Parts)
+                {
+                    Append(Part.Id, Part.Bone, Part.Contact, Part.Rotation);
+                }
+            }
+            Sample->SetArrayField(TEXT("goreContacts"), Contacts);
             Sample->SetNumberField(TEXT("actorYawDegrees"), DisplayActor ? DisplayActor->GetActorRotation().Yaw : 0.0);
             Sample->SetNumberField(TEXT("actorPositionErrorCm"), DisplayActor && Transform ?
                 FVector::Distance(DisplayActor->GetActorLocation(), Transform->GetTransform().GetLocation()) : 0.0);

@@ -16,7 +16,13 @@ void FBBBMonsterDismembermentSystem::Resolve(FBBBMonsterGoreFragment& Result,
     for (int32 Region = 1; Region < 6; ++Region)
     {
         auto& Slot = Result.DismembermentPresets[Region - 1];
-        if ((DestroyedParts & (1u << Region)) == 0 || Slot != 0)
+        if ((DestroyedParts & (1u << Region)) == 0)
+        {
+            continue;
+        }
+        const auto* Previous = Definition.Dismemberment->Find(Slot);
+        if (Previous && (!Mesh || Hit.Serial == 0 || Hit.Age > 0.25f || static_cast<int32>(Hit.Region) != Region
+            || Result.DismembermentHitSerials[Region - 1] == Hit.Serial))
         {
             continue;
         }
@@ -25,6 +31,14 @@ void FBBBMonsterDismembermentSystem::Resolve(FBBBMonsterGoreFragment& Result,
         for (const auto& Part : Definition.Dismemberment->Parts)
         {
             if (static_cast<int32>(Part.Region) != Region)
+            {
+                continue;
+            }
+            if (Previous && (Part.Bone == Previous->Bone || !Definition.Body
+                || !Definition.Body->GetRefSkeleton().BoneIsChildOf(
+                    Definition.Body->GetRefSkeleton().FindBoneIndex(Previous->Bone),
+                    Definition.Body->GetRefSkeleton().FindBoneIndex(Part.Bone))
+                || !Part.RemainingSkin || !Part.RemainingMesh))
             {
                 continue;
             }
@@ -50,7 +64,24 @@ void FBBBMonsterDismembermentSystem::Resolve(FBBBMonsterGoreFragment& Result,
         }
         if (Best)
         {
+            if (Previous)
+            {
+                const auto& Skeleton = Definition.Body->GetRefSkeleton();
+                const int32 Bone = Skeleton.FindBoneIndex(Previous->Bone);
+                FTransform Reference = Skeleton.GetRefBonePose()[Bone];
+                for (int32 Parent = Skeleton.GetParentIndex(Bone); Parent != INDEX_NONE; Parent = Skeleton.GetParentIndex(Parent))
+                {
+                    Reference *= Skeleton.GetRefBonePose()[Parent];
+                }
+                const FVector RestHit = Reference.TransformPosition(Mesh->GetSocketTransform(Previous->Bone).InverseTransformPosition(Hit.Position));
+                const FVector Axis = Previous->Rotation.RotateVector(FVector::ForwardVector);
+                if (FVector::DotProduct(RestHit - Previous->Contact, Axis) >= -1.0)
+                {
+                    continue;
+                }
+            }
             Slot = static_cast<uint8>(Best->Id);
+            Result.DismembermentHitSerials[Region - 1] = Hit.Serial;
         }
     }
 }

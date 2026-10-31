@@ -56,7 +56,9 @@ bool UBBBMonsterGoreDefinition::IsReady() const
             || !FMath::IsFinite(Part.AtlasRect.Z) || !FMath::IsFinite(Part.AtlasRect.W)
             || Part.AtlasRect.X < 0 || Part.AtlasRect.Y < 0 || Part.AtlasRect.Z <= 0 || Part.AtlasRect.W <= 0
             || Part.AtlasRect.X + Part.AtlasRect.Z > 1 || Part.AtlasRect.Y + Part.AtlasRect.W > 1
-            || !Part.Tissue || !Part.DetachedSkin || !Part.DetachedMesh)
+            || !Part.Tissue || !Part.DetachedSkin || !Part.DetachedMesh
+            || (Part.RemainingSkin != nullptr) != (Part.RemainingMesh != nullptr)
+            || (Part.RemainingSkin && Part.RemainingSkin->GetSkeleton() != Body->GetSkeleton()))
         {
             return false;
         }
