@@ -126,7 +126,8 @@ bool FBBBMonsterPathFollowing::UpdateProgress(FBBBMonsterNavigationFragment& Pat
     const FVector& Start = Path.PathPoints[FMath::Max(0, Path.PathPointIndex - 1)];
     const FVector Closest = FMath::ClosestPointOnSegment(Feet, Start, End);
     Path.OffPathDistance = FVector::Dist2D(Feet, Closest);
-    Path.RemainingDistance = static_cast<float>(FVector::Distance(Closest, End)) + Path.TailDistances[Path.PathPointIndex];
+    Path.RemainingDistance = static_cast<float>(FVector::Distance(Feet, Closest) + FVector::Distance(Closest, End))
+        + Path.TailDistances[Path.PathPointIndex];
     if (FMath::Abs(Feet.Z - Closest.Z) > HeightTolerance)
     {
         Path.Condition = EBBBMonsterNavigationCondition::HeightMismatch;

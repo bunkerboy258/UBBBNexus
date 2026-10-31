@@ -44,4 +44,13 @@ struct ABBB_EVAC_API FBBBMonsterAvoidanceFragment final : public FMassFragment
 
     /** 当前是有界同伴等待 不是路径失败 */
     bool bWaitingForNeighbor = false;
+
+    /** 通过邻居身体净空检查的当前移动方向 */
+    FVector SteeringDirection = FVector::ZeroVector;
+
+    /** 当前方向允许推进的厘米数 移动处理器仍检查环境碰撞 */
+    float MaxTravelDistance = 0.0f;
+
+    /** 当前可行推进被活体邻居收窄 不用于判定环境不可达 */
+    bool bCrowdConstrained = false;
 };

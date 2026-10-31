@@ -51,10 +51,11 @@ public:
      * 读取当前世界测试实体位置 速度和对应预算网格
      * @param WorldContext		当前 PIE 世界
      * @param Entities		本工具创建的完整句柄
+     * @param bDetailed		是否执行骨骼伤口和导航碰撞诊断 连续行为采样关闭此项
      * @return JSON 验证快照 不存在的实体明确计入失效数
      */
     UFUNCTION(BlueprintCallable, Category = "BBB|验证")
-    static FString InspectPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities);
+    static FString InspectPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities, bool bDetailed = true);
 
     /**
      * 对明确测试句柄贡献本地玩家累计伤害 由正式解析和生命处理器执行

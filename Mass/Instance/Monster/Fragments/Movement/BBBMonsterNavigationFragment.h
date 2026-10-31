@@ -98,6 +98,9 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
     /** 连续路线上的净推进量 刷新路线只更换剩余距离基准 不清空推进计时 */
     float ProgressDistance = 0.0f;
 
+    /** 当前进展窗口曾被同伴压缩通行空间 不能据此排除玩家位置 */
+    bool bProgressCrowded = false;
+
     /** 身体脚底到当前路线段的偏移距离 */
     float OffPathDistance = 0.0f;
 
@@ -139,6 +142,9 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 
     /** 当前稳定的包围接近位置编号 */
     int32 ApproachSlot = INDEX_NONE;
+
+    /** 无实际推进时接近位置的释放时刻 攻击期间保持占位 */
+    float ApproachExpiresAt = 0.0f;
 
     /** 包围位置所属的玩家 不读取隐藏玩家位置 */
     TWeakObjectPtr<AActor> ApproachActor;

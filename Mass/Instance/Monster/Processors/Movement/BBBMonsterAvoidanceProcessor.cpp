@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
@@ -27,6 +28,7 @@ void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -40,13 +42,15 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
     {
         const TConstArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetFragmentView<FBBBMonsterAvoidanceFragment>();
 
-        for (const FBBBMonsterAvoidanceFragment& Avoidance : Avoidances)
+        const auto Movements = ChunkContext.GetFragmentView<FBBBMonsterMovementFragment>();
+        for (int32 Index = 0; Index < Avoidances.Num(); ++Index)
         {
-            CellSize = FMath::Max(CellSize, Avoidance.NeighborSearchRadius);
+            CellSize = FMath::Max(CellSize, FMath::Max(Avoidances[Index].NeighborSearchRadius,
+                Avoidances[Index].CollisionRadius * 2.0f + Movements[Index].SprintSpeed * 0.2f));
         }
     });
 
-    TMap<FIntPoint, TArray<TTuple<FMassEntityHandle, FVector, FVector>>> SpatialBuckets;
+    TMap<FIntPoint, TArray<TTuple<FMassEntityHandle, FVector, FVector, float>>> SpatialBuckets;
 
     // 第一遍遍历建立二维空间桶
     MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
@@ -55,6 +59,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
 
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Paths = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Avoidances = ChunkContext.GetFragmentView<FBBBMonsterAvoidanceFragment>();
 
         for (int32 Index = 0; Index < Transforms.Num(); ++Index)
         {
@@ -70,7 +75,9 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
             const auto& Path = Paths[Index];
             const FVector Goal = Path.bHasFollowTarget ? Path.FollowTarget
                 : Path.PathPoints.IsValidIndex(Path.PathPointIndex) ? Path.PathPoints[Path.PathPointIndex] : Location;
-            SpatialBuckets.FindOrAdd(Cell).Emplace(ChunkContext.GetEntity(Index), Location, (Goal - Location).GetSafeNormal2D());
+            SpatialBuckets.FindOrAdd(Cell).Emplace(ChunkContext.GetEntity(Index), Location,
+                States[Index].State == EBBBMonsterBehavior::Attack ? FVector::ZeroVector : (Goal - Location).GetSafeNormal2D(),
+                Avoidances[Index].CollisionRadius);
         }
     });
 
@@ -82,6 +89,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
         TArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetMutableFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Paths = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Movements = ChunkContext.GetFragmentView<FBBBMonsterMovementFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
@@ -93,12 +101,16 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                 Avoidances[Index].bWaitingForNeighbor = false;
                 Avoidances[Index].YieldBlocker.Reset();
                 Avoidances[Index].YieldStartedAt = -1.0f;
+                Avoidances[Index].SteeringDirection = FVector::ZeroVector;
+                Avoidances[Index].MaxTravelDistance = 0.0f;
+                Avoidances[Index].bCrowdConstrained = false;
                 continue;
             }
 
             const FVector Location = Transforms[Index].GetTransform().GetLocation();
             const FBBBMonsterAvoidanceFragment& Settings = Avoidances[Index];
-            const float SearchRadius = FMath::Max(Settings.NeighborSearchRadius, 1.0f);
+            const float SearchRadius = FMath::Max(Settings.NeighborSearchRadius,
+                Settings.CollisionRadius * 2.0f + Movements[Index].SprintSpeed * 0.2f);
             const float PersonalSpace = FMath::Clamp(Settings.PersonalSpaceRadius, 0.0f, SearchRadius);
             const FIntPoint CenterCell(
                 FMath::FloorToInt(Location.X / CellSize),
@@ -108,6 +120,18 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
             const FVector Goal = Path.bHasFollowTarget ? Path.FollowTarget
                 : Path.PathPoints.IsValidIndex(Path.PathPointIndex) ? Path.PathPoints[Path.PathPointIndex] : Location;
             const FVector DesiredDirection = (Goal - Location).GetSafeNormal2D();
+            constexpr int32 CandidateCount = 9;
+            const float Side = (ChunkContext.GetEntity(Index).Index & 1) == 0 ? 1.0f : -1.0f;
+            const float Angles[CandidateCount] = {0.0f, 35.0f, -35.0f, 70.0f, -70.0f, 110.0f, -110.0f, 150.0f, -150.0f};
+            FVector Directions[CandidateCount];
+            float Clearances[CandidateCount];
+            const float Horizon = FMath::Max(1.0f, FMath::Min(SearchRadius - Settings.CollisionRadius * 2.0f,
+                Movements[Index].SprintSpeed * 0.2f));
+            for (int32 Candidate = 0; Candidate < CandidateCount; ++Candidate)
+            {
+                Directions[Candidate] = DesiredDirection.RotateAngleAxis(Angles[Candidate] * Side, FVector::UpVector);
+                Clearances[Candidate] = Horizon;
+            }
             FMassEntityHandle Blocker;
             double BlockerDistance = MAX_dbl;
 
@@ -128,6 +152,10 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                         const auto NeighborEntity = Neighbor.Get<0>();
                         const FVector& NeighborLocation = Neighbor.Get<1>();
                         const FVector& NeighborDirection = Neighbor.Get<2>();
+                        if (NeighborEntity == ChunkContext.GetEntity(Index))
+                        {
+                            continue;
+                        }
                         /** 二维分桶只负责候选检索 不把上下楼层当成身体重叠 */
                         if (FMath::Abs(Location.Z - NeighborLocation.Z) > Settings.CollisionRadius * 2.0f)
                         {
@@ -135,15 +163,42 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
                         }
                         FVector AwayFromNeighbor = Location - NeighborLocation;
                         AwayFromNeighbor.Z = 0.0f;
+                        if (AwayFromNeighbor.IsNearlyZero())
+                        {
+                            AwayFromNeighbor.X = ChunkContext.GetEntity(Index).Index < NeighborEntity.Index ? -0.01f : 0.01f;
+                        }
                         const double DistanceSquared = AwayFromNeighbor.SizeSquared();
 
-                        if (DistanceSquared <= FMath::Square(KINDA_SMALL_NUMBER) || DistanceSquared >= FMath::Square(PersonalSpace))
+                        if (DistanceSquared >= FMath::Square(SearchRadius))
                         {
                             continue;
                         }
-
-                        const double Distance = FMath::Sqrt(DistanceSquared);
-                        Separation += AwayFromNeighbor / Distance * (1.0f - Distance / PersonalSpace);
+                        const float BodyDistance = Settings.CollisionRadius + Neighbor.Get<3>();
+                        const double Distance = FMath::Sqrt(FMath::Max(DistanceSquared, 0.0001));
+                        for (int32 Candidate = 0; Candidate < CandidateCount; ++Candidate)
+                        {
+                            const float Along = FVector::DotProduct(-AwayFromNeighbor, Directions[Candidate]);
+                            if (DistanceSquared < FMath::Square(BodyDistance))
+                            {
+                                if (Along >= 0.0f)
+                                {
+                                    Clearances[Candidate] = 0.0f;
+                                }
+                                continue;
+                            }
+                            if (Along <= 0.0f)
+                            {
+                                continue;
+                            }
+                            /** 两侧各承担一半法向间距 保留切向通行 避免交叉移动时同时侵入 */
+                            const float NormalAllowance = FMath::Max(0.0, Distance - BodyDistance - 1.0) * 0.5;
+                            Clearances[Candidate] = FMath::Min(Clearances[Candidate],
+                                static_cast<float>(NormalAllowance * Distance / Along));
+                        }
+                        if (Distance < PersonalSpace)
+                        {
+                            Separation += AwayFromNeighbor / Distance * (1.0f - Distance / FMath::Max(PersonalSpace, 1.0f));
+                        }
                         const float ForwardDistance = FVector::DotProduct(-AwayFromNeighbor, DesiredDirection);
                         const double LateralSquared = FMath::Max(0.0, DistanceSquared - FMath::Square(ForwardDistance));
                         const bool bYieldPriority = NeighborDirection.IsNearlyZero()
@@ -162,13 +217,35 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, F
             Avoidances[Index].SeparationStrength = Separation.Size();
             Avoidances[Index].SeparationDirection = Separation.GetSafeNormal();
             auto& Result = Avoidances[Index];
-            if (Blocker != Result.YieldBlocker)
+            int32 Best = 0;
+            float BestScore = -FLT_MAX;
+            for (int32 Candidate = 0; Candidate < CandidateCount; ++Candidate)
             {
-                Result.YieldBlocker = Blocker;
-                Result.YieldStartedAt = Blocker.IsSet() ? Now : -1.0f;
+                const float Score = (Clearances[Candidate] >= 1.0f ? 1.0f : 0.0f)
+                    + Clearances[Candidate] / Horizon - FMath::Abs(Angles[Candidate]) / 180.0f
+                    + FVector::DotProduct(Directions[Candidate], Result.SeparationDirection)
+                        * FMath::Min(Result.SeparationStrength * Result.AvoidanceWeight, 1.0f) * 0.15f
+                    + FVector::DotProduct(Directions[Candidate], Result.SteeringDirection) * 0.1f;
+                if (Score > BestScore)
+                {
+                    Best = Candidate;
+                    BestScore = Score;
+                }
             }
+            Result.SteeringDirection = Directions[Best];
+            Result.MaxTravelDistance = Clearances[Best];
+            Result.bCrowdConstrained = Clearances[0] < Horizon || Clearances[Best] < Horizon;
+            if (!Blocker.IsSet())
+            {
+                Result.YieldStartedAt = -1.0f;
+            }
+            if (Blocker.IsSet() && Result.YieldStartedAt < 0.0f)
+            {
+                Result.YieldStartedAt = Now;
+            }
+            Result.YieldBlocker = Blocker;
             Result.bWaitingForNeighbor = Blocker.IsSet() && Result.YieldStartedAt >= 0.0f
-                && Now - Result.YieldStartedAt < Result.CrowdWaitDuration;
+                && Now - Result.YieldStartedAt < Result.CrowdWaitDuration && Result.MaxTravelDistance < 1.0f;
         }
     });
 }

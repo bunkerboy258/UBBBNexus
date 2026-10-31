@@ -130,6 +130,7 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AttackRange) && AttackRange > 0.0f
         && FMath::IsFinite(AttackDamage) && AttackDamage >= 0.0f
         && FMath::IsFinite(AttackCooldown) && AttackCooldown >= 0.0f
+        && FMath::IsFinite(AttackCooldownVariation) && AttackCooldownVariation >= 0.0f && AttackCooldownVariation <= 0.3f
         && FMath::IsFinite(AttackWindup) && AttackWindup > 0.0f
         && FMath::IsFinite(AttackRecovery) && AttackRecovery > 0.0f;
 }

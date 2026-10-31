@@ -99,7 +99,7 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
     }
     auto& Health = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(First);
     Health.DestroyedParts |= 1u << static_cast<uint8>(EBBBMonsterHitRegion::LeftArm);
-    TestFalse(TEXT("未重建粗筛时已损毁的手臂立即不可命中"), Trace(FVector(-100, -55, 85), FVector(100, -55, 85)));
+    TestTrue(TEXT("伤害失能未产生断点时仍保留手臂碰撞"), Trace(FVector(-100, -55, 85), FVector(100, -55, 85)));
     auto& Mobility = Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(First);
     Mobility.bCrawling = true;
     Mobility.CrawlStartedAt = World->GetTimeSeconds() - 10.0f;
@@ -162,14 +162,14 @@ bool FBBBMonsterCollisionTest::RunTest(const FString&)
             Mesh->RefreshBoneTransforms();
             auto& Logical = Manager.GetFragmentDataChecked<FTransformFragment>(Replacement).GetMutableTransform();
             Logical.SetRotation(Rotation.Quaternion());
-            const FTransform Head = Mesh->GetSocketTransform(TEXT("head"), RTS_Component) * Mesh->GetRelativeTransform() * Logical;
+            const FTransform Head = Mesh->GetSocketTransform(TEXT("head"));
             const FVector Along = Head.TransformVectorNoScale(FVector(1, 0, 0));
             for (const FVector& SkullPoint : {SkullCenter, Crown})
             {
                 const FVector Center = Head.TransformPosition(SkullPoint);
                 TestTrue(*FString::Printf(TEXT("%s 转向及卧倒头部轮廓可命中"), *Names[Index]),
                     Trace(Center - Along * 70.0f, Center + Along * 70.0f) && HitEntity == Replacement);
-                TestEqual(TEXT("头部姿态命中不受表现位置追靠影响"), Part, static_cast<uint8>(EBBBMonsterHitRegion::Head));
+                TestEqual(TEXT("头部命中贴合当前可见姿势"), Part, static_cast<uint8>(EBBBMonsterHitRegion::Head));
             }
             const FVector Outside = Head.TransformPosition(FVector(0, 0, 30));
             FBBBMassCollisionBody HeadBody;

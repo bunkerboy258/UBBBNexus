@@ -359,6 +359,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (ClampMin = "0.0", DisplayName = "攻击冷却时间"))
     float AttackCooldown = 1.2f;
 
+    /** 每次攻击按出生身份与攻击编号确定间隔差异 不改变前摇命中时刻 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (ClampMin = "0.0", ClampMax = "0.3", DisplayName = "攻击间隔偏差"))
+    float AttackCooldownVariation = 0.15f;
+
     /** 攻击命中前摇 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (ClampMin = "0.0", DisplayName = "攻击前摇时间"))
     float AttackWindup = 0.35f;

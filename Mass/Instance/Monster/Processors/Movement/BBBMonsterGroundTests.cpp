@@ -69,7 +69,13 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("高处出生开始下落"), Location.Z < 1000.0f && Velocity.Z < 0.0f && !Ground.bGrounded);
     TestTrue(TEXT("使用世界重力"), FMath::IsNearlyEqual(Velocity.Z, World->GetGravityZ() * 0.1f, 0.01f));
     Solve(2.0f);
-    TestTrue(TEXT("两秒长帧不会穿过地面"), Ground.bGrounded && FMath::IsNearlyEqual(Location.Z, 90.5f, 0.1f));
+    TestTrue(TEXT("两秒长帧只推进有界子步 不直接穿过地面"), Location.Z > 900.0f && !Ground.bGrounded);
+    for (int32 Frame = 0; Frame < 180 && !Ground.bGrounded; ++Frame)
+    {
+        Solve(1.0f / 60.0f);
+        TestTrue(TEXT("补充帧下落不穿地"), Location.Z >= 90.4f);
+    }
+    TestTrue(TEXT("正常帧持续推进后落地"), Ground.bGrounded && FMath::IsNearlyEqual(Location.Z, 90.5f, 0.1f));
     TestEqual(TEXT("落地消除向下速度"), Velocity.Z, 0.0);
     const FVector Landed = Location;
     for (int32 Frame = 0; Frame < 180; ++Frame)
@@ -173,14 +179,21 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
     }
     TestTrue(TEXT("高墙不能当台阶穿过"), Location.X <= 106.0f && Ground.bGrounded);
     UE_LOG(LogTemp, Display, TEXT("[BBBMonsterGroundCheck] Wall X=%.3f Z=%.3f Grounded=%d"), Location.X, Location.Z, Ground.bGrounded);
-    Solve(0.2f, FVector(10.0f, 60.0f, 0.0f));
+    for (int32 Frame = 0; Frame < 12; ++Frame)
+    {
+        Solve(1.0f / 60.0f, FVector(10.0f, 60.0f, 0.0f) / 12.0f);
+    }
     TestTrue(TEXT("贴墙仍可沿切线滑动"), Location.X <= 106.0f && Location.Y > 50.0f && Ground.bGrounded);
     Wall->DestroyComponent();
     Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     UBoxComponent* Slope = MakeBox(FVector(0.0f, 0.0f, -50.0f), FVector(1000.0f, 1000.0f, 50.0f), FRotator(25.0f, 0.0f, 0.0f));
     Location = FVector(0.0f, 0.0f, 1000.0f);
     Velocity = FVector::ZeroVector;
-    Solve(2.0f);
+    Ground = {};
+    for (int32 Frame = 0; Frame < 180 && !Ground.bGrounded; ++Frame)
+    {
+        Solve(1.0f / 60.0f);
+    }
     TestTrue(TEXT("可行走坡面提供支撑"), Ground.bGrounded && Ground.SupportNormal.Z >= Movement.WalkableFloorZ);
     const float SlopeStart = Location.Z;
     Solve(0.2f, FVector(50.0f, 0.0f, 0.0f));
@@ -217,8 +230,11 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
         TestTrue(FString::Printf(TEXT("状态%d无路径仍受重力影响"), Value), Transform.GetLocation().Z < 1000.0f && EntityVelocity.Z < 0.0f);
         TestEqual(TEXT("非移动状态不保留主动水平位移"), Transform.GetLocation().X, 0.0);
         TestEqual(TEXT("下落不会产生俯仰"), Transform.Rotator().Pitch, 0.0);
-        UE::Mass::FProcessingContext LandingContext(Manager, 2.0f);
-        UE::Mass::Executor::Run(*Processor, LandingContext);
+        for (int32 Frame = 0; Frame < 180 && !Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded; ++Frame)
+        {
+            UE::Mass::FProcessingContext LandingContext(Manager, 1.0f / 60.0f);
+            UE::Mass::Executor::Run(*Processor, LandingContext);
+        }
         TestTrue(TEXT("全部状态可落地而非悬空"), Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded &&
             FMath::IsNearlyEqual(Transform.GetLocation().Z, 90.5f, 0.1f) && EntityVelocity.Z == 0.0f);
     }

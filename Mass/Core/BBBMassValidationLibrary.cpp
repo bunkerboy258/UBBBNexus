@@ -58,6 +58,21 @@
 namespace
 {
     UWorld* ValidationWorld(UObject* Context);
+
+#if !UE_BUILD_SHIPPING
+    FAutoConsoleCommandWithWorld InspectMonsterCommand(TEXT("bbb.Monster.Inspect"),
+        TEXT("读取当前 PIE 尸群事实 JSON 不修改实体"),
+        FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+        {
+            if (!World || World->WorldType != EWorldType::PIE)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[BBBMonsterInspect]需要 PIE 世界"));
+                return;
+            }
+            UE_LOG(LogTemp, Display, TEXT("[BBBMonsterInspect]%s"),
+                *UBBBMassValidationLibrary::InspectPopulation(World, {}, false));
+        }), ECVF_Cheat);
+#endif
 }
 
 int32 UBBBMassValidationLibrary::DamagePopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities, const float Damage)
@@ -251,7 +266,7 @@ TArray<FMassEntityHandle> UBBBMassValidationLibrary::SpawnPopulation(UObject* Wo
     return Result;
 }
 
-FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities)
+FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, const TArray<FMassEntityHandle>& Entities, const bool bDetailed)
 {
     UWorld* const World = ValidationWorld(WorldContext);
     UMassEntitySubsystem* const Subsystem = World ? World->GetSubsystem<UMassEntitySubsystem>() : nullptr;
@@ -274,7 +289,7 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
         });
         if (!CurrentEntities.IsEmpty())
         {
-            return InspectPopulation(WorldContext, CurrentEntities);
+            return InspectPopulation(WorldContext, CurrentEntities, bDetailed);
         }
     }
     int32 Valid = 0;
@@ -349,7 +364,30 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetBoolField(TEXT("navigationUpToDate"), Navigation->NativePath.IsValid() && Navigation->NativePath->IsUpToDate());
             Sample->SetNumberField(TEXT("excludedUntil"), Navigation->ExcludedUntil);
             Sample->SetNumberField(TEXT("approachSlot"), Navigation->ApproachSlot);
+            Sample->SetNumberField(TEXT("approachExpiresAt"), Navigation->ApproachExpiresAt);
             Sample->SetBoolField(TEXT("waitingForSpace"), Navigation->bWaitingForSpace);
+            Sample->SetStringField(TEXT("navigationCondition"), StaticEnum<EBBBMonsterNavigationCondition>()->GetNameStringByValue(static_cast<int64>(Navigation->Condition)));
+            Sample->SetStringField(TEXT("repathReason"), StaticEnum<EBBBMonsterNavigationCondition>()->GetNameStringByValue(static_cast<int64>(Navigation->LastRepathCondition)));
+            Sample->SetNumberField(TEXT("repathCount"), Navigation->RepathCount);
+            Sample->SetNumberField(TEXT("remainingDistance"), Navigation->RemainingDistance);
+            Sample->SetNumberField(TEXT("offPathDistance"), Navigation->OffPathDistance);
+            Sample->SetNumberField(TEXT("motionEfficiency"), Navigation->MotionEfficiency);
+            Sample->SetNumberField(TEXT("blockedDuration"), Navigation->BlockedDuration);
+            Sample->SetNumberField(TEXT("progressAge"), Navigation->ProgressTime >= 0.0f ? World->GetTimeSeconds() - Navigation->ProgressTime : 0.0f);
+            Sample->SetNumberField(TEXT("progressDistance"), Navigation->ProgressDistance);
+            Sample->SetNumberField(TEXT("directionReversals"), Navigation->DirectionReversals);
+            Sample->SetNumberField(TEXT("detourRatio"), Navigation->DetourRatio);
+            Sample->SetBoolField(TEXT("localBlocked"), Navigation->bLocalBlocked);
+            Sample->SetBoolField(TEXT("waitingForNeighbor"), Avoidance && Avoidance->bWaitingForNeighbor);
+            Sample->SetNumberField(TEXT("crowdClearance"), Avoidance ? Avoidance->MaxTravelDistance : 0.0f);
+            Sample->SetNumberField(TEXT("bodyRadius"), Movement->CapsuleRadius);
+            Sample->SetNumberField(TEXT("yieldBlocker"), Avoidance && Avoidance->YieldBlocker.IsSet() ? Avoidance->YieldBlocker.Index : INDEX_NONE);
+            Sample->SetNumberField(TEXT("yieldAge"), Avoidance && Avoidance->YieldStartedAt >= 0.0f ? World->GetTimeSeconds() - Avoidance->YieldStartedAt : 0.0f);
+            Sample->SetNumberField(TEXT("requestedDistance"), Ground ? Ground->RequestedDistance : 0.0f);
+            Sample->SetNumberField(TEXT("movedDistance"), Ground ? Ground->MovedDistance : 0.0f);
+            Sample->SetNumberField(TEXT("attackRange"), Combat ? Combat->AttackRange : 0.0f);
+            Sample->SetNumberField(TEXT("nextAttackTime"), Combat ? Combat->NextAttackTime : 0.0f);
+            Sample->SetStringField(TEXT("position"), Transform ? Transform->GetTransform().GetLocation().ToString() : TEXT(""));
             const auto* Target = Manager.GetFragmentDataPtr<FBBBMonsterTargetFragment>(Entity);
             const auto* Perception = Manager.GetFragmentDataPtr<FBBBMonsterPerceptionFragment>(Entity);
             Sample->SetBoolField(TEXT("hasTarget"), Target && Target->bHasTarget);
@@ -423,7 +461,7 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             const auto* Settings = Network && Network->Definition.IsValid() ? Network->Definition->Presentation.Get() : nullptr;
             const auto* Wounds = Settings ? Settings->Gore.Get() : nullptr;
             TArray<TSharedPtr<FJsonValue>> Contacts;
-            if (Wounds && Wounds->Body && Wounds->Destruction && Wounds->Dismemberment && CorpseMesh)
+            if (bDetailed && Wounds && Wounds->Body && Wounds->Destruction && Wounds->Dismemberment && CorpseMesh)
             {
                 const auto& Reference = Wounds->Body->GetRefSkeleton();
                 const auto Append = [&Reference, CorpseMesh, &Contacts](int32 Id, FName Bone, const FVector& Contact, const FRotator& Rotation)
@@ -461,7 +499,7 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("actorYawDegrees"), DisplayActor ? DisplayActor->GetActorRotation().Yaw : 0.0);
             Sample->SetNumberField(TEXT("actorPositionErrorCm"), DisplayActor && Transform ?
                 FVector::Distance(DisplayActor->GetActorLocation(), Transform->GetTransform().GetLocation()) : 0.0);
-            if (Transform && Navigation->PathPoints.IsValidIndex(Navigation->PathPointIndex))
+            if (bDetailed && Transform && Navigation->PathPoints.IsValidIndex(Navigation->PathPointIndex))
             {
                 const FVector Position = Transform->GetTransform().GetLocation();
                 const FVector Waypoint = Navigation->PathPoints[Navigation->PathPointIndex];

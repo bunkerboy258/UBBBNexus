@@ -84,7 +84,7 @@ bool FBBBMonsterHitReactionTest::RunTest(const FString&)
     Run(UBBBMonsterHitReactionProcessor::StaticClass());
     TestEqual(TEXT("不重放已消费命中"), State.PublishedSerial, 1u);
     Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).CurrentHealth = 0.0f;
-    TestFalse(TEXT("死亡目标拒绝迟到表现"), Slot.Packet.CanApply(Health));
+    TestTrue(TEXT("尸体保留新的受击血效输入"), Slot.Packet.CanApply(Health));
     Run(UBBBMonsterCollisionProcessor::StaticClass());
     FMassEntityHandle Hit;
     float Time;

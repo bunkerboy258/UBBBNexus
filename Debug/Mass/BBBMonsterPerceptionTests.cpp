@@ -37,6 +37,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Perception/BBBMonsterPerceptionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Input/BBBMonsterParseProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
@@ -71,7 +72,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
         FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
         FBBBMonsterHitReactionInputFragment::StaticStruct(), FBBBMonsterHitReactionFragment::StaticStruct(),
-        FBBBMonsterBehaviorFragment::StaticStruct()});
+        FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct()});
     auto* Settings = NewObject<UBBBMonsterDefinition>(World);
     Settings->AllyAlertRange = 0.0f;
     auto* Processor = NewObject<UBBBMonsterPerceptionProcessor>(World);

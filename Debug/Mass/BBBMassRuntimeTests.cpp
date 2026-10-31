@@ -59,6 +59,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 
 /** 隔离世界验证覆盖输入 枪口运动 逻辑碰撞与伤害权限 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMassRuntimeTest, "UBBB.Mass.Runtime",
@@ -92,7 +93,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
         FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct(),
         FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(),
-        FBBBMonsterVariationFragment::StaticStruct()
+        FBBBMonsterVariationFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct(), FBBBMonsterGroundFragment::StaticStruct()
     });
     const FMassEntityHandle Monster = Manager.CreateEntity(MonsterType);
     const FGuid InstanceId = FGuid::NewGuid();
@@ -128,8 +129,12 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("覆盖后的累计结果包含前一次命中"), Health(), 75.0f);
     Consume();
     TestEqual(TEXT("消费后不重复扣血"), Health(), 75.0f);
-    TestEqual(TEXT("字典原生深拷贝保留贡献"),
-        Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.FindChecked(1).Parts.Torso, 25.0);
+    const auto* Contribution = Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.Find(1);
+    if (!TestNotNull(TEXT("输入消费后存在贡献"), Contribution))
+    {
+        return false;
+    }
+    TestEqual(TEXT("字典原生深拷贝保留贡献"), Contribution->Parts.Torso, 25.0);
 
     // 测试夹具重新开始独立场景 运行时不允许清空累计贡献
     Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions.Reset();
@@ -356,10 +361,12 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
         FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDeathFragment::StaticStruct(),
         FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct(),
         FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterVariationFragment::StaticStruct(),
-        FBBBMonsterGroundFragment::StaticStruct()
+        FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
     Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Actor, true);
+    Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition = LoadObject<UBBBMonsterDefinition>(nullptr,
+        TEXT("/Game/_Project/Mass/Monster/Zombie/Male/Variants/Michael/DA_BBBZombieMichaelDefinition"));
     Manager.GetFragmentDataChecked<FBBBMonsterAvoidanceFragment>(Entity).CollisionRadius = 1.0f;
     FTransform& Target = Manager.GetFragmentDataChecked<FTransformFragment>(Entity).GetMutableTransform();
     Target = FTransform(FRotator(0.0f, 179.0f, 0.0f), FVector(100.0f, 20.0f, 90.0f));
@@ -394,12 +401,12 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     FVector HitNormal;
     EPhysicalSurface HitSurface;
     uint8 HitPart = 0;
-    TestTrue(TEXT("碰撞立即使用最新逻辑位置"), Mass->TraceEntities(
-        Target.GetLocation() - FVector(0.0f, 0.0f, 2.0f), Target.GetLocation() + FVector(0.0f, 0.0f, 2.0f),
+    TestTrue(TEXT("有身体时碰撞使用当前可见姿势"), Mass->TraceEntities(
+        FirstDisplay - FVector(0.0f, 0.0f, 2.0f), FirstDisplay + FVector(0.0f, 0.0f, 2.0f),
         0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface, HitPart));
     TestTrue(TEXT("逻辑碰撞命中正确实体"), Hit == Entity);
-    TestFalse(TEXT("显示位置没有生成第二套碰撞"), Mass->TraceEntities(
-        FirstDisplay - FVector(0.0f, 0.0f, 2.0f), FirstDisplay + FVector(0.0f, 0.0f, 2.0f),
+    TestFalse(TEXT("逻辑位置不生成第二套可见身体碰撞"), Mass->TraceEntities(
+        Target.GetLocation() - FVector(0.0f, 0.0f, 2.0f), Target.GetLocation() + FVector(0.0f, 0.0f, 2.0f),
         0.0f, {}, Hit, HitTime, HitPosition, HitNormal, HitSurface, HitPart));
 
     auto& State = Manager.GetFragmentDataChecked<FBBBMonsterPresentationStateFragment>(Entity);
@@ -432,6 +439,10 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
     ++State.ActionId;
     Run(UBBBMonsterPresentationProcessor::StaticClass());
     TestEqual(TEXT("死亡状态立即响应"), Actor->GetMonsterPresentation()->GetBBBMonsterBehavior(), EBBBMonsterBehavior::Dead);
+
+    Actor->GetMonsterPresentation()->ResetCorpsePresentation();
+    State.State = EBBBMonsterBehavior::Idle;
+    ++State.ActionId;
 
     for (int32 Index = 0; Index < 20; ++Index)
     {

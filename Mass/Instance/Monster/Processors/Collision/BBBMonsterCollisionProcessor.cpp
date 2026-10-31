@@ -213,7 +213,7 @@ void UBBBMonsterCollisionProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
-    EntityQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
 }
 
 void UBBBMonsterCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -237,7 +237,7 @@ void UBBBMonsterCollisionProcessor::Execute(FMassEntityManager&, FMassExecutionC
             Body.Radius = 200.0f * Scale;
             if (Health[Index].CurrentHealth <= 0.0f)
             {
-                const auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
+                const auto* Actor = Actors.IsEmpty() ? nullptr : Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
                 const auto* Mesh = Actor ? Actor->GetMonsterMesh() : nullptr;
                 if (!Mesh || !Mesh->IsVisible() || Mesh->bHiddenInGame || Actor->IsHidden())
                 {

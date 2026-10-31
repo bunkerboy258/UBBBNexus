@@ -251,7 +251,10 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 Combat.AttackTarget = Target.TargetActor;
                 Combat.bHitAttempted = false;
                 Combat.bAttackFinished = false;
-                Combat.NextAttackTime = WorldTime + FMath::Max(Combat.AttackCooldown, Combat.AttackWindup + Combat.AttackRecovery);
+                FRandomStream Rhythm(static_cast<int32>(HashCombine(GetTypeHash(Network[Index].InstanceId), Combat.AttackId)));
+                const float Spread = Settings ? Settings->AttackCooldownVariation : 0.0f;
+                const float Cooldown = Combat.AttackCooldown * Rhythm.FRandRange(1.0f - Spread, 1.0f + Spread);
+                Combat.NextAttackTime = WorldTime + FMath::Max(Cooldown, Combat.AttackWindup + Combat.AttackRecovery);
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Attack begin Entity=%d AttackId=%u"), ChunkContext.GetEntity(Index).Index, Combat.AttackId);
                 continue;
             }

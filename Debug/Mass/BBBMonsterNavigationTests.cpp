@@ -33,6 +33,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterPathFollowing.h"
 
 /** 在隔离真实导航与碰撞世界验证绕墙 脱困 包围和五十只移动 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterNavigationTest, "UBBB.Mass.ZombieNavigation",
@@ -40,6 +41,13 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterNavigationTest, "UBBB.Mass.ZombieNav
 
 bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
 {
+    FBBBMonsterNavigationFragment Endpoint;
+    Endpoint.bHasPath = true;
+    Endpoint.PathPoints = {FVector::ZeroVector, FVector(100.0f, 0.0f, 0.0f)};
+    Endpoint.TailDistances = {100.0f, 0.0f};
+    Endpoint.Destination = Endpoint.PathPoints.Last();
+    TestFalse(TEXT("路径末端侧方尚未抵达"), FBBBMonsterPathFollowing::UpdateProgress(Endpoint, FVector(100.0f, 50.0f, 0.0f), 30.0f, true));
+    TestTrue(TEXT("路径末端侧方保留五十厘米路程"), FMath::IsNearlyEqual(Endpoint.RemainingDistance, 50.0f));
     const auto Initialization = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(true).CreateAISystem(true);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
     if (!TestNotNull(TEXT("导航隔离世界"), World))
@@ -293,6 +301,12 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     Path.ProgressTime = 1.0f;
     Run(Navigation);
     TestEqual(TEXT("无进展首先重算路径"), Path.FailureCount, 1);
+    auto& Neighbors = Manager.GetFragmentDataChecked<FBBBMonsterAvoidanceFragment>(Entity);
+    Neighbors.bCrowdConstrained = true;
+    Path.ProgressTime = 1.0f;
+    Run(Navigation);
+    TestEqual(TEXT("同伴阻挡触发重算但不增加不可达次数"), Path.FailureCount, 1);
+    Neighbors.bCrowdConstrained = false;
     World->TimeSeconds = 10.0;
     Path.ProgressTime = 6.0f;
     Run(Navigation);
@@ -331,7 +345,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Manager.DestroyEntity(Monster);
     }
     TestTrue(TEXT("近距离分散到多个接近方向"), Slots.Num() >= 4);
-    TestTrue(TEXT("接近位置满时合理等待"), Waiting >= 2);
+    TestTrue(TEXT("外围接近位置允许后排继续分散"), Slots.Num() == 10 && Waiting == 0);
 
     TArray<FMassEntityHandle> WallCrowd;
     const FVector WallCenter(160.0f, 0.0f, 90.0f);
@@ -356,7 +370,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         TestEqual(TEXT("墙边有效位置占满不计为寻路失败"), Route.FailureCount, 0);
         Manager.DestroyEntity(Monster);
     }
-    TestTrue(TEXT("墙边只有部分接近位置可用"), WallSlots > 0 && WallSlots < 8);
+    TestTrue(TEXT("墙边仍可利用外围接近位置"), WallSlots > 0 && WallSlots <= 10);
     TestTrue(TEXT("墙边可用位置占满后合理等待"), WallWaiting == 10 - WallSlots);
 
     TArray<FMassEntityHandle> Crowd;
@@ -365,12 +379,22 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Crowd.Add(Create(FVector(-1800.0f - Index / 10 * 120.0f, (Index % 10 - 5) * 120.0f, 90.0f)));
     }
     const double Started = FPlatformTime::Seconds();
+    double MinimumSeparation = MAX_dbl;
     for (int32 Frame = 0; Frame < 240; ++Frame)
     {
         World->TimeSeconds += 1.0 / 30.0;
         Run(Navigation);
         Run(Avoidance);
         Run(Movement);
+        for (int32 First = 0; First < Crowd.Num(); ++First)
+        {
+            const FVector A = Manager.GetFragmentDataChecked<FTransformFragment>(Crowd[First]).GetTransform().GetLocation();
+            for (int32 Second = First + 1; Second < Crowd.Num(); ++Second)
+            {
+                const FVector B = Manager.GetFragmentDataChecked<FTransformFragment>(Crowd[Second]).GetTransform().GetLocation();
+                MinimumSeparation = FMath::Min(MinimumSeparation, FVector::Dist2D(A, B));
+            }
+        }
     }
     const double Elapsed = FPlatformTime::Seconds() - Started;
     int32 Progressed = 0;
@@ -383,7 +407,8 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Manager.DestroyEntity(Monster);
     }
     TestTrue(TEXT("五十只真实路径移动都有进展"), Progressed == 50);
-    AddInfo(FString::Printf(TEXT("[BBBNavigation50] Frames=240 Count=50 TotalMs=%.3f MeanMs=%.3f"), Elapsed * 1000.0, Elapsed * 1000.0 / 240.0));
+    TestTrue(TEXT("五十只移动不出现身体深度穿叠"), MinimumSeparation >= 88.0);
+    AddInfo(FString::Printf(TEXT("[BBBNavigation50] Frames=240 Count=50 MinimumSeparation=%.3f TotalMs=%.3f MeanMs=%.3f"), MinimumSeparation, Elapsed * 1000.0, Elapsed * 1000.0 / 240.0));
     return true;
 }
 #endif

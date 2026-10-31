@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
 #include "MassEntityConfigAsset.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
 
 /** 验证同一只僵尸的三档速度 加减速与停靠边界 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterLocomotionTest, "UBBB.Mass.ZombieLocomotion",
@@ -75,6 +76,9 @@ bool FBBBMonsterLocomotionTest::RunTest(const FString& Parameters)
 
     UBBBMonsterDefinition* Definition = NewObject<UBBBMonsterDefinition>();
     Definition->EntityConfig = NewObject<UMassEntityConfigAsset>();
+    auto* Trait = NewObject<UBBBMonsterTrait>(Definition->EntityConfig);
+    Trait->Definition = Definition;
+    Definition->EntityConfig->GetMutableConfig().AddTrait(*Trait);
     Definition->Variation = NewObject<UBBBMonsterVariationDefinition>();
     TestTrue(TEXT("新配置默认有效"), Definition->IsValid());
     Definition->RunSpeed = Definition->WalkSpeed;

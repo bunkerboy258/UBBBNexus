@@ -383,9 +383,9 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 const float Speed = Now < Injury.SlowRecoveryStartedAt ? FMath::Min(InterpolatedSpeed, TargetSpeed) : InterpolatedSpeed;
                 const float Distance = FMath::Min3(Speed * DeltaSeconds, PointDistance, Remaining);
                 const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
-                const float Steering = FMath::Clamp(Neighbors.SeparationStrength * Neighbors.AvoidanceWeight, 0.0f, 0.65f);
-                const FVector Direction = (ToPoint.GetSafeNormal2D() + Neighbors.SeparationDirection * Steering).GetSafeNormal2D();
-                FVector Destination = Location + Direction * Distance;
+                const FVector Direction = Neighbors.SteeringDirection;
+                const float SafeDistance = FMath::Min(Distance, Neighbors.MaxTravelDistance);
+                FVector Destination = Location + Direction * SafeDistance;
 
                 // 同一求解内约束导航边界 防止避让把实体推到墙外
                 const FVector FootOffset(0.0f, 0.0f, Geometry.CapsuleHalfHeight);
@@ -400,12 +400,12 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 else
                 {
                     // 使用最近导航多边形作为唯一射线起点 允许边界外的浅层偏移沿物理可行方向进入导航区
-                    const FVector NavEnd = ProjectedFoot.Location + Direction * Distance;
+                    const FVector NavEnd = ProjectedFoot.Location + Direction * SafeDistance;
                     FVector HitLocation;
                     if (ARecastNavMesh::NavMeshRaycast(NavMesh, ProjectedFoot.NodeRef, ProjectedFoot.Location,
                         NavEnd, HitLocation, NavMesh->GetDefaultQueryFilter()))
                     {
-                        const float Travel = FMath::Clamp(FVector::DotProduct(HitLocation - ProjectedFoot.Location, Direction), 0.0, double(Distance));
+                        const float Travel = FMath::Clamp(FVector::DotProduct(HitLocation - ProjectedFoot.Location, Direction), 0.0, double(SafeDistance));
                         Destination = Location + Direction * Travel;
                     }
                 }
@@ -445,7 +445,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             FVector FacingDirection = HorizontalDelta;
             const bool bFaceTarget = Target.bHasTarget && Settings && (States[Index].State == EBBBMonsterBehavior::Alert
-                || (bChase && FVector::DistSquared(Location, Target.TargetLocation) <= FMath::Square(Settings->AttackRange)));
+                || (bChase && (FVector::DistSquared(Location, Target.TargetLocation) <= FMath::Square(Settings->AttackRange)
+                    || (HorizontalDelta.IsNearlyZero() && (Path.bWaitingForSpace || Avoidance[Index].bCrowdConstrained)))));
             if (bFaceTarget)
             {
                 FacingDirection = (Target.TargetLocation - Location).GetSafeNormal2D();
