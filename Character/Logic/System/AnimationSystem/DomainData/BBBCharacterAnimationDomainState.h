@@ -5,6 +5,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterLifeAnimationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterRecoilState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterWeaponHandlingState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
 
 class FBBBCharacterAnimationFactProcessor;
@@ -45,7 +47,19 @@ public:
     }
 
 
+    /** @return 当前后坐力段与结果 */
+    const FBBBCharacterRecoilState &ReadRecoilState() const { return RecoilState; }
+
+    /** @return 当前持枪动画领域结果 */
+    const FBBBCharacterWeaponHandlingState &ReadWeaponHandlingState() const { return WeaponHandlingState; }
+
 private:
+    friend class FBBBCharacterRecoilProcessor;
+    friend class FBBBCharacterWeaponHandlingProcessor;
+    /** 唯一后坐力运行状态 */
+    FBBBCharacterRecoilState RecoilState;
+    /** 唯一持枪动画领域结果 */
+    FBBBCharacterWeaponHandlingState WeaponHandlingState;
     friend class FBBBCharacterLifeAnimationProcessor;
     /** 生命阶段动画的应用进度 */
     UPROPERTY(Transient)

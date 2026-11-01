@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterRecoilState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterWeaponHandlingState.h"
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
@@ -20,7 +22,8 @@ UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 //------------------------------------------------------------------------------
 
 void UBBBAnimInstance::PublishAnimationFacts(
-    const FBBBCharacterAnimationFactState &FactState)
+    const FBBBCharacterAnimationFactState &FactState,
+    const FBBBCharacterRecoilState &RecoilState, const FBBBCharacterWeaponHandlingState &HandlingState)
 {
     SourceLifePhase = FactState.LifePhase;
     SourceLocomotionDatabaseChooser = FactState.LocomotionDatabaseChooser;
@@ -37,7 +40,12 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceMovementInput = FactState.MovementInput;
     SourceBlockingSurfaceNormal = FactState.BlockingSurfaceNormal;
     SourceSecondaryBlockingSurfaceNormal = FactState.SecondaryBlockingSurfaceNormal;
-    SourceRecoilLimitDegrees = FactState.RecoilLimitDegrees;
+    SourceRecoilAngles = RecoilState.Angles;
+    SourceWeaponPoseOffsetAngles = HandlingState.PoseOffsetAngles;
+    SourceWeaponAimFollowSpeed = HandlingState.AimFollowSpeed;
+    SourceWeaponRecoilTime = HandlingState.RecoilTime;
+    SourceWeaponBackwardRecoilStrength = HandlingState.BackwardRecoilStrength;
+    SourceWeaponRecoilAnimation = HandlingState.RecoilAnimation.Get();
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
 

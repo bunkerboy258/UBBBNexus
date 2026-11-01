@@ -25,154 +25,154 @@ public:
     bool PlayEquipmentMontage(UAnimMontage &Montage);
 
     /** @return 本帧装备动画事实 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     FBBBEquipmentAnimationFacts GetAnimationFacts() const
     {
         return AnimationFacts;
     }
 
     /** @return 左手握持目标在角色 hand_r 骨骼空间中的位置 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     FVector GetLeftHandTargetHandRSpace() const
     {
         return AnimationFacts.LeftHandTargetHandRSpace;
     }
 
     /** @return 左手握持目标相对角色 hand_r 骨骼的旋转 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     FRotator GetLeftHandTargetHandRSpaceRotation() const
     {
         return AnimationFacts.LeftHandTargetHandRSpaceRotation;
     }
 
     /** @return 本帧左手握持目标是否有效 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     bool HasLeftHandTarget() const
     {
         return AnimationFacts.bHasLeftHandTarget;
     }
 
     /** @return 当前装备的角色后坐力序列 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual UAnimSequence *GetRecoilAnimation() const
     {
         return nullptr;
     }
 
     /** @return 当前装备动作快照的时间 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetSnapshotTimeSeconds() const
     {
         return 0.0f;
     }
 
     /** @return 当前装备成立的开火序号 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual int32 GetFireSequence() const
     {
         return 0;
     }
 
     /** @return 当前装备是否正在换弹 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual bool IsReloading() const
     {
         return false;
     }
 
     /** @return 当前快照距离最近开火的秒数 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetTimeSinceLastFireSeconds() const
     {
         return 0.0f;
     }
 
     /** @return 腰射瞄准跟随速度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetHipFireAimFollowSpeed() const
     {
         return 18.0f;
     }
 
     /** @return 瞄准射击跟随速度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAimFireAimFollowSpeed() const
     {
         return 18.0f;
     }
 
     /** @return 腰射后向后坐力权重 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetHipFireBackwardRecoilAlpha() const
     {
         return 0.0f;
     }
 
     /** @return 瞄准射击后向后坐力权重 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAimFireBackwardRecoilAlpha() const
     {
         return 0.0f;
     }
 
     /** @return 腰射摇摆幅度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual FVector2D GetHipFireSwayAmplitudeDegrees() const
     {
         return FVector2D::ZeroVector;
     }
 
     /** @return 瞄准摇摆幅度 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual FVector2D GetAimFireSwayAmplitudeDegrees() const
     {
         return FVector2D::ZeroVector;
     }
 
     /** @return 腰射摇摆频率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual FVector2D GetHipFireSwayFrequency() const
     {
         return FVector2D::ZeroVector;
     }
 
     /** @return 瞄准摇摆频率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual FVector2D GetAimFireSwayFrequency() const
     {
         return FVector2D::ZeroVector;
     }
 
     /** @return 空中瞄准跟随倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAirborneAimFollowScale() const
     {
         return 1.0f;
     }
 
     /** @return 空中后向后坐力倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAirborneBackwardRecoilScale() const
     {
         return 1.0f;
     }
 
     /** @return 空中摇摆幅度倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAirborneSwayAmplitudeScale() const
     {
         return 1.0f;
     }
 
     /** @return 空中摇摆频率倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAirborneSwayFrequencyScale() const
     {
         return 1.0f;
     }
 
     /** @return 当前装备腰射镜头贡献 无贡献时冲量为零 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual FBBBPlayerCameraRecoilSettings GetHipFireCameraSettings() const
     {
         FBBBPlayerCameraRecoilSettings Settings;
@@ -182,7 +182,7 @@ public:
     }
 
     /** @return 当前装备瞄准镜头贡献 无贡献时冲量为零 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual FBBBPlayerCameraRecoilSettings GetAimFireCameraSettings() const
     {
         FBBBPlayerCameraRecoilSettings Settings;
@@ -192,56 +192,56 @@ public:
     }
 
     /** @return 当前装备空中镜头冲量倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAirborneCameraImpulseScale() const
     {
         return 1.0f;
     }
 
     /** @return 当前装备空中镜头回零倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetAirborneCameraRecoveryScale() const
     {
         return 1.0f;
     }
 
     /** @return 下蹲目标跟随倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲目标跟随倍率"))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedAimFollowScale() const
     {
         return 1.0f;
     }
 
     /** @return 下蹲后向震动倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲后向震动倍率"))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedBackwardRecoilScale() const
     {
         return 1.0f;
     }
 
     /** @return 下蹲摇摆幅度倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲摇摆幅度倍率"))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedSwayAmplitudeScale() const
     {
         return 1.0f;
     }
 
     /** @return 下蹲摇摆频率倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲摇摆频率倍率"))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedSwayFrequencyScale() const
     {
         return 1.0f;
     }
 
     /** @return 下蹲镜头冲击倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲镜头冲击倍率"))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedCameraImpulseScale() const
     {
         return 1.0f;
     }
 
     /** @return 下蹲镜头回零速度倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "BBB|装备|动画", meta = (BlueprintThreadSafe, DisplayName = "下蹲镜头回零速度倍率"))
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedCameraRecoveryScale() const
     {
         return 1.0f;
@@ -249,17 +249,17 @@ public:
 
     /**
      * 只读采样本实例已经发布的曲线 不维护累积或回落状态
-     * @param Position\t蓝图计算的曲线位置
+     * @param Position\t动画 Processor 计算的曲线位置
      * @return 原始曲线值 X 俯仰 Y 偏航
      */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     FVector2D SampleRecoilCurve(float Position) const
     {
         return FVector2D(RecoilPitchCurve.Eval(Position), RecoilYawCurve.Eval(Position));
     }
 
     /** @return 已发布的后坐力配置与时间事实是否有效 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     bool HasValidRecoilProfile() const
     {
         return !RecoilPitchCurve.IsEmpty() && !RecoilYawCurve.IsEmpty()
@@ -273,56 +273,56 @@ public:
     }
 
     /** @return 连续两枪的配置间隔 单位秒 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetRecoilFireInterval() const
     {
         return RecoilFireInterval;
     }
 
     /** @return 停火回落角速度 单位度每秒 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetRecoilReturnSpeed() const
     {
         return RecoilReturnSpeed;
     }
 
     /** @return 腰射轨迹幅度倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetHipRecoilScale() const
     {
         return HipRecoilScale;
     }
 
     /** @return 瞄准轨迹幅度倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetAimRecoilScale() const
     {
         return AimRecoilScale;
     }
 
     /** @return 下蹲轨迹幅度倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetCrouchedRecoilScale() const
     {
         return CrouchedRecoilScale;
     }
 
     /** @return 空中轨迹幅度倍率 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetAirborneRecoilScale() const
     {
         return AirborneRecoilScale;
     }
 
     /** @return 是否在持续输入期间保持轨迹点 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     bool HoldsRecoilBetweenShots() const
     {
         return bAutomaticRecoil;
     }
 
     /** @return 已成立的动作状态是否允许继续连续射击 */
-    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     bool CanSustainRecoil() const
     {
         return bCanSustainRecoil;
@@ -401,6 +401,6 @@ private:
     void PublishAnimationFacts(const FBBBEquipmentAnimationFacts &Facts);
 
 
-    UPROPERTY(Transient, BlueprintReadOnly, Category = "BBB|装备|动画", meta = (AllowPrivateAccess = "true", DisplayName = "动画事实"))
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Equipment|Animation", meta = (AllowPrivateAccess = "true"))
     FBBBEquipmentAnimationFacts AnimationFacts;
 };

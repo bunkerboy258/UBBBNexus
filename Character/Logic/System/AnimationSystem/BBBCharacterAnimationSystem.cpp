@@ -58,5 +58,8 @@ void FBBBCharacterAnimationSystem::Update()
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
     MuzzleProcessor.Update(Context);
-    AnimInstance->PublishAnimationFacts(Context.AnimationFactState);
+    RecoilProcessor.Update(Context);
+    WeaponHandlingProcessor.Update(Context);
+    AnimInstance->PublishAnimationFacts(Context.AnimationFactState,
+        RuntimeData->Animation.ReadRecoilState(), RuntimeData->Animation.ReadWeaponHandlingState());
 }

@@ -8,6 +8,9 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationFactProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterMuzzleProcessor.h"
 
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterRecoilProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterWeaponHandlingProcessor.h"
+
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
 struct FBBBCharacterAnimationConfig;
@@ -51,4 +54,6 @@ private:
     FBBBCharacterAnimationActionProcessor ActionProcessor;
     FBBBCharacterAnimationFactProcessor FactProcessor;
     FBBBCharacterMuzzleProcessor MuzzleProcessor;
+    FBBBCharacterRecoilProcessor RecoilProcessor;
+    FBBBCharacterWeaponHandlingProcessor WeaponHandlingProcessor;
 };

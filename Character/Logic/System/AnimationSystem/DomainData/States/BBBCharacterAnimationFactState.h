@@ -156,9 +156,6 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsAiming = false;
 
-    /** 后坐力表现配置的角度上限 不保存蓝图产生的表现角度 */
-    UPROPERTY(Transient)
-    FVector2D RecoilLimitDegrees = FVector2D::ZeroVector;
 
     /** 角色组件空间中的瞄准目标 */
     UPROPERTY(Transient)

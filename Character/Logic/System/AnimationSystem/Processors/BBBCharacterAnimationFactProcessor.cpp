@@ -108,7 +108,6 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.bFullBodyPlaying = Context.AnimationInstance.FullBodyMontageContribution
         && Context.AnimationInstance.Montage_IsPlaying(Context.AnimationInstance.FullBodyMontageContribution);
     FactState.bIsAiming = AimState.bIsAiming;
-    FactState.RecoilLimitDegrees = Context.AnimationConfig.RecoilLimitDegrees;
     FactState.AimTargetComponentSpace = RawAimTargetComponentSpace;
 
     FactState.ActorLocation = Character.GetActorLocation();
