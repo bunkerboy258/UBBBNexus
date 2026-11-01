@@ -26,6 +26,9 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
     /** 当前应接近的拐点 */
     int32 PathPointIndex = 1;
 
+    /** 下一处自定义连接的入口点 在完成上台前禁止前瞻越过 */
+    int32 TraversalPoint = INDEX_NONE;
+
     /** 本次巡逻或追击目的地 */
     FVector Destination = FVector::ZeroVector;
 
@@ -46,12 +49,6 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 
     /** 最近一次 APS 同步调用耗时 单位为毫秒 */
     float LastQueryMs = 0.0f;
-
-    /** 最近一次实际提交的弧线强度 用于调试 */
-    float ArcStrength = 0.0f;
-
-    /** 最近一次实际提交的横向偏移 用于调试 */
-    float LaneOffset = 0.0f;
 
     /** 缓存路径是否可用于移动 */
     bool bHasPath = false;
@@ -121,12 +118,6 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 
     /** 该实体已提交的重新寻路次数 */
     uint32 RepathCount = 0;
-
-    /** 最近路线长度与同条件基础路线长度的比值 零表示未抽样 */
-    float DetourRatio = 0.0f;
-
-    /** 允许再次抽样基础路线的时刻 */
-    float NextReferenceTime = 0.0f;
 
     /** 当前实际位移与移动意图的比例 */
     float MotionEfficiency = 1.0f;

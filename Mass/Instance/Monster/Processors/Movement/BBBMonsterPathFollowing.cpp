@@ -1,4 +1,5 @@
 #include "BBBMonsterPathFollowing.h"
+#include "BBBMonsterStep.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
@@ -35,7 +36,7 @@ namespace
             return false;
         }
         const int32 FloorSamples = FMath::Clamp(FMath::CeilToInt(FVector::Dist2D(From, To)
-            / FMath::Max(Geometry.CapsuleRadius, 30.0f)), 1, 10);
+            / FMath::Max(10.0f, FMath::Min(Geometry.CapsuleRadius, Geometry.MaxStepHeight * 0.5f))), 1, 32);
         for (int32 Sample = 1; Sample <= FloorSamples; ++Sample)
         {
             FHitResult Floor;
@@ -66,9 +67,10 @@ namespace
         {
             return false;
         }
-        const FVector Lift = FVector::UpVector * Geometry.MaxStepHeight;
-        return !World.SweepSingleByChannel(Hit, Start, Start + Lift, FQuat::Identity, ECC_Pawn, Capsule, Params)
-            && !World.SweepSingleByChannel(Hit, Start + Lift, End + Lift, FQuat::Identity, ECC_Pawn, Capsule, Params);
+        FVector Landing;
+        FVector Normal;
+        return FBBBMonsterStep::Solve(World, Geometry, Start, End - Start, Params, Landing, Normal)
+            && FMath::Abs(Landing.Z - End.Z) <= Geometry.MaxStepHeight + 3.0f;
     }
 }
 
@@ -90,7 +92,7 @@ bool FBBBMonsterPathFollowing::UpdateProgress(FBBBMonsterNavigationFragment& Pat
             Path.PathPoints[BestSegment - 1], Path.PathPoints[BestSegment]);
         double BestDistanceSquared = FVector::DistSquared2D(Feet, Closest);
         const int32 LastSegment = FMath::Min3(Path.FollowSegmentIndex,
-            Path.PathPointIndex + 7, Path.PathPoints.Num() - 1);
+            Path.PathPointIndex + 7, Path.TraversalPoint == INDEX_NONE ? Path.PathPoints.Num() - 1 : FMath::Max(1, Path.TraversalPoint));
         for (int32 Segment = Path.PathPointIndex + 1; Segment <= LastSegment; ++Segment)
         {
             Closest = FMath::ClosestPointOnSegment(Feet, Path.PathPoints[Segment - 1], Path.PathPoints[Segment]);
@@ -110,7 +112,8 @@ bool FBBBMonsterPathFollowing::UpdateProgress(FBBBMonsterNavigationFragment& Pat
         const bool bNear = FVector::DistSquared2D(Feet, End) <= FMath::Square(ArrivalDistance);
         const bool bPassed = FVector::DotProduct(FVector(Feet.X - End.X, Feet.Y - End.Y, 0.0),
             FVector(End.X - Start.X, End.Y - Start.Y, 0.0)) > 0.0f;
-        if (!bGrounded || FMath::Abs(Feet.Z - End.Z) > HeightTolerance || (!bNear && !bPassed))
+        if ((Path.TraversalPoint != INDEX_NONE && Path.PathPointIndex >= Path.TraversalPoint)
+            || !bGrounded || FMath::Abs(Feet.Z - End.Z) > HeightTolerance || (!bNear && !bPassed))
         {
             break;
         }
@@ -149,12 +152,25 @@ void FBBBMonsterPathFollowing::RefreshTarget(UWorld& World, const ANavigationDat
     {
         return;
     }
+    if (Path.TraversalPoint != INDEX_NONE)
+    {
+        const FVector& Entry = Path.PathPoints[Path.TraversalPoint];
+        if (Path.PathPointIndex >= Path.TraversalPoint)
+        {
+            Path.FollowTarget = Entry;
+            Path.FollowSegmentIndex = FMath::Max(1, Path.TraversalPoint);
+            Path.bHasFollowTarget = true;
+            Path.bLocalBlocked = false;
+            return;
+        }
+    }
     const FVector& SegmentEnd = Path.PathPoints[Path.PathPointIndex];
     FVector Candidate = FMath::ClosestPointOnSegment(Feet,
         Path.PathPoints[FMath::Max(0, Path.PathPointIndex - 1)], SegmentEnd);
     float Remaining = LookAhead;
     int32 CandidateSegment = Path.PathPointIndex;
-    for (int32 Segment = Path.PathPointIndex; Segment < Path.PathPoints.Num() && Segment < Path.PathPointIndex + 8; ++Segment)
+    for (int32 Segment = Path.PathPointIndex; Segment < Path.PathPoints.Num() && Segment < Path.PathPointIndex + 8
+        && (Path.TraversalPoint == INDEX_NONE || Segment <= Path.TraversalPoint); ++Segment)
     {
         const FVector& End = Path.PathPoints[Segment];
         const float Distance = FVector::Distance(Candidate, End);

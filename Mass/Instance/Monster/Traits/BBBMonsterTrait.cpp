@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "MassEntityTemplateRegistry.h"
@@ -59,6 +60,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     BuildContext.AddFragment<FTransformFragment>();
     BuildContext.AddFragment<FMassVelocityFragment>();
     BuildContext.AddFragment<FBBBMonsterGroundFragment>();
+    BuildContext.AddFragment<FBBBMonsterTraversalFragment>();
     BuildContext.AddFragment<FBBBMonsterMobilityFragment>();
     BuildContext.AddFragment<FMassActorFragment>();
     BuildContext.AddFragment<FBBBMonsterHealthInputFragment>();

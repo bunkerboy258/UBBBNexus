@@ -3,6 +3,7 @@
 #include "Engine/DataAsset.h"
 #include "BBBMonsterHitPresentation.h"
 #include "BBBMonsterAnimationPresentation.h"
+#include "BBBMonsterTraversalClip.h"
 #include "BBBMonsterGibPresentation.h"
 #include "BBBMonsterPresentationDefinition.generated.h"
 
@@ -19,6 +20,12 @@ class ABBB_EVAC_API UBBBMonsterPresentationDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    UPROPERTY(EditAnywhere, Category = "动画", meta = (DisplayName = "快速上台"))
+    FBBBMonsterTraversalClip Mantle;
+
+    UPROPERTY(EditAnywhere, Category = "动画", meta = (DisplayName = "较高攀爬"))
+    FBBBMonsterTraversalClip Climb;
+
     UBBBMonsterPresentationDefinition();
 
     UPROPERTY(EditAnywhere, Instanced, Category = "身体与伤口", meta = (DisplayName = "身体与伤口"))

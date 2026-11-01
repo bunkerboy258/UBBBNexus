@@ -195,8 +195,6 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     auto& CachedRoute = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Pending[0]);
     auto& MovingGoal = Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Pending[0]);
     const auto OriginalPath = CachedRoute.NativePath;
-    const float OriginalArc = CachedRoute.ArcStrength;
-    const float OriginalLane = CachedRoute.LaneOffset;
     MovingGoal.TargetLocation.X += 1.0f;
     World->TimeSeconds = 0.5;
     Run(Navigation);
@@ -204,8 +202,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     MovingGoal.TargetLocation.X += 250.0f;
     World->TimeSeconds = 1.0;
     Run(Navigation);
-    TestTrue(TEXT("目标明显移动后重新规划并保持个体形状"), CachedRoute.bHasPath && CachedRoute.NativePath != OriginalPath &&
-        CachedRoute.ArcStrength == OriginalArc && CachedRoute.LaneOffset == OriginalLane);
+    TestTrue(TEXT("目标明显移动后重新规划完整路线"), CachedRoute.bHasPath && CachedRoute.NativePath != OriginalPath);
     const auto InvalidatedPath = CachedRoute.NativePath;
     if (InvalidatedPath.IsValid())
     {
@@ -223,7 +220,6 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     }
     Budget->MaxRequestsPerFrame = OriginalRequestLimit;
     World->TimeSeconds = 0.0;
-    Settings->ChaseNavigation.DirectPathChance = 1.0f;
     TArray<FMassEntityHandle> StepWalkers;
     for (int32 Index = 0; Index < 3; ++Index)
     {
@@ -256,7 +252,6 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
             FMath::IsNearlyEqual(Position.Y, -1400.0f - Index * 800.0f, 40.0f) && FMath::IsNearlyEqual(Position.Z, 90.5f + Height, 2.0f));
         Manager.DestroyEntity(Walker);
     }
-    Settings->ChaseNavigation.DirectPathChance = 0.2f;
     World->TimeSeconds = 0.0;
     const auto Entity = Create(FVector(-1800.0f, 0.0f, 90.0f));
     Run(Navigation);

@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Input/BBBMonsterParseProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
@@ -23,6 +24,7 @@ UBBBMonsterParseProcessor::UBBBMonsterParseProcessor()
 void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>&)
 {
     EntityQuery.AddRequirement<FBBBMonsterHealthInputFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterNetworkInputFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadWrite);
@@ -92,7 +94,8 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
                     {
                         Variation[Index].Seed = Fact.Packet.BirthSeed;
                     }
-                    Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index], Gore[Index]);
+                    Fact.Packet.Apply(Network[Index], Transforms[Index], Velocities[Index], State[Index], Gore[Index],
+                        Chunk.GetMutableFragmentView<FBBBMonsterTraversalFragment>()[Index]);
                 }
             }
 

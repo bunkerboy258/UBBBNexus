@@ -250,6 +250,13 @@ void UBBBMonsterPresentationComponent::ApplyMobilityState(const bool bInCrawling
     }
 }
 
+void UBBBMonsterPresentationComponent::ApplyTraversalFact(const FBBBMonsterTraversalFact& Fact,
+    const UBBBMonsterPresentationDefinition* Settings)
+{
+    TraversalFact = Fact;
+    TraversalSettings = Settings;
+}
+
 void UBBBMonsterPresentationComponent::ApplyStaggerState(const bool bActive, const float Progress, const EBBBMonsterHitRegion Region)
 {
     const bool bChanged = bStaggering != bActive;

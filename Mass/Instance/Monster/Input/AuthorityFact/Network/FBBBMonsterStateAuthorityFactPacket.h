@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
@@ -14,6 +15,7 @@ struct FBBBMonsterStateAuthorityFactPacket final
     using FInputFragment = FBBBMonsterNetworkInputFragment;
 
     FGuid InstanceId;
+    FBBBMonsterTraversalFact Traversal;
     /** 出生种子只允许在本机首次初始化前还原 */
     uint32 BirthSeed = 0;
     uint32 Revision = 0;
@@ -32,7 +34,7 @@ struct FBBBMonsterStateAuthorityFactPacket final
     /** @return 当前事实是否有效 */
     bool IsValid() const
     {
-        return InstanceId.IsValid() && Revision > 0
+        return InstanceId.IsValid() && Revision > 0 && Traversal.IsValid()
             && !Transform.ContainsNaN() && !Velocity.ContainsNaN()
             && FMath::IsFinite(StateEnteredTime)
             && FMath::IsFinite(CrawlStartedAt)
@@ -54,8 +56,13 @@ struct FBBBMonsterStateAuthorityFactPacket final
      * @return 无
      */
     void Apply(FBBBMonsterNetworkFragment& Network, FTransformFragment& Position,
-        FMassVelocityFragment& Speed, FBBBMonsterBehaviorFragment& State, FBBBMonsterGoreFragment& Gore) const
+        FMassVelocityFragment& Speed, FBBBMonsterBehaviorFragment& State, FBBBMonsterGoreFragment& Gore, FBBBMonsterTraversalFragment& Motion) const
     {
+        Motion.Fact = Traversal;
+        if (State.State == EBBBMonsterBehavior::Dead || Behavior == EBBBMonsterBehavior::Dead)
+        {
+            Motion.Fact.Kind = 0;
+        }
         Network.InstanceId = InstanceId;
         Network.ReceivedRevision = Revision;
         Network.CrawlStartedAt = CrawlStartedAt;

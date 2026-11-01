@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 
@@ -55,6 +56,7 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
     MonsterQuery.AddRequirement<FBBBMonsterDeathFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
@@ -212,6 +214,8 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed,
                     ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].InstanceId, bNewActor);
             }
+            Presentation->ApplyTraversalFact(
+                ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>()[Index].Fact, Definition->Presentation);
             Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);
             if (Definition)
             {

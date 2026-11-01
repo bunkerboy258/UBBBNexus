@@ -10,6 +10,12 @@ class ABBB_EVAC_API UBBBMonsterNavigationSettings final : public UDeveloperSetti
     GENERATED_BODY()
 
 public:
+    UPROPERTY(Config, EditAnywhere, Category = "攀爬预算", meta = (DisplayName = "每帧攀爬入口检查上限", ClampMin = "1", ClampMax = "32"))
+    int32 MaxTraversalChecksPerFrame = 4;
+
+    UPROPERTY(Config, EditAnywhere, Category = "攀爬预算", meta = (DisplayName = "每帧攀爬入口软预算", Units = "ms", ClampMin = "0.1", ClampMax = "4"))
+    float TraversalTimeBudgetMs = 0.5f;
+
     /** 一个请求包含站位检查 投影和 APS 查询 */
     UPROPERTY(Config, EditAnywhere, Category = "寻路预算", meta = (DisplayName = "每帧请求上限", ClampMin = "1", ClampMax = "256"))
     int32 MaxRequestsPerFrame = 16;
@@ -26,17 +32,14 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "局部跟随预算", meta = (DisplayName = "每帧局部检查时间预算", Units = "ms", ClampMin = "0.1", ClampMax = "8"))
     float LocalTimeBudgetMs = 0.75f;
 
-    /** 基础参考路径仍计入总 APS 调用预算 不逐只逐帧双算 */
-    UPROPERTY(Config, EditAnywhere, Category = "路线质量预算", meta = (DisplayName = "每帧参考查询上限", ClampMin = "0", ClampMax = "16"))
-    int32 MaxReferenceQueriesPerFrame = 2;
-
     /** @return 当前项目级预算配置是否有效 */
     bool IsValid() const
     {
-        return MaxRequestsPerFrame >= 1 && MaxRequestsPerFrame <= 256
+        return MaxTraversalChecksPerFrame >= 1 && MaxTraversalChecksPerFrame <= 32
+            && FMath::IsFinite(TraversalTimeBudgetMs) && TraversalTimeBudgetMs >= 0.1f && TraversalTimeBudgetMs <= 4
+            && MaxRequestsPerFrame >= 1 && MaxRequestsPerFrame <= 256
             && MaxLocalChecksPerFrame >= 1 && MaxLocalChecksPerFrame <= 256
             && FMath::IsFinite(LocalTimeBudgetMs) && LocalTimeBudgetMs >= 0.1f && LocalTimeBudgetMs <= 8.0f
-            && MaxReferenceQueriesPerFrame >= 0 && MaxReferenceQueriesPerFrame <= 16
             && FMath::IsFinite(TimeBudgetMs) && TimeBudgetMs >= 0.1f && TimeBudgetMs <= 16.0f;
     }
 

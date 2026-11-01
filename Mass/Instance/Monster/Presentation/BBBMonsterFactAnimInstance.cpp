@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterFactAnimInstance.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "GameFramework/Actor.h"
@@ -16,6 +17,10 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     {
         ensureMsgf(Presentation.IsValid(), TEXT("[UBBBM]Fact animation requires a monster presentation component"));
     }
+    TraversalActiveFact = false;
+    TraversalHandAlphaFact = 0;
+    MantleSequenceFact = nullptr;
+    ClimbSequenceFact = nullptr;
     BehaviorFact = EBBBMonsterBehavior::Idle;
     StaggeringFact = false;
     StaggerProgressFact = 0.0f;
@@ -39,10 +44,41 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
         return;
     }
 
+    const auto* TraversalConfig = Source->TraversalSettings.Get();
+    const auto& Traversal = Source->TraversalFact;
+    TraversalActiveFact = TraversalConfig && Traversal.Kind != 0
+        && Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling;
+    TraversalHighFact = Traversal.Kind == 2;
+    TraversalHandAlphaFact = 0;
+    if (TraversalConfig)
+    {
+        MantleSequenceFact = TraversalConfig->Mantle.Sequence;
+        ClimbSequenceFact = TraversalConfig->Climb.Sequence;
+    }
+    if (TraversalActiveFact)
+    {
+        const float P = FMath::Clamp((GetWorld()->GetTimeSeconds() - Traversal.StartedAt)
+            / FMath::Max(Traversal.Duration, 0.01f), 0.0f, 1.0f);
+        MantleTimeFact = MantleSequenceFact ? P * MantleSequenceFact->GetPlayLength() : 0;
+        ClimbTimeFact = ClimbSequenceFact ? P * ClimbSequenceFact->GetPlayLength() : 0;
+        const auto& Clip = TraversalHighFact ? TraversalConfig->Climb : TraversalConfig->Mantle;
+        const float In = FMath::Clamp((P - Clip.ContactStart) / 0.08f, 0.0f, 1.0f);
+        const float Out = FMath::Clamp((Clip.ContactEnd - P) / 0.08f, 0.0f, 1.0f);
+        TraversalHandAlphaFact = FMath::Min(In, Out);
+        const FVector Side = GetOwningActor()->GetActorRightVector();
+        auto* Mesh = GetSkelMeshComponent();
+        const FTransform Component = Mesh->GetComponentTransform();
+        const float LeftSign = FVector::DotProduct(Mesh->GetSocketLocation(TEXT("upperarm_l"))
+            - GetOwningActor()->GetActorLocation(), Side) < 0 ? -1.0f : 1.0f;
+        TraversalLeftHandFact = Component.InverseTransformPosition(Traversal.Ledge + Side * Clip.HandSpacing * 0.5f * LeftSign);
+        TraversalRightHandFact = Component.InverseTransformPosition(Traversal.Ledge - Side * Clip.HandSpacing * 0.5f * LeftSign);
+        TraversalLeftElbowFact = Component.InverseTransformPosition(Mesh->GetSocketLocation(TEXT("lowerarm_l")) + Side * 25.0f * LeftSign);
+        TraversalRightElbowFact = Component.InverseTransformPosition(Mesh->GetSocketLocation(TEXT("lowerarm_r")) - Side * 25.0f * LeftSign);
+    }
     BehaviorFact = Source->BBBMonsterBehavior;
     ActorYawFact = GetOwningActor()->GetActorRotation().Yaw;
     CrawlingFact = Source->bCrawling;
-    StaggeringFact = Source->bStaggering && !CrawlingFact && BehaviorFact != EBBBMonsterBehavior::Dead;
+    StaggeringFact = Source->bStaggering && !TraversalActiveFact && !CrawlingFact && BehaviorFact != EBBBMonsterBehavior::Dead;
     StaggerProgressFact = Source->StaggerProgress;
     StaggerVariantFact = 0;
     switch (Source->StaggerRegion)

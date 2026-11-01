@@ -1,5 +1,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassNavigationQueryActor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterClimbArea.h"
+
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
@@ -21,7 +24,7 @@
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
 #include "NavigationSystem.h"
-#include "Navigation/APS_NavigationData.h"
+#include "NavMesh/RecastNavMesh.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "HAL/IConsoleManager.h"
@@ -37,7 +40,6 @@ DECLARE_DWORD_COUNTER_STAT(TEXT("本帧接受路径点"), STAT_BBBNavigationPoin
 DECLARE_FLOAT_COUNTER_STAT(TEXT("请求处理毫秒"), STAT_BBBNavigationRequestMs, STATGROUP_BBBMonsterNavigation);
 DECLARE_FLOAT_COUNTER_STAT(TEXT("最长等待秒数"), STAT_BBBNavigationWait, STATGROUP_BBBMonsterNavigation);
 DECLARE_DWORD_COUNTER_STAT(TEXT("本帧局部检查"), STAT_BBBNavigationLocalChecks, STATGROUP_BBBMonsterNavigation);
-DECLARE_DWORD_COUNTER_STAT(TEXT("本帧参考查询"), STAT_BBBNavigationReferences, STATGROUP_BBBMonsterNavigation);
 DECLARE_DWORD_COUNTER_STAT(TEXT("本帧无进展重算"), STAT_BBBNavigationNoProgress, STATGROUP_BBBMonsterNavigation);
 DECLARE_FLOAT_COUNTER_STAT(TEXT("局部检查毫秒"), STAT_BBBNavigationLocalMs, STATGROUP_BBBMonsterNavigation);
 
@@ -55,6 +57,7 @@ namespace
         Path.PathPoints.Reset();
         Path.TailDistances.Reset();
         Path.PathPointIndex = 1;
+        Path.TraversalPoint = INDEX_NONE;
         Path.RequestSince = -1.0f;
         Path.bHasFollowTarget = false;
         Path.bLocalBlocked = false;
@@ -71,16 +74,7 @@ namespace
         Path.Condition = EBBBMonsterNavigationCondition::Unreachable;
     }
 
-    float MeasurePath(const FNavigationPath& Path)
-    {
-        float Length = 0.0f;
-        const auto& Points = Path.GetPathPoints();
-        for (int32 Index = 1; Index < Points.Num(); ++Index)
-        {
-            Length += FVector::Distance(Points[Index - 1].Location, Points[Index].Location);
-        }
-        return Length;
-    }
+
 }
 
 UBBBMonsterNavigationProcessor::UBBBMonsterNavigationProcessor()
@@ -105,6 +99,7 @@ void UBBBMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly);
@@ -122,7 +117,6 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     SET_FLOAT_STAT(STAT_BBBNavigationRequestMs, 0.0f);
     SET_FLOAT_STAT(STAT_BBBNavigationWait, 0.0f);
     SET_DWORD_STAT(STAT_BBBNavigationLocalChecks, 0);
-    SET_DWORD_STAT(STAT_BBBNavigationReferences, 0);
     SET_DWORD_STAT(STAT_BBBNavigationNoProgress, 0);
     SET_FLOAT_STAT(STAT_BBBNavigationLocalMs, 0.0f);
 
@@ -132,10 +126,10 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         return;
     }
     auto* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
-    auto* RouteData = NavigationSystem ? Cast<AAPS_NavigationData>(NavigationSystem->GetDefaultNavDataInstance()) : nullptr;
+    auto* RouteData = NavigationSystem ? Cast<ARecastNavMesh>(NavigationSystem->GetDefaultNavDataInstance()) : nullptr;
     const auto* Budget = GetDefault<UBBBMonsterNavigationSettings>();
-    if (!ensureMsgf(RouteData && RouteData->PathAlgorithm == EAPSPathAlgorithm::APS_LowLevelArc && Budget->IsValid(),
-        TEXT("[BBBNavigation]需要 APS LowLevelArc 导航数据和有效的寻路预算 请重建 Zombie 导航网格")))
+    if (!ensureMsgf(RouteData && Budget->IsValid(),
+        TEXT("[BBBNavigation]需要 Recast 导航数据和有效的寻路预算 请重建 Zombie 导航网格")))
     {
         MonsterQuery.ForEachEntityChunk(Context, [](FMassExecutionContext& Chunk)
         {
@@ -150,8 +144,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     }
 
     // 保存基础多边形走廊以接收动态网格失效通知 不启用逐段重建走廊
-    RouteData->bBuildCrowdCompatiblePathCorridor = true;
-    RouteData->bRebuildCrowdCorridorAfterArc = false;
+
 
     const float WorldTime = World->GetTimeSeconds();
     TMap<TWeakObjectPtr<AActor>, TSet<int32>> OccupiedSlots;
@@ -185,6 +178,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Networks = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Grounds = Chunk.GetFragmentView<FBBBMonsterGroundFragment>();
+        const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         const auto Movement = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
         const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
@@ -192,12 +186,25 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Path = Paths[Index];
+            if (Traversals[Index].Fact.Kind != 0)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::Suspended;
+                Path.ProgressTime = WorldTime;
+                Path.BlockedDuration = 0;
+                continue;
+            }
             const auto& State = States[Index];
             const auto& Target = Targets[Index];
             const auto* Definition = Networks[Index].Definition.Get();
             if (!ensureMsgf(Definition, TEXT("[BBBNavigation]缺少僵尸定义")))
             {
                 continue;
+            }
+            if (Path.TraversalPoint != INDEX_NONE && (!Definition->Traversal.bEnabled
+                || Mobility[Index].bCrawling || Mobility[Index].AttackRatio < 0.99f))
+            {
+                ClearPath(Path);
+                Path.NextPathRefreshTime = WorldTime;
             }
             const bool bPatrol = State.State == EBBBMonsterBehavior::Patrol;
             const bool bChase = State.State == EBBBMonsterBehavior::Chase;
@@ -404,9 +411,9 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 }
                 DrawDebugSphere(World, Path.FollowTarget + FVector::UpVector * 8.0f, 8.0f, 8, FColor::Yellow);
                 DrawDebugString(World, Location + FVector::UpVector * 110.0f,
-                    FString::Printf(TEXT("%s Remaining=%.0f Offset=%.0f Motion=%.2f Detour=%.2f Repath=%u Reverse=%u Wait=%.2f Last=%s"),
+                    FString::Printf(TEXT("%s Remaining=%.0f Offset=%.0f Motion=%.2f Repath=%u Reverse=%u Wait=%.2f Last=%s"),
                         *StaticEnum<EBBBMonsterNavigationCondition>()->GetDisplayNameTextByValue(static_cast<int64>(Path.Condition)).ToString(),
-                        Path.RemainingDistance, Path.OffPathDistance, Path.MotionEfficiency, Path.DetourRatio,
+                        Path.RemainingDistance, Path.OffPathDistance, Path.MotionEfficiency,
                         Path.RepathCount, Path.DirectionReversals,
                         Path.RequestSince < 0.0f ? 0.0f : WorldTime - Path.RequestSince,
                         *StaticEnum<EBBBMonsterNavigationCondition>()->GetDisplayNameTextByValue(static_cast<int64>(Path.LastRepathCondition)).ToString()),
@@ -515,16 +522,14 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     });
     auto* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     auto* QueryOwner = Mass ? Mass->GetNavigationQueryActor() : nullptr;
-    if (!ensureMsgf(QueryOwner, TEXT("[BBBNavigation]无法创建世界级 APS 查询载体")))
+    if (!QueryOwner)
     {
         return;
     }
-
     const double RequestStart = FPlatformTime::Seconds();
     int32 Submitted = 0;
     int32 QueryCount = 0;
     int32 AcceptedPoints = 0;
-    int32 ReferenceQueries = 0;
     for (const auto& Request : Requests)
     {
         if (Submitted >= Budget->MaxRequestsPerFrame || QueryCount >= Budget->MaxRequestsPerFrame ||
@@ -540,6 +545,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto& State = EntityManager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity);
         const auto& Movement = EntityManager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Entity);
         const auto& Ground = EntityManager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity);
+        const auto& Mobility = EntityManager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
         const auto& Variation = EntityManager.GetFragmentDataChecked<FBBBMonsterVariationFragment>(Entity);
         const auto& Definition = *EntityManager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition;
         const FVector Location = EntityManager.GetFragmentDataChecked<FTransformFragment>(Entity).GetTransform().GetLocation();
@@ -679,28 +685,20 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             bProjected = NavigationSystem->ProjectPointToNavigation(GoalFoot, End, FVector(1000.0f, 1000.0f, 250.0f), RouteData);
         }
         const FVector QueryEnd = bProjected ? End.Location : GoalFoot;
-        const auto& Profile = bPatrol ? Definition.PatrolNavigation : Definition.ChaseNavigation;
-        Profile.Sample(Variation.Seed, Path.ArcStrength, Path.LaneOffset);
-        float ShapeScale = bPatrol ? 1.0f : FMath::Clamp((Distance - Definition.EncircleRange) /
-            (Definition.NavigationFullShapeDistance - Definition.EncircleRange), 0.0f, 1.0f);
-        if (bFar)
+        auto Filter = RouteData->GetDefaultQueryFilter()->GetCopy();
+        if (!Definition.Traversal.bEnabled || Mobility.bCrawling || Mobility.AttackRatio < 0.99f)
         {
-            ShapeScale = 0.0f;
+            Filter->SetExcludedArea(RouteData->GetAreaID(UBBBMonsterClimbArea::StaticClass()));
         }
-        if (Path.FailureCount > 0)
-        {
-            ShapeScale = 0.0f;
-        }
-        Path.ArcStrength *= ShapeScale;
-        Path.LaneOffset *= ShapeScale;
-        QueryOwner->SetParameters(Path.ArcStrength, Profile.NumMidPoints, Profile.MidpointMode, Path.LaneOffset);
-        FPathFindingQuery Query(QueryOwner, *RouteData, Start.Location, QueryEnd, RouteData->GetDefaultQueryFilter());
+        QueryOwner->SetTraversalLimit(Definition.Traversal.bEnabled && !Mobility.bCrawling && Mobility.AttackRatio >= 0.99f
+            ? Definition.Traversal.MaximumHeight : 0.0f);
+        FPathFindingQuery Query(QueryOwner, *RouteData, Start.Location, QueryEnd, Filter);
         Query.SetAllowPartialPaths(bChase);
         Query.SetRequireNavigableEndLocation(!bChase);
         const double QueryStart = FPlatformTime::Seconds();
-        const FPathFindingResult Result = NavigationSystem->FindPathSync(Query);
+        const FPathFindingResult Result = ARecastNavMesh::FindPath(RouteData->GetConfig(), Query);
+        QueryOwner->SetTraversalLimit(0);
         Path.LastQueryMs = static_cast<float>((FPlatformTime::Seconds() - QueryStart) * 1000.0);
-        QueryOwner->ResetParameters();
         ++QueryCount;
         auto NativePath = Result.Path;
         if (NativePath.IsValid())
@@ -718,41 +716,10 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             FVector::DistSquared(NativePath->GetPathPoints().Last().Location, QueryEnd) > FMath::Square(15.0f));
         const bool bUsefulPartial = bValid && FVector::Dist2D(Start.Location,
             NativePath->GetPathPoints().Last().Location) >= 50.0f;
-        Path.DetourRatio = 0.0f;
-        if (bValid && !bPartial && !bFar && FMath::Abs(Path.ArcStrength) + FMath::Abs(Path.LaneOffset) > 0.01f
-            && WorldTime >= Path.NextReferenceTime && ReferenceQueries < Budget->MaxReferenceQueriesPerFrame
-            && QueryCount < Budget->MaxRequestsPerFrame
-            && (FPlatformTime::Seconds() - RequestStart) * 1000.0 < Budget->TimeBudgetMs)
-        {
-            QueryOwner->SetParameters(0.0f, Profile.NumMidPoints, Profile.MidpointMode, 0.0f);
-            const auto Reference = NavigationSystem->FindPathSync(Query);
-            QueryOwner->ResetParameters();
-            ++QueryCount;
-            ++ReferenceQueries;
-            Path.NextReferenceTime = WorldTime + 5.0f;
-            if (Reference.IsSuccessful() && Reference.Path.IsValid() && Reference.Path->IsValid()
-                && !Reference.Path->IsPartial() && Reference.Path->GetPathPoints().Num() >= 2
-                && !Reference.Path->GetPathPoints().ContainsByPredicate([](const FNavPathPoint& Point)
-                {
-                    return Point.Location.ContainsNaN();
-                }) && FVector::DistSquared(Reference.Path->GetPathPoints().Last().Location, QueryEnd) <= FMath::Square(15.0f))
-            {
-                Path.DetourRatio = MeasurePath(*NativePath) / FMath::Max(MeasurePath(*Reference.Path), 1.0f);
-                if (Path.DetourRatio > Definition.NavigationMaxDetourRatio)
-                {
-                    NativePath = Reference.Path;
-                    NativePath->EnableRecalculationOnInvalidation(false);
-                    Path.ArcStrength = 0.0f;
-                    Path.LaneOffset = 0.0f;
-                    Path.DetourRatio = 1.0f;
-                    Path.LastRepathCondition = EBBBMonsterNavigationCondition::DetourLimited;
-                }
-            }
-        }
         if (NavigationLogRequests.GetValueOnGameThread() != 0)
         {
-            UE_LOG(LogTemp, Log, TEXT("[BBBNavigation]实体=%d APS毫秒=%.3f 弧度=%.3f 偏移=%.1f 有效=%d 部分路径=%d 原因=%s"),
-                Entity.Index, Path.LastQueryMs, Path.ArcStrength, Path.LaneOffset, bValid, bPartial,
+            UE_LOG(LogTemp, Log, TEXT("[BBBNavigation]实体=%d 导航毫秒=%.3f 有效=%d 部分路径=%d 原因=%s"),
+                Entity.Index, Path.LastQueryMs, bValid, bPartial,
                 *StaticEnum<EBBBMonsterNavigationCondition>()->GetDisplayNameTextByValue(static_cast<int64>(Path.LastRepathCondition)).ToString());
         }
         if (!bValid || (bPartial && (!bChase || !bUsefulPartial)))
@@ -773,6 +740,16 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             Path.TailDistances[Point] = Path.TailDistances[Point + 1] + FVector::Distance(Path.PathPoints[Point], Path.PathPoints[Point + 1]);
         }
         Path.PathPointIndex = 1;
+        Path.TraversalPoint = INDEX_NONE;
+        const auto& Nodes = NativePath->GetPathPoints();
+        for (int32 Point = 0; Point < Nodes.Num() - 1; ++Point)
+        {
+            if (Nodes[Point].CustomNavLinkId != FNavLinkId::Invalid)
+            {
+                Path.TraversalPoint = Point;
+                break;
+            }
+        }
         Path.Destination = Path.PathPoints.Last();
         Path.RequestedGoal = Target.TargetLocation;
         Path.LastPathTime = WorldTime;
@@ -788,6 +765,5 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     SET_DWORD_STAT(STAT_BBBNavigationSubmitted, Submitted);
     SET_DWORD_STAT(STAT_BBBNavigationQueries, QueryCount);
     SET_DWORD_STAT(STAT_BBBNavigationPoints, AcceptedPoints);
-    SET_DWORD_STAT(STAT_BBBNavigationReferences, ReferenceQueries);
     SET_FLOAT_STAT(STAT_BBBNavigationRequestMs, static_cast<float>((FPlatformTime::Seconds() - RequestStart) * 1000.0));
 }

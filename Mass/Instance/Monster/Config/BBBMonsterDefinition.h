@@ -2,7 +2,7 @@
 
 #include "Engine/DataAsset.h"
 #include "BBBMonsterBodyPartDefinition.h"
-#include "BBBMonsterNavigationProfile.h"
+#include "BBBMonsterTraversalSettings.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBMonsterDefinition.generated.h"
 
@@ -19,6 +19,9 @@ class ABBB_EVAC_API UBBBMonsterDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    UPROPERTY(EditAnywhere, Category = "攀爬", meta = (DisplayName = "上台与攀爬"))
+    FBBBMonsterTraversalSettings Traversal;
+
     /** 表现参数唯一入口 不参与伤害和行动裁决 */
     UPROPERTY(EditAnywhere, Category = "表现配置", meta = (DisplayName = "表现配置"))
     TObjectPtr<UBBBMonsterPresentationDefinition> Presentation;
@@ -243,14 +246,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "感知与索敌", meta = (ClampMin = "0.1", DisplayName = "调查结束警觉时间"))
     float InvestigationAlertDuration = 1.5f;
 
-    /** 巡逻路线的个体形状 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "巡逻路线"))
-    FBBBMonsterNavigationProfile PatrolNavigation;
-
-    /** 追击路线的个体形状 靠近目标后逐渐收直 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "追击路线"))
-    FBBBMonsterNavigationProfile ChaseNavigation;
-
     /** 目标明显移动后 近距离重算的最短间隔 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "近距离重算间隔", Units = "s", ClampMin = "0.1"))
     float NavigationNearInterval = 0.4f;
@@ -275,10 +270,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "追击路径最长复用时间", Units = "s", ClampMin = "0.1"))
     float NavigationMaxPathAge = 4.0f;
 
-    /** 在包围距离与此距离之间逐渐恢复完整路线形状 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "完整塑形距离", Units = "cm", ClampMin = "1"))
-    float NavigationFullShapeDistance = 1200.0f;
-
     /** 实际无进展持续此秒数后重算路径 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (ClampMin = "0.1", DisplayName = "卡住检测时间"))
     float NavigationStuckDuration = 1.5f;
@@ -302,10 +293,6 @@ public:
     /** 有局部预算时更新前方障碍与绕行目标的最短间隔 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "局部检查间隔", Units = "s", ClampMin = "0.05", ClampMax = "0.5"))
     float NavigationFollowInterval = 0.15f;
-
-    /** 塑形路线超过同条件基础路线的比例时使用本次基础结果 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "塑形绕行比例上限", ClampMin = "1.0", ClampMax = "3.0"))
-    float NavigationMaxDetourRatio = 1.35f;
 
     /** 选定绕行侧后的最短保持时间 空间恢复后仍优先继续向前 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (DisplayName = "绕行侧保持时间", Units = "s", ClampMin = "0.1", ClampMax = "3"))

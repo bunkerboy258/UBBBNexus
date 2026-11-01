@@ -114,7 +114,8 @@ bool FBBBMonsterGoreResultRestoreTest::RunTest(const FString&)
     FBBBMonsterBehaviorFragment Behavior;
     FBBBMonsterGoreFragment Remote;
     Remote.DestructionStrengths[7] = 200;
-    Packet.Apply(Network, Position, Velocity, Behavior, Remote);
+    FBBBMonsterTraversalFragment Traversal;
+    Packet.Apply(Network, Position, Velocity, Behavior, Remote, Traversal);
     TestTrue(TEXT("五个断点直接还原"), FMemory::Memcmp(State.DismembermentPresets,
         Remote.DismembermentPresets, sizeof(State.DismembermentPresets)) == 0);
     TestEqual(TEXT("行动快照保持独立毁伤贡献结果"), Remote.DestructionStrengths[7], static_cast<uint8>(200));

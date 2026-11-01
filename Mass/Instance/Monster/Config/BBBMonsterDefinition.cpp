@@ -10,9 +10,6 @@
 UBBBMonsterDefinition::UBBBMonsterDefinition()
 {
     Variation = CreateDefaultSubobject<UBBBMonsterVariationDefinition>(TEXT("BirthRules"));
-    PatrolNavigation.MidpointMode = EAPSArcMidpointMode::Wavy;
-    PatrolNavigation.ArcStrengthRange = FVector2D(0.35, 0.9);
-    PatrolNavigation.DirectPathChance = 0.1f;
     TorsoPart = {1.0f, 0.25f, 1.0f, true};
     HeadPart = {0.35f, 0.0f, 1.0f, true};
     LeftArmPart = {0.4f, 0.5f, 0.25f, false};
@@ -51,6 +48,10 @@ const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EB
 
 bool UBBBMonsterDefinition::IsValid() const
 {
+    if (!Traversal.IsValid())
+    {
+        return false;
+    }
     const auto* Trait = EntityConfig ? Cast<UBBBMonsterTrait>(EntityConfig->FindTrait(UBBBMonsterTrait::StaticClass())) : nullptr;
     return EntityConfig != nullptr
         && Trait && Trait->Definition == this
@@ -102,20 +103,17 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AllyAlertRange) && AllyAlertRange >= 0.0f
         && FMath::IsFinite(AllyAlertCooldown) && AllyAlertCooldown > 0.0f
         && FMath::IsFinite(InvestigationAlertDuration) && InvestigationAlertDuration > 0.0f
-        && PatrolNavigation.IsValid() && ChaseNavigation.IsValid()
         && FMath::IsFinite(NavigationNearInterval) && NavigationNearInterval >= 0.1f
         && FMath::IsFinite(NavigationFarInterval) && NavigationFarInterval >= NavigationNearInterval
-        && FMath::IsFinite(NavigationFarDistance) && NavigationFarDistance > NavigationFullShapeDistance
+        && FMath::IsFinite(NavigationFarDistance) && NavigationFarDistance > EncircleRange
         && FMath::IsFinite(NavigationNearGoalThreshold) && NavigationNearGoalThreshold > 0.0f
         && FMath::IsFinite(NavigationFarGoalThreshold) && NavigationFarGoalThreshold >= NavigationNearGoalThreshold
         && FMath::IsFinite(NavigationMaxPathAge) && NavigationMaxPathAge >= NavigationFarInterval
-        && FMath::IsFinite(NavigationFullShapeDistance) && NavigationFullShapeDistance > EncircleRange
         && FMath::IsFinite(NavigationStuckDuration) && NavigationStuckDuration > 0.0f
         && FMath::IsFinite(NavigationRetryDuration) && NavigationRetryDuration > 0.0f
         && FMath::IsFinite(NavigationLookAheadTime) && NavigationLookAheadTime >= 0.05f && NavigationLookAheadTime <= 1.0f
         && FMath::IsFinite(NavigationLookAheadDistance) && NavigationLookAheadDistance >= 30.0f && NavigationLookAheadDistance <= 400.0f
         && FMath::IsFinite(NavigationFollowInterval) && NavigationFollowInterval >= 0.05f && NavigationFollowInterval <= 0.5f
-        && FMath::IsFinite(NavigationMaxDetourRatio) && NavigationMaxDetourRatio >= 1.0f && NavigationMaxDetourRatio <= 3.0f
         && FMath::IsFinite(AvoidanceSideHoldDuration) && AvoidanceSideHoldDuration >= 0.1f && AvoidanceSideHoldDuration <= 3.0f
         && FMath::IsFinite(UnsupportedLifetime) && UnsupportedLifetime >= 5.0f && UnsupportedLifetime <= 120.0f
         && FMath::IsFinite(EncircleRange) && EncircleRange > 0.0f

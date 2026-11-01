@@ -27,6 +27,50 @@ public:
     //~ End UAnimInstance Interface
 
 private:
+    /** 当前上台事实 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "当前上台事实"))
+    bool TraversalActiveFact = false;
+
+    /** 较高攀爬事实 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "较高攀爬事实"))
+    bool TraversalHighFact = false;
+
+    /** 快速上台资源事实 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "快速上台资源事实"))
+    TObjectPtr<UAnimSequence> MantleSequenceFact = nullptr;
+
+    /** 较高攀爬资源事实 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "较高攀爬资源事实"))
+    TObjectPtr<UAnimSequence> ClimbSequenceFact = nullptr;
+
+    /** 快速上台采样秒数 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "快速上台采样秒数"))
+    float MantleTimeFact = 0;
+
+    /** 较高攀爬采样秒数 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "较高攀爬采样秒数"))
+    float ClimbTimeFact = 0;
+
+    /** 抓边修正权重 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "抓边修正权重"))
+    float TraversalHandAlphaFact = 0;
+
+    /** 组件空间左手抓点 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "组件空间左手抓点"))
+    FVector TraversalLeftHandFact = FVector::ZeroVector;
+
+    /** 组件空间右手抓点 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "组件空间右手抓点"))
+    FVector TraversalRightHandFact = FVector::ZeroVector;
+
+    /** 组件空间左肘参考 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "组件空间左肘参考"))
+    FVector TraversalLeftElbowFact = FVector::ZeroVector;
+
+    /** 组件空间右肘参考 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "组件空间右肘参考"))
+    FVector TraversalRightElbowFact = FVector::ZeroVector;
+
     /** 当前表现演员的实际世界朝向 不包含转向决策 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "实际朝向事实"))
     float ActorYawFact = 0.0f;

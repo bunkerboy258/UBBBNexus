@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassValidationLibrary.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -322,6 +323,12 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("serial"), Entity.SerialNumber);
             Sample->SetNumberField(TEXT("behavior"), static_cast<int32>(Behavior->State));
             Sample->SetNumberField(TEXT("gait"), static_cast<int32>(Movement->Gait));
+            const auto* Traversal = Manager.GetFragmentDataPtr<FBBBMonsterTraversalFragment>(Entity);
+            Sample->SetNumberField(TEXT("traversalKind"), Traversal ? Traversal->Fact.Kind : 0);
+            Sample->SetNumberField(TEXT("traversalSerial"), Traversal ? Traversal->Fact.Serial : 0);
+            Sample->SetNumberField(TEXT("traversalStartedAt"), Traversal ? Traversal->Fact.StartedAt : 0);
+            Sample->SetNumberField(TEXT("traversalDuration"), Traversal ? Traversal->Fact.Duration : 0);
+            Sample->SetStringField(TEXT("traversalFailure"), Traversal ? Traversal->Failure.ToString() : TEXT(""));
             const auto* Variation = Manager.GetFragmentDataPtr<FBBBMonsterVariationFragment>(Entity);
             const auto* Snapshot = Manager.GetFragmentDataPtr<FBBBMonsterPresentationStateFragment>(Entity);
             const auto* Network = Manager.GetFragmentDataPtr<FBBBMonsterNetworkFragment>(Entity);
@@ -357,8 +364,6 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetBoolField(TEXT("partialPath"), Navigation->bPartialPath);
             Sample->SetNumberField(TEXT("navigationFailures"), Navigation->FailureCount);
             Sample->SetNumberField(TEXT("navigationQueryMs"), Navigation->LastQueryMs);
-            Sample->SetNumberField(TEXT("navigationArcStrength"), Navigation->ArcStrength);
-            Sample->SetNumberField(TEXT("navigationLaneOffset"), Navigation->LaneOffset);
             Sample->SetNumberField(TEXT("navigationRequestSince"), Navigation->RequestSince);
             Sample->SetNumberField(TEXT("navigationLastPathTime"), Navigation->LastPathTime);
             Sample->SetBoolField(TEXT("navigationUpToDate"), Navigation->NativePath.IsValid() && Navigation->NativePath->IsUpToDate());
@@ -376,7 +381,6 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("progressAge"), Navigation->ProgressTime >= 0.0f ? World->GetTimeSeconds() - Navigation->ProgressTime : 0.0f);
             Sample->SetNumberField(TEXT("progressDistance"), Navigation->ProgressDistance);
             Sample->SetNumberField(TEXT("directionReversals"), Navigation->DirectionReversals);
-            Sample->SetNumberField(TEXT("detourRatio"), Navigation->DetourRatio);
             Sample->SetBoolField(TEXT("localBlocked"), Navigation->bLocalBlocked);
             Sample->SetBoolField(TEXT("waitingForNeighbor"), Avoidance && Avoidance->bWaitingForNeighbor);
             Sample->SetNumberField(TEXT("crowdClearance"), Avoidance ? Avoidance->MaxTravelDistance : 0.0f);

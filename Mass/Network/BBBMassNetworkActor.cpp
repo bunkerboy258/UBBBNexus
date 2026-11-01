@@ -42,12 +42,15 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
         bUpdateAction = true;
     }
 
+    const bool bTraversalChanged = Existing->Traversal.Serial != State.Traversal.Serial
+        || Existing->Traversal.Kind != State.Traversal.Kind;
+    bUpdateAction = bUpdateAction || bTraversalChanged;
     const bool bDamageChanged = Existing->Contributions != State.Contributions;
     const bool bGoreChanged = FMemory::Memcmp(Existing->DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets)) != 0;
     const bool bActionChanged = bUpdateAction && (Existing->InstanceId != State.InstanceId
         || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
         || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
-        || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
+        || bTraversalChanged || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
         || Existing->StateEnteredTime != State.StateEnteredTime || Existing->CrawlStartedAt != State.CrawlStartedAt);
     if (!bDamageChanged && !bActionChanged && !bGoreChanged)
     {
@@ -67,6 +70,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
         Existing->ActionId = State.ActionId;
         Existing->StateEnteredTime = State.StateEnteredTime;
         Existing->CrawlStartedAt = State.CrawlStartedAt;
+        Existing->Traversal = State.Traversal;
     }
     Existing->Contributions = State.Contributions;
     ++Existing->Revision;
@@ -262,6 +266,12 @@ void ABBBMassNetworkActor::OnRep_Monsters()
         Packet.CrawlStartedAt = Item.CrawlStartedAt >= 0.0f
             ? GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.CrawlStartedAt) : -1.0f;
         Packet.bHasCrawlTime = Item.CrawlStartedAt >= 0.0f;
+        Packet.Traversal = Item.Traversal;
+        if (Packet.Traversal.Kind != 0)
+        {
+            Packet.Traversal.StartedAt = GetWorld()->GetTimeSeconds()
+                - FMath::Max(0.0, ServerTime - Item.Traversal.StartedAt);
+        }
         Mass->SubmitInput(Entity, MoveTemp(Packet));
         RouteDamage(Item.InstanceId, Item.Contributions);
         if (const auto* Pending = PendingDamageSnapshots.Find(Item.InstanceId))

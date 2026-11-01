@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
+#include "BBBMonsterStep.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
@@ -230,22 +232,16 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         bool bStepped = false;
         if (bBlocked && bWasGrounded && !HorizontalStep.IsNearlyZero() && Movement.MaxStepHeight > 0.0f)
         {
-            const FVector Raised = Start + FVector::UpVector * Movement.MaxStepHeight;
-            FVector Candidate = Raised + HorizontalStep;
-            FVector CandidateNormal = FVector::UpVector;
-            float CandidateSurfaceHeight = 0.0f;
-            FHitResult UpHit;
-            FHitResult ForwardHit;
-            if (!Sweep(Start, Raised, UpHit) && !Sweep(Raised, Candidate, ForwardHit) &&
-                FindSupport(Candidate, Movement.MaxStepHeight + SupportDistance, CandidateNormal, &CandidateSurfaceHeight) &&
-                Candidate.Z <= Start.Z + Movement.MaxStepHeight + Skin &&
-                CandidateSurfaceHeight <= Start.Z - Movement.CapsuleHalfHeight + Movement.MaxStepHeight + Skin)
+            FVector Candidate;
+            FVector CandidateNormal;
+            if (FBBBMonsterStep::Solve(World, Movement, Start, HorizontalStep, Params, Candidate, CandidateNormal))
             {
                 Location = Candidate;
                 Ground.SupportNormal = CandidateNormal;
                 bStepped = true;
             }
         }
+
         if (bBlocked && !bStepped && !Hit.bStartPenetrating)
         {
             Location += Hit.Normal * Skin;
@@ -288,6 +284,7 @@ void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
@@ -312,6 +309,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         auto Velocities = Chunk.GetMutableFragmentView<FMassVelocityFragment>();
         auto Movements = Chunk.GetMutableFragmentView<FBBBMonsterMovementFragment>();
         auto Grounds = Chunk.GetMutableFragmentView<FBBBMonsterGroundFragment>();
+        const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
         const auto Navigation = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
@@ -320,6 +318,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
+            if (Traversals[Index].Fact.Kind != 0)
+            {
+                continue;
+            }
             FTransform& Transform = Transforms[Index].GetMutableTransform();
             FVector& Velocity = Velocities[Index].Value;
             FBBBMonsterMovementFragment& Movement = Movements[Index];
@@ -367,7 +369,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
             // 合格近战位置在冷却期间保持 身体继续对准目标
-            Movement.bHoldingAttackPosition = bChase && Target.bTargetVisible && Settings
+            Movement.bHoldingAttackPosition = Path.TraversalPoint == INDEX_NONE && bChase && Target.bTargetVisible && Settings
                 && TargetDistance <= Settings->AttackRange * (Movement.bHoldingAttackPosition ? 1.0f : 0.95f);
             const bool bMayMove = !Movement.bHoldingAttackPosition && !bChangingPosture && !Injury.IsStaggering(Now) && !Avoidance[Index].bWaitingForNeighbor
                 && (bPatrol || bChase) && Path.bHasPath &&
@@ -458,7 +460,14 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                     Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
             FVector FacingDirection = bMayMove ? Avoidance[Index].SteeringDirection : FVector::ZeroVector;
-            if (Movement.bFacingTarget)
+            const bool bAtClimbEntry = Path.TraversalPoint != INDEX_NONE
+                && Path.PathPoints.IsValidIndex(Path.TraversalPoint + 1)
+                && FVector::DistSquared2D(Location, Path.PathPoints[Path.TraversalPoint]) <= FMath::Square(Movement.CapsuleRadius * 2);
+            if (bAtClimbEntry)
+            {
+                FacingDirection = (Path.PathPoints[Path.TraversalPoint + 1] - Path.PathPoints[Path.TraversalPoint]).GetSafeNormal2D();
+            }
+            if (Movement.bFacingTarget && !bAtClimbEntry)
             {
                 FacingDirection = (Target.TargetLocation - Location).GetSafeNormal2D();
             }

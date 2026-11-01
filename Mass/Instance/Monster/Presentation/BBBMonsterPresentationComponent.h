@@ -3,10 +3,12 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFact.h"
 
 #include "BBBMonsterPresentationComponent.generated.h"
 
 struct FBBBMonsterVariationFragment;
+class UBBBMonsterPresentationDefinition;
 
 
 /** 向小怪动画蓝图提供只读 Mass 表现状态 */
@@ -18,6 +20,13 @@ class ABBB_EVAC_API UBBBMonsterPresentationComponent final : public UActorCompon
     friend class UBBBMonsterFactAnimInstance;
 
 public:
+    /**
+     * @param Fact	Mass 当前上台结果
+     * @param Settings	当前身体的唯一表现配置
+     * @return 仅更新动画只读快照 无返回值
+     */
+    void ApplyTraversalFact(const FBBBMonsterTraversalFact& Fact, const UBBBMonsterPresentationDefinition* Settings);
+
     /** 创建小怪表现状态组件 */
     UBBBMonsterPresentationComponent();
 
@@ -122,6 +131,12 @@ public:
     void ResetCorpsePresentation();
 
 private:
+    /** Mass 当前上台事实的机械显示副本 */
+    FBBBMonsterTraversalFact TraversalFact;
+
+    UPROPERTY(Transient)
+    TObjectPtr<const UBBBMonsterPresentationDefinition> TraversalSettings;
+
     /** 等待动画图消费当前事实的引擎帧 不记录玩法历史 */
     uint64 CorpsePoseRequestFrame = MAX_uint64;
 

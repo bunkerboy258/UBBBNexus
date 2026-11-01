@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
@@ -39,6 +40,7 @@ void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntity
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
@@ -68,6 +70,7 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
         auto Transforms = ChunkContext.GetMutableFragmentView<FTransformFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();
+        const auto Traversals = ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>();
         const auto Navigation = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
         const auto Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>();
@@ -152,6 +155,18 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
 
             if (State.State == EBBBMonsterBehavior::Attack &&
                 (Mobility[Index].IsStaggering(WorldTime) || WorldTime < Mobility[Index].HitStopEndsAt))
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
+                EnterState(EBBBMonsterBehavior::Chase);
+                continue;
+            }
+
+            if (Traversals[Index].Fact.Kind != 0
+                || (Navigation[Index].TraversalPoint != INDEX_NONE && Navigation[Index].PathPoints.IsValidIndex(Navigation[Index].TraversalPoint)
+                    && FVector::DistSquared2D(Transforms[Index].GetTransform().GetLocation(),
+                        Navigation[Index].PathPoints[Navigation[Index].TraversalPoint]) < FMath::Square(90.0f)))
             {
                 Combat.AttackTarget.Reset();
                 Combat.bHitAttempted = true;
