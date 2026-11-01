@@ -28,6 +28,7 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     SpecialFact = {};
     SpecialPhaseFact = 0;
     SpecialProgressFact = 0;
+    SpecialLoopPhaseFact = 0;
     CrawlingFact = false;
     CrawlProgressFact = 0.0f;
     MovementSpeedFact = 0.0f;
@@ -48,11 +49,17 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     }
 
     const auto* TraversalConfig = Source->TraversalSettings.Get();
+    if (TraversalConfig)
+    {
+        SpecialAnimationFact = TraversalConfig->SpecialAnimation;
+    }
     SpecialFact = Source->SpecialFact;
     SpecialPhaseFact = Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling
-        && SpecialFact.HoldsMovement() ? SpecialFact.Phase : 0;
+        && !Source->bStaggering && Source->TraversalFact.Kind == 0 && SpecialFact.HoldsMovement() ? SpecialFact.Phase : 0;
     SpecialProgressFact = FMath::Clamp((GetWorld()->GetTimeSeconds() - SpecialFact.StartedAt)
         / FMath::Max(SpecialFact.Duration, 0.01f), 0.0f, 1.0f);
+    SpecialLoopPhaseFact = FMath::Frac(FMath::Max(0.0f, GetWorld()->GetTimeSeconds() - SpecialFact.StartedAt)
+        * Source->MovementSpeed / FMath::Max(SpecialAnimationFact.RushStride, 10.0f));
     const auto& Traversal = Source->TraversalFact;
     TraversalActiveFact = TraversalConfig && Traversal.Kind != 0
         && Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling;
@@ -110,6 +117,10 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     MovementSpeedFact = Source->MovementSpeed;
     VariationSeedFact = Source->VariationSeed;
     LocomotionStyleFact = Source->LocomotionStyle;
+    if (BehaviorFact == EBBBMonsterBehavior::Chase && !CrawlingFact && SpecialFact.Phase >= 5)
+    {
+        LocomotionStyleFact = SpecialFact.Phase == 5 ? 1 : 2;
+    }
     AnimationSpeedFact = Source->MovementSpeed / FMath::Max(Source->AnimationSpeedScale, 0.01f);
     LoopPhaseFact = Source->LoopPhase;
     ActionProgressFact = Source->ActionProgress;
@@ -118,4 +129,21 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     HitRegionFact = static_cast<int32>(Source->HitReaction.Region);
     HitAgeFact = Source->HitReaction.Age;
     HitDirectionFact = GetSkelMeshComponent()->GetComponentTransform().InverseTransformVectorNoScale(Source->HitReaction.Direction);
+}
+
+float UBBBMonsterFactAnimInstance::GetSpecialBlendDuration(const int32 Phase) const
+{
+    switch (Phase)
+    {
+        case 1:
+            return SpecialAnimationFact.WindupBlend;
+        case 2:
+            return SpecialAnimationFact.RushBlend;
+        case 3:
+            return SpecialAnimationFact.RecoveryBlend;
+        case 4:
+            return SpecialAnimationFact.SpitBlend;
+        default:
+            return SpecialAnimationFact.NormalBlend;
+    }
 }

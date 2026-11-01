@@ -3,6 +3,7 @@
 #include "Engine/DataAsset.h"
 #include "BBBMonsterHitPresentation.h"
 #include "BBBMonsterAnimationPresentation.h"
+#include "BBBMonsterSpecialAnimationPresentation.h"
 #include "BBBMonsterTraversalClip.h"
 #include "BBBMonsterGibPresentation.h"
 #include "BBBMonsterPresentationDefinition.generated.h"
@@ -42,6 +43,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "动画", meta = (DisplayName = "动画采样"))
     FBBBMonsterAnimationPresentation Animation;
+
+    UPROPERTY(EditAnywhere, Category = "动画", meta = (DisplayName = "特殊动作混合与步幅"))
+    FBBBMonsterSpecialAnimationPresentation SpecialAnimation;
 
     UPROPERTY(EditAnywhere, Category = "程序化受击", meta = (DisplayName = "程序化受击"))
     FBBBMonsterHitPresentation HitReaction;

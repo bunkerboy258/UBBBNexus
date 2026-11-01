@@ -21,6 +21,7 @@ bool UBBBMonsterSpecialDefinition::IsValid() const
         }
     }
     return Kind <= EBBBMonsterSpecialKind::Stalker && MaximumRange > MinimumRange
+        && !SpitOriginOffset.ContainsNaN() && SpitOriginOffset.GetAbsMax() <= 300
         && KnockdownDuration <= 10 && ImpactSpeed <= 2500 && ImpactLift <= 1200
         && FMath::IsFinite(FrenzyCooldownScale) && FrenzyCooldownScale >= 0.1f && FrenzyCooldownScale <= 1
         && (Kind != EBBBMonsterSpecialKind::Spitter || (Slime && Slime->IsValid()));

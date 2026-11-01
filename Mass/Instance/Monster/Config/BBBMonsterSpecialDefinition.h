@@ -85,6 +85,10 @@ public:
     UPROPERTY(EditAnywhere, Category = "粘液", meta = (DisplayName = "粘液配置"))
     TObjectPtr<UBBBSlimeDefinition> Slime;
 
+    /** 从动作实际喷出帧预先标定的胶囊局部起点 */
+    UPROPERTY(EditAnywhere, Category = "粘液", meta = (DisplayName = "喷吐起点偏移", Units = "cm"))
+    FVector SpitOriginOffset = FVector(60, 0, 50);
+
     /** @return 当前能力参数是否有限且处于有效范围 */
     bool IsValid() const;
 };

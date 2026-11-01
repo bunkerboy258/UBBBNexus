@@ -12,6 +12,7 @@
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Combat/BBBMonsterCombatProcessor.h"
 #include "MassMovementFragments.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterInitializationPendingTag.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
@@ -33,6 +34,7 @@ UBBBMonsterPresentationStateProcessor::UBBBMonsterPresentationStateProcessor()
 void UBBBMonsterPresentationStateProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FBBBMonsterCombatFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
@@ -60,6 +62,7 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
         TArrayView<FBBBMonsterPresentationStateFragment> PresentationStates = ChunkContext.GetMutableFragmentView<FBBBMonsterPresentationStateFragment>();
 
         const auto Combats = ChunkContext.GetFragmentView<FBBBMonsterCombatFragment>();
+        const auto Specials = ChunkContext.GetFragmentView<FBBBMonsterSpecialFragment>();
         const auto Healths = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Variations = ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>();
         const auto Networks = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
@@ -82,6 +85,11 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
                 continue;
             }
             const auto& Settings = Definition->Presentation->Animation;
+            int32 Style = Variation.LocomotionStyle;
+            if (!Specials.IsEmpty() && States[Index].State == EBBBMonsterBehavior::Chase && Specials[Index].Fact.Phase >= 5)
+            {
+                Style = Specials[Index].Fact.Phase == 5 ? 1 : 2;
+            }
             const uint32 IdleIndex = Variation.Seed % 3u;
             float Duration = static_cast<float>(Settings.IdleCycleSeconds[IdleIndex]);
             if (States[Index].State == EBBBMonsterBehavior::Alert)
@@ -90,26 +98,26 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
             }
             if (States[Index].State == EBBBMonsterBehavior::Patrol || States[Index].State == EBBBMonsterBehavior::Chase)
             {
-                const FVector& Cycle = Settings.MovementCycleSeconds[Variation.LocomotionStyle];
-                Duration = static_cast<float>(Settings.IdleCycleSeconds[Variation.LocomotionStyle]);
+                const FVector& Cycle = Settings.MovementCycleSeconds[Style];
+                Duration = static_cast<float>(Settings.IdleCycleSeconds[Style]);
                 if (NormalizedSpeed <= Settings.SlowWalkSampleSpeed)
                 {
-                    Duration = FMath::Lerp(Duration, static_cast<float>(Settings.SlowWalkCycleSeconds[Variation.LocomotionStyle]),
+                    Duration = FMath::Lerp(Duration, static_cast<float>(Settings.SlowWalkCycleSeconds[Style]),
                         FMath::Clamp(NormalizedSpeed / Settings.SlowWalkSampleSpeed, 0.0f, 1.0f));
                 }
                 if (NormalizedSpeed > Settings.SlowWalkSampleSpeed && NormalizedSpeed <= Definition->WalkSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Settings.SlowWalkCycleSeconds[Variation.LocomotionStyle]), static_cast<float>(Cycle.X),
+                    Duration = FMath::Lerp(static_cast<float>(Settings.SlowWalkCycleSeconds[Style]), static_cast<float>(Cycle.X),
                         FMath::Clamp((NormalizedSpeed - Settings.SlowWalkSampleSpeed) / (Definition->WalkSpeed - Settings.SlowWalkSampleSpeed), 0.0f, 1.0f));
                 }
                 if (NormalizedSpeed > Definition->WalkSpeed && NormalizedSpeed <= Definition->WalkerChaseWalkSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Cycle.X), static_cast<float>(Settings.PursuitWalkCycleSeconds[Variation.LocomotionStyle]),
+                    Duration = FMath::Lerp(static_cast<float>(Cycle.X), static_cast<float>(Settings.PursuitWalkCycleSeconds[Style]),
                         FMath::Clamp((NormalizedSpeed - Definition->WalkSpeed) / (Definition->WalkerChaseWalkSpeed - Definition->WalkSpeed), 0.0f, 1.0f));
                 }
                 if (NormalizedSpeed > Definition->WalkerChaseWalkSpeed && NormalizedSpeed <= Definition->RunSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Settings.PursuitWalkCycleSeconds[Variation.LocomotionStyle]), static_cast<float>(Cycle.Y),
+                    Duration = FMath::Lerp(static_cast<float>(Settings.PursuitWalkCycleSeconds[Style]), static_cast<float>(Cycle.Y),
                         FMath::Clamp((NormalizedSpeed - Definition->WalkerChaseWalkSpeed) / (Definition->RunSpeed - Definition->WalkerChaseWalkSpeed), 0.0f, 1.0f));
                 }
                 if (NormalizedSpeed > Definition->RunSpeed)

@@ -3,6 +3,7 @@
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFact.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpecialAnimationPresentation.h"
 
 #include "BBBMonsterFactAnimInstance.generated.h"
 
@@ -27,7 +28,21 @@ public:
     virtual void NativeUpdateAnimation(float DeltaSeconds) override;
     //~ End UAnimInstance Interface
 
+    /**
+     * @param Phase	普通零 蓄力一 冲撞二 收势三 喷吐四
+     * @return 当前表现配置的过渡秒数
+     */
+    UFUNCTION(BlueprintPure, Category = "Special", meta = (BlueprintThreadSafe))
+    float GetSpecialBlendDuration(int32 Phase) const;
+
 private:
+    /** 游戏线程复制的特殊动作配置 */
+    FBBBMonsterSpecialAnimationPresentation SpecialAnimationFact;
+
+    /** 按实际位移与配置步幅计算的当前冲撞循环相位 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
+    float SpecialLoopPhaseFact = 0;
+
     /** 当前特感阶段供专用动画图读取 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
     FBBBMonsterSpecialFact SpecialFact;

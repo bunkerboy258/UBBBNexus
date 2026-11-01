@@ -68,6 +68,10 @@ UBBBMonsterPresentationDefinition::UBBBMonsterPresentationDefinition()
 
 bool UBBBMonsterPresentationDefinition::IsValid() const
 {
+    if (!SpecialAnimation.IsValid())
+    {
+        return false;
+    }
     if (!Gore || !Gore->IsReady() || Gore->GetOuter() != this || !Blood || Blood->GetOuter() != this
         || !Blood->HitSpray.IsValid() || !Blood->WoundSpray.IsValid() || !Blood->SeveringSpray.IsValid()
         || !Sounds || Sounds->GetOuter() != this || !Sounds->IsValid() || !PhysicsAsset || !AnimationClass

@@ -126,8 +126,7 @@ void UBBBMonsterSpitProcessor::Execute(FMassEntityManager&, FMassExecutionContex
             Packet.Fact.SourceId = Rules[I].InstanceId;
             Packet.Fact.Revision = 1;
             Packet.Fact.Definition = Rule->Slime;
-            Packet.Fact.Location = Location + Positions[I].GetTransform().GetRotation().GetForwardVector()
-                * (Definition->CollisionRadius + 20) + FVector::UpVector * (Definition->CapsuleHalfHeight * 0.8f);
+            Packet.Fact.Location = Positions[I].GetTransform().TransformPosition(Rule->SpitOriginOffset);
             const FVector Offset = Fact.Goal - Packet.Fact.Location;
             const float Time = FMath::Clamp(Offset.Size2D() / Rule->Slime->Speed, 0.1f, Rule->Slime->FlightLifetime);
             Packet.Fact.Velocity = Offset / Time - FVector::UpVector * (World->GetGravityZ() * Rule->Slime->GravityScale * Time * 0.5f);
