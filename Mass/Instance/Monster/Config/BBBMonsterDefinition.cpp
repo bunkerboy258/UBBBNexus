@@ -105,25 +105,22 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(InvestigationAlertDuration) && InvestigationAlertDuration > 0.0f
         && FMath::IsFinite(NavigationNearInterval) && NavigationNearInterval >= 0.1f
         && FMath::IsFinite(NavigationFarInterval) && NavigationFarInterval >= NavigationNearInterval
-        && FMath::IsFinite(NavigationFarDistance) && NavigationFarDistance > EncircleRange
+        && FMath::IsFinite(NavigationFarDistance) && NavigationFarDistance > 0.0f
         && FMath::IsFinite(NavigationNearGoalThreshold) && NavigationNearGoalThreshold > 0.0f
         && FMath::IsFinite(NavigationFarGoalThreshold) && NavigationFarGoalThreshold >= NavigationNearGoalThreshold
         && FMath::IsFinite(NavigationMaxPathAge) && NavigationMaxPathAge >= NavigationFarInterval
         && FMath::IsFinite(NavigationStuckDuration) && NavigationStuckDuration > 0.0f
         && FMath::IsFinite(NavigationRetryDuration) && NavigationRetryDuration > 0.0f
-        && FMath::IsFinite(NavigationLookAheadTime) && NavigationLookAheadTime >= 0.05f && NavigationLookAheadTime <= 1.0f
-        && FMath::IsFinite(NavigationLookAheadDistance) && NavigationLookAheadDistance >= 30.0f && NavigationLookAheadDistance <= 400.0f
         && FMath::IsFinite(NavigationFollowInterval) && NavigationFollowInterval >= 0.05f && NavigationFollowInterval <= 0.5f
-        && FMath::IsFinite(AvoidanceSideHoldDuration) && AvoidanceSideHoldDuration >= 0.1f && AvoidanceSideHoldDuration <= 3.0f
         && FMath::IsFinite(UnsupportedLifetime) && UnsupportedLifetime >= 5.0f && UnsupportedLifetime <= 120.0f
-        && FMath::IsFinite(EncircleRange) && EncircleRange > 0.0f
+        && FMath::IsFinite(ApproachRange) && ApproachRange >= 200
+        && FMath::IsFinite(ApproachSpread) && ApproachSpread >= 0 && ApproachSpread <= 150
         && NavigationFailureLimit >= 1 && NavigationFailureLimit <= 10
         && FMath::IsFinite(CollisionRadius) && CollisionRadius > 0.0f
         && FMath::IsFinite(CapsuleHalfHeight) && CapsuleHalfHeight >= CollisionRadius
         && FMath::IsFinite(MaxStepHeight) && MaxStepHeight >= 0.0f && MaxStepHeight < CapsuleHalfHeight
         && FMath::IsFinite(MaxWalkableSlopeAngle) && MaxWalkableSlopeAngle >= 0.0f && MaxWalkableSlopeAngle <= 80.0f
-        && FMath::IsFinite(PersonalSpaceRadius) && PersonalSpaceRadius >= 0.0f
-        && FMath::IsFinite(NeighborSearchRadius) && NeighborSearchRadius >= PersonalSpaceRadius
+        && FMath::IsFinite(NeighborSearchRadius) && NeighborSearchRadius >= CollisionRadius * 2
         && FMath::IsFinite(AvoidanceWeight) && AvoidanceWeight >= 0.0f
         && FMath::IsFinite(AttackRange) && AttackRange > 0.0f
         && FMath::IsFinite(AttackDamage) && AttackDamage >= 0.0f

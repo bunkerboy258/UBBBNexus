@@ -254,7 +254,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "远距离重算间隔", Units = "s", ClampMin = "0.1"))
     float NavigationFarInterval = 1.2f;
 
-    /** 超过此距离降低刷新频率并关闭路线塑形 仍通过 APS 查询 */
+    /** 超过此距离降低完整寻路刷新频率 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "远距离分界", Units = "cm", ClampMin = "1"))
     float NavigationFarDistance = 3000.0f;
 
@@ -282,29 +282,21 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (ClampMin = "0.1", DisplayName = "不可达重试间隔"))
     float NavigationRetryDuration = 4.0f;
 
-    /** 按实际速度向路线前方观察的时间 不按靠近玩家距离减速 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "前瞻时间", Units = "s", ClampMin = "0.05", ClampMax = "1.0"))
-    float NavigationLookAheadTime = 0.35f;
-
-    /** 前瞻不能无限跨过转角 局部净空检查仍是必要条件 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "前瞻距离上限", Units = "cm", ClampMin = "30", ClampMax = "400"))
-    float NavigationLookAheadDistance = 180.0f;
-
     /** 有局部预算时更新前方障碍与绕行目标的最短间隔 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "局部检查间隔", Units = "s", ClampMin = "0.05", ClampMax = "0.5"))
     float NavigationFollowInterval = 0.15f;
-
-    /** 选定绕行侧后的最短保持时间 空间恢复后仍优先继续向前 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (DisplayName = "绕行侧保持时间", Units = "s", ClampMin = "0.1", ClampMax = "3"))
-    float AvoidanceSideHoldDuration = 0.75f;
 
     /** 活体持续坠落且无法恢复支撑时结束该实体 不生成玩家击杀贡献 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "死亡与回收", meta = (DisplayName = "失去支撑回收时间", Units = "s", ClampMin = "5", ClampMax = "120"))
     float UnsupportedLifetime = 20.0f;
 
-    /** 仅在目标附近安排有限包围位置 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (ClampMin = "1.0", DisplayName = "包围接近启用距离"))
-    float EncircleRange = 650.0f;
+    /** 目标附近开始分散接近方向的范围 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "分散接近范围", Units = "cm", ClampMin = "200"))
+    float ApproachRange = 650.0f;
+
+    /** 各个体接近目标时的横向分散尺度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路", meta = (DisplayName = "接近横向分散", Units = "cm", ClampMin = "0", ClampMax = "150"))
+    float ApproachSpread = 100.0f;
 
     /** 逻辑球形碰撞半径 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "0.0", DisplayName = "碰撞半径"))
@@ -322,13 +314,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "0.0", ClampMax = "80.0", DisplayName = "最大坡度"))
     float MaxWalkableSlopeAngle = 50.0f;
 
-    /** 个体间隔 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (ClampMin = "0.0", DisplayName = "个人空间半径"))
-    float PersonalSpaceRadius = 110.0f;
-
     /** 邻居查询范围 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (ClampMin = "0.0", DisplayName = "邻近搜索半径"))
-    float NeighborSearchRadius = 180.0f;
+    float NeighborSearchRadius = 400.0f;
 
     /** 避让权重 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (ClampMin = "0.0", DisplayName = "避让权重"))

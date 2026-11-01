@@ -164,9 +164,8 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             }
 
             if (Traversals[Index].Fact.Kind != 0
-                || (Navigation[Index].TraversalPoint != INDEX_NONE && Navigation[Index].PathPoints.IsValidIndex(Navigation[Index].TraversalPoint)
-                    && FVector::DistSquared2D(Transforms[Index].GetTransform().GetLocation(),
-                        Navigation[Index].PathPoints[Navigation[Index].TraversalPoint]) < FMath::Square(90.0f)))
+                || (Navigation[Index].TraversalPoly != 0
+                    && FVector::DistSquared2D(Transforms[Index].GetTransform().GetLocation(), Navigation[Index].TraversalEntry) < FMath::Square(90.0f)))
             {
                 Combat.AttackTarget.Reset();
                 Combat.bHitAttempted = true;

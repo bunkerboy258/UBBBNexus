@@ -12,7 +12,6 @@
 #include "NavigationSystem.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 #include "NavMesh/RecastNavMesh.h"
-#include "Navigation/APS_NavigationData.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
 #include "MassEntitySubsystem.h"
@@ -33,7 +32,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterPathFollowing.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 
 /** 在隔离真实导航与碰撞世界验证绕墙 脱困 包围和五十只移动 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterNavigationTest, "UBBB.Mass.ZombieNavigation",
@@ -41,13 +40,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterNavigationTest, "UBBB.Mass.ZombieNav
 
 bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
 {
-    FBBBMonsterNavigationFragment Endpoint;
-    Endpoint.bHasPath = true;
-    Endpoint.PathPoints = {FVector::ZeroVector, FVector(100.0f, 0.0f, 0.0f)};
-    Endpoint.TailDistances = {100.0f, 0.0f};
-    Endpoint.Destination = Endpoint.PathPoints.Last();
-    TestFalse(TEXT("路径末端侧方尚未抵达"), FBBBMonsterPathFollowing::UpdateProgress(Endpoint, FVector(100.0f, 50.0f, 0.0f), 30.0f, true));
-    TestTrue(TEXT("路径末端侧方保留五十厘米路程"), FMath::IsNearlyEqual(Endpoint.RemainingDistance, 50.0f));
     const auto Initialization = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(true).CreateAISystem(true);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
     if (!TestNotNull(TEXT("导航隔离世界"), World))
@@ -98,8 +90,8 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     Nav->OnNavigationBoundsUpdated(Bounds);
     Nav->OnWorldInitDone(FNavigationSystemRunMode::GameMode);
     Nav->Build();
-    auto* Mesh = Cast<AAPS_NavigationData>(Nav->GetDefaultNavDataInstance(FNavigationSystem::Create));
-    if (!TestNotNull(TEXT("真实 APS 导航网格"), Mesh))
+    auto* Mesh = Cast<ARecastNavMesh>(Nav->GetDefaultNavDataInstance(FNavigationSystem::Create));
+    if (!TestNotNull(TEXT("原生 Recast 导航网格"), Mesh))
     {
         return false;
     }
@@ -114,7 +106,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterMovementFragment::StaticStruct(), FBBBMonsterNavigationFragment::StaticStruct(),
         FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterTargetFragment::StaticStruct(),
-        FBBBMonsterVariationFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()});
+        FBBBMonsterVariationFragment::StaticStruct(), FBBBMonsterTraversalFragment::StaticStruct(), FBBBMonsterTag::StaticStruct()});
     auto* Settings = NewObject<UBBBMonsterDefinition>(World);
     auto* Navigation = NewObject<UBBBMonsterNavigationProcessor>(World);
     auto* Movement = NewObject<UBBBMonsterLocomotionProcessor>(World);
@@ -234,7 +226,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     {
         const auto& Route = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Walker);
         TestTrue(TEXT("小台阶生成直接完整路线 不绕开平台"), Route.bHasPath && !Route.bPartialPath &&
-            Route.TailDistances.Num() > 0 && Route.TailDistances[0] < 1450.0f);
+            Route.RemainingDistance < 1450.0f);
     }
     for (int32 Frame = 0; Frame < 420; ++Frame)
     {
@@ -256,7 +248,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     const auto Entity = Create(FVector(-1800.0f, 0.0f, 90.0f));
     Run(Navigation);
     auto& Path = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
-    TestTrue(TEXT("绕墙完整路径成立"), Path.bHasPath && !Path.bPartialPath && Path.PathPoints.Num() >= 3);
+    TestTrue(TEXT("绕墙完整路径成立"), Path.bHasPath && !Path.bPartialPath && Path.Corners.Num() >= 2);
     const auto Outside = Create(FVector(2000.0f, -1000.0f, 90.0f));
     auto& OutsideTarget = Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Outside);
     OutsideTarget.TargetLocation = FVector(4500.0f, -1000.0f, 90.0f);
@@ -281,7 +273,7 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
             World->TimeSeconds += 0.6;
             Run(Navigation);
         }
-        TestTrue(TEXT("高台边界有限重试后排除而非永久拦停"), PlatformPath.ExcludedUntil > World->GetTimeSeconds() && !PlatformPath.bHasPath);
+        TestTrue(TEXT("部分路径边界不冒充到达目标"), !PlatformPath.bReachedDestination && PlatformPath.bPartialPath);
     }
     Manager.DestroyEntity(Platform);
     Path = FBBBMonsterNavigationFragment{};
@@ -295,22 +287,22 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     World->TimeSeconds = 5.0;
     Path.ProgressTime = 1.0f;
     Run(Navigation);
-    TestEqual(TEXT("无进展首先重算路径"), Path.FailureCount, 1);
+    TestTrue(TEXT("无进展重算时保留可用路线"), Path.bHasPath);
     auto& Neighbors = Manager.GetFragmentDataChecked<FBBBMonsterAvoidanceFragment>(Entity);
     Neighbors.bCrowdConstrained = true;
     Path.ProgressTime = 1.0f;
     Run(Navigation);
-    TestEqual(TEXT("同伴阻挡触发重算但不增加不可达次数"), Path.FailureCount, 1);
+    TestEqual(TEXT("同伴阻挡不增加不可达次数"), Path.FailureCount, 0);
     Neighbors.bCrowdConstrained = false;
     World->TimeSeconds = 10.0;
     Path.ProgressTime = 6.0f;
     Run(Navigation);
-    TestTrue(TEXT("第二次无进展仍通过 APS 重算真实目标路线"), Path.FailureCount == 2 && Path.bHasPath &&
+    TestTrue(TEXT("再次无进展仍维护真实目标路线"), Path.FailureCount == 0 && Path.bHasPath &&
         Path.NativePath.IsValid());
     World->TimeSeconds = 15.0;
     Path.ProgressTime = 11.0f;
     Run(Navigation);
-    TestTrue(TEXT("持续失败暂时排除目标位置"), Path.ExcludedUntil > World->GetTimeSeconds() && !Path.bHasPath);
+    TestTrue(TEXT("存在有效路线时不因停滞丢弃目标"), Path.bHasPath && Path.ExcludedUntil == 0);
     Manager.DestroyEntity(Entity);
 
     AActor* Player = World->SpawnActor<AActor>();
@@ -326,22 +318,10 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         Ring.Add(Monster);
     }
     Plan(Ring);
-    TSet<int32> Slots;
-    int32 Waiting = 0;
     for (const auto Monster : Ring)
     {
-        const auto& Route = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Monster);
-        if (Route.ApproachSlot != INDEX_NONE)
-        {
-            TestFalse(TEXT("包围位置不重复分配"), Slots.Contains(Route.ApproachSlot));
-            Slots.Add(Route.ApproachSlot);
-        }
-        Waiting += Route.bWaitingForSpace;
         Manager.DestroyEntity(Monster);
     }
-    TestTrue(TEXT("近距离分散到多个接近方向"), Slots.Num() >= 4);
-    TestTrue(TEXT("外围接近位置允许后排继续分散"), Slots.Num() == 10 && Waiting == 0);
-
     const auto Attacker = Create(FVector(1800.0f, -450.0f, 90.0f));
     auto& AttackTarget = Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Attacker);
     AttackTarget.bTargetVisible = true;
@@ -350,19 +330,16 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     auto& AttackPath = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Attacker);
     auto& AttackState = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Attacker);
     const FNavPathSharedPtr PreservedPath = AttackPath.NativePath;
-    const int32 PreservedSlot = AttackPath.ApproachSlot;
     AttackState.State = EBBBMonsterBehavior::Attack;
     ++AttackState.ActionId;
     World->TimeSeconds += 5.0;
     Run(Navigation);
-    TestTrue(TEXT("攻击暂停保留路线与包围位置"), AttackPath.NativePath == PreservedPath && AttackPath.ApproachSlot == PreservedSlot);
     TestEqual(TEXT("攻击暂停不累计虚假卡住时间"), AttackPath.ProgressTime, static_cast<float>(World->GetTimeSeconds()));
+    TestTrue(TEXT("攻击暂停保留现有路线"), AttackPath.NativePath == PreservedPath);
     AttackState.State = EBBBMonsterBehavior::Chase;
     ++AttackState.ActionId;
-    Manager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Attacker).bHoldingAttackPosition = true;
     World->TimeSeconds += 0.1;
     Run(Navigation);
-    TestTrue(TEXT("攻击冷却站稳时保留接近位置且不计寻路失败"), AttackPath.ApproachSlot == PreservedSlot && AttackPath.FailureCount == 0);
     Manager.DestroyEntity(Attacker);
 
     TArray<FMassEntityHandle> WallCrowd;
@@ -378,18 +355,10 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
         WallCrowd.Add(Monster);
     }
     Plan(WallCrowd);
-    int32 WallSlots = 0;
-    int32 WallWaiting = 0;
     for (const auto Monster : WallCrowd)
     {
-        const auto& Route = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Monster);
-        WallSlots += Route.ApproachSlot != INDEX_NONE;
-        WallWaiting += Route.bWaitingForSpace;
-        TestEqual(TEXT("墙边有效位置占满不计为寻路失败"), Route.FailureCount, 0);
         Manager.DestroyEntity(Monster);
     }
-    TestTrue(TEXT("墙边仍可利用外围接近位置"), WallSlots > 0 && WallSlots <= 10);
-    TestTrue(TEXT("墙边可用位置占满后合理等待"), WallWaiting == 10 - WallSlots);
 
     TArray<FMassEntityHandle> Crowd;
     for (int32 Index = 0; Index < 50; ++Index)

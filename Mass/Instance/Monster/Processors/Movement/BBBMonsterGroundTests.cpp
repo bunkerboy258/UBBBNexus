@@ -244,9 +244,7 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
     Manager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity).bGrounded = false;
     auto& Path = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
     Path.bHasPath = true;
-    Path.PathPointIndex = 0;
-    Path.PathPoints = {FVector(2000.0f, 0.0f, 90.0f)};
-    Path.TailDistances = {0.0f};
+    Path.FollowTarget = FVector(2000.0f, 0.0f, 0.0f);
     Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity).HitStopEndsAt = World->GetTimeSeconds() + 1.0f;
     UE::Mass::FProcessingContext StopContext(Manager, 0.1f);
     UE::Mass::Executor::Run(*Processor, StopContext);

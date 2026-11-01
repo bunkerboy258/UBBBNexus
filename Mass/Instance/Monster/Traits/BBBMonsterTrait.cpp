@@ -106,10 +106,8 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Perception.SightRange = Settings->SightRange;
     auto& Avoidance = BuildContext.AddFragment_GetRef<FBBBMonsterAvoidanceFragment>();
     Avoidance.CollisionRadius = Settings->CollisionRadius;
-    Avoidance.PersonalSpaceRadius = Settings->PersonalSpaceRadius;
     Avoidance.NeighborSearchRadius = Settings->NeighborSearchRadius;
     Avoidance.AvoidanceWeight = Settings->AvoidanceWeight;
-    Avoidance.SideHoldDuration = Settings->AvoidanceSideHoldDuration;
     auto& Combat = BuildContext.AddFragment_GetRef<FBBBMonsterCombatFragment>();
     Combat.AttackRange = Settings->AttackRange;
     Combat.AttackDamage = Settings->AttackDamage;

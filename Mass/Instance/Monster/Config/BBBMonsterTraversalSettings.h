@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBMonsterTraversalSettings.generated.h"
 
-/** 上台规则与离线制作的归一化根轨迹 不依赖可视身体存在 */
+/** 上台与翻墙的逻辑高度和时长 不依赖可视身体存在 */
 USTRUCT(BlueprintType)
 struct ABBB_EVAC_API FBBBMonsterTraversalSettings
 {
@@ -29,13 +29,6 @@ struct ABBB_EVAC_API FBBBMonsterTraversalSettings
 
     UPROPERTY(EditAnywhere, Category = "攀爬", meta = (DisplayName = "较高攀爬时长", Units = "s", ClampMin = "1", ClampMax = "6"))
     float ClimbSeconds = 3.1f;
-
-    /** 时间均匀采样 X为前进比例 Z为升高比例 由动作制作入口统一写入 */
-    UPROPERTY(VisibleAnywhere, Category = "攀爬", meta = (DisplayName = "快速上台根轨迹"))
-    TArray<FVector> MantleTrajectory;
-
-    UPROPERTY(VisibleAnywhere, Category = "攀爬", meta = (DisplayName = "较高攀爬根轨迹"))
-    TArray<FVector> ClimbTrajectory;
 
     /** @return 高度与时长是否在可用范围 */
     bool IsValid() const

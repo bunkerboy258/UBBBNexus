@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
-#include "BBBWork/UBBBNexus/Mass/Core/BBBMassNavigationQueryActor.h"
 
 #include "MassEntityConfigAsset.h"
 #include "MassEntityTemplate.h"
@@ -56,27 +55,6 @@ namespace
     }
 }
 
-ABBBMassNavigationQueryActor* UBBBMassSubsystem::GetNavigationQueryActor()
-{
-    check(IsInGameThread());
-    if (!IsValid(NavigationQueryActor))
-    {
-        FActorSpawnParameters Parameters;
-        Parameters.ObjectFlags |= RF_Transient;
-        NavigationQueryActor = GetWorld()->SpawnActor<ABBBMassNavigationQueryActor>(Parameters);
-    }
-    return NavigationQueryActor;
-}
-
-void UBBBMassSubsystem::Deinitialize()
-{
-    if (IsValid(NavigationQueryActor))
-    {
-        NavigationQueryActor->Destroy();
-    }
-    NavigationQueryActor = nullptr;
-    Super::Deinitialize();
-}
 
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorInitializeLocalControlPacket& Packet)
 {

@@ -8,17 +8,6 @@ struct FBBBMonsterMovementFragment;
 struct ABBB_EVAC_API FBBBMonsterSteering final
 {
     /**
-     * @param Velocity		上一轮真实水平速度
-     * @param Direction		本轮候选水平意图
-     * @param Acceleration		水平加速度上限
-     * @param TurnRate		身体转速上限
-     * @param DeltaSeconds		本轮步长
-     * @return 与运动连续的候选方向
-     */
-    static FVector ConstrainDirection(const FVector& Velocity, const FVector& Direction,
-        float Acceleration, float TurnRate, float DeltaSeconds);
-
-    /**
      * @param Movement		移动处理器持有的朝向模式
      * @param bHasTarget		当前目标有效
      * @param bForceTarget		警觉或攻击要求面向目标

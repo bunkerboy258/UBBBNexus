@@ -421,7 +421,7 @@ namespace
                         Visible += Goals[Index].bTargetVisible;
                         Contacts += Senses[Index].Contacts.Num();
                         Paths += Routes[Index].bHasPath;
-                        Waiting += Routes[Index].bWaitingForSpace;
+                        Waiting += Routes[Index].Condition == EBBBMonsterNavigationCondition::WaitingForNeighbor;
                         Chasing += States[Index].State == EBBBMonsterBehavior::Chase;
                         Moving += Velocity[Index].Value.SizeSquared2D() > 100.0f;
                     }

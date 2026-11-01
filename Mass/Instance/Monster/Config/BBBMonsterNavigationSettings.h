@@ -16,7 +16,7 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "攀爬预算", meta = (DisplayName = "每帧攀爬入口软预算", Units = "ms", ClampMin = "0.1", ClampMax = "4"))
     float TraversalTimeBudgetMs = 0.5f;
 
-    /** 一个请求包含站位检查 投影和 APS 查询 */
+    /** 一个请求包含起终点投影与 Recast 查询 */
     UPROPERTY(Config, EditAnywhere, Category = "寻路预算", meta = (DisplayName = "每帧请求上限", ClampMin = "1", ClampMax = "256"))
     int32 MaxRequestsPerFrame = 16;
 
@@ -24,12 +24,12 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "寻路预算", meta = (DisplayName = "每帧提交时间预算", ToolTip = "软预算 单次同步查询可能超出此值 不包含常规实体状态遍历", Units = "ms", ClampMin = "0.1", ClampMax = "16"))
     float TimeBudgetMs = 1.0f;
 
-    /** 每帧可更新局部净空与绕行的实体数 按轮次公平分摊 */
-    UPROPERTY(Config, EditAnywhere, Category = "局部跟随预算", meta = (DisplayName = "每帧局部检查上限", ClampMin = "1", ClampMax = "256"))
+    /** 每帧可更新导航墙边缓存的实体数 */
+    UPROPERTY(Config, EditAnywhere, Category = "墙边缓存预算", meta = (DisplayName = "每帧墙边缓存上限", ClampMin = "1", ClampMax = "256"))
     int32 MaxLocalChecksPerFrame = 32;
 
-    /** 单次局部检查仍是不可中断查询 达到软预算后从下个实体继续 */
-    UPROPERTY(Config, EditAnywhere, Category = "局部跟随预算", meta = (DisplayName = "每帧局部检查时间预算", Units = "ms", ClampMin = "0.1", ClampMax = "8"))
+    /** 单次墙边缓存仍是不可中断查询 达到软预算后从下个实体继续 */
+    UPROPERTY(Config, EditAnywhere, Category = "墙边缓存预算", meta = (DisplayName = "每帧墙边缓存时间预算", Units = "ms", ClampMin = "0.1", ClampMax = "8"))
     float LocalTimeBudgetMs = 0.75f;
 
     /** @return 当前项目级预算配置是否有效 */

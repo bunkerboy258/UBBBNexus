@@ -1,6 +1,9 @@
 #include "BBBMonsterTraversalProcessor.h"
 
 #include "BBBMonsterNavigationProcessor.h"
+#include "BBBMonsterNavigation.h"
+#include "BBBMonsterTraversalGeometry.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
@@ -46,21 +49,14 @@ UBBBMonsterTraversalProcessor::UBBBMonsterTraversalProcessor() : MonsterQuery(*t
 }
 
 FVector UBBBMonsterTraversalProcessor::EvaluateFeet(const FBBBMonsterTraversalFact& Fact,
-    const FBBBMonsterTraversalSettings& Settings, const float Progress)
+    const float Progress)
 {
     const float P = FMath::Clamp(Progress, 0.0f, 1.0f);
-    const auto& Samples = Fact.Kind == 1 ? Settings.MantleTrajectory : Settings.ClimbTrajectory;
-    if (Samples.Num() < 2)
-    {
-        return Fact.Start;
-    }
-    const float Frame = P * (Samples.Num() - 1);
-    const int32 Index = FMath::Min(FMath::FloorToInt(Frame), Samples.Num() - 2);
-    const FVector Root = FMath::Lerp(Samples[Index], Samples[Index + 1], Frame - Index);
-    const float Forward = Smooth(0.55f, 0.93f, P) * FMath::Clamp(static_cast<float>(Root.X), 0.0f, 1.0f);
+    const float Forward = Smooth(0.42f, 0.82f, P);
     FVector Feet = FMath::Lerp(Fact.Start, Fact.End, Forward);
-    const float Rise = FMath::Max(FMath::Clamp(static_cast<float>(Root.Z), 0.0f, 1.0f), Smooth(0.05f, 0.55f, P));
-    Feet.Z = FMath::Lerp(Fact.Start.Z, Fact.End.Z, Rise) + 8.0f * FMath::Sin(PI * P);
+    const float Apex = FMath::Max3(Fact.Start.Z, Fact.End.Z, Fact.Ledge.Z) + 12;
+    Feet.Z = FMath::Lerp(Fact.Start.Z, Apex, Smooth(0.02f, 0.42f, P));
+    Feet.Z = FMath::Lerp(Feet.Z, Fact.End.Z, Smooth(0.82f, 1.0f, P));
     return Feet;
 }
 
@@ -75,6 +71,7 @@ void UBBBMonsterTraversalProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
@@ -102,6 +99,34 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
             }
         }
     });
+    TArray<TPair<FMassEntityHandle, float>> Requests;
+    MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
+    {
+        const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
+        const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        const auto Ground = Chunk.GetFragmentView<FBBBMonsterGroundFragment>();
+        const auto Paths = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Positions = Chunk.GetFragmentView<FTransformFragment>();
+        for (int32 I = 0; I < Traversals.Num(); ++I)
+        {
+            if (Traversals[I].Fact.Kind != 0 || Now < Traversals[I].RetryAt || !Ground[I].bGrounded
+                || (States[I].State != EBBBMonsterBehavior::Chase && States[I].State != EBBBMonsterBehavior::Patrol))
+            {
+                continue;
+            }
+            if (Paths[I].TraversalPoly != 0 && FVector::DistSquared2D(Positions[I].GetTransform().GetLocation(), Paths[I].TraversalEntry) > FMath::Square(40.0f))
+            {
+                continue;
+            }
+            Requests.Emplace(Chunk.GetEntity(I), Traversals[I].RetryAt);
+        }
+    });
+    Requests.Sort([](const auto& A, const auto& B) { return A.Value < B.Value; });
+    TSet<FMassEntityHandle> Allowed;
+    for (int32 I = 0; I < FMath::Min(Requests.Num(), Budget->MaxTraversalChecksPerFrame); ++I)
+    {
+        Allowed.Add(Requests[I].Key);
+    }
     int32 Checks = 0;
     const double CheckStart = FPlatformTime::Seconds();
     MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
@@ -117,6 +142,7 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
+        const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Traversal = Traversals[Index];
@@ -157,21 +183,19 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 Traversal.RetryAt = Now + Rule.RetrySeconds;
                 Ground.bGrounded = false;
                 Ground.UnsupportedSince = Now;
-                Path.bHasPath = false;
-                Path.bHasFollowTarget = false;
-                Path.TraversalPoint = INDEX_NONE;
+                FBBBMonsterNavigation::Reset(Path);
                 Path.NextPathRefreshTime = Traversal.RetryAt;
                 Velocity.Z = FMath::Min(Velocity.Z, 0.0);
             };
             if (Fact.Kind != 0)
             {
-                if (!bAble || !Traversal.Link.IsValid() || States[Index].State == EBBBMonsterBehavior::Dead)
+                if (!bAble || (Path.TraversalPoly != 0 && !Traversal.Link.IsValid()) || States[Index].State == EBBBMonsterBehavior::Dead)
                 {
                     Abort(TEXT("Interrupted"));
                     continue;
                 }
                 const float P = FMath::Clamp((Now - Fact.StartedAt) / Fact.Duration, 0.0f, 1.0f);
-                const FVector Destination = EvaluateFeet(Fact, Rule, P) + Offset;
+                const FVector Destination = EvaluateFeet(Fact, P) + Offset;
                 const FVector Previous = Transform.GetLocation();
                 const int32 Steps = FMath::Clamp(FMath::CeilToInt((Destination - Previous).Size() / 10.0f), 1, 32);
                 bool bClear = true;
@@ -211,60 +235,67 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
                     Ground.SupportNormal = Floor.ImpactNormal;
                     Ground.UnsupportedSince = -1;
                     Velocity = FVector::ZeroVector;
-                    Path.PathPointIndex = FMath::Min(Path.TraversalPoint + 2, Path.PathPoints.Num() - 1);
-                    Path.TraversalPoint = INDEX_NONE;
-                    if (Path.NativePath.IsValid())
-                    {
-                        const auto& Nodes = Path.NativePath->GetPathPoints();
-                        for (int32 Point = Path.PathPointIndex; Point < Nodes.Num() - 1; ++Point)
-                        {
-                            if (Nodes[Point].CustomNavLinkId != FNavLinkId::Invalid)
-                            {
-                                Path.TraversalPoint = Point;
-                                break;
-                            }
-                        }
-                    }
-                    Path.bHasFollowTarget = false;
+                    FBBBMonsterNavigation::FinishTraversal(Path, Fact.End);
                     Path.ProgressTime = Now;
+                    Path.ProgressPosition = Destination;
                     Path.BlockedDuration = 0;
-                    Path.NextPathRefreshTime = Now + 0.25f;
+                    Path.NextPathRefreshTime = Now;
                 }
                 continue;
             }
             if (!bAble || Now < Traversal.RetryAt || !Ground.bGrounded || Mobility[Index].IsStaggering(Now)
-                || Now < Mobility[Index].HitStopEndsAt || !Path.bHasPath || !Path.NativePath.IsValid()
-                || Path.TraversalPoint == INDEX_NONE || !Path.NativePath->GetPathPoints().IsValidIndex(Path.TraversalPoint))
+                || Now < Mobility[Index].HitStopEndsAt || (States[Index].State != EBBBMonsterBehavior::Chase
+                    && States[Index].State != EBBBMonsterBehavior::Patrol))
             {
-                continue;
-            }
-            const auto& Node = Path.NativePath->GetPathPoints()[Path.TraversalPoint];
-            auto* Interface = Navigation->GetCustomLink(Node.CustomNavLinkId);
-            auto* Component = Interface ? Cast<UActorComponent>(Interface->GetLinkOwner()) : nullptr;
-            auto* Link = Interface ? Cast<ABBBMonsterClimbLinkActor>(Interface->GetLinkOwner()) : nullptr;
-            if (!Link && Component)
-            {
-                Link = Cast<ABBBMonsterClimbLinkActor>(Component->GetOwner());
-            }
-            if (!Link)
-            {
-                Traversal.Failure = TEXT("UnknownLink");
                 continue;
             }
             const FVector Feet = Transform.GetLocation() - Offset;
-            const FVector Entry = Link->GetEntry();
-            if (FVector::Dist2D(Feet, Entry) > Rule.EntryTolerance || FMath::Abs(Feet.Z - Entry.Z) > Body.MaxStepHeight + 5)
+            ABBBMonsterClimbLinkActor* Link = nullptr;
+            FVector Entry = Feet;
+            FVector End = FVector::ZeroVector;
+            FVector Ledge = FVector::ZeroVector;
+            const bool bLinked = Path.TraversalPoly != 0;
+            if (bLinked)
             {
-                continue;
+                if (FVector::Dist2D(Feet, Path.TraversalEntry) > Rule.EntryTolerance
+                    || FMath::Abs(Feet.Z - Path.TraversalEntry.Z) > Body.MaxStepHeight + 5)
+                {
+                    continue;
+                }
+                auto* Interface = Navigation->GetCustomLink(Path.TraversalLink);
+                auto* Component = Interface ? Cast<UActorComponent>(Interface->GetLinkOwner()) : nullptr;
+                Link = Interface ? Cast<ABBBMonsterClimbLinkActor>(Interface->GetLinkOwner()) : nullptr;
+                if (!Link && Component)
+                {
+                    Link = Cast<ABBBMonsterClimbLinkActor>(Component->GetOwner());
+                }
+                if (!Link)
+                {
+                    Traversal.Failure = TEXT("UnknownLink");
+                    Traversal.RetryAt = Now + Rule.RetrySeconds;
+                    continue;
+                }
+                Entry = Link->GetEntry();
+                End = Link->GetExit();
+                Ledge = Link->GetLedge();
             }
-            if (Checks >= Budget->MaxTraversalChecksPerFrame
+            if (!Allowed.Contains(Chunk.GetEntity(Index)) || Checks >= Budget->MaxTraversalChecksPerFrame
                 || (Checks > 0 && (FPlatformTime::Seconds() - CheckStart) * 1000.0 > Budget->TraversalTimeBudgetMs))
             {
                 continue;
             }
             ++Checks;
-            const FVector End = Link->GetExit();
-            const float Height = End.Z - Entry.Z;
+            Traversal.RetryAt = Now + 0.2f;
+            if (!bLinked)
+            {
+                Traversal.RetryAt = Now + 0.3f + (Chunk.GetEntity(Index).Index % 7) * 0.03f;
+                const FVector Goal = Targets[Index].bHasTarget ? Targets[Index].TargetLocation : Path.FollowTarget;
+                if (!FBBBMonsterTraversalGeometry::Find(*World, Feet, Goal - Feet, Body, Rule.MaximumHeight, Params, Ledge, End))
+                {
+                    continue;
+                }
+            }
+            const float Height = Ledge.Z - Feet.Z;
             if (Height <= Body.MaxStepHeight || Height > Rule.MaximumHeight)
             {
                 Traversal.Failure = TEXT("HeightOutsideRange");
@@ -297,15 +328,14 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
             Proposed.StartedAt = Now;
             Proposed.Start = Feet;
             Proposed.End = End;
-            Proposed.Ledge = Link->GetLedge();
+            Proposed.Ledge = Ledge;
             const float Variation = 0.94f + (GetTypeHash(Chunk.GetEntity(Index).Index) % 13) * 0.01f;
             Proposed.Duration = (Proposed.Kind == 1 ? Rule.MantleSeconds : Rule.ClimbSeconds) * Variation;
-            const auto& Samples = Proposed.Kind == 1 ? Rule.MantleTrajectory : Rule.ClimbTrajectory;
-            bool bClear = Samples.Num() >= 2;
+            bool bClear = true;
             FVector Last = Transform.GetLocation();
             for (int32 Sample = 1; bClear && Sample <= 24; ++Sample)
             {
-                const FVector Next = EvaluateFeet(Proposed, Rule, Sample / 24.0f) + Offset;
+                const FVector Next = EvaluateFeet(Proposed, Sample / 24.0f) + Offset;
                 bClear = ClearMotion(Last, Next);
                 Last = Next;
             }
@@ -355,7 +385,7 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 FVector Previous = T.Fact.Start;
                 for (int32 Sample = 1; Sample <= 24; ++Sample)
                 {
-                    const FVector Next = EvaluateFeet(T.Fact, D->Traversal, Sample / 24.0f);
+                    const FVector Next = EvaluateFeet(T.Fact, Sample / 24.0f);
                     DrawDebugLine(World, Previous, Next, FColor::Cyan, false, 0, 0, 2);
                     Previous = Next;
                 }

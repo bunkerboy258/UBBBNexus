@@ -6,13 +6,16 @@
 
 #include "BBBMonsterNavigationProcessor.generated.h"
 
-/** 按世界预算调度 APS 查询并维护小怪路线 */
+/** 按世界预算构建 Detour 走廊并持续更新前视目标 */
 UCLASS()
 class ABBB_EVAC_API UBBBMonsterNavigationProcessor final : public UMassProcessor
 {
     GENERATED_BODY()
 
 public:
+    /** @return 当前同步查询允许的跨障高度 */
+    float GetTraversalLimit() const { return TraversalLimit; }
+
     /** 创建小怪导航处理器 */
     UBBBMonsterNavigationProcessor();
 
@@ -27,6 +30,9 @@ private:
     /** 查询全部小怪实体的 Mass 查询器 */
     FMassEntityQuery MonsterQuery;
 
-    /** 局部探测按实体轮次分摊 避免固定遍历顺序饥饿 */
-    uint32 FollowUpdateSerial = 0;
+    /** 同步查询期间的通行能力 查询结束立即清零 */
+    float TraversalLimit = 0;
+
+    /** 世界共享查询器 不缓存实体位置 */
+    TSharedPtr<class dtNavMeshQuery> NavQuery;
 };

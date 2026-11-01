@@ -33,8 +33,6 @@ struct ABBB_EVAC_API FBBBMonsterMovementFragment final : public FMassFragment
     /** 因拥挤停止推进的起点 有实际移动时清除 */
     float CrowdStationarySince = -1.0f;
 
-    /** 已抵达合格攻击距离 冷却期间保持该接近位置 */
-    bool bHoldingAttackPosition = false;
 
     /** 中距离追击速度 */
     float RunSpeed = 300.0f;

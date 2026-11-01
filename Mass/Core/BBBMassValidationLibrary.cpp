@@ -355,11 +355,17 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("attackId"), Combat ? Combat->AttackId : 0);
             Sample->SetBoolField(TEXT("attackFinished"), Combat && Combat->bAttackFinished);
             Sample->SetBoolField(TEXT("hitAttempted"), Combat && Combat->bHitAttempted);
-            Sample->SetNumberField(TEXT("separationStrength"), Avoidance ? Avoidance->SeparationStrength : 0.0);
             Sample->SetNumberField(TEXT("verticalSpeedCmS"), Velocity ? Velocity->Value.Z : 0.0);
             Sample->SetBoolField(TEXT("grounded"), Ground && Ground->bGrounded);
             Sample->SetNumberField(TEXT("supportNormalZ"), Ground ? Ground->SupportNormal.Z : 0.0);
+            Sample->SetStringField(TEXT("stopReason"), Navigation->StopReason.ToString());
             Sample->SetBoolField(TEXT("hasPath"), Navigation->bHasPath);
+            Sample->SetStringField(TEXT("desiredVelocity"), Avoidance ? Avoidance->DesiredVelocity.ToString() : TEXT(""));
+            Sample->SetStringField(TEXT("recommendedVelocity"), Avoidance ? Avoidance->RecommendedVelocity.ToString() : TEXT(""));
+            Sample->SetNumberField(TEXT("neighborCount"), Avoidance ? Avoidance->NeighborCount : 0);
+            Sample->SetNumberField(TEXT("velocitySamples"), Avoidance ? Avoidance->VelocitySamples : 0);
+            Sample->SetStringField(TEXT("traversalEntry"), Navigation->TraversalEntry.ToString());
+            Sample->SetStringField(TEXT("traversalExit"), Navigation->TraversalExit.ToString());
             Sample->SetBoolField(TEXT("reached"), Navigation->bReachedDestination);
             Sample->SetBoolField(TEXT("partialPath"), Navigation->bPartialPath);
             Sample->SetNumberField(TEXT("navigationFailures"), Navigation->FailureCount);
@@ -368,25 +374,14 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("navigationLastPathTime"), Navigation->LastPathTime);
             Sample->SetBoolField(TEXT("navigationUpToDate"), Navigation->NativePath.IsValid() && Navigation->NativePath->IsUpToDate());
             Sample->SetNumberField(TEXT("excludedUntil"), Navigation->ExcludedUntil);
-            Sample->SetNumberField(TEXT("approachSlot"), Navigation->ApproachSlot);
-            Sample->SetNumberField(TEXT("approachExpiresAt"), Navigation->ApproachExpiresAt);
-            Sample->SetBoolField(TEXT("waitingForSpace"), Navigation->bWaitingForSpace);
             Sample->SetStringField(TEXT("navigationCondition"), StaticEnum<EBBBMonsterNavigationCondition>()->GetNameStringByValue(static_cast<int64>(Navigation->Condition)));
             Sample->SetStringField(TEXT("repathReason"), StaticEnum<EBBBMonsterNavigationCondition>()->GetNameStringByValue(static_cast<int64>(Navigation->LastRepathCondition)));
             Sample->SetNumberField(TEXT("repathCount"), Navigation->RepathCount);
             Sample->SetNumberField(TEXT("remainingDistance"), Navigation->RemainingDistance);
-            Sample->SetNumberField(TEXT("offPathDistance"), Navigation->OffPathDistance);
             Sample->SetNumberField(TEXT("motionEfficiency"), Navigation->MotionEfficiency);
             Sample->SetNumberField(TEXT("blockedDuration"), Navigation->BlockedDuration);
             Sample->SetNumberField(TEXT("progressAge"), Navigation->ProgressTime >= 0.0f ? World->GetTimeSeconds() - Navigation->ProgressTime : 0.0f);
-            Sample->SetNumberField(TEXT("progressDistance"), Navigation->ProgressDistance);
-            Sample->SetNumberField(TEXT("directionReversals"), Navigation->DirectionReversals);
-            Sample->SetBoolField(TEXT("localBlocked"), Navigation->bLocalBlocked);
-            Sample->SetBoolField(TEXT("waitingForNeighbor"), Avoidance && Avoidance->bWaitingForNeighbor);
-            Sample->SetNumberField(TEXT("crowdClearance"), Avoidance ? Avoidance->MaxTravelDistance : 0.0f);
             Sample->SetNumberField(TEXT("bodyRadius"), Movement->CapsuleRadius);
-            Sample->SetNumberField(TEXT("steeringSide"), Avoidance ? Avoidance->SteeringSide : 0);
-            Sample->SetNumberField(TEXT("steeringSideChanges"), Avoidance ? Avoidance->SideChanges : 0);
             Sample->SetBoolField(TEXT("facingTarget"), Movement->bFacingTarget);
             Sample->SetNumberField(TEXT("requestedDistance"), Ground ? Ground->RequestedDistance : 0.0f);
             Sample->SetNumberField(TEXT("movedDistance"), Ground ? Ground->MovedDistance : 0.0f);
@@ -410,10 +405,9 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
                 }
             }
             Sample->SetNumberField(TEXT("awareness"), Awareness);
-            Sample->SetNumberField(TEXT("pathPoints"), Navigation->PathPoints.Num());
-            Sample->SetNumberField(TEXT("pathPointIndex"), Navigation->PathPointIndex);
+            Sample->SetNumberField(TEXT("pathPoints"), Navigation->Corners.Num());
             TArray<TSharedPtr<FJsonValue>> PathCoordinates;
-            for (const FVector& Point : Navigation->PathPoints)
+            for (const FVector& Point : Navigation->Corners)
             {
                 PathCoordinates.Add(MakeShared<FJsonValueString>(Point.ToString()));
             }
@@ -504,10 +498,10 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetNumberField(TEXT("actorYawDegrees"), DisplayActor ? DisplayActor->GetActorRotation().Yaw : 0.0);
             Sample->SetNumberField(TEXT("actorPositionErrorCm"), DisplayActor && Transform ?
                 FVector::Distance(DisplayActor->GetActorLocation(), Transform->GetTransform().GetLocation()) : 0.0);
-            if (bDetailed && Transform && Navigation->PathPoints.IsValidIndex(Navigation->PathPointIndex))
+            if (bDetailed && Transform && Navigation->bHasPath)
             {
                 const FVector Position = Transform->GetTransform().GetLocation();
-                const FVector Waypoint = Navigation->PathPoints[Navigation->PathPointIndex];
+                const FVector Waypoint = Navigation->FollowTarget;
                 const FVector Foot = Position - FVector(0.0f, 0.0f, Ground && Ground->CapsuleHalfHeight > 0.0f ? Ground->CapsuleHalfHeight : Movement->CapsuleHalfHeight);
                 const FVector End = Foot + (Waypoint - Position).GetSafeNormal2D() * 10.0f;
                 FVector Hit = End;

@@ -6,150 +6,97 @@
 #include "BBBMonsterNavigationCondition.h"
 #include "BBBMonsterNavigationFragment.generated.h"
 
-/** 导航路径与本次移动目的地 仅由寻路处理器维护 */
+class dtPathCorridor;
+class dtNavMeshQuery;
+
+/** 导航处理器维护路线 移动处理器回传实际脚底位置 */
 USTRUCT()
 struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
-    /** 有效导航路径的完整拐点 */
-    UPROPERTY()
-    TArray<FVector> PathPoints;
-
-    /** 各拐点到路径末端的长度 */
-    UPROPERTY()
-    TArray<float> TailDistances;
-
-    /** 保留导航失效通知 由 Mass 在预算内重算 禁止原生自动重算 */
+    /** 原生路径负责导航失效通知 */
     FNavPathSharedPtr NativePath;
-
-    /** 当前应接近的拐点 */
-    int32 PathPointIndex = 1;
-
-    /** 下一处自定义连接的入口点 在完成上台前禁止前瞻越过 */
-    int32 TraversalPoint = INDEX_NONE;
-
-    /** 本次巡逻或追击目的地 */
+    /** Detour 当前多边形走廊 */
+    TSharedPtr<dtPathCorridor> Corridor;
+    /** 同一世界顺序复用的查询器 不持有实体状态 */
+    TSharedPtr<dtNavMeshQuery> Query;
+    /** 本条路线使用的通行过滤器 */
+    FSharedConstNavQueryFilter Filter;
+    /** 当前前视拐点 上限六个 */
+    TArray<FVector> Corners;
+    /** 当前邻近导航墙边 成对保存端点 */
+    TArray<FVector> Walls;
+    /** 当前脚底前视目标 */
+    FVector FollowTarget = FVector::ZeroVector;
+    /** 当前可达终点 */
     FVector Destination = FVector::ZeroVector;
-
-    /** 当前路径关联的行为编号 */
-    uint32 ActionId = MAX_uint32;
-
-    /** 下次允许刷新导航路径的时间 */
-    float NextPathRefreshTime = 0.0f;
-
-    /** 上次成功查询时的原始目标位置 */
+    /** 上次完整查询的原始可达终点 */
+    FVector QueryDestination = FVector::ZeroVector;
+    /** 上次查询对应的目标位置 */
     FVector RequestedGoal = FVector::ZeroVector;
-
-    /** 上次成功接受路线的时间 */
-    float LastPathTime = -1.0f;
-
-    /** 本次待处理请求开始等待的时间 未等待时为负 */
-    float RequestSince = -1.0f;
-
-    /** 最近一次 APS 同步调用耗时 单位为毫秒 */
-    float LastQueryMs = 0.0f;
-
-    /** 缓存路径是否可用于移动 */
-    bool bHasPath = false;
-
-    /** 当前巡逻目的地是否已到达 */
-    bool bReachedDestination = false;
-
-    /** 当前路径是否只到达可达边界 */
-    bool bPartialPath = false;
-
-    /** 路径使用的目标版本 */
+    /** 最近一次实际推进的位置 */
+    FVector ProgressPosition = FVector::ZeroVector;
+    /** 待执行的跨障多边形 */
+    NavNodeRef TraversalPoly = 0;
+    /** 待执行的跨障连接 */
+    FNavLinkId TraversalLink = FNavLinkId::Invalid;
+    /** 当前跨障入口脚底 */
+    FVector TraversalEntry = FVector::ZeroVector;
+    /** 当前跨障出口脚底 */
+    FVector TraversalExit = FVector::ZeroVector;
+    /** 路线使用的行为身份 */
+    uint32 ActionId = MAX_uint32;
+    /** 路线使用的目标身份 */
     uint32 TargetRevision = MAX_uint32;
-
-    /** 寻路失败或无进展的连续次数 */
-    int32 FailureCount = 0;
-
-    /** 此位置暂时不可达的结束时刻 */
-    float ExcludedUntil = 0.0f;
-
+    /** 下次完整寻路时刻 */
+    float NextPathRefreshTime = 0;
+    /** 下次墙边缓存刷新时刻 */
+    float NextBoundaryTime = 0;
+    /** 上次成功查询时刻 */
+    float LastPathTime = -1;
+    /** 当前请求进入等待的时刻 */
+    float RequestSince = -1;
+    /** 最近查询毫秒 */
+    float LastQueryMs = 0;
+    /** 暂时不可达位置的重试时刻 */
+    float ExcludedUntil = 0;
     /** 暂时不可达的位置 */
     FVector ExcludedPosition = FVector::ZeroVector;
-
-    /** 上次有实际移动进展的世界时间 */
-    float ProgressTime = -1.0f;
-
-    /** 当前安全前瞻目标 使用导航脚底坐标 */
-    FVector FollowTarget = FVector::ZeroVector;
-
-    /** 前瞻目标已经通过导航和当前身体净空检查 */
-    bool bHasFollowTarget = false;
-
-    /** 最近一次局部检查受阻 下一次成功检查前保持该原因 */
-    bool bLocalBlocked = false;
-
-    /** 缓存前瞻目标所在路线段 经过该段后必须重新检查 */
-    int32 FollowSegmentIndex = 0;
-
-    /** 上次构建路线时的爬行状态 姿态改变必须重新检查通行 */
-    bool bCrawlingPath = false;
-
-    /** 当前路线剩余长度 不以玩家直线距离代替 */
-    float RemainingDistance = 0.0f;
-
-    /** 连续路线上的净推进量 刷新路线只更换剩余距离基准 不清空推进计时 */
-    float ProgressDistance = 0.0f;
-
-    /** 当前进展窗口曾被同伴压缩通行空间 不能据此排除玩家位置 */
-    bool bProgressCrowded = false;
-
-    /** 身体脚底到当前路线段的偏移距离 */
-    float OffPathDistance = 0.0f;
-
-    /** 下一次允许刷新局部前瞻的时刻 */
-    float NextFollowRefreshTime = 0.0f;
-
-    /** 当前局部绕行方向 短时保持一侧避免左右反复切换 */
-    int8 AvoidanceSide = 0;
-
-    /** 允许重新选择局部绕行侧的时刻 */
-    float AvoidanceSideUntil = 0.0f;
-
-    /** 最近一次前瞻目标方向 仅用于统计转向反复 */
-    FVector LastFollowDirection = FVector::ZeroVector;
-
-    /** 路线执行期间方向反复的累计次数 */
-    uint32 DirectionReversals = 0;
-
-    /** 该实体已提交的重新寻路次数 */
+    /** 最近实际推进时刻 */
+    float ProgressTime = -1;
+    /** 当前剩余路线长度 */
+    float RemainingDistance = 0;
+    /** 当前实际位移与请求位移比例 */
+    float MotionEfficiency = 1;
+    /** 环境阻挡持续时间 */
+    float BlockedDuration = 0;
+    /** 完整查询连续失败次数 */
+    int32 FailureCount = 0;
+    /** 完整查询次数 */
     uint32 RepathCount = 0;
-
-    /** 当前实际位移与移动意图的比例 */
-    float MotionEfficiency = 1.0f;
-
-    /** 有移动意图却持续受阻的累计秒数 换路线不抹掉真实阻塞 */
-    float BlockedDuration = 0.0f;
-
-    /** 当前路线情况 与寻路成功返回值分开记录 */
+    /** 当前路线可用于前进 */
+    bool bHasPath = false;
+    /** 当前目的地已到达 */
+    bool bReachedDestination = false;
+    /** 当前只能到达目标附近边界 */
+    bool bPartialPath = false;
+    /** 该路线使用爬行身体 */
+    bool bCrawlingPath = false;
+    /** 持续拥挤开始时刻 */
+    float CrowdSince = -1;
+    /** 连续拥堵后的接近方向尝试编号 */
+    uint32 ApproachAttempt = 0;
+    /** 当前停止或限制的直接原因 */
+    FName StopReason;
+    /** 当前路线执行情况 */
     EBBBMonsterNavigationCondition Condition = EBBBMonsterNavigationCondition::WaitingForPath;
-
-    /** 当前请求或最近一次重新寻路的直接原因 不保存重算历史 */
+    /** 最近重算原因 */
     EBBBMonsterNavigationCondition LastRepathCondition = EBBBMonsterNavigationCondition::WaitingForPath;
-
-    /** 当前稳定的包围接近位置编号 */
-    int32 ApproachSlot = INDEX_NONE;
-
-    /** 无实际推进时接近位置的释放时刻 攻击期间保持占位 */
-    float ApproachExpiresAt = 0.0f;
-
-    /** 包围位置所属的玩家 不读取隐藏玩家位置 */
-    TWeakObjectPtr<AActor> ApproachActor;
-
-    /** 因所有近战接近位置拥堵而合理等待 */
-    bool bWaitingForSpace = false;
 };
 
-/** 完整导航路径使用原生构造 拷贝与析构 */
 template<>
 struct TMassFragmentTraits<FBBBMonsterNavigationFragment>
 {
-    enum
-    {
-        AuthorAcceptsItsNotTriviallyCopyable = true
-    };
+    enum { AuthorAcceptsItsNotTriviallyCopyable = true };
 };

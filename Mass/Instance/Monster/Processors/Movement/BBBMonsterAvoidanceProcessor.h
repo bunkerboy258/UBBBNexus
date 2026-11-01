@@ -26,4 +26,7 @@ protected:
 private:
     /** 查询全部小怪实体的 Mass 查询器 */
     FMassEntityQuery MonsterQuery;
+
+    /** 顺序复用的 Detour 采样缓冲 */
+    TSharedPtr<class dtObstacleAvoidanceQuery> Sampler;
 };

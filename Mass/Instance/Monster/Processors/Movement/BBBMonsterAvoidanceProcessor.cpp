@@ -1,278 +1,224 @@
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
-#include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
+#include "BBBMonsterAvoidanceProcessor.h"
 
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+#include "BBBMonsterNavigationProcessor.h"
+#include "BBBMonsterTraversalProcessor.h"
+#include "BBBMonsterLocomotionProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
-#include "MassCommonFragments.h"
-#include "MassExecutionContext.h"
-#include "Engine/World.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
-#include "BBBMonsterSteering.h"
-#include "MassMovementFragments.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+#include "MassCommonFragments.h"
+#include "MassMovementFragments.h"
+#include "MassExecutionContext.h"
+#include "NavMesh/RecastHelpers.h"
+#include "DetourCrowd/DetourObstacleAvoidance.h"
+#include "Engine/World.h"
 
-UBBBMonsterAvoidanceProcessor::UBBBMonsterAvoidanceProcessor()
-    : MonsterQuery(*this)
+UBBBMonsterAvoidanceProcessor::UBBBMonsterAvoidanceProcessor() : MonsterQuery(*this)
 {
     bAutoRegisterWithProcessingPhases = true;
+    bRequiresGameThreadExecution = true;
     ProcessingPhase = EMassProcessingPhase::PrePhysics;
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Movement;
+    ExecutionOrder.ExecuteAfter.Add(UBBBMonsterTraversalProcessor::StaticClass()->GetFName());
     ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::Server | EProcessorExecutionFlags::Standalone);
-    ExecutionOrder.ExecuteAfter.Add(UBBBMonsterNavigationProcessor::StaticClass()->GetFName());
 }
 
 void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
-    MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
-void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
+void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
-    // 先确定空间分桶使用的最大搜索尺寸
-    float CellSize = 1.0f;
-
-    // 使用最大邻居范围作为空间分桶尺寸
-    MonsterQuery.ForEachEntityChunk(Context, [&CellSize](FMassExecutionContext& ChunkContext)
-    {
-        const TConstArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetFragmentView<FBBBMonsterAvoidanceFragment>();
-
-        const auto Movements = ChunkContext.GetFragmentView<FBBBMonsterMovementFragment>();
-        for (int32 Index = 0; Index < Avoidances.Num(); ++Index)
-        {
-            CellSize = FMath::Max(CellSize, FMath::Max(Avoidances[Index].NeighborSearchRadius,
-                Avoidances[Index].CollisionRadius * 2.0f + Movements[Index].SprintSpeed * 0.2f));
-        }
-    });
-
-    TMap<FIntPoint, TArray<TTuple<FMassEntityHandle, FVector, float>>> SpatialBuckets;
-
-    // 第一遍遍历建立二维空间桶
-    MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize](FMassExecutionContext& ChunkContext)
-    {
-        const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
-
-        const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
-        const auto Avoidances = ChunkContext.GetFragmentView<FBBBMonsterAvoidanceFragment>();
-
-        for (int32 Index = 0; Index < Transforms.Num(); ++Index)
-        {
-            if (States[Index].State == EBBBMonsterBehavior::Dead)
-            {
-                continue;
-            }
-
-            const FVector Location = Transforms[Index].GetTransform().GetLocation();
-            const FIntPoint Cell(
-                FMath::FloorToInt(Location.X / CellSize),
-                FMath::FloorToInt(Location.Y / CellSize));
-            SpatialBuckets.FindOrAdd(Cell).Emplace(ChunkContext.GetEntity(Index), Location, Avoidances[Index].CollisionRadius);
-        }
-    });
-
-    // 第二遍遍历写入连续意图与安全推进范围
     const float Now = Context.GetWorld()->GetTimeSeconds();
-    const float DeltaSeconds = FMath::Max(Context.GetDeltaTimeSeconds(), 0.0f);
-    MonsterQuery.ForEachEntityChunk(Context, [&SpatialBuckets, CellSize, Now, DeltaSeconds](FMassExecutionContext& ChunkContext)
+    const float Dt = Context.GetDeltaTimeSeconds();
+    constexpr float CellSize = 500;
+    using FNeighbor = TTuple<FMassEntityHandle, FVector, FVector, FVector, float, float>;
+    TMap<FIntPoint, TArray<FNeighbor>> Buckets;
+    MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
     {
-        const auto Transforms = ChunkContext.GetFragmentView<FTransformFragment>();
-        TArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetMutableFragmentView<FBBBMonsterAvoidanceFragment>();
-        const auto States = ChunkContext.GetFragmentView<FBBBMonsterBehaviorFragment>();
-        const auto Paths = ChunkContext.GetFragmentView<FBBBMonsterNavigationFragment>();
-        const auto Movements = ChunkContext.GetFragmentView<FBBBMonsterMovementFragment>();
-        const auto Velocities = ChunkContext.GetFragmentView<FMassVelocityFragment>();
-        const auto Networks = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
-
-        for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
+        const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
+        const auto Velocities = Chunk.GetFragmentView<FMassVelocityFragment>();
+        const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
+        const auto Paths = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Bodies = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+        const auto Injuries = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Rules = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
+        auto Crowds = Chunk.GetMutableFragmentView<FBBBMonsterAvoidanceFragment>();
+        for (int32 I = 0; I < Chunk.GetNumEntities(); ++I)
         {
-            // 停止状态不再被分离修正推动 活体仍作为其它实体的障碍
-            if (States[Index].State != EBBBMonsterBehavior::Chase && States[Index].State != EBBBMonsterBehavior::Patrol)
+            auto& C = Crowds[I];
+            C.DesiredVelocity = FVector::ZeroVector;
+            C.RecommendedVelocity = FVector::ZeroVector;
+            C.SeparationVelocity = FVector::ZeroVector;
+            C.bCrowdConstrained = false;
+            C.NeighborCount = 0;
+            C.VelocitySamples = 0;
+            if (States[I].State == EBBBMonsterBehavior::Dead || Traversals[I].Fact.Kind != 0 || !Rules[I].Definition.IsValid())
             {
-                Avoidances[Index].SeparationDirection = FVector::ZeroVector;
-                Avoidances[Index].SeparationStrength = 0.0f;
-                Avoidances[Index].bWaitingForNeighbor = false;
-                Avoidances[Index].SteeringSide = 0;
-                Avoidances[Index].SideHeldUntil = 0.0f;
-                Avoidances[Index].SteeringDirection = FVector::ZeroVector;
-                Avoidances[Index].MaxTravelDistance = 0.0f;
-                Avoidances[Index].bCrowdConstrained = false;
                 continue;
             }
-
-            const FVector Location = Transforms[Index].GetTransform().GetLocation();
-            const FBBBMonsterAvoidanceFragment& Settings = Avoidances[Index];
-            const float SearchRadius = FMath::Max(Settings.NeighborSearchRadius,
-                Settings.CollisionRadius * 2.0f + Movements[Index].SprintSpeed * 0.2f);
-            const float PersonalSpace = FMath::Clamp(Settings.PersonalSpaceRadius, 0.0f, SearchRadius);
-            const FIntPoint CenterCell(
-                FMath::FloorToInt(Location.X / CellSize),
-                FMath::FloorToInt(Location.Y / CellSize));
-            FVector Separation = FVector::ZeroVector;
-            const auto& Path = Paths[Index];
-            const FVector Goal = Path.bHasFollowTarget ? Path.FollowTarget
-                : Path.PathPoints.IsValidIndex(Path.PathPointIndex) ? Path.PathPoints[Path.PathPointIndex] : Location;
-            const FVector DesiredDirection = (Goal - Location).GetSafeNormal2D();
-            constexpr int32 CandidateCount = 8;
-            const float Side = (ChunkContext.GetEntity(Index).Index & 1) == 0 ? 1.0f : -1.0f;
-            const float Angles[CandidateCount] = {0.0f, 25.0f, -25.0f, 50.0f, -50.0f, 75.0f, -75.0f, 0.0f};
-            FVector Directions[CandidateCount];
-            FVector Intents[CandidateCount];
-            float Clearances[CandidateCount];
-            float OpenDistances[CandidateCount];
-            int8 Sides[CandidateCount];
-            const auto* Definition = Networks[Index].Definition.Get();
-            const float TurnRate = Definition ? (Movements[Index].Gait == EBBBMonsterGait::Walk
-                ? Definition->WalkTurnRate : Definition->RunTurnRate) : 260.0f;
-            const float Horizon = FMath::Max(1.0f, FMath::Min(SearchRadius - Settings.CollisionRadius * 2.0f,
-                Movements[Index].SprintSpeed * 0.2f));
-            const float Travel = FMath::Max(1.0f, Velocities[Index].Value.Size2D() * DeltaSeconds
-                + Movements[Index].Acceleration * DeltaSeconds * DeltaSeconds);
-            for (int32 Candidate = 0; Candidate < CandidateCount; ++Candidate)
+            const auto& Rule = *Rules[I].Definition;
+            const auto& Body = Bodies[I];
+            const auto& Injury = Injuries[I];
+            const bool bPatrol = States[I].State == EBBBMonsterBehavior::Patrol;
+            const bool bChase = States[I].State == EBBBMonsterBehavior::Chase;
+            const FVector Location = Transforms[I].GetTransform().GetLocation();
+            if ((bPatrol || bChase) && Paths[I].bHasPath && !Paths[I].bReachedDestination && !Injury.IsStaggering(Now)
+                && Now >= Injury.HitStopEndsAt && (!Injury.bCrawling || Now >= Injury.CrawlStartedAt + Rule.CrawlTransitionDuration))
             {
-                FVector Intent = DesiredDirection.RotateAngleAxis(Angles[Candidate] * Side, FVector::UpVector);
-                if (Candidate == CandidateCount - 1)
+                const auto Gait = UBBBMonsterLocomotionProcessor::SelectGait(Body, Paths[I].RemainingDistance, bPatrol);
+                float Speed = Gait == EBBBMonsterGait::Walk ? (bChase && Body.MaxGait == EBBBMonsterGait::Walk
+                    ? Body.WalkerChaseWalkSpeed : Body.WalkSpeed) : Gait == EBBBMonsterGait::Run ? Body.RunSpeed : Body.SprintSpeed;
+                if (Injury.bCrawling)
                 {
-                    Intent = Settings.SteeringDirection;
+                    Speed = Rule.CrawlSpeed;
                 }
-                Intents[Candidate] = Intent;
-                Directions[Candidate] = FBBBMonsterSteering::ConstrainDirection(Velocities[Index].Value,
-                    Intent, Movements[Index].Acceleration, TurnRate, DeltaSeconds);
-                const float Cross = FVector::CrossProduct(DesiredDirection, Intent).Z;
-                Sides[Candidate] = FMath::Abs(Cross) < 0.05f ? 0 : Cross > 0.0f ? 1 : -1;
-                Clearances[Candidate] = FVector::DotProduct(DesiredDirection, Directions[Candidate]) > 0.05f ? Horizon : 0.0f;
-                OpenDistances[Candidate] = Intent.IsNearlyZero() ? 0.0f : Horizon;
-            }
-
-            // 只检查当前实体周边的相邻空间桶
-            for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
-            {
-                for (int32 OffsetY = -1; OffsetY <= 1; ++OffsetY)
+                Speed *= Injury.GetSpeedRatio(Now);
+                if (bPatrol)
                 {
-                    const auto* Neighbors = SpatialBuckets.Find(CenterCell + FIntPoint(OffsetX, OffsetY));
-
-                    if (Neighbors == nullptr)
+                    Speed = FMath::Min(Speed, FMath::Sqrt(2 * Body.Deceleration * FMath::Max(0.0f, Paths[I].RemainingDistance - 10)));
+                }
+                float Accelerated = UBBBMonsterLocomotionProcessor::CalculateSpeed(Body, Velocities[I].Value.Size2D(), Speed,
+                    Paths[I].RemainingDistance, Dt);
+                if (Now < Injury.SlowRecoveryStartedAt)
+                {
+                    Accelerated = FMath::Min(Accelerated, Speed);
+                }
+                C.DesiredVelocity = (Paths[I].FollowTarget - Location).GetSafeNormal2D() * Accelerated;
+            }
+            const FIntPoint Cell(FMath::FloorToInt(Location.X / CellSize), FMath::FloorToInt(Location.Y / CellSize));
+            Buckets.FindOrAdd(Cell).Emplace(Chunk.GetEntity(I), Location, Velocities[I].Value,
+                C.DesiredVelocity, C.CollisionRadius, Injury.bCrawling ? Rule.CrawlCapsuleHalfHeight : Body.CapsuleHalfHeight);
+        }
+    });
+    if (!Sampler)
+    {
+        Sampler = MakeShared<dtObstacleAvoidanceQuery>();
+        if (!Sampler->init(16, 24, 0))
+        {
+            Sampler.Reset();
+            return;
+        }
+    }
+    MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
+    {
+        const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
+        const auto Velocities = Chunk.GetFragmentView<FMassVelocityFragment>();
+        const auto Paths = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Bodies = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+        auto Crowds = Chunk.GetMutableFragmentView<FBBBMonsterAvoidanceFragment>();
+        for (int32 I = 0; I < Chunk.GetNumEntities(); ++I)
+        {
+            auto& C = Crowds[I];
+            if (C.DesiredVelocity.IsNearlyZero())
+            {
+                continue;
+            }
+            Sampler->reset();
+            const FVector Location = Transforms[I].GetTransform().GetLocation();
+            const FIntPoint Cell(FMath::FloorToInt(Location.X / CellSize), FMath::FloorToInt(Location.Y / CellSize));
+            TArray<TPair<float, const FNeighbor*>, TInlineAllocator<16>> Closest;
+            const float Search = FMath::Clamp(FMath::Max(C.NeighborSearchRadius, C.DesiredVelocity.Size() * 0.7f), 180.0f, 500.0f);
+            for (int32 X = -1; X <= 1; ++X)
+            {
+                for (int32 Y = -1; Y <= 1; ++Y)
+                {
+                    const auto* Neighbors = Buckets.Find(Cell + FIntPoint(X, Y));
+                    if (!Neighbors)
                     {
                         continue;
                     }
-
-                    for (const auto& Neighbor : *Neighbors)
+                    for (const auto& N : *Neighbors)
                     {
-                        const auto NeighborEntity = Neighbor.Get<0>();
-                        const FVector& NeighborLocation = Neighbor.Get<1>();
-                        if (NeighborEntity == ChunkContext.GetEntity(Index))
+                        const float Distance = FVector::DistSquared2D(Location, N.Get<1>());
+                        if (N.Get<0>() == Chunk.GetEntity(I) || Distance > FMath::Square(Search)
+                            || FMath::Abs(Location.Z - N.Get<1>().Z) >= FMath::Min(Bodies[I].CapsuleHalfHeight, N.Get<5>()) * 1.5f)
                         {
                             continue;
                         }
-                        /** 二维分桶只负责候选检索 不把上下楼层当成身体重叠 */
-                        if (FMath::Abs(Location.Z - NeighborLocation.Z) > Settings.CollisionRadius * 2.0f)
+                        if (Closest.Num() == 16 && Distance >= Closest.Last().Key)
                         {
                             continue;
                         }
-                        FVector AwayFromNeighbor = Location - NeighborLocation;
-                        AwayFromNeighbor.Z = 0.0f;
-                        if (AwayFromNeighbor.IsNearlyZero())
+                        if (Closest.Num() == 16)
                         {
-                            AwayFromNeighbor.X = ChunkContext.GetEntity(Index).Index < NeighborEntity.Index ? -0.01f : 0.01f;
+                            Closest.Pop(EAllowShrinking::No);
                         }
-                        const double DistanceSquared = AwayFromNeighbor.SizeSquared();
-
-                        if (DistanceSquared >= FMath::Square(SearchRadius))
-                        {
-                            continue;
-                        }
-                        const float BodyDistance = Settings.CollisionRadius + Neighbor.Get<2>();
-                        const double Distance = FMath::Sqrt(FMath::Max(DistanceSquared, 0.0001));
-                        for (int32 Candidate = 0; Candidate < CandidateCount; ++Candidate)
-                        {
-                            // 长程净空只负责选绕行侧 本帧连续方向仍遵守双方间距约束
-                            const float IntentAlong = FVector::DotProduct(-AwayFromNeighbor, Intents[Candidate]);
-                            const double LateralSquared = FMath::Max(0.0, DistanceSquared - FMath::Square(IntentAlong));
-                            if (IntentAlong > 0.0f && LateralSquared < FMath::Square(BodyDistance))
-                            {
-                                OpenDistances[Candidate] = FMath::Min(OpenDistances[Candidate],
-                                    FMath::Max(0.0f, IntentAlong - static_cast<float>(FMath::Sqrt(FMath::Square(BodyDistance) - LateralSquared))));
-                            }
-                            const float Along = FVector::DotProduct(-AwayFromNeighbor, Directions[Candidate]);
-                            if (DistanceSquared < FMath::Square(BodyDistance))
-                            {
-                                if (Along >= 0.0f)
-                                {
-                                    Clearances[Candidate] = 0.0f;
-                                }
-                                continue;
-                            }
-                            if (Along <= 0.0f)
-                            {
-                                continue;
-                            }
-                            /** 两侧各承担一半法向间距 保留切向通行 避免交叉移动时同时侵入 */
-                            const float NormalAllowance = FMath::Max(0.0, Distance - BodyDistance - 1.0) * 0.5;
-                            Clearances[Candidate] = FMath::Min(Clearances[Candidate],
-                                static_cast<float>(NormalAllowance * Distance / Along));
-                        }
-                        if (Distance < PersonalSpace)
-                        {
-                            Separation += AwayFromNeighbor / Distance * (1.0f - Distance / FMath::Max(PersonalSpace, 1.0f));
-                        }
+                        Closest.Emplace(Distance, &N);
+                        Closest.Sort([](const auto& A, const auto& B) { return A.Key < B.Key; });
                     }
                 }
             }
-
-            Avoidances[Index].SeparationStrength = Separation.Size();
-            Avoidances[Index].SeparationDirection = Separation.GetSafeNormal();
-            auto& Result = Avoidances[Index];
-            int32 Best = 0;
-            int32 Preferred = INDEX_NONE;
-            float BestScore = -FLT_MAX;
-            float PreferredScore = -FLT_MAX;
-            for (int32 Candidate = 0; Candidate < CandidateCount; ++Candidate)
+            for (const auto& Entry : Closest)
             {
-                // 前方净空选择绕行意图 本帧许可距离约束真实移动 所有候选均保持前进半平面
-                const float Progress = FMath::Clamp(Clearances[Candidate] / Travel, 0.0f, 1.0f);
-                const float Forward = FVector::DotProduct(Intents[Candidate], DesiredDirection);
-                const float Score = Progress * Forward * 0.25f + OpenDistances[Candidate] / Horizon * 0.75f - (1.0f - Forward) * 0.15f
-                    + FVector::DotProduct(Directions[Candidate], Result.SeparationDirection)
-                        * FMath::Min(Result.SeparationStrength * Result.AvoidanceWeight, 1.0f) * 0.05f
-                    + FVector::DotProduct(Directions[Candidate], Result.SteeringDirection) * 0.1f;
-                if (Score > BestScore)
+                const auto& N = *Entry.Value;
+                const auto Position = Unreal2RecastPoint(N.Get<1>());
+                const auto Velocity = Unreal2RecastPoint(FVector(N.Get<2>().X, N.Get<2>().Y, 0));
+                const auto Desired = Unreal2RecastPoint(N.Get<3>());
+                Sampler->addCircle(&Position.X, N.Get<4>(), &Velocity.X, &Desired.X);
+                FVector Away = Location - N.Get<1>();
+                Away.Z = 0;
+                const float Distance = FMath::Sqrt(Entry.Key);
+                const float Overlap = C.CollisionRadius + N.Get<4>() + 2 - Distance;
+                if (Overlap > 0)
                 {
-                    Best = Candidate;
-                    BestScore = Score;
-                }
-                if ((Sides[Candidate] == 0 || Sides[Candidate] == Result.SteeringSide)
-                    && Score > PreferredScore && Clearances[Candidate] > 0.25f)
-                {
-                    Preferred = Candidate;
-                    PreferredScore = Score;
+                    if (Distance < 0.01f)
+                    {
+                        Away = FVector(Chunk.GetEntity(I).Index < N.Get<0>().Index ? -1 : 1, 0, 0);
+                    }
+                    C.SeparationVelocity += Away.GetSafeNormal2D() * FMath::Min(60.0f, Overlap * 5);
                 }
             }
-            if (Result.SteeringSide != 0 && Preferred != INDEX_NONE
-                && (Now < Result.SideHeldUntil || BestScore < PreferredScore + 0.15f))
+            C.NeighborCount = Closest.Num();
+            for (int32 W = 0; W + 1 < Paths[I].Walls.Num() && W < 48; W += 2)
             {
-                Best = Preferred;
+                const auto A = Unreal2RecastPoint(Paths[I].Walls[W]);
+                const auto B = Unreal2RecastPoint(Paths[I].Walls[W + 1]);
+                Sampler->addSegment(&A.X, &B.X);
             }
-            const int8 ChosenSide = Sides[Best];
-            if (ChosenSide != 0 && ChosenSide != Result.SteeringSide && Clearances[Best] > 0.25f)
-            {
-                Result.SideChanges += Result.SteeringSide != 0 ? 1u : 0u;
-                Result.SteeringSide = ChosenSide;
-                Result.SideHeldUntil = Now + Result.SideHoldDuration;
-            }
-            Result.SteeringDirection = Directions[Best];
-            Result.MaxTravelDistance = Clearances[Best];
-            Result.bCrowdConstrained = Clearances[0] < Horizon || Clearances[Best] < Horizon;
-            Result.bWaitingForNeighbor = Result.bCrowdConstrained && Result.MaxTravelDistance <= 0.25f;
+            C.SeparationVelocity = C.SeparationVelocity.GetClampedToMaxSize(60);
+            const float MaxSpeed = C.DesiredVelocity.Size();
+            const FVector Intent = (C.DesiredVelocity + C.SeparationVelocity * FMath::Min(C.AvoidanceWeight, 2.0f)).GetClampedToMaxSize(MaxSpeed);
+            const auto Position = Unreal2RecastPoint(Location);
+            const auto Velocity = Unreal2RecastPoint(FVector(Velocities[I].Value.X, Velocities[I].Value.Y, 0));
+            const auto Desired = Unreal2RecastPoint(Intent);
+            dtObstacleAvoidanceParams Params{};
+            Params.velBias = 0.4;
+            Params.weightDesVel = 2;
+            Params.weightCurVel = 0.75;
+            Params.weightSide = 0.75;
+            Params.weightToi = 2.5;
+            Params.horizTime = 0.7;
+            Params.sideBiasThreshold = 0.05;
+            Params.weightRightBias = 0.1;
+            Params.patternIdx = 0xff;
+            Params.adaptiveDivs = 7;
+            Params.adaptiveRings = 2;
+            Params.adaptiveDepth = 3;
+            dtReal Result[3] = {};
+            C.VelocitySamples = Sampler->sampleVelocityAdaptive(&Position.X, C.CollisionRadius, MaxSpeed, 1,
+                &Velocity.X, &Desired.X, Result, &Params);
+            C.RecommendedVelocity = (Recast2UnrealPoint(Result) + C.SeparationVelocity).GetClampedToMaxSize(MaxSpeed);
+            C.RecommendedVelocity.Z = 0;
+            C.bCrowdConstrained = C.NeighborCount > 0 && C.RecommendedVelocity.SizeSquared() < C.DesiredVelocity.SizeSquared() * 0.25;
         }
     });
 }

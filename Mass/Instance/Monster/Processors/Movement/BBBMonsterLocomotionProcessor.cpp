@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBMonsterStep.h"
+#include "BBBMonsterNavigation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
@@ -288,7 +289,7 @@ void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
-    MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
@@ -310,7 +311,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         auto Movements = Chunk.GetMutableFragmentView<FBBBMonsterMovementFragment>();
         auto Grounds = Chunk.GetMutableFragmentView<FBBBMonsterGroundFragment>();
         const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
-        const auto Navigation = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
+        auto Navigation = Chunk.GetMutableFragmentView<FBBBMonsterNavigationFragment>();
         const auto Avoidance = Chunk.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
@@ -325,7 +326,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             FTransform& Transform = Transforms[Index].GetMutableTransform();
             FVector& Velocity = Velocities[Index].Value;
             FBBBMonsterMovementFragment& Movement = Movements[Index];
-            const FBBBMonsterNavigationFragment& Path = Navigation[Index];
+            FBBBMonsterNavigationFragment& Path = Navigation[Index];
             const bool bPatrol = States[Index].State == EBBBMonsterBehavior::Patrol;
             const bool bChase = States[Index].State == EBBBMonsterBehavior::Chase;
             if (DeltaSeconds <= SMALL_NUMBER)
@@ -339,7 +340,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const auto& Target = Targets[Index];
             const float TargetDistance = Target.bHasTarget ? FVector::Distance(Location, Target.TargetLocation) : MAX_flt;
             const bool bCrowdStationary = Velocity.Size2D() < 10.0f
-                && (Path.bWaitingForSpace || Avoidance[Index].bWaitingForNeighbor || Avoidance[Index].bCrowdConstrained);
+                && Avoidance[Index].bCrowdConstrained;
             FBBBMonsterSteering::UpdateFacingMode(Movement, Target.bHasTarget,
                 States[Index].State == EBBBMonsterBehavior::Alert || States[Index].State == EBBBMonsterBehavior::Attack,
                 bChase, bCrowdStationary, TargetDistance, Settings ? Settings->AttackRange : 0.0f,
@@ -368,67 +369,21 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
-            // 合格近战位置在冷却期间保持 身体继续对准目标
-            Movement.bHoldingAttackPosition = Path.TraversalPoint == INDEX_NONE && bChase && Target.bTargetVisible && Settings
-                && TargetDistance <= Settings->AttackRange * (Movement.bHoldingAttackPosition ? 1.0f : 0.95f);
-            const bool bMayMove = !Movement.bHoldingAttackPosition && !bChangingPosture && !Injury.IsStaggering(Now) && !Avoidance[Index].bWaitingForNeighbor
-                && (bPatrol || bChase) && Path.bHasPath &&
-                Path.PathPoints.IsValidIndex(Path.PathPointIndex) && Path.TailDistances.IsValidIndex(Path.PathPointIndex);
+            const bool bMayMove = !bChangingPosture && !Injury.IsStaggering(Now) && Now >= Injury.HitStopEndsAt
+                && (bPatrol || bChase) && Path.bHasPath && !Path.bReachedDestination;
             if (!bMayMove)
             {
                 Movement.Gait = EBBBMonsterGait::Walk;
             }
             if (bMayMove && Grounds[Index].bGrounded)
             {
-                const FVector ToPoint = (Path.bHasFollowTarget ? Path.FollowTarget : Path.PathPoints[Path.PathPointIndex]) - Location;
-                const float PointDistance = ToPoint.Size2D();
-                const float Remaining = FMath::Max((Path.RemainingDistance > 0.0f ? Path.RemainingDistance
-                    : PointDistance + Path.TailDistances[Path.PathPointIndex]) - (bPatrol ? 15.0f : 0.0f), 0.0f);
-                Movement.Gait = SelectGait(Movement, Remaining, bPatrol);
-                const float WalkingSpeed = bChase && Movement.MaxGait == EBBBMonsterGait::Walk
-                    ? Movement.WalkerChaseWalkSpeed : Movement.WalkSpeed;
-                const float UprightSpeed = Movement.Gait == EBBBMonsterGait::Walk ? WalkingSpeed :
-                    Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
-                const float SpeedRatio = Injury.GetSpeedRatio(Now);
-                const float BrakingSpeed = FMath::Sqrt(2.0f * Movement.Deceleration * Remaining);
-                const float TargetSpeed = FMath::Min((Injury.bCrawling && Settings ? Settings->CrawlSpeed : UprightSpeed) * SpeedRatio, BrakingSpeed);
-                const float InterpolatedSpeed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
-                // 受击压制在保持阶段直接限制实际速度 恢复阶段仍由正常加速度推进
-                const float Speed = Now < Injury.SlowRecoveryStartedAt ? FMath::Min(InterpolatedSpeed, TargetSpeed) : InterpolatedSpeed;
-                const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
-                const FVector Direction = Neighbors.SteeringDirection;
-                const float Alignment = FMath::Clamp(static_cast<float>(FVector::DotProduct(
-                    Transform.GetRotation().GetForwardVector().GetSafeNormal2D(), Direction)), 0.0f, 1.0f);
-                const float Distance = FMath::Min3(Speed * Alignment * DeltaSeconds, PointDistance, Remaining);
-                const float SafeDistance = FMath::Min(Distance, Neighbors.MaxTravelDistance);
-                FVector Destination = Location + Direction * SafeDistance;
-
-                // 同一求解内约束导航边界 防止避让把实体推到墙外
-                const FVector FootOffset(0.0f, 0.0f, Geometry.CapsuleHalfHeight);
-                auto* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
-                const auto* NavMesh = Path.NativePath.IsValid() ? Cast<ARecastNavMesh>(Path.NativePath->GetNavigationDataUsed()) : nullptr;
-                FNavLocation ProjectedFoot;
-                if (!NavigationSystem || !NavMesh || !NavigationSystem->ProjectPointToNavigation(Location - FootOffset, ProjectedFoot,
-                    FVector(Geometry.CapsuleRadius, Geometry.CapsuleRadius, 250.0f), NavMesh))
-                {
-                    Destination = Location;
-                }
-                else
-                {
-                    // 使用最近导航多边形作为唯一射线起点 允许边界外的浅层偏移沿物理可行方向进入导航区
-                    const FVector NavEnd = ProjectedFoot.Location + Direction * SafeDistance;
-                    FVector HitLocation;
-                    if (ARecastNavMesh::NavMeshRaycast(NavMesh, ProjectedFoot.NodeRef, ProjectedFoot.Location,
-                        NavEnd, HitLocation, NavMesh->GetDefaultQueryFilter()))
-                    {
-                        const float Travel = FMath::Clamp(FVector::DotProduct(HitLocation - ProjectedFoot.Location, Direction), 0.0, double(SafeDistance));
-                        Destination = Location + Direction * Travel;
-                    }
-                }
-                if (!Destination.ContainsNaN() && FVector::Dist2D(Location, Destination) <= Distance + 1.0f)
-                {
-                    HorizontalDelta = FVector(Destination.X - Location.X, Destination.Y - Location.Y, 0.0f);
-                }
+                Movement.Gait = SelectGait(Movement, Path.RemainingDistance, bPatrol);
+                const FVector DesiredFeet = Location - FVector::UpVector * Geometry.CapsuleHalfHeight
+                    + Avoidance[Index].RecommendedVelocity * DeltaSeconds;
+                const FVector AllowedFeet = FBBBMonsterNavigation::Constrain(Path, DesiredFeet);
+                HorizontalDelta = FVector(AllowedFeet.X - Location.X, AllowedFeet.Y - Location.Y, 0);
+                const float MaxDelta = Movement.SprintSpeed * DeltaSeconds + 1;
+                HorizontalDelta = HorizontalDelta.GetClampedToMaxSize(MaxDelta);
             }
             if (bMayMove && !Grounds[Index].bGrounded)
             {
@@ -448,6 +403,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             Transform.SetLocation(Location);
             if (Grounds[Index].bGrounded)
             {
+                FBBBMonsterNavigation::Feedback(Path, Location - FVector::UpVector * Geometry.CapsuleHalfHeight);
+            }
+            if (Grounds[Index].bGrounded)
+            {
                 Grounds[Index].UnsupportedSince = -1.0f;
             }
             if (!Grounds[Index].bGrounded && Grounds[Index].UnsupportedSince < 0.0f)
@@ -459,13 +418,12 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Ground Entity=%d Supported=%d Z=%.2f VerticalSpeed=%.2f"),
                     Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
-            FVector FacingDirection = bMayMove ? Avoidance[Index].SteeringDirection : FVector::ZeroVector;
-            const bool bAtClimbEntry = Path.TraversalPoint != INDEX_NONE
-                && Path.PathPoints.IsValidIndex(Path.TraversalPoint + 1)
-                && FVector::DistSquared2D(Location, Path.PathPoints[Path.TraversalPoint]) <= FMath::Square(Movement.CapsuleRadius * 2);
+            FVector FacingDirection = bMayMove ? Avoidance[Index].RecommendedVelocity.GetSafeNormal2D() : FVector::ZeroVector;
+            const bool bAtClimbEntry = Path.TraversalPoly != 0
+                && FVector::DistSquared2D(Location, Path.TraversalEntry) <= FMath::Square(Movement.CapsuleRadius * 2);
             if (bAtClimbEntry)
             {
-                FacingDirection = (Path.PathPoints[Path.TraversalPoint + 1] - Path.PathPoints[Path.TraversalPoint]).GetSafeNormal2D();
+                FacingDirection = (Path.TraversalExit - Path.TraversalEntry).GetSafeNormal2D();
             }
             if (Movement.bFacingTarget && !bAtClimbEntry)
             {
