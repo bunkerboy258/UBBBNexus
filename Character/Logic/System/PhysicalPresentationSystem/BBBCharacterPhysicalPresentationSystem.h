@@ -1,4 +1,6 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterGetUpCandidateProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterPhysicalPhaseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterRagdollCaptureProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterPhysicalPresentationProcessor.h"
 class ABBBCharacter;
@@ -41,6 +43,10 @@ class FBBBCharacterPhysicalPresentationSystem final
     UPhysicalAnimationComponent *PhysicalAnimation = nullptr;
     /** 固定调度的表现处理器 */
     FBBBCharacterPhysicalPresentationProcessor Processor;
+    /** 起身前空间检查 */
+    FBBBCharacterGetUpCandidateProcessor CandidateProcessor;
+    /** 起身阶段交接 */
+    FBBBCharacterPhysicalPhaseProcessor PhaseProcessor;
     /** 物理完成后的采集处理器 */
     FBBBCharacterRagdollCaptureProcessor CaptureProcessor;
 };

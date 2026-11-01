@@ -9,6 +9,11 @@ namespace
 {
 FVector Feet(const ABBBCharacter &Character)
 {
+    const auto &Physical = Character.RuntimeData.PhysicalPresentation.ReadPhysicalPresentationState();
+    if (Physical.bRagdoll)
+    {
+        return Physical.PelvisLocation;
+    }
     return Character.GetActorLocation() - FVector(0, 0, Character.GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 }
 
@@ -28,9 +33,10 @@ void FBBBCharacterRescueCandidateProcessor::Update(FBBBCharacterLifeUpdateContex
     Candidate.EligiblePartners.Reset();
     Candidate.bCanRecover = false;
     Candidate.bRecoverCrouched = false;
-    // 本轮布娃娃只进入并保持 救援不能绕过尚未实现的物理退出
     const auto &Physical = Context.Data.PhysicalPresentation.ReadPhysicalPresentationState();
-    if (Physical.bRagdollRequested || Physical.bRagdoll)
+    if (Physical.bRagdollRequested
+        || (Context.Data.Life.ReadLifeState().Phase == EBBBCharacterLifePhase::Alive
+            && Physical.RagdollSnapshot.Phase != EBBBCharacterPhysicalPhase::Animated))
     {
         return;
     }
@@ -65,6 +71,11 @@ void FBBBCharacterRescueCandidateProcessor::Update(FBBBCharacterLifeUpdateContex
         {
             Candidate.bCanRecover = Fits(Config.CrouchedHalfHeight);
             Candidate.bRecoverCrouched = Candidate.bCanRecover;
+        }
+        if (Physical.bRagdoll)
+        {
+            Candidate.bCanRecover = Physical.bCanGetUp;
+            Candidate.bRecoverCrouched = false;
         }
     }
     float Nearest = FMath::Square(FMath::Max(1.0f, Context.Config.RescueDistance));

@@ -18,7 +18,8 @@ void FBBBCharacterRagdollObservationProcessor::Update(FBBBCharacterNetworkUpdate
     }
     const double Now = Context.WorldState.WorldTimeSeconds;
     // 当前结果最多每秒二十次 丢失后由后续快照收敛 不排队重演物理过程
-    if (Identity.bLocallyControlled && Observation.LastSendTime >= 0.0
+    const bool bTransition = Snapshot.Transition > Observation.Transition;
+    if (!bTransition && Identity.bLocallyControlled && Observation.LastSendTime >= 0.0
         && Now - Observation.LastSendTime < 0.05)
     {
         return;
@@ -29,8 +30,16 @@ void FBBBCharacterRagdollObservationProcessor::Update(FBBBCharacterNetworkUpdate
     }
     else
     {
-        Context.NetworkComponent.ServerSubmitRagdoll(Snapshot);
+        if (bTransition)
+        {
+            Context.NetworkComponent.ServerSubmitPhysicalPhase(Snapshot);
+        }
+        if (!bTransition)
+        {
+            Context.NetworkComponent.ServerSubmitRagdoll(Snapshot);
+        }
     }
     Observation.Revision = Snapshot.Revision;
+    Observation.Transition = Snapshot.Transition;
     Observation.LastSendTime = Now;
 }

@@ -18,6 +18,17 @@ void FBBBCharacterLifeAnimationProcessor::Update(FBBBCharacterAnimationUpdateCon
     {
         return;
     }
+    const auto &Physical = Context.RuntimeData.PhysicalPresentation.ReadPhysicalPresentationState();
+    if (Physical.RagdollSnapshot.Phase == EBBBCharacterPhysicalPhase::Recovering
+        || (Physical.bRagdoll && !Rescue.bReceiving))
+    {
+        // 起身动作由全身物理交接独占 救援接收阶段仍须运行原有完成通知
+        State.AppliedPhase = Life.Phase;
+        State.bAppliedRescueHelping = Rescue.bHelping;
+        State.bAppliedRescueReceiving = Rescue.bReceiving;
+        State.AppliedRescueOperation = Rescue.OperationId;
+        return;
+    }
     const EBBBCharacterLifePhase PreviousPhase = State.AppliedPhase;
     const bool bWasHelping = State.bAppliedRescueHelping;
     const bool bWasReceiving = State.bAppliedRescueReceiving;

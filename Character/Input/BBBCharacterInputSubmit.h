@@ -94,6 +94,8 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeEndLocalControlPacket, MeleeEnd)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentShowLocalControlPacket, EquipmentShow)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentHideLocalControlPacket, EquipmentHide)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEnterRagdollLocalControlPacket, EnterRagdoll)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRequestGetUpLocalControlPacket, RequestGetUp)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterGetUpCompleteLocalControlPacket, GetUpComplete)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRagdollRemoteMessagePacket, RemoteRagdoll)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRagdollAuthorityFactPacket, AuthorityRagdoll)
 #undef BBB_CHARACTER_INPUT_SLOT
@@ -114,6 +116,10 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterGetUpCompleteLocalControlPacket>)
+        {
+            Slot.Data.Episodes.Append(Packet.Episodes);
+        }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterRagdollRemoteMessagePacket>
             || std::is_same_v<FPacket, FBBBCharacterRagdollAuthorityFactPacket>)
         {
@@ -351,6 +357,7 @@ namespace BBBCharacterInput
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
         if constexpr (!std::is_same_v<FPacket, FBBBCharacterInteractionPrimaryLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterGetUpCompleteLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterRagdollRemoteMessagePacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterRagdollAuthorityFactPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&

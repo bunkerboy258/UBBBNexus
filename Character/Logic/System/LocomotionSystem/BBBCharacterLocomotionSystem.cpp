@@ -46,6 +46,7 @@ void FBBBCharacterLocomotionSystem::Update()
         CharacterData->Life.ReadLifeState(),
         CharacterData->External.ReadWorldState().FrameDeltaSeconds,
         *CharacterData};
+    RecoveryMovementProcessor.Update(Context);
     LifeMovementProcessor.Update(Context);
     RescueMovementProcessor.Update(Context);
     LocomotionProcessor.Update(Context);

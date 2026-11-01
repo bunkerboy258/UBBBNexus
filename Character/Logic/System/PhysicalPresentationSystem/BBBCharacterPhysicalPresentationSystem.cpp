@@ -20,6 +20,8 @@ void FBBBCharacterPhysicalPresentationSystem::Update() const
         return;
     }
     FBBBCharacterPhysicalPresentationUpdateContext Context{*Character, *Data, *Mesh, *Reaction, *PhysicalAnimation};
+    CandidateProcessor.Update(Context);
+    PhaseProcessor.Update(Context);
     Processor.Update(Context);
 }
 

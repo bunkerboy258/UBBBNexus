@@ -133,7 +133,8 @@ void FBBBCharacterLocomotionProcessor::Update(
         RuntimeData.bRun = false;
         return;
     }
-    if (!Context.Life.bActionsAllowed)
+    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().RagdollSnapshot.Phase
+            == EBBBCharacterPhysicalPhase::Recovering || !Context.Life.bActionsAllowed)
     {
         return;
     }

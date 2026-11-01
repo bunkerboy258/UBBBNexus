@@ -1,4 +1,6 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterRequestGetUpLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterGetUpCompleteLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterEnterRagdollLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/PhysicalPresentation/FBBBCharacterRagdollRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/PhysicalPresentation/FBBBCharacterRagdollAuthorityFactPacket.h"
@@ -83,6 +85,10 @@ struct FBBBCharacterInputState final
 {
     /** 布娃娃进入请求及当前结果输入 */
     TBBBCharacterInputSlot<FBBBCharacterEnterRagdollLocalControlPacket> EnterRagdoll;
+    /** 主动起身请求 */
+    TBBBCharacterInputSlot<FBBBCharacterRequestGetUpLocalControlPacket> RequestGetUp;
+    /** 起身动作完成通知 */
+    TBBBCharacterInputSlot<FBBBCharacterGetUpCompleteLocalControlPacket> GetUpComplete;
     /** 控制端提交的当前布娃娃结果 */
     TBBBCharacterInputSlot<FBBBCharacterRagdollRemoteMessagePacket> RemoteRagdoll;
     /** 分发的当前布娃娃结果 */

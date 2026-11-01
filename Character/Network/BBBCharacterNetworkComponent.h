@@ -44,6 +44,9 @@ private:
     /** @param Snapshot 控制端已成立的物理结果 @return 无 */
     UFUNCTION(Server, Unreliable)
     void ServerSubmitRagdoll(FBBBCharacterRagdollSnapshot Snapshot);
+    /** @param Snapshot 已成立的物理阶段变化 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerSubmitPhysicalPhase(FBBBCharacterRagdollSnapshot Snapshot);
     /** 当前结果到达后仅提交角色输入 */
     UFUNCTION()
     void OnRep_Ragdoll();

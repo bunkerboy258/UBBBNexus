@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterGetUpAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterLifeAnimationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationLayerProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/Processors/BBBCharacterAnimationMontageProcessor.h"
@@ -49,6 +50,8 @@ private:
     const FBBBCharacterAnimationConfig *AnimationConfig = nullptr;
     /** 生命阶段动作清理处理器 */
     FBBBCharacterLifeAnimationProcessor LifeProcessor;
+    /** 起身选片与动作交接 */
+    FBBBCharacterGetUpAnimationProcessor GetUpProcessor;
     FBBBCharacterAnimationLayerProcessor LayerProcessor;
     FBBBCharacterAnimationMontageProcessor MontageProcessor;
     FBBBCharacterAnimationActionProcessor ActionProcessor;

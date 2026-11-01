@@ -134,7 +134,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
     }
     const auto &Physical = Context.Data.PhysicalPresentation.ReadPhysicalPresentationState();
     State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving
-        && !Physical.bRagdollRequested && !Physical.bRagdoll;
+        && !Physical.bRagdollRequested && Physical.RagdollSnapshot.Phase == EBBBCharacterPhysicalPhase::Animated;
     Context.Character.SetCanBeDamaged(State.bInitialized && State.Phase != EBBBCharacterLifePhase::Dead);
 
     if (!Delivery.Damages.IsEmpty())

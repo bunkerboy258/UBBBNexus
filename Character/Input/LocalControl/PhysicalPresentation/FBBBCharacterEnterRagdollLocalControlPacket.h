@@ -13,7 +13,9 @@ struct FBBBCharacterEnterRagdollLocalControlPacket final
     /** @param Context 当前事实 @return 是否允许接管身体 */
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
-        return !Context.bIsMirror && Context.Life.bInitialized && Context.Life.bActionsAllowed
+        return !Context.bIsMirror && Context.Life.bInitialized
+            && (Context.Life.bActionsAllowed
+                || Context.PhysicalPresentation.RagdollSnapshot.Phase == EBBBCharacterPhysicalPhase::Recovering)
             && Context.Life.Phase == EBBBCharacterLifePhase::Alive
             && !Context.PhysicalPresentation.bRagdollRequested && !Context.PhysicalPresentation.bRagdoll;
     }
@@ -21,5 +23,7 @@ struct FBBBCharacterEnterRagdollLocalControlPacket final
     void Apply(FBBBCharacterInputContext &Context) const
     {
         Context.PhysicalPresentation.bRagdollRequested = true;
+        Context.PhysicalPresentation.bGetUpRequested = false;
+        Context.PhysicalPresentation.bGetUpComplete = false;
     }
 };

@@ -8,6 +8,8 @@ void FBBBCharacterInputProcessor::Update(
 {
     Context.Control.bJump = false;
     Process(InputState.EnterRagdoll, Context);
+    Process(InputState.RequestGetUp, Context);
+    Process(InputState.GetUpComplete, Context);
     Process(InputState.RemoteRagdoll, Context);
     Process(InputState.AuthorityRagdoll, Context);
 

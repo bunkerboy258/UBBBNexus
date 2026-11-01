@@ -5,6 +5,8 @@ struct FBBBCharacterRagdollNetworkObservationState final
 {
     /** 最近投送的结果版本 */
     uint64 Revision = 0;
+    /** 已可靠投送的阶段变化 */
+    uint64 Transition = 0;
     /** 最近投送时间 */
     double LastSendTime = -1.0;
 };

@@ -3,6 +3,8 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/PoseSnapshot.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterPhysicalPhase.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBAnimInstance.generated.h"
 
@@ -38,8 +40,21 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterAnimationSystem;
     friend class FBBBCharacterLifeAnimationProcessor;
     friend class FBBBCharacterAnimationFactProcessor;
+    friend class FBBBCharacterGetUpAnimationProcessor;
 
 public:
+    /** 当前全身物理控制阶段 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "Animation|Facts")
+    EBBBCharacterPhysicalPhase SourcePhysicalPhase = EBBBCharacterPhysicalPhase::Animated;
+    /** 退出物理时的姿态 用于起身蒙太奇的源姿态 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "Animation|Facts")
+    FPoseSnapshot SourceRecoveryPose;
+    /** @return 身体当前是否由起身动作接管 */
+    UFUNCTION(BlueprintPure, Category = "Animation|Facts", meta = (BlueprintThreadSafe))
+    bool IsRecoveringFromRagdoll() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->SourcePhysicalPhase == EBBBCharacterPhysicalPhase::Recovering;
+    }
     /** 当前动画层提供的不可变搜索库选择配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "运动匹配", meta = (DisplayName = "基础运动搜索配置"))
     TObjectPtr<UChooserTable> LocomotionDatabaseChooser = nullptr;

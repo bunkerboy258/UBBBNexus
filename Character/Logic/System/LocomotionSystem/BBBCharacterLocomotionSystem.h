@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRecoveryMovementProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRagdollFollowProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRescueMovementProcessor.h"
 
@@ -30,6 +31,8 @@ public:
     void FollowRagdoll();
 
 private:
+    /** 起身的胶囊与移动交接 */
+    FBBBCharacterRecoveryMovementProcessor RecoveryMovementProcessor;
     friend class FBBBCharacterInitializer;
 
     /**

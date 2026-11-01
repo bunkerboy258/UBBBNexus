@@ -73,6 +73,20 @@ void UBBBCharacterNetworkComponent::OnRep_Ragdoll()
     }
 }
 
+void UBBBCharacterNetworkComponent::ServerSubmitPhysicalPhase_Implementation(FBBBCharacterRagdollSnapshot Snapshot)
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    const FBBBCharacterRagdollRemoteMessagePacket Packet{{Snapshot}};
+    if (Character && IsOwnerAuthority() && !Character->IsLocallyControlled()
+        && Snapshot.Revision > ReplicatedRagdoll.Revision && Packet.IsValid())
+    {
+        Character->SubmitInput(Packet);
+    }
+}
+
 void UBBBCharacterNetworkComponent::Initialize(ABBBCharacter &InCharacter)
 {
     Character = &InCharacter;

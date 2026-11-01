@@ -19,6 +19,8 @@ struct FBBBCharacterPhysicalPresentationDomainState final
     friend class FBBBCharacterParseSystem;
     friend class FBBBCharacterPhysicalPresentationProcessor;
     friend class FBBBCharacterRagdollCaptureProcessor;
+    friend class FBBBCharacterGetUpCandidateProcessor;
+    friend class FBBBCharacterPhysicalPhaseProcessor;
     /** 独立物理表现应用记录 */
     UPROPERTY(Transient)
     FBBBCharacterPhysicalPresentationState PhysicalPresentationState;

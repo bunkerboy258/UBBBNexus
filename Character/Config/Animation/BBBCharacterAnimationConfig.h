@@ -12,6 +12,12 @@ USTRUCT(BlueprintType)
 struct FBBBCharacterAnimationConfig
 {
     GENERATED_BODY()
+    /** 布娃娃静止站立起身候选库 只索引允许进入起身的前段 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "站立起身搜索库"))
+    TObjectPtr<class UPoseSearchDatabase> GetUpStandDatabase = nullptr;
+    /** 搜索命中的序列到固定全身槽蒙太奇的映射 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "起身序列动作映射"))
+    TMap<TObjectPtr<class UAnimSequence>, TObjectPtr<class UAnimMontage>> GetUpMontages;
     /** 空手快速近战动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "空手快速近战"))
     TObjectPtr<class UAnimMontage> UnarmedQuickMeleeMontage = nullptr;

@@ -17,7 +17,7 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
     UCharacterMovementComponent &Movement = Context.Movement;
     auto &State = Context.Data.Locomotion.LocomotionState;
     // 物理已接管时 不再用生命阶段的胶囊/网格偏移重定位身体
-    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().bRagdoll)
+    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().RagdollSnapshot.Phase != EBBBCharacterPhysicalPhase::Animated)
     {
         return;
     }

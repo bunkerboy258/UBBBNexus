@@ -55,6 +55,7 @@ void FBBBCharacterAnimationSystem::Update()
     LayerProcessor.Update(Context);
     LifeProcessor.Update(Context);
     MontageProcessor.Update(Context);
+    GetUpProcessor.Update(Context);
     ActionProcessor.Update(Context);
     FactProcessor.Update(Context);
     MuzzleProcessor.Update(Context);
@@ -62,4 +63,6 @@ void FBBBCharacterAnimationSystem::Update()
     WeaponHandlingProcessor.Update(Context);
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState,
         RuntimeData->Animation.ReadRecoilState(), RuntimeData->Animation.ReadWeaponHandlingState());
+    AnimInstance->SourcePhysicalPhase = RuntimeData->PhysicalPresentation.ReadPhysicalPresentationState().RagdollSnapshot.Phase;
+    AnimInstance->SourceRecoveryPose = RuntimeData->Animation.ReadGetUpAnimationState().RecoveryPose;
 }

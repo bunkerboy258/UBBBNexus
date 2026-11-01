@@ -7,7 +7,8 @@
 void FBBBCharacterRescueMovementProcessor::Update(FBBBCharacterLocomotionUpdateContext &Context) const
 {
     const auto &Rescue = Context.Data.Life.ReadRescueState();
-    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().bRagdoll)
+    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().RagdollSnapshot.Phase
+        != EBBBCharacterPhysicalPhase::Animated)
     {
         return;
     }

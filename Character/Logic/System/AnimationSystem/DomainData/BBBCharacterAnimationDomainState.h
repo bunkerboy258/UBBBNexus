@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterGetUpAnimationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
@@ -22,6 +23,8 @@ struct FBBBCharacterAnimationDomainState final
     GENERATED_BODY()
 
 public:
+    /** @return 已选择的起身动作与物理姿态交接 */
+    const FBBBCharacterGetUpAnimationState &ReadGetUpAnimationState() const { return GetUpAnimationState; }
     /** @return 生命阶段动画的应用进度 */
     const FBBBCharacterLifeAnimationState &ReadLifeAnimationState() const
     {
@@ -54,6 +57,10 @@ public:
     const FBBBCharacterWeaponHandlingState &ReadWeaponHandlingState() const { return WeaponHandlingState; }
 
 private:
+    friend class FBBBCharacterGetUpAnimationProcessor;
+    /** 起身动画领域的唯一应用记录 */
+    UPROPERTY(Transient)
+    FBBBCharacterGetUpAnimationState GetUpAnimationState;
     friend class FBBBCharacterRecoilProcessor;
     friend class FBBBCharacterWeaponHandlingProcessor;
     /** 唯一后坐力运行状态 */

@@ -12,6 +12,8 @@ struct FBBBCharacterLocomotionState final
 
     /** 当前本地计算或网络恢复后的跑步状态 */
     bool bRun = false;
+    /** 胶囊与移动模式已经还原的全身物理阶段版本 */
+    uint64 AppliedPhysicalTransition = 0;
 
     /** CMC 完成后的有效加速度 下游不再判断事实来源 */
     FVector Acceleration = FVector::ZeroVector;

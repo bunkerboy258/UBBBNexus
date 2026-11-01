@@ -16,8 +16,11 @@ struct FBBBCharacterRagdollAuthorityFactPacket final
         }
         for (const auto &Snapshot : Snapshots)
         {
-            if (Snapshot.Revision == 0 || Snapshot.PelvisLocation.ContainsNaN()
-                || Snapshot.Velocity.ContainsNaN())
+            if (Snapshot.Revision == 0 || Snapshot.Episode == 0 || Snapshot.Transition == 0
+                || Snapshot.PelvisLocation.ContainsNaN() || Snapshot.Velocity.ContainsNaN()
+                || Snapshot.RecoveryTransform.ContainsNaN() || !FMath::IsFinite(Snapshot.GetUpPosition)
+                || Snapshot.GetUpPosition < 0.0f || uint8(Snapshot.Phase) > uint8(EBBBCharacterPhysicalPhase::Recovering)
+                || (Snapshot.Phase == EBBBCharacterPhysicalPhase::Recovering && !Snapshot.GetUpMontage))
             {
                 return false;
             }
@@ -37,7 +40,8 @@ struct FBBBCharacterRagdollAuthorityFactPacket final
             if (Snapshot.Revision > Context.PhysicalPresentation.RagdollSnapshot.Revision)
             {
                 Context.PhysicalPresentation.RagdollSnapshot = Snapshot;
-                Context.PhysicalPresentation.bRagdollRequested = true;
+                Context.PhysicalPresentation.bRagdollRequested = Snapshot.Phase == EBBBCharacterPhysicalPhase::Ragdoll
+                    && !Context.PhysicalPresentation.bRagdoll;
             }
         }
     }

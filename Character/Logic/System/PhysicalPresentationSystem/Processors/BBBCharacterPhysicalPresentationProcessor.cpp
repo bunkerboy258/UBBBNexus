@@ -73,6 +73,19 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
             Context.Mesh.AddImpulseAtLocation(Hit.Direction * 700.0f, Hit.Position, Hit.Bone);
         }
         State.bRagdoll = true;
+        State.bRagdollRequested = false;
+        State.bGetUpRequested = false;
+        State.bGetUpComplete = false;
+        if (!bRestored)
+        {
+            auto &Snapshot = State.RagdollSnapshot;
+            Snapshot.Phase = EBBBCharacterPhysicalPhase::Ragdoll;
+            Snapshot.GetUpMontage = nullptr;
+            Snapshot.GetUpPosition = 0.0f;
+            ++Snapshot.Episode;
+            ++Snapshot.Transition;
+            ++Snapshot.Revision;
+        }
         State.PelvisLocation = Context.Mesh.GetBodyInstance(TEXT("pelvis"))->GetUnrealWorldTransform().GetLocation();
         if (bRestored)
         {
@@ -84,7 +97,8 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
         State.HitSerial = Hit.Serial;
         return;
     }
-    if (Hit.Serial == 0 || Hit.Serial <= State.HitSerial)
+    if (State.RagdollSnapshot.Phase == EBBBCharacterPhysicalPhase::Recovering
+        || Hit.Serial == 0 || Hit.Serial <= State.HitSerial)
     {
         return;
     }
