@@ -13,7 +13,8 @@ void FBBBCharacterGetUpCandidateProcessor::Update(FBBBCharacterPhysicalPresentat
     State.bCanGetUp = false;
     const auto &Life = Context.Data.Life.ReadLifeState();
     if (!State.bRagdoll || Life.Phase == EBBBCharacterLifePhase::Dead
-        || Context.Data.External.ReadNetworkIdentityState().bIsMirror)
+        || Context.Data.External.ReadNetworkIdentityState().bIsMirror
+        || Context.Data.External.ReadWorldState().WorldTimeSeconds < State.ImpactReleaseAt)
     {
         return;
     }

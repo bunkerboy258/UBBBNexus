@@ -16,6 +16,11 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterAvoidanceProcessor.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpecialDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPointDamageEvent.h"
 
 UBBBMonsterCombatProcessor::UBBBMonsterCombatProcessor()
     : MonsterQuery(*this)
@@ -37,6 +42,8 @@ void UBBBMonsterCombatProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterCombatFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
+    MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -66,6 +73,11 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
             FBBBMonsterCombatFragment& Combat = Combats[Index];
+            const auto Specials = ChunkContext.GetFragmentView<FBBBMonsterSpecialFragment>();
+            if (!Specials.IsEmpty() && Specials[Index].Fact.HoldsMovement())
+            {
+                continue;
+            }
 
             if (States[Index].State != EBBBMonsterBehavior::Attack)
             {
@@ -148,8 +160,27 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
 
             // 伤害通过 UE 标准接口发送给玩家
             const float RequestedDamage = Combat.AttackDamage * Mobility[Index].AttackRatio;
-            const float AppliedDamage = UGameplayStatics::ApplyPointDamage(PlayerPawn, RequestedDamage,
-                Direction, ContactHit, Instigator, DamageCauser, nullptr);
+            const auto Networks = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
+            const auto* Definition = !Networks.IsEmpty() ? Networks[Index].Definition.Get() : nullptr;
+            const auto* Special = Definition ? Definition->Special.Get() : nullptr;
+            float AppliedDamage = 0;
+            if (Special && Special->Kind == EBBBMonsterSpecialKind::Stalker)
+            {
+                FBBBMonsterPointDamageEvent Event;
+                Event.Damage = RequestedDamage;
+                Event.HitInfo = ContactHit;
+                Event.ShotDirection = Direction;
+                Event.SourceId = Networks[Index].InstanceId;
+                Event.AttackId = Combat.AttackId;
+                Event.LaunchVelocity = Direction.GetSafeNormal2D() * Special->ImpactSpeed + FVector::UpVector * Special->ImpactLift;
+                Event.KnockdownDuration = Special->KnockdownDuration;
+                AppliedDamage = PlayerPawn->TakeDamage(RequestedDamage, Event, Instigator, DamageCauser);
+            }
+            if (!Special || Special->Kind != EBBBMonsterSpecialKind::Stalker)
+            {
+                AppliedDamage = UGameplayStatics::ApplyPointDamage(PlayerPawn, RequestedDamage,
+                    Direction, ContactHit, Instigator, DamageCauser, nullptr);
+            }
             UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Monster attack Target=%s AttackId=%u Requested=%.1f Applied=%.1f"),
                 *GetNameSafe(PlayerPawn), Combat.AttackId, RequestedDamage, AppliedDamage);
         }

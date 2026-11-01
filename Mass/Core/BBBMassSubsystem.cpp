@@ -15,6 +15,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Network/BBBMonsterNetworkObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDestructionSystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Slime/Fragments/BBBSlimeInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Slime/Processors/BBBSlimeProcessor.h"
 
 namespace
 {
@@ -53,6 +55,22 @@ namespace
             FMath::FloorToInt(Position.X / CollisionCellSize),
             FMath::FloorToInt(Position.Y / CollisionCellSize));
     }
+}
+
+bool UBBBMassSubsystem::QuerySlimeExposure(const FVector& FootPosition, const float Radius,
+    float& DamagePerSecond, float& SpeedScale) const
+{
+    return UBBBSlimeProcessor::QueryExposure(*GetWorld(), FootPosition, Radius, DamagePerSecond, SpeedScale);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBSlimeSpawnLocalControlPacket& Packet)
+{
+    return GetWorld()->GetNetMode() != NM_Client && WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBSlimeStateAuthorityFactPacket& Packet)
+{
+    return GetWorld()->GetNetMode() == NM_Client && WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
 

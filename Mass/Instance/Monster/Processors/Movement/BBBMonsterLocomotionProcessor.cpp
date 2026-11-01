@@ -2,6 +2,7 @@
 #include "BBBMonsterStep.h"
 #include "BBBMonsterNavigation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
@@ -293,6 +294,7 @@ void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -319,7 +321,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
-            if (Traversals[Index].Fact.Kind != 0)
+            const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+            if (Traversals[Index].Fact.Kind != 0 || (!Specials.IsEmpty() && Specials[Index].Fact.HoldsMovement()))
             {
                 continue;
             }

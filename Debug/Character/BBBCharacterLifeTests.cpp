@@ -82,7 +82,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     const auto Damage = [&](float Amount)
     {
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
-            {Amount}, {TEXT("spine_03")}, {Character->GetActorLocation()}, {FVector::ForwardVector}, {nullptr}});
+            {Amount}, {TEXT("spine_03")}, {Character->GetActorLocation()}, {FVector::ForwardVector}, {nullptr}, {{}}});
     };
     Step();
     TestEqual(TEXT("初始最大生命"), Character->GetHealth(), 500.0f);
@@ -159,7 +159,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
                                                              {5},
                                                              {TEXT("spine_02")},
                                                              {Mirror->GetActorLocation()},
-                                                             {FVector::ForwardVector}, {10}, {false}});
+                                                             {FVector::ForwardVector}, {10}, {false}, {1}});
     Step();
     TestEqual(TEXT("首份当前快照还原倒地生命"), Mirror->GetHealth(), 200.0f);
     TestTrue(TEXT("首份当前快照不重演旧受击"),
@@ -170,7 +170,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
                                                              {4},
                                                              {TEXT("spine_02")},
                                                              {Mirror->GetActorLocation()},
-                                                             {FVector::ForwardVector}, {9}, {false}});
+                                                             {FVector::ForwardVector}, {9}, {false}, {1}});
     Step();
     TestEqual(TEXT("迟到结果不能覆盖较新生命"), Mirror->GetHealth(), 200.0f);
 

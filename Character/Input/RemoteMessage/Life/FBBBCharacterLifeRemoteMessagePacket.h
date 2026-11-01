@@ -25,6 +25,8 @@ struct FBBBCharacterLifeRemoteMessagePacket final
     TArray<uint64> DownedRevisions;
     /** 恢复阶段采用的蹲姿 */
     TArray<bool> RecoveryCrouched;
+    /** 控制端成立的当前移动倍率 */
+    TArray<float> MovementSpeedScales;
 
     /** @return 输入数据是否完整有效 */
     bool IsValid() const
@@ -32,7 +34,7 @@ struct FBBBCharacterLifeRemoteMessagePacket final
         if (Phases.IsEmpty() || Healths.Num() != Phases.Num() || Revisions.Num() != Phases.Num() ||
             HitSerials.Num() != Phases.Num() || Bones.Num() != Phases.Num() || Positions.Num() != Phases.Num() ||
             Directions.Num() != Phases.Num() || DownedRevisions.Num() != Phases.Num() ||
-            RecoveryCrouched.Num() != Phases.Num())
+            RecoveryCrouched.Num() != Phases.Num() || MovementSpeedScales.Num() != Phases.Num())
         {
             return false;
         }
@@ -40,7 +42,8 @@ struct FBBBCharacterLifeRemoteMessagePacket final
         {
             if (Phases[Index] > EBBBCharacterLifePhase::Dead || Revisions[Index] == 0 ||
                 !FMath::IsFinite(Healths[Index]) || Healths[Index] < 0.0f || Positions[Index].ContainsNaN() ||
-                Directions[Index].ContainsNaN() ||
+                Directions[Index].ContainsNaN() || !FMath::IsFinite(MovementSpeedScales[Index])
+                || MovementSpeedScales[Index] < .1f || MovementSpeedScales[Index] > 1 ||
                 ((Phases[Index] == EBBBCharacterLifePhase::Dead) != (Healths[Index] == 0.0f)))
             {
                 return false;
@@ -75,6 +78,7 @@ struct FBBBCharacterLifeRemoteMessagePacket final
             Input.bHasResult = true;
             Input.ResultPhase = Phases[Index];
             Input.ResultHealth = Healths[Index];
+            Input.ResultMovementSpeedScale = MovementSpeedScales[Index];
             Input.ResultRevision = Revisions[Index];
             Input.ResultDownedRevision = DownedRevisions[Index];
             Input.bResultRecoveryCrouched = RecoveryCrouched[Index];

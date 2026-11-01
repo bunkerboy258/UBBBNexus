@@ -22,5 +22,6 @@ void FBBBCharacterLifeSystem::Update()
     CandidateProcessor.Update(Context);
     HelperProcessor.Update(Context);
     TargetProcessor.Update(Context);
+    EnvironmentProcessor.Update(Context);
     Processor.Update(Context);
 }

@@ -111,7 +111,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     const auto Damage = [&](ABBBCharacter *Character, float Amount)
     {
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Amount}, {TEXT("spine_03")},
-            {Character->GetActorLocation()}, {FVector::ForwardVector}, {nullptr}});
+            {Character->GetActorLocation()}, {FVector::ForwardVector}, {nullptr}, {{}}});
     };
     const auto Begin = [&]()
     {
@@ -303,7 +303,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Mirror->GetCharacterMovement()->SetComponentTickEnabled(false);
     Characters.Add(Mirror);
     Mirror->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{{EBBBCharacterLifePhase::Downed}, {300}, {20},
-        {0}, {NAME_None}, {FVector::ZeroVector}, {FVector::ZeroVector}, {20}, {false}});
+        {0}, {NAME_None}, {FVector::ZeroVector}, {FVector::ZeroVector}, {20}, {false}, {1}});
     Step();
     Step();
     TestTrue(TEXT("镜像倒地角色仍可作为本地救援候选"), Helper->GetRescueTarget() == Mirror);

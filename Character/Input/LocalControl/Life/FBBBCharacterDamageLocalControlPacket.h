@@ -17,19 +17,21 @@ struct FBBBCharacterDamageLocalControlPacket final
     TArray<FVector> Directions;
     /** 命中来源的控制角色 允许环境来源为空 */
     TArray<TWeakObjectPtr<APawn>> Sources;
+    /** 与命中一一对应的物理冲击 */
+    TArray<FBBBCharacterPhysicalImpact> Impacts;
 
     /** @return 输入数据是否完整有效 */
     bool IsValid() const
     {
         if (Damages.IsEmpty() || Bones.Num() != Damages.Num() || Positions.Num() != Damages.Num() ||
-            Directions.Num() != Damages.Num() || Sources.Num() != Damages.Num())
+            Directions.Num() != Damages.Num() || Sources.Num() != Damages.Num() || Impacts.Num() != Damages.Num())
         {
             return false;
         }
         for (int32 Index = 0; Index < Damages.Num(); ++Index)
         {
-            if (!FMath::IsFinite(Damages[Index]) || Damages[Index] <= 0.0f || Positions[Index].ContainsNaN() ||
-                Directions[Index].ContainsNaN())
+            if (!FMath::IsFinite(Damages[Index]) || (Damages[Index] < 0.0f || (Damages[Index] == 0.0f && Impacts[Index].HoldSeconds <= 0)) || Positions[Index].ContainsNaN() ||
+                Directions[Index].ContainsNaN() || !Impacts[Index].IsValid())
             {
                 return false;
             }
@@ -57,5 +59,6 @@ struct FBBBCharacterDamageLocalControlPacket final
         Context.LifeInputs.Positions.Append(Positions);
         Context.LifeInputs.Directions.Append(Directions);
         Context.LifeInputs.Sources.Append(Sources);
+        Context.LifeInputs.Impacts.Append(Impacts);
     }
 };

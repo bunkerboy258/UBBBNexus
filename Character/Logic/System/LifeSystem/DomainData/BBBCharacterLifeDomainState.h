@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterEnvironmentState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterHitState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeInputState.h"
@@ -27,6 +28,12 @@ struct FBBBCharacterLifeDomainState final
     const FBBBCharacterHitState &ReadHitState() const
     {
         return HitState;
+    }
+
+    /** @return 本机环境接触与待递交伤害 */
+    const FBBBCharacterEnvironmentState &ReadEnvironmentState() const
+    {
+        return EnvironmentState;
     }
 
     /** @return 待消费输入 */
@@ -83,6 +90,7 @@ struct FBBBCharacterLifeDomainState final
     FBBBCharacterRescueDeliveryState RescueDeliveryState;
 
     friend class FBBBCharacterLifeProcessor;
+    friend class FBBBCharacterEnvironmentProcessor;
     friend class FBBBCharacterParseSystem;
 
     /** 当前生命结果 */
@@ -90,6 +98,8 @@ struct FBBBCharacterLifeDomainState final
 
     /** 当前有效命中事实 */
     FBBBCharacterHitState HitState;
+    /** 仅控制端维护的环境采样 */
+    FBBBCharacterEnvironmentState EnvironmentState;
 
     /** 待处理输入 */
     FBBBCharacterLifeInputState LifeInputState;

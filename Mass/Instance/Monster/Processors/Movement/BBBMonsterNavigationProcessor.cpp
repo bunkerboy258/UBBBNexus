@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigationProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterClimbArea.h"
 
@@ -60,6 +61,7 @@ void UBBBMonsterNavigationProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTargetFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterAvoidanceFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadWrite);
@@ -132,13 +134,16 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             Path.TargetRevision = Targets[I].Revision;
             Path.ActionId = States[I].ActionId;
-            if (Traversals[I].Fact.Kind != 0 || States[I].State == EBBBMonsterBehavior::Attack)
+            const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+            if (Traversals[I].Fact.Kind != 0 || States[I].State == EBBBMonsterBehavior::Attack
+                || (!Specials.IsEmpty() && Specials[I].Fact.HoldsMovement()))
             {
                 Path.Condition = EBBBMonsterNavigationCondition::Suspended;
                 Path.ProgressTime = Now;
                 Path.ProgressPosition = Location;
                 Path.BlockedDuration = 0;
-                Path.StopReason = Traversals[I].Fact.Kind != 0 ? FName(TEXT("Traversal")) : FName(TEXT("Attack"));
+                Path.StopReason = Traversals[I].Fact.Kind != 0 ? FName(TEXT("Traversal"))
+                    : !Specials.IsEmpty() && Specials[I].Fact.HoldsMovement() ? FName(TEXT("SpecialAction")) : FName(TEXT("Attack"));
                 continue;
             }
             if ((!bPatrol && !bChase) || (bChase && !Targets[I].bHasTarget))
@@ -210,10 +215,12 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             const bool bStuck = Path.bHasPath && !bPaused && !Crowds[I].bCrowdConstrained
                 && (Path.BlockedDuration >= Rule->NavigationStuckDuration
                     || (Path.ProgressTime >= 0 && Now - Path.ProgressTime >= Rule->NavigationStuckDuration));
-            const float GoalDistance = FVector::Dist2D(Location, Targets[I].TargetLocation);
+            const FVector DesiredGoal = !Specials.IsEmpty() && Specials[I].Fact.Phase == 5
+                ? Specials[I].Fact.Goal : Targets[I].TargetLocation;
+            const float GoalDistance = FVector::Dist2D(Location, DesiredGoal);
             const bool bFar = bChase && GoalDistance >= Rule->NavigationFarDistance;
             const float Threshold = bFar ? Rule->NavigationFarGoalThreshold : Rule->NavigationNearGoalThreshold;
-            const bool bMoved = bChase && FVector::DistSquared(Targets[I].TargetLocation, Path.RequestedGoal) > FMath::Square(Threshold);
+            const bool bMoved = bChase && FVector::DistSquared(DesiredGoal, Path.RequestedGoal) > FMath::Square(Threshold);
             const bool bExpired = bChase && Now - Path.LastPathTime >= Rule->NavigationMaxPathAge;
             if (bStuck)
             {
@@ -253,7 +260,13 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Entity = Request.Key;
         auto& Path = EntityManager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
         const auto& State = EntityManager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity);
-        const auto& Target = EntityManager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Entity);
+        auto Target = EntityManager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Entity);
+        const auto* Special = EntityManager.GetFragmentDataPtr<FBBBMonsterSpecialFragment>(Entity);
+        if (Special && Special->Fact.Phase == 5)
+        {
+            Target.TargetLocation = Special->Fact.Goal;
+            Target.bTargetVisible = false;
+        }
         const auto& Body = EntityManager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Entity);
         const auto& Injury = EntityManager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
         const auto& Ground = EntityManager.GetFragmentDataChecked<FBBBMonsterGroundFragment>(Entity);
@@ -398,7 +411,10 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             const auto& State = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>()[I];
             if (State.State == EBBBMonsterBehavior::Chase && Target.bTargetVisible && !P.bPartialPath)
             {
-                const FVector Shift = Target.TargetLocation - P.RequestedGoal;
+                const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+                const FVector DesiredGoal = !Specials.IsEmpty() && Specials[I].Fact.Phase == 5
+                    ? Specials[I].Fact.Goal : Target.TargetLocation;
+                const FVector Shift = DesiredGoal - P.RequestedGoal;
                 const float Threshold = FVector::Dist2D(Location, Target.TargetLocation) >= Rule.NavigationFarDistance
                     ? Rule.NavigationFarGoalThreshold : Rule.NavigationNearGoalThreshold;
                 if (Shift.SizeSquared() <= FMath::Square(Threshold * 2))

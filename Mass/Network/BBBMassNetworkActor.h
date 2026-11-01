@@ -6,6 +6,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterReplicationArray.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
 #include "BBBMassPendingDamageSnapshot.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Slime/Fragments/BBBSlimeFact.h"
 #include "BBBMassNetworkActor.generated.h"
 
 /** 世界级 Mass 当前结果传输载体 不执行生命裁决 */
@@ -30,6 +31,8 @@ public:
     void Publish(const FBBBMonsterReplicationItem& State, FMassEntityHandle Entity, bool bUpdateAction = true);
 
     void EndPublish();
+    /** @param States 当前全部粘液结果 @return 仅发布当前快照 */
+    void PublishSlimes(const TArray<FBBBSlimeFact>& States);
     FMassEntityHandle FindEntity(const FGuid& InstanceId) const;
 
     /**
@@ -42,6 +45,14 @@ public:
     bool ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution);
 
 private:
+    UFUNCTION()
+    void OnRep_Slimes();
+
+    UPROPERTY(ReplicatedUsing = OnRep_Slimes)
+    TArray<FBBBSlimeFact> Slimes;
+
+    /** 当前快照的本机粘液身份映射 */
+    TMap<FGuid, FMassEntityHandle> LocalSlimes;
     UFUNCTION()
     void OnRep_Monsters();
 

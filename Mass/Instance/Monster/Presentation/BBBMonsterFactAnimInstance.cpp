@@ -25,6 +25,9 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     StaggeringFact = false;
     StaggerProgressFact = 0.0f;
     StaggerVariantFact = 0;
+    SpecialFact = {};
+    SpecialPhaseFact = 0;
+    SpecialProgressFact = 0;
     CrawlingFact = false;
     CrawlProgressFact = 0.0f;
     MovementSpeedFact = 0.0f;
@@ -45,6 +48,11 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     }
 
     const auto* TraversalConfig = Source->TraversalSettings.Get();
+    SpecialFact = Source->SpecialFact;
+    SpecialPhaseFact = Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling
+        && SpecialFact.HoldsMovement() ? SpecialFact.Phase : 0;
+    SpecialProgressFact = FMath::Clamp((GetWorld()->GetTimeSeconds() - SpecialFact.StartedAt)
+        / FMath::Max(SpecialFact.Duration, 0.01f), 0.0f, 1.0f);
     const auto& Traversal = Source->TraversalFact;
     TraversalActiveFact = TraversalConfig && Traversal.Kind != 0
         && Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling;

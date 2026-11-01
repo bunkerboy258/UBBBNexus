@@ -11,6 +11,12 @@ struct FBBBCharacterPhysicalPresentationState final
     GENERATED_BODY()
     /** 最新已经表现的命中 */
     uint64 HitSerial = 0;
+    /** 已应用的全身冲击版本 */
+    uint64 ImpactSerial = 0;
+    /** 本次进入物理时需要叠加的速度 */
+    FVector PendingImpactVelocity = FVector::ZeroVector;
+    /** 被击倒后最早允许安全起身的本机世界时间 零表示无自动起身 */
+    double ImpactReleaseAt = 0;
     /** 全身布娃娃是否已经接管网格 */
     bool bRagdoll = false;
     /** 输入接受的全身物理请求 与已经执行的接管标记分离 */

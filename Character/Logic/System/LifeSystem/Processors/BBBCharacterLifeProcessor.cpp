@@ -29,12 +29,14 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
     Delivery.Positions.Reset();
     Delivery.Directions.Reset();
     Delivery.Sources.Reset();
+    Delivery.Impacts.Reset();
 
     if (bMirror && Input.bHasResult && (!State.bInitialized || Input.ResultRevision > State.Revision))
     {
         const bool bFirstResult = !State.bInitialized;
         State.Phase = Input.ResultPhase;
         State.Health = Input.ResultHealth;
+        State.MovementSpeedScale = Input.ResultMovementSpeedScale;
         State.Revision = Input.ResultRevision;
         State.DownedRevision = Input.ResultDownedRevision;
         State.bRecoveryCrouched = Input.bResultRecoveryCrouched;
@@ -46,6 +48,13 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         Hit.Time = bFirstResult ? World.WorldTimeSeconds - 1.0 : World.WorldTimeSeconds;
     }
     Input.bHasResult = false;
+    if (!bMirror && Input.bHasEnvironmentResult
+        && !FMath::IsNearlyEqual(State.MovementSpeedScale, Input.EnvironmentSpeedScale))
+    {
+        State.MovementSpeedScale = Input.EnvironmentSpeedScale;
+        ++State.Revision;
+    }
+    Input.bHasEnvironmentResult = false;
 
     if (!bMirror && !State.bInitialized)
     {
@@ -70,6 +79,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
             Delivery.Positions.Add(Input.Positions[Index]);
             Delivery.Directions.Add(Input.Directions[Index]);
             Delivery.Sources.Add(Input.Sources[Index]);
+            Delivery.Impacts.Add(Input.Impacts[Index]);
             continue;
         }
         if (State.Phase == EBBBCharacterLifePhase::Dead)
@@ -84,6 +94,11 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         Hit.Position = Input.Positions[Index];
         Hit.Direction = Input.Directions[Index].GetSafeNormal();
         Hit.Time = World.WorldTimeSeconds;
+        if (Input.Impacts[Index].HoldSeconds > 0)
+        {
+            Hit.Impact = Input.Impacts[Index];
+            ++Hit.ImpactSerial;
+        }
         if (State.Health > 0.0f)
         {
             continue;
@@ -146,4 +161,5 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
     Input.Positions.Reset();
     Input.Directions.Reset();
     Input.Sources.Reset();
+    Input.Impacts.Reset();
 }

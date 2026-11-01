@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Network/BBBMonsterNetworkObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
@@ -41,6 +42,7 @@ void UBBBMonsterNetworkObservationProcessor::ConfigureQueries(const TSharedRef<F
     EntityQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
 }
 
 void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -119,6 +121,11 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
                 continue;
             }
             FBBBMonsterReplicationItem Item;
+            const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+            if (!Specials.IsEmpty())
+            {
+                Item.Special = Specials[Index].Fact;
+            }
             Item.InstanceId = Network[Index].InstanceId;
             Item.Traversal = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>()[Index].Fact;
             Item.BirthSeed = Variation[Index].Seed;

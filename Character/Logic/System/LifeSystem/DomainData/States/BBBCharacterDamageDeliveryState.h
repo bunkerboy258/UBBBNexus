@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
 #include "BBBCharacterDamageDeliveryState.generated.h"
 
 class APawn;
@@ -28,4 +29,6 @@ struct FBBBCharacterDamageDeliveryState final
 
     /** 命中来源角色 */
     TArray<TWeakObjectPtr<APawn>> Sources;
+    /** 与命中一一对应的全身物理冲击 */
+    TArray<FBBBCharacterPhysicalImpact> Impacts;
 };

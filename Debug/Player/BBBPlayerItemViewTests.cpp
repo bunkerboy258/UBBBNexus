@@ -340,7 +340,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestFalse(TEXT("空手不显示瞄准界面"), Controller->ShouldShowAimHud());
     const float MaximumHealth = Character->GetCharacterConfig().MaximumHealth;
     Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
-        {MaximumHealth * 0.25f}, {NAME_None}, {Character->GetActorLocation()}, {FVector::ZeroVector}, {nullptr}});
+        {MaximumHealth * 0.25f}, {NAME_None}, {Character->GetActorLocation()}, {FVector::ZeroVector}, {nullptr}, {{}}});
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("白线读取真实生命损失"), Controller->GetHudHealthFraction(), 0.75f);
     Controller->UnPossess();

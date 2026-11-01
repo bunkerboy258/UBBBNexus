@@ -1,4 +1,6 @@
 #include "BBBMonsterAvoidanceProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpecialDefinition.h"
 
 #include "BBBMonsterNavigationProcessor.h"
 #include "BBBMonsterTraversalProcessor.h"
@@ -40,6 +42,7 @@ void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
@@ -80,8 +83,10 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
             const auto& Injury = Injuries[I];
             const bool bPatrol = States[I].State == EBBBMonsterBehavior::Patrol;
             const bool bChase = States[I].State == EBBBMonsterBehavior::Chase;
+            const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+            const bool bSpecialMove = !Specials.IsEmpty() && Specials[I].Fact.HoldsMovement();
             const FVector Location = Transforms[I].GetTransform().GetLocation();
-            if ((bPatrol || bChase) && Paths[I].bHasPath && !Paths[I].bReachedDestination && !Injury.IsStaggering(Now)
+            if (!bSpecialMove && (bPatrol || bChase) && Paths[I].bHasPath && !Paths[I].bReachedDestination && !Injury.IsStaggering(Now)
                 && Now >= Injury.HitStopEndsAt && (!Injury.bCrawling || Now >= Injury.CrawlStartedAt + Rule.CrawlTransitionDuration))
             {
                 const auto Gait = UBBBMonsterLocomotionProcessor::SelectGait(Body, Paths[I].RemainingDistance, bPatrol);
@@ -92,6 +97,17 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                     Speed = Rule.CrawlSpeed;
                 }
                 Speed *= Injury.GetSpeedRatio(Now);
+                if (!Specials.IsEmpty() && Rule.Special && Rule.Special->Kind == EBBBMonsterSpecialKind::Stalker)
+                {
+                    if (Specials[I].Fact.Phase == 5)
+                    {
+                        Speed = FMath::Min(Speed, Body.WalkSpeed);
+                    }
+                    if (Specials[I].Fact.Phase == 6 && !Injury.bCrawling)
+                    {
+                        Speed = Rule.Special->RushSpeed * Injury.GetSpeedRatio(Now);
+                    }
+                }
                 if (bPatrol)
                 {
                     Speed = FMath::Min(Speed, FMath::Sqrt(2 * Body.Deceleration * FMath::Max(0.0f, Paths[I].RemainingDistance - 10)));

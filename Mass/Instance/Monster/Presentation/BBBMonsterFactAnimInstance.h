@@ -2,6 +2,7 @@
 
 #include "Animation/AnimInstance.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFact.h"
 
 #include "BBBMonsterFactAnimInstance.generated.h"
 
@@ -27,6 +28,17 @@ public:
     //~ End UAnimInstance Interface
 
 private:
+    /** 当前特感阶段供专用动画图读取 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
+    FBBBMonsterSpecialFact SpecialFact;
+
+    /** 普通姿态零 蓄力一 冲撞二 恢复三 喷吐四 死亡优先清零 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
+    int32 SpecialPhaseFact = 0;
+
+    /** 直接采样当前技能阶段 不由动画推动玩法 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
+    float SpecialProgressFact = 0;
     /** 当前上台事实 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "当前上台事实"))
     bool TraversalActiveFact = false;

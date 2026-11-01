@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 
@@ -57,6 +58,7 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassVelocityFragment>(EMassFragmentAccess::ReadOnly);
@@ -191,11 +193,13 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
 
             // 取得表现组件同步状态和移动速度
             UBBBMonsterPresentationComponent* Presentation = MonsterActor->GetMonsterPresentation();
-
             if (!ensureMsgf(Presentation != nullptr, TEXT("[UBBBM]Monster actor requires BBBMonsterPresentationComponent")))
             {
                 continue;
             }
+
+            const auto Specials = ChunkContext.GetFragmentView<FBBBMonsterSpecialFragment>();
+            Presentation->ApplySpecialFact(!Specials.IsEmpty() ? Specials[Index].Fact : FBBBMonsterSpecialFact{});
 
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
             const auto& Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>()[Index];
@@ -273,10 +277,27 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     continue;
                 }
 
+                EBBBMonsterBehavior VoiceState = PresentationState.State;
+                uint32 VoiceAction = PresentationState.ActionId;
+                float VoiceProgress = PresentationState.ActionProgress;
+                if (PresentationState.State != EBBBMonsterBehavior::Dead && !Specials.IsEmpty())
+                {
+                    const auto& Special = Specials[Index].Fact;
+                    if (Special.Phase == 1)
+                    {
+                        VoiceState = EBBBMonsterBehavior::Alert;
+                    }
+                    if (Special.Phase == 4)
+                    {
+                        VoiceState = EBBBMonsterBehavior::Attack;
+                        VoiceAction = Special.Serial ^ 0x80000000u;
+                        VoiceProgress = FMath::Clamp((Now - Special.StartedAt) / FMath::Max(Special.Duration, 0.01f), 0.0f, 1.0f);
+                    }
+                }
                 SoundPresentation->ApplyFacts(
                     SoundInstance,
                     Definition ? Definition->Presentation->Sounds.Get() : nullptr,
-                    PresentationState.State, PresentationState.ActionId, PresentationState.ActionProgress,
+                    VoiceState, VoiceAction, VoiceProgress,
                     ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
                     Mobility.bCrawling, Velocities[Index].Value.Size2D(), Now, bNewActor);
                 SoundPresentation->ApplyContactFacts(*MonsterActor->GetMonsterContactAudio(),

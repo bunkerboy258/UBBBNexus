@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterRagdollSnapshot.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Definitions/BBBCharacterUseFact.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "Components/ActorComponent.h"
 #include "Engine/NetSerialization.h"
@@ -132,21 +133,21 @@ private:
 
     /** 复制已经成立的生命结果 */
     void ReplicateLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
-        uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched);
+        uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale);
 
     /** 控制者上报自己的既成生命结果 */
     UFUNCTION(Server, Reliable)
     void ServerSubmitLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
-        uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched);
+        uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale);
 
     /** 通过发送者拥有的连接投送命中 */
     UFUNCTION(Server, Reliable)
     void ServerSubmitDamage(ABBBCharacter *Target, float Damage, FName Bone,
-        FVector Position, FVector Direction, uint64 Sequence);
+        FVector Position, FVector Direction, uint64 Sequence, FBBBCharacterPhysicalImpact Impact);
 
     /** 向目标自身的控制者投送独立命中 */
     UFUNCTION(Client, Reliable)
-    void ClientDeliverDamage(float Damage, FName Bone, FVector Position, FVector Direction);
+    void ClientDeliverDamage(float Damage, FName Bone, FVector Position, FVector Direction, FBBBCharacterPhysicalImpact Impact);
 
     /** 当前生命结果到达时提交还原输入 */
     UFUNCTION()
@@ -158,6 +159,9 @@ private:
     /** 当前生命 */
     UPROPERTY(Replicated)
     float ReplicatedHealth = 500.0f;
+    /** 控制端成立的环境移动倍率 */
+    UPROPERTY(Replicated)
+    float ReplicatedMovementSpeedScale = 1;
     /** 当前结果版本 */
     UPROPERTY(ReplicatedUsing = OnRep_Life)
     uint64 ReplicatedLifeRevision = 0;

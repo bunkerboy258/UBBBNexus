@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
 #include "BBBCharacterLifeInputState.generated.h"
 
 class APawn;
@@ -28,6 +29,14 @@ struct FBBBCharacterLifeInputState final
 
     /** 与伤害一一对应的来源角色 */
     TArray<TWeakObjectPtr<APawn>> Sources;
+    /** 与伤害一一对应的物理冲击 */
+    TArray<FBBBCharacterPhysicalImpact> Impacts;
+    /** 本机环境采样是否有新的当前结果 */
+    bool bHasEnvironmentResult = false;
+    /** 本机接触产生的当前速度倍率 */
+    float EnvironmentSpeedScale = 1;
+    /** 镜像待还原的当前速度倍率 */
+    float ResultMovementSpeedScale = 1;
 
     /** 是否存在待还原生命结果 */
     bool bHasResult = false;

@@ -9,6 +9,8 @@
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/AuthorityFact/Network/FBBBMonsterStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Slime/Input/AuthorityFact/Network/FBBBSlimeStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Slime/Presentation/BBBSlimePresentationActor.h"
 
 ABBBMassNetworkActor::ABBBMassNetworkActor()
 {
@@ -22,6 +24,64 @@ void ABBBMassNetworkActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABBBMassNetworkActor, Monsters);
+    DOREPLIFETIME(ABBBMassNetworkActor, Slimes);
+}
+
+void ABBBMassNetworkActor::PublishSlimes(const TArray<FBBBSlimeFact>& States)
+{
+    if (HasAuthority() && ensureMsgf(States.Num() <= 128, TEXT("粘液当前快照超过世界上限")))
+    {
+        Slimes = States;
+    }
+}
+
+void ABBBMassNetworkActor::OnRep_Slimes()
+{
+    auto* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
+    auto* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
+    if (!Mass || !Entities)
+    {
+        return;
+    }
+    auto& Manager = Entities->GetMutableEntityManager();
+    TSet<FGuid> Present;
+    const auto* GameState = GetWorld()->GetGameState();
+    const double ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+    for (const auto& Fact : Slimes)
+    {
+        if (!Fact.IsValid())
+        {
+            continue;
+        }
+        Present.Add(Fact.InstanceId);
+        auto& Entity = LocalSlimes.FindOrAdd(Fact.InstanceId);
+        if (!Manager.IsEntityValid(Entity))
+        {
+            Entity = Mass->CreateEntity(*Fact.Definition->EntityConfig);
+        }
+        if (Entity.IsSet())
+        {
+            FBBBSlimeStateAuthorityFactPacket Packet;
+            Packet.Fact = Fact;
+            Packet.Fact.EndsAt = GetWorld()->GetTimeSeconds() + FMath::Max(0.0, Fact.EndsAt - ServerTime);
+            Mass->SubmitInput(Entity, MoveTemp(Packet));
+        }
+    }
+    for (auto It = LocalSlimes.CreateIterator(); It; ++It)
+    {
+        if (!Present.Contains(It.Key()))
+        {
+            if (Manager.IsEntityValid(It.Value()))
+            {
+                if (const auto* State = Manager.GetFragmentDataPtr<FBBBSlimeFragment>(It.Value()); State && State->Presentation.IsValid())
+                {
+                    State->Presentation->Destroy();
+                }
+                Mass->DestroyEntity(It.Value());
+            }
+            It.RemoveCurrent();
+        }
+    }
 }
 
 void ABBBMassNetworkActor::BeginPublish()
@@ -44,13 +104,14 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
 
     const bool bTraversalChanged = Existing->Traversal.Serial != State.Traversal.Serial
         || Existing->Traversal.Kind != State.Traversal.Kind;
-    bUpdateAction = bUpdateAction || bTraversalChanged;
+    const bool bSpecialChanged = Existing->Special.Serial != State.Special.Serial || Existing->Special.Phase != State.Special.Phase;
+    bUpdateAction = bUpdateAction || bTraversalChanged || bSpecialChanged;
     const bool bDamageChanged = Existing->Contributions != State.Contributions;
     const bool bGoreChanged = FMemory::Memcmp(Existing->DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets)) != 0;
     const bool bActionChanged = bUpdateAction && (Existing->InstanceId != State.InstanceId
         || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
         || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
-        || bTraversalChanged || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
+        || bTraversalChanged || bSpecialChanged || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
         || Existing->StateEnteredTime != State.StateEnteredTime || Existing->CrawlStartedAt != State.CrawlStartedAt);
     if (!bDamageChanged && !bActionChanged && !bGoreChanged)
     {
@@ -71,6 +132,7 @@ void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMas
         Existing->StateEnteredTime = State.StateEnteredTime;
         Existing->CrawlStartedAt = State.CrawlStartedAt;
         Existing->Traversal = State.Traversal;
+        Existing->Special = State.Special;
     }
     Existing->Contributions = State.Contributions;
     ++Existing->Revision;
@@ -267,6 +329,8 @@ void ABBBMassNetworkActor::OnRep_Monsters()
             ? GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.CrawlStartedAt) : -1.0f;
         Packet.bHasCrawlTime = Item.CrawlStartedAt >= 0.0f;
         Packet.Traversal = Item.Traversal;
+        Packet.Special = Item.Special;
+        Packet.Special.StartedAt = GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.Special.StartedAt);
         if (Packet.Traversal.Kind != 0)
         {
             Packet.Traversal.StartedAt = GetWorld()->GetTimeSeconds()

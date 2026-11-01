@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 UBBBMonsterParseProcessor::UBBBMonsterParseProcessor()
     : EntityQuery(*this)
@@ -38,6 +39,7 @@ void UBBBMonsterParseProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
     EntityQuery.AddRequirement<FBBBMonsterStimulusFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterGoreFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadWrite, EMassFragmentPresence::Optional);
 }
 
 void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -90,6 +92,15 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
                 Fact.bActive = false;
                 if (Fact.Packet.IsValid() && Fact.Packet.CanApply(Network[Index]))
                 {
+                    auto Specials = Chunk.GetMutableFragmentView<FBBBMonsterSpecialFragment>();
+                    if (!Specials.IsEmpty())
+                    {
+                        Specials[Index].Fact = Fact.Packet.Special;
+                        if (State[Index].State == EBBBMonsterBehavior::Dead || Fact.Packet.Behavior == EBBBMonsterBehavior::Dead)
+                        {
+                            Specials[Index].Fact.Phase = 0;
+                        }
+                    }
                     if (Variation[Index].Seed == 0 && Fact.Packet.BirthSeed != 0)
                     {
                         Variation[Index].Seed = Fact.Packet.BirthSeed;

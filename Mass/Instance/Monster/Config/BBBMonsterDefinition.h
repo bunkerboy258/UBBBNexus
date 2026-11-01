@@ -9,6 +9,7 @@
 class UMassEntityConfigAsset;
 class UBBBMonsterVariationDefinition;
 class UBBBMonsterPresentationDefinition;
+class UBBBMonsterSpecialDefinition;
 class USkeletalMesh;
 class UMaterialInterface;
 
@@ -19,6 +20,10 @@ class ABBB_EVAC_API UBBBMonsterDefinition final : public UDataAsset
     GENERATED_BODY()
 
 public:
+    /** 特感专用能力 普通僵尸保持为空 */
+    UPROPERTY(EditAnywhere, Instanced, Category = "特殊感染者", meta = (DisplayName = "特殊能力"))
+    TObjectPtr<UBBBMonsterSpecialDefinition> Special;
+
     UPROPERTY(EditAnywhere, Category = "攀爬", meta = (DisplayName = "上台与攀爬"))
     FBBBMonsterTraversalSettings Traversal;
 

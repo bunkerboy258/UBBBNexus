@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageContribution.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFact.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFact.h"
 #include "BBBMonsterReplicationItem.generated.h"
 
 class UBBBMonsterDefinition;
@@ -20,6 +21,10 @@ struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
     /** 当前上台动作 无活动动作时压缩为空状态 */
     UPROPERTY()
     FBBBMonsterTraversalFact Traversal;
+
+    /** 当前技能阶段 不传输冷却或命中历史 */
+    UPROPERTY()
+    FBBBMonsterSpecialFact Special;
 
     /** 同一代小怪只确定一次的出生种子 */
     UPROPERTY()

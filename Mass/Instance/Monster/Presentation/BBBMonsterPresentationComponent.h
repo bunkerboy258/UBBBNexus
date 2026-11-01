@@ -4,6 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFact.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFact.h"
 
 #include "BBBMonsterPresentationComponent.generated.h"
 
@@ -20,6 +21,8 @@ class ABBB_EVAC_API UBBBMonsterPresentationComponent final : public UActorCompon
     friend class UBBBMonsterFactAnimInstance;
 
 public:
+    /** @param Fact 当前技能结果 @return 仅复制表现事实 无返回值 */
+    void ApplySpecialFact(const FBBBMonsterSpecialFact& Fact) { SpecialFact = Fact; }
     /**
      * @param Fact	Mass 当前上台结果
      * @param Settings	当前身体的唯一表现配置
@@ -131,6 +134,8 @@ public:
     void ResetCorpsePresentation();
 
 private:
+    /** 当前特感技能的机械显示副本 */
+    FBBBMonsterSpecialFact SpecialFact;
     /** Mass 当前上台事实的机械显示副本 */
     FBBBMonsterTraversalFact TraversalFact;
 

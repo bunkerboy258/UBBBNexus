@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
 class APawn;
 
 /** 等待投送至控制者的独立命中消息 */
@@ -17,4 +18,6 @@ struct FBBBCharacterDamageInboxState final
     TArray<TWeakObjectPtr<APawn>> Sources;
     /** 对应来源的命中序号 */
     TArray<uint64> Sequences;
+    /** 与命中一一对应的物理冲击 */
+    TArray<FBBBCharacterPhysicalImpact> Impacts;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterLifeProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterEnvironmentProcessor.h"
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterRescueCandidateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/Processors/BBBCharacterRescueHelperProcessor.h"
@@ -45,6 +46,8 @@ class FBBBCharacterLifeSystem final
 
     /** 生命结算处理器 */
     FBBBCharacterLifeProcessor Processor;
+    /** 环境接触与持续伤害输入 */
+    FBBBCharacterEnvironmentProcessor EnvironmentProcessor;
     FBBBCharacterRescueCandidateProcessor CandidateProcessor;
     FBBBCharacterRescueHelperProcessor HelperProcessor;
     FBBBCharacterRescueTargetProcessor TargetProcessor;

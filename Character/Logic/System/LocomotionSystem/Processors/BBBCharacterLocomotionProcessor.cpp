@@ -203,6 +203,10 @@ void FBBBCharacterLocomotionProcessor::Update(
         ResolveDirectionalSpeed(Config.CrouchSpeeds, DirectionMap),
         1.0f);
 
+    // 每帧从基础速度应用当前结果 避免持续相乘累积减速
+    Movement.MaxWalkSpeed *= Context.Life.MovementSpeedScale;
+    Movement.MaxWalkSpeedCrouched *= Context.Life.MovementSpeedScale;
+
     Movement.MaxAcceleration = FMath::Max(Config.MaxAcceleration, 0.0f);
     Movement.BrakingDecelerationWalking = FMath::Max(Config.BrakingDeceleration, 0.0f);
     Movement.GroundFriction = FMath::Max(Config.GroundFriction, 0.0f);

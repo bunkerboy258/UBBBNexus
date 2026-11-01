@@ -104,6 +104,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAccelerationRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifePhase, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHealth, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMovementSpeedScale, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifeRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitSerial, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedDownedRevision, COND_SimulatedOnly);
@@ -303,10 +304,11 @@ void UBBBCharacterNetworkComponent::OnRep_Interaction()
 }
 
 void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, float Health,
-    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched)
+    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale)
 {
     ReplicatedLifePhase = Phase;
     ReplicatedHealth = Health;
+    ReplicatedMovementSpeedScale = MovementSpeedScale;
     ReplicatedLifeRevision = Revision;
     ReplicatedDownedRevision = DownedRevision;
     bReplicatedRecoveryCrouched = bRecoveryCrouched;
@@ -318,12 +320,12 @@ void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, 
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLife_Implementation(EBBBCharacterLifePhase Phase, float Health,
-    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched)
+    uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale)
 {
     if (Character)
     {
         Character->SubmitInput(FBBBCharacterLifeRemoteMessagePacket{
-            {Phase}, {Health}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}, {DownedRevision}, {bRecoveryCrouched}});
+            {Phase}, {Health}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}, {DownedRevision}, {bRecoveryCrouched}, {MovementSpeedScale}});
     }
 }
 
@@ -334,28 +336,28 @@ void UBBBCharacterNetworkComponent::OnRep_Life()
     {
         Character->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{
             {ReplicatedLifePhase}, {ReplicatedHealth}, {ReplicatedLifeRevision},
-            {ReplicatedHitSerial}, {ReplicatedHitBone}, {ReplicatedHitPosition}, {ReplicatedHitDirection}, {ReplicatedDownedRevision}, {bReplicatedRecoveryCrouched}});
+            {ReplicatedHitSerial}, {ReplicatedHitBone}, {ReplicatedHitPosition}, {ReplicatedHitDirection}, {ReplicatedDownedRevision}, {bReplicatedRecoveryCrouched}, {ReplicatedMovementSpeedScale}});
     }
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitDamage_Implementation(ABBBCharacter *Target,
-    float Damage, FName Bone, FVector Position, FVector Direction, uint64 Sequence)
+    float Damage, FName Bone, FVector Position, FVector Direction, uint64 Sequence, FBBBCharacterPhysicalImpact Impact)
 {
     if (IsValid(Target) && Character)
     {
         Target->SubmitInput(FBBBCharacterDamageDeliveryRemoteMessagePacket{
-            {Damage}, {Bone}, {Position}, {Direction}, {Character}, {Sequence}});
+            {Damage}, {Bone}, {Position}, {Direction}, {Character}, {Sequence}, {Impact}});
     }
 }
 
 void UBBBCharacterNetworkComponent::ClientDeliverDamage_Implementation(float Damage,
-    FName Bone, FVector Position, FVector Direction)
+    FName Bone, FVector Position, FVector Direction, FBBBCharacterPhysicalImpact Impact)
 {
     if (!Character) Character = Cast<ABBBCharacter>(GetOwner());
     if (Character && Character->IsLocallyControlled())
     {
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
-            {Damage}, {Bone}, {Position}, {Direction}, {nullptr}});
+            {Damage}, {Bone}, {Position}, {Direction}, {nullptr}, {Impact}});
     }
 }
 

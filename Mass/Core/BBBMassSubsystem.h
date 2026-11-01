@@ -30,6 +30,8 @@ struct FBBBMonsterBodyPartDefinition;
 struct FBBBMonsterStateAuthorityFactPacket;
 struct FBBBMonsterHitReactionLocalControlPacket;
 struct FBBBMonsterSoundLocalControlPacket;
+struct FBBBSlimeSpawnLocalControlPacket;
+struct FBBBSlimeStateAuthorityFactPacket;
 
 /** 世界级实体生命周期与输入路由 */
 UCLASS()
@@ -127,6 +129,9 @@ public:
      */
     bool QueryMonsterInstanceId(FMassEntityHandle Entity, FGuid& Result) const;
 
+    /** @param FootPosition 玩家脚底世界位置 @param Radius 水平接触半径 @param DamagePerSecond 最强每秒伤害 @param SpeedScale 最强减速倍率 @return 是否接触有效粘液 */
+    bool QuerySlimeExposure(const FVector& FootPosition, float Radius, float& DamagePerSecond, float& SpeedScale) const;
+
     /**
      * @param Entity	目标实体
      * @param Packet	覆盖提交的输入
@@ -157,6 +162,8 @@ private:
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterStateAuthorityFactPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterHitReactionLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSoundLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBSlimeSpawnLocalControlPacket& Packet);
+    bool RouteInput(FMassEntityHandle Entity, const FBBBSlimeStateAuthorityFactPacket& Packet);
 
     /** 每帧重建的空间桶 不持有实体玩法状态 */
     TMap<FIntPoint, TArray<FBBBMassCollisionBody>> CollisionCells;

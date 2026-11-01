@@ -15,6 +15,8 @@ struct FBBBCharacterLifeState final
 
     /** 当前阶段剩余生命 */
     float Health = 500.0f;
+    /** 控制端成立并分发的环境移动倍率 */
+    float MovementSpeedScale = 1;
 
     /** 已成立结果的递增标识 */
     uint64 Revision = 0;

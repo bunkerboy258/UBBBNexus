@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterVariationDefinition.h"
 #include "BBBMonsterPresentationDefinition.h"
+#include "BBBMonsterSpecialDefinition.h"
 #include "MassEntityConfigAsset.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterTrait.h"
 #if WITH_EDITOR
@@ -48,7 +49,7 @@ const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EB
 
 bool UBBBMonsterDefinition::IsValid() const
 {
-    if (!Traversal.IsValid())
+    if (!Traversal.IsValid() || (Special && (Special->GetOuter() != this || !Special->IsValid())))
     {
         return false;
     }

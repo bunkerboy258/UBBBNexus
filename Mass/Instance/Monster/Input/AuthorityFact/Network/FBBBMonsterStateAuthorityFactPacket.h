@@ -1,5 +1,6 @@
 #pragma once
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFact.h"
 
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
@@ -16,6 +17,8 @@ struct FBBBMonsterStateAuthorityFactPacket final
 
     FGuid InstanceId;
     FBBBMonsterTraversalFact Traversal;
+    /** 当前特感动作结果 */
+    FBBBMonsterSpecialFact Special;
     /** 出生种子只允许在本机首次初始化前还原 */
     uint32 BirthSeed = 0;
     uint32 Revision = 0;
@@ -34,7 +37,7 @@ struct FBBBMonsterStateAuthorityFactPacket final
     /** @return 当前事实是否有效 */
     bool IsValid() const
     {
-        return InstanceId.IsValid() && Revision > 0 && Traversal.IsValid()
+        return InstanceId.IsValid() && Revision > 0 && Traversal.IsValid() && Special.IsValid()
             && !Transform.ContainsNaN() && !Velocity.ContainsNaN()
             && FMath::IsFinite(StateEnteredTime)
             && FMath::IsFinite(CrawlStartedAt)

@@ -52,7 +52,9 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
         // 本阶段在 CMC 停止之前执行 先继承已经成立的运动速度
         const bool bRestored = Context.Data.External.ReadNetworkIdentityState().bIsMirror
             && State.RagdollSnapshot.Revision > 0;
-        const FVector Velocity = bRestored ? State.RagdollSnapshot.Velocity : Context.Character.GetVelocity();
+        const FVector Velocity = bRestored ? State.RagdollSnapshot.Velocity
+            : Context.Character.GetVelocity() + State.PendingImpactVelocity;
+        State.PendingImpactVelocity = FVector::ZeroVector;
         Context.HitReaction.ClearSimulation();
         Context.PhysicalAnimation.SetStrengthMultiplyer(0.0f);
         Context.PhysicalAnimation.SetComponentTickEnabled(false);

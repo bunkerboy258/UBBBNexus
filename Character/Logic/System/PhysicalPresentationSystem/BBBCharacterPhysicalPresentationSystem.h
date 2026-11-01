@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterPhysicalPhaseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterRagdollCaptureProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterPhysicalPresentationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterKnockdownProcessor.h"
 class ABBBCharacter;
 class USkeletalMeshComponent;
 class UPhysicalAnimationComponent;
@@ -43,6 +44,8 @@ class FBBBCharacterPhysicalPresentationSystem final
     UPhysicalAnimationComponent *PhysicalAnimation = nullptr;
     /** 固定调度的表现处理器 */
     FBBBCharacterPhysicalPresentationProcessor Processor;
+    /** 已成立冲击与自动起身请求 */
+    FBBBCharacterKnockdownProcessor KnockdownProcessor;
     /** 起身前空间检查 */
     FBBBCharacterGetUpCandidateProcessor CandidateProcessor;
     /** 起身阶段交接 */

@@ -24,7 +24,7 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
             if (Context.NetworkIdentityState.bHasAuthority)
             {
                 Context.NetworkComponent.ClientDeliverDamage(Delivery.Damages[Index], Delivery.Bones[Index],
-                                                             Delivery.Positions[Index], Delivery.Directions[Index]);
+                                                             Delivery.Positions[Index], Delivery.Directions[Index], Delivery.Impacts[Index]);
             }
             if (!Context.NetworkIdentityState.bHasAuthority)
             {
@@ -39,7 +39,7 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
                     const uint64 Sequence = (Delivery.Serial << 32) | uint64(Index + 1);
                     Sender->GetCharacterNetworkComponent()->ServerSubmitDamage(
                         Target, Delivery.Damages[Index], Delivery.Bones[Index], Delivery.Positions[Index],
-                        Delivery.Directions[Index], Sequence);
+                        Delivery.Directions[Index], Sequence, Delivery.Impacts[Index]);
                 }
                 if (!Sender)
                 {
@@ -66,12 +66,12 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
                                                                           {Inbox.Bones[Index]},
                                                                           {Inbox.Positions[Index]},
                                                                           {Inbox.Directions[Index]},
-                                                                          {Inbox.Sources[Index]}});
+                                                                          {Inbox.Sources[Index]}, {Inbox.Impacts[Index]}});
             }
             if (!Context.NetworkIdentityState.bLocallyControlled)
             {
                 Context.NetworkComponent.ClientDeliverDamage(Inbox.Damages[Index], Inbox.Bones[Index],
-                                                             Inbox.Positions[Index], Inbox.Directions[Index]);
+                                                             Inbox.Positions[Index], Inbox.Directions[Index], Inbox.Impacts[Index]);
             }
         }
         for (auto It = Observation.ReceivedSequences.CreateIterator(); It; ++It)
@@ -88,4 +88,5 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
     Inbox.Directions.Reset();
     Inbox.Sources.Reset();
     Inbox.Sequences.Reset();
+    Inbox.Impacts.Reset();
 }

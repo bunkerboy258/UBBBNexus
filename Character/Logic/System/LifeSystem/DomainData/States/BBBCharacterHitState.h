@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
 #include "BBBCharacterHitState.generated.h"
 
 /** 最近有效伤害产生的骨骼受力事实 */
@@ -23,4 +24,8 @@ struct FBBBCharacterHitState final
 
     /** 事实成立的世界时间 */
     double Time = 0.0;
+    /** 最新已成立的全身冲击版本 不被后续普通命中覆盖 */
+    uint64 ImpactSerial = 0;
+    /** 最新有效的全身物理冲击 */
+    FBBBCharacterPhysicalImpact Impact;
 };
