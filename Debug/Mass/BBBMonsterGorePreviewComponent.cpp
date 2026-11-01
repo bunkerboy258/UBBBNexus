@@ -142,16 +142,19 @@ void UBBBMonsterGorePreviewComponent::TickComponent(const float DeltaTime, const
 
 void UBBBMonsterGorePreviewComponent::ClearResidue()
 {
-    if (GetWorld() && GetOwner())
+    UWorld* World = GetWorld();
+    AActor* Owner = GetOwner();
+    if (!World || !Owner)
     {
-        GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->ClearFleshForSource(*GetOwner());
+        return;
     }
-    if (GetWorld())
+    if (auto* Pieces = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>())
     {
-        if (auto *Blood = GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>())
-        {
-            Blood->ClearForSource(*GetOwner());
-        }
+        Pieces->ClearFleshForSource(*Owner);
+    }
+    if (auto* Blood = World->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>())
+    {
+        Blood->ClearForSource(*Owner);
     }
 }
 
