@@ -116,7 +116,7 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(NavigationLookAheadDistance) && NavigationLookAheadDistance >= 30.0f && NavigationLookAheadDistance <= 400.0f
         && FMath::IsFinite(NavigationFollowInterval) && NavigationFollowInterval >= 0.05f && NavigationFollowInterval <= 0.5f
         && FMath::IsFinite(NavigationMaxDetourRatio) && NavigationMaxDetourRatio >= 1.0f && NavigationMaxDetourRatio <= 3.0f
-        && FMath::IsFinite(NavigationCrowdWaitDuration) && NavigationCrowdWaitDuration >= 0.0f && NavigationCrowdWaitDuration <= 3.0f
+        && FMath::IsFinite(AvoidanceSideHoldDuration) && AvoidanceSideHoldDuration >= 0.1f && AvoidanceSideHoldDuration <= 3.0f
         && FMath::IsFinite(UnsupportedLifetime) && UnsupportedLifetime >= 5.0f && UnsupportedLifetime <= 120.0f
         && FMath::IsFinite(EncircleRange) && EncircleRange > 0.0f
         && NavigationFailureLimit >= 1 && NavigationFailureLimit <= 10

@@ -20,7 +20,7 @@ protected:
     /** 配置参与局部避让查询的实体数据 */
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
 
-    /** 计算邻居分离方向并修正实体位置 */
+    /** 计算连续的安全移动意图与拥挤等待结果 */
     virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
 
 private:

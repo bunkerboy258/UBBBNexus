@@ -24,6 +24,18 @@ struct ABBB_EVAC_API FBBBMonsterMovementFragment final : public FMassFragment
     /** 本次追击已经转跑 仅由移动处理器维护 */
     bool bWalkerRunning = false;
 
+    /** 当前身体使用面向目标的稳定模式 */
+    bool bFacingTarget = false;
+
+    /** 最近一次切换朝向模式的世界时刻 */
+    float FacingModeChangedAt = -1.0f;
+
+    /** 因拥挤停止推进的起点 有实际移动时清除 */
+    float CrowdStationarySince = -1.0f;
+
+    /** 已抵达合格攻击距离 冷却期间保持该接近位置 */
+    bool bHoldingAttackPosition = false;
+
     /** 中距离追击速度 */
     float RunSpeed = 300.0f;
 

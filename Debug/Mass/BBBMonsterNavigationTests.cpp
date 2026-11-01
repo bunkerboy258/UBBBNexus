@@ -347,6 +347,29 @@ bool FBBBMonsterNavigationTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("近距离分散到多个接近方向"), Slots.Num() >= 4);
     TestTrue(TEXT("外围接近位置允许后排继续分散"), Slots.Num() == 10 && Waiting == 0);
 
+    const auto Attacker = Create(FVector(1800.0f, -450.0f, 90.0f));
+    auto& AttackTarget = Manager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Attacker);
+    AttackTarget.bTargetVisible = true;
+    AttackTarget.TargetActor = Player;
+    Plan(TArray<FMassEntityHandle>{Attacker});
+    auto& AttackPath = Manager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Attacker);
+    auto& AttackState = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Attacker);
+    const FNavPathSharedPtr PreservedPath = AttackPath.NativePath;
+    const int32 PreservedSlot = AttackPath.ApproachSlot;
+    AttackState.State = EBBBMonsterBehavior::Attack;
+    ++AttackState.ActionId;
+    World->TimeSeconds += 5.0;
+    Run(Navigation);
+    TestTrue(TEXT("攻击暂停保留路线与包围位置"), AttackPath.NativePath == PreservedPath && AttackPath.ApproachSlot == PreservedSlot);
+    TestEqual(TEXT("攻击暂停不累计虚假卡住时间"), AttackPath.ProgressTime, static_cast<float>(World->GetTimeSeconds()));
+    AttackState.State = EBBBMonsterBehavior::Chase;
+    ++AttackState.ActionId;
+    Manager.GetFragmentDataChecked<FBBBMonsterMovementFragment>(Attacker).bHoldingAttackPosition = true;
+    World->TimeSeconds += 0.1;
+    Run(Navigation);
+    TestTrue(TEXT("攻击冷却站稳时保留接近位置且不计寻路失败"), AttackPath.ApproachSlot == PreservedSlot && AttackPath.FailureCount == 0);
+    Manager.DestroyEntity(Attacker);
+
     TArray<FMassEntityHandle> WallCrowd;
     const FVector WallCenter(160.0f, 0.0f, 90.0f);
     for (int32 Index = 0; Index < 10; ++Index)

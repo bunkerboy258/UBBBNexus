@@ -307,9 +307,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "塑形绕行比例上限", ClampMin = "1.0", ClampMax = "3.0"))
     float NavigationMaxDetourRatio = 1.35f;
 
-    /** 同一前方邻居只短时等待一次 超时后允许绕行和脱困 零为关闭 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (DisplayName = "同伴让行等待时间", Units = "s", ClampMin = "0", ClampMax = "3"))
-    float NavigationCrowdWaitDuration = 0.75f;
+    /** 选定绕行侧后的最短保持时间 空间恢复后仍优先继续向前 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "群体避让", meta = (DisplayName = "绕行侧保持时间", Units = "s", ClampMin = "0.1", ClampMax = "3"))
+    float AvoidanceSideHoldDuration = 0.75f;
 
     /** 活体持续坠落且无法恢复支撑时结束该实体 不生成玩家击杀贡献 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "死亡与回收", meta = (DisplayName = "失去支撑回收时间", Units = "s", ClampMin = "5", ClampMax = "120"))

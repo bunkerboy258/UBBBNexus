@@ -89,13 +89,26 @@ bool FBBBMonsterAnimationFinishTest::RunTest(const FString& Parameters)
         const float TurnPhase = Phase->GetPropertyValue_InContainer(Instance);
         Update();
         TestEqual(TEXT("没有实际转向不能自行播放转身"), Phase->GetPropertyValue_InContainer(Instance), TurnPhase);
+        for (int32 Frame = 0; Frame < 120; ++Frame)
+        {
+            Actor->SetActorRotation(FRotator(0, Frame % 2 == 0 ? 31.5f : 31.75f, 0));
+            Update();
+        }
+        TestTrue(TEXT("四分之一度来回扰动退出转身混合"), Weight->GetPropertyValue_InContainer(Instance) < 0.001f);
+        const float SettledPhase = Phase->GetPropertyValue_InContainer(Instance);
+        for (int32 Frame = 0; Frame < 120; ++Frame)
+        {
+            Actor->SetActorRotation(FRotator(0, Frame % 2 == 0 ? 31.5f : 31.75f, 0));
+            Update();
+        }
+        TestEqual(TEXT("稳定的小角度来回扰动不推进转身循环"), Phase->GetPropertyValue_InContainer(Instance), SettledPhase);
         Actor->SetActorRotation(FRotator(0, 175, 0));
         Update();
-        TestEqual(TEXT("大角度重定位不能当作转身循环"), Phase->GetPropertyValue_InContainer(Instance), TurnPhase);
+        TestEqual(TEXT("大角度重定位不能当作转身循环"), Phase->GetPropertyValue_InContainer(Instance), SettledPhase);
         Presentation->ApplyPresentationState(EBBBMonsterBehavior::Attack, 0, 2, 2, 0.4f);
         Actor->SetActorRotation(FRotator(0, 176.5f, 0));
         Update();
-        TestEqual(TEXT("攻击不推进站立转身"), Phase->GetPropertyValue_InContainer(Instance), TurnPhase);
+        TestEqual(TEXT("攻击不推进站立转身"), Phase->GetPropertyValue_InContainer(Instance), SettledPhase);
         TestTrue(TEXT("动画不改写世界朝向"), FMath::IsNearlyEqual(Actor->GetActorRotation().Yaw, 176.5f));
         Variation.Seed = 456;
         Presentation->ApplyVariationFacts(Variation, 0.0f);

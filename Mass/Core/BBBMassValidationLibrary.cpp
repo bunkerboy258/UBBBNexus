@@ -381,8 +381,9 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetBoolField(TEXT("waitingForNeighbor"), Avoidance && Avoidance->bWaitingForNeighbor);
             Sample->SetNumberField(TEXT("crowdClearance"), Avoidance ? Avoidance->MaxTravelDistance : 0.0f);
             Sample->SetNumberField(TEXT("bodyRadius"), Movement->CapsuleRadius);
-            Sample->SetNumberField(TEXT("yieldBlocker"), Avoidance && Avoidance->YieldBlocker.IsSet() ? Avoidance->YieldBlocker.Index : INDEX_NONE);
-            Sample->SetNumberField(TEXT("yieldAge"), Avoidance && Avoidance->YieldStartedAt >= 0.0f ? World->GetTimeSeconds() - Avoidance->YieldStartedAt : 0.0f);
+            Sample->SetNumberField(TEXT("steeringSide"), Avoidance ? Avoidance->SteeringSide : 0);
+            Sample->SetNumberField(TEXT("steeringSideChanges"), Avoidance ? Avoidance->SideChanges : 0);
+            Sample->SetBoolField(TEXT("facingTarget"), Movement->bFacingTarget);
             Sample->SetNumberField(TEXT("requestedDistance"), Ground ? Ground->RequestedDistance : 0.0f);
             Sample->SetNumberField(TEXT("movedDistance"), Ground ? Ground->MovedDistance : 0.0f);
             Sample->SetNumberField(TEXT("attackRange"), Combat ? Combat->AttackRange : 0.0f);

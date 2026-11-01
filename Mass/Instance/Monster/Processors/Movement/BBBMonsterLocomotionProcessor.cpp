@@ -17,6 +17,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
+#include "BBBMonsterSteering.h"
 
 UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
     : MonsterQuery(*this)
@@ -334,6 +335,13 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const auto* Settings = Network[Index].Definition.Get();
             const float Now = World->GetTimeSeconds();
             const auto& Target = Targets[Index];
+            const float TargetDistance = Target.bHasTarget ? FVector::Distance(Location, Target.TargetLocation) : MAX_flt;
+            const bool bCrowdStationary = Velocity.Size2D() < 10.0f
+                && (Path.bWaitingForSpace || Avoidance[Index].bWaitingForNeighbor || Avoidance[Index].bCrowdConstrained);
+            FBBBMonsterSteering::UpdateFacingMode(Movement, Target.bHasTarget,
+                States[Index].State == EBBBMonsterBehavior::Alert || States[Index].State == EBBBMonsterBehavior::Attack,
+                bChase, bCrowdStationary, TargetDistance, Settings ? Settings->AttackRange : 0.0f,
+                Movement.CapsuleRadius, Now);
             if (!bChase || !Target.bHasTarget || Injury.bCrawling)
             {
                 Movement.bWalkerRunning = false;
@@ -358,7 +366,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
-            const bool bMayMove = !bChangingPosture && !Injury.IsStaggering(Now) && !Avoidance[Index].bWaitingForNeighbor
+            // 合格近战位置在冷却期间保持 身体继续对准目标
+            Movement.bHoldingAttackPosition = bChase && Target.bTargetVisible && Settings
+                && TargetDistance <= Settings->AttackRange * (Movement.bHoldingAttackPosition ? 1.0f : 0.95f);
+            const bool bMayMove = !Movement.bHoldingAttackPosition && !bChangingPosture && !Injury.IsStaggering(Now) && !Avoidance[Index].bWaitingForNeighbor
                 && (bPatrol || bChase) && Path.bHasPath &&
                 Path.PathPoints.IsValidIndex(Path.PathPointIndex) && Path.TailDistances.IsValidIndex(Path.PathPointIndex);
             if (!bMayMove)
@@ -377,13 +388,16 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 const float UprightSpeed = Movement.Gait == EBBBMonsterGait::Walk ? WalkingSpeed :
                     Movement.Gait == EBBBMonsterGait::Run ? Movement.RunSpeed : Movement.SprintSpeed;
                 const float SpeedRatio = Injury.GetSpeedRatio(Now);
-                const float TargetSpeed = (Injury.bCrawling && Settings ? Settings->CrawlSpeed : UprightSpeed) * SpeedRatio;
+                const float BrakingSpeed = FMath::Sqrt(2.0f * Movement.Deceleration * Remaining);
+                const float TargetSpeed = FMath::Min((Injury.bCrawling && Settings ? Settings->CrawlSpeed : UprightSpeed) * SpeedRatio, BrakingSpeed);
                 const float InterpolatedSpeed = CalculateSpeed(Movement, Velocity.Size2D(), TargetSpeed, Remaining, DeltaSeconds);
                 // 受击压制在保持阶段直接限制实际速度 恢复阶段仍由正常加速度推进
                 const float Speed = Now < Injury.SlowRecoveryStartedAt ? FMath::Min(InterpolatedSpeed, TargetSpeed) : InterpolatedSpeed;
-                const float Distance = FMath::Min3(Speed * DeltaSeconds, PointDistance, Remaining);
                 const FBBBMonsterAvoidanceFragment& Neighbors = Avoidance[Index];
                 const FVector Direction = Neighbors.SteeringDirection;
+                const float Alignment = FMath::Clamp(static_cast<float>(FVector::DotProduct(
+                    Transform.GetRotation().GetForwardVector().GetSafeNormal2D(), Direction)), 0.0f, 1.0f);
+                const float Distance = FMath::Min3(Speed * Alignment * DeltaSeconds, PointDistance, Remaining);
                 const float SafeDistance = FMath::Min(Distance, Neighbors.MaxTravelDistance);
                 FVector Destination = Location + Direction * SafeDistance;
 
@@ -443,11 +457,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Ground Entity=%d Supported=%d Z=%.2f VerticalSpeed=%.2f"),
                     Chunk.GetEntity(Index).Index, Grounds[Index].bGrounded, Location.Z, Velocity.Z);
             }
-            FVector FacingDirection = HorizontalDelta;
-            const bool bFaceTarget = Target.bHasTarget && Settings && (States[Index].State == EBBBMonsterBehavior::Alert
-                || (bChase && (FVector::DistSquared(Location, Target.TargetLocation) <= FMath::Square(Settings->AttackRange)
-                    || (HorizontalDelta.IsNearlyZero() && (Path.bWaitingForSpace || Avoidance[Index].bCrowdConstrained)))));
-            if (bFaceTarget)
+            FVector FacingDirection = bMayMove ? Avoidance[Index].SteeringDirection : FVector::ZeroVector;
+            if (Movement.bFacingTarget)
             {
                 FacingDirection = (Target.TargetLocation - Location).GetSafeNormal2D();
             }
@@ -456,8 +467,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 const float Rate = Injury.bCrawling ? Settings->CrawlTurnRate
                     : Movement.Gait == EBBBMonsterGait::Walk ? Settings->WalkTurnRate : Settings->RunTurnRate;
-                Transform.SetRotation(bFaceTarget ? TurnTowards(Transform.GetRotation(), FacingDirection, DeltaSeconds, Rate)
-                    : CalculateFacing(Transform.GetRotation(), HorizontalDelta, Velocity, DeltaSeconds, Rate));
+                // 连续意图也负责起步前的转身 停止与碰撞修正本身不产生新方向
+                Transform.SetRotation(Movement.bFacingTarget || Velocity.Size2D() <= 10.0f
+                    ? TurnTowards(Transform.GetRotation(), FacingDirection, DeltaSeconds, Rate)
+                    : CalculateFacing(Transform.GetRotation(), FacingDirection, Velocity, DeltaSeconds, Rate));
             }
         }
     });

@@ -212,7 +212,9 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 Path.ApproachSlot = INDEX_NONE;
                 Path.ApproachExpiresAt = 0.0f;
             };
-            if (Path.TargetRevision != Target.Revision || Path.ActionId != State.ActionId)
+            const bool bAttacking = State.State == EBBBMonsterBehavior::Attack;
+            if (Path.TargetRevision != Target.Revision
+                || (Path.ActionId != State.ActionId && !bAttacking && !bChase))
             {
                 ClearPath(Path);
                 Path.TargetRevision = Target.Revision;
@@ -229,8 +231,9 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 Path.Condition = EBBBMonsterNavigationCondition::WaitingForPath;
                 Path.LastRepathCondition = Path.Condition;
             }
-            const bool bAttacking = State.State == EBBBMonsterBehavior::Attack;
-            const bool bEncircle = (bChase || bAttacking) && Target.bTargetVisible && Target.TargetActor.IsValid() &&
+            Path.ActionId = State.ActionId;
+            const bool bEncircle = (bChase || bAttacking) && Target.bHasTarget && Target.TargetActor.IsValid()
+                && (Target.bTargetVisible || WorldTime - Target.LastSeenTime < 0.5f) &&
                 FVector::DistSquared(Location, Target.TargetLocation) < FMath::Square(Definition->EncircleRange) &&
                 FMath::Abs(Location.Z - Target.TargetLocation.Z) <= Definition->MaxStepHeight + 50.0f;
             if (!bEncircle || Path.ApproachActor != Target.TargetActor ||
@@ -238,9 +241,18 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 ReleaseSlot();
             }
-            if (Path.ApproachSlot != INDEX_NONE && (bAttacking || Grounds[Index].MovedDistance > 2.0f))
+            if (Path.ApproachSlot != INDEX_NONE && (bAttacking || Movement[Index].bHoldingAttackPosition
+                || Path.bWaitingForSpace || Grounds[Index].MovedDistance > 0.1f))
             {
                 Path.ApproachExpiresAt = WorldTime + FMath::Max(2.0f, Definition->NavigationStuckDuration * 2.0f);
+            }
+            if (bAttacking)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::Suspended;
+                Path.ProgressTime = WorldTime;
+                Path.ProgressDistance = 0.0f;
+                Path.BlockedDuration = 0.0f;
+                continue;
             }
             if ((!bPatrol && !bChase) || (bChase && !Target.bHasTarget) ||
                 (bChase && Path.ExcludedUntil > WorldTime && FVector::DistSquared(Path.ExcludedPosition, Target.TargetLocation) < FMath::Square(200.0f)))
@@ -270,7 +282,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             }
 
             const bool bPostureChange = Mobility[Index].bCrawling && WorldTime < Mobility[Index].CrawlStartedAt + Definition->CrawlTransitionDuration;
-            const bool bMovementSuspended = !Grounds[Index].bGrounded || Mobility[Index].IsStaggering(WorldTime) ||
+            const bool bMovementSuspended = Movement[Index].bHoldingAttackPosition || !Grounds[Index].bGrounded || Mobility[Index].IsStaggering(WorldTime) ||
                 WorldTime < Mobility[Index].HitStopEndsAt || bPostureChange;
             const bool bNeighborWait = Avoidance[Index].bWaitingForNeighbor;
             Path.bProgressCrowded |= Avoidance[Index].bCrowdConstrained;
@@ -411,10 +423,18 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 Path.LastRepathCondition = EBBBMonsterNavigationCondition::PathExpired;
             }
-            const bool bNeedsPath = !Path.bHasPath || (bChase &&
+            const auto* Slots = OccupiedSlots.Find(Target.TargetActor);
+            bool bInnerSpaceAvailable = false;
+            for (int32 Slot = 0; Slot < 6 && bEncircle && Path.ApproachSlot >= 6; ++Slot)
+            {
+                bInnerSpaceAvailable |= !Slots || !Slots->Contains(Slot);
+            }
+            const bool bUpgradeApproach = bInnerSpaceAvailable && WorldTime - Path.LastPathTime >= 1.0f;
+            const bool bHoldingSlot = bEncircle && Path.ApproachSlot != INDEX_NONE && Path.bWaitingForSpace
+                && FVector::DistSquared(Target.TargetLocation, Path.RequestedGoal) < FMath::Square(MoveThreshold);
+            const bool bNeedsPath = (!Path.bHasPath && !bHoldingSlot) || (bChase &&
                 (FVector::DistSquared(Target.TargetLocation, Path.RequestedGoal) >= FMath::Square(MoveThreshold) ||
-                    WorldTime - Path.LastPathTime >= Definition->NavigationMaxPathAge ||
-                    (bEncircle && (Path.ApproachSlot == INDEX_NONE || Path.ApproachSlot >= 6))));
+                    (!bHoldingSlot && WorldTime - Path.LastPathTime >= Definition->NavigationMaxPathAge) || bUpgradeApproach));
             if (!bNeedsPath || bMovementSuspended || Path.bReachedDestination || WorldTime < Path.NextPathRefreshTime)
             {
                 Path.RequestSince = -1.0f;
@@ -556,6 +576,8 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             float BestCost = FLT_MAX;
             int32 BestSlot = INDEX_NONE;
             int32 ValidSlots = 0;
+            FVector CurrentSlotGoal = FVector::ZeroVector;
+            bool bCurrentSlotValid = false;
             for (int32 Slot = 0; Slot < 36; ++Slot)
             {
                 if (Slots.Contains(Slot) && Slot != Path.ApproachSlot)
@@ -582,14 +604,26 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                     continue;
                 }
                 ++ValidSlots;
-                const float Cost = FVector::Dist2D(Location, Projected.Location) + Ring * Definition.EncircleRange
-                    - (Slot == Path.ApproachSlot ? Movement.CapsuleRadius : 0.0f);
+                if (Slot == Path.ApproachSlot)
+                {
+                    bCurrentSlotValid = true;
+                    CurrentSlotGoal = Projected.Location;
+                }
+                const float Cost = FVector::Dist2D(Location, Projected.Location) + Ring * Definition.EncircleRange;
                 if (Cost < BestCost)
                 {
                     BestCost = Cost;
                     BestSlot = Slot;
                     Goal = Projected.Location;
                 }
+            }
+            // 同一圈内保持已占用的合格位置 只有进入更靠近目标的一圈才升级
+            const int32 CurrentRing = Path.ApproachSlot < 6 ? 0 : Path.ApproachSlot < 18 ? 1 : 2;
+            const int32 BestRing = BestSlot < 6 ? 0 : BestSlot < 18 ? 1 : 2;
+            if (bCurrentSlotValid && (BestSlot == INDEX_NONE || BestRing >= CurrentRing))
+            {
+                BestSlot = Path.ApproachSlot;
+                Goal = CurrentSlotGoal;
             }
             Slots.Remove(Path.ApproachSlot);
             Path.ApproachSlot = BestSlot;
@@ -633,6 +667,8 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             Path.bWaitingForSpace = true;
             Path.Condition = EBBBMonsterNavigationCondition::WaitingForSpace;
             Path.FailureCount = 0;
+            Path.RequestedGoal = Target.TargetLocation;
+            Path.LastPathTime = WorldTime;
             continue;
         }
         FNavLocation End;
@@ -653,7 +689,7 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         }
         if (Path.FailureCount > 0)
         {
-            ShapeScale *= Path.FailureCount % 2 == 0 ? 0.5f : -0.5f;
+            ShapeScale = 0.0f;
         }
         Path.ArcStrength *= ShapeScale;
         Path.LaneOffset *= ShapeScale;
