@@ -132,7 +132,9 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         Rescue.EndReason = Reason;
         ++Rescue.Revision;
     }
-    State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving;
+    const auto &Physical = Context.Data.PhysicalPresentation.ReadPhysicalPresentationState();
+    State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving
+        && !Physical.bRagdollRequested && !Physical.bRagdoll;
     Context.Character.SetCanBeDamaged(State.bInitialized && State.Phase != EBBBCharacterLifePhase::Dead);
 
     if (!Delivery.Damages.IsEmpty())

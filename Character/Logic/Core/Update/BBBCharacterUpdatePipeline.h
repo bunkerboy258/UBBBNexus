@@ -12,6 +12,8 @@ class FBBBCharacterShutdown;
 class FBBBCharacterUpdatePipeline final
 {
 public:
+    /** @param Character 相机跟随的角色 @param Camera 相机载体 @return 无 */
+    static void RegisterCameraTicks(ABBBCharacter &Character, AActor &Camera);
     /** @param Mesh	持有角色网格 @param Equipment	装备实例 @return 无 */
     static void RegisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item);
 
@@ -48,8 +50,8 @@ private:
      * 执行 CMC 前的角色主更新
      *
      * 时间与身份快照、输入解析完成后，明确分为 Mirror 与 Causal 路径。
-     * Mirror：装备关系、外观、生命、攀爬、装备使用、移动、物理表现。
-     * Causal：物品、装备关系、外观、生命、瞄准、攀爬、装备使用、移动、物理表现。
+     * Mirror: 装备关系 外观 生命 物理接管 攀爬 装备使用 移动 网络观察
+     * Causal: 物品 装备关系 外观 生命 物理接管 瞄准 攀爬 装备使用 移动 网络观察
      *
      * @param DeltaSeconds 当前帧间隔
      */
@@ -57,10 +59,14 @@ private:
 
     /** 调度移动完成后的动画事实更新 */
     void LateUpdate() const;
+    /** 在 Chaos 完成后采集刚体结果并更新角色锚点 */
+    void PostPhysicsUpdate() const;
 
     /** 管线所属角色 */
     ABBBCharacter *Character = nullptr;
 
     /** CMC 后执行的引擎 Tick 适配器 */
     FBBBCharacterLateUpdate LateUpdateTick;
+    /** 位于 CMC 与骨骼动画之后的 PostPhysics 采集阶段 */
+    FBBBCharacterLateUpdate PostPhysicsTick;
 };

@@ -30,6 +30,7 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
     ActiveRecoilSettings = DefaultRecoilSettings;
     LastCameraRevision = InCharacter.RuntimeData.Parse.ReadCameraState().Revision;
     AddTickPrerequisiteComponent(InCharacter.GetCharacterMovement());
+    FBBBCharacterUpdatePipeline::RegisterCameraTicks(InCharacter, *this);
     ensureMsgf(
         PrimaryActorTick.TickGroup == TG_PostPhysics
             && PrimaryActorTick.EndTickGroup == TG_PostPhysics

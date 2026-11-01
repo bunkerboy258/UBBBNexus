@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRagdollObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterAppearanceObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRescueObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterInteractionObservationProcessor.h"
@@ -23,6 +24,7 @@ public:
     void Update();
 
 private:
+    FBBBCharacterRagdollObservationProcessor RagdollObservationProcessor;
     FBBBCharacterLifeObservationProcessor LifeObservationProcessor;
     FBBBCharacterRescueObservationProcessor RescueObservationProcessor;
     FBBBCharacterDamageObservationProcessor DamageObservationProcessor;

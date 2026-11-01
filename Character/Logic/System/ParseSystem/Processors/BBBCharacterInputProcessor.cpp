@@ -7,6 +7,9 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterInputContext &Context) const
 {
     Context.Control.bJump = false;
+    Process(InputState.EnterRagdoll, Context);
+    Process(InputState.RemoteRagdoll, Context);
+    Process(InputState.AuthorityRagdoll, Context);
 
     Process(InputState.RescueBeginLocalControl, Context);
     Process(InputState.RescueCancelLocalControl, Context);

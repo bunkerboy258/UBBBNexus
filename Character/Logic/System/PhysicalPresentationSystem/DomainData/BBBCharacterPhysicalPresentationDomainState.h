@@ -16,7 +16,9 @@ struct FBBBCharacterPhysicalPresentationDomainState final
     }
 
   private:
+    friend class FBBBCharacterParseSystem;
     friend class FBBBCharacterPhysicalPresentationProcessor;
+    friend class FBBBCharacterRagdollCaptureProcessor;
     /** 独立物理表现应用记录 */
     UPROPERTY(Transient)
     FBBBCharacterPhysicalPresentationState PhysicalPresentationState;

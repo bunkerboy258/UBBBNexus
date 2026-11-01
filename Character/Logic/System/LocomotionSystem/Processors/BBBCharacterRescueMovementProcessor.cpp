@@ -7,6 +7,10 @@
 void FBBBCharacterRescueMovementProcessor::Update(FBBBCharacterLocomotionUpdateContext &Context) const
 {
     const auto &Rescue = Context.Data.Life.ReadRescueState();
+    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().bRagdoll)
+    {
+        return;
+    }
     if ((!Rescue.bHelping && !Rescue.bReceiving) || Context.Life.Phase == EBBBCharacterLifePhase::Dead)
     {
         return;

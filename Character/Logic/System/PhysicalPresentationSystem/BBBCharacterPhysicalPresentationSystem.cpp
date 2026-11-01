@@ -22,3 +22,13 @@ void FBBBCharacterPhysicalPresentationSystem::Update() const
     FBBBCharacterPhysicalPresentationUpdateContext Context{*Character, *Data, *Mesh, *Reaction, *PhysicalAnimation};
     Processor.Update(Context);
 }
+
+void FBBBCharacterPhysicalPresentationSystem::CapturePhysics() const
+{
+    if (!Character || !Data || !Mesh || !Reaction || !PhysicalAnimation)
+    {
+        return;
+    }
+    FBBBCharacterPhysicalPresentationUpdateContext Context{*Character, *Data, *Mesh, *Reaction, *PhysicalAnimation};
+    CaptureProcessor.Update(Context);
+}

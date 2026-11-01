@@ -19,6 +19,7 @@ struct FBBBCharacterLifeInputState;
 struct FBBBCharacterInteractionUseState;
 struct FBBBCharacterDamageInboxState;
 struct FBBBCharacterAppearanceInputState;
+struct FBBBCharacterPhysicalPresentationState;
 
 /**
  * 输入包应用上下文
@@ -76,4 +77,6 @@ struct FBBBCharacterInputContext final
     FBBBCharacterAppearanceInputState &AppearanceInputs;
     /** 本帧输入许可的只读交互结果 */
     FBBBCharacterInteractionUseState &InteractionUse;
+    /** 物理接管请求及接收的物理结果 */
+    FBBBCharacterPhysicalPresentationState &PhysicalPresentation;
 };

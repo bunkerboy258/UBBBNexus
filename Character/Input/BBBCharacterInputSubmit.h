@@ -93,6 +93,9 @@ BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeBeginLocalControlPacket, MeleeBegin)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterMeleeEndLocalControlPacket, MeleeEnd)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentShowLocalControlPacket, EquipmentShow)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEquipmentHideLocalControlPacket, EquipmentHide)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterEnterRagdollLocalControlPacket, EnterRagdoll)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRagdollRemoteMessagePacket, RemoteRagdoll)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterRagdollAuthorityFactPacket, AuthorityRagdoll)
 #undef BBB_CHARACTER_INPUT_SLOT
 
 /** 角色固定输入槽位的唯一提交闸口 */
@@ -111,6 +114,11 @@ namespace BBBCharacterInput
         using FPacket = typename TDecay<TPacket>::Type;
 
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterRagdollRemoteMessagePacket>
+            || std::is_same_v<FPacket, FBBBCharacterRagdollAuthorityFactPacket>)
+        {
+            Slot.Data.Snapshots.Append(Packet.Snapshots);
+        }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterInteractionPrimaryLocalControlPacket>)
         {
             if (!Slot.bActive)
@@ -343,6 +351,8 @@ namespace BBBCharacterInput
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
         if constexpr (!std::is_same_v<FPacket, FBBBCharacterInteractionPrimaryLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRagdollRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterRagdollAuthorityFactPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterMeleeEndLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterMeleeBeginLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterUseAuthorityFactPacket> &&

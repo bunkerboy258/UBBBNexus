@@ -65,3 +65,14 @@ void FBBBCharacterLocomotionSystem::CaptureMovementFacts()
         CharacterData->External.ReadNetworkIdentityState().bIsMirror};
     MovementFactProcessor.Update(Context);
 }
+
+void FBBBCharacterLocomotionSystem::FollowRagdoll()
+{
+    if (!Character || !Movement || !CharacterData)
+    {
+        return;
+    }
+    FBBBCharacterMovementFactContext Context{*Character, *Movement, *CharacterData,
+        CharacterData->External.ReadNetworkIdentityState().bIsMirror};
+    RagdollFollowProcessor.Update(Context);
+}

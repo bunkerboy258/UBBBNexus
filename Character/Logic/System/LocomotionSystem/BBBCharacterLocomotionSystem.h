@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRagdollFollowProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRescueMovementProcessor.h"
 
 #include "CoreMinimal.h"
@@ -25,6 +26,8 @@ public:
 
     /** 仅由主管线在 CMC 后和动画事实发布前采集最终移动事实 */
     void CaptureMovementFacts();
+    /** 仅由主管线在物理采集之后跟随布娃娃锚点 */
+    void FollowRagdoll();
 
 private:
     friend class FBBBCharacterInitializer;
@@ -62,5 +65,7 @@ private:
     FBBBCharacterLifeMovementProcessor LifeMovementProcessor;
     FBBBCharacterRescueMovementProcessor RescueMovementProcessor;
     FBBBCharacterMovementFactProcessor MovementFactProcessor;
+    /** 身体锚点跟随 */
+    FBBBCharacterRagdollFollowProcessor RagdollFollowProcessor;
 
 };

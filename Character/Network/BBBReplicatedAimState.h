@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/NetSerialization.h"
 #include "BBBReplicatedAimState.generated.h"
 
 /** 网络原子传输的瞄准最终状态 */

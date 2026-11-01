@@ -14,5 +14,12 @@ void FBBBCharacterLateUpdate::ExecuteTick(
     }
 
     // 引擎回调只转发到管线 不承载领域逻辑
-    Pipeline->LateUpdate();
+    if (bAfterPhysics)
+    {
+        Pipeline->PostPhysicsUpdate();
+    }
+    else
+    {
+        Pipeline->LateUpdate();
+    }
 }

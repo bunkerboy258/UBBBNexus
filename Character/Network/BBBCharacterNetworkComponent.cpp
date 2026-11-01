@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/PhysicalPresentation/FBBBCharacterRagdollRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/PhysicalPresentation/FBBBCharacterRagdollAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterUseRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterUseAuthorityFactPacket.h"
 
@@ -34,6 +36,43 @@ UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
     SetIsReplicatedByDefault(true);
 }
 
+void UBBBCharacterNetworkComponent::ReplicateRagdoll(const FBBBCharacterRagdollSnapshot &Snapshot)
+{
+    if (IsOwnerAuthority() && Snapshot.Revision > ReplicatedRagdoll.Revision)
+    {
+        ReplicatedRagdoll = Snapshot;
+        GetOwner()->FlushNetDormancy();
+        GetOwner()->ForceNetUpdate();
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitRagdoll_Implementation(FBBBCharacterRagdollSnapshot Snapshot)
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    const FBBBCharacterRagdollRemoteMessagePacket Packet{{Snapshot}};
+    if (Character && IsOwnerAuthority() && !Character->IsLocallyControlled()
+        && Snapshot.Revision > ReplicatedRagdoll.Revision && Packet.IsValid())
+    {
+        Character->SubmitInput(Packet);
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Ragdoll()
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    const FBBBCharacterRagdollAuthorityFactPacket Packet{{ReplicatedRagdoll}};
+    if (Character && !IsOwnerAuthority() && !Character->IsLocallyControlled() && Packet.IsValid())
+    {
+        Character->SubmitInput(Packet);
+    }
+}
+
 void UBBBCharacterNetworkComponent::Initialize(ABBBCharacter &InCharacter)
 {
     Character = &InCharacter;
@@ -43,6 +82,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedRagdoll, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedUse, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAppearance, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAcceleration, COND_SimulatedOnly);

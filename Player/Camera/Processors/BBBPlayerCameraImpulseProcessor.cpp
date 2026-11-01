@@ -99,7 +99,8 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     CameraSystem.Controller->SetControlRotation(Rotation);
     Rotation.Roll += CameraSystem.RecoilOffset.Z;
 
-    const bool bAiming = CameraSystem.Character->RuntimeData.Parse.ReadControlState().bAim;
+    const bool bAiming = CameraSystem.Character->RuntimeData.Life.ReadLifeState().bActionsAllowed
+        && CameraSystem.Character->RuntimeData.Parse.ReadControlState().bAim;
     CameraSystem.Boom->TargetArmLength = FMath::FInterpTo(
         CameraSystem.Boom->TargetArmLength,
         bAiming ? CameraSystem.AimArmLength : CameraSystem.HipArmLength,

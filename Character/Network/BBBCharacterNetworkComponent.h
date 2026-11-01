@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterRagdollSnapshot.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Definitions/BBBCharacterUseFact.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
@@ -37,6 +38,18 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
 private:
+    friend class FBBBCharacterRagdollObservationProcessor;
+    /** @param Snapshot 已成立的布娃娃当前结果 @return 无 */
+    void ReplicateRagdoll(const FBBBCharacterRagdollSnapshot &Snapshot);
+    /** @param Snapshot 控制端已成立的物理结果 @return 无 */
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitRagdoll(FBBBCharacterRagdollSnapshot Snapshot);
+    /** 当前结果到达后仅提交角色输入 */
+    UFUNCTION()
+    void OnRep_Ragdoll();
+    /** 原子当前结果 支持后加入与重新相关 */
+    UPROPERTY(ReplicatedUsing = OnRep_Ragdoll)
+    FBBBCharacterRagdollSnapshot ReplicatedRagdoll;
     friend class FBBBCharacterAppearanceObservationProcessor;
     /** @param Snapshot 既成外观事实 @return 无 */
     void ReplicateAppearance(const FBBBCharacterAppearanceSnapshot &Snapshot);

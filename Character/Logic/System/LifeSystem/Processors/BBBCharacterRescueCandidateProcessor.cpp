@@ -28,6 +28,12 @@ void FBBBCharacterRescueCandidateProcessor::Update(FBBBCharacterLifeUpdateContex
     Candidate.EligiblePartners.Reset();
     Candidate.bCanRecover = false;
     Candidate.bRecoverCrouched = false;
+    // 本轮布娃娃只进入并保持 救援不能绕过尚未实现的物理退出
+    const auto &Physical = Context.Data.PhysicalPresentation.ReadPhysicalPresentationState();
+    if (Physical.bRagdollRequested || Physical.bRagdoll)
+    {
+        return;
+    }
     if (Context.Data.External.ReadNetworkIdentityState().bIsMirror)
     {
         return;

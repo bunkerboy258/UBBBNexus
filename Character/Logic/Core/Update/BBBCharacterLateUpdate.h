@@ -32,6 +32,8 @@ private:
 
     /** CMC 后更新所属管线 */
     FBBBCharacterUpdatePipeline *Pipeline = nullptr;
+    /** 同一 Tick 适配器用于物理完成后的独立管线阶段 */
+    bool bAfterPhysics = false;
 };
 
 template<>

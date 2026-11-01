@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRagdollNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterInteractionNetworkObservationState.h"
 
 #include "CoreMinimal.h"
@@ -24,6 +25,11 @@ struct FBBBCharacterNetworkDomainState final
     GENERATED_BODY()
 
 public:
+    /** @return 布娃娃结果发送基准 */
+    const FBBBCharacterRagdollNetworkObservationState &ReadRagdollNetworkObservationState() const
+    {
+        return RagdollObservationState;
+    }
     /** @return 生命结果发送基准 */
     const FBBBCharacterLifeNetworkObservationState &ReadLifeNetworkObservationState() const
     {
@@ -81,6 +87,9 @@ public:
         return AppearanceObservationState;
     }
 private:
+    friend class FBBBCharacterRagdollObservationProcessor;
+    /** 物理当前结果的发送基准 */
+    FBBBCharacterRagdollNetworkObservationState RagdollObservationState;
     friend class FBBBCharacterAppearanceObservationProcessor;
     /** 外观结果发送基准 */
     UPROPERTY()

@@ -14,6 +14,7 @@ void FBBBCharacterUpdatePipeline::Initialize(ABBBCharacter &InCharacter)
 
     // 角色领域依赖完成装配后才允许 CMC 后阶段运行
     LateUpdateTick.SetTickFunctionEnable(true);
+    PostPhysicsTick.SetTickFunctionEnable(true);
 }
 
 //------------------------------------------------------------------------------
@@ -44,6 +45,17 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
         LateUpdateTick.SetTickFunctionEnable(InCharacter.HasActorBegunPlay());
         LateUpdateTick.AddPrerequisite(Movement, Movement->PrimaryComponentTick);
         LateUpdateTick.RegisterTickFunction(InCharacter.GetLevel());
+        // 物理完成后读取刚体 不从 PrePhysics 动画缓存推断本帧物理位置
+        PostPhysicsTick.bCanEverTick = true;
+        PostPhysicsTick.bStartWithTickEnabled = false;
+        PostPhysicsTick.TickGroup = TG_PostPhysics;
+        PostPhysicsTick.EndTickGroup = TG_PostPhysics;
+        PostPhysicsTick.Target = &InCharacter;
+        PostPhysicsTick.Pipeline = this;
+        PostPhysicsTick.bAfterPhysics = true;
+        PostPhysicsTick.SetTickFunctionEnable(InCharacter.HasActorBegunPlay());
+        PostPhysicsTick.AddPrerequisite(CharacterMesh, CharacterMesh->PrimaryComponentTick);
+        PostPhysicsTick.RegisterTickFunction(InCharacter.GetLevel());
 
         // 骨骼网格必须等待动画事实在 LateUpdate 中提交完成
         CharacterMesh->PrimaryComponentTick.AddPrerequisite(&InCharacter, LateUpdateTick);
@@ -51,6 +63,10 @@ void FBBBCharacterUpdatePipeline::RegisterTickFunctions(
     }
 
     // 注销时按反向顺序移除依赖与 Tick 注册
+    PostPhysicsTick.RemovePrerequisite(CharacterMesh, CharacterMesh->PrimaryComponentTick);
+    PostPhysicsTick.UnRegisterTickFunction();
+    PostPhysicsTick.Pipeline = nullptr;
+    PostPhysicsTick.Target = nullptr;
     InCharacter.PhysicalAnimation->RemoveTickPrerequisiteComponent(InCharacter.HitReaction);
     InCharacter.HitReaction->RemoveTickPrerequisiteComponent(CharacterMesh);
     CharacterMesh->PrimaryComponentTick.RemovePrerequisite(&InCharacter, LateUpdateTick);
@@ -96,10 +112,10 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         Character->AppearanceSystem.Update();
 
         Character->LifeSystem.Update();
+        Character->PhysicalPresentationSystem.Update();
         Character->TraversalSystem.Update();
         Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
-        Character->PhysicalPresentationSystem.Update();
     }
     else
     {
@@ -110,13 +126,13 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         Character->AppearanceSystem.Update();
 
         Character->LifeSystem.Update();
+        Character->PhysicalPresentationSystem.Update();
         Character->AimSystem.Update();
 
         // 攀爬生成交接结果，装备使用许可随后更新，移动系统独占 CMC 写入
         Character->TraversalSystem.Update();
         Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
-        Character->PhysicalPresentationSystem.Update();
     }
 
     // 两条路径都在领域更新完成后进行网络观察
@@ -138,6 +154,16 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
 
 }
 
+void FBBBCharacterUpdatePipeline::PostPhysicsUpdate() const
+{
+    if (!Character)
+    {
+        return;
+    }
+    Character->PhysicalPresentationSystem.CapturePhysics();
+    Character->LocomotionSystem.FollowRagdoll();
+}
+
 void FBBBCharacterUpdatePipeline::RegisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item)
 {
     Item.PrimaryActorTick.AddPrerequisite(Mesh.GetOwner(), Mesh.GetOwner()->PrimaryActorTick);
@@ -150,6 +176,11 @@ void FBBBCharacterUpdatePipeline::RegisterItemTicks(USkeletalMeshComponent &Mesh
             EquipmentMesh->PrimaryComponentTick.AddPrerequisite(&Mesh, Mesh.PrimaryComponentTick);
         }
     }
+}
+
+void FBBBCharacterUpdatePipeline::RegisterCameraTicks(ABBBCharacter &InCharacter, AActor &Camera)
+{
+    Camera.PrimaryActorTick.AddPrerequisite(&InCharacter, InCharacter.CharacterUpdatePipeline.PostPhysicsTick);
 }
 
 void FBBBCharacterUpdatePipeline::UnregisterItemTicks(USkeletalMeshComponent &Mesh, AActor &Item)

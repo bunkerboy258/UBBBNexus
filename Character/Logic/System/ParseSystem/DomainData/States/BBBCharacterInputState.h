@@ -1,4 +1,7 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterEnterRagdollLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/PhysicalPresentation/FBBBCharacterRagdollRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/PhysicalPresentation/FBBBCharacterRagdollAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterEquipmentShowLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterEquipmentHideLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBCharacterFireIntentLocalControlPacket.h"
@@ -78,6 +81,12 @@
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 布娃娃进入请求及当前结果输入 */
+    TBBBCharacterInputSlot<FBBBCharacterEnterRagdollLocalControlPacket> EnterRagdoll;
+    /** 控制端提交的当前布娃娃结果 */
+    TBBBCharacterInputSlot<FBBBCharacterRagdollRemoteMessagePacket> RemoteRagdoll;
+    /** 分发的当前布娃娃结果 */
+    TBBBCharacterInputSlot<FBBBCharacterRagdollAuthorityFactPacket> AuthorityRagdoll;
     /** 角色表现使用的开火意图快照输入 */
     TBBBCharacterInputSlot<FBBBCharacterFireIntentLocalControlPacket> FireIntent;
     /** 快速近战输入 */

@@ -118,6 +118,21 @@ void FBBBCharacterLocomotionProcessor::Update(
     ACharacter &Character = Context.Character;
     UCharacterMovementComponent &Movement = Context.Movement;
     FBBBCharacterLocomotionState &RuntimeData = Context.LocomotionState;
+    if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().bRagdoll)
+    {
+        Character.StopJumping();
+        Character.ConsumeMovementInputVector();
+        Movement.StopMovementImmediately();
+        Movement.ClearAccumulatedForces();
+        Movement.CurrentRootMotion.Clear();
+        Movement.RootMotionParams.Clear();
+        Movement.DisableMovement();
+        Movement.bUseControllerDesiredRotation = false;
+        Movement.NetworkSmoothingMode = ENetworkSmoothingMode::Disabled;
+        Character.GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        RuntimeData.bRun = false;
+        return;
+    }
     if (!Context.Life.bActionsAllowed)
     {
         return;
