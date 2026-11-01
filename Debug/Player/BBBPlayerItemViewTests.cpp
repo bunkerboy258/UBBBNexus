@@ -97,6 +97,8 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     };
     TestEqual(TEXT("打开前没有人物捕获演员"), CaptureCount(), 0);
     View->SetBackpackOpen(true);
+    TestEqual(TEXT("空手打开背包默认查看第一个装备"), View->GetInspectedSlot(), 0);
+    TestEqual(TEXT("默认查看不改变手持选择"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestEqual(TEXT("人物捕获不建立额外世界上下文"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);
     TestEqual(TEXT("捕获演员只生成在玩家世界"), CaptureCount(), 1);
     TFunction<TSharedPtr<SWidget>(const TSharedRef<SWidget> &, FName)> FindTagged;

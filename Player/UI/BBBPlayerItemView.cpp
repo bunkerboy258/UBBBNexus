@@ -84,9 +84,12 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     InspectedSlot = INDEX_NONE;
     if (Controller)
     {
-        for (int32 SlotIndex = 0; SlotIndex < Controller->GetQuickAccessSlotCount(); ++SlotIndex)
+        int32 StorageStart = 0;
+        int32 StorageCount = 0;
+        Controller->GetStorageRange(EBBBItemType::Equipment, StorageStart, StorageCount);
+        for (int32 SlotIndex = 0; SlotIndex < StorageStart + StorageCount; ++SlotIndex)
         {
-            if (Controller->GetItemDisplayData(SlotIndex).bActive)
+            if (Controller->GetItemDisplayData(SlotIndex).bOccupied)
             {
                 InspectedSlot = SlotIndex;
                 break;
