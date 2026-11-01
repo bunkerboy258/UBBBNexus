@@ -247,61 +247,82 @@ public:
         return 1.0f;
     }
 
-    /** @return 游戏线程只读的垂直后坐力曲线 */
-    const FRichCurve &GetRecoilPitchCurve() const
+    /**
+     * 只读采样本实例已经发布的曲线 不维护累积或回落状态
+     * @param Position\t蓝图计算的曲线位置
+     * @return 原始曲线值 X 俯仰 Y 偏航
+     */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    FVector2D SampleRecoilCurve(float Position) const
     {
-        return RecoilPitchCurve;
+        return FVector2D(RecoilPitchCurve.Eval(Position), RecoilYawCurve.Eval(Position));
     }
 
-    /** @return 游戏线程只读的水平后坐力曲线 */
-    const FRichCurve &GetRecoilYawCurve() const
+    /** @return 已发布的后坐力配置与时间事实是否有效 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    bool HasValidRecoilProfile() const
     {
-        return RecoilYawCurve;
+        return !RecoilPitchCurve.IsEmpty() && !RecoilYawCurve.IsEmpty()
+            && FMath::IsFinite(RecoilFireInterval) && RecoilFireInterval > 0.0f
+            && FMath::IsFinite(RecoilReturnSpeed) && RecoilReturnSpeed > 0.0f
+            && FMath::IsFinite(HipRecoilScale) && HipRecoilScale >= 0.0f
+            && FMath::IsFinite(AimRecoilScale) && AimRecoilScale >= 0.0f
+            && FMath::IsFinite(CrouchedRecoilScale) && CrouchedRecoilScale >= 0.0f
+            && FMath::IsFinite(AirborneRecoilScale) && AirborneRecoilScale >= 0.0f
+            && FMath::IsFinite(GetTimeSinceLastFireSeconds()) && GetTimeSinceLastFireSeconds() >= 0.0f;
     }
 
     /** @return 连续两枪的配置间隔 单位秒 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     float GetRecoilFireInterval() const
     {
         return RecoilFireInterval;
     }
 
     /** @return 停火回落角速度 单位度每秒 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     float GetRecoilReturnSpeed() const
     {
         return RecoilReturnSpeed;
     }
 
     /** @return 腰射轨迹幅度倍率 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     float GetHipRecoilScale() const
     {
         return HipRecoilScale;
     }
 
     /** @return 瞄准轨迹幅度倍率 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     float GetAimRecoilScale() const
     {
         return AimRecoilScale;
     }
 
     /** @return 下蹲轨迹幅度倍率 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     float GetCrouchedRecoilScale() const
     {
         return CrouchedRecoilScale;
     }
 
     /** @return 空中轨迹幅度倍率 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     float GetAirborneRecoilScale() const
     {
         return AirborneRecoilScale;
     }
 
     /** @return 是否在持续输入期间保持轨迹点 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     bool HoldsRecoilBetweenShots() const
     {
         return bAutomaticRecoil;
     }
 
     /** @return 已成立的动作状态是否允许继续连续射击 */
+    UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     bool CanSustainRecoil() const
     {
         return bCanSustainRecoil;

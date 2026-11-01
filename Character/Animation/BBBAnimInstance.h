@@ -117,9 +117,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源第二阻挡面法线"))
     FVector SourceSecondaryBlockingSurfaceNormal = FVector::ZeroVector;
 
-    /** 本帧后坐力姿势驱动角 X 向上 Y 向右 单位为度 不代表实际枪口误差 */
-    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源后坐力角度"))
-    FVector2D SourceRecoilAngles = FVector2D::ZeroVector;
+    /** 后坐力表现配置的角度上限 X 俯仰 Y 偏航 不持有派生表现角度 */
+    UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "后坐力角度上限"))
+    FVector2D SourceRecoilLimitDegrees = FVector2D::ZeroVector;
 
     /** 本帧引擎移动模式 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "BBB|动画事实", meta = (DisplayName = "来源移动模式"))
@@ -195,12 +195,16 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceAimTargetComponentSpace;
     }
 
-    /** @return 后坐力姿势驱动角 X 向上 Y 向右 单位为度 只读取已发布快照 */
+    /** @return 主动画蓝图已计算的后坐力姿势角 X 向上 Y 向右 单位为度 */
     UFUNCTION(BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
     FVector2D GetRecoilAngles() const
     {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceRecoilAngles;
+        return GetBBBMainAnimInstanceThreadSafe()->ReadRecoilAngles();
     }
+
+    /** @return 主动画蓝图线程安全更新制造的后坐力表现角度 */
+    UFUNCTION(BlueprintImplementableEvent, BlueprintPure, Category = "BBB|后坐力", meta = (BlueprintThreadSafe))
+    FVector2D ReadRecoilAngles() const;
 
     /**
      * 读取主动画实例曲线供关联层内部计算权重

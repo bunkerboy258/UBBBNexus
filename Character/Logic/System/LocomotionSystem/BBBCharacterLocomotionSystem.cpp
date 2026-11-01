@@ -7,6 +7,7 @@
 #include "Curves/CurveFloat.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/DomainData/Context/BBBCharacterMovementFactContext.h"
 
 void FBBBCharacterLocomotionSystem::Initialize(
     ACharacter &InCharacter,
@@ -48,4 +49,19 @@ void FBBBCharacterLocomotionSystem::Update()
     LifeMovementProcessor.Update(Context);
     RescueMovementProcessor.Update(Context);
     LocomotionProcessor.Update(Context);
+}
+
+void FBBBCharacterLocomotionSystem::CaptureMovementFacts()
+{
+    if (!Character || !Movement || !CharacterData)
+    {
+        return;
+    }
+
+    FBBBCharacterMovementFactContext Context{
+        *Character,
+        *Movement,
+        *CharacterData,
+        CharacterData->External.ReadNetworkIdentityState().bIsMirror};
+    MovementFactProcessor.Update(Context);
 }

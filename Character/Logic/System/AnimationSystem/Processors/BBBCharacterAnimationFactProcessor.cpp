@@ -2,6 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Config/Aim/BBBAimConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/Context/BBBCharacterAnimationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
@@ -107,6 +108,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.bFullBodyPlaying = Context.AnimationInstance.FullBodyMontageContribution
         && Context.AnimationInstance.Montage_IsPlaying(Context.AnimationInstance.FullBodyMontageContribution);
     FactState.bIsAiming = AimState.bIsAiming;
+    FactState.RecoilLimitDegrees = Context.AnimationConfig.RecoilLimitDegrees;
     FactState.AimTargetComponentSpace = RawAimTargetComponentSpace;
 
     FactState.ActorLocation = Character.GetActorLocation();
@@ -114,13 +116,9 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.MeshWorldTransform = CharacterMesh->GetComponentTransform();
     FactState.Velocity = Movement->Velocity;
     FactState.LastUpdateVelocity = Movement->GetLastUpdateVelocity();
-    // 镜像 CMC 不保证保留控制者加速度 表现只读取已经还原的原始移动事实
-    FactState.Acceleration = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
-        ? RuntimeData.Locomotion.ReadLocomotionState().RestoredAcceleration
-        : Movement->GetCurrentAcceleration();
-    FactState.MovementInput = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
-        ? RuntimeData.Locomotion.ReadLocomotionState().RestoredMovementInput
-        : RuntimeData.Parse.ReadControlState().MoveWorld;
+    // 移动系统已统一本地采样与还原事实 动画发布不再区分来源
+    FactState.Acceleration = RuntimeData.Locomotion.ReadLocomotionState().Acceleration;
+    FactState.MovementInput = RuntimeData.Locomotion.ReadLocomotionState().MovementInput;
     FactState.BlockingSurfaceNormal = FVector::ZeroVector;
     FactState.SecondaryBlockingSurfaceNormal = FVector::ZeroVector;
 
@@ -173,9 +171,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     }
 
     FactState.MaxAcceleration = Movement->GetMaxAcceleration();
-    FactState.FacingWorld = Context.RuntimeData.External.ReadNetworkIdentityState().bIsMirror
-        ? Character.GetActorRotation()
-        : RuntimeData.Parse.ReadControlState().FacingWorld;
+    FactState.FacingWorld = RuntimeData.Locomotion.ReadLocomotionState().FacingWorld;
     FactState.ControlRotation = Character.GetControlRotation();
     FactState.bIsRunning = RuntimeData.Locomotion.ReadLocomotionState().bRun;
     FactState.MovementMode = Movement->MovementMode;

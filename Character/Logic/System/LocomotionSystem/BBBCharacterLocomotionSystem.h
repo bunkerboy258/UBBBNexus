@@ -5,6 +5,7 @@
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLifeMovementProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterMovementFactProcessor.h"
 
 class ACharacter;
 struct FBBBCharacterRuntimeData;
@@ -21,6 +22,9 @@ class ABBB_EVAC_API FBBBCharacterLocomotionSystem final
 public:
     /** 逐帧更新步态 移动参数 蹲跳请求和移动输入 */
     void Update();
+
+    /** 仅由主管线在 CMC 后和动画事实发布前采集最终移动事实 */
+    void CaptureMovementFacts();
 
 private:
     friend class FBBBCharacterInitializer;
@@ -57,5 +61,6 @@ private:
     FBBBCharacterLocomotionProcessor LocomotionProcessor;
     FBBBCharacterLifeMovementProcessor LifeMovementProcessor;
     FBBBCharacterRescueMovementProcessor RescueMovementProcessor;
+    FBBBCharacterMovementFactProcessor MovementFactProcessor;
 
 };

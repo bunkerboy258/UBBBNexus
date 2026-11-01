@@ -25,6 +25,7 @@ private:
     friend class FBBBCharacterLifeMovementProcessor;
     friend class FBBBCharacterLocomotionSystem;
     friend class FBBBCharacterLocomotionProcessor;
+    friend class FBBBCharacterMovementFactProcessor;
     friend class FBBBCharacterParseSystem;
 
     /** 角色当前移动状态 */

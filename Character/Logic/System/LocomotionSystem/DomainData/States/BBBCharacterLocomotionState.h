@@ -13,6 +13,15 @@ struct FBBBCharacterLocomotionState final
     /** 当前本地计算或网络恢复后的跑步状态 */
     bool bRun = false;
 
+    /** CMC 完成后的有效加速度 下游不再判断事实来源 */
+    FVector Acceleration = FVector::ZeroVector;
+
+    /** 本帧有效移动输入 保留原始输入强度 */
+    FVector MovementInput = FVector::ZeroVector;
+
+    /** 本帧有效世界朝向输入 */
+    FRotator FacingWorld = FRotator::ZeroRotator;
+
     /** 控制者产生的加速度事实 镜像不通过移动输入重新计算 */
     FVector RestoredAcceleration = FVector::ZeroVector;
 

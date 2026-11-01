@@ -4,7 +4,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationLayerState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationMontageState.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterRecoilState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterLifeAnimationState.h"
 #include "BBBCharacterAnimationDomainState.generated.h"
 
@@ -13,7 +12,6 @@ class FBBBCharacterAnimationLayerProcessor;
 class FBBBCharacterAnimationSystem;
 class FBBBCharacterParseSystem;
 class FBBBCharacterMuzzleProcessor;
-class FBBBCharacterRecoilProcessor;
 
 /** 角色动画领域全部状态的唯一直接持有者 */
 USTRUCT()
@@ -26,12 +24,6 @@ public:
     const FBBBCharacterLifeAnimationState &ReadLifeAnimationState() const
     {
         return LifeAnimationState;
-    }
-
-    /** @return 角色后坐力轨迹状态 */
-    const FBBBCharacterRecoilState &ReadRecoilState() const
-    {
-        return RecoilState;
     }
 
     /** @return 角色动画事实状态 */
@@ -58,11 +50,6 @@ private:
     /** 生命阶段动画的应用进度 */
     UPROPERTY(Transient)
     FBBBCharacterLifeAnimationState LifeAnimationState;
-
-    friend class FBBBCharacterRecoilProcessor;
-
-    /** 角色后坐力轨迹状态 */
-    FBBBCharacterRecoilState RecoilState;
 
     friend class FBBBCharacterAnimationFactProcessor;
     friend class FBBBCharacterAnimationLayerProcessor;

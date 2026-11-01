@@ -133,6 +133,7 @@ void FBBBCharacterUpdatePipeline::LateUpdate() const
     }
 
     // CMC 结束后采集最终移动结果并更新动画事实
+    Character->LocomotionSystem.CaptureMovementFacts();
     Character->AnimationSystem.Update();
 
 }
