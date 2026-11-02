@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
+#include "BBBSlimePresentation.h"
 #include "BBBSlimeDefinition.generated.h"
 
 class UMassEntityConfigAsset;
-class UMaterialInterface;
 
 /** 喷吐粘液的飞行 地面接触与生命周期规则 */
 UCLASS(BlueprintType)
@@ -46,9 +46,12 @@ public:
     /** 同一喷吐者仍然存活的区域上限 */
     UPROPERTY(EditAnywhere, Category = "粘液", meta = (DisplayName = "单体数量上限", ClampMin = "1", ClampMax = "32"))
     int32 SourceLimit = 4;
-    /** 绿色粘液的表现材质 */
-    UPROPERTY(EditAnywhere, Category = "表现", meta = (DisplayName = "粘液材质"))
-    TObjectPtr<UMaterialInterface> Material;
+    /** 独立的喷出 飞行 泼溅与地面表现 */
+    UPROPERTY(EditAnywhere, Category = "表现", meta = (DisplayName = "黏液表现"))
+    FBBBSlimePresentation Presentation;
+    /** @return 当前表现资源与参数是否可以用于显示 */
+    UFUNCTION(BlueprintPure, Category = "Presentation")
+    bool IsPresentationReady() const { return Presentation.IsValid(); }
     /** @return 当前飞行与接触规则是否合法 */
     bool IsValid() const;
 };
