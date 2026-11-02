@@ -162,6 +162,7 @@ namespace BBBCharacterInput
             Slot.Data.Positions.Append(Packet.Positions);
             Slot.Data.Directions.Append(Packet.Directions);
             Slot.Data.Sources.Append(Packet.Sources);
+            Slot.Data.Impacts.Append(Packet.Impacts);
             if constexpr (std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>)
             {
                 Slot.Data.Sequences.Append(Packet.Sequences);
