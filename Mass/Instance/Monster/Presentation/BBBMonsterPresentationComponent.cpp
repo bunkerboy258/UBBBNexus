@@ -89,14 +89,21 @@ bool UBBBMonsterPresentationComponent::BeginCorpsePresentation(const FVector& Ve
             Body->UpdateDampingProperties();
         }
     }
-    Mesh->SetAllPhysicsLinearVelocity(Velocity.ContainsNaN() ? FVector::ZeroVector : Velocity.GetClampedToMaxSize(650.0f));
+    const bool bPhysicalHit = Hit.Serial != 0 && Hit.Age <= 0.3f
+        && (!Hit.ImpactImpulse.IsNearlyZero() || !Hit.ImpactVelocity.IsNearlyZero());
+    const FVector ImpactVelocity = bPhysicalHit
+        ? Hit.ImpactVelocity + Hit.ImpactImpulse / FMath::Max(1.0f, Mesh->GetMass()) : FVector::ZeroVector;
+    Mesh->SetAllPhysicsLinearVelocity((Velocity.ContainsNaN() ? FVector::ZeroVector : Velocity.GetClampedToMaxSize(650.0f)) + ImpactVelocity);
     FVector CollapseImpulse = GetOwner()->GetActorForwardVector() * 100.0f;
     if (Hit.Serial != 0 && Hit.Age <= 0.3f && !Hit.Direction.ContainsNaN() && !Hit.Position.ContainsNaN())
     {
         const FVector Direction = Hit.Direction.GetSafeNormal();
         CollapseImpulse = Direction * 180.0f + FVector::UpVector * 25.0f;
     }
-    Mesh->AddImpulse(CollapseImpulse, TEXT("pelvis"), true);
+    if (!bPhysicalHit)
+    {
+        Mesh->AddImpulse(CollapseImpulse, TEXT("pelvis"), true);
+    }
     Mesh->WakeAllRigidBodies();
     bCorpseActive = true;
     bCorpseFrozen = false;

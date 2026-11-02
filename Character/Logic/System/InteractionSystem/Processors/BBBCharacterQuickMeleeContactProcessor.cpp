@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterQuickMeleeContactProcessor.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Context/BBBCharacterInteractionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
@@ -70,38 +71,17 @@ void FBBBCharacterQuickMeleeContactProcessor::Update(FBBBCharacterInteractionUpd
             {
                 continue;
             }
-            FBBBMonsterDamageLocalControlPacket Packet;
-            if (!Mass->QueryDamage(Entity, Packet.Contributions))
-            {
-                continue;
-            }
-            const auto *Existing = Packet.Contributions.FindByPredicate(
-                [Player](const auto &Value)
-                {
-                    return Value.PlayerId == Player->GetPlayerId();
-                });
-            FBBBMonsterDamageContribution Value = Existing ? *Existing : FBBBMonsterDamageContribution{};
+            FBBBHitContribution Value{Config.QuickMeleeDamage, NAME_None, Position, Direction};
+            Value.Part = Part;
+            Value.Normal = Normal;
             Value.PlayerId = Player->GetPlayerId();
-            Value.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Part);
-            FBBBMonsterBodyPartDefinition PartDefinition;
-            if (!Mass->QueryMonsterBodyPart(Entity, Part, PartDefinition))
-            {
-                continue;
-            }
-            Value.Parts.Add(Value.LastHitRegion, Config.QuickMeleeDamage * (1.0 - PartDefinition.Durability) +
-                                                     Config.QuickMeleeDurableDamage * PartDefinition.Durability);
-            const auto *GameState = World.GetGameState();
-            Value.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
-            Packet.Include(Value);
+            Value.AddDurableDamage = Config.QuickMeleeDurableDamage;
+            Value.SourcePosition = Context.Character.GetActorLocation();
+            Value.bHasSourcePosition = true;
+            FBBBMonsterDamageLocalControlPacket Packet{{Value}};
             if (Mass->SubmitInput(Entity, MoveTemp(Packet)))
             {
                 State.MeleeEntities.Add(Entity);
-                FBBBMonsterHitReactionLocalControlPacket Reaction;
-                Reaction.Region = static_cast<EBBBMonsterHitRegion>(Part);
-                Reaction.Position = Position;
-                Reaction.Normal = Normal;
-                Reaction.Direction = Direction;
-                Mass->SubmitInput(Entity, MoveTemp(Reaction));
                 UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Mass hit Attack=%d Entity=%d Damage=%.1f"), State.UseSerial,
                        Entity.Index, Config.QuickMeleeDamage);
             }
@@ -111,8 +91,7 @@ void FBBBCharacterQuickMeleeContactProcessor::Update(FBBBCharacterInteractionUpd
         if (IsValid(Actor) && Actor->CanBeDamaged() && !State.MeleeActors.Contains(Actor))
         {
             State.MeleeActors.Add(Actor);
-            UGameplayStatics::ApplyPointDamage(Actor, Config.QuickMeleeDamage, Direction, Hit,
-                                               Context.Character.GetController(), &Context.Character, nullptr);
+            BBBHitReceiver::Submit(Actor, FBBBHitContribution{Config.QuickMeleeDamage, Hit.BoneName, Hit.ImpactPoint, Direction});
             UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Actor hit Attack=%d Target=%s Damage=%.1f"), State.UseSerial,
                    *Actor->GetName(), Config.QuickMeleeDamage);
         }

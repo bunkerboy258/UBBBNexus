@@ -42,7 +42,7 @@ public:
      * @param CumulativeDamage	本机玩家对目标的最新累计伤害
      * @return 是否已交接可靠通道
      */
-    bool ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution);
+    bool ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Contribution);
 
 private:
     UFUNCTION()
@@ -58,9 +58,9 @@ private:
 
     /** 当前字典快照的可靠投递 不另设死亡消息或命中事件链路 */
     UFUNCTION(NetMulticast, Reliable)
-    void MulticastDamage(FGuid InstanceId, const TArray<FBBBMonsterDamageContribution>& Contributions);
+    void MulticastDamage(FGuid InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions);
 
-    void RouteDamage(const FGuid& InstanceId, const TArray<FBBBMonsterDamageContribution>& Contributions);
+    void RouteDamage(const FGuid& InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions);
 
     /** 清理已经离开当前复制集合的暂存与退役身份 不撤销现存实体的退役保护 */
     void PruneCaches();
@@ -71,7 +71,7 @@ private:
     TMap<FGuid, FMassEntityHandle> LocalEntities;
     TMap<FGuid, int32> ReplicationIndices;
     TSet<FGuid> Observed;
-    TMap<FGuid, FBBBMonsterDamageContribution> SubmittedDamage;
+    TMap<FGuid, FBBBMonsterDamageTotals> SubmittedDamage;
 
     /** 可靠字典早于出生属性到达时暂存当前结果 不保存消息历史 */
     TMap<FGuid, FBBBMassPendingDamageSnapshot> PendingDamageSnapshots;

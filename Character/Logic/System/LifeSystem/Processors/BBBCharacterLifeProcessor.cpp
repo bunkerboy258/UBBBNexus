@@ -24,12 +24,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
     auto &Delivery = Domain.DamageDeliveryState;
     const bool bMirror = Context.Data.External.ReadNetworkIdentityState().bIsMirror;
     const auto &World = Context.Data.External.ReadWorldState();
-    Delivery.Damages.Reset();
-    Delivery.Bones.Reset();
-    Delivery.Positions.Reset();
-    Delivery.Directions.Reset();
-    Delivery.Sources.Reset();
-    Delivery.Impacts.Reset();
+    Delivery.Hits.Reset();
 
     if (bMirror && Input.bHasResult && (!State.bInitialized || Input.ResultRevision > State.Revision))
     {
@@ -70,16 +65,12 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         }
     }
     Input.Recoveries.Reset();
-    for (int32 Index = 0; Index < Input.Damages.Num(); ++Index)
+    bool bFirstImpact = true;
+    for (const auto& Value : Input.Hits)
     {
         if (bMirror)
         {
-            Delivery.Damages.Add(Input.Damages[Index]);
-            Delivery.Bones.Add(Input.Bones[Index]);
-            Delivery.Positions.Add(Input.Positions[Index]);
-            Delivery.Directions.Add(Input.Directions[Index]);
-            Delivery.Sources.Add(Input.Sources[Index]);
-            Delivery.Impacts.Add(Input.Impacts[Index]);
+            Delivery.Hits.Add(Value);
             continue;
         }
         if (State.Phase == EBBBCharacterLifePhase::Dead)
@@ -87,16 +78,25 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
             continue;
         }
 
-        State.Health = FMath::Max(0.0f, State.Health - Input.Damages[Index]);
+        State.Health = FMath::Max(0.0f, State.Health - Value.AddDamage);
         ++State.Revision;
         ++Hit.Serial;
-        Hit.Bone = Input.Bones[Index];
-        Hit.Position = Input.Positions[Index];
-        Hit.Direction = Input.Directions[Index].GetSafeNormal();
+        Hit.Bone = Value.Bone;
+        Hit.Position = Value.Position;
+        Hit.Direction = Value.Direction.GetSafeNormal();
         Hit.Time = World.WorldTimeSeconds;
-        if (Input.Impacts[Index].HoldSeconds > 0)
+        if (Value.AddHoldSeconds > 0 || !Value.AddImpulse.IsNearlyZero() || !Value.AddVelocity.IsNearlyZero())
         {
-            Hit.Impact = Input.Impacts[Index];
+            if (bFirstImpact)
+            {
+                Hit.ImpactVelocity = FVector::ZeroVector;
+                Hit.ImpactImpulse = FVector::ZeroVector;
+                Hit.ImpactHoldSeconds = 0;
+                bFirstImpact = false;
+            }
+            Hit.ImpactVelocity += Value.AddVelocity;
+            Hit.ImpactImpulse += Value.AddImpulse;
+            Hit.ImpactHoldSeconds = FMath::Max(Hit.ImpactHoldSeconds, Value.AddHoldSeconds);
             ++Hit.ImpactSerial;
         }
         if (State.Health > 0.0f)
@@ -152,14 +152,9 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         && !Physical.bRagdollRequested && Physical.RagdollSnapshot.Phase == EBBBCharacterPhysicalPhase::Animated;
     Context.Character.SetCanBeDamaged(State.bInitialized && State.Phase != EBBBCharacterLifePhase::Dead);
 
-    if (!Delivery.Damages.IsEmpty())
+    if (!Delivery.Hits.IsEmpty())
     {
         ++Delivery.Serial;
     }
-    Input.Damages.Reset();
-    Input.Bones.Reset();
-    Input.Positions.Reset();
-    Input.Directions.Reset();
-    Input.Sources.Reset();
-    Input.Impacts.Reset();
+    Input.Hits.Reset();
 }

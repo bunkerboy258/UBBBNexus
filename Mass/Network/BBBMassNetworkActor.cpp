@@ -169,7 +169,7 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
     return Entity != nullptr ? *Entity : FMassEntityHandle();
 }
 
-bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageContribution& Contribution)
+bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Contribution)
 {
     const auto* Submitted = SubmittedDamage.Find(InstanceId);
     if (Contribution.Parts.Sum() <= 0.0 || (Submitted != nullptr
@@ -191,7 +191,7 @@ bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBB
 }
 
 void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,
-    const TArray<FBBBMonsterDamageContribution>& Contributions)
+    const TArray<FBBBMonsterDamageTotals>& Contributions)
 {
     if (!HasAuthority())
     {
@@ -200,7 +200,7 @@ void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,
 }
 
 void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
-    const TArray<FBBBMonsterDamageContribution>& Contributions)
+    const TArray<FBBBMonsterDamageTotals>& Contributions)
 {
     PruneCaches();
     if (Retired.Contains(InstanceId))
@@ -211,7 +211,7 @@ void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
     FBBBMonsterDamageRemoteMessagePacket Packet;
     Packet.InstanceId = InstanceId;
     const FMassEntityHandle Entity = FindEntity(InstanceId);
-    if (!Mass->QueryDamage(Entity, Packet.Contributions))
+    if (!Entity.IsSet())
     {
         /** 完整复制快照仍会还原当前贡献 暂存不能随短命实体无限增长 */
         if (!PendingDamageSnapshots.Contains(InstanceId) && PendingDamageSnapshots.Num() >= 512)

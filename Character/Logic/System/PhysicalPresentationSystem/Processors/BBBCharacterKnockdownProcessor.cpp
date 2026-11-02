@@ -14,7 +14,7 @@ void FBBBCharacterKnockdownProcessor::Update(FBBBCharacterPhysicalPresentationUp
     const auto &Life = Context.Data.Life.ReadLifeState();
     const auto &Hit = Context.Data.Life.ReadHitState();
     const double Now = Context.Data.External.ReadWorldState().WorldTimeSeconds;
-    if (!Life.bInitialized || Life.Phase == EBBBCharacterLifePhase::Dead)
+    if (!Life.bInitialized)
     {
         State.ImpactReleaseAt = 0;
         State.PendingImpactVelocity = FVector::ZeroVector;
@@ -23,19 +23,20 @@ void FBBBCharacterKnockdownProcessor::Update(FBBBCharacterPhysicalPresentationUp
     if (Hit.ImpactSerial > State.ImpactSerial)
     {
         State.ImpactSerial = Hit.ImpactSerial;
-        if (Hit.Impact.IsValid() && Hit.Impact.HoldSeconds > 0)
+        const FVector Velocity = Hit.ImpactVelocity + Hit.ImpactImpulse / FMath::Max(1.0f, Context.Mesh.GetMass());
+        if (Hit.ImpactHoldSeconds > 0 || !Velocity.IsNearlyZero())
         {
-            State.ImpactReleaseAt = FMath::Max(State.ImpactReleaseAt, Now + Hit.Impact.HoldSeconds);
+            State.ImpactReleaseAt = FMath::Max(State.ImpactReleaseAt, Now + FMath::Max(0.2f, Hit.ImpactHoldSeconds));
             State.bGetUpRequested = false;
             State.bGetUpComplete = false;
             if (State.bRagdoll)
             {
-                Context.Mesh.SetAllPhysicsLinearVelocity(Hit.Impact.Velocity, true);
+                Context.Mesh.SetAllPhysicsLinearVelocity(Velocity, true);
                 Context.Mesh.WakeAllRigidBodies();
             }
             if (!State.bRagdoll)
             {
-                State.PendingImpactVelocity = Hit.Impact.Velocity;
+                State.PendingImpactVelocity = Velocity;
                 State.bRagdollRequested = true;
             }
         }

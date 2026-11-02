@@ -42,6 +42,8 @@ struct FBBBMonsterHitReactionLocalControlPacket final
         State.Position = Position;
         State.Direction = Direction.GetSafeNormal();
         State.Normal = Normal.GetSafeNormal();
+        State.ImpactImpulse = FVector::ZeroVector;
+        State.ImpactVelocity = FVector::ZeroVector;
         State.Age = 0.0f;
         ++State.Serial;
     }

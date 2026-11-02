@@ -10,6 +10,7 @@
 #include "Engine/EngineBaseTypes.h"
 #include "UObject/Package.h"
 #include "Components/BoxComponent.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/Pawn.h"
@@ -100,7 +101,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     };
     const auto Damage = [&](FMassEntityHandle Target)
     {
-        TArray<FBBBMonsterDamageContribution> Values;
+        TArray<FBBBMonsterDamageTotals> Values;
         Mass->QueryDamage(Target, Values);
         double Total = 0.0;
         for (const auto& Value : Values)
@@ -156,7 +157,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     Manager.DestroyEntity(First);
     Manager.DestroyEntity(Second);
 
-    TArray<FBBBMonsterDamageContribution> ShotgunValues;
+    TArray<FBBBMonsterDamageTotals> ShotgunValues;
     Mass->QueryDamage(B, ShotgunValues);
     const auto* ShotgunContribution = ShotgunValues.FindByPredicate([](const auto& Value)
     {
@@ -302,9 +303,9 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     {
         return false;
     }
-    auto *SourcePawn = World->SpawnActor<APawn>();
-    auto *NearbyPawn = World->SpawnActor<APawn>();
-    for (APawn *Pawn : {SourcePawn, NearbyPawn})
+    auto *SourcePawn = World->SpawnActor<ABBBCharacter>();
+    auto *NearbyPawn = World->SpawnActor<ABBBCharacter>();
+    for (auto *Pawn : {SourcePawn, NearbyPawn})
     {
         auto *Body = NewObject<UBoxComponent>(Pawn);
         Pawn->SetRootComponent(Body);
@@ -318,11 +319,6 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     }
     SourcePawn->SetActorLocation(FVector(1000, 0, 0));
     NearbyPawn->SetActorLocation(FVector(1100, 0, 0));
-    auto *LastHitBy = FindFProperty<FObjectPropertyBase>(APawn::StaticClass(), TEXT("LastHitBy"));
-    if (!TestNotNull(TEXT("引擎角色提供实际受伤来源"), LastHitBy))
-    {
-        return false;
-    }
     // 爆心位于两名角色之间 避免投掷者碰撞体遮挡另一名角色的爆炸视线
     Packet.LaunchTransform = FTransform(FVector(1050, 0, 0));
     Packet.LocalDirection = FVector::ForwardVector;
@@ -335,27 +331,31 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     Packet.Pawn = SourcePawn;
     for (const bool bSelfDamage : {false, true})
     {
-        LastHitBy->SetObjectPropertyValue_InContainer(SourcePawn, nullptr);
-        LastHitBy->SetObjectPropertyValue_InContainer(NearbyPawn, nullptr);
+        const int32 SourceHits = SourcePawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num();
+        const int32 NearbyHits = NearbyPawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num();
         Packet.bDamageInstigator = bSelfDamage;
         const auto Grenade = Spawn();
         Run(UBBBProjectileMovementProcessor::StaticClass());
         Run(UBBBProjectileCollisionProcessor::StaticClass());
-        TestEqual(TEXT("自伤配置决定投掷者是否实际受到径向伤害"),
-            LastHitBy->GetObjectPropertyValue_InContainer(SourcePawn), bSelfDamage ? static_cast<UObject *>(Controller) : nullptr);
-        TestEqual(TEXT("附近其他角色仍然受到同来源的爆炸伤害"),
-            LastHitBy->GetObjectPropertyValue_InContainer(NearbyPawn), static_cast<UObject *>(Controller));
+        TestEqual(TEXT("自伤开关决定是否提交独立贡献"),
+            SourcePawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num() - SourceHits, bSelfDamage ? 1 : 0);
+        const auto& NearbyInput = NearbyPawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits;
+        TestEqual(TEXT("爆炸对多组件角色只提交一次贡献"), NearbyInput.Num() - NearbyHits, 1);
+        if (!NearbyInput.IsEmpty())
+        {
+            TestEqual(TEXT("径向伤害完整进入统一命中值"), NearbyInput.Last().AddDamage, Packet.Damage);
+        }
         Manager.DestroyEntity(Grenade);
     }
-    LastHitBy->SetObjectPropertyValue_InContainer(SourcePawn, nullptr);
-    LastHitBy->SetObjectPropertyValue_InContainer(NearbyPawn, nullptr);
+    const int32 SourceHits = SourcePawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num();
+    const int32 NearbyHits = NearbyPawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num();
     Packet.bDamageInstigator = true;
     Packet.bCanCauseDamage = false;
     const auto VisualGrenade = Spawn();
     Run(UBBBProjectileMovementProcessor::StaticClass());
     Run(UBBBProjectileCollisionProcessor::StaticClass());
-    TestNull(TEXT("镜像爆炸不得伤害投掷者"), LastHitBy->GetObjectPropertyValue_InContainer(SourcePawn));
-    TestNull(TEXT("镜像爆炸不得伤害附近角色"), LastHitBy->GetObjectPropertyValue_InContainer(NearbyPawn));
+    TestEqual(TEXT("镜像爆炸不向投掷者提交贡献"), SourcePawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num(), SourceHits);
+    TestEqual(TEXT("镜像爆炸不向附近角色提交贡献"), NearbyPawn->RuntimeData.Parse.ReadInputState().Damage.Data.Hits.Num(), NearbyHits);
     Manager.DestroyEntity(VisualGrenade);
     return true;
 }

@@ -189,7 +189,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("没有新确认时追踪超时"), Target.bHasTarget);
 
     Reset();
-    FBBBMonsterDamageContribution Hit;
+    FBBBMonsterDamageTotals Hit;
     Hit.PlayerId = 1;
     Hit.Parts.Torso = 1.0;
     Hit.LastHitTime = World->GetTimeSeconds();
@@ -197,12 +197,12 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     Hit.bHasSourcePosition = true;
     TArray<uint8> Encoded;
     FMemoryWriter Writer(Encoded);
-    FBBBMonsterDamageContribution::StaticStruct()->SerializeItem(Writer, &Hit, nullptr);
-    FBBBMonsterDamageContribution Decoded;
+    FBBBMonsterDamageTotals::StaticStruct()->SerializeItem(Writer, &Hit, nullptr);
+    FBBBMonsterDamageTotals Decoded;
     FMemoryReader Reader(Encoded);
-    FBBBMonsterDamageContribution::StaticStruct()->SerializeItem(Reader, &Decoded, nullptr);
+    FBBBMonsterDamageTotals::StaticStruct()->SerializeItem(Reader, &Decoded, nullptr);
     TestTrue(TEXT("当前伤害快照序列化保留来源位置"), Decoded == Hit);
-    FBBBMonsterDamageLocalControlPacket SourcePacket;
+    FBBBMonsterDamageRemoteMessagePacket SourcePacket;
     SourcePacket.Include(Hit);
     auto NewerHit = Hit;
     NewerHit.Parts.Torso = 2.0;

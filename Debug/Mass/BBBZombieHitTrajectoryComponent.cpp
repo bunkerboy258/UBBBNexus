@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitTrajectoryComponent.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimSequence.h"
@@ -517,7 +518,10 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
             const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Position - Direction * 200, Position + Direction * 30, ECC_Pawn);
             if (bHit && Hit.GetActor() == Target)
             {
-                UGameplayStatics::ApplyPointDamage(Target, 10, Direction, Hit, nullptr, nullptr, nullptr);
+                FBBBHitContribution Value{10.f, Hit.BoneName, Hit.ImpactPoint, Direction};
+                Value.Normal = Hit.ImpactNormal;
+                Value.AddWound = 1;
+                BBBHitReceiver::Submit(Target, Value);
             }
         }
         if (bCommand)

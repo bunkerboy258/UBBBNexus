@@ -9,6 +9,4 @@ struct FBBBThrowableExplosionState final
     bool bPresented = false;
     /** 当前唯一的爆炸结果 */
     FBBBThrowableExplosionFact Fact;
-    /** 已交接伤害的终态目标索引 */
-    TSet<int32> Credited;
 };

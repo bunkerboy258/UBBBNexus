@@ -110,8 +110,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     };
     const auto Damage = [&](ABBBCharacter *Character, float Amount)
     {
-        Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Amount}, {TEXT("spine_03")},
-            {Character->GetActorLocation()}, {FVector::ForwardVector}, {nullptr}, {{}}});
+        Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{FBBBHitContribution{Amount, TEXT("spine_03"), Character->GetActorLocation(), FVector::ForwardVector}}});
     };
     const auto Begin = [&]()
     {

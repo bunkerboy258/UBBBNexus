@@ -4,7 +4,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpecialDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPointDamageEvent.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/AuthorityFact/Network/FBBBMonsterStateAuthorityFactPacket.h"
 
 /** 验证特感网络拒绝非法阶段 保留点伤害适配与普通移动交接 */
@@ -37,15 +37,10 @@ bool FBBBMonsterSpecialContractTest::RunTest(const FString&)
     Rule->RushSpeed = 1000;
     Rule->Kind = EBBBMonsterSpecialKind::Spitter;
     TestFalse(TEXT("喷吐缺少粘液规则时拒绝"), Rule->IsValid());
-    FBBBMonsterPointDamageEvent Event;
-    Event.SourceId = FGuid::NewGuid();
-    Event.AttackId = 1;
-    Event.LaunchVelocity = FVector(900, 0, 350);
-    Event.KnockdownDuration = 2;
-    const FDamageEvent& Base = Event;
-    TestTrue(TEXT("接收方可识别击飞载荷"), Base.IsOfType(FBBBMonsterPointDamageEvent::ClassID));
-    TestTrue(TEXT("保留标准点伤害行为"), Base.IsOfType(FPointDamageEvent::ClassID));
-    TestTrue(TEXT("保留标准伤害行为"), Base.IsOfType(FDamageEvent::ClassID));
+    FBBBHitContribution Hit;
+    Hit.AddVelocity = FVector(900, 0, 350);
+    Hit.AddHoldSeconds = 2;
+    TestTrue(TEXT("零扣血的击飞是有效命中"), Hit.IsValid());
     return true;
 }
 #endif

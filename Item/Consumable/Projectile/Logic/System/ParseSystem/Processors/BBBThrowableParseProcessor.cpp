@@ -1,5 +1,12 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Logic/System/ParseSystem/Processors/BBBThrowableParseProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
+
+void FBBBThrowableParseProcessor::Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableHitLocalControlPacket Packet)
+{
+    Data.Parse.State.Hit.Hits.Append(Packet.Hits);
+    Data.Parse.State.bHit = true;
+}
+
 void FBBBThrowableParseProcessor::Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableLaunchLocalControlPacket Packet)
 {
     Data.Parse.State.Launch = MoveTemp(Packet);
@@ -23,6 +30,11 @@ void FBBBThrowableParseProcessor::Update(ABBBThrowable& Actor) const
     auto& Slots = Actor.RuntimeData.Parse.State;
     auto& Life = Actor.RuntimeData.Lifetime.State;
     auto& Explosion = Actor.RuntimeData.Explosion.State;
+    if (Slots.bHit && Actor.HasAuthority() && !Explosion.Fact.bExploded
+        && Slots.Hit.IsValid() && Slots.Hit.CanApply(Life))
+    {
+        Slots.Hit.Apply(Life);
+    }
     if (Slots.bLaunch && Slots.Launch.IsValid() && Actor.HasAuthority() && Slots.Launch.CanApply(Life))
     {
         Slots.Launch.Apply(Life);

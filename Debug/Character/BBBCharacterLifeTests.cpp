@@ -81,8 +81,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     };
     const auto Damage = [&](float Amount)
     {
-        Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
-            {Amount}, {TEXT("spine_03")}, {Character->GetActorLocation()}, {FVector::ForwardVector}, {nullptr}, {{}}});
+        Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{FBBBHitContribution{Amount, TEXT("spine_03"), Character->GetActorLocation(), FVector::ForwardVector}}});
     };
     Step();
     TestEqual(TEXT("初始最大生命"), Character->GetHealth(), 500.0f);
@@ -174,6 +173,19 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     Step();
     TestEqual(TEXT("迟到结果不能覆盖较新生命"), Mirror->GetHealth(), 200.0f);
 
+    FBBBHitContribution Left;
+    Left.AddVelocity = FVector(100, 0, 0);
+    Left.AddHoldSeconds = 0.2f;
+    FBBBHitContribution Right;
+    Right.AddVelocity = FVector(0, 200, 0);
+    Right.AddHoldSeconds = 0.3f;
+    Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Left}});
+    Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Right}});
+    Step();
+    const auto& Impact = Character->RuntimeData.Life.ReadHitState();
+    TestEqual(TEXT("同帧零伤击飞不扣血"), Character->GetHealth(), 250.f);
+    TestTrue(TEXT("两次速度贡献相加"), Impact.ImpactVelocity.Equals(FVector(100, 200, 0)));
+    TestEqual(TEXT("保持时间取最大值"), Impact.ImpactHoldSeconds, 0.3f);
     Damage(250.0f);
     Step();
     TestTrue(TEXT("倒地生命清零后死亡"), Character->GetLifePhase() == EBBBCharacterLifePhase::Dead);

@@ -7,36 +7,13 @@
 /** 已发生的独立命中 按提交顺序累计而不合并伤害 */
 struct FBBBCharacterDamageLocalControlPacket final
 {
-    /** 每次命中的生命损失 */
-    TArray<float> Damages;
-    /** 每次命中的骨骼 */
-    TArray<FName> Bones;
-    /** 每次命中的世界位置 */
-    TArray<FVector> Positions;
-    /** 每次命中的世界冲击方向 */
-    TArray<FVector> Directions;
-    /** 命中来源的控制角色 允许环境来源为空 */
-    TArray<TWeakObjectPtr<APawn>> Sources;
-    /** 与命中一一对应的物理冲击 */
-    TArray<FBBBCharacterPhysicalImpact> Impacts;
+    /** 本批独立作用 */
+    TArray<FBBBHitContribution> Hits;
 
-    /** @return 输入数据是否完整有效 */
+    /** @return 本批的每次贡献是否完整 */
     bool IsValid() const
     {
-        if (Damages.IsEmpty() || Bones.Num() != Damages.Num() || Positions.Num() != Damages.Num() ||
-            Directions.Num() != Damages.Num() || Sources.Num() != Damages.Num() || Impacts.Num() != Damages.Num())
-        {
-            return false;
-        }
-        for (int32 Index = 0; Index < Damages.Num(); ++Index)
-        {
-            if (!FMath::IsFinite(Damages[Index]) || (Damages[Index] < 0.0f || (Damages[Index] == 0.0f && Impacts[Index].HoldSeconds <= 0)) || Positions[Index].ContainsNaN() ||
-                Directions[Index].ContainsNaN() || !Impacts[Index].IsValid())
-            {
-                return false;
-            }
-        }
-        return true;
+        return !Hits.IsEmpty() && !Hits.ContainsByPredicate([](const auto& Hit) { return !Hit.IsValid(); });
     }
 
     /**
@@ -54,11 +31,6 @@ struct FBBBCharacterDamageLocalControlPacket final
      */
     void Apply(FBBBCharacterInputContext &Context) const
     {
-        Context.LifeInputs.Damages.Append(Damages);
-        Context.LifeInputs.Bones.Append(Bones);
-        Context.LifeInputs.Positions.Append(Positions);
-        Context.LifeInputs.Directions.Append(Directions);
-        Context.LifeInputs.Sources.Append(Sources);
-        Context.LifeInputs.Impacts.Append(Impacts);
+        Context.LifeInputs.Hits.Append(Hits);
     }
 };

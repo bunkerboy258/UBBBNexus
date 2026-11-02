@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Logic/System/LifetimeSystem/Processors/BBBThrowableLifetimeProcessor.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Logic/Core/Initialization/BBBThrowableInitializer.h"
 #include "Components/SphereComponent.h"
@@ -55,6 +57,10 @@ void FBBBThrowableLifetimeProcessor::Update(ABBBThrowable& Actor) const
         Actor.PhysicsBody->SetPhysicsLinearVelocity(Life.PendingTransform.GetUnitAxis(EAxis::X) * Launch.Speed
             + Life.PendingVelocity * Launch.VelocityInheritance);
         Actor.PhysicsBody->SetPhysicsAngularVelocityInDegrees(Life.PendingTransform.TransformVectorNoScale(Launch.AngularVelocity));
+        const auto* Owner = Cast<APlayerController>(Actor.GetOwner());
+        const auto* Player = Owner ? Owner->GetPlayerState<APlayerState>() : nullptr;
+        Life.PlayerId = Player ? Player->GetPlayerId() : INDEX_NONE;
+        Actor.SetOwner(nullptr);
         Life.bLaunched = true;
         Life.LaunchTime = Actor.GetWorld()->GetTimeSeconds();
         Actor.ForceNetUpdate();
@@ -65,6 +71,18 @@ void FBBBThrowableLifetimeProcessor::Update(ABBBThrowable& Actor) const
         return;
     }
     const double Age = Actor.GetWorld()->GetTimeSeconds() - Life.LaunchTime;
+    for (const auto& Hit : Life.Hits)
+    {
+        if (!Hit.AddVelocity.IsNearlyZero())
+        {
+            Actor.PhysicsBody->AddImpulse(Hit.AddVelocity, NAME_None, true);
+        }
+        if (!Hit.AddImpulse.IsNearlyZero())
+        {
+            Actor.PhysicsBody->AddImpulse(Hit.AddImpulse);
+        }
+    }
+    Life.Hits.Reset();
     const auto& Config = Actor.Definition->Explosion;
     if (Config.FuseSeconds > 0.0f && Age >= Config.FuseSeconds)
     {

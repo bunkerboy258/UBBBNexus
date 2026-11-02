@@ -125,11 +125,14 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
 
     FHitReactImpulseParams Impulse;
     Impulse.LinearImpulse.bApplyImpulse = true;
-    Impulse.LinearImpulse.Impulse = LinearStrength;
+    const FBodyInstance* Body = Mesh->GetBodyInstance(BoneName);
+    const float Mass = Body ? FMath::Max(Body->GetBodyMass(), 1.0f) : 1.0f;
+    const FVector LinearVelocity = Direction * LinearStrength + Hit.ImpactVelocity + Hit.ImpactImpulse / Mass;
+    Impulse.LinearImpulse.Impulse = LinearVelocity.Size();
     Impulse.AngularImpulse.bApplyImpulse = !AngularAxis.IsNearlyZero();
     Impulse.AngularImpulse.Impulse = AngularStrength;
     FHitReactImpulse_WorldParams World;
-    World.LinearDirection = Direction;
+    World.LinearDirection = LinearVelocity.GetSafeNormal();
     World.AngularDirection = AngularAxis;
     const FHitReactInputParams Params(AvailableProfiles[ProfileIndex], BoneName, true);
     RequestAnimationUpdate();

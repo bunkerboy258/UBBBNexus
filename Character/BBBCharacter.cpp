@@ -13,7 +13,6 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterHitReactionComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterPhysicalAnimationComponent.h"
 #include "Engine/DamageEvents.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPointDamageEvent.h"
 #include "GameFramework/Controller.h"
 
 ABBBCharacter::ABBBCharacter()
@@ -103,19 +102,8 @@ float ABBBCharacter::TakeDamage(float DamageAmount, const FDamageEvent &DamageEv
     FHitResult Hit;
     FVector Direction;
     DamageEvent.GetBestHitInfo(this, DamageCauser, Hit, Direction);
-    FBBBCharacterPhysicalImpact Impact;
-    if (DamageEvent.IsOfType(FBBBMonsterPointDamageEvent::ClassID))
-    {
-        const auto &MonsterHit = static_cast<const FBBBMonsterPointDamageEvent &>(DamageEvent);
-        Impact.SourceId = MonsterHit.SourceId;
-        Impact.AttackId = MonsterHit.AttackId;
-        Impact.Velocity = MonsterHit.LaunchVelocity;
-        Impact.HoldSeconds = MonsterHit.KnockdownDuration;
-    }
-    FBBBCharacterDamageLocalControlPacket Packet{
-        {DamageAmount}, {Hit.BoneName}, {Hit.ImpactPoint}, {Direction},
-        {EventInstigator ? EventInstigator->GetPawn() : nullptr}, {Impact}};
-    SubmitInput(MoveTemp(Packet));
+    FBBBHitContribution Value{DamageAmount, Hit.BoneName, Hit.ImpactPoint, Direction};
+    SubmitInput(FBBBCharacterDamageLocalControlPacket{{Value}});
     return DamageAmount;
 }
 

@@ -18,6 +18,10 @@ struct ABBB_EVAC_API FBBBMonsterHitReactionFragment final : public FMassFragment
     FVector Direction = FVector::ForwardVector;
     /** 世界表面法线 */
     FVector Normal = FVector::UpVector;
+    /** 目标本轮认可的物理冲量总和 */
+    FVector ImpactImpulse = FVector::ZeroVector;
+    /** 目标本轮认可的速度增量总和 */
+    FVector ImpactVelocity = FVector::ZeroVector;
     /** 最近命中之后的秒数 */
     float Age = 10.0f;
     /** 本地命中编号 镜像子弹也可推进表现 */

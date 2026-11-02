@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBCharacterLifeInputState.generated.h"
 
 class APawn;
@@ -15,22 +15,9 @@ struct FBBBCharacterLifeInputState final
 
     /** 同帧已经成立的恢复量 */
     TArray<float> Recoveries;
-    /** 同帧全部伤害数值 */
-    TArray<float> Damages;
+    /** 按提交顺序保存每个完整命中 */
+    TArray<FBBBHitContribution> Hits;
 
-    /** 与伤害一一对应的骨骼 */
-    TArray<FName> Bones;
-
-    /** 与伤害一一对应的命中位置 */
-    TArray<FVector> Positions;
-
-    /** 与伤害一一对应的受力方向 */
-    TArray<FVector> Directions;
-
-    /** 与伤害一一对应的来源角色 */
-    TArray<TWeakObjectPtr<APawn>> Sources;
-    /** 与伤害一一对应的物理冲击 */
-    TArray<FBBBCharacterPhysicalImpact> Impacts;
     /** 本机环境采样是否有新的当前结果 */
     bool bHasEnvironmentResult = false;
     /** 本机接触产生的当前速度倍率 */

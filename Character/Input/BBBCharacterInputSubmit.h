@@ -152,19 +152,16 @@ namespace BBBCharacterInput
             Slot.Data.Directions.Append(Packet.Directions);
             Slot.Data.DownedRevisions.Append(Packet.DownedRevisions);
             Slot.Data.RecoveryCrouched.Append(Packet.RecoveryCrouched);
+            Slot.Data.MovementSpeedScales.Append(Packet.MovementSpeedScales);
         }
 
         if constexpr (std::is_same_v<FPacket, FBBBCharacterDamageLocalControlPacket>
             || std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>)
         {
-            Slot.Data.Damages.Append(Packet.Damages);
-            Slot.Data.Bones.Append(Packet.Bones);
-            Slot.Data.Positions.Append(Packet.Positions);
-            Slot.Data.Directions.Append(Packet.Directions);
-            Slot.Data.Sources.Append(Packet.Sources);
-            Slot.Data.Impacts.Append(Packet.Impacts);
+            Slot.Data.Hits.Append(Packet.Hits);
             if constexpr (std::is_same_v<FPacket, FBBBCharacterDamageDeliveryRemoteMessagePacket>)
             {
+                Slot.Data.Sources.Append(Packet.Sources);
                 Slot.Data.Sequences.Append(Packet.Sequences);
             }
         }

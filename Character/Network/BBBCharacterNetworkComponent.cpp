@@ -340,24 +340,22 @@ void UBBBCharacterNetworkComponent::OnRep_Life()
     }
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitDamage_Implementation(ABBBCharacter *Target,
-    float Damage, FName Bone, FVector Position, FVector Direction, uint64 Sequence, FBBBCharacterPhysicalImpact Impact)
+void UBBBCharacterNetworkComponent::ServerSubmitDamage_Implementation(ABBBCharacter *Target, FBBBHitContribution Hit, uint64 Sequence)
 {
     if (IsValid(Target) && Character)
     {
         Target->SubmitInput(FBBBCharacterDamageDeliveryRemoteMessagePacket{
-            {Damage}, {Bone}, {Position}, {Direction}, {Character}, {Sequence}, {Impact}});
+            {Hit}, {Character}, {Sequence}});
     }
 }
 
-void UBBBCharacterNetworkComponent::ClientDeliverDamage_Implementation(float Damage,
-    FName Bone, FVector Position, FVector Direction, FBBBCharacterPhysicalImpact Impact)
+void UBBBCharacterNetworkComponent::ClientDeliverDamage_Implementation(FBBBHitContribution Hit)
 {
     if (!Character) Character = Cast<ABBBCharacter>(GetOwner());
     if (Character && Character->IsLocallyControlled())
     {
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
-            {Damage}, {Bone}, {Position}, {Direction}, {nullptr}, {Impact}});
+            {Hit}});
     }
 }
 

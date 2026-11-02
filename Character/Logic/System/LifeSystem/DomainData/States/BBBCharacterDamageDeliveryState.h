@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBCharacterDamageDeliveryState.generated.h"
 
 class APawn;
@@ -15,20 +15,7 @@ struct FBBBCharacterDamageDeliveryState final
     /** 本地事实批次编号 */
     uint64 Serial = 0;
 
-    /** 本帧伤害数值 */
-    TArray<float> Damages;
+    /** 按提交顺序保存每个完整命中 */
+    TArray<FBBBHitContribution> Hits;
 
-    /** 命中骨骼 */
-    TArray<FName> Bones;
-
-    /** 命中世界位置 */
-    TArray<FVector> Positions;
-
-    /** 受力世界方向 */
-    TArray<FVector> Directions;
-
-    /** 命中来源角色 */
-    TArray<TWeakObjectPtr<APawn>> Sources;
-    /** 与命中一一对应的全身物理冲击 */
-    TArray<FBBBCharacterPhysicalImpact> Impacts;
 };

@@ -1,5 +1,5 @@
 #pragma once
-#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Network/BBBThrowableDamageFact.h"
+#include "CoreMinimal.h"
 #include "BBBThrowableExplosionFact.generated.h"
 
 /** 单个投掷物唯一的终态结果 不保存事件历史 */
@@ -15,6 +15,4 @@ struct FBBBThrowableExplosionFact final
     int32 PlayerId = INDEX_NONE;
     UPROPERTY()
     double Time = 0.0;
-    UPROPERTY()
-    TArray<FBBBThrowableDamageFact> Targets;
 };

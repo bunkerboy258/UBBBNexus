@@ -1,10 +1,15 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Network/BBBThrowableBounceFact.h"
 class UBBBThrowableDefinition;
 /** 初始化和引信共享生命周期 */
 struct FBBBThrowableLifetimeState final
 {
+    /** 释放时缓存的投掷者身份 离线后仍保留伤害归属 */
+    int32 PlayerId = INDEX_NONE;
+    /** 等待目标自身处理的战斗贡献 */
+    TArray<FBBBHitContribution> Hits;
     /** 当前是否已释放 */
     bool bLaunched = false;
     /** 释放时世界时间 */

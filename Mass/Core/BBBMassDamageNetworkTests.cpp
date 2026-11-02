@@ -116,7 +116,7 @@ namespace
                     const APlayerState* Player = Controller ? Controller->GetPlayerState<APlayerState>() : nullptr;
                     FBBBMonsterDamageLocalControlPacket Packet;
                     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
-                    if (!Player || !Mass->QueryDamage(Entity, Packet.Contributions))
+                    if (!Player)
                     {
                         bValid = false;
                         continue;
@@ -124,27 +124,25 @@ namespace
                     if (Stage == TEXT("start"))
                     {
                         TestedPlayers.AddUnique(Player->GetPlayerId());
-                        FBBBMonsterDamageContribution Contribution;
-                        Contribution.PlayerId = Player->GetPlayerId();
-                        Contribution.Parts.LeftLeg = 20.0;
-                        Contribution.LastHitRegion = EBBBMonsterHitRegion::LeftLeg;
-                        Contribution.LastHitTime = World->GetGameState()->GetServerWorldTimeSeconds();
-                        Packet.Include(Contribution);
+                        FBBBHitContribution Hit{20.f};
+                        Hit.PlayerId = Player->GetPlayerId();
+                        Hit.Part = static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg);
+                        Hit.AddDurableDamage = Hit.AddDamage;
+                        Packet.Hits.Add(Hit);
                         Mass->SubmitInput(Entity, MoveTemp(Packet));
                     }
                     else if (Player->GetPlayerId() == TestedPlayers[0])
                     {
-                        FBBBMonsterDamageContribution Contribution = Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity).Contributions.FindChecked(Player->GetPlayerId());
-                        Contribution.Parts.Torso = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).MaxHealth + 20.0;
-                        Contribution.LastHitRegion = EBBBMonsterHitRegion::Torso;
-                        Contribution.LastHitTime = World->GetGameState()->GetServerWorldTimeSeconds();
-                        Packet.Include(Contribution);
+                        FBBBHitContribution Hit{Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).MaxHealth + 20.f};
+                        Hit.PlayerId = Player->GetPlayerId();
+                        Hit.AddDurableDamage = Hit.AddDamage;
+                        Packet.Hits.Add(Hit);
                         Mass->SubmitInput(Entity, MoveTemp(Packet));
                     }
                     continue;
                 }
 
-                if (Stage == TEXT("check") || Stage == TEXT("death"))
+                if (Stage == TEXT("check") || Stage == TEXT("join") || Stage == TEXT("death"))
                 {
                     const auto& Health = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity);
                     const auto& Damage = Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity);
@@ -169,6 +167,14 @@ namespace
             {
                 TestWorlds = Worlds;
                 bValid &= TestedPlayers.Num() == 2 && Worlds == 3;
+            }
+            else if (Stage == TEXT("join"))
+            {
+                bValid &= Worlds == TestWorlds + 1 && TestedPlayers.Num() == 2;
+                if (bValid)
+                {
+                    TestWorlds = Worlds;
+                }
             }
             else
             {

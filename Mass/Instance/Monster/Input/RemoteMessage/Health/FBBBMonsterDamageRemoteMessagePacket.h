@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageContribution.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageTotals.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 
@@ -12,7 +12,7 @@ struct FBBBMonsterDamageRemoteMessagePacket final
     using FInputFragment = FBBBMonsterHealthInputFragment;
 
     FGuid InstanceId;
-    TArray<FBBBMonsterDamageContribution> Contributions;
+    TArray<FBBBMonsterDamageTotals> Contributions;
 
     bool IsValid() const
     {
@@ -29,12 +29,12 @@ struct FBBBMonsterDamageRemoteMessagePacket final
     }
 
     /** 整理当前结果包 不保存逐次消息 */
-    void Include(const FBBBMonsterDamageContribution& Value)
+    void Include(const FBBBMonsterDamageTotals& Value)
     {
         auto* Existing = Contributions.FindByPredicate(
             [&Value](const auto& Item)
             {
-                return Item.PlayerId == Value.PlayerId;
+                return Item.WriterKey() == Value.WriterKey();
             });
         if (Existing != nullptr)
         {
@@ -50,7 +50,7 @@ struct FBBBMonsterDamageRemoteMessagePacket final
     {
         for (const auto& Value : Contributions)
         {
-            auto& Current = State.Contributions.FindOrAdd(Value.PlayerId);
+            auto& Current = State.Contributions.FindOrAdd(Value.WriterKey());
             Current.Merge(Value);
         }
     }

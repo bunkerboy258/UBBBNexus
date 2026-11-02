@@ -2,7 +2,7 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/BBBZombieHitTrajectoryComponent.h"
 #include "BBBMonsterGorePreviewComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePointDamageEvent.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 
 #include "Animation/AnimSequence.h"
 #include "Animation/Skeleton.h"
@@ -262,14 +262,11 @@ bool ABBBZombieHitReactionTarget::PreviewHit(const int32 Region, FVector Directi
     {
         return false;
     }
-    FBBBProjectilePointDamageEvent Event;
-    Event.Damage = 1.0f;
-    Event.WoundStrength = WoundStrength;
-    Event.ShotDirection = Direction;
-    Event.HitInfo = FHitResult(this, TargetMesh, ImpactPoint, -Direction);
-    Event.HitInfo.BoneName = Bones[Region];
+    FBBBHitContribution Value{1.f, Bones[Region], ImpactPoint, Direction};
+    Value.Normal = -Direction;
+    Value.AddWound = WoundStrength;
     const uint32 Before = HitCount;
-    TakeDamage(1.0f, Event, nullptr, this);
+    ReceiveHit(Value);
     return HitCount != Before && static_cast<int32>(LastHitRegion) == Region;
 }
 
@@ -289,7 +286,20 @@ float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FD
         return 0.0f;
     }
 
-    LastHitBone = Point.HitInfo.BoneName;
+    FBBBHitContribution Value{DamageAmount, Point.HitInfo.BoneName, Point.HitInfo.ImpactPoint, Point.ShotDirection};
+    Value.Normal = Point.HitInfo.ImpactNormal;
+    Value.AddWound = 1;
+    ReceiveHit(Value);
+    return 0;
+}
+
+void ABBBZombieHitReactionTarget::ReceiveHit(const FBBBHitContribution& Value)
+{
+    if (!bConfigurationReady || !GetWorld() || !GetWorld()->IsGameWorld() || !Value.IsValid() || Value.Direction.IsNearlyZero())
+    {
+        return;
+    }
+    LastHitBone = Value.Bone;
     LastHitRegion = EBBBMonsterHitRegion::Torso;
     for (FName Bone = LastHitBone; !Bone.IsNone(); Bone = TargetMesh->GetParentBone(Bone))
     {
@@ -329,15 +339,12 @@ float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FD
     Hit.Serial = HitCount;
     Hit.Age = 0.0f;
     Hit.Region = LastHitRegion;
-    Hit.Position = Point.HitInfo.ImpactPoint;
-    Hit.Direction = Point.ShotDirection.GetSafeNormal();
-    Hit.Normal = Point.HitInfo.ImpactNormal;
+    Hit.Position = Value.Position;
+    Hit.Direction = Value.Direction.GetSafeNormal();
+    Hit.Normal = Value.Normal;
     if (GorePreview->bEnablePhysicalReaction)
     {
         HitReaction->ApplyHitFacts(Hit, true);
     }
-    const float Strength = DamageEvent.IsOfType(FBBBProjectilePointDamageEvent::ClassID)
-        ? static_cast<const FBBBProjectilePointDamageEvent&>(DamageEvent).WoundStrength : 1.0f;
-    GorePreview->ApplyHit(Hit, Strength);
-    return 0.0f;
+    GorePreview->ApplyHit(Hit, Value.AddWound);
 }

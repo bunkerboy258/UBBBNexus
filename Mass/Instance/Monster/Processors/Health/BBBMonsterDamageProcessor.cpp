@@ -15,8 +15,102 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
+
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
+
+namespace
+{
+    /** 把本批命中解释为僵尸自身的部位与行动结果 */
+    void ResolveHits(UWorld& World, FMassEntityHandle Entity, const UBBBMonsterDefinition& Definition,
+        const TArray<FBBBHitContribution>& Hits, TMap<int64, FBBBMonsterDamageTotals>& Ledger, double Time)
+    {
+        TMap<TPair<int64, FGuid>, FBBBMonsterStaggerContribution> Candidates;
+        auto* Mass = World.GetSubsystem<UBBBMassSubsystem>();
+        for (const auto& Hit : Hits)
+        {
+            FBBBMonsterDamageTotals Identity;
+            Identity.PlayerId = Hit.PlayerId;
+            Identity.bWorldSource = Hit.bWorldSource;
+            auto& Value = Ledger.FindOrAdd(Identity.WriterKey());
+            Value.PlayerId = Hit.PlayerId;
+            Value.bWorldSource = Hit.bWorldSource;
+            Value.LastHitTime = Time;
+            Value.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Hit.Part);
+            Value.bHasSourcePosition = Hit.bHasSourcePosition;
+            Value.LastSourcePosition = Hit.SourcePosition;
+            for (uint8 Part = 0; Part <= 5; ++Part)
+            {
+                if (!Hit.bRadial && Part != Hit.Part)
+                {
+                    continue;
+                }
+                const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
+                const auto& Rule = Definition.GetBodyPart(Region);
+                const float Share = Hit.bRadial ? (Part == 0 ? 0.5f : 0.1f) : 1.0f;
+                const double Amount = Share * (Hit.AddDamage * (1.0 - Rule.Durability) + Hit.AddDurableDamage * Rule.Durability);
+                Value.Parts.Add(Region, Amount);
+                if (Amount <= 0)
+                {
+                    continue;
+                }
+                if (Part == 0 && Mass && Hit.AddWound > 0)
+                {
+                    Mass->QueryMonsterDestruction(Entity, Hit.Position, Hit.Direction, Hit.AddWound, Value.Destruction);
+                }
+                if (!Hit.AttackId.IsValid() || (Value.Stagger.AttackId == Hit.AttackId && Value.Stagger.bEvaluated)
+                    || Hit.AttackTime < Value.Stagger.AttackTime)
+                {
+                    continue;
+                }
+                auto& Candidate = Candidates.FindOrAdd({Identity.WriterKey(), Hit.AttackId});
+                Candidate.AttackId = Hit.AttackId;
+                Candidate.AttackTime = Hit.AttackTime;
+                Candidate.HitTime = Time;
+                const uint32 Seed = HashCombineFast(GetTypeHash(Hit.AttackId),
+                    HashCombineFast(GetTypeHash(Entity.Index), GetTypeHash(Entity.SerialNumber)));
+                Candidate.Roll = float(Seed >> 8) / 16777216.0f;
+                Candidate.Impacts.Add(Region, Amount * Rule.StaggerMultiplier);
+                const float Force = Candidate.Impacts.Get(Region);
+                if (Force > Candidate.Impact || (Force == Candidate.Impact && Region > Candidate.Region))
+                {
+                    Candidate.Impact = Force;
+                    Candidate.Region = Region;
+                    Candidate.Chance = FMath::Clamp(Hit.AddStagger * (Hit.bWorldSource ? 1.f : Rule.StaggerMultiplier), 0.f, 1.f);
+                    Candidate.Duration = Rule.StaggerDuration;
+                }
+            }
+        }
+        double Available = 0;
+        for (const auto& Entry : Ledger)
+        {
+            if (Entry.Value.Stagger.ActiveAttackId.IsValid())
+            {
+                Available = FMath::Max(Available, Entry.Value.Stagger.EndsAt + FBBBMonsterStaggerContribution::RecoveryDuration);
+            }
+        }
+        Candidates.ValueSort([](const auto& A, const auto& B)
+        {
+            return A.AttackTime < B.AttackTime || (A.AttackTime == B.AttackTime && A.AttackId < B.AttackId);
+        });
+        for (auto& Entry : Candidates)
+        {
+            auto& Candidate = Entry.Value;
+            if (Candidate.Resolve(Available))
+            {
+                Candidate.ActiveAttackId = Candidate.AttackId;
+                Candidate.StartedAt = Time;
+                Candidate.EndsAt = Time + Candidate.Duration;
+                Candidate.ActiveRegion = Candidate.Region;
+                Available = Candidate.EndsAt + FBBBMonsterStaggerContribution::RecoveryDuration;
+            }
+            Ledger.FindChecked(Entry.Key.Key).Stagger.Merge(Candidate);
+        }
+    }
+}
+
 bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
-    TArray<FBBBMonsterDamageContribution>& Result)
+    TArray<FBBBMonsterDamageTotals>& Result)
 {
     Result.Reset();
     auto* Entities = World.GetSubsystem<UMassEntitySubsystem>();
@@ -36,17 +130,10 @@ bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
     {
         return false;
     }
-    FBBBMonsterDamageLocalControlPacket Snapshot;
+    FBBBMonsterDamageRemoteMessagePacket Snapshot;
     for (const auto& Value : Damage->Contributions)
     {
         Snapshot.Include(Value.Value);
-    }
-    if (Input->Damage.bActive && Input->Damage.Packet.IsValid())
-    {
-        for (const auto& Value : Input->Damage.Packet.Contributions)
-        {
-            Snapshot.Include(Value);
-        }
     }
     const auto* NetworkInput = Manager.GetFragmentDataPtr<FBBBMonsterNetworkInputFragment>(Entity);
     const FGuid EffectiveId = Network->InstanceId.IsValid() ? Network->InstanceId
@@ -60,10 +147,25 @@ bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
             Snapshot.Include(Value);
         }
     }
-    Result = MoveTemp(Snapshot.Contributions);
+    TMap<int64, FBBBMonsterDamageTotals> Ledger;
+    for (const auto& Value : Snapshot.Contributions)
+    {
+        Ledger.Add(Value.WriterKey(), Value);
+    }
+    if (Network->Definition.IsValid())
+    {
+        auto Hits = Damage->PendingHits;
+        if (Input->Damage.bActive && Input->Damage.Packet.IsValid())
+        {
+            Hits.Append(Input->Damage.Packet.Hits);
+        }
+        const auto* Game = World.GetGameState();
+        ResolveHits(World, Entity, *Network->Definition, Hits, Ledger, Game ? Game->GetServerWorldTimeSeconds() : World.GetTimeSeconds());
+    }
+    Ledger.GenerateValueArray(Result);
     Result.Sort([](const auto& A, const auto& B)
     {
-        return A.PlayerId < B.PlayerId;
+        return A.WriterKey() < B.WriterKey();
     });
     return true;
 }
@@ -103,6 +205,7 @@ bool UBBBMonsterDamageProcessor::QueryPart(UWorld& World, FMassEntityHandle Enti
 void UBBBMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>&)
 {
     EntityQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadWrite, EMassFragmentPresence::Optional);
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadWrite);
@@ -110,11 +213,11 @@ void UBBBMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
 
 void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
-    const UWorld* World = Context.GetWorld();
+    UWorld* World = Context.GetWorld();
     const float Now = World->GetTimeSeconds();
     const AGameStateBase* GameState = World->GetGameState();
     const double ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : Now;
-    EntityQuery.ForEachEntityChunk(Context, [Now, ServerTime](FMassExecutionContext& Chunk)
+    EntityQuery.ForEachEntityChunk(Context, [Now, ServerTime, World](FMassExecutionContext& Chunk)
     {
         auto Damage = Chunk.GetMutableFragmentView<FBBBMonsterDamageFragment>();
         auto Health = Chunk.GetMutableFragmentView<FBBBMonsterHealthFragment>();
@@ -122,8 +225,37 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
+            auto& Pending = Damage[Index].PendingHits;
+            if (!Pending.IsEmpty() && Network[Index].Definition.IsValid())
+            {
+                ResolveHits(*World, Chunk.GetEntity(Index), *Network[Index].Definition, Pending, Damage[Index].Contributions, ServerTime);
+                auto Reactions = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
+                if (!Reactions.IsEmpty())
+                {
+                    FVector Impulse = FVector::ZeroVector;
+                    FVector Velocity = FVector::ZeroVector;
+                    for (const auto& Hit : Pending)
+                    {
+                        Impulse += Hit.AddImpulse;
+                        Velocity += Hit.AddVelocity;
+                        FBBBMonsterHitReactionLocalControlPacket Reaction;
+                        Reaction.Region = static_cast<EBBBMonsterHitRegion>(Hit.Part);
+                        Reaction.Position = Hit.Position;
+                        const FVector PhysicalDirection = Hit.AddVelocity.IsNearlyZero() ? Hit.AddImpulse : Hit.AddVelocity;
+                        Reaction.Direction = Hit.Direction.GetSafeNormal(UE_SMALL_NUMBER, PhysicalDirection.GetSafeNormal());
+                        Reaction.Normal = Hit.Normal.GetSafeNormal(UE_SMALL_NUMBER, -Reaction.Direction);
+                        if (Reaction.IsValid())
+                        {
+                            Reaction.Apply(Reactions[Index]);
+                        }
+                    }
+                    Reactions[Index].ImpactImpulse = Impulse;
+                    Reactions[Index].ImpactVelocity = Velocity;
+                }
+                Pending.Reset();
+            }
             FBBBMonsterPartDamage Totals;
-            const FBBBMonsterDamageContribution* Latest = nullptr;
+            const FBBBMonsterDamageTotals* Latest = nullptr;
             const FBBBMonsterStaggerContribution* ActiveStagger = nullptr;
             for (const auto& Value : Damage[Index].Contributions)
             {

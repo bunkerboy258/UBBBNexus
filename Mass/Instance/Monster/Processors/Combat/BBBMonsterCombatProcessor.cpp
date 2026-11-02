@@ -20,7 +20,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpecialDefinition.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPointDamageEvent.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 
 UBBBMonsterCombatProcessor::UBBBMonsterCombatProcessor()
     : MonsterQuery(*this)
@@ -158,31 +158,23 @@ void UBBBMonsterCombatProcessor::Execute(FMassEntityManager& EntityManager, FMas
             const FVector Direction = ToTarget.GetSafeNormal();
             FHitResult ContactHit(PlayerPawn, TargetBody, Contact, -Direction);
 
-            // 伤害通过 UE 标准接口发送给玩家
+            // 只向目标贡献本次命中 由目标自身解释生命和物理结果
             const float RequestedDamage = Combat.AttackDamage * Mobility[Index].AttackRatio;
             const auto Networks = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
             const auto* Definition = !Networks.IsEmpty() ? Networks[Index].Definition.Get() : nullptr;
             const auto* Special = Definition ? Definition->Special.Get() : nullptr;
-            float AppliedDamage = 0;
+            FBBBHitContribution Hit{RequestedDamage, ContactHit.BoneName, Contact, Direction};
+            if (!Networks.IsEmpty())
+            {
+                Hit.SourceId = Networks[Index].InstanceId;
+                Hit.AttackId = FGuid(0, 0, 0, Combat.AttackId);
+            }
             if (Special && Special->Kind == EBBBMonsterSpecialKind::Stalker)
             {
-                FBBBMonsterPointDamageEvent Event;
-                Event.Damage = RequestedDamage;
-                Event.HitInfo = ContactHit;
-                Event.ShotDirection = Direction;
-                Event.SourceId = Networks[Index].InstanceId;
-                Event.AttackId = Combat.AttackId;
-                Event.LaunchVelocity = Direction.GetSafeNormal2D() * Special->ImpactSpeed + FVector::UpVector * Special->ImpactLift;
-                Event.KnockdownDuration = Special->KnockdownDuration;
-                AppliedDamage = PlayerPawn->TakeDamage(RequestedDamage, Event, Instigator, DamageCauser);
+                Hit.AddVelocity = Direction.GetSafeNormal2D() * Special->ImpactSpeed + FVector::UpVector * Special->ImpactLift;
+                Hit.AddHoldSeconds = Special->KnockdownDuration;
             }
-            if (!Special || Special->Kind != EBBBMonsterSpecialKind::Stalker)
-            {
-                AppliedDamage = UGameplayStatics::ApplyPointDamage(PlayerPawn, RequestedDamage,
-                    Direction, ContactHit, Instigator, DamageCauser, nullptr);
-            }
-            UE_LOG(LogTemp, Verbose, TEXT("[UBBBM]Monster attack Target=%s AttackId=%u Requested=%.1f Applied=%.1f"),
-                *GetNameSafe(PlayerPawn), Combat.AttackId, RequestedDamage, AppliedDamage);
+            BBBHitReceiver::Submit(PlayerPawn, Hit);
         }
     });
 }

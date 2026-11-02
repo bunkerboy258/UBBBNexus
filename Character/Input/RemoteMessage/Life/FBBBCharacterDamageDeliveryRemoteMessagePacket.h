@@ -6,39 +6,15 @@
 /** 独立命中投送消息 不包含扣血或阶段切换规则 */
 struct FBBBCharacterDamageDeliveryRemoteMessagePacket final
 {
-    /** 每次独立伤害 */
-    TArray<float> Damages;
-    /** 命中骨骼 */
-    TArray<FName> Bones;
-    /** 命中世界位置 */
-    TArray<FVector> Positions;
-    /** 命中世界方向 */
-    TArray<FVector> Directions;
-    /** 合法连接的发送者 */
+    /** 本批独立作用 */
+    TArray<FBBBHitContribution> Hits;
     TArray<TWeakObjectPtr<APawn>> Sources;
-    /** 发送者在目标角色生命周期内的命中序号 */
     TArray<uint64> Sequences;
-    /** 与命中一一对应的物理冲击 */
-    TArray<FBBBCharacterPhysicalImpact> Impacts;
 
-    /** @return 输入数据是否完整有效 */
+    /** @return 本批的每次贡献是否完整 */
     bool IsValid() const
     {
-        if (Damages.IsEmpty() || Damages.Num() != Bones.Num() || Damages.Num() != Positions.Num() ||
-            Damages.Num() != Directions.Num() || Damages.Num() != Sources.Num() || Damages.Num() != Sequences.Num()
-            || Damages.Num() != Impacts.Num())
-        {
-            return false;
-        }
-        for (int32 Index = 0; Index < Damages.Num(); ++Index)
-        {
-            if (!FMath::IsFinite(Damages[Index]) || (Damages[Index] < 0.0f || (Damages[Index] == 0.0f && Impacts[Index].HoldSeconds <= 0)) || Sequences[Index] == 0 ||
-                Positions[Index].ContainsNaN() || Directions[Index].ContainsNaN() || !Impacts[Index].IsValid())
-            {
-                return false;
-            }
-        }
-        return true;
+        return !Hits.IsEmpty() && !Hits.ContainsByPredicate([](const auto& Hit) { return !Hit.IsValid(); }) && Sources.Num() == Hits.Num() && Sequences.Num() == Hits.Num() && !Sequences.Contains(0);
     }
 
     /**
@@ -56,12 +32,8 @@ struct FBBBCharacterDamageDeliveryRemoteMessagePacket final
      */
     void Apply(FBBBCharacterInputContext &Context) const
     {
-        Context.DamageInbox.Damages.Append(Damages);
-        Context.DamageInbox.Bones.Append(Bones);
-        Context.DamageInbox.Positions.Append(Positions);
-        Context.DamageInbox.Directions.Append(Directions);
+        Context.DamageInbox.Hits.Append(Hits);
         Context.DamageInbox.Sources.Append(Sources);
         Context.DamageInbox.Sequences.Append(Sequences);
-        Context.DamageInbox.Impacts.Append(Impacts);
     }
 };

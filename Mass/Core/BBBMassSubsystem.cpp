@@ -44,6 +44,25 @@ namespace
         }
 
         auto& Slot = Slots->template GetSlot<TPacket>();
+        if constexpr (std::is_same_v<TPacket, FBBBMonsterDamageLocalControlPacket>)
+        {
+            if (Slot.bActive)
+            {
+                Slot.Packet.Hits.Append(Packet.Hits);
+                return true;
+            }
+        }
+        if constexpr (std::is_same_v<TPacket, FBBBMonsterDamageRemoteMessagePacket>)
+        {
+            if (Slot.bActive && Slot.Packet.InstanceId == Packet.InstanceId)
+            {
+                for (const auto& Value : Packet.Contributions)
+                {
+                    Slot.Packet.Include(Value);
+                }
+                return true;
+            }
+        }
         Slot.Packet = Packet;
         Slot.bActive = true;
         return true;
@@ -179,7 +198,7 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDa
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result) const
+bool UBBBMassSubsystem::QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageTotals>& Result) const
 {
     return UBBBMonsterDamageProcessor::Query(*GetWorld(), Entity, Result);
 }

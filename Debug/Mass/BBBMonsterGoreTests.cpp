@@ -15,7 +15,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterDestructionMergeTest,
 
 bool FBBBMonsterDestructionMergeTest::RunTest(const FString&)
 {
-    FBBBMonsterDamageContribution First;
+    FBBBMonsterDamageTotals First;
     First.PlayerId = 1;
     First.LastHitTime = 10;
     First.Parts.Torso = 20;
@@ -38,7 +38,7 @@ bool FBBBMonsterDestructionMergeTest::RunTest(const FString&)
 
     FBBBMonsterDamageFragment Damage;
     Damage.Contributions.Add(1, Merged);
-    FBBBMonsterDamageContribution Second;
+    FBBBMonsterDamageTotals Second;
     Second.PlayerId = 2;
     Second.Destruction.Add(0, 0.5f);
     Second.Destruction.Add(7, 0.5f);

@@ -19,27 +19,21 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
     const auto &Delivery = Context.Data.Life.ReadDamageDeliveryState();
     if (Delivery.Serial > Observation.DeliverySerial)
     {
-        for (int32 Index = 0; Index < Delivery.Damages.Num(); ++Index)
+        for (int32 Index = 0; Index < Delivery.Hits.Num(); ++Index)
         {
             if (Context.NetworkIdentityState.bHasAuthority)
             {
-                Context.NetworkComponent.ClientDeliverDamage(Delivery.Damages[Index], Delivery.Bones[Index],
-                                                             Delivery.Positions[Index], Delivery.Directions[Index], Delivery.Impacts[Index]);
+                Context.NetworkComponent.ClientDeliverDamage(Delivery.Hits[Index]);
             }
             if (!Context.NetworkIdentityState.bHasAuthority)
             {
-                ABBBCharacter *Sender = Cast<ABBBCharacter>(Delivery.Sources[Index].Get());
-                if (!Sender || !Sender->IsLocallyControlled())
-                {
-                    APlayerController *Controller = Target->GetWorld()->GetFirstPlayerController();
-                    Sender = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
-                }
+                APlayerController *Controller = Target->GetWorld()->GetFirstPlayerController();
+                ABBBCharacter *Sender = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
                 if (Sender && Sender->IsLocallyControlled())
                 {
                     const uint64 Sequence = (Delivery.Serial << 32) | uint64(Index + 1);
                     Sender->GetCharacterNetworkComponent()->ServerSubmitDamage(
-                        Target, Delivery.Damages[Index], Delivery.Bones[Index], Delivery.Positions[Index],
-                        Delivery.Directions[Index], Sequence, Delivery.Impacts[Index]);
+                        Target, Delivery.Hits[Index], Sequence);
                 }
                 if (!Sender)
                 {
@@ -52,7 +46,7 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
 
     if (Context.NetworkIdentityState.bHasAuthority)
     {
-        for (int32 Index = 0; Index < Inbox.Damages.Num(); ++Index)
+        for (int32 Index = 0; Index < Inbox.Hits.Num(); ++Index)
         {
             uint64 &Last = Observation.ReceivedSequences.FindOrAdd(Inbox.Sources[Index]);
             if (Inbox.Sequences[Index] <= Last)
@@ -62,16 +56,11 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
             Last = Inbox.Sequences[Index];
             if (Context.NetworkIdentityState.bLocallyControlled)
             {
-                Target->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Inbox.Damages[Index]},
-                                                                          {Inbox.Bones[Index]},
-                                                                          {Inbox.Positions[Index]},
-                                                                          {Inbox.Directions[Index]},
-                                                                          {Inbox.Sources[Index]}, {Inbox.Impacts[Index]}});
+                Target->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Inbox.Hits[Index]}});
             }
             if (!Context.NetworkIdentityState.bLocallyControlled)
             {
-                Context.NetworkComponent.ClientDeliverDamage(Inbox.Damages[Index], Inbox.Bones[Index],
-                                                             Inbox.Positions[Index], Inbox.Directions[Index], Inbox.Impacts[Index]);
+                Context.NetworkComponent.ClientDeliverDamage(Inbox.Hits[Index]);
             }
         }
         for (auto It = Observation.ReceivedSequences.CreateIterator(); It; ++It)
@@ -82,11 +71,7 @@ void FBBBCharacterDamageObservationProcessor::Update(FBBBCharacterNetworkUpdateC
             }
         }
     }
-    Inbox.Damages.Reset();
-    Inbox.Bones.Reset();
-    Inbox.Positions.Reset();
-    Inbox.Directions.Reset();
-    Inbox.Sources.Reset();
+    Inbox.Hits.Reset();
     Inbox.Sequences.Reset();
-    Inbox.Impacts.Reset();
+    Inbox.Sources.Reset();
 }

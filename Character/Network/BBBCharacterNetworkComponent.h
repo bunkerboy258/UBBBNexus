@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterRagdollSnapshot.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Definitions/BBBCharacterUseFact.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterLifePhase.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBWork/UBBBNexus/Character/Network/BBBReplicatedAimState.h"
 #include "Components/ActorComponent.h"
 #include "Engine/NetSerialization.h"
@@ -142,12 +142,11 @@ private:
 
     /** 通过发送者拥有的连接投送命中 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitDamage(ABBBCharacter *Target, float Damage, FName Bone,
-        FVector Position, FVector Direction, uint64 Sequence, FBBBCharacterPhysicalImpact Impact);
+    void ServerSubmitDamage(ABBBCharacter *Target, FBBBHitContribution Hit, uint64 Sequence);
 
     /** 向目标自身的控制者投送独立命中 */
     UFUNCTION(Client, Reliable)
-    void ClientDeliverDamage(float Damage, FName Bone, FVector Position, FVector Direction, FBBBCharacterPhysicalImpact Impact);
+    void ClientDeliverDamage(FBBBHitContribution Hit);
 
     /** 当前生命结果到达时提交还原输入 */
     UFUNCTION()

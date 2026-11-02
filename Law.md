@@ -10,6 +10,7 @@
 
 ```text
 UBBBNexus/
+    Combat/         公共单次命中贡献及普通物理目标的接收边界
     Character/      角色对象及角色运行逻辑
     Item/           全局物品定义与物品实例
     Player/          本地玩家控制与玩家界面

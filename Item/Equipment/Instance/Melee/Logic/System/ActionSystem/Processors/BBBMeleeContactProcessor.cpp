@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/Processors/BBBMeleeContactProcessor.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ActionSystem/DomainData/Context/BBBMeleeActionUpdateContext.h"
@@ -57,38 +58,18 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
             {
                 continue;
             }
-            FBBBMonsterDamageLocalControlPacket Packet;
-            if (!Mass->QueryDamage(Entity, Packet.Contributions))
-            {
-                continue;
-            }
-            const auto *Existing = Packet.Contributions.FindByPredicate([Player](const auto &Value)
-            {
-                return Value.PlayerId == Player->GetPlayerId();
-            });
-            FBBBMonsterDamageContribution Value = Existing ? *Existing : FBBBMonsterDamageContribution{};
+            FBBBHitContribution Value{Context.Definition.Damage, NAME_None, Position, Direction};
+            Value.Part = Part;
+            Value.Normal = Normal;
             Value.PlayerId = Player->GetPlayerId();
-            Value.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Part);
-            FBBBMonsterBodyPartDefinition PartDefinition;
-            if (!Mass->QueryMonsterBodyPart(Entity, Part, PartDefinition))
-            {
-                continue;
-            }
-            Value.Parts.Add(Value.LastHitRegion, Context.Definition.Damage * (1.0 - PartDefinition.Durability)
-                + Context.Definition.DurableDamage * PartDefinition.Durability);
-            const auto *GameState = Context.World.GetGameState();
-            Value.LastHitTime = GameState ? GameState->GetServerWorldTimeSeconds() : Context.World.GetTimeSeconds();
-            Packet.Include(Value);
+            Value.AddDurableDamage = Context.Definition.DurableDamage;
+            Value.SourcePosition = Context.Character.GetActorLocation();
+            Value.bHasSourcePosition = true;
+            FBBBMonsterDamageLocalControlPacket Packet{{Value}};
             if (Mass->SubmitInput(Entity, MoveTemp(Packet)))
             {
                 State.HitEntities.Add(Entity);
                 ++State.HitCount;
-                FBBBMonsterHitReactionLocalControlPacket Reaction;
-                Reaction.Region = static_cast<EBBBMonsterHitRegion>(Part);
-                Reaction.Position = Position;
-                Reaction.Normal = Normal;
-                Reaction.Direction = Direction;
-                Mass->SubmitInput(Entity, MoveTemp(Reaction));
                 UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Mass hit Attack=%d Entity=%d Damage=%.1f"),
                     State.AttackSequence, Entity.Index, Context.Definition.Damage);
             }
@@ -98,8 +79,7 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
         if (IsValid(Actor) && Actor->CanBeDamaged() && !State.HitActors.Contains(Actor))
         {
             State.HitActors.Add(Actor);
-            UGameplayStatics::ApplyPointDamage(Actor, Context.Definition.Damage, Direction, Hit,
-                Context.Character.GetController(), &Context.Equipment, nullptr);
+            BBBHitReceiver::Submit(Actor, FBBBHitContribution{Context.Definition.Damage, Hit.BoneName, Hit.ImpactPoint, Direction});
             ++State.HitCount;
             UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Actor hit Attack=%d Target=%s Damage=%.1f"),
                 State.AttackSequence, *Actor->GetName(), Context.Definition.Damage);

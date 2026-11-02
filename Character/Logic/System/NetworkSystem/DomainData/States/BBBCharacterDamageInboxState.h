@@ -1,23 +1,14 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 class APawn;
 
 /** 等待投送至控制者的独立命中消息 */
 struct FBBBCharacterDamageInboxState final
 {
-    /** 每次命中的伤害 */
-    TArray<float> Damages;
-    /** 命中骨骼 */
-    TArray<FName> Bones;
-    /** 命中位置 */
-    TArray<FVector> Positions;
-    /** 命中方向 */
-    TArray<FVector> Directions;
-    /** 已拥有合法连接的发送角色 */
-    TArray<TWeakObjectPtr<APawn>> Sources;
-    /** 对应来源的命中序号 */
+    /** 按提交顺序保存每个完整命中 */
+    TArray<FBBBHitContribution> Hits;
+    /** 传输序号与连接发送者 不参与玩法计算 */
     TArray<uint64> Sequences;
-    /** 与命中一一对应的物理冲击 */
-    TArray<FBBBCharacterPhysicalImpact> Impacts;
+    TArray<TWeakObjectPtr<APawn>> Sources;
 };

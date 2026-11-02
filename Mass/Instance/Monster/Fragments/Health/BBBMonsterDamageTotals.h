@@ -5,11 +5,11 @@
 #include "BBBMonsterPartDamage.h"
 #include "BBBMonsterStaggerContribution.h"
 #include "BBBMonsterDestructionContribution.h"
-#include "BBBMonsterDamageContribution.generated.h"
+#include "BBBMonsterDamageTotals.generated.h"
 
 /** 一个玩家对一代小怪已经造成的累计伤害 不是单次命中事件 */
 USTRUCT()
-struct FBBBMonsterDamageContribution final
+struct FBBBMonsterDamageTotals final
 {
     GENERATED_BODY()
 
@@ -45,16 +45,25 @@ struct FBBBMonsterDamageContribution final
     UPROPERTY()
     FBBBMonsterStaggerContribution Stagger;
 
+    /** 世界来源由房主独占写入 与同一投掷者的枪伤分别合并 */
+    UPROPERTY()
+    bool bWorldSource = false;
+
+    int64 WriterKey() const
+    {
+        return bWorldSource ? (int64(1) << 32) + uint32(PlayerId) : PlayerId;
+    }
+
     bool IsValid() const
     {
-        return PlayerId >= 0 && Parts.IsValid()
+        return (PlayerId >= 0 || bWorldSource) && Parts.IsValid()
             && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg
             && !LastSourcePosition.ContainsNaN() && Stagger.IsValid();
     }
 
-    bool operator==(const FBBBMonsterDamageContribution& Other) const
+    bool operator==(const FBBBMonsterDamageTotals& Other) const
     {
-        return PlayerId == Other.PlayerId && Parts == Other.Parts
+        return PlayerId == Other.PlayerId && bWorldSource == Other.bWorldSource && Parts == Other.Parts
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
             && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition
             && Stagger == Other.Stagger && Destruction == Other.Destruction;
@@ -64,7 +73,7 @@ struct FBBBMonsterDamageContribution final
      * @param Other	同一玩家的当前结果
      * @return 无
      */
-    void Merge(const FBBBMonsterDamageContribution& Other)
+    void Merge(const FBBBMonsterDamageTotals& Other)
     {
         FBBBMonsterPartDamage Combined = Parts;
         Combined.MergeMax(Other.Parts);
@@ -72,7 +81,7 @@ struct FBBBMonsterDamageContribution final
         CombinedStagger.Merge(Other.Stagger);
         FBBBMonsterDestructionContribution CombinedDestruction = Destruction;
         CombinedDestruction.MergeMax(Other.Destruction);
-        if (PlayerId == INDEX_NONE || Other.LastHitTime > LastHitTime
+        if ((PlayerId == INDEX_NONE && !bWorldSource) || Other.LastHitTime > LastHitTime
             || (Other.LastHitTime == LastHitTime && (Other.LastHitRegion > LastHitRegion
                 || (Other.LastHitRegion == LastHitRegion && Other.Parts.Exceeds(Parts)))))
         {

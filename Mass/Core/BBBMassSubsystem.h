@@ -24,7 +24,7 @@ struct FBBBMonsterDirectorStateAuthorityFactPacket;
 struct FBBBProjectileSpawnLocalControlPacket;
 struct FBBBMonsterDamageLocalControlPacket;
 struct FBBBMonsterDamageRemoteMessagePacket;
-struct FBBBMonsterDamageContribution;
+struct FBBBMonsterDamageTotals;
 struct FBBBMonsterDestructionContribution;
 struct FBBBMonsterBodyPartDefinition;
 struct FBBBMonsterStateAuthorityFactPacket;
@@ -108,7 +108,7 @@ public:
      * @param Result	已应用与待解析的累计贡献 当前结果按玩家身份排序
      * @return 是否取得有效目标的快照
      */
-    bool QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result) const;
+    bool QueryDamage(FMassEntityHandle Entity, TArray<FBBBMonsterDamageTotals>& Result) const;
 
     /**
      * @param Entity	目标实体

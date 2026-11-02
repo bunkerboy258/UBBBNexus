@@ -14,7 +14,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 
@@ -24,8 +24,8 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterPartDamageTest, "UBBB.Mass.ZombiePar
 
 bool FBBBMonsterPartDamageTest::RunTest(const FString&)
 {
-    FBBBMonsterDamageLocalControlPacket Snapshot;
-    FBBBMonsterDamageContribution First;
+    FBBBMonsterDamageRemoteMessagePacket Snapshot;
+    FBBBMonsterDamageTotals First;
     First.PlayerId = 1;
     First.Parts.Head = 10.0;
     First.Parts.LeftArm = 25.0;

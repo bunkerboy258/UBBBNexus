@@ -1,4 +1,5 @@
 #include "Misc/AutomationTest.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Misc/ScopeExit.h"
@@ -90,7 +91,7 @@ bool FBBBMonsterCombatTest::RunTest(const FString& Parameters)
     FMassEntityManager& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const FMassArchetypeHandle Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterCombatFragment::StaticStruct(),
-        FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
+        FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterTraversalFragment::StaticStruct(),
         FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterPerceptionFragment::StaticStruct(),
         FBBBMonsterTargetFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
         FBBBMonsterDamageFragment::StaticStruct(), FBBBMonsterDeathFragment::StaticStruct(),

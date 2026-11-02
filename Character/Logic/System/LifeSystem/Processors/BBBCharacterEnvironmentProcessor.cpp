@@ -47,8 +47,7 @@ void FBBBCharacterEnvironmentProcessor::Update(FBBBCharacterLifeUpdateContext &C
     Environment.PendingDamage += Environment.DamagePerSecond * FMath::Clamp(World.FrameDeltaSeconds, 0.0f, .25f);
     if (Environment.PendingDamage > 0 && (Now >= Environment.NextDamageAt || Environment.DamagePerSecond <= 0))
     {
-        Context.Character.SubmitInput(FBBBCharacterDamageLocalControlPacket{{Environment.PendingDamage}, {NAME_None},
-            {Context.Character.GetActorLocation()}, {FVector::ZeroVector}, {nullptr}, {{}}});
+        Context.Character.SubmitInput(FBBBCharacterDamageLocalControlPacket{{FBBBHitContribution{Environment.PendingDamage, NAME_None, Context.Character.GetActorLocation(), FVector::ZeroVector}}});
         Environment.PendingDamage = 0;
         Environment.NextDamageAt = Now + .2;
     }

@@ -2,7 +2,7 @@
 
 #include "Net/Serialization/FastArraySerializer.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageContribution.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageTotals.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFact.h"
 #include "BBBMonsterReplicationItem.generated.h"
@@ -63,5 +63,5 @@ struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
     float CrawlStartedAt = -1.0f;
 
     UPROPERTY()
-    TArray<FBBBMonsterDamageContribution> Contributions;
+    TArray<FBBBMonsterDamageTotals> Contributions;
 };

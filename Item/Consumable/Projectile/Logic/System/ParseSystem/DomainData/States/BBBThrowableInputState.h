@@ -1,12 +1,16 @@
 #pragma once
-#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/LocalControl/Lifecycle/FBBBThrowableBounceLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/AuthorityFact/Lifecycle/FBBBThrowableBounceAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/LocalControl/Lifecycle/FBBBThrowableHitLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/LocalControl/Lifecycle/FBBBThrowableLaunchLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/LocalControl/Explosion/FBBBThrowableDetonateLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/AuthorityFact/Explosion/FBBBThrowableExplosionAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/LocalControl/Lifecycle/FBBBThrowableBounceLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Input/AuthorityFact/Lifecycle/FBBBThrowableBounceAuthorityFactPacket.h"
 /** 每种输入的独立覆盖槽位 */
 struct FBBBThrowableInputState final
 {
+    /** 追加各次战斗贡献的槽位 */
+    bool bHit = false;
+    FBBBThrowableHitLocalControlPacket Hit;
     /** 释放槽位 */
     bool bLaunch = false;
     FBBBThrowableLaunchLocalControlPacket Launch;

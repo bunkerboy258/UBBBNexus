@@ -104,13 +104,10 @@ int32 UBBBMassValidationLibrary::DamagePopulation(UObject* WorldContext, const T
         {
             continue;
         }
-        const auto* Current = State->Contributions.Find(Player->GetPlayerId());
-        FBBBMonsterDamageContribution Contribution = Current ? *Current : FBBBMonsterDamageContribution();
-        Contribution.PlayerId = Player->GetPlayerId();
-        Contribution.Parts.Torso += Damage;
-        Contribution.LastHitTime = World->GetTimeSeconds();
-        FBBBMonsterDamageLocalControlPacket Packet;
-        Packet.Include(Contribution);
+        FBBBHitContribution Hit{Damage};
+        Hit.PlayerId = Player->GetPlayerId();
+        Hit.AddDurableDamage = Damage;
+        FBBBMonsterDamageLocalControlPacket Packet{{Hit}};
         Submitted += Mass->SubmitInput(Entity, MoveTemp(Packet)) ? 1 : 0;
     }
     return Submitted;

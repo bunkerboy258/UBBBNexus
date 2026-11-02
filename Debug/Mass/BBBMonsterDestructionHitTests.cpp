@@ -13,7 +13,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePointDamageEvent.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 #include "Components/SkeletalMeshComponent.h"
 
 /** 标准点伤害实际进入固定靶 再验证共享呈现与对象复用 */
@@ -60,13 +60,10 @@ bool FBBBMonsterDestructionHitTest::RunTest(const FString&)
         const FTransform Current = Mesh->GetSocketTransform(BoneName);
         const FVector Position = Current.TransformPosition(Reference.InverseTransformPosition(Contact));
         const FVector WorldNormal = Current.TransformVectorNoScale(Reference.InverseTransformVectorNoScale(Normal)).GetSafeNormal();
-        FBBBProjectilePointDamageEvent Event;
-        Event.HitInfo = FHitResult(Target, Mesh, Position, WorldNormal);
-        Event.HitInfo.ImpactPoint = Position;
-        Event.HitInfo.ImpactNormal = WorldNormal;
-        Event.HitInfo.BoneName = BoneName;
-        Event.ShotDirection = -WorldNormal;
-        Target->TakeDamage(1, Event, nullptr, nullptr);
+        FBBBHitContribution Value{1.f, BoneName, Position, -WorldNormal};
+        Value.Normal = WorldNormal;
+        Value.AddWound = 1;
+        Target->ReceiveHit(Value);
     };
     for (int32 Index = 0; Index < 8; ++Index)
     {

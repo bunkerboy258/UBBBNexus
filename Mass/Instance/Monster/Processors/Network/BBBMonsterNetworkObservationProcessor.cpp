@@ -147,7 +147,7 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             }
             Item.Contributions.Sort([](const auto& A, const auto& B)
             {
-                return A.PlayerId < B.PlayerId;
+                return A.WriterKey() < B.WriterKey();
             });
             Transport->Publish(Item, Chunk.GetEntity(Index), bUpdateAction);
             Network[Index].bDamageSubmitted = true;

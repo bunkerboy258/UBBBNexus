@@ -72,11 +72,6 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
         Context.Mesh.SetEnableGravityOnAllBodiesBelow(true, NAME_None);
         Context.Mesh.SetAllPhysicsLinearVelocity(Velocity);
         Context.Mesh.WakeAllRigidBodies();
-        if (Life.Phase == EBBBCharacterLifePhase::Dead && !bRestored
-            && Hit.Serial > 0 && !Hit.Direction.IsNearlyZero())
-        {
-            Context.Mesh.AddImpulseAtLocation(Hit.Direction * 700.0f, Hit.Position, Hit.Bone);
-        }
         State.bRagdoll = true;
         State.bRagdollRequested = false;
         State.bGetUpRequested = false;

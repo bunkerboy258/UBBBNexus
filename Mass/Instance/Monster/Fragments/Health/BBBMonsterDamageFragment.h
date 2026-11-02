@@ -1,7 +1,8 @@
 #pragma once
 
 #include "MassEntityTypes.h"
-#include "BBBMonsterDamageContribution.h"
+#include "BBBMonsterDamageTotals.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBMonsterDamageFragment.generated.h"
 
 /** 已成立的玩家累计贡献与本轮受伤结果 */
@@ -12,7 +13,10 @@ struct ABBB_EVAC_API FBBBMonsterDamageFragment final : public FMassFragment
 
     /** 键为玩家身份 值为对这一代小怪的累计伤害 */
     UPROPERTY()
-    TMap<int32, FBBBMonsterDamageContribution> Contributions;
+    TMap<int64, FBBBMonsterDamageTotals> Contributions;
+
+    /** 已解析且等待本轮生命处理的独立命中 */
+    TArray<FBBBHitContribution> PendingHits;
 
     /** 已扣血的受伤事实 */
     bool bReceivedDamage = false;

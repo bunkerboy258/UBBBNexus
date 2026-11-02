@@ -4,7 +4,7 @@
 #include "MassEntityQuery.h"
 #include "BBBMonsterDamageProcessor.generated.h"
 
-struct FBBBMonsterDamageContribution;
+struct FBBBMonsterDamageTotals;
 struct FBBBMonsterBodyPartDefinition;
 
 /** 根据累计贡献计算本机生命结果 */
@@ -24,7 +24,7 @@ public:
      * @param Result	累计贡献的值快照
      * @return 是否取得有效目标的快照
      */
-    static bool Query(UWorld& World, FMassEntityHandle Entity, TArray<FBBBMonsterDamageContribution>& Result);
+    static bool Query(UWorld& World, FMassEntityHandle Entity, TArray<FBBBMonsterDamageTotals>& Result);
 
     /**
      * @param World	目标世界

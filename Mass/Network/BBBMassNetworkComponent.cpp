@@ -13,10 +13,11 @@ UBBBMassNetworkComponent::UBBBMassNetworkComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void UBBBMassNetworkComponent::ServerReportDamage_Implementation(FGuid InstanceId, FBBBMonsterDamageContribution Contribution)
+void UBBBMassNetworkComponent::ServerReportDamage_Implementation(FGuid InstanceId, FBBBMonsterDamageTotals Contribution)
 {
     const APlayerController* Controller = Cast<APlayerController>(GetOwner());
     const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
+    Contribution.bWorldSource = false;
     Contribution.PlayerId = Player != nullptr ? Player->GetPlayerId() : INDEX_NONE;
     if (!InstanceId.IsValid() || !Contribution.IsValid())
     {
@@ -29,12 +30,8 @@ void UBBBMassNetworkComponent::ServerReportDamage_Implementation(FGuid InstanceI
         UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
         FBBBMonsterDamageRemoteMessagePacket Packet;
         Packet.InstanceId = InstanceId;
-        // 查询包含本轮其他连接已投递的结果 再生成新的完整覆盖包
-        if (Mass->QueryDamage(Entity, Packet.Contributions))
-        {
-            Packet.Include(Contribution);
-            Mass->SubmitInput(Entity, MoveTemp(Packet));
-        }
+        Packet.Include(Contribution);
+        Mass->SubmitInput(Entity, MoveTemp(Packet));
         return;
     }
 }

@@ -24,7 +24,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Movement/BBBMonsterNavigation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPointDamageEvent.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 
 UBBBMonsterChargeProcessor::UBBBMonsterChargeProcessor() : MonsterQuery(*this)
 {
@@ -216,15 +216,12 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                         && Special.HitPlayerCount < 32 && Pawn->CanBeDamaged())
                     {
                         Special.HitPlayers[Special.HitPlayerCount++] = Pawn;
-                        FBBBMonsterPointDamageEvent Event;
-                        Event.Damage = Rule->RushDamage;
-                        Event.HitInfo = Hit;
-                        Event.ShotDirection = Direction;
-                        Event.SourceId = Network[I].InstanceId;
-                        Event.AttackId = Fact.Serial;
-                        Event.LaunchVelocity = Direction * Rule->ImpactSpeed + FVector::UpVector * Rule->ImpactLift;
-                        Event.KnockdownDuration = Rule->KnockdownDuration;
-                        Pawn->TakeDamage(Rule->RushDamage, Event, nullptr, !Actors.IsEmpty() ? const_cast<AActor*>(Actors[I].Get()) : nullptr);
+                        FBBBHitContribution Value{Rule->RushDamage, Hit.BoneName, Hit.ImpactPoint, Direction};
+                        Value.SourceId = Network[I].InstanceId;
+                        Value.AttackId = FGuid(0, 0, 0, Fact.Serial);
+                        Value.AddVelocity = Direction * Rule->ImpactSpeed + FVector::UpVector * Rule->ImpactLift;
+                        Value.AddHoldSeconds = Rule->KnockdownDuration;
+                        BBBHitReceiver::Submit(Pawn, Value);
                     }
                 }
             }

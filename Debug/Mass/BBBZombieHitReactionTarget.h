@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
+#include "BBBWork/UBBBNexus/Combat/BBBHitReceiver.h"
 #include "BBBZombieHitReactionTarget.generated.h"
 
 class USkeletalMeshComponent;
@@ -21,7 +22,7 @@ class UBBBMonsterPresentationDefinition;
 
 /** 仅用于本地受击与血腥调参的固定表现靶 不创建实体或维护玩法生命 */
 UCLASS(meta = (DisplayName = "僵尸程序化受击调参靶"))
-class ABBB_EVAC_API ABBBZombieHitReactionTarget final : public AActor
+class ABBB_EVAC_API ABBBZombieHitReactionTarget final : public AActor, public IBBBHitReceiver
 {
     GENERATED_BODY()
 
@@ -85,6 +86,7 @@ public:
      * @param DamageCauser	射击来源
      * @return 零 不生成有效生命伤害
      */
+    virtual void ReceiveHit(const FBBBHitContribution& Value) override;
     virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent,
         AController* EventInstigator, AActor* DamageCauser) override;
 

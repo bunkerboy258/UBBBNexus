@@ -58,7 +58,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     };
     const auto Hit = [&Manager, World, Settings](const FMassEntityHandle Entity, const EBBBMonsterHitRegion Region, const double Damage, const double Age, const bool bTrigger = true)
     {
-        FBBBMonsterDamageContribution Contribution;
+        FBBBMonsterDamageTotals Contribution;
         Contribution.PlayerId = 1;
         Contribution.Parts.Add(Region, Damage);
         Contribution.LastHitRegion = Region;
@@ -161,7 +161,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     const auto Mirror = Create();
     Run();
     TestFalse(TEXT("没有有效伤害的镜像输入不生成踉跄"), Manager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Mirror).IsStaggering(Now));
-    FBBBMonsterDamageContribution Current;
+    FBBBMonsterDamageTotals Current;
     Current.PlayerId = 1;
     Current.Parts.Torso = 10.0;
     Current.Stagger.AttackId = FGuid::NewGuid();
@@ -169,7 +169,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     Current.Stagger.ActiveAttackId = Current.Stagger.AttackId;
     Current.Stagger.StartedAt = 1.0;
     Current.Stagger.EndsAt = 1.0 + Settings->TorsoPart.StaggerDuration;
-    FBBBMonsterDamageContribution NewHit;
+    FBBBMonsterDamageTotals NewHit;
     NewHit.PlayerId = 1;
     NewHit.Parts.LeftArm = 5.0;
     NewHit.LastHitTime = 2.0;
@@ -186,11 +186,11 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     TArray<uint8> Bytes;
     FMemoryWriter Writer(Bytes);
     FObjectAndNameAsStringProxyArchive Saving(Writer, false);
-    FBBBMonsterDamageContribution::StaticStruct()->SerializeItem(Saving, &Current, nullptr);
+    FBBBMonsterDamageTotals::StaticStruct()->SerializeItem(Saving, &Current, nullptr);
     FMemoryReader Reader(Bytes);
     FObjectAndNameAsStringProxyArchive Loading(Reader, false);
-    FBBBMonsterDamageContribution Received;
-    FBBBMonsterDamageContribution::StaticStruct()->SerializeItem(Loading, &Received, nullptr);
+    FBBBMonsterDamageTotals Received;
+    FBBBMonsterDamageTotals::StaticStruct()->SerializeItem(Loading, &Received, nullptr);
     TestEqual(TEXT("当前踉跄身份进入反射传输"), Received.Stagger.ActiveAttackId, ActiveId);
     TestEqual(TEXT("当前踉跄结束时间进入反射传输"), Received.Stagger.EndsAt, Current.Stagger.EndsAt);
     TestFalse(TEXT("随机候选和命中汇总不进入网络快照"), Received.Stagger.AttackId.IsValid());

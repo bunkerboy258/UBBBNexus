@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/Definitions/BBBCharacterPhysicalImpact.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBCharacterHitState.generated.h"
 
 /** 最近有效伤害产生的骨骼受力事实 */
@@ -27,5 +27,9 @@ struct FBBBCharacterHitState final
     /** 最新已成立的全身冲击版本 不被后续普通命中覆盖 */
     uint64 ImpactSerial = 0;
     /** 最新有效的全身物理冲击 */
-    FBBBCharacterPhysicalImpact Impact;
+    FVector ImpactVelocity = FVector::ZeroVector;
+    /** 世界空间冲量由身体按实际质量换算 */
+    FVector ImpactImpulse = FVector::ZeroVector;
+    /** 本批冲击保持秒数 */
+    float ImpactHoldSeconds = 0;
 };

@@ -82,7 +82,7 @@ void FBBBCharacterRescueHelperProcessor::Update(FBBBCharacterLifeUpdateContext &
         {
             Reason = TEXT("Movement");
         }
-        if (!Domain.ReadLifeInputState().Damages.IsEmpty())
+        if (!Domain.ReadLifeInputState().Hits.IsEmpty())
         {
             Reason = TEXT("Damage");
         }
@@ -109,7 +109,7 @@ void FBBBCharacterRescueHelperProcessor::Update(FBBBCharacterLifeUpdateContext &
     }
     if (Input.bBegin && !Input.bCancel && !State.bHelping && !State.bReceiving &&
         Life.Phase == EBBBCharacterLifePhase::Alive && Control.MoveWorld.IsNearlyZero() &&
-        Domain.ReadLifeInputState().Damages.IsEmpty())
+        Domain.ReadLifeInputState().Hits.IsEmpty())
     {
         ABBBCharacter *Target = Cast<ABBBCharacter>(Domain.ReadRescueCandidateState().Target.Get());
         State.EndReason = TEXT("NoTarget");

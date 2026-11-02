@@ -13,7 +13,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 
@@ -52,7 +52,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
         UE::Mass::FProcessingContext Context(Manager, 0.016f);
         UE::Mass::Executor::Run(*Processor, Context);
     };
-    FBBBMonsterDamageContribution First;
+    FBBBMonsterDamageTotals First;
     First.PlayerId = 1;
     First.Parts.LeftLeg = 25.0;
     First.LastHitTime = World->GetTimeSeconds();
@@ -73,7 +73,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     Run();
     TestEqual(TEXT("重复快照不刷新减速"), Mobility.SlowEndsAt, End);
 
-    FBBBMonsterDamageContribution Second = First;
+    FBBBMonsterDamageTotals Second = First;
     Second.PlayerId = 2;
     Second.Parts.LeftLeg = 10.0;
     Damage.Contributions.Add(2, Second);
@@ -81,7 +81,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("合并不同玩家腿伤达到阈值"), Mobility.bCrawling);
     TestEqual(TEXT("第二次命中不叠乘"), Mobility.SlowMinimumRatio, 0.15f);
     TestEqual(TEXT("生命按全部累计贡献计算"), Health.CurrentHealth, 89.5f);
-    FBBBMonsterDamageLocalControlPacket Packet;
+    FBBBMonsterDamageRemoteMessagePacket Packet;
     Packet.Include(First);
     auto Older = First;
     Older.Parts.LeftLeg = 5.0;
