@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Input/LocalControl/Equipment/FBBBRifleSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/DomainData/Context/BBBRifleActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/RuntimeData/BBBRifleRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/BBBRifleEquipment.h"
@@ -95,6 +96,13 @@ void FBBBRifleActionProcessor::Update(FBBBRifleActionUpdateContext &Context)
     if (Input.bInterruptReloadRequested && !State.bReloadCompletedThisFrame)
     {
         Stop(Context.RuntimeData);
+    }
+
+    // 空弹开火请求通过既有输入槽提交换弹 由下一帧正常解析
+    if (Input.bPrimaryRequested && State.LoadedAmmo == 0 && !State.bIsReloading
+        && !State.bHide && !State.bFireBlocked && !State.bEquippedThisFrame && !Input.bReloadRequested)
+    {
+        Context.Equipment.SubmitInput(FBBBRifleSecondaryLocalControlPacket{});
     }
 
     if (Input.bReloadRequested && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)

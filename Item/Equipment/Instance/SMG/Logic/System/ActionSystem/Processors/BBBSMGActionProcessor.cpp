@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/System/ActionSystem/Processors/BBBSMGActionProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Input/LocalControl/Equipment/FBBBSMGSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/System/ActionSystem/DomainData/Context/BBBSMGActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/Logic/RuntimeData/BBBSMGRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/SMG/BBBSMGEquipment.h"
@@ -98,6 +99,13 @@ void FBBBSMGActionProcessor::Update(FBBBSMGActionUpdateContext &Context)
     if (Input.bInterruptReloadRequested && !State.bReloadCompletedThisFrame)
     {
         Stop(Context.RuntimeData);
+    }
+
+    // 空弹开火请求通过既有输入槽提交换弹 由下一帧正常解析
+    if (Input.bPrimaryRequested && State.LoadedAmmo == 0 && !State.bIsReloading
+        && !State.bHide && !State.bFireBlocked && !State.bEquippedThisFrame && !Input.bReloadRequested)
+    {
+        Context.Equipment.SubmitInput(FBBBSMGSecondaryLocalControlPacket{});
     }
 
     if (Input.bReloadRequested && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)

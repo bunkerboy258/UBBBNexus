@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/Processors/BBBShotgunActionProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Input/LocalControl/Equipment/FBBBShotgunSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/Context/BBBShotgunActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/RuntimeData/BBBShotgunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/BBBShotgunEquipment.h"
@@ -135,6 +136,13 @@ void FBBBShotgunActionProcessor::Update(FBBBShotgunActionUpdateContext &Context)
     if (Input.bReloadCycleEnded && Context.Definition.bReloadOneRoundAtATime && State.bIsReloading)
     {
         ++State.ReloadSequence;
+    }
+
+    // 空弹开火请求通过既有输入槽提交换弹 由下一帧正常解析
+    if (Input.bPrimaryRequested && State.LoadedAmmo == 0 && !State.bIsReloading && !State.bReloadFinishing
+        && !State.bHide && !State.bFireBlocked && !State.bEquippedThisFrame && !Input.bReloadRequested)
+    {
+        Context.Equipment.SubmitInput(FBBBShotgunSecondaryLocalControlPacket{});
     }
 
     if (Input.bReloadRequested && !State.bIsReloading && !State.bReloadFinishing && State.LoadedAmmo < State.AmmoCapacity)

@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/Processors/BBBMinigunActionProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Input/LocalControl/Equipment/FBBBMinigunSecondaryLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/DomainData/Context/BBBMinigunActionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/RuntimeData/BBBMinigunRuntimeData.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/BBBMinigunEquipment.h"
@@ -97,6 +98,13 @@ void FBBBMinigunActionProcessor::Update(FBBBMinigunActionUpdateContext &Context)
     if (Input.bInterruptReloadRequested && !State.bReloadCompletedThisFrame)
     {
         Stop(Context.RuntimeData);
+    }
+
+    // 空弹开火请求通过既有输入槽提交换弹 由下一帧正常解析
+    if (Input.bPrimaryRequested && State.LoadedAmmo == 0 && !State.bIsReloading
+        && !State.bHide && !State.bFireBlocked && !State.bEquippedThisFrame && !Input.bReloadRequested)
+    {
+        Context.Equipment.SubmitInput(FBBBMinigunSecondaryLocalControlPacket{});
     }
 
     if (Input.bReloadRequested && !State.bIsReloading && State.LoadedAmmo < State.AmmoCapacity)
