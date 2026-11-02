@@ -1,5 +1,4 @@
 #include "BBBMonsterBloodPresentationSubsystem.h"
-#include "BBBMonsterGibPresentationSubsystem.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBloodPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
@@ -77,14 +76,6 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
         return;
     }
     const auto* Presentation = Settings.GetTypedOuter<UBBBMonsterPresentationDefinition>();
-    if (Presentation)
-    {
-        auto* Pieces = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>();
-        for (const auto& Impact : Impacts)
-        {
-            Pieces->EmitFlesh(Impact, *Presentation);
-        }
-    }
     const auto* Sounds = Presentation ? Presentation->Sounds.Get() : nullptr;
     if (Sounds && Sounds->Attenuation && Sounds->ContactConcurrency)
     {
@@ -151,6 +142,7 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
                 {
                     const auto& Impact = Impacts[Batch.Value[Index]];
                     Writer->WritePosition(TEXT("Position"), Index, Impact.Position);
+                    Writer->WriteInt(TEXT("ImpactSeed"), Index, static_cast<int32>(Impact.Seed));
                     const FVector Outward = Impact.Normal.GetSafeNormal();
                     const FVector Spray = BloodDirection(Settings, Impact);
                     Writer->WriteVector(TEXT("Normal"), Index, Outward);

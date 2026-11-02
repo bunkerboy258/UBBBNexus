@@ -1,5 +1,4 @@
 #include "BBBMonsterGibPresentationSubsystem.h"
-#include "BBBMonsterBloodImpact.h"
 
 #include "Components/PoseableMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -104,11 +103,6 @@ void UBBBMonsterGibPresentationSubsystem::ReleaseSlot(const int32 Index)
     {
         Poses[Index]->SetVisibility(false);
     }
-    FleshSources[Index].Reset();
-    FleshInstances[Index].Invalidate();
-    FleshPieces[Index] = false;
-    MajorFleshPieces[Index] = false;
-    LandedAt[Index] = -1;
     BornAt[Index] = -1.0f;
     StableSince[Index] = -1.0f;
     LandingPlayed[Index] = false;
@@ -149,155 +143,10 @@ int32 UBBBMonsterGibPresentationSubsystem::FindSettledRecycleSlot() const
     return Result;
 }
 
-int32 UBBBMonsterGibPresentationSubsystem::GetFleshCount() const
-{
-    int32 Count = 0;
-    for (int32 Index = 0; Index < Pieces.Num(); ++Index)
-    {
-        Count += BornAt[Index] >= 0 && FleshPieces[Index] ? 1 : 0;
-    }
-    return Count;
-}
-
-void UBBBMonsterGibPresentationSubsystem::GetFleshPieces(TArray<UStaticMeshComponent*>& Out) const
-{
-    Out.Reset();
-    for (int32 Index = 0; Index < Pieces.Num(); ++Index)
-    {
-        if (BornAt[Index] >= 0 && FleshPieces[Index])
-        {
-            Out.Add(Pieces[Index]);
-        }
-    }
-}
-
-void UBBBMonsterGibPresentationSubsystem::ClearFleshForSource(const AActor& Source)
-{
-    for (int32 Index = 0; Index < Pieces.Num(); ++Index)
-    {
-        if (BornAt[Index] >= 0 && FleshPieces[Index] && FleshSources[Index].Get() == &Source)
-        {
-            ReleaseSlot(Index);
-        }
-    }
-}
-
-int32 UBBBMonsterGibPresentationSubsystem::EmitFlesh(const FBBBMonsterBloodImpact& Impact,
-    const UBBBMonsterPresentationDefinition& Settings)
+int32 UBBBMonsterGibPresentationSubsystem::AcquireSlot()
 {
     UWorld* World = GetWorld();
-    const auto& Flesh = Settings.Gibs.Flesh;
-    if (!World || World->GetNetMode() == NM_DedicatedServer || Impact.bDripOnly || !Flesh.Mesh
-        || !Flesh.Material || Flesh.Mesh->IsCompiling() || Impact.Position.ContainsNaN()
-        || Impact.Normal.ContainsNaN() || Impact.Direction.ContainsNaN()
-        || ViewDistanceSquared(*World, Impact.Position) > FMath::Square(1500.0f))
-    {
-        return 0;
-    }
-    const bool bMajor = Impact.bSevering || Impact.bWoundOpening;
-    const float Now = World->GetTimeSeconds();
-    TArray<int32, TInlineAllocator<5>> Recent;
-    const float Interval = FMath::Max(Flesh.Interval, 0.1f);
-    for (int32 Index = 0; Index < Pieces.Num(); ++Index)
-    {
-        const bool bSameSource = Impact.InstanceId.IsValid() ? FleshInstances[Index] == Impact.InstanceId
-            : Impact.Source.IsValid() && FleshSources[Index] == Impact.Source;
-        if (BornAt[Index] < 0 || !FleshPieces[Index] || !bSameSource)
-        {
-            continue;
-        }
-        const float Age = Now - BornAt[Index];
-        if (MajorFleshPieces[Index] && Age < Interval * 3)
-        {
-            return 0;
-        }
-        if (Age < Interval)
-        {
-            if (!bMajor)
-            {
-                return 0;
-            }
-            Recent.Add(Index);
-        }
-    }
-    FRandomStream Random(Impact.Seed ^ 0x31f5a9);
-    const FIntPoint Range = bMajor ? Flesh.MajorCount : Flesh.HitCount;
-    const int32 Minimum = FMath::Clamp(FMath::Min(Range.X, Range.Y), 0, 5);
-    const int32 Maximum = FMath::Clamp(FMath::Max(Range.X, Range.Y), Minimum, 5);
-    int32 Requested = bMajor ? Random.RandRange(Minimum, Maximum)
-        : (Random.FRand() < 0.75f ? Minimum : Maximum);
-    // 同次毁伤只补足目标数量 已经飞出的普通肉块计入本次总量
-    for (const int32 Index : Recent)
-    {
-        MajorFleshPieces[Index] = true;
-    }
-    Requested = FMath::Max(0, Requested - Recent.Num());
-    const FVector Outward = Impact.Normal.GetSafeNormal(UE_SMALL_NUMBER, -Impact.Direction.GetSafeNormal());
-    const FVector Side = FVector::CrossProduct(Outward, FVector::UpVector).GetSafeNormal(UE_SMALL_NUMBER, FVector::RightVector);
-    if (!ContactMaterial)
-    {
-        ContactMaterial = NewObject<UPhysicalMaterial>(this);
-        ContactMaterial->Friction = 0.65f;
-        ContactMaterial->StaticFriction = 0.8f;
-        ContactMaterial->Restitution = 0.12f;
-    }
-    int32 Emitted = 0;
-    for (int32 Index = 0; Index < Requested; ++Index)
-    {
-        const int32 Slot = AcquireSlot(true);
-        if (Slot == INDEX_NONE)
-        {
-            break;
-        }
-        auto* Piece = Pieces[Slot].Get();
-        Piece->EmptyOverrideMaterials();
-        Piece->SetStaticMesh(Flesh.Mesh);
-        Piece->SetMaterial(0, Flesh.Material);
-        Piece->SetPhysMaterialOverride(ContactMaterial);
-        const float Scale = Random.FRandRange(FMath::Clamp(static_cast<float>(Flesh.Scale.X), 0.1f, 0.6f),
-            FMath::Clamp(static_cast<float>(Flesh.Scale.Y), 0.1f, 0.6f));
-        const FQuat Rotation = FRotator(Random.FRandRange(-180, 180), Random.FRandRange(-180, 180), Random.FRandRange(-180, 180)).Quaternion();
-        Piece->SetWorldTransform(FTransform(Rotation, Impact.Position + Outward * 8 + Side * Random.FRandRange(-3, 3), FVector(Scale)),
-            false, nullptr, ETeleportType::TeleportPhysics);
-        Piece->SetCustomPrimitiveDataFloat(8, 0);
-        Piece->SetVisibility(true);
-        Piece->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-        Piece->SetUseCCD(true);
-        Piece->SetSimulatePhysics(true);
-        if (!Piece->IsSimulatingPhysics())
-        {
-            ReleaseSlot(Slot);
-            continue;
-        }
-        Piece->SetEnableGravity(true);
-        Piece->SetMassOverrideInKg(NAME_None, 0.08f);
-        Piece->SetLinearDamping(0.35f);
-        Piece->SetAngularDamping(2.0f);
-        const float Speed = Random.FRandRange(FMath::Clamp(static_cast<float>(Flesh.Speed.X), 50.0f, 500.0f),
-            FMath::Clamp(static_cast<float>(Flesh.Speed.Y), 50.0f, 500.0f));
-        FVector Velocity = Outward * Speed + Side * Random.FRandRange(-70, 70) + FVector::UpVector * Random.FRandRange(15, 45);
-        Velocity.Z = FMath::Clamp(Velocity.Z, -120.0, 90.0);
-        Piece->SetPhysicsLinearVelocity(Velocity);
-        Piece->SetPhysicsAngularVelocityInDegrees(Random.VRand() * Random.FRandRange(180, 360));
-        Piece->WakeAllRigidBodies();
-        BornAt[Slot] = Now;
-        StableSince[Slot] = -1;
-        SoundConfigs[Slot] = Settings.Sounds;
-        PresentationConfigs[Slot] = &Settings;
-        LandingPlayed[Slot] = false;
-        MajorFleshPieces[Slot] = bMajor;
-        FleshInstances[Slot] = Impact.InstanceId;
-        FleshSources[Slot] = Impact.Source;
-        ++Emitted;
-    }
-    return Emitted;
-}
-
-int32 UBBBMonsterGibPresentationSubsystem::AcquireSlot(const bool bFlesh)
-{
-    UWorld* World = GetWorld();
-    if (!World || GetSimulatingCount() >= MaximumSimulating
-        || (bFlesh && (GetSimulatingCount() >= MaximumSimulating - 8 || GetFleshCount() >= 64)))
+    if (!World || GetSimulatingCount() >= MaximumSimulating)
     {
         return INDEX_NONE;
     }
@@ -343,19 +192,12 @@ int32 UBBBMonsterGibPresentationSubsystem::AcquireSlot(const bool bFlesh)
         Piece->RegisterComponentWithWorld(World);
         Slot = Pieces.Add(Piece);
         Poses.Add(nullptr);
-        FleshPieces.Add(false);
-        MajorFleshPieces.Add(false);
-        LandedAt.Add(-1);
-        FleshInstances.Add(FGuid());
-        FleshSources.Add(nullptr);
         BornAt.Add(-1.0f);
         StableSince.Add(-1.0f);
         SoundConfigs.Add(nullptr);
         PresentationConfigs.Add(nullptr);
         LandingPlayed.Add(false);
     }
-    FleshPieces[Slot] = bFlesh;
-    LandedAt[Slot] = -1;
     return Slot;
 }
 
@@ -383,7 +225,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
     {
         return false;
     }
-    const int32 Slot = AcquireSlot(false);
+    const int32 Slot = AcquireSlot();
     if (Slot == INDEX_NONE)
     {
         return false;
@@ -491,12 +333,6 @@ void UBBBMonsterGibPresentationSubsystem::OnPieceHit(UPrimitiveComponent* HitCom
         return;
     }
     LandingPlayed[Index] = true;
-    LandedAt[Index] = GetWorld()->GetTimeSeconds();
-    if (FleshPieces[Index])
-    {
-        Pieces[Index]->SetLinearDamping(4.0f);
-        Pieces[Index]->SetAngularDamping(6.0f);
-    }
     const auto* Audio = SoundConfigs[Index].Get();
     if (Audio && !Audio->Landings.IsEmpty())
     {
@@ -528,11 +364,7 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
             Piece->SetVisibility(true);
         }
         const bool bVisible = Piece->WasRecentlyRendered(0.2f) || (Poses[Index] && Poses[Index]->WasRecentlyRendered(0.2f));
-        const bool bFlesh = FleshPieces[Index];
-        const float RetainedAge = bFlesh ? (LandedAt[Index] >= 0 ? Now - LandedAt[Index] : 0) : Age;
-        const float Lifetime = bFlesh ? FMath::Clamp(Settings.Flesh.Lifetime, 1.0f, 60.0f) : Settings.Lifetime;
-        const float FadeDuration = bFlesh ? FMath::Max(Settings.Flesh.FadeDuration, 0.1f) : Settings.FadeDuration;
-        const float Fade = FMath::Clamp((RetainedAge - Lifetime) / FadeDuration, 0.0f, 1.0f);
+        const float Fade = FMath::Clamp((Age - Settings.Lifetime) / Settings.FadeDuration, 0.0f, 1.0f);
         if (!FMath::IsNearlyEqual(Piece->GetCustomPrimitiveData().Data.IsValidIndex(8)
             ? Piece->GetCustomPrimitiveData().Data[8] : 0.0f, Fade))
         {
@@ -542,9 +374,7 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
                 Poses[Index]->SetCustomPrimitiveDataFloat(8, Fade);
             }
         }
-        if ((bFlesh ? RetainedAge >= Lifetime + FadeDuration
-                : RetainedAge >= Lifetime && (!bVisible || RetainedAge >= Lifetime + FadeDuration))
-            || (bFlesh && LandedAt[Index] < 0 && Age > 8.0f))
+        if (Age >= Settings.Lifetime && (!bVisible || Age >= Settings.Lifetime + Settings.FadeDuration))
         {
             Settled -= Piece->IsSimulatingPhysics() ? 0 : 1;
             ReleaseSlot(Index);
@@ -619,11 +449,6 @@ void UBBBMonsterGibPresentationSubsystem::Deinitialize()
         Piece->DestroyComponent();
     }
     Poses.Reset();
-    FleshPieces.Reset();
-    MajorFleshPieces.Reset();
-    LandedAt.Reset();
-    FleshInstances.Reset();
-    FleshSources.Reset();
     Pieces.Reset();
     BornAt.Reset();
     StableSince.Reset();

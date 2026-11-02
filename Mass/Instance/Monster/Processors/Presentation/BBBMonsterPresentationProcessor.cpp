@@ -216,7 +216,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     PresentationState.State == EBBBMonsterBehavior::Dead
                         ? ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity : Velocities[Index].Value,
                     ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed,
-                    ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].InstanceId, bNewActor);
+                    bNewActor);
             }
             Presentation->ApplyTraversalFact(
                 ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>()[Index].Fact, Definition->Presentation);

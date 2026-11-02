@@ -78,7 +78,7 @@ void UBBBMonsterGorePreviewComponent::Present()
     {
         FBBBMonsterDismembermentSystem::Resolve(Result, *Definition, Destroyed, CurrentHit, Target->TargetMesh);
         Target->Gore->ResidueSource = Target;
-        Target->Gore->Apply(*Definition, Result, CurrentHit, FVector::ZeroVector, 17, FGuid(), false);
+        Target->Gore->Apply(*Definition, Result, CurrentHit, FVector::ZeroVector, 17, false);
     }
 }
 
@@ -147,10 +147,6 @@ void UBBBMonsterGorePreviewComponent::ClearResidue()
     if (!World || !Owner)
     {
         return;
-    }
-    if (auto* Pieces = World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>())
-    {
-        Pieces->ClearFleshForSource(*Owner);
     }
     if (auto* Blood = World->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>())
     {
