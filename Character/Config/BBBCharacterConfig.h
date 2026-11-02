@@ -35,6 +35,19 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "最大生命", ClampMin = "1"))
     float MaximumHealth = 500.0f;
 
+    /** 从本次最高点下降到此距离时在空中进入布娃娃 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落布娃娃距离", ClampMin = "1"))
+    float FallRagdollDistance = 500.0f;
+    /** 首次撞地向下速度不超过此值时不受伤 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落无伤速度", ClampMin = "0"))
+    float FallSafeSpeed = 800.0f;
+    /** 首次撞地向下速度达到此值时使用满额伤害 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落满额伤害速度", ClampMin = "1"))
+    float FallFullDamageSpeed = 1600.0f;
+    /** 首次身体撞地可造成的最大伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落满额伤害", ClampMin = "0"))
+    float FallMaximumDamage = 500.0f;
+
     /** 每次进入倒地状态的独立生命 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "倒地生命", ClampMin = "1"))
     float DownedHealth = 300.0f;

@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterFallContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterRequestGetUpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterGetUpCompleteLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterEnterRagdollLocalControlPacket.h"
@@ -85,6 +86,8 @@ struct FBBBCharacterInputState final
 {
     /** 布娃娃进入请求及当前结果输入 */
     TBBBCharacterInputSlot<FBBBCharacterEnterRagdollLocalControlPacket> EnterRagdoll;
+    /** 真实身体碰撞收件槽 */
+    TBBBCharacterInputSlot<FBBBCharacterFallContactLocalControlPacket> FallContact;
     /** 主动起身请求 */
     TBBBCharacterInputSlot<FBBBCharacterRequestGetUpLocalControlPacket> RequestGetUp;
     /** 起身动作完成通知 */

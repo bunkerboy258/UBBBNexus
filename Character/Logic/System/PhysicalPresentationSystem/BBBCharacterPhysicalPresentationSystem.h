@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterFallProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterGetUpCandidateProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterPhysicalPhaseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterRagdollCaptureProcessor.h"
@@ -46,6 +47,8 @@ class FBBBCharacterPhysicalPresentationSystem final
     FBBBCharacterPhysicalPresentationProcessor Processor;
     /** 已成立冲击与自动起身请求 */
     FBBBCharacterKnockdownProcessor KnockdownProcessor;
+    /** 下落触发与首次撞地结算 */
+    FBBBCharacterFallProcessor FallProcessor;
     /** 起身前空间检查 */
     FBBBCharacterGetUpCandidateProcessor CandidateProcessor;
     /** 起身阶段交接 */

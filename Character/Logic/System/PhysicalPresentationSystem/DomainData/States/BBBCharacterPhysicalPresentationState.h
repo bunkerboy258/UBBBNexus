@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Animation/PoseSnapshot.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterFallContact.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterRagdollSnapshot.h"
 #include "BBBCharacterPhysicalPresentationState.generated.h"
 
@@ -9,6 +10,21 @@ USTRUCT()
 struct FBBBCharacterPhysicalPresentationState final
 {
     GENERATED_BODY()
+    /** 当前普通下落是否已有最高点 */
+    bool bTrackingFall = false;
+    /** 当前下落的最高世界高度 */
+    double FallPeakHeight = 0;
+    /** 本轮是否由高处下落触发 */
+    bool bFallRagdoll = false;
+    /** 本轮首次身体撞地已经结算 */
+    bool bFallLanded = false;
+    /** 物理求解前躯干部位的向下速度 */
+    TMap<FName, float> FallBodySpeeds;
+    /** 高处下落接管前的身体线性阻尼 起身后恢复 */
+    TMap<FName, float> FallBodyDamping;
+    /** 本帧待消费的真实碰撞 */
+    TArray<FBBBCharacterFallContact> FallContacts;
+
     /** 最新已经表现的命中 */
     uint64 HitSerial = 0;
     /** 已应用的全身冲击版本 */

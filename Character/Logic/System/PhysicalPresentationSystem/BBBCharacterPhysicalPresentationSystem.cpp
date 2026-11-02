@@ -21,6 +21,7 @@ void FBBBCharacterPhysicalPresentationSystem::Update() const
     }
     FBBBCharacterPhysicalPresentationUpdateContext Context{*Character, *Data, *Mesh, *Reaction, *PhysicalAnimation};
     KnockdownProcessor.Update(Context);
+    FallProcessor.Update(Context);
     CandidateProcessor.Update(Context);
     PhaseProcessor.Update(Context);
     Processor.Update(Context);

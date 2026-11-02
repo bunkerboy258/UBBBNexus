@@ -86,6 +86,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.AppearanceSystem.Initialize(Character, Character.RuntimeData, Config.Appearance);
 
     Character.LifeSystem.Initialize(Character, Character.RuntimeData, Config);
+    Character.HitReaction->BindBodyContacts(*Character.GetMesh(), true);
     Character.PhysicalAnimation->SetSkeletalMeshComponent(Character.GetMesh());
     Character.PhysicalPresentationSystem.Initialize(Character, Character.RuntimeData,
         *Character.GetMesh(), *Character.HitReaction, *Character.PhysicalAnimation);
