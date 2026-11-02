@@ -129,7 +129,9 @@ void UBBBEquipmentNetworkComponent::DeliverPending()
     }
 
     const bool bRemoteMessage = Character->HasNetworkAuthority();
-    auto &Pending = bRemoteMessage ? RemoteMessages : Messages;
+    // 只排序本次投递副本 保持复制数组的元素位置不变
+    const auto &Source = bRemoteMessage ? RemoteMessages : Messages;
+    TArray<FBBBEquipmentNetworkMessage> Pending = Source;
     Pending.Sort([](const auto &A, const auto &B)
     {
         return A.Revision < B.Revision;

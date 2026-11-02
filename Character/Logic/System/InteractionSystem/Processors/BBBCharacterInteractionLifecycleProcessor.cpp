@@ -1,6 +1,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionLifecycleProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Context/BBBCharacterInteractionUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Animation/FBBBUpperBodyMontageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
@@ -37,6 +39,7 @@ void FBBBCharacterInteractionLifecycleProcessor::Update(FBBBCharacterInteraction
     {
         return;
     }
+    const bool bHadEquipment = IsValid(Cast<ABBBEquipment>(Selection.ActiveMainHandInstance.Get()));
     if (AActor *Previous = Selection.ActiveMainHandInstance)
     {
         Detach(Context.CharacterMesh, *Previous);
@@ -59,6 +62,22 @@ void FBBBCharacterInteractionLifecycleProcessor::Update(FBBBCharacterInteraction
     AActor *Desired = Context.DesiredItem;
     if (!Desired)
     {
+        // 装备关系归空时用角色收势覆盖旧装备留下的上半身动作
+        if (bHadEquipment)
+        {
+            UAnimMontage *Return = Context.Character.GetCharacterConfig().Animation.UseReturnMontage.Get();
+            if (ensureMsgf(Return, TEXT("空手交接缺少角色收势蒙太奇")))
+            {
+                if (Context.bIsMirror)
+                {
+                    Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{Return});
+                }
+                if (!Context.bIsMirror)
+                {
+                    Context.Character.SubmitInput(FBBBUpperBodyMontageLocalControlPacket{Return});
+                }
+            }
+        }
         return;
     }
     if (!ensureMsgf(Attach(Context.CharacterMesh, Context.RightHandSocketName, *Desired), TEXT("主手挂接失败 %s"), *GetNameSafe(Desired)))
