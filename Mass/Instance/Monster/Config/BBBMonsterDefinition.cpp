@@ -113,6 +113,10 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(NavigationStuckDuration) && NavigationStuckDuration > 0.0f
         && FMath::IsFinite(NavigationRetryDuration) && NavigationRetryDuration > 0.0f
         && FMath::IsFinite(NavigationFollowInterval) && NavigationFollowInterval >= 0.05f && NavigationFollowInterval <= 0.5f
+        && FMath::IsFinite(NavigationCurveAngle) && NavigationCurveAngle >= 0.0f && NavigationCurveAngle <= 35.0f
+        && FMath::IsFinite(NavigationCurvePeriod) && NavigationCurvePeriod >= 1.0f && NavigationCurvePeriod <= 30.0f
+        && FMath::IsFinite(NavigationCurveRunScale) && NavigationCurveRunScale >= 0.0f && NavigationCurveRunScale <= 1.0f
+        && FMath::IsFinite(NavigationCurveFadeDistance) && NavigationCurveFadeDistance >= 1.0f && NavigationCurveFadeDistance <= 3000.0f
         && FMath::IsFinite(UnsupportedLifetime) && UnsupportedLifetime >= 5.0f && UnsupportedLifetime <= 120.0f
         && FMath::IsFinite(ApproachRange) && ApproachRange >= 200
         && FMath::IsFinite(ApproachSpread) && ApproachSpread >= 0 && ApproachSpread <= 150

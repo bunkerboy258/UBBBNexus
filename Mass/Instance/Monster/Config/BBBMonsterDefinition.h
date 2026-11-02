@@ -291,6 +291,22 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路质量", meta = (DisplayName = "局部检查间隔", Units = "s", ClampMin = "0.05", ClampMax = "0.5"))
     float NavigationFollowInterval = 0.15f;
 
+    /** 普通行进方向的最大侧偏 设为零关闭曲线 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路|行进曲线", meta = (DisplayName = "行走曲线偏角", Units = "deg", ClampMin = "0", ClampMax = "35"))
+    float NavigationCurveAngle = 15.0f;
+
+    /** 主要摆动周期 各个体使用固定的相位与周期差异 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路|行进曲线", meta = (DisplayName = "曲线变化周期", Units = "s", ClampMin = "1", ClampMax = "30"))
+    float NavigationCurvePeriod = 5.0f;
+
+    /** 跑步与冲刺相对行走的曲线强度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路|行进曲线", meta = (DisplayName = "跑步曲线比例", ClampMin = "0", ClampMax = "1"))
+    float NavigationCurveRunScale = 0.35f;
+
+    /** 到达或可攻击前的这段路程逐渐恢复直行 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "寻路|行进曲线", meta = (DisplayName = "到达前收敛距离", Units = "cm", ClampMin = "1", ClampMax = "3000"))
+    float NavigationCurveFadeDistance = 300.0f;
+
     /** 活体持续坠落且无法恢复支撑时结束该实体 不生成玩家击杀贡献 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "死亡与回收", meta = (DisplayName = "失去支撑回收时间", Units = "s", ClampMin = "5", ClampMax = "120"))
     float UnsupportedLifetime = 20.0f;

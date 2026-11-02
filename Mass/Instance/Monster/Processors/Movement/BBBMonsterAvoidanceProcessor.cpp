@@ -5,6 +5,7 @@
 #include "BBBMonsterNavigationProcessor.h"
 #include "BBBMonsterTraversalProcessor.h"
 #include "BBBMonsterLocomotionProcessor.h"
+#include "BBBMonsterSteering.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
@@ -118,7 +119,17 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 {
                     Accelerated = FMath::Min(Accelerated, Speed);
                 }
-                C.DesiredVelocity = (Paths[I].FollowTarget - Location).GetSafeNormal2D() * Accelerated;
+                const FVector GoalDelta = Paths[I].FollowTarget - Location;
+                FVector Direction = GoalDelta.GetSafeNormal2D();
+                const bool bCurvedTravel = !Injury.bCrawling && Paths[I].TraversalPoly == 0
+                    && (Specials.IsEmpty() || Specials[I].Fact.Phase == 0);
+                if (bCurvedTravel)
+                {
+                    const float ArrivalDistance = bChase ? Rule.AttackRange + Body.CapsuleRadius : 10.0f;
+                    Direction = FBBBMonsterSteering::ApplyTravelCurve(GoalDelta, Rule, Rules[I].InstanceId,
+                        Now, Paths[I].RemainingDistance, ArrivalDistance, Body.CapsuleRadius, Gait != EBBBMonsterGait::Walk);
+                }
+                C.DesiredVelocity = Direction * Accelerated;
             }
             const FIntPoint Cell(FMath::FloorToInt(Location.X / CellSize), FMath::FloorToInt(Location.Y / CellSize));
             Buckets.FindOrAdd(Cell).Emplace(Chunk.GetEntity(I), Location, Velocities[I].Value,
