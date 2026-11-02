@@ -18,10 +18,8 @@ namespace
     void SlimeParameters(UNiagaraComponent& Component, const FBBBSlimePresentation& Settings)
     {
         Component.SetVariableLinearColor(TEXT("User.Color"), Settings.MainColor);
-        Component.SetVariableLinearColor(TEXT("User.Color 2"), Settings.SecondaryColor);
         Component.SetVariableLinearColor(TEXT("User.SecondaryColor"), Settings.SecondaryColor);
         Component.SetVariableFloat(TEXT("User.SpawnRate"), Settings.ParticleScale);
-        Component.SetVariableFloat(TEXT("User.Emissive"), .08f);
     }
 }
 
@@ -76,7 +74,6 @@ bool ABBBSlimePresentationActor::Configure(const FBBBSlimeFact& Fact)
     SlimeParameters(*Trail, Settings);
     SlimeParameters(*Bubbles, Settings);
     Bubbles->SetVariableFloat(TEXT("User.Seed"), GetTypeHash(Fact.InstanceId) % 65536);
-    Trail->SetVariableFloat(TEXT("User.Trail Size"), Settings.TrailWidth);
     Trail->SetVariableFloat(TEXT("User.TrailLifetime"), Settings.TrailLifetime);
     Trail->SetVariableFloat(TEXT("User.Size"), Settings.TrailWidth);
     AppliedPhase = 255;
