@@ -31,3 +31,13 @@ void UBBBThrowableNetworkComponent::OnRep_Explosion()
         Actor->SubmitInput(FBBBThrowableExplosionAuthorityFactPacket{Explosion});
     }
 }
+
+void UBBBThrowableNetworkComponent::MulticastBounce_Implementation(const FBBBThrowableBounceFact& Fact)
+{
+    if (auto* Actor = Cast<ABBBThrowable>(GetOwner()); Actor && !Actor->HasAuthority())
+    {
+        FBBBThrowableBounceAuthorityFactPacket Packet;
+        Packet.Facts.Add(Fact);
+        Actor->SubmitInput(MoveTemp(Packet));
+    }
+}

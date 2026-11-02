@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "NiagaraComponent.h"
 void FBBBThrowableInitializer::Initialize(ABBBThrowable& Actor) const
 {
     Actor.PhysicsBody->OnComponentHit.AddUniqueDynamic(&Actor, &ABBBThrowable::OnPhysicsHit);
@@ -25,5 +26,11 @@ void FBBBThrowableInitializer::Initialize(ABBBThrowable& Actor) const
     Actor.PhysicsBody->SetUseCCD(Config.bCCD);
     Actor.Mesh->SetStaticMesh(Actor.Definition->Presentation.Mesh);
     Actor.Mesh->SetRelativeTransform(Actor.Definition->Presentation.MeshTransform);
+    if (Actor.GetNetMode() != NM_DedicatedServer && Actor.Definition->Presentation.TrailEffect &&
+        Actor.Trail->GetAsset() != Actor.Definition->Presentation.TrailEffect)
+    {
+        Actor.Trail->SetAsset(Actor.Definition->Presentation.TrailEffect);
+        Actor.Trail->Activate(true);
+    }
     Actor.PhysicsBody->SetSimulatePhysics(true);
 }

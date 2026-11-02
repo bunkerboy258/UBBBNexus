@@ -1,6 +1,7 @@
 #pragma once
 #include "Components/ActorComponent.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Network/BBBThrowableExplosionFact.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Network/BBBThrowableBounceFact.h"
 #include "BBBThrowableNetworkComponent.generated.h"
 /** 终态可靠桥接组件 不维护运动状态 */
 UCLASS()
@@ -15,6 +16,9 @@ public:
     /** @param Fact	房主产生的终态 @return 无 */
     UFUNCTION(NetMulticast, Reliable)
     void MulticastExplosion(const FBBBThrowableExplosionFact& Fact);
+    /** @param Fact	房主真实碰撞结果 @return 无 */
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastBounce(const FBBBThrowableBounceFact& Fact);
 private:
     UFUNCTION()
     void OnRep_Explosion();

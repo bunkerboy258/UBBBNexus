@@ -35,5 +35,29 @@ void FBBBThrowableParseProcessor::Update(ABBBThrowable& Actor) const
     {
         Slots.Fact.Apply(Explosion);
     }
+    if (Slots.bBounce && Actor.HasAuthority() && !Explosion.Fact.bExploded &&
+        Slots.Bounce.IsValid() && Slots.Bounce.CanApply(Life))
+    {
+        Slots.Bounce.Apply(Life);
+    }
+    if (Slots.bBounceFact && !Actor.HasAuthority() && !Explosion.Fact.bExploded &&
+        Slots.BounceFact.IsValid() && Slots.BounceFact.CanApply(Life))
+    {
+        Slots.BounceFact.Apply(Life);
+    }
     Slots = {};
+}
+
+void FBBBThrowableParseProcessor::Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableBounceLocalControlPacket Packet)
+{
+    auto& Slots = Data.Parse.State;
+    Slots.Bounce.Contacts.Append(MoveTemp(Packet.Contacts));
+    Slots.bBounce = true;
+}
+
+void FBBBThrowableParseProcessor::Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableBounceAuthorityFactPacket Packet)
+{
+    auto& Slots = Data.Parse.State;
+    Slots.BounceFact.Facts.Append(MoveTemp(Packet.Facts));
+    Slots.bBounceFact = true;
 }

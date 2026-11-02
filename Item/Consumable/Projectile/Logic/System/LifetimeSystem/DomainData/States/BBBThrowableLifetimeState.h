@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Network/BBBThrowableBounceFact.h"
 class UBBBThrowableDefinition;
 /** 初始化和引信共享生命周期 */
 struct FBBBThrowableLifetimeState final
@@ -15,10 +16,16 @@ struct FBBBThrowableLifetimeState final
     /** 释放时持有者速度 */
     FVector PendingVelocity = FVector::ZeroVector;
 
-    /** 仅供声音判断使用的上一帧引擎速度样本 */
-    FVector LastAudibleVelocity = FVector::ZeroVector;
-    /** 声音速度样本是否已建立 */
-    bool bHasAudibleVelocity = false;
+    /** 本帧真实碰撞中最大的速度变化 */
+    float PendingBounceStrength = 0.0f;
+    /** 本帧最大碰撞的接触位置 */
+    FVector PendingBouncePosition = FVector::ZeroVector;
+    /** 最近一次可听碰撞结果 */
+    FBBBThrowableBounceFact Bounce;
+    /** 本端已经播放的碰撞序号 */
+    uint32 PresentedBounceSerial = 0;
+    /** 已观察到本机物理运动 防止初始复制前误停尾迹 */
+    bool bTrailHasMoved = false;
     /** 最近一次弹跳声音时间 */
     double LastBounceSoundTime = -1.0;
 };

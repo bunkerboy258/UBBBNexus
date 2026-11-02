@@ -4,28 +4,43 @@
 #include "Components/SphereComponent.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
 void FBBBThrowableLifetimeProcessor::Update(ABBBThrowable& Actor) const
 {
     auto &Life = Actor.RuntimeData.Lifetime.State;
     auto &Explosion = Actor.RuntimeData.Explosion.State;
-    if (Actor.Definition && Actor.GetNetMode() != NM_DedicatedServer && !Explosion.Fact.bExploded &&
-        Actor.PhysicsBody->IsSimulatingPhysics())
+    if (Actor.Definition && !Explosion.Fact.bExploded)
     {
-        const FVector Velocity = Actor.PhysicsBody->GetPhysicsLinearVelocity();
-        const float Change = FVector::Distance(Velocity, Life.LastAudibleVelocity);
         const double Now = Actor.GetWorld()->GetTimeSeconds();
         const auto &Presentation = Actor.Definition->Presentation;
-        if (Life.bHasAudibleVelocity && Change > 180.0f && Now - Life.LastBounceSoundTime >= 0.12 &&
-            Presentation.BounceSound)
+        if (Actor.HasAuthority() && Life.PendingBounceStrength >= 60.0f && Now - Life.LastBounceSoundTime >= 0.08)
         {
             Life.LastBounceSoundTime = Now;
-            UGameplayStatics::PlaySoundAtLocation(Actor.GetWorld(), Presentation.BounceSound, Actor.GetActorLocation(),
-                                                  FRotator::ZeroRotator, FMath::Clamp(Change / 900.0f, 0.15f, 1.0f),
-                                                  FMath::FRandRange(0.94f, 1.06f), 0.0f,
-                                                  Presentation.BounceAttenuation);
+            ++Life.Bounce.Serial;
+            Life.Bounce.Position = Life.PendingBouncePosition;
+            Life.Bounce.Strength = Life.PendingBounceStrength;
         }
-        Life.LastAudibleVelocity = Velocity;
-        Life.bHasAudibleVelocity = true;
+        Life.PendingBounceStrength = 0.0f;
+        if (Life.Bounce.Serial > Life.PresentedBounceSerial)
+        {
+            Life.PresentedBounceSerial = Life.Bounce.Serial;
+            if (Actor.GetNetMode() != NM_DedicatedServer && Presentation.BounceSound)
+            {
+                UGameplayStatics::PlaySoundAtLocation(Actor.GetWorld(), Presentation.BounceSound, Life.Bounce.Position,
+                    FRotator::ZeroRotator, FMath::Clamp(Life.Bounce.Strength / 850.0f, 0.25f, 1.0f),
+                    FMath::FRandRange(0.96f, 1.04f), 0.0f, Presentation.BounceAttenuation);
+            }
+        }
+        const float SpeedSquared = Actor.PhysicsBody->GetPhysicsLinearVelocity().SizeSquared();
+        Life.bTrailHasMoved |= SpeedSquared >= FMath::Square(80.0f);
+        if (Actor.Trail->IsActive() && Life.bTrailHasMoved && SpeedSquared < FMath::Square(80.0f))
+        {
+            Actor.Trail->Deactivate();
+        }
+    }
+    if (Explosion.Fact.bExploded && Actor.Trail->IsActive())
+    {
+        Actor.Trail->Deactivate();
     }
     if (!Actor.HasAuthority())
     {

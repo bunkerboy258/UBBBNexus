@@ -33,9 +33,14 @@ struct FBBBThrowablePresentationConfig final
               meta = (DisplayName = "爆炸声音衰减", ToolTip = "控制爆炸声音的空间定位与距离衰减"))
     TObjectPtr<USoundAttenuation> ExplosionAttenuation = nullptr;
 
+    /** 沿释放后的实际运动生成短尾迹 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物",
+              meta = (DisplayName = "飞行尾迹", ToolTip = "附着于物理投掷物的本地 Niagara 尾迹 爆炸与停稳后停止生成"))
+    TObjectPtr<UNiagaraSystem> TrailEffect = nullptr;
+
     /** 硬质地面弹跳声音 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物",
-              meta = (DisplayName = "弹跳音效", ToolTip = "物理速度突变时播放的轻量弹跳声音"))
+              meta = (DisplayName = "弹跳音效", ToolTip = "房主确认真实碰撞后各端播放一次 声音强弱由碰撞冲量决定"))
     TObjectPtr<USoundBase> BounceSound = nullptr;
 
     /** 弹跳声音的空间衰减 */

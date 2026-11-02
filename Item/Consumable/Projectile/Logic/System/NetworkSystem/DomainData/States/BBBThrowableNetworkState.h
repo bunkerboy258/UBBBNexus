@@ -4,4 +4,6 @@ struct FBBBThrowableNetworkState final
 {
     /** 当前终态是否已交接可靠通道 */
     bool bPublished = false;
+    /** 已交接给远端的最近碰撞序号 */
+    uint32 PublishedBounceSerial = 0;
 };

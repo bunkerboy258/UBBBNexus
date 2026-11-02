@@ -13,4 +13,8 @@ public:
     static void Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableDetonateLocalControlPacket Packet);
     /** @param Data	唯一黑板 @param Packet	终态事实 @return 是否接受 */
     static void Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableExplosionAuthorityFactPacket Packet);
+    /** @param Data	唯一黑板 @param Packet	真实碰撞输入 @return 无 */
+    static void Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableBounceLocalControlPacket Packet);
+    /** @param Data	唯一黑板 @param Packet	远端碰撞结果 @return 无 */
+    static void Submit(FBBBThrowableRuntimeData& Data, FBBBThrowableBounceAuthorityFactPacket Packet);
 };

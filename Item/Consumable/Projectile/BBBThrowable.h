@@ -5,6 +5,7 @@
 #include "BBBThrowable.generated.h"
 class USphereComponent;
 class UStaticMeshComponent;
+class UNiagaraComponent;
 class UBBBThrowableNetworkComponent;
 class FBBBThrowableInitializer;
 class FBBBThrowableUpdatePipeline;
@@ -46,6 +47,9 @@ private:
     TObjectPtr<USphereComponent> PhysicsBody;
     UPROPERTY(VisibleAnywhere, Category = "投掷物", meta = (DisplayName = "可见网格"))
     TObjectPtr<UStaticMeshComponent> Mesh;
+    /** 沿引擎实际运动生成的本地尾迹 */
+    UPROPERTY()
+    TObjectPtr<UNiagaraComponent> Trail;
     UPROPERTY()
     TObjectPtr<UBBBThrowableNetworkComponent> Network;
     UPROPERTY(ReplicatedUsing = OnRep_Definition)
