@@ -56,8 +56,9 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
             : Context.Character.GetVelocity() + State.PendingImpactVelocity;
         State.PendingImpactVelocity = FVector::ZeroVector;
         Context.HitReaction.ClearSimulation();
-        Context.PhysicalAnimation.SetStrengthMultiplyer(0.0f);
         Context.PhysicalAnimation.SetComponentTickEnabled(false);
+        // 释放局部受击的目标刚体与驱动约束 由全身物理独立接管
+        Context.PhysicalAnimation.SetSkeletalMeshComponent(nullptr);
         // 脱离胶囊后 锚点跟随不会再次搬动物理身体
         Context.Mesh.DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
         // 自由布娃娃不再求值动画与通知 不停止或清空任何蒙太奇槽位
@@ -67,6 +68,8 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
         Context.Mesh.SetAllBodiesSimulatePhysics(true);
         Context.Mesh.SetAllBodiesPhysicsBlendWeight(1.0f);
         Context.Mesh.SetSimulatePhysics(true);
+        // 局部受击资产关闭了重力 全身布娃娃必须逐刚体重新开启
+        Context.Mesh.SetEnableGravityOnAllBodiesBelow(true, NAME_None);
         Context.Mesh.SetAllPhysicsLinearVelocity(Velocity);
         Context.Mesh.WakeAllRigidBodies();
         if (Life.Phase == EBBBCharacterLifePhase::Dead && !bRestored

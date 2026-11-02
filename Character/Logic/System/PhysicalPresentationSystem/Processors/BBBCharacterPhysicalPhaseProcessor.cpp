@@ -5,6 +5,10 @@
 #include "Animation/AnimMontage.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "PhysicsEngine/BodyInstance.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
 
 void FBBBCharacterPhysicalPhaseProcessor::Update(FBBBCharacterPhysicalPresentationUpdateContext &Context) const
 {
@@ -86,6 +90,22 @@ void FBBBCharacterPhysicalPhaseProcessor::Update(FBBBCharacterPhysicalPresentati
         Context.Mesh.SetAllBodiesSimulatePhysics(false);
         Context.Mesh.SetSimulatePhysics(false);
         Context.Mesh.SetAllBodiesPhysicsBlendWeight(0.0f);
+        // 退出全身物理后恢复资产的逐刚体重力设置 不改变局部受击的表现
+        if (const UPhysicsAsset *Asset = Context.Mesh.GetPhysicsAsset())
+        {
+            for (const USkeletalBodySetup *Setup : Asset->SkeletalBodySetups)
+            {
+                if (Setup)
+                {
+                    if (FBodyInstance *Body = Context.Mesh.GetBodyInstance(Setup->BoneName))
+                    {
+                        Body->SetEnableGravity(Setup->DefaultInstance.bEnableGravity);
+                    }
+                }
+            }
+        }
+        Context.PhysicalAnimation.SetSkeletalMeshComponent(&Context.Mesh);
+        Context.PhysicalAnimation.SetStrengthMultiplyer(1.0f);
         Context.Mesh.AttachToComponent(Context.Character.GetCapsuleComponent(), FAttachmentTransformRules::KeepWorldTransform);
         const auto *DefaultMesh = Context.Character.GetClass()->GetDefaultObject<ABBBCharacter>()->GetMesh();
         Context.Mesh.SetCollisionProfileName(DefaultMesh->GetCollisionProfileName());
