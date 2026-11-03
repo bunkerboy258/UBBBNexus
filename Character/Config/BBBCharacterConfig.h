@@ -48,6 +48,10 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落满额伤害", ClampMin = "0"))
     float FallMaximumDamage = 500.0f;
 
+    /** 本目标接受冲击保持时间的最大秒数 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "冲击保持时间上限", ClampMin = "0"))
+    float MaximumImpactHoldSeconds = 10.0f;
+
     /** 每次进入倒地状态的独立生命 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "倒地生命", ClampMin = "1"))
     float DownedHealth = 300.0f;

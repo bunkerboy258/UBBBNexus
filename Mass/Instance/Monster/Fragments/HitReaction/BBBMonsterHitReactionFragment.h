@@ -24,7 +24,7 @@ struct ABBB_EVAC_API FBBBMonsterHitReactionFragment final : public FMassFragment
     FVector ImpactVelocity = FVector::ZeroVector;
     /** 最近命中之后的秒数 */
     float Age = 10.0f;
-    /** 本地命中编号 镜像子弹也可推进表现 */
+    /** 本地响应消费编号 只由目标结果推进 */
     uint32 Serial = 0;
     /** 已提交光效的最新编号 */
     uint32 PublishedSerial = 0;

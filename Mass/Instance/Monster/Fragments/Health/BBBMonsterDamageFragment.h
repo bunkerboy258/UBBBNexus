@@ -18,6 +18,9 @@ struct ABBB_EVAC_API FBBBMonsterDamageFragment final : public FMassFragment
     /** 已解析且等待本轮生命处理的独立命中 */
     TArray<FBBBHitContribution> PendingHits;
 
+    /** 每个累计写入来源已经消费的响应版本 不保存命中历史 */
+    TMap<int64, uint64> PresentedHitSequences;
+
     /** 已扣血的受伤事实 */
     bool bReceivedDamage = false;
 };

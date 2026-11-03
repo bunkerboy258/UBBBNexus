@@ -12,11 +12,13 @@
 #include "MassExecutor.h"
 #include "MassProcessingContext.h"
 #include "BBBMassSubsystem.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/HitReaction/BBBMonsterHitReactionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 
 /** 验证部位碰撞 覆盖输入 死亡屏蔽和方向姿势 */
@@ -39,9 +41,13 @@ bool FBBBMonsterHitReactionTest::RunTest(const FString&)
     auto& Manager = World->GetSubsystem<UMassEntitySubsystem>()->GetMutableEntityManager();
     const auto Type = Manager.CreateArchetype({FTransformFragment::StaticStruct(), FMassActorFragment::StaticStruct(),
         FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
-        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(),
-        FBBBMonsterMobilityFragment::StaticStruct()});
+        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(),
+        FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterDamageFragment::StaticStruct(), FBBBMonsterHealthInputFragment::StaticStruct()});
     const auto Entity = Manager.CreateEntity(Type);
+    auto* Definition = NewObject<UBBBMonsterDefinition>(World);
+    auto& Identity = Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity);
+    Identity.Definition = Definition;
+    Identity.InstanceId = FGuid::NewGuid();
     const auto Run = [&Manager, World](UClass* Class)
     {
         auto* Processor = NewObject<UMassProcessor>(World, Class);
@@ -65,26 +71,32 @@ bool FBBBMonsterHitReactionTest::RunTest(const FString&)
         TestEqual(TEXT("返回正确部位"), Part, Region);
         TestTrue(TEXT("命中同一个实体"), Hit == Entity);
     }
-    FBBBMonsterHitReactionLocalControlPacket First;
-    First.Region = EBBBMonsterHitRegion::Head;
-    Mass->SubmitInput(Entity, First);
-    First.Region = EBBBMonsterHitRegion::RightLeg;
+    FBBBHitContribution First{1.f, NAME_None, FVector::ZeroVector, FVector::ForwardVector};
+    First.Part = 1;
+    First.PlayerId = 7;
+    First.AddDurableDamage = 1;
+    First.Normal = -First.Direction;
+    Mass->SubmitInput(Entity, FBBBMonsterDamageLocalControlPacket{{First}});
+    First.Part = 5;
     First.Direction = FVector::RightVector;
-    Mass->SubmitInput(Entity, First);
-    const auto& Slot = Manager.GetFragmentDataChecked<FBBBMonsterHitReactionInputFragment>(Entity).Hit;
-    TestTrue(TEXT("同种输入最后覆盖前者"), Slot.bActive && Slot.Packet.Region == EBBBMonsterHitRegion::RightLeg);
+    Mass->SubmitInput(Entity, FBBBMonsterDamageLocalControlPacket{{First}});
+    auto& Slot = Manager.GetFragmentDataChecked<FBBBMonsterHealthInputFragment>(Entity).Damage;
+    TestEqual(TEXT("统一输入保留两次独立命中"), Slot.Packet.Hits.Num(), 2);
+    Slot.Packet.Apply(Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Entity));
+    Slot.bActive = false;
+    Run(UBBBMonsterDamageProcessor::StaticClass());
     auto& State = Manager.GetFragmentDataChecked<FBBBMonsterHitReactionFragment>(Entity);
-    const auto& Health = Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity);
-    TestTrue(TEXT("活体接收表现事实"), Slot.Packet.IsValid() && Slot.Packet.CanApply(Health));
-    Slot.Packet.Apply(State);
+    TestEqual(TEXT("目标发布一次最新反应"), State.Serial, 1u);
+    TestTrue(TEXT("目标决定最后受击部位"), State.Region == EBBBMonsterHitRegion::RightLeg);
     Run(UBBBMonsterHitReactionProcessor::StaticClass());
-    TestEqual(TEXT("命中编号只推进一次"), State.Serial, 1u);
     TestEqual(TEXT("血效编号已消费"), State.PublishedSerial, State.Serial);
     TestTrue(TEXT("批量阶段推进间隔"), FMath::IsNearlyEqual(State.Age, 0.05f));
-    Run(UBBBMonsterHitReactionProcessor::StaticClass());
-    TestEqual(TEXT("不重放已消费命中"), State.PublishedSerial, 1u);
+    Run(UBBBMonsterDamageProcessor::StaticClass());
+    TestEqual(TEXT("旧结果不重复驱动身体"), State.Serial, 1u);
+    const auto Original = Definition->HitShapes[0].Radius;
+    Definition->HitShapes[0].Radius = Original + 8;
+    TestTrue(TEXT("命中形状由本目标配置提供"), Definition->HitShapes[0].IsValid());
     Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).CurrentHealth = 0.0f;
-    TestTrue(TEXT("尸体保留新的受击血效输入"), Slot.Packet.CanApply(Health));
     Run(UBBBMonsterCollisionProcessor::StaticClass());
     FMassEntityHandle Hit;
     float Time;

@@ -105,6 +105,7 @@ int32 UBBBMassValidationLibrary::DamagePopulation(UObject* WorldContext, const T
             continue;
         }
         FBBBHitContribution Hit{Damage};
+        Hit.Part = 0;
         Hit.PlayerId = Player->GetPlayerId();
         Hit.AddDurableDamage = Damage;
         FBBBMonsterDamageLocalControlPacket Packet{{Hit}};

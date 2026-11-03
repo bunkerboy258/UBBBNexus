@@ -21,7 +21,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBodyPartDefinition.h"
 
 namespace
@@ -29,14 +28,8 @@ namespace
     void SubmitHit(UBBBMassSubsystem& Mass, const FBBBProjectileCollisionFragment& Data, FMassEntityHandle Target,
         uint8 Part, const FVector& Position, const FVector& Direction, const FVector& Normal, bool bRadial)
     {
-        FBBBMonsterHitReactionLocalControlPacket Reaction;
-        Reaction.Region = static_cast<EBBBMonsterHitRegion>(Part);
-        Reaction.Position = Position;
-        Reaction.Direction = Direction;
-        Reaction.Normal = Normal;
-        if (!Data.bCanCauseDamage || (Data.Damage <= 0 && Data.DurableDamage <= 0))
+        if (!Data.bCanCauseDamage)
         {
-            Mass.SubmitInput(Target, MoveTemp(Reaction));
             return;
         }
         const auto* Controller = Data.EventInstigator.Get();

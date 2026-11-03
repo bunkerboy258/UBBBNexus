@@ -40,7 +40,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Perception/FBBBMonsterSoundLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 
@@ -71,7 +70,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
         FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(),
         FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
-        FBBBMonsterHitReactionInputFragment::StaticStruct(), FBBBMonsterHitReactionFragment::StaticStruct(),
+        FBBBMonsterHitReactionFragment::StaticStruct(),
         FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct()});
     auto* Settings = NewObject<UBBBMonsterDefinition>(World);
     Settings->AllyAlertRange = 0.0f;
@@ -202,7 +201,7 @@ bool FBBBMonsterPerceptionTest::RunTest(const FString& Parameters)
     FMemoryReader Reader(Encoded);
     FBBBMonsterDamageTotals::StaticStruct()->SerializeItem(Reader, &Decoded, nullptr);
     TestTrue(TEXT("当前伤害快照序列化保留来源位置"), Decoded == Hit);
-    FBBBMonsterDamageRemoteMessagePacket SourcePacket;
+    FBBBMonsterDamageTotalsRemoteMessagePacket SourcePacket;
     SourcePacket.Include(Hit);
     auto NewerHit = Hit;
     NewerHit.Parts.Torso = 2.0;

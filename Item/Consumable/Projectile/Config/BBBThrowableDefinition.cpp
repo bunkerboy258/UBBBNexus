@@ -10,6 +10,6 @@ bool UBBBThrowableDefinition::IsValid() const
         && (Explosion.bOnImpact || Explosion.FuseSeconds > 0.0f)
         && Explosion.Damage >= 0.0f && Explosion.DurableDamage >= 0.0f
         && Explosion.MinimumDamageRatio >= 0.0f && Explosion.MinimumDamageRatio <= 1.0f
-        && Explosion.Stagger >= 0.0f && Explosion.Stagger <= 1.0f
+        && Explosion.Stagger >= 0.0f
         && Explosion.ImpulseRadius >= 0.0f && Explosion.ImpulseStrength >= 0.0f;
 }

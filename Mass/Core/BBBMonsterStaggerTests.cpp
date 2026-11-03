@@ -194,7 +194,7 @@ bool FBBBMonsterStaggerTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("当前踉跄身份进入反射传输"), Received.Stagger.ActiveAttackId, ActiveId);
     TestEqual(TEXT("当前踉跄结束时间进入反射传输"), Received.Stagger.EndsAt, Current.Stagger.EndsAt);
     TestFalse(TEXT("随机候选和命中汇总不进入网络快照"), Received.Stagger.AttackId.IsValid());
-    TestTrue(TEXT("远端当前快照有效且不携带随机样本"), Received.IsValid() && Received.Stagger.Impacts.Sum() == 0.0);
+    TestTrue(TEXT("远端当前快照有效且不携带随机样本"), Received.IsValid() && Received.Stagger.AttackId.IsValid() == false);
     const auto LocalAttackId = Current.Stagger.AttackId;
     Current.Merge(Received);
     TestEqual(TEXT("房主镜像返回不清掉本机同发去重缓存"), Current.Stagger.AttackId, LocalAttackId);

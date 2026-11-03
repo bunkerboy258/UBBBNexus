@@ -54,7 +54,6 @@
 #include "UObject/UnrealType.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
@@ -92,7 +91,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkInputFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterBehaviorFragment::StaticStruct(),
         FBBBMonsterDeathFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(),
-        FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct(),
+        FBBBMonsterHitReactionFragment::StaticStruct(),
         FBBBMonsterPerceptionInputFragment::StaticStruct(), FBBBMonsterStimulusFragment::StaticStruct(),
         FBBBMonsterVariationFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct(), FBBBMonsterGroundFragment::StaticStruct(),
         FBBBMonsterTraversalFragment::StaticStruct()
@@ -120,6 +119,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
 
     FBBBMonsterDamageLocalControlPacket Damage;
     FBBBHitContribution Hit{10.f};
+    Hit.Part = 0;
     Hit.AddDurableDamage = 10.f;
     Hit.PlayerId = 1;
     Damage.Hits = {Hit};
@@ -146,7 +146,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     Consume();
     Damage.Hits[0].AddDamage = Damage.Hits[0].AddDurableDamage = 20.f;
     Mass->SubmitInput(Monster, Damage);
-    FBBBMonsterDamageRemoteMessagePacket Remote;
+    FBBBMonsterDamageTotalsRemoteMessagePacket Remote;
     Remote.InstanceId = InstanceId;
     TestTrue(TEXT("查询包含待消费的本机贡献"), Mass->QueryDamage(Monster, Remote.Contributions));
     Remote.Contributions.RemoveAll([](const auto& Value){ return Value.PlayerId == 1; });
@@ -177,9 +177,11 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     const auto CombinedBaseline = Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Monster).Contributions;
     const auto ReactionBaseline = Manager.GetFragmentDataChecked<FBBBMonsterHitReactionFragment>(Monster);
     FBBBHitContribution Gun{10.f};
+    Gun.Part = 0;
     Gun.AddDurableDamage = 10.f;
     Gun.PlayerId = 1;
     FBBBHitContribution Explosion{15.f};
+    Explosion.Part = 0;
     Explosion.AddDurableDamage = 15.f;
     Explosion.PlayerId = 1;
     Explosion.bWorldSource = true;
@@ -191,6 +193,7 @@ bool FBBBMassRuntimeTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("世界渠道独立保留同一玩家的爆炸结果"), Writers.FindChecked((int64(1) << 32) + 1).Parts.Sum(), 15.0);
 
     FBBBHitContribution Push;
+    Push.Part = 0;
     Push.PlayerId = 1;
     Push.AddVelocity = FVector(100, 0, 0);
     FBBBHitContribution Impulse = Push;
@@ -788,6 +791,7 @@ namespace
                         return;
                     }
                     FBBBHitContribution Hit{1000000.f};
+                    Hit.Part = 0;
                     Hit.PlayerId = Player->GetPlayerId();
                     Hit.AddDurableDamage = Hit.AddDamage;
                     Packet.Hits.Add(Hit);

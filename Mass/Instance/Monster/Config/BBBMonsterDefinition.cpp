@@ -11,12 +11,27 @@
 UBBBMonsterDefinition::UBBBMonsterDefinition()
 {
     Variation = CreateDefaultSubobject<UBBBMonsterVariationDefinition>(TEXT("BirthRules"));
+    HitShapes = {
+        {EBBBMonsterHitRegion::Torso, TEXT("pelvis"), NAME_None, {0, 0, -25}, {}, {}, 23},
+        {EBBBMonsterHitRegion::Torso, TEXT("spine_01"), NAME_None, {0, 0, 0}, {}, {}, 25},
+        {EBBBMonsterHitRegion::Torso, TEXT("spine_03"), NAME_None, {0, 0, 30}, {}, {}, 24},
+        {EBBBMonsterHitRegion::Head, TEXT("head"), NAME_None, {0, 0, 70}, {}, {0, 0, 6}, 14},
+        {EBBBMonsterHitRegion::Head, TEXT("head"), NAME_None, {0, 0, 70}, {}, {0, 0, 12}, 14},
+        {EBBBMonsterHitRegion::LeftArm, TEXT("upperarm_l"), TEXT("lowerarm_l"), {0, -30, 30}, {0, -48, 10}, {}, 10},
+        {EBBBMonsterHitRegion::LeftArm, TEXT("lowerarm_l"), TEXT("hand_l"), {0, -48, 10}, {0, -55, -5}, {}, 9},
+        {EBBBMonsterHitRegion::RightArm, TEXT("upperarm_r"), TEXT("lowerarm_r"), {0, 30, 30}, {0, 48, 10}, {}, 10},
+        {EBBBMonsterHitRegion::RightArm, TEXT("lowerarm_r"), TEXT("hand_r"), {0, 48, 10}, {0, 55, -5}, {}, 9},
+        {EBBBMonsterHitRegion::LeftLeg, TEXT("thigh_l"), TEXT("calf_l"), {0, -14, -30}, {0, -14, -56}, {}, 12},
+        {EBBBMonsterHitRegion::LeftLeg, TEXT("calf_l"), TEXT("foot_l"), {0, -14, -56}, {0, -14, -80}, {}, 10},
+        {EBBBMonsterHitRegion::RightLeg, TEXT("thigh_r"), TEXT("calf_r"), {0, 14, -30}, {0, 14, -56}, {}, 12},
+        {EBBBMonsterHitRegion::RightLeg, TEXT("calf_r"), TEXT("foot_r"), {0, 14, -56}, {0, 14, -80}, {}, 10}};
     TorsoPart = {1.0f, 0.25f, 1.0f, true};
     HeadPart = {0.35f, 0.0f, 1.0f, true};
     LeftArmPart = {0.4f, 0.5f, 0.25f, false};
     RightArmPart = LeftArmPart;
     LeftLegPart = {0.35f, 0.35f, 0.3f, false};
     RightLegPart = LeftLegPart;
+    TorsoPart.RadialWeight = 0.5f;
     HeadPart.StaggerMultiplier = 1.5f;
     LeftArmPart.StaggerMultiplier = 0.75f;
     RightArmPart.StaggerMultiplier = 0.75f;
@@ -49,6 +64,18 @@ const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EB
 
 bool UBBBMonsterDefinition::IsValid() const
 {
+    float Weight = 0.f;
+    for (uint8 Part = 0; Part <= 5; ++Part)
+    {
+        Weight += GetBodyPart(static_cast<EBBBMonsterHitRegion>(Part)).RadialWeight;
+    }
+    if (HitShapes.IsEmpty() || HitShapes.ContainsByPredicate([](const auto& Shape) { return !Shape.IsValid(); })
+        || !FMath::IsFinite(StaggerStartValue) || StaggerStartValue < 0
+        || !FMath::IsFinite(StaggerFullValue) || StaggerFullValue <= StaggerStartValue
+        || !FMath::IsFinite(Weight) || Weight <= 0)
+    {
+        return false;
+    }
     if (!Traversal.IsValid() || (Special && (Special->GetOuter() != this || !Special->IsValid())))
     {
         return false;

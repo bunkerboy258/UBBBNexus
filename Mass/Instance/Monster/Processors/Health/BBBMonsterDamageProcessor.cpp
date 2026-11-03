@@ -17,7 +17,7 @@
 
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/HitReaction/FBBBMonsterHitReactionLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 
 namespace
 {
@@ -27,8 +27,19 @@ namespace
     {
         TMap<TPair<int64, FGuid>, FBBBMonsterStaggerContribution> Candidates;
         auto* Mass = World.GetSubsystem<UBBBMassSubsystem>();
+        float Weight = 0.f;
+        for (uint8 Part = 0; Part <= 5; ++Part)
+        {
+            Weight += Definition.GetBodyPart(static_cast<EBBBMonsterHitRegion>(Part)).RadialWeight;
+        }
+        TSet<int64> Started;
         for (const auto& Hit : Hits)
         {
+            if (!Hit.IsValid() || (!Hit.bRadial && Hit.Part > 5) || (Hit.bRadial && Weight <= 0))
+            {
+                UE_LOG(LogTemp, Warning, TEXT("[BBBHit] 拒绝无效僵尸命中 Entity=%d Part=%d"), Entity.Index, Hit.Part);
+                continue;
+            }
             FBBBMonsterDamageTotals Identity;
             Identity.PlayerId = Hit.PlayerId;
             Identity.bWorldSource = Hit.bWorldSource;
@@ -36,7 +47,24 @@ namespace
             Value.PlayerId = Hit.PlayerId;
             Value.bWorldSource = Hit.bWorldSource;
             Value.LastHitTime = Time;
-            Value.LastHitRegion = static_cast<EBBBMonsterHitRegion>(Hit.Part);
+            const auto ContactRegion = Hit.Part <= 5 ? static_cast<EBBBMonsterHitRegion>(Hit.Part) : EBBBMonsterHitRegion::Torso;
+            Value.LastHitRegion = ContactRegion;
+            auto& Result = Value.LastHitResult;
+            if (!Started.Contains(Identity.WriterKey()))
+            {
+                Result.Impulse = FVector::ZeroVector;
+                Result.Velocity = FVector::ZeroVector;
+                Started.Add(Identity.WriterKey());
+            }
+            ++Result.Sequence;
+            Result.Time = Time;
+            Result.Region = ContactRegion;
+            Result.Position = Hit.Position;
+            const FVector PhysicalDirection = Hit.AddVelocity.IsNearlyZero() ? Hit.AddImpulse : Hit.AddVelocity;
+            Result.Direction = Hit.Direction.GetSafeNormal(UE_SMALL_NUMBER, PhysicalDirection.GetSafeNormal());
+            Result.Normal = Hit.Normal.GetSafeNormal(UE_SMALL_NUMBER, -Result.Direction);
+            Result.Impulse += Hit.AddImpulse;
+            Result.Velocity += Hit.AddVelocity;
             Value.bHasSourcePosition = Hit.bHasSourcePosition;
             Value.LastSourcePosition = Hit.SourcePosition;
             for (uint8 Part = 0; Part <= 5; ++Part)
@@ -47,14 +75,10 @@ namespace
                 }
                 const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
                 const auto& Rule = Definition.GetBodyPart(Region);
-                const float Share = Hit.bRadial ? (Part == 0 ? 0.5f : 0.1f) : 1.0f;
+                const float Share = Hit.bRadial ? Rule.RadialWeight / Weight : 1.0f;
                 const double Amount = Share * (Hit.AddDamage * (1.0 - Rule.Durability) + Hit.AddDurableDamage * Rule.Durability);
                 Value.Parts.Add(Region, Amount);
-                if (Amount <= 0)
-                {
-                    continue;
-                }
-                if (Part == 0 && Mass && Hit.AddWound > 0)
+                if (Part == 0 && Mass && Hit.AddWound > 0 && Amount > 0)
                 {
                     Mass->QueryMonsterDestruction(Entity, Hit.Position, Hit.Direction, Hit.AddWound, Value.Destruction);
                 }
@@ -70,13 +94,13 @@ namespace
                 const uint32 Seed = HashCombineFast(GetTypeHash(Hit.AttackId),
                     HashCombineFast(GetTypeHash(Entity.Index), GetTypeHash(Entity.SerialNumber)));
                 Candidate.Roll = float(Seed >> 8) / 16777216.0f;
-                Candidate.Impacts.Add(Region, Amount * Rule.StaggerMultiplier);
-                const float Force = Candidate.Impacts.Get(Region);
+                const float Force = Hit.AddStagger * Rule.StaggerMultiplier;
                 if (Force > Candidate.Impact || (Force == Candidate.Impact && Region > Candidate.Region))
                 {
                     Candidate.Impact = Force;
                     Candidate.Region = Region;
-                    Candidate.Chance = FMath::Clamp(Hit.AddStagger * (Hit.bWorldSource ? 1.f : Rule.StaggerMultiplier), 0.f, 1.f);
+                    Candidate.Chance = FMath::Clamp((Force - Definition.StaggerStartValue)
+                        / FMath::Max(UE_SMALL_NUMBER, Definition.StaggerFullValue - Definition.StaggerStartValue), 0.f, 1.f);
                     Candidate.Duration = Rule.StaggerDuration;
                 }
             }
@@ -130,7 +154,7 @@ bool UBBBMonsterDamageProcessor::Query(UWorld& World, FMassEntityHandle Entity,
     {
         return false;
     }
-    FBBBMonsterDamageRemoteMessagePacket Snapshot;
+    FBBBMonsterDamageTotalsRemoteMessagePacket Snapshot;
     for (const auto& Value : Damage->Contributions)
     {
         Snapshot.Include(Value.Value);
@@ -229,30 +253,47 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             if (!Pending.IsEmpty() && Network[Index].Definition.IsValid())
             {
                 ResolveHits(*World, Chunk.GetEntity(Index), *Network[Index].Definition, Pending, Damage[Index].Contributions, ServerTime);
-                auto Reactions = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
-                if (!Reactions.IsEmpty())
-                {
-                    FVector Impulse = FVector::ZeroVector;
-                    FVector Velocity = FVector::ZeroVector;
-                    for (const auto& Hit : Pending)
-                    {
-                        Impulse += Hit.AddImpulse;
-                        Velocity += Hit.AddVelocity;
-                        FBBBMonsterHitReactionLocalControlPacket Reaction;
-                        Reaction.Region = static_cast<EBBBMonsterHitRegion>(Hit.Part);
-                        Reaction.Position = Hit.Position;
-                        const FVector PhysicalDirection = Hit.AddVelocity.IsNearlyZero() ? Hit.AddImpulse : Hit.AddVelocity;
-                        Reaction.Direction = Hit.Direction.GetSafeNormal(UE_SMALL_NUMBER, PhysicalDirection.GetSafeNormal());
-                        Reaction.Normal = Hit.Normal.GetSafeNormal(UE_SMALL_NUMBER, -Reaction.Direction);
-                        if (Reaction.IsValid())
-                        {
-                            Reaction.Apply(Reactions[Index]);
-                        }
-                    }
-                    Reactions[Index].ImpactImpulse = Impulse;
-                    Reactions[Index].ImpactVelocity = Velocity;
-                }
                 Pending.Reset();
+            }
+            auto Reactions = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
+            const FBBBMonsterHitResult* LatestResponse = nullptr;
+            int64 LatestWriter = MIN_int64;
+            FVector Impulse = FVector::ZeroVector;
+            FVector Velocity = FVector::ZeroVector;
+            for (const auto& Entry : Damage[Index].Contributions)
+            {
+                const auto& Result = Entry.Value.LastHitResult;
+                auto& Presented = Damage[Index].PresentedHitSequences.FindOrAdd(Entry.Key);
+                if (Result.Sequence <= Presented)
+                {
+                    continue;
+                }
+                Presented = Result.Sequence;
+                const double Age = ServerTime - Result.Time;
+                if (Age < -0.1 || Age > 0.3 || !Result.IsValid())
+                {
+                    continue;
+                }
+                Impulse += Result.Impulse;
+                Velocity += Result.Velocity;
+                if (!LatestResponse || Result.Time > LatestResponse->Time
+                    || (Result.Time == LatestResponse->Time && Entry.Key > LatestWriter))
+                {
+                    LatestResponse = &Result;
+                    LatestWriter = Entry.Key;
+                }
+            }
+            if (LatestResponse && !Reactions.IsEmpty())
+            {
+                auto& Hit = Reactions[Index];
+                Hit.Region = LatestResponse->Region;
+                Hit.Position = LatestResponse->Position;
+                Hit.Direction = LatestResponse->Direction;
+                Hit.Normal = LatestResponse->Normal;
+                Hit.ImpactImpulse = Impulse;
+                Hit.ImpactVelocity = Velocity;
+                Hit.Age = FMath::Max(0.f, float(ServerTime - LatestResponse->Time));
+                ++Hit.Serial;
             }
             FBBBMonsterPartDamage Totals;
             const FBBBMonsterDamageTotals* Latest = nullptr;
@@ -270,7 +311,7 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                     Latest = &Value.Value;
                 }
                 const auto& Stagger = Value.Value.Stagger;
-                if (Stagger.ActiveAttackId.IsValid() && Value.Value.Parts.Sum() > 0.0
+                if (Stagger.ActiveAttackId.IsValid()
                     && (ActiveStagger == nullptr || Stagger.StartedAt > ActiveStagger->StartedAt
                         || (Stagger.StartedAt == ActiveStagger->StartedAt && ActiveStagger->ActiveAttackId < Stagger.ActiveAttackId)))
                 {

@@ -4,7 +4,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "MassActorSubsystem.h"
 #include "MassEntitySubsystem.h"
@@ -64,7 +64,7 @@ int32 UBBBMonsterDestructionValidationLibrary::SetPopulationDestruction(UObject*
                 static_cast<double>(Definition.MaxHealth * Definition.LeftArmPart.HealthFraction + 1.0f));
         }
         Contribution.LastHitTime = World->GetTimeSeconds();
-        FBBBMonsterDamageRemoteMessagePacket Packet;
+        FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
         Packet.InstanceId = Network->InstanceId;
         Packet.Include(Contribution);
         Submitted += Mass->SubmitInput(Entity, MoveTemp(Packet)) ? 1 : 0;

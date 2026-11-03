@@ -17,7 +17,7 @@ struct FBBBMonsterDamageLocalControlPacket final
     {
         return !Hits.IsEmpty() && !Hits.ContainsByPredicate([](const auto& Hit)
         {
-            return !Hit.IsValid() || Hit.Part > 5 || (!Hit.bWorldSource && Hit.PlayerId < 0);
+            return !Hit.IsValid() || (!Hit.bRadial && Hit.Part > 5) || (!Hit.bWorldSource && Hit.PlayerId < 0);
         });
     }
 

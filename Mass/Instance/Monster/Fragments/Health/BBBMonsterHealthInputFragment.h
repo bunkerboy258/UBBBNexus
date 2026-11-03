@@ -3,7 +3,7 @@
 #include "MassEntityTypes.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassInputSlot.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
 #include "BBBMonsterHealthInputFragment.generated.h"
 
 /** 健康领域输入覆盖槽 */
@@ -13,7 +13,7 @@ struct ABBB_EVAC_API FBBBMonsterHealthInputFragment final : public FMassFragment
     GENERATED_BODY()
 
     TBBBMassInputSlot<FBBBMonsterDamageLocalControlPacket> Damage;
-    TBBBMassInputSlot<FBBBMonsterDamageRemoteMessagePacket> RemoteDamage;
+    TBBBMassInputSlot<FBBBMonsterDamageTotalsRemoteMessagePacket> RemoteDamage;
 
     template<typename TPacket>
     TBBBMassInputSlot<TPacket>& GetSlot()
@@ -24,7 +24,7 @@ struct ABBB_EVAC_API FBBBMonsterHealthInputFragment final : public FMassFragment
         }
         else
         {
-            static_assert(std::is_same_v<TPacket, FBBBMonsterDamageRemoteMessagePacket>);
+            static_assert(std::is_same_v<TPacket, FBBBMonsterDamageTotalsRemoteMessagePacket>);
             return RemoteDamage;
         }
     }

@@ -25,8 +25,12 @@ struct FBBBMonsterBodyPartDefinition final
     UPROPERTY(EditAnywhere, Category = "部位", meta = (DisplayName = "致死部位"))
     bool bFatal = true;
 
-    /** 命中本部位时乘子弹踉跄值的倍率 */
-    UPROPERTY(EditAnywhere, Category = "部位", meta = (ClampMin = "0.0", ClampMax = "4.0", DisplayName = "踉跄概率倍率"))
+    /** 范围贡献的部位分配权重 */
+    UPROPERTY(EditAnywhere, Category = "部位", meta = (ClampMin = "0", DisplayName = "范围伤害权重"))
+    float RadialWeight = 0.1f;
+
+    /** 本部位对踉跄强度的修正倍率 */
+    UPROPERTY(EditAnywhere, Category = "部位", meta = (ClampMin = "0.0", ClampMax = "4.0", DisplayName = "踉跄强度倍率"))
     float StaggerMultiplier = 1.0f;
 
     /** 本部位完整原地反应的原片秒数 */
@@ -36,7 +40,7 @@ struct FBBBMonsterBodyPartDefinition final
     /** @return 静态规则是否有效 */
     bool IsValid() const
     {
-        return FMath::IsFinite(HealthFraction) && HealthFraction > 0.0f
+        return FMath::IsFinite(RadialWeight) && RadialWeight >= 0 && FMath::IsFinite(HealthFraction) && HealthFraction > 0.0f
             && FMath::IsFinite(Durability) && Durability >= 0.0f && Durability <= 1.0f
             && FMath::IsFinite(MainTransfer) && MainTransfer >= 0.0f && MainTransfer <= 1.0f
             && FMath::IsFinite(StaggerMultiplier) && StaggerMultiplier >= 0.0f && StaggerMultiplier <= 4.0f

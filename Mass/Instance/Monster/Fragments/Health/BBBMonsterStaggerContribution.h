@@ -25,9 +25,6 @@ struct FBBBMonsterStaggerContribution final
     /** 当前攻击最大部位冲击贡献 */
     float Impact = 0.0f;
 
-    /** 当前攻击各部位的累计冲击贡献 同发弹丸先合并后选择部位 */
-    FBBBMonsterPartDamage Impacts;
-
     /** 当前候选的最终概率 */
     float Chance = 0.0f;
 
@@ -75,7 +72,7 @@ struct FBBBMonsterStaggerContribution final
     /** @return 当前快照是否为有限合法值 */
     bool IsValid() const
     {
-        return Impacts.IsValid() && FMath::IsFinite(AttackTime) && AttackTime >= 0.0
+        return FMath::IsFinite(AttackTime) && AttackTime >= 0.0
             && FMath::IsFinite(HitTime) && HitTime >= 0.0
             && FMath::IsFinite(Impact) && Impact >= 0.0f
             && FMath::IsFinite(Chance) && Chance >= 0.0f && Chance <= 1.0f
@@ -90,7 +87,7 @@ struct FBBBMonsterStaggerContribution final
     bool operator==(const FBBBMonsterStaggerContribution& Other) const
     {
         return AttackId == Other.AttackId && AttackTime == Other.AttackTime && HitTime == Other.HitTime
-            && Impact == Other.Impact && Impacts == Other.Impacts && Chance == Other.Chance && Roll == Other.Roll
+            && Impact == Other.Impact && Chance == Other.Chance && Roll == Other.Roll
             && Duration == Other.Duration && Region == Other.Region && bEvaluated == Other.bEvaluated
             && ActiveAttackId == Other.ActiveAttackId && StartedAt == Other.StartedAt
             && EndsAt == Other.EndsAt && ActiveRegion == Other.ActiveRegion;

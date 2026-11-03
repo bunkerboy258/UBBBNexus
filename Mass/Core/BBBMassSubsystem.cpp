@@ -9,7 +9,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Collision/BBBMonsterCollisionProcessor.h"
@@ -52,10 +51,11 @@ namespace
                 return true;
             }
         }
-        if constexpr (std::is_same_v<TPacket, FBBBMonsterDamageRemoteMessagePacket>)
+        if constexpr (std::is_same_v<TPacket, FBBBMonsterDamageTotalsRemoteMessagePacket>)
         {
             if (Slot.bActive && Slot.Packet.InstanceId == Packet.InstanceId)
             {
+                Slot.Packet.bInitialSnapshot |= Packet.bInitialSnapshot;
                 for (const auto& Value : Packet.Contributions)
                 {
                     Slot.Packet.Include(Value);
@@ -193,7 +193,7 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDa
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageRemoteMessagePacket& Packet)
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDamageTotalsRemoteMessagePacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
@@ -224,10 +224,6 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterSt
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterHitReactionLocalControlPacket& Packet)
-{
-    return WriteInputSlot(*GetWorld(), Entity, Packet);
-}
 
 void UBBBMassSubsystem::BeginCollisionFrame()
 {

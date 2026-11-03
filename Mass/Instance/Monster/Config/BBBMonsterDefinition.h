@@ -4,6 +4,7 @@
 #include "BBBMonsterBodyPartDefinition.h"
 #include "BBBMonsterTraversalSettings.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
+#include "BBBMonsterHitShapeDefinition.h"
 #include "BBBMonsterDefinition.generated.h"
 
 class UMassEntityConfigAsset;
@@ -33,6 +34,18 @@ public:
 
     /** @return 建立六个部位的默认静态规则 */
     UBBBMonsterDefinition();
+
+    /** 本目标的部位命中形状 身体可用时跟随实际骨骼 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "伤害与部位", meta = (DisplayName = "命中形状"))
+    TArray<FBBBMonsterHitShapeDefinition> HitShapes;
+
+    /** 有效踉跄强度不超过此值时不触发 */
+    UPROPERTY(EditAnywhere, Category = "伤害与部位", meta = (DisplayName = "踉跄起始强度", ClampMin = "0"))
+    float StaggerStartValue = 0.f;
+
+    /** 有效踉跄强度达到此值时必定触发 */
+    UPROPERTY(EditAnywhere, Category = "伤害与部位", meta = (DisplayName = "踉跄满额强度", ClampMin = "0.1"))
+    float StaggerFullValue = 100.f;
 
     /** 躯干生命与耐久规则 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "伤害与部位", meta = (DisplayName = "躯干"))

@@ -13,7 +13,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 
@@ -81,7 +81,7 @@ bool FBBBMonsterMobilityTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("合并不同玩家腿伤达到阈值"), Mobility.bCrawling);
     TestEqual(TEXT("第二次命中不叠乘"), Mobility.SlowMinimumRatio, 0.15f);
     TestEqual(TEXT("生命按全部累计贡献计算"), Health.CurrentHealth, 89.5f);
-    FBBBMonsterDamageRemoteMessagePacket Packet;
+    FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
     Packet.Include(First);
     auto Older = First;
     Older.Parts.LeftLeg = 5.0;

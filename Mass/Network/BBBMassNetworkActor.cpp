@@ -172,8 +172,9 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
 bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Contribution)
 {
     const auto* Submitted = SubmittedDamage.Find(InstanceId);
-    if (Contribution.Parts.Sum() <= 0.0 || (Submitted != nullptr
-        && !Contribution.Parts.Exceeds(Submitted->Parts) && !Contribution.Destruction.Exceeds(Submitted->Destruction)))
+    if ((Contribution.Parts.Sum() <= 0.0 && Contribution.LastHitResult.Sequence == 0) || (Submitted != nullptr
+        && !Contribution.Parts.Exceeds(Submitted->Parts) && !Contribution.Destruction.Exceeds(Submitted->Destruction)
+        && Contribution.LastHitResult.Sequence <= Submitted->LastHitResult.Sequence))
     {
         return true;
     }
@@ -200,7 +201,7 @@ void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,
 }
 
 void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
-    const TArray<FBBBMonsterDamageTotals>& Contributions)
+    const TArray<FBBBMonsterDamageTotals>& Contributions, bool bInitialSnapshot)
 {
     PruneCaches();
     if (Retired.Contains(InstanceId))
@@ -208,8 +209,9 @@ void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
         return;
     }
     UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
-    FBBBMonsterDamageRemoteMessagePacket Packet;
+    FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
     Packet.InstanceId = InstanceId;
+    Packet.bInitialSnapshot = bInitialSnapshot;
     const FMassEntityHandle Entity = FindEntity(InstanceId);
     if (!Entity.IsSet())
     {
@@ -297,7 +299,8 @@ void ABBBMassNetworkActor::OnRep_Monsters()
             continue;
         }
 
-        if (!Entity.IsSet())
+        const bool bNewEntity = !Entity.IsSet();
+        if (bNewEntity)
         {
             if (!ensureMsgf(Item.Definition != nullptr && Item.Definition->EntityConfig != nullptr,
                 TEXT("Mass 远端小怪缺少出生配置")))
@@ -337,12 +340,12 @@ void ABBBMassNetworkActor::OnRep_Monsters()
                 - FMath::Max(0.0, ServerTime - Item.Traversal.StartedAt);
         }
         Mass->SubmitInput(Entity, MoveTemp(Packet));
-        RouteDamage(Item.InstanceId, Item.Contributions);
+        RouteDamage(Item.InstanceId, Item.Contributions, bNewEntity);
         if (const auto* Pending = PendingDamageSnapshots.Find(Item.InstanceId))
         {
             const auto Contributions = Pending->Packet.Contributions;
             PendingDamageSnapshots.Remove(Item.InstanceId);
-            RouteDamage(Item.InstanceId, Contributions);
+            RouteDamage(Item.InstanceId, Contributions, bNewEntity);
         }
     }
 

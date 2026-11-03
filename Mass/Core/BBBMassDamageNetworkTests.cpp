@@ -125,6 +125,7 @@ namespace
                     {
                         TestedPlayers.AddUnique(Player->GetPlayerId());
                         FBBBHitContribution Hit{20.f};
+                        Hit.Part = 0;
                         Hit.PlayerId = Player->GetPlayerId();
                         Hit.Part = static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg);
                         Hit.AddDurableDamage = Hit.AddDamage;
@@ -134,6 +135,7 @@ namespace
                     else if (Player->GetPlayerId() == TestedPlayers[0])
                     {
                         FBBBHitContribution Hit{Manager.GetFragmentDataChecked<FBBBMonsterHealthFragment>(Entity).MaxHealth + 20.f};
+                        Hit.Part = 0;
                         Hit.PlayerId = Player->GetPlayerId();
                         Hit.AddDurableDamage = Hit.AddDamage;
                         Packet.Hits.Add(Hit);

@@ -4,7 +4,7 @@
 #include "MassEntityTypes.h"
 #include "Mass/EntityHandle.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterReplicationArray.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
 #include "BBBMassPendingDamageSnapshot.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Slime/Fragments/BBBSlimeFact.h"
 #include "BBBMassNetworkActor.generated.h"
@@ -60,7 +60,7 @@ private:
     UFUNCTION(NetMulticast, Reliable)
     void MulticastDamage(FGuid InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions);
 
-    void RouteDamage(const FGuid& InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions);
+    void RouteDamage(const FGuid& InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions, bool bInitialSnapshot = false);
 
     /** 清理已经离开当前复制集合的暂存与退役身份 不撤销现存实体的退役保护 */
     void PruneCaches();

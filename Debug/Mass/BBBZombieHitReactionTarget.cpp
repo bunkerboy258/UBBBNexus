@@ -342,6 +342,8 @@ void ABBBZombieHitReactionTarget::ReceiveHit(const FBBBHitContribution& Value)
     Hit.Position = Value.Position;
     Hit.Direction = Value.Direction.GetSafeNormal();
     Hit.Normal = Value.Normal;
+    Hit.ImpactImpulse = Value.AddImpulse;
+    Hit.ImpactVelocity = Value.AddVelocity;
     if (GorePreview->bEnablePhysicalReaction)
     {
         HitReaction->ApplyHitFacts(Hit, true);

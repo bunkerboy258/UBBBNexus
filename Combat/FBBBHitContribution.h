@@ -29,7 +29,7 @@ struct ABBB_EVAC_API FBBBHitContribution final
     UPROPERTY()
     float AddDurableDamage = 0;
 
-    /** 踉跄概率贡献 */
+    /** 踉跄强度 由目标决定触发概率 */
     UPROPERTY()
     float AddStagger = 0;
 
@@ -71,7 +71,7 @@ struct ABBB_EVAC_API FBBBHitContribution final
 
     /** 目标报告的接触部位编号 */
     UPROPERTY()
-    uint8 Part = 0;
+    uint8 Part = MAX_uint8;
 
     /** 接触表面法线 */
     UPROPERTY()
@@ -94,7 +94,7 @@ struct ABBB_EVAC_API FBBBHitContribution final
     {
         return FMath::IsFinite(AddDamage) && AddDamage >= 0 && FMath::IsFinite(AddDurableDamage) && AddDurableDamage >= 0
             && FMath::IsFinite(AddStagger) && AddStagger >= 0 && FMath::IsFinite(AddWound) && AddWound >= 0
-            && FMath::IsFinite(AddHoldSeconds) && AddHoldSeconds >= 0 && AddHoldSeconds <= 10
+            && FMath::IsFinite(AddHoldSeconds) && AddHoldSeconds >= 0
             && FMath::IsFinite(AttackTime) && AttackTime >= 0 && !Position.ContainsNaN() && !Direction.ContainsNaN()
             && !SourcePosition.ContainsNaN() && !Normal.ContainsNaN() && !AddImpulse.ContainsNaN() && !AddVelocity.ContainsNaN()
             && (AddDamage > 0 || AddDurableDamage > 0 || AddHoldSeconds > 0 || !AddVelocity.IsNearlyZero()

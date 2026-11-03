@@ -96,7 +96,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
             }
             Hit.ImpactVelocity += Value.AddVelocity;
             Hit.ImpactImpulse += Value.AddImpulse;
-            Hit.ImpactHoldSeconds = FMath::Max(Hit.ImpactHoldSeconds, Value.AddHoldSeconds);
+            Hit.ImpactHoldSeconds = FMath::Max(Hit.ImpactHoldSeconds, FMath::Min(Value.AddHoldSeconds, Context.Config.MaximumImpactHoldSeconds));
             ++Hit.ImpactSerial;
         }
         if (State.Health > 0.0f)

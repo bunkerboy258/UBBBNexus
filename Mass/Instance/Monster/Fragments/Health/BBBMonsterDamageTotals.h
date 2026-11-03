@@ -5,6 +5,7 @@
 #include "BBBMonsterPartDamage.h"
 #include "BBBMonsterStaggerContribution.h"
 #include "BBBMonsterDestructionContribution.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitResult.h"
 #include "BBBMonsterDamageTotals.generated.h"
 
 /** 一个玩家对一代小怪已经造成的累计伤害 不是单次命中事件 */
@@ -49,6 +50,10 @@ struct FBBBMonsterDamageTotals final
     UPROPERTY()
     bool bWorldSource = false;
 
+    /** 本来源最近一次已结算的身体响应 */
+    UPROPERTY()
+    FBBBMonsterHitResult LastHitResult;
+
     int64 WriterKey() const
     {
         return bWorldSource ? (int64(1) << 32) + uint32(PlayerId) : PlayerId;
@@ -58,7 +63,7 @@ struct FBBBMonsterDamageTotals final
     {
         return (PlayerId >= 0 || bWorldSource) && Parts.IsValid()
             && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg
-            && !LastSourcePosition.ContainsNaN() && Stagger.IsValid();
+            && !LastSourcePosition.ContainsNaN() && Stagger.IsValid() && LastHitResult.IsValid();
     }
 
     bool operator==(const FBBBMonsterDamageTotals& Other) const
@@ -66,7 +71,7 @@ struct FBBBMonsterDamageTotals final
         return PlayerId == Other.PlayerId && bWorldSource == Other.bWorldSource && Parts == Other.Parts
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
             && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition
-            && Stagger == Other.Stagger && Destruction == Other.Destruction;
+            && LastHitResult == Other.LastHitResult && Stagger == Other.Stagger && Destruction == Other.Destruction;
     }
 
     /**
@@ -75,6 +80,7 @@ struct FBBBMonsterDamageTotals final
      */
     void Merge(const FBBBMonsterDamageTotals& Other)
     {
+        const auto SavedHit = LastHitResult.Sequence >= Other.LastHitResult.Sequence ? LastHitResult : Other.LastHitResult;
         FBBBMonsterPartDamage Combined = Parts;
         Combined.MergeMax(Other.Parts);
         FBBBMonsterStaggerContribution CombinedStagger = Stagger;
@@ -87,6 +93,7 @@ struct FBBBMonsterDamageTotals final
         {
             *this = Other;
         }
+        LastHitResult = SavedHit;
         Parts = Combined;
         Stagger = CombinedStagger;
         Destruction = CombinedDestruction;

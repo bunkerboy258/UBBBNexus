@@ -21,7 +21,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 
@@ -49,7 +48,7 @@ bool FBBBProjectileStaggerTest::RunTest(const FString&)
         FBBBProjectileLifetimeFragment::StaticStruct(), FBBBProjectilePresentationFragment::StaticStruct(), FBBBProjectileSpawnInputFragment::StaticStruct()});
     const auto MonsterType = Manager.CreateArchetype({FBBBMonsterDamageFragment::StaticStruct(), FBBBMonsterHealthInputFragment::StaticStruct(),
         FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(),
-        FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterHitReactionInputFragment::StaticStruct()});
+        FBBBMonsterMobilityFragment::StaticStruct()});
     const auto Target = Manager.CreateEntity(MonsterType);
     auto& Network = Manager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Target);
     Network.InstanceId = FGuid::NewGuid();
@@ -75,7 +74,7 @@ bool FBBBProjectileStaggerTest::RunTest(const FString&)
         Packet.Radius = 0.0f;
         Packet.Damage = 1.0f;
         Packet.DurableDamage = 1.0f;
-        Packet.StaggerValue = Value;
+        Packet.StaggerValue = Value * 100.f;
         Packet.Controller = Controller;
         Packet.bCanCauseDamage = true;
         for (int32 Index = 0; Index < Count; ++Index)

@@ -7,12 +7,14 @@
 struct FBBBMonsterHealthInputFragment;
 
 /** 来自远端的累计贡献快照 接收顺序不能减少任何来源的贡献 */
-struct FBBBMonsterDamageRemoteMessagePacket final
+struct FBBBMonsterDamageTotalsRemoteMessagePacket final
 {
     using FInputFragment = FBBBMonsterHealthInputFragment;
 
     FGuid InstanceId;
     TArray<FBBBMonsterDamageTotals> Contributions;
+    /** 首次镜像只还原累计状态 不播放此前的瞬间反应 */
+    bool bInitialSnapshot = false;
 
     bool IsValid() const
     {
@@ -52,6 +54,11 @@ struct FBBBMonsterDamageRemoteMessagePacket final
         {
             auto& Current = State.Contributions.FindOrAdd(Value.WriterKey());
             Current.Merge(Value);
+            if (bInitialSnapshot)
+            {
+                auto& Presented = State.PresentedHitSequences.FindOrAdd(Value.WriterKey());
+                Presented = FMath::Max(Presented, Current.LastHitResult.Sequence);
+            }
         }
     }
 };

@@ -26,7 +26,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Collision/BBBProjectileCollisionProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 
 /** 验证散射弹丸 网格爆炸弹 重力 引信和本机伤害权限 */
@@ -54,7 +53,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
         FBBBProjectileSpawnInputFragment::StaticStruct()});
     const auto MonsterType = Manager.CreateArchetype({FBBBMonsterDamageFragment::StaticStruct(),
         FBBBMonsterHealthInputFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(),
-        FBBBMonsterHitReactionInputFragment::StaticStruct()});
+        FBBBMonsterHitReactionFragment::StaticStruct()});
     const auto A = Manager.CreateEntity(MonsterType);
     const auto B = Manager.CreateEntity(MonsterType);
     const auto C = Manager.CreateEntity(MonsterType);
@@ -73,7 +72,7 @@ bool FBBBProjectileAmmoTest::RunTest(const FString&)
     Packet.Speed = 1000.0f;
     Packet.Damage = 20.0f;
     Packet.DurableDamage = 20.0f;
-    Packet.StaggerValue = 1.0f;
+    Packet.StaggerValue = 100.0f;
     Packet.Controller = Controller;
     Packet.bCanCauseDamage = true;
     TestTrue(TEXT("仅网格表现的弹丸出生有效"), Packet.IsValid());

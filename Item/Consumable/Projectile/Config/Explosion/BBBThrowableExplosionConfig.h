@@ -36,9 +36,9 @@ struct FBBBThrowableExplosionConfig final
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "边缘伤害倍率", ToolTip = "伤害半径边缘保留的伤害倍率", ClampMin = "0", ClampMax = "1"))
     float MinimumDamageRatio = 0.2f;
 
-    /** 一次爆炸每个目标的踉跄概率 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "踉跄概率", ToolTip = "一次爆炸每个目标的踉跄概率", ClampMin = "0", ClampMax = "1"))
-    float Stagger = 0.8f;
+    /** 一次爆炸每个目标的踉跄强度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "踉跄强度", ToolTip = "一次爆炸每个目标的踉跄强度", ClampMin = "0"))
+    float Stagger = 80.0f;
 
     /** 世界静态遮挡阻止范围伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "检查遮挡", ToolTip = "世界静态遮挡阻止范围伤害"))

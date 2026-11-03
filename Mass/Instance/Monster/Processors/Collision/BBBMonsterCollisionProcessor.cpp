@@ -115,34 +115,32 @@ namespace
             Body.Part = static_cast<uint8>(Region);
             Visitor(Body);
         };
-        const auto Limb = [&BonePoint, &Sphere](const FName First, const FName Last, const FVector& Start, const FVector& End, const float Radius, const EBBBMonsterHitRegion Region)
+        if (!Definition)
         {
-            const FVector A = BonePoint(First, Start);
-            const FVector B = BonePoint(Last, End);
-            const int32 Steps = FMath::Clamp(FMath::CeilToInt(FVector::Distance(A, B) / Radius), 1, 8);
+            return;
+        }
+        for (const auto& Shape : Definition->HitShapes)
+        {
+            if (!Shape.IsValid())
+            {
+                continue;
+            }
+            if (Shape.EndBone.IsNone())
+            {
+                const FVector Center = Mesh && Mesh->GetBoneIndex(Shape.Bone) != INDEX_NONE
+                    ? Mesh->GetSocketTransform(Shape.Bone).TransformPosition(Shape.Offset)
+                    : BonePoint(Shape.Bone, Shape.FallbackStart + Shape.Offset);
+                Sphere(Center, Shape.Radius, Shape.Region);
+                continue;
+            }
+            const FVector A = BonePoint(Shape.Bone, Shape.FallbackStart);
+            const FVector B = BonePoint(Shape.EndBone, Shape.FallbackEnd);
+            const int32 Steps = FMath::Clamp(FMath::CeilToInt(FVector::Distance(A, B) / Shape.Radius), 1, 8);
             for (int32 Step = 0; Step <= Steps; ++Step)
             {
-                Sphere(FMath::Lerp(A, B, static_cast<float>(Step) / Steps), Radius, Region);
+                Sphere(FMath::Lerp(A, B, float(Step) / Steps), Shape.Radius, Shape.Region);
             }
-        };
-        Sphere(BonePoint(TEXT("pelvis"), FVector(0, 0, -25)), 23.0f, EBBBMonsterHitRegion::Torso);
-        Sphere(BonePoint(TEXT("spine_01"), FVector(0, 0, 0)), 25.0f, EBBBMonsterHitRegion::Torso);
-        Sphere(BonePoint(TEXT("spine_03"), FVector(0, 0, 30)), 24.0f, EBBBMonsterHitRegion::Torso);
-        // 头骨原点位于颈部附近 两个同半径球沿头骨轴覆盖十种外观的头部高度
-        const FVector HeadBase = BonePoint(TEXT("head"), FVector(0, 0, 70));
-        const FVector HeadAxis = Mesh && Mesh->GetBoneIndex(TEXT("head")) != INDEX_NONE
-            ? Mesh->GetSocketTransform(TEXT("head")).TransformVector(FVector::UpVector)
-            : Transform.TransformVector(FMath::Lerp(FVector::UpVector, FVector::ForwardVector, CrawlProgress)) * Scale;
-        Sphere(HeadBase + HeadAxis * 6.0f, 14.0f, EBBBMonsterHitRegion::Head);
-        Sphere(HeadBase + HeadAxis * 12.0f, 14.0f, EBBBMonsterHitRegion::Head);
-        Limb(TEXT("upperarm_l"), TEXT("lowerarm_l"), FVector(0, -30, 30), FVector(0, -48, 10), 10.0f, EBBBMonsterHitRegion::LeftArm);
-        Limb(TEXT("lowerarm_l"), TEXT("hand_l"), FVector(0, -48, 10), FVector(0, -55, -5), 9.0f, EBBBMonsterHitRegion::LeftArm);
-        Limb(TEXT("upperarm_r"), TEXT("lowerarm_r"), FVector(0, 30, 30), FVector(0, 48, 10), 10.0f, EBBBMonsterHitRegion::RightArm);
-        Limb(TEXT("lowerarm_r"), TEXT("hand_r"), FVector(0, 48, 10), FVector(0, 55, -5), 9.0f, EBBBMonsterHitRegion::RightArm);
-        Limb(TEXT("thigh_l"), TEXT("calf_l"), FVector(0, -14, -30), FVector(0, -14, -56), 12.0f, EBBBMonsterHitRegion::LeftLeg);
-        Limb(TEXT("calf_l"), TEXT("foot_l"), FVector(0, -14, -56), FVector(0, -14, -80), 10.0f, EBBBMonsterHitRegion::LeftLeg);
-        Limb(TEXT("thigh_r"), TEXT("calf_r"), FVector(0, 14, -30), FVector(0, 14, -56), 12.0f, EBBBMonsterHitRegion::RightLeg);
-        Limb(TEXT("calf_r"), TEXT("foot_r"), FVector(0, 14, -56), FVector(0, 14, -80), 10.0f, EBBBMonsterHitRegion::RightLeg);
+        }
     }
 }
 

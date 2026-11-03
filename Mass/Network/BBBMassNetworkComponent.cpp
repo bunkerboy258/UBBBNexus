@@ -5,7 +5,7 @@
 #include "GameFramework/PlayerState.h"
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
 
 UBBBMassNetworkComponent::UBBBMassNetworkComponent()
 {
@@ -28,7 +28,7 @@ void UBBBMassNetworkComponent::ServerReportDamage_Implementation(FGuid InstanceI
     {
         const FMassEntityHandle Entity = It->FindEntity(InstanceId);
         UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
-        FBBBMonsterDamageRemoteMessagePacket Packet;
+        FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
         Packet.InstanceId = InstanceId;
         Packet.Include(Contribution);
         Mass->SubmitInput(Entity, MoveTemp(Packet));
