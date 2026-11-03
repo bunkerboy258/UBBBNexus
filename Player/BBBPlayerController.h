@@ -65,6 +65,11 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|界面")
     float GetHudHealthFraction() const;
 
+    /** @param Health 当前生命 @param Maximum 生命上限 @param Phase 生命阶段 @return 是否存在角色 */
+    bool ReadHudHealth(float &Health, float &Maximum, uint8 &Phase) const;
+    /** @return 正常游玩时是否显示常驻准星 */
+    bool ShouldShowCrosshair() const;
+
     /** @return 当前角色是否正在瞄准并允许显示战斗准星 */
     UFUNCTION(BlueprintPure, Category = "BBB|界面")
     bool ShouldShowAimHud() const;

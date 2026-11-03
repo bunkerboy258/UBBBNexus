@@ -101,6 +101,12 @@ public:
      */
     virtual bool ReadAmmoDisplay(int32 &Loaded, int32 &Capacity, bool &bContinuous) const;
 
+    /** @return 是否处于真实换弹流程 */
+    virtual bool IsReloading() const
+    {
+        return false;
+    }
+
     /** @return 装备动画实例 */
     UBBBEquipmentAnimInstance *GetEquipmentAnimationInstance() const;
 

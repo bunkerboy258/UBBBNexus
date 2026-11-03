@@ -67,3 +67,27 @@ bool ABBBPlayerController::GetActualAimScreenPosition(FVector2D &ScreenPosition)
     return GetActualAimWorldPosition(WorldPosition)
         && ProjectWorldLocationToScreen(WorldPosition, ScreenPosition, true);
 }
+
+bool ABBBPlayerController::ReadHudHealth(float &Health, float &Maximum, uint8 &Phase) const
+{
+    Health = 0.0f;
+    Maximum = 0.0f;
+    Phase = 255;
+    const ABBBCharacter *PawnCharacter = GetItemCharacter();
+    if (!PawnCharacter)
+    {
+        return false;
+    }
+    Phase = static_cast<uint8>(PawnCharacter->GetLifePhase());
+    Health = PawnCharacter->GetHealth();
+    Maximum = PawnCharacter->GetLifePhase() == EBBBCharacterLifePhase::Downed
+        ? PawnCharacter->GetCharacterConfig().DownedHealth : PawnCharacter->GetCharacterConfig().MaximumHealth;
+    return true;
+}
+
+bool ABBBPlayerController::ShouldShowCrosshair() const
+{
+    const ABBBCharacter *PawnCharacter = GetItemCharacter();
+    return PawnCharacter && PawnCharacter->GetLifePhase() == EBBBCharacterLifePhase::Alive
+        && !IsPlayerMenuOpen() && !IsBackpackOpen() && !bShowMouseCursor;
+}

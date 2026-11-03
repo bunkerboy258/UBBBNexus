@@ -84,7 +84,7 @@ public:
 
     /** @return 当前是否正在换弹 */
     UFUNCTION(BlueprintPure, Category = "BBB|步枪")
-    bool IsReloading() const
+    bool IsReloading() const override
     {
         return RuntimeData.Action.ReadRifleActionState().bIsReloading;
     }
