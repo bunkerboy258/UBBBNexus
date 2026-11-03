@@ -28,19 +28,33 @@ void FBBBWorldDropInitializer::Construct(ABBBWorldDropItem &Drop)
     Drop.Icon->SetupAttachment(Drop.Body);
     Drop.Icon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Drop.Icon->SetCastShadow(false);
+    Drop.Icon->SetTranslucentSortPriority(1);
     Drop.Beam = Drop.CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DropBeam"));
     Drop.Beam->SetupAttachment(Drop.Body);
     Drop.Beam->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Drop.Beam->SetCastShadow(false);
-    Drop.Beam->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")));
+    Drop.Beam->SetReceivesDecals(false);
+    Drop.Beam->SetAffectDynamicIndirectLighting(false);
+    Drop.Beam->SetVisibleInRayTracing(false);
+    Drop.Beam->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")));
+    Drop.GroundGlow = Drop.CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DropGroundGlow"));
+    Drop.GroundGlow->SetupAttachment(Drop.Body);
+    Drop.GroundGlow->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Drop.GroundGlow->SetCastShadow(false);
+    Drop.GroundGlow->SetReceivesDecals(false);
+    Drop.GroundGlow->SetAffectDynamicIndirectLighting(false);
+    Drop.GroundGlow->SetVisibleInRayTracing(false);
+    Drop.GroundGlow->SetStaticMesh(Drop.Beam->GetStaticMesh());
     Drop.Network = Drop.CreateDefaultSubobject<UBBBWorldDropNetworkComponent>(TEXT("DropNetwork"));
 }
 void FBBBWorldDropInitializer::Initialize(ABBBWorldDropItem &Drop)
 {
     const auto &Config = Drop.Config;
+    Drop.RuntimeData.Drop.PresentationState = {};
     Drop.Body->SetSphereRadius(FMath::Max(1.0f, Config.Radius));
     Drop.Icon->SetVisibility(false);
     Drop.Beam->SetVisibility(false);
+    Drop.GroundGlow->SetVisibility(false);
     Drop.Body->SetSimulatePhysics(Drop.HasAuthority());
     if (Drop.HasAuthority())
     {
@@ -51,10 +65,6 @@ void FBBBWorldDropInitializer::Initialize(ABBBWorldDropItem &Drop)
         Snapshot.Definition = Config.Definition;
         Snapshot.Quantity = Config.Quantity;
         Snapshot.Revision = 1;
-    }
-    if (auto *Material = Config.BeamMaterial.LoadSynchronous())
-    {
-        Drop.Beam->SetMaterial(0, Material);
     }
 }
 void FBBBWorldDropInitializer::Preview(ABBBWorldDropItem &Drop)
@@ -67,11 +77,7 @@ void FBBBWorldDropInitializer::Preview(ABBBWorldDropItem &Drop)
     Snapshot.Definition = Drop.Config.Definition;
     Snapshot.Quantity = Drop.Config.Quantity;
     Snapshot.bLanded = true;
-    Drop.RuntimeData.Drop.PresentationState.RenderedDefinition = nullptr;
+    Drop.RuntimeData.Drop.PresentationState = {};
     Drop.Body->SetSphereRadius(FMath::Max(1.0f, Drop.Config.Radius));
-    if (auto *Material = Drop.Config.BeamMaterial.LoadSynchronous())
-    {
-        Drop.Beam->SetMaterial(0, Material);
-    }
     FBBBWorldDropUpdatePipeline::Update(Drop);
 }

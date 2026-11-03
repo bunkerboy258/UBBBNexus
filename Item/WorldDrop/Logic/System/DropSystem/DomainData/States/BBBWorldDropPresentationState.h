@@ -14,4 +14,14 @@ struct FBBBWorldDropPresentationState final
     /** 当前白色图标的动态材质 */
     UPROPERTY(Transient)
     TObjectPtr<UMaterialInstanceDynamic> IconMaterial = nullptr;
+    /** 本地光束的淡入材质 */
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> BeamMaterial = nullptr;
+    /** 本地落点的淡入材质 */
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> GroundGlowMaterial = nullptr;
+    /** 最近一次开始显示的本地时间 */
+    double VisibleSince = 0;
+    /** 上次更新是否显示落地标记 */
+    bool bWasVisible = false;
 };

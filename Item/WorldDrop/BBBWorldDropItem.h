@@ -47,6 +47,7 @@ public:
     virtual void OnConstruction(const FTransform &Transform) override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
+    virtual bool ShouldTickIfViewportsOnly() const override;
     //~ End AActor Interface
 protected:
     /** 关卡摆放与派生蓝图的生成配置 */
@@ -67,6 +68,9 @@ private:
     /** 无碰撞的光柱网格 */
     UPROPERTY(VisibleAnywhere, Category = "显示", meta = (DisplayName = "光柱"))
     TObjectPtr<UStaticMeshComponent> Beam;
+    /** 无碰撞的地面柔光平面 */
+    UPROPERTY(VisibleAnywhere, Category = "显示", meta = (DisplayName = "地面微光"))
+    TObjectPtr<UStaticMeshComponent> GroundGlow;
     /** 复制当前业务结果的桥接组件 */
     UPROPERTY()
     TObjectPtr<UBBBWorldDropNetworkComponent> Network;

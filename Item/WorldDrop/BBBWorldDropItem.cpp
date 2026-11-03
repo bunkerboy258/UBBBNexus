@@ -25,3 +25,8 @@ void ABBBWorldDropItem::EndPlay(const EEndPlayReason::Type Reason)
     FBBBWorldDropShutdown::Shutdown(*this);
     Super::EndPlay(Reason);
 }
+
+bool ABBBWorldDropItem::ShouldTickIfViewportsOnly() const
+{
+    return true;
+}

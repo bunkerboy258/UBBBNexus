@@ -9,6 +9,7 @@ void FBBBWorldDropShutdown::Shutdown(ABBBWorldDropItem &Drop)
     Drop.Body->SetSimulatePhysics(false);
     Drop.Icon->SetVisibility(false);
     Drop.Beam->SetVisibility(false);
+    Drop.GroundGlow->SetVisibility(false);
     auto &State = Drop.RuntimeData.Drop.DropState;
     State.Claims.Reset();
     State.Completions.Reset();
