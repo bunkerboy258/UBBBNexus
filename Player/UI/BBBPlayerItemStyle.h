@@ -25,7 +25,7 @@ inline const FSlateBrush *Brush(const TCHAR *Path)
         Textures.Emplace(Texture);
         TSharedPtr<FSlateBrush> Value = MakeShared<FSlateBrush>();
         Value->SetResourceObject(Texture);
-        Value->DrawAs = ESlateBrushDrawType::Image;
+        Value->DrawAs = Texture ? ESlateBrushDrawType::Image : ESlateBrushDrawType::NoDrawType;
         Value->ImageSize = Texture ? FVector2D(Texture->GetSizeX(), Texture->GetSizeY()) : FVector2D(1.0);
         Brushes.Add(Key, Value);
     }
@@ -123,18 +123,18 @@ inline const FButtonStyle *Navigation()
     return &Style;
 }
 
-/** @return 从原稿独立导出的旧化主按钮 */
+/** @return 素材包的透明边框主按钮 */
 inline const FButtonStyle *ExitButton()
 {
     static const FButtonStyle Style = []()
     {
-        const auto *Surface = Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_ExitSurface.T_E01_ExitSurface"));
+        const auto *Surface = Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_EquipBtn.T_EquipBtn"));
         FSlateBrush Normal = *Surface;
-        Normal.TintColor = FLinearColor(0.24f, 0.24f, 0.24f);
+        Normal.TintColor = FLinearColor(0.75f, 0.75f, 0.75f);
         FSlateBrush Hover = *Surface;
-        Hover.TintColor = FLinearColor(0.35f, 0.35f, 0.35f);
+        Hover.TintColor = FLinearColor::White;
         FSlateBrush Pressed = *Surface;
-        Pressed.TintColor = FLinearColor(0.16f, 0.16f, 0.16f);
+        Pressed.TintColor = FLinearColor(0.5f, 0.5f, 0.5f);
         FButtonStyle Result;
         Result.SetNormal(Normal).SetHovered(Hover).SetPressed(Pressed);
         Result.SetNormalPadding(FMargin(16.0f, 9.0f)).SetPressedPadding(FMargin(16.0f, 10.0f));

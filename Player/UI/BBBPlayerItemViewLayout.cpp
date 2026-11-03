@@ -111,7 +111,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     Place(500.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
     Place(720.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
     Place(StorageLeft, 608.0f, 862.0f, 398.0f,
-          SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_StorageBoundary.T_E01_StorageBoundary")))
+          SNew(SImage).Image(Selection())
               .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));
     static const FScrollBarStyle Scroll = []()
     {
@@ -210,10 +210,6 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
               })[SNew(STextBlock).Text(BBBItemText::Return).Font(ChineseArtFont(28)).ColorAndOpacity(FLinearColor::White)]);
     return SNew(SOverlay) +
         SOverlay::Slot()[SNew(SBorder).BorderImage(&Dim).Padding(0.0f).Visibility(EVisibility::HitTestInvisible)] +
-        SOverlay::Slot()[SNew(SScaleBox).Stretch(EStretch::ScaleToFill).Clipping(EWidgetClipping::ClipToBounds)
-            .Visibility(EVisibility::HitTestInvisible)
-                [SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/E01/T_E01_Backdrop.T_E01_Backdrop")))
-                    .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.87f))]] +
         SOverlay::Slot()[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
             [SNew(SBox).WidthOverride(1920.0f).HeightOverride(1080.0f)[Canvas]]];
 }
