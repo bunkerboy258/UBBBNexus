@@ -28,6 +28,10 @@ struct FBBBCharacterInteractionUseState final
     TObjectPtr<class UBBBConsumableDefinition> Definition = nullptr;
     /** 房主已生成世界实体的使用序号 */
     int32 SpawnedSerial = 0;
+    /** 本次快速近战的唯一攻击身份 */
+    FGuid MeleeAttackId;
+    /** 本次攻击开始的本机单调时间 与弹丸来源使用相同排序依据 */
+    double MeleeAttackTime = 0.0;
     /** 本次快速近战命中窗口 */
     bool bMeleeContact = false;
     /** 本次近战上帧是否具有有效手部姿态 */

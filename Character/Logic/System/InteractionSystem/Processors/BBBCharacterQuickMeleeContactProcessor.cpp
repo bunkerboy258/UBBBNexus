@@ -63,6 +63,17 @@ void FBBBCharacterQuickMeleeContactProcessor::Update(FBBBCharacterInteractionUpd
         const bool bEntityHit = Mass && Mass->TraceEntities(Start, End, Config.QuickMeleeRadius, State.MeleeEntities,
                                                             Entity, HitTime, Position, Normal, Surface, Part);
         const FVector Direction = (End - Start).GetSafeNormal(SMALL_NUMBER, Context.Character.GetActorForwardVector());
+        FBBBHitContribution Value{Config.QuickMeleeDamage, NAME_None, Position, Direction};
+        Value.AddDurableDamage = Config.QuickMeleeDurableDamage;
+        Value.AddStagger = Config.QuickMeleeStaggerValue;
+        Value.AddVelocity = Context.Character.GetActorForwardVector().GetSafeNormal2D() * Config.QuickMeleeImpactSpeed;
+        Value.AddHoldSeconds = Config.QuickMeleeImpactHoldSeconds;
+        Value.AttackId = State.MeleeAttackId;
+        Value.AttackTime = State.MeleeAttackTime;
+        Value.SourcePosition = Context.Character.GetActorLocation();
+        Value.bHasSourcePosition = true;
+        const auto* SourcePlayer = Context.Character.GetPlayerState();
+        Value.PlayerId = SourcePlayer ? SourcePlayer->GetPlayerId() : INDEX_NONE;
         if (bEntityHit && (!bWorldHit || HitTime < Hit.Time))
         {
             auto *Player = Context.Character.GetPlayerState();
@@ -70,13 +81,9 @@ void FBBBCharacterQuickMeleeContactProcessor::Update(FBBBCharacterInteractionUpd
             {
                 continue;
             }
-            FBBBHitContribution Value{Config.QuickMeleeDamage, NAME_None, Position, Direction};
             Value.Part = Part;
             Value.Normal = Normal;
             Value.PlayerId = Player->GetPlayerId();
-            Value.AddDurableDamage = Config.QuickMeleeDurableDamage;
-            Value.SourcePosition = Context.Character.GetActorLocation();
-            Value.bHasSourcePosition = true;
             FBBBMonsterDamageLocalControlPacket Packet{{Value}};
             if (Mass->SubmitInput(Entity, MoveTemp(Packet)))
             {
@@ -90,7 +97,10 @@ void FBBBCharacterQuickMeleeContactProcessor::Update(FBBBCharacterInteractionUpd
         if (IsValid(Actor) && Actor->CanBeDamaged() && !State.MeleeActors.Contains(Actor))
         {
             State.MeleeActors.Add(Actor);
-            BBBHitReceiver::Submit(Actor, FBBBHitContribution{Config.QuickMeleeDamage, Hit.BoneName, Hit.ImpactPoint, Direction});
+            Value.Bone = Hit.BoneName;
+            Value.Position = Hit.ImpactPoint;
+            Value.Normal = Hit.ImpactNormal;
+            BBBHitReceiver::Submit(Actor, Value);
             UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Actor hit Attack=%d Target=%s Damage=%.1f"), State.UseSerial,
                    *Actor->GetName(), Config.QuickMeleeDamage);
         }

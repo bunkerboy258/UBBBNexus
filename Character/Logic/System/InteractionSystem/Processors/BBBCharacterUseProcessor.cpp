@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
 #include "Animation/AnimMontage.h"
+#include "HAL/PlatformTime.h"
 #include "Components/SkeletalMeshComponent.h"
 
 void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Context) const
@@ -88,6 +89,8 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
             Use.Fact = {};
             Use.Fact.Revision = Revision;
             Use.Fact.Serial = ++Use.UseSerial;
+            Use.MeleeAttackId = FGuid::NewGuid();
+            Use.MeleeAttackTime = FPlatformTime::Seconds();
             Use.Fact.ItemId = Equipment ? Equipment->GetEquipmentId() : FName(TEXT("Unarmed"));
             Use.Fact.bActive = true;
             Use.Fact.bQuickMelee = true;

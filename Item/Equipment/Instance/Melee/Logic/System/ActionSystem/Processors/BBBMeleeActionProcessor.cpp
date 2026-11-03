@@ -5,11 +5,14 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "HAL/PlatformTime.h"
 
 void FBBBMeleeActionProcessor::Stop(FBBBMeleeRuntimeData &Data)
 {
     auto &State = Data.Action.ActionState;
     State.bAttacking = false;
+    State.AttackId.Invalidate();
+    State.AttackTime = 0.0;
     State.bContactOpen = false;
     State.ActionToken = INDEX_NONE;
     State.ContactToken = INDEX_NONE;
@@ -79,6 +82,8 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeActionUpdateContext &Context)
     }
     Stop(Context.RuntimeData);
     ++State.AttackSequence;
+    State.AttackId = FGuid::NewGuid();
+    State.AttackTime = FPlatformTime::Seconds();
     State.LastAttackTime = Time;
     State.bAttacking = true;
     UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Attack started Equipment=%s Sequence=%d Time=%.3f"),

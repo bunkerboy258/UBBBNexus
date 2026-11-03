@@ -17,6 +17,9 @@ bool FBBBMeleeInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) cons
         && Definition->EquipmentType == EBBBEquipmentType::Melee
         && FMath::IsFinite(Definition->Damage) && Definition->Damage >= 0.0f
         && FMath::IsFinite(Definition->DurableDamage) && Definition->DurableDamage >= 0.0f
+        && FMath::IsFinite(Definition->StaggerValue) && Definition->StaggerValue >= 0.0f
+        && FMath::IsFinite(Definition->ImpactSpeed) && Definition->ImpactSpeed >= 0.0f
+        && FMath::IsFinite(Definition->ImpactHoldSeconds) && Definition->ImpactHoldSeconds >= 0.0f
         && Definition->TraceRadius > 0.0f && Definition->AttackInterval > 0.0f
         && Cast<UBBBMeleeAnimInstance>(Equipment.GetEquipmentAnimationInstance()), TEXT("近战装备缺少有效配置与动画实例")))
     {

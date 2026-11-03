@@ -50,6 +50,17 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
         const bool bEntityHit = Mass && Mass->TraceEntities(Start, End, Context.Definition.TraceRadius,
             State.HitEntities, Entity, HitTime, Position, Normal, Surface, Part);
         const FVector Direction = (End - Start).GetSafeNormal(SMALL_NUMBER, Context.Character.GetActorForwardVector());
+        FBBBHitContribution Value{Context.Definition.Damage, NAME_None, Position, Direction};
+        Value.AddDurableDamage = Context.Definition.DurableDamage;
+        Value.AddStagger = Context.Definition.StaggerValue;
+        Value.AddVelocity = Context.Character.GetActorForwardVector().GetSafeNormal2D() * Context.Definition.ImpactSpeed;
+        Value.AddHoldSeconds = Context.Definition.ImpactHoldSeconds;
+        Value.AttackId = State.AttackId;
+        Value.AttackTime = State.AttackTime;
+        Value.SourcePosition = Context.Character.GetActorLocation();
+        Value.bHasSourcePosition = true;
+        const auto* SourcePlayer = Context.Character.GetPlayerState();
+        Value.PlayerId = SourcePlayer ? SourcePlayer->GetPlayerId() : INDEX_NONE;
         if (bEntityHit && (!bWorldHit || HitTime < Hit.Time))
         {
             auto *Player = Context.Character.GetPlayerState();
@@ -57,13 +68,9 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
             {
                 continue;
             }
-            FBBBHitContribution Value{Context.Definition.Damage, NAME_None, Position, Direction};
             Value.Part = Part;
             Value.Normal = Normal;
             Value.PlayerId = Player->GetPlayerId();
-            Value.AddDurableDamage = Context.Definition.DurableDamage;
-            Value.SourcePosition = Context.Character.GetActorLocation();
-            Value.bHasSourcePosition = true;
             FBBBMonsterDamageLocalControlPacket Packet{{Value}};
             if (Mass->SubmitInput(Entity, MoveTemp(Packet)))
             {
@@ -78,7 +85,10 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
         if (IsValid(Actor) && Actor->CanBeDamaged() && !State.HitActors.Contains(Actor))
         {
             State.HitActors.Add(Actor);
-            BBBHitReceiver::Submit(Actor, FBBBHitContribution{Context.Definition.Damage, Hit.BoneName, Hit.ImpactPoint, Direction});
+            Value.Bone = Hit.BoneName;
+            Value.Position = Hit.ImpactPoint;
+            Value.Normal = Hit.ImpactNormal;
+            BBBHitReceiver::Submit(Actor, Value);
             ++State.HitCount;
             UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Actor hit Attack=%d Target=%s Damage=%.1f"),
                 State.AttackSequence, *Actor->GetName(), Context.Definition.Damage);

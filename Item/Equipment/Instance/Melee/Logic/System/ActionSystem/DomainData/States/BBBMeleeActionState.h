@@ -6,6 +6,10 @@ struct FBBBMeleeActionState final
 {
     /** 每次成立的攻击递增 */
     int32 AttackSequence = 0;
+    /** 本次攻击的唯一身份 不因切换武器重用 */
+    FGuid AttackId;
+    /** 本次攻击开始的本机单调时间 与弹丸来源使用相同排序依据 */
+    double AttackTime = 0.0;
     /** 是否正在等待攻击生命周期结束 */
     bool bAttacking = false;
 

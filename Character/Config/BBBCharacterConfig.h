@@ -28,6 +28,16 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     /** 快速近战耐久伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战耐久伤害", ClampMin = "0"))
     float QuickMeleeDurableDamage = 20.0f;
+    /** 快速近战贡献的踉跄强度 当前僵尸各部位都达到满额概率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "近战", meta = (DisplayName = "快速近战踉跄强度", ClampMin = "0"))
+    float QuickMeleeStaggerValue = 200.0f;
+    /** 快速近战沿角色前方贡献的速度增量 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "近战", meta = (DisplayName = "快速近战推力速度", ClampMin = "0", ForceUnits = "cm/s"))
+    float QuickMeleeImpactSpeed = 400.0f;
+    /** 快速近战贡献的冲击保持时间 由目标解释 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "近战", meta = (DisplayName = "快速近战冲击保持时间", ClampMin = "0", ForceUnits = "s"))
+    float QuickMeleeImpactHoldSeconds = 1.0f;
+
     /** 手部接触段半径 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战接触半径", ClampMin = "1"))
     float QuickMeleeRadius = 14.0f;

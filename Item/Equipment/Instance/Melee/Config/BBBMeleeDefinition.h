@@ -33,6 +33,16 @@ public:
     /** 命中耐久部位时混合的伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "专属机制|伤害", meta = (DisplayPriority = "2", ClampMin = "0.0", DisplayName = "耐久伤害 (生命值)", ToolTip = "用于 Mass 部位耐久混合 有效伤害为普通伤害*(1-耐久比例)+耐久伤害*耐久比例 不是额外叠加 普通 Actor 不使用"))
     float DurableDamage = 25.0f;
+    /** 每次攻击贡献的踉跄强度 当前僵尸各部位都达到满额概率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "专属机制|伤害", meta = (DisplayName = "踉跄强度", ClampMin = "0"))
+    float StaggerValue = 200.0f;
+    /** 沿持有者前方贡献的速度增量 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "专属机制|伤害", meta = (DisplayName = "推力速度", ClampMin = "0", ForceUnits = "cm/s"))
+    float ImpactSpeed = 400.0f;
+    /** 单次攻击贡献的冲击保持时间 由目标解释 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "专属机制|伤害", meta = (DisplayName = "冲击保持时间", ClampMin = "0", ForceUnits = "s"))
+    float ImpactHoldSeconds = 1.0f;
+
     /** 覆盖武器运动轨迹的球扫掠半径 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "专属机制|命中检测", meta = (DisplayPriority = "3", ClampMin = "0.1", DisplayName = "扫掠半径 (厘米)", ToolTip = "攻击窗口内球形扫掠的半径 越大越容易覆盖目标 不是武器长度 同时影响轨迹采样间距"))
     float TraceRadius = 5.0f;
