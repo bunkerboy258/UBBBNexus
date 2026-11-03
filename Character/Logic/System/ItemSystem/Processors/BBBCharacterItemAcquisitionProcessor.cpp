@@ -16,9 +16,17 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
 {
     auto &Inventory = Context.RuntimeData.Item.ItemInventoryState;
     auto &Operations = Context.RuntimeData.Item.ItemOperationState;
+    Operations.AcquisitionResults.Reset();
     for (int32 Request = 0; Request < Operations.PendingItemIds.Num(); ++Request)
     {
         const FName Id = Operations.PendingItemIds[Request];
+        FBBBCharacterItemAcquisitionResult *Result = nullptr;
+        if (Operations.PendingAcquisitionKeys.IsValidIndex(Request)
+            && Operations.PendingAcquisitionKeys[Request].SourceId.IsValid())
+        {
+            Result = &Operations.AcquisitionResults.AddDefaulted_GetRef();
+            Result->Key = Operations.PendingAcquisitionKeys[Request];
+        }
         UBBBItemDefinition *Definition = nullptr;
         TSubclassOf<AActor> ActorClass;
         int32 Candidates = 0;
@@ -147,7 +155,12 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
         }
         ++Inventory.Revision;
         ++Operations.SucceededCount;
+        if (Result)
+        {
+            Result->bSucceeded = true;
+        }
     }
     Operations.PendingItemIds.Reset();
     Operations.PendingQuantities.Reset();
+    Operations.PendingAcquisitionKeys.Reset();
 }

@@ -20,6 +20,8 @@ struct FBBBCharacterInteractionUseState;
 struct FBBBCharacterDamageInboxState;
 struct FBBBCharacterAppearanceInputState;
 struct FBBBCharacterPhysicalPresentationState;
+struct FBBBCharacterPickupState;
+struct FBBBCharacterPickupInboxState;
 
 /**
  * 输入包应用上下文
@@ -79,4 +81,8 @@ struct FBBBCharacterInputContext final
     FBBBCharacterInteractionUseState &InteractionUse;
     /** 物理接管请求及接收的物理结果 */
     FBBBCharacterPhysicalPresentationState &PhysicalPresentation;
+    /** 待处理的世界物品交付 */
+    FBBBCharacterPickupState &Pickup;
+    /** 待投送给世界掉落物的输入 */
+    FBBBCharacterPickupInboxState &PickupInbox;
 };

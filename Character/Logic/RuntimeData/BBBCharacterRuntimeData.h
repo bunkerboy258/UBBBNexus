@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/BBBCharacterItemDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/BBBCharacterLifeDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/BBBCharacterAppearanceDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/DomainData/BBBCharacterPickupDomainState.h"
 #include "BBBCharacterRuntimeData.generated.h"
 
 /** 角色全部领域状态持有者的唯一聚合黑板 */
@@ -19,6 +20,9 @@ USTRUCT()
 struct FBBBCharacterRuntimeData final
 {
     GENERATED_BODY()
+    /** 世界拾取的独立领域 */
+    UPROPERTY(Transient)
+    FBBBCharacterPickupDomainState Pickup;
 
     /** 角色外部世界与网络身份状态 */
     UPROPERTY(Transient)

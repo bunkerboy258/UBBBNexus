@@ -1,4 +1,8 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Pickup/FBBBCharacterPickupGrantLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Pickup/FBBBCharacterPickupGrantAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Pickup/FBBBCharacterPickupRequestRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Pickup/FBBBCharacterPickupReceiptRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterFallContactLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterRequestGetUpLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/PhysicalPresentation/FBBBCharacterGetUpCompleteLocalControlPacket.h"
@@ -84,6 +88,14 @@
 /** 角色全部输入的固定槽位状态 */
 struct FBBBCharacterInputState final
 {
+    /** 世界拾取交付输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterPickupGrantLocalControlPacket> PickupGrantLocalControl;
+    /** 世界拾取交付输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterPickupGrantAuthorityFactPacket> PickupGrantAuthorityFact;
+    /** 世界拾取投送输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterPickupRequestRemoteMessagePacket> PickupRequestRemoteMessage;
+    /** 世界拾取投送输入槽 */
+    TBBBCharacterInputSlot<FBBBCharacterPickupReceiptRemoteMessagePacket> PickupReceiptRemoteMessage;
     /** 布娃娃进入请求及当前结果输入 */
     TBBBCharacterInputSlot<FBBBCharacterEnterRagdollLocalControlPacket> EnterRagdoll;
     /** 真实身体碰撞收件槽 */

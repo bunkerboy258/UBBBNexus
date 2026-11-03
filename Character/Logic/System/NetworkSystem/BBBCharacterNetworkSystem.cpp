@@ -46,6 +46,7 @@ void FBBBCharacterNetworkSystem::Update()
     LifeObservationProcessor.Update(Context);
     RagdollObservationProcessor.Update(Context);
     RescueObservationProcessor.Update(Context);
+    PickupObservationProcessor.Update(Context);
     if (!NetworkIdentityState.bHasAuthority && !NetworkIdentityState.bLocallyControlled)
     {
         return;

@@ -1,4 +1,7 @@
 #include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Pickup/FBBBCharacterPickupRequestRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Pickup/FBBBCharacterPickupReceiptRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Pickup/FBBBCharacterPickupGrantAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/PhysicalPresentation/FBBBCharacterRagdollRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/PhysicalPresentation/FBBBCharacterRagdollAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterUseRemoteMessagePacket.h"
@@ -515,5 +518,33 @@ void UBBBCharacterNetworkComponent::OnRep_Use()
     if (Character && Character->IsNetworkMirror())
     {
         Character->SubmitInput(FBBBCharacterUseAuthorityFactPacket{{ReplicatedUse}});
+    }
+}
+void UBBBCharacterNetworkComponent::ServerRequestPickup_Implementation(FBBBCharacterPickupRequest Request)
+{
+    if (Character && IsOwnerAuthority() && Request.Drop && Request.DropId.IsValid())
+    {
+        Character->SubmitInput(FBBBCharacterPickupRequestRemoteMessagePacket{{Request}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ClientGrantPickup_Implementation(FBBBCharacterPickupGrant Grant)
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    if (Character && Character->IsLocallyControlled())
+    {
+        Character->SubmitInput(FBBBCharacterPickupGrantAuthorityFactPacket{{Grant}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerCompletePickup_Implementation(FBBBCharacterPickupReceipt Receipt)
+{
+    if (Character && IsOwnerAuthority() && Receipt.Grant.Drop && Receipt.Grant.DropId.IsValid()
+        && Receipt.Grant.Operation > 0)
+    {
+        Character->SubmitInput(FBBBCharacterPickupReceiptRemoteMessagePacket{{Receipt}});
     }
 }

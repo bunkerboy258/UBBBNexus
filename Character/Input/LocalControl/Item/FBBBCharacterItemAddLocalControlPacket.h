@@ -10,10 +10,13 @@ struct FBBBCharacterItemAddLocalControlPacket final
     TArray<FName> ItemIds;
     /** 各型号对应的数量 */
     TArray<int32> Quantities;
+    /** 需要对应结果时逐项提供来源身份 空数组表示无需对应结果 */
+    TArray<FBBBCharacterItemAcquisitionKey> Keys;
     /** @return 请求结构是否有效 */
     bool IsValid() const
     {
-        if (ItemIds.IsEmpty() || ItemIds.Num() != Quantities.Num())
+        if (ItemIds.IsEmpty() || ItemIds.Num() != Quantities.Num()
+            || (!Keys.IsEmpty() && Keys.Num() != ItemIds.Num()))
         {
             return false;
         }
@@ -36,5 +39,10 @@ struct FBBBCharacterItemAddLocalControlPacket final
     {
         Context.ItemOperations.PendingItemIds.Append(ItemIds);
         Context.ItemOperations.PendingQuantities.Append(Quantities);
+        for (int32 Index = 0; Index < ItemIds.Num(); ++Index)
+        {
+            Context.ItemOperations.PendingAcquisitionKeys.Add(Keys.IsEmpty()
+                ? FBBBCharacterItemAcquisitionKey{} : Keys[Index]);
+        }
     }
 };

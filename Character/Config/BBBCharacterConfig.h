@@ -8,6 +8,7 @@
 #include "Engine/DataAsset.h"
 #include "BBBWork/UBBBNexus/Character/Config/Item/BBBCharacterItemConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBCharacterAppearanceConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Pickup/BBBCharacterPickupConfig.h"
 #include "BBBCharacterConfig.generated.h"
 
 /** 角色全部可编辑的静态配置资产 */
@@ -16,6 +17,10 @@ UCLASS(BlueprintType)
 class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 {
     GENERATED_BODY()
+  public:
+    /** 世界掉落物自动拾取配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "拾取配置"))
+    FBBBCharacterPickupConfig Pickup;
   public:
     /** 快速近战普通伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "快速近战伤害", ClampMin = "0"))

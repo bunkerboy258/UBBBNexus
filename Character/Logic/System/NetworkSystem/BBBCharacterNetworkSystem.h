@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterPickupObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRagdollObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterAppearanceObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBCharacterRescueObservationProcessor.h"
@@ -27,6 +28,8 @@ private:
     FBBBCharacterRagdollObservationProcessor RagdollObservationProcessor;
     FBBBCharacterLifeObservationProcessor LifeObservationProcessor;
     FBBBCharacterRescueObservationProcessor RescueObservationProcessor;
+    /** 世界拾取事实的角色连接投送 */
+    FBBBCharacterPickupObservationProcessor PickupObservationProcessor;
     FBBBCharacterDamageObservationProcessor DamageObservationProcessor;
     friend class FBBBCharacterInitializer;
 

@@ -83,6 +83,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.TraversalSystem.Initialize();
     
     Character.ItemSystem.Initialize(Character, Character.RuntimeData, Config.Item);
+    Character.PickupSystem.Initialize(Character, Character.RuntimeData, Config.Pickup);
     Character.AppearanceSystem.Initialize(Character, Character.RuntimeData, Config.Appearance);
 
     Character.LifeSystem.Initialize(Character, Character.RuntimeData, Config);

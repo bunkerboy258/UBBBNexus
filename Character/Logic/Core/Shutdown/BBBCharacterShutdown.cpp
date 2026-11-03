@@ -16,4 +16,5 @@ void FBBBCharacterShutdown::Shutdown(ABBBCharacter &Character)
     Character.InteractionSystem.Shutdown();
     Character.AppearanceSystem.Shutdown();
     Character.ItemSystem.Shutdown();
+    Character.PickupSystem.Shutdown();
 }

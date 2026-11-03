@@ -12,6 +12,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueInboxState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterAppearanceNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterPickupInboxState.h"
 #include "BBBCharacterNetworkDomainState.generated.h"
 
 class FBBBAimObservationProcessor;
@@ -25,6 +26,11 @@ struct FBBBCharacterNetworkDomainState final
     GENERATED_BODY()
 
 public:
+    /** @return 角色连接收到的世界拾取投送 */
+    const FBBBCharacterPickupInboxState &ReadCharacterPickupInboxState() const
+    {
+        return PickupInboxState;
+    }
     /** @return 布娃娃结果发送基准 */
     const FBBBCharacterRagdollNetworkObservationState &ReadRagdollNetworkObservationState() const
     {
@@ -87,6 +93,10 @@ public:
         return AppearanceObservationState;
     }
 private:
+    friend class FBBBCharacterPickupObservationProcessor;
+    /** 拾取网络收件与发送基准 */
+    UPROPERTY()
+    FBBBCharacterPickupInboxState PickupInboxState;
     friend class FBBBCharacterRagdollObservationProcessor;
     /** 物理当前结果的发送基准 */
     FBBBCharacterRagdollNetworkObservationState RagdollObservationState;

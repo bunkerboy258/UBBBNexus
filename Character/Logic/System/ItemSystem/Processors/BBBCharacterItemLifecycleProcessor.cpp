@@ -85,6 +85,8 @@ void FBBBCharacterItemLifecycleProcessor::Shutdown(FBBBCharacterItemUpdateContex
     auto &Operations = Context.RuntimeData.Item.ItemOperationState;
     Operations.PendingItemIds.Reset();
     Operations.PendingQuantities.Reset();
+    Operations.PendingAcquisitionKeys.Reset();
+    Operations.AcquisitionResults.Reset();
     Operations.PendingMoveSources.Reset();
     Operations.PendingMoveTargets.Reset();
     Operations.PendingMoveInstances.Reset();

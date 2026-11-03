@@ -128,6 +128,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         Character->LifeSystem.Update();
         Character->PhysicalPresentationSystem.Update();
         Character->AimSystem.Update();
+        Character->PickupSystem.Update();
 
         // 攀爬生成交接结果，装备使用许可随后更新，移动系统独占 CMC 写入
         Character->TraversalSystem.Update();

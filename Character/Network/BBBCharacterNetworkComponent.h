@@ -9,6 +9,9 @@
 #include "Components/ActorComponent.h"
 #include "Engine/NetSerialization.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/Definitions/BBBCharacterAppearanceSnapshot.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/DomainData/Definitions/BBBCharacterPickupRequest.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/DomainData/Definitions/BBBCharacterPickupGrant.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/DomainData/Definitions/BBBCharacterPickupReceipt.h"
 #include "BBBCharacterNetworkComponent.generated.h"
 
 class APawn;
@@ -21,6 +24,15 @@ class ABBB_EVAC_API UBBBCharacterNetworkComponent final : public UActorComponent
     GENERATED_BODY()
 
 public:
+    /** @param Request\t已成立的世界掉落物领取意图 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerRequestPickup(FBBBCharacterPickupRequest Request);
+    /** @param Grant\t已确定收件人的物品交付 @return 无 */
+    UFUNCTION(Client, Reliable)
+    void ClientGrantPickup(FBBBCharacterPickupGrant Grant);
+    /** @param Receipt\t已成立的入包结果 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerCompletePickup(FBBBCharacterPickupReceipt Receipt);
     /** 构造无 Tick 的角色网络传输组件 */
     UBBBCharacterNetworkComponent();
 

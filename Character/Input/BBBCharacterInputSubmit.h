@@ -28,6 +28,10 @@ BBB_CHARACTER_INPUT_SLOT(FBBBRunStateAuthorityFactPacket, RunState)
 BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationRemoteMessagePacket, RemoteAcceleration)
 BBB_CHARACTER_INPUT_SLOT(FBBBAccelerationAuthorityFactPacket, AuthorityAcceleration)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemAddLocalControlPacket, ItemAdd)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterPickupGrantLocalControlPacket, PickupGrantLocalControl)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterPickupGrantAuthorityFactPacket, PickupGrantAuthorityFact)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterPickupRequestRemoteMessagePacket, PickupRequestRemoteMessage)
+BBB_CHARACTER_INPUT_SLOT(FBBBCharacterPickupReceiptRemoteMessagePacket, PickupReceiptRemoteMessage)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterItemMoveLocalControlPacket, ItemMove)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSelectionAuthorityFactPacket, AuthorityInteractionSelectionState)
 BBB_CHARACTER_INPUT_SLOT(FBBBCharacterInteractionSelectionRemoteMessagePacket, RemoteInteractionSelectionState)
@@ -115,8 +119,24 @@ namespace BBBCharacterInput
     {
 
         using FPacket = typename TDecay<TPacket>::Type;
-
         TBBBCharacterInputSlot<FPacket> &Slot = TBBBCharacterInputSlotSelector<FPacket>::Get(State);
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterPickupGrantLocalControlPacket>)
+        {
+            Slot.Data.Grants.Append(Packet.Grants);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterPickupGrantAuthorityFactPacket>)
+        {
+            Slot.Data.Grants.Append(Packet.Grants);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterPickupRequestRemoteMessagePacket>)
+        {
+            Slot.Data.Requests.Append(Packet.Requests);
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBCharacterPickupReceiptRemoteMessagePacket>)
+        {
+            Slot.Data.Receipts.Append(Packet.Receipts);
+        }
+
         if constexpr (std::is_same_v<FPacket, FBBBCharacterFallContactLocalControlPacket>)
         {
             Slot.Data.Contacts.Append(Packet.Contacts);
@@ -181,6 +201,11 @@ namespace BBBCharacterInput
         {
             Slot.Data.ItemIds.Append(Packet.ItemIds);
             Slot.Data.Quantities.Append(Packet.Quantities);
+            for (int32 Index = 0; Index < Packet.ItemIds.Num(); ++Index)
+            {
+                Slot.Data.Keys.Add(Packet.Keys.IsValidIndex(Index)
+                    ? Packet.Keys[Index] : FBBBCharacterItemAcquisitionKey{});
+            }
         }
         if constexpr (std::is_same_v<FPacket, FBBBCharacterItemMoveLocalControlPacket>)
         {
@@ -360,6 +385,10 @@ namespace BBBCharacterInput
             Slot.Data.Tokens.Append(Packet.Tokens);
         }
         if constexpr (!std::is_same_v<FPacket, FBBBCharacterFallContactLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterPickupGrantLocalControlPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterPickupGrantAuthorityFactPacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterPickupRequestRemoteMessagePacket> &&
+                      !std::is_same_v<FPacket, FBBBCharacterPickupReceiptRemoteMessagePacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterInteractionPrimaryLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterGetUpCompleteLocalControlPacket> &&
                       !std::is_same_v<FPacket, FBBBCharacterRagdollRemoteMessagePacket> &&

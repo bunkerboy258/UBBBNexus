@@ -16,6 +16,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/BBBCharacterTraversalSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/BBBCharacterLifeSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/BBBCharacterAppearanceSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/BBBCharacterPickupSystem.h"
 #include "BBBCharacter.generated.h"
 class FBBBCharacterInitializer;
 class FBBBCharacterShutdown;
@@ -294,6 +295,8 @@ private:
     FBBBCharacterLifeSystem LifeSystem;
 
     FBBBCharacterItemSystem ItemSystem;
+    /** 世界掉落物的独立领取协调 */
+    FBBBCharacterPickupSystem PickupSystem;
 
     FBBBCharacterAppearanceSystem AppearanceSystem;
 

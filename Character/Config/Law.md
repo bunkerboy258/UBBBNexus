@@ -8,5 +8,6 @@
 - Interaction/ 存放角色持有物品的挂接配置 实例类由四类外侧目录提供.
 - Locomotion/ 存放角色移动配置.
 - Network/ 存放角色网络配置.
+- Pickup/ 存放角色世界拾取的距离 探测间隔与拒绝重试间隔配置.
 - 背包容量与快捷槽位数量只在 Item/ 中定义 禁止在 Interaction/ 保留旧字段或重复配置.
 - 禁止在 Character/Config/ 新增直属文件夹或文件.

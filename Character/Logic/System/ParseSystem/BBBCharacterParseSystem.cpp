@@ -32,6 +32,8 @@ void FBBBCharacterParseSystem::Update() const
                                       Data->Network.RescueInboxState,
                                       Data->Appearance.InputState,
                                       Data->Interaction.InteractionUseState,
-                                      Data->PhysicalPresentation.PhysicalPresentationState};
+                                      Data->PhysicalPresentation.PhysicalPresentationState,
+                                      Data->Pickup.PickupState,
+                                      Data->Network.PickupInboxState};
     InputProcessor.Update(Data->Parse.InputState, Context);
 }

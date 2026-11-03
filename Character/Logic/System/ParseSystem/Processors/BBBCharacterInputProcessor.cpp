@@ -7,6 +7,10 @@ void FBBBCharacterInputProcessor::Update(
     FBBBCharacterInputContext &Context) const
 {
     Context.Control.bJump = false;
+    Process(InputState.PickupGrantLocalControl, Context);
+    Process(InputState.PickupGrantAuthorityFact, Context);
+    Process(InputState.PickupRequestRemoteMessage, Context);
+    Process(InputState.PickupReceiptRemoteMessage, Context);
     Process(InputState.EnterRagdoll, Context);
     Process(InputState.FallContact, Context);
     Process(InputState.RequestGetUp, Context);

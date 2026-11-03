@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/Definitions/BBBCharacterItemAcquisitionResult.h"
 #include "BBBCharacterItemOperationState.generated.h"
 
 /** 角色物品输入及完成结果 */
@@ -11,6 +12,11 @@ struct FBBBCharacterItemOperationState final
     TArray<FName> PendingItemIds;
     /** 与型号对应的整次获取数量 */
     TArray<int32> PendingQuantities;
+    /** 与获得请求逐项对应的可选来源身份 */
+    TArray<FBBBCharacterItemAcquisitionKey> PendingAcquisitionKeys;
+    /** 本帧已完成的有来源获得结果 */
+    UPROPERTY()
+    TArray<FBBBCharacterItemAcquisitionResult> AcquisitionResults;
     /** 待移动的源位置 */
     TArray<int32> PendingMoveSources;
     /** 待移动的目标位置 */

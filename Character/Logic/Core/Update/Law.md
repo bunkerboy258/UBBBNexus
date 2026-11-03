@@ -6,6 +6,7 @@
 - ItemSystem 必须先完成背包操作 再生成本帧目标主手物品结果.
 - InteractionSystem 必须在 ItemSystem 之后维护本帧实际装备关系.
 - AppearanceSystem 位于物品与装备维护之后 CMC 和网络观察之前.
+- PickupSystem 仅在 Causal 路径执行 位于 ItemSystem InteractionSystem AppearanceSystem 与生命更新之后 CMC 和网络观察之前 通过输入进入下一次解析 不直接调度其它系统.
 - Mirror 路径不执行真实背包与快捷选择逻辑 InteractionSystem 只消费接收的持有关系结果.
 - LateUpdate 必须等待 CMC 完成 只负责动画事实采集和帧末清理.
 - Causal/Mirror 由主管线确定 禁止使用 HasAuthority 代替玩法执行身份.
