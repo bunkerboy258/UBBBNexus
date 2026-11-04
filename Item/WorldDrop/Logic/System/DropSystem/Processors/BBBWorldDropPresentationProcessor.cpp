@@ -104,10 +104,8 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
             TEXT("世界掉落物缺少光束或落点材质 %s"), *Drop.GetPathName());
         Drop.Icon->MarkRenderStateDirty();
     }
-    const bool bVisible = Snapshot.Definition && Snapshot.bLanded && !Snapshot.bConsumed;
-    const bool bAirborne = Snapshot.Definition && Snapshot.Quantity > 0 && !Snapshot.bLanded
-        && !Snapshot.bConsumed && Drop.GetNetMode() != NM_DedicatedServer;
-    Drop.Airborne->SetVisibility(bAirborne && Drop.Airborne->GetStaticMesh());
+    const bool bVisible = Snapshot.Definition && Snapshot.Quantity > 0 && !Snapshot.bConsumed;
+    Drop.Airborne->SetVisibility(bVisible && Drop.Airborne->GetStaticMesh());
     const double Now = Drop.GetWorld()->GetTimeSeconds();
     if (bVisible && !Presentation.bWasVisible)
     {
@@ -128,7 +126,7 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
     }
     Drop.Icon->SetVisibility(bVisible && Presentation.IconMaterial);
     Drop.Beam->SetVisibility(bVisible && Presentation.BeamMaterial);
-    Drop.GroundGlow->SetVisibility(bVisible && Presentation.GroundGlowMaterial);
+    Drop.GroundGlow->SetVisibility(bVisible && Snapshot.bLanded && Presentation.GroundGlowMaterial);
     const FVector Location = Drop.GetActorLocation() - FVector(0, 0, Drop.Body->GetScaledSphereRadius() - 0.5f);
     Drop.Icon->SetWorldLocation(Location + FVector(0, 0, Config.IconLift));
     FVector ToCamera = FVector::ForwardVector;

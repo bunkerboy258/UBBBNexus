@@ -29,6 +29,6 @@ struct FBBBWorldDropPresentationState final
     TObjectPtr<UMaterialInstanceDynamic> GroundGlowMaterial = nullptr;
     /** 最近一次开始显示的本地时间 */
     double VisibleSince = 0;
-    /** 上次更新是否显示落地标记 */
+    /** 上次更新是否已显示掉落标记 */
     bool bWasVisible = false;
 };
