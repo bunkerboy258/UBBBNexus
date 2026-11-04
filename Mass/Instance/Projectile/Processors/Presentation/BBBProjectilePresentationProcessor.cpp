@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Processors/Presentation/BBBProjectilePresentationProcessor.h"
 
 #include "MassExecutionContext.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
 #include "MassCommonFragments.h"
 #include "MassSimulationSubsystem.h"
 #include "MassProcessingPhaseManager.h"
@@ -98,31 +99,11 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
                 continue;
             }
 
-            if (SystemComponent == nullptr)
+            auto *Display = World->GetSubsystem<UBBBProjectilePresentationSubsystem>();
+            Display->PrepareTracer(Visual.Channel.Get(), Visual.System.Get());
+            if (!Display->IsReady(Visual.Channel.Get(), Visual.System.Get()))
             {
-                UMassSimulationSubsystem* Simulation = World->GetSubsystem<UMassSimulationSubsystem>();
-                if (!ensureMsgf(Simulation != nullptr && Simulation->IsSimulationStarted()
-                    && Visual.System->bRequireCurrentFrameData,
-                    TEXT("共享子弹光效需要运行中的 Mass 调度与当帧模拟配置")))
-                {
-                    continue;
-                }
-
-                // 仅创建一个世界级 Niagara 组件 所有 Mass 子弹共享这次模拟
-                SystemComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-                    World, Visual.System.Get(), FVector::ZeroVector, FRotator::ZeroRotator,
-                    FVector::OneVector, false, false, ENCPoolMethod::None, false);
-                if (!ensureMsgf(SystemComponent != nullptr, TEXT("无法启动共享子弹曳光系统")))
-                {
-                    continue;
-                }
-
-                // 共享组件脱离普通光效批次 单独等待帧末 Mass 完成后读取当帧位置
-                SystemComponent->SetForceSolo(true);
-                SystemComponent->SetTickBehavior(ENiagaraTickBehavior::ForceTickLast);
-                SystemComponent->PrimaryComponentTick.AddPrerequisite(Simulation,
-                    Simulation->GetMutablePhaseManager().GetProcessingPhaseTickFunction(EMassProcessingPhase::FrameEnd));
-                SystemComponent->Activate();
+                continue;
             }
 
             if (Visual.Slot == INDEX_NONE)
@@ -151,32 +132,7 @@ void UBBBProjectilePresentationProcessor::Execute(FMassEntityManager&, FMassExec
         }
     });
 
-    for (auto It = MeshComponents.CreateIterator(); It; ++It)
-    {
-        if (!MeshTransforms.Contains(It.Key().Get()))
-        {
-            It.Value()->DestroyComponent();
-            It.RemoveCurrent();
-        }
-    }
-    for (const auto& Batch : MeshTransforms)
-    {
-        auto& Component = MeshComponents.FindOrAdd(Batch.Key);
-        if (Component == nullptr)
-        {
-            Component = NewObject<UInstancedStaticMeshComponent>(World);
-            Component->SetStaticMesh(Batch.Key);
-            Component->SetMobility(EComponentMobility::Movable);
-            Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-            Component->SetGenerateOverlapEvents(false);
-            Component->SetCanEverAffectNavigation(false);
-            Component->SetCastShadow(false);
-            Component->PrimaryComponentTick.bCanEverTick = false;
-            Component->RegisterComponentWithWorld(World);
-        }
-        Component->ClearInstances();
-        Component->AddInstances(Batch.Value, false, true, false);
-    }
+    World->GetSubsystem<UBBBProjectilePresentationSubsystem>()->UpdateMeshes(MeshTransforms);
 
     if (!Presentation.IsEmpty())
     {

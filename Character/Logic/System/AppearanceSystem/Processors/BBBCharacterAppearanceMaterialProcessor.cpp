@@ -24,7 +24,7 @@ namespace
             UMaterialInterface *Parent = Slot.MaterialInterface.Get();
             if (!bPatchEnabled && !Resource.PatchMaterialSlot.IsNone() && Slot.MaterialSlotName == Resource.PatchMaterialSlot)
             {
-                Parent = Resource.HiddenPatchMaterial.LoadSynchronous();
+                Parent = Resource.HiddenPatchMaterial.Get();
             }
             UMaterialInstanceDynamic *Dynamic = Cast<UMaterialInstanceDynamic>(Materials[Index]);
             if (!Dynamic || Dynamic->Parent != Parent)

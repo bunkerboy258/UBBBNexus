@@ -60,6 +60,9 @@ public:
      */
     void AdvancePresentation(float Now);
 
+    /** @param Settings 当前世界使用的表现配置 @return 无 排队准备少量常用残肢 */
+    void Prepare(const UBBBMonsterPresentationDefinition &Settings);
+
     /** @return 当前模拟部件数量 */
     int32 GetSimulatingCount() const;
 
@@ -77,7 +80,14 @@ public:
 
 private:
     /** @return 可复用残肢槽位或负一 */
-    int32 AcquireSlot();
+    int32 AcquireSlot(const UStaticMesh &Mesh);
+    /** @return 新准备的空闲槽位 每次最多创建一个 */
+    int32 CreateSlot();
+    /** 当前世界实际使用的准备资源 */
+    UPROPERTY(Transient)
+    TObjectPtr<const UBBBMonsterPresentationDefinition> PreparationSettings;
+    /** 只在安全的表现推进阶段扩容 */
+    int32 DesiredSlots = 0;
 
     /** 活动池槽保留共享配置引用 不复制完整资源表 */
     UPROPERTY(Transient)

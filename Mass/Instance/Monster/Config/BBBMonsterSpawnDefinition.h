@@ -30,7 +30,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "预算", meta = (DisplayName = "世界存活上限", ClampMin = "1", ClampMax = "4096"))
     int32 WorldMaxAlive = 80;
 
-    /** 候选检查共享的软时间预算 单次同步可达性查询无法中断 */
+    /** 地面和空间检查共享的软时间预算 完整可达性在异步阶段确认 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "预算", meta = (DisplayName = "每帧选点时间预算", Units = "ms", ClampMin = "0.1", ClampMax = "16"))
     float TimeBudgetMs = 1.0f;
 

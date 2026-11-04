@@ -20,6 +20,9 @@ public:
      */
     void SampleMotion();
 
+    /** @return 无 清空上一轮通知的轨迹拟合数据 */
+    void ResetMotion();
+
     /** @return 弹匣实测世界线速度 单位厘米每秒 */
     FVector GetReleaseLinearVelocity() const
     {

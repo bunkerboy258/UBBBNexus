@@ -4,6 +4,9 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Config/BBBSniperDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Sniper/Logic/System/ActionSystem/Processors/BBBSniperActionProcessor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Config/BBBProjectileDefinition.h"
 
 bool FBBBSniperInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) const
 {
@@ -18,5 +21,12 @@ bool FBBBSniperInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) con
         *Equipment.GetName(), *SniperDefinition->GetPathName(), SniperDefinition->FireInterval);
 
     FBBBSniperActionProcessor::Initialize(Equipment.RuntimeData, *SniperDefinition);
+    if (SniperDefinition->ProjectileDefinition && Equipment.GetWorld())
+    {
+        if (auto *Display = Equipment.GetWorld()->GetSubsystem<UBBBProjectilePresentationSubsystem>())
+        {
+            Display->Prepare(*SniperDefinition->ProjectileDefinition);
+        }
+    }
     return true;
 }

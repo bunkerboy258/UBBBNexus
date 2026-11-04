@@ -10,17 +10,63 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Animation/AnimSequence.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 
-bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
+void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
 {
-    Close();
+    if (bActive == bInActive)
+    {
+        return;
+    }
+    bActive = bInActive;
+    bDirty |= bActive;
+    if (IsValid(Display))
+    {
+        TArray<UPointLightComponent *> Lights;
+        Display->GetComponents(Lights);
+        for (auto *Light : Lights)
+        {
+            Light->SetVisibility(bActive);
+        }
+    }
+}
+
+bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
+{
+    if (Source.Get() != Pawn)
+    {
+        Close();
+    }
     if (!IsValid(Pawn))
     {
+        Close();
         return false;
     }
     Source = Pawn;
     UWorld *World = Pawn->GetWorld();
     if (!World || World->IsNetMode(NM_DedicatedServer))
+    {
+        return false;
+    }
+    if (IsValid(Display) && IsValid(Capture) && IsValid(Pose))
+    {
+        return true;
+    }
+    const FSoftObjectPath StandingPath(TEXT("/Game/_Project/Characters/BBBC_UA/Animation/UsedAnimation/unarmed/MM_Unarmed_Idle_Ready.MM_Unarmed_Idle_Ready"));
+    const FSoftObjectPath MaterialPath(TEXT("/Game/_Project/UI/Bag/M_CharacterPreview.M_CharacterPreview"));
+    if (!ResourceLoad)
+    {
+        ResourceLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(TArray<FSoftObjectPath>{StandingPath, MaterialPath});
+    }
+    if (ResourceLoad && !ResourceLoad->HasLoadCompleted())
+    {
+        return false;
+    }
+    auto *Standing = Cast<UAnimSequence>(StandingPath.ResolveObject());
+    auto *Parent = Cast<UMaterialInterface>(MaterialPath.ResolveObject());
+    const auto *Character = Cast<ABBBCharacter>(Pawn);
+    if (!Character || !Standing || !Parent)
     {
         return false;
     }
@@ -53,15 +99,8 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
         Light->SetIntensity(Index == 0 ? 3800.0f : 1800.0f);
         Light->SetLightColor(Index == 0 ? FLinearColor(1.0f, 0.91f, 0.78f) : FLinearColor(0.68f, 0.78f, 1.0f));
         Light->SetRelativeLocation(Index == 0 ? FVector(190.0f, -155.0f, 240.0f) : FVector(100.0f, 170.0f, 130.0f));
+        Light->SetVisibility(bActive);
         Light->RegisterComponent();
-    }
-    const ABBBCharacter *Character = Cast<ABBBCharacter>(Pawn);
-    UAnimSequence *Standing = LoadObject<UAnimSequence>(
-        nullptr, TEXT("/Game/_Project/Characters/BBBC_UA/Animation/UsedAnimation/unarmed/MM_Unarmed_Idle_Ready.MM_Unarmed_Idle_Ready"));
-    if (!ensureMsgf(Character && Standing, TEXT("固定人物预览缺少角色或站姿动画")))
-    {
-        Close();
-        return false;
     }
     Pose = NewObject<USkeletalMeshComponent>(Display);
     Display->AddInstanceComponent(Pose);
@@ -83,14 +122,7 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     Texture->ClearColor = FLinearColor::Transparent;
     Texture->RenderTargetFormat = RTF_RGBA16f;
     Texture->InitAutoFormat(640, 1080);
-    Texture->UpdateResourceImmediate(true);
-    UMaterialInterface *Parent =
-        LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/_Project/UI/Bag/M_CharacterPreview.M_CharacterPreview"));
-    if (!ensureMsgf(Parent, TEXT("人物预览材质缺失")))
-    {
-        Close();
-        return false;
-    }
+
     Material = UMaterialInstanceDynamic::Create(Parent, this);
     Material->SetTextureParameterValue(TEXT("Preview"), Texture);
     auto *Camera = Capture->GetCaptureComponent2D();
@@ -118,13 +150,13 @@ bool UBBBPlayerItemPortrait::Open(APawn *Pawn)
     Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
     Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 95.0f));
     Capture->SetActorRotation(FRotator(0.0f, 180.0f, 0.0f));
-    Update(1.0f);
+    bDirty = true;
     return true;
 }
 
 void UBBBPlayerItemPortrait::Update(float DeltaTime)
 {
-    if (!Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || !IsValid(Pose)
+    if (!bActive || !Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || !IsValid(Pose)
         || Source->GetWorld() != Capture->GetWorld())
     {
         return;
@@ -135,10 +167,15 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         return;
     }
     Elapsed = 0.0f;
+    const auto *Character = Cast<ABBBCharacter>(Source.Get());
+    const uint64 Revision = Character ? Character->RuntimeData.Appearance.ReadCharacterAppearanceDisplayState().AppliedRevision : 0;
+    bool bChanged = bDirty || Revision != ObservedAppearanceRevision;
+    ObservedAppearanceRevision = Revision;
     TArray<USkeletalMeshComponent *> Actual;
     Source->GetComponents(Actual);
     while (Components.Num() > Actual.Num())
     {
+        bChanged = true;
         Components.Last()->DestroyComponent();
         Components.Pop();
     }
@@ -154,29 +191,34 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
             Part->SetComponentTickEnabled(false);
             Part->RegisterComponent();
             Components.Add(Part);
+            bChanged = true;
         }
         auto *Part = Components[Index].Get();
         auto *Original = Actual[Index];
         const bool bMeshChanged = Part->GetSkeletalMeshAsset() != Original->GetSkeletalMeshAsset();
         if (bMeshChanged)
         {
+            bChanged = true;
             Part->EmptyOverrideMaterials();
             Part->SetSkeletalMesh(Original->GetSkeletalMeshAsset());
         }
         if (!Original->GetSkeletalMeshAsset())
         {
+            bChanged |= Part->IsVisible();
             Part->SetVisibility(false);
             continue;
         }
         const bool bVisible = Original->IsVisible() && !Original->bHiddenInGame && !Original->GetOwner()->IsHidden();
         if (Part->IsVisible() != bVisible)
         {
+            bChanged = true;
             Part->SetVisibility(bVisible);
         }
         for (int32 MaterialIndex = 0; MaterialIndex < Original->GetNumMaterials(); ++MaterialIndex)
         {
             if (Part->GetMaterial(MaterialIndex) != Original->GetMaterial(MaterialIndex))
             {
+                bChanged = true;
                 Part->SetMaterial(MaterialIndex, Original->GetMaterial(MaterialIndex));
             }
         }
@@ -185,11 +227,13 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         USkeletalMeshComponent *Leader = bRigid ? nullptr : Pose.Get();
         if (Part->LeaderPoseComponent.Get() != Leader)
         {
+            bChanged = true;
             Part->SetLeaderPoseComponent(Leader);
         }
         const bool bPoseChanged = Part->bForceRefpose != bRigid;
         if (bPoseChanged)
         {
+            bChanged = true;
             Part->SetForceRefPose(bRigid);
         }
         if (bRigid && (bMeshChanged || bPoseChanged))
@@ -199,7 +243,6 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         FTransform Relative = Original->GetComponentTransform().GetRelativeTransform(Source->GetActorTransform());
         Relative.AddToTranslation(FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
         Relative.AddToTranslation(Origin);
-        const ABBBCharacter *Character = Cast<ABBBCharacter>(Source.Get());
         if (Character && Original == Character->GetMesh())
         {
             Relative = Pose->GetComponentTransform();
@@ -210,14 +253,24 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         }
         if (!Part->GetComponentTransform().Equals(Relative))
         {
+            bChanged = true;
             Part->SetWorldTransform(Relative);
         }
     }
-    Capture->GetCaptureComponent2D()->CaptureScene();
+    if (bChanged)
+    {
+        Capture->GetCaptureComponent2D()->CaptureSceneDeferred();
+        bDirty = false;
+    }
 }
 
 void UBBBPlayerItemPortrait::Close()
 {
+    if (ResourceLoad)
+    {
+        ResourceLoad->CancelHandle();
+    }
+    ResourceLoad.Reset();
     if (IsValid(Capture))
     {
         Capture->Destroy();
@@ -234,6 +287,9 @@ void UBBBPlayerItemPortrait::Close()
     Material = nullptr;
     Source.Reset();
     Elapsed = 0.0f;
+    bActive = false;
+    bDirty = true;
+    ObservedAppearanceRevision = 0;
 }
 UMaterialInstanceDynamic *UBBBPlayerItemPortrait::GetMaterial() const
 {

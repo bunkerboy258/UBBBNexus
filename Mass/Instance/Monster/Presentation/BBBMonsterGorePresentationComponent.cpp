@@ -8,6 +8,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "Materials/MaterialInterface.h"
+#include "PSOPrecache.h"
 
 namespace
 {
@@ -72,6 +74,103 @@ bool UBBBMonsterGorePresentationComponent::Prepare(const UBBBMonsterGoreDefiniti
     return true;
 }
 
+bool UBBBMonsterGorePresentationComponent::PrepareNext(const UBBBMonsterGoreDefinition &Definition,
+    const FBBBMonsterGoreFragment &Facts, const bool bOnlyRequired)
+{
+    bool bOpenTorso = false;
+    bool bHasRequired = false;
+    for (int32 Index = 0; Index < 5; ++Index)
+    {
+        bHasRequired |= Facts.DismembermentPresets[Index] != 0 && !Tissue[Index];
+    }
+    for (int32 Index = 0; Index < 8; ++Index)
+    {
+        bOpenTorso |= Definition.Destruction && Facts.DestructionStrengths[Index] / 255.0f >= Definition.Destruction->OpeningThreshold;
+    }
+    bHasRequired |= bOpenTorso && !Tissue[5];
+    if (bOnlyRequired && (AppliedDefinition != &Definition || !bHasRequired))
+    {
+        return false;
+    }
+    if (!Prepare(Definition))
+    {
+        return false;
+    }
+    if (!bDamagePSORequested)
+    {
+#if UE_WITH_PSO_PRECACHING
+        FPSOPrecacheParams Params;
+        Body->SetupPrecachePSOParams(Params);
+        FMaterialInterfacePSOPrecacheParamsList Entries;
+        Body->CollectPSOPrecacheData(Params, Entries);
+        for (int32 Index = 0; Index < Definition.Materials.Num(); ++Index)
+        {
+            auto *Material = Definition.Materials[Index].Get();
+            if (!Material)
+            {
+                continue;
+            }
+            for (const auto &Entry : Entries)
+            {
+                if ((OriginalMaterials.IsValidIndex(Index) && Entry.MaterialInterface == OriginalMaterials[Index])
+                    || Entry.MaterialInterface == Material)
+                {
+                    TArray<FMaterialPSOPrecacheRequestID> Requests;
+                    Material->PrecachePSOs(Entry.VertexFactoryDataList, Entry.PSOPrecacheParams,
+                        EPSOPrecachePriority::Medium, Requests);
+                }
+            }
+        }
+#endif
+        bDamagePSORequested = true;
+        return true;
+    }
+    const EBBBMonsterHitRegion Regions[] = {EBBBMonsterHitRegion::Head, EBBBMonsterHitRegion::LeftArm,
+        EBBBMonsterHitRegion::RightArm, EBBBMonsterHitRegion::LeftLeg, EBBBMonsterHitRegion::RightLeg};
+    for (int32 Index = 0; Index < 6; ++Index)
+    {
+        if (Tissue[Index])
+        {
+            continue;
+        }
+        const bool bRequired = Index < 5 ? Facts.DismembermentPresets[Index] != 0 : bOpenTorso;
+        if (bOnlyRequired && !bRequired)
+        {
+            continue;
+        }
+        USkeletalMesh *Resource = Definition.Destruction->Interior;
+        if (Index < 5)
+        {
+            const auto *Part = bRequired ? Definition.Dismemberment->Find(Facts.DismembermentPresets[Index])
+                : Definition.Dismemberment->Parts.FindByPredicate([&](const auto &Value)
+                    { return Value.Region == Regions[Index] && Value.Tissue; });
+            Resource = Part ? Part->Tissue.Get() : nullptr;
+        }
+        if (!Resource)
+        {
+            continue;
+        }
+        auto *Component = NewObject<USkeletalMeshComponent>(GetOwner());
+        Component->PrimaryComponentTick.bCanEverTick = false;
+        Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Component->SetCanEverAffectNavigation(false);
+        Component->SetReceivesDecals(false);
+        Component->SetAllowAnimCurveEvaluation(false);
+        Component->SetDisablePostProcessBlueprint(true);
+        Component->bUseAttachParentBound = true;
+        Component->SetupAttachment(Body);
+        Component->SetSkeletalMesh(Resource);
+        Component->SetLeaderPoseComponent(Body);
+        Component->SetVisibility(false);
+        Component->RegisterComponent();
+        Component->SetComponentTickEnabled(false);
+        Component->PrecachePSOs();
+        Tissue[Index] = Component;
+        return true;
+    }
+    return false;
+}
+
 void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition& Definition,
     const FBBBMonsterGoreFragment& Facts, const FBBBMonsterHitReactionFragment& Hit,
     const FVector& Velocity, const uint32 Seed, const bool bRestore)
@@ -79,6 +178,12 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
     if (!Prepare(Definition))
     {
         return;
+    }
+    if (GetWorld()->WorldType == EWorldType::EditorPreview)
+    {
+        while (PrepareNext(Definition, Facts, false))
+        {
+        }
     }
     bool bDamaged = false;
     bool bOpenTorso = false;
@@ -130,20 +235,6 @@ void UBBBMonsterGorePresentationComponent::Apply(const UBBBMonsterGoreDefinition
             Resource = Definition.Destruction->Interior;
         }
         const bool bVisible = Resource && Body->GetPredictedLODLevel() <= 2;
-        if (bVisible && !Tissue[Index])
-        {
-            Tissue[Index] = NewObject<USkeletalMeshComponent>(GetOwner());
-            Tissue[Index]->PrimaryComponentTick.bCanEverTick = false;
-            Tissue[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-            Tissue[Index]->SetCanEverAffectNavigation(false);
-            Tissue[Index]->SetReceivesDecals(false);
-            Tissue[Index]->SetAllowAnimCurveEvaluation(false);
-            Tissue[Index]->SetDisablePostProcessBlueprint(true);
-            Tissue[Index]->bUseAttachParentBound = true;
-            Tissue[Index]->SetupAttachment(Body);
-            Tissue[Index]->RegisterComponent();
-            Tissue[Index]->SetComponentTickEnabled(false);
-        }
         if (Tissue[Index])
         {
             if (bVisible && Tissue[Index]->GetSkeletalMeshAsset() != Resource)
@@ -242,6 +333,7 @@ void UBBBMonsterGorePresentationComponent::ResetPresentation()
     AppliedDefinition = nullptr;
     FMemory::Memzero(AppliedPresets);
     bUsingDamageMaterials = false;
+    bDamagePSORequested = false;
 }
 
 void UBBBMonsterGorePresentationComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

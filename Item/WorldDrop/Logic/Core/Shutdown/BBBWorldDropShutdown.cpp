@@ -3,8 +3,15 @@
 #include "Components/SphereComponent.h"
 #include "Components/MaterialBillboardComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StreamableManager.h"
 void FBBBWorldDropShutdown::Shutdown(ABBBWorldDropItem &Drop)
 {
+    auto &Presentation = Drop.RuntimeData.Drop.PresentationState;
+    if (Presentation.ResourceLoad)
+    {
+        Presentation.ResourceLoad->CancelHandle();
+    }
+    Presentation.ResourceLoad.Reset();
     Drop.SetActorTickEnabled(false);
     Drop.Body->SetSimulatePhysics(false);
     Drop.Airborne->SetVisibility(false);

@@ -4,6 +4,9 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Logic/System/ActionSystem/Processors/BBBRifleActionProcessor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Config/BBBProjectileDefinition.h"
 
 bool FBBBRifleInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) const
 {
@@ -18,5 +21,12 @@ bool FBBBRifleInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) cons
         *Equipment.GetName(), *RifleDefinition->GetPathName(), RifleDefinition->FireInterval);
 
     FBBBRifleActionProcessor::Initialize(Equipment.RuntimeData, *RifleDefinition);
+    if (RifleDefinition->ProjectileDefinition && Equipment.GetWorld())
+    {
+        if (auto *Display = Equipment.GetWorld()->GetSubsystem<UBBBProjectilePresentationSubsystem>())
+        {
+            Display->Prepare(*RifleDefinition->ProjectileDefinition);
+        }
+    }
     return true;
 }

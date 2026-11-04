@@ -20,8 +20,8 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "寻路预算", meta = (DisplayName = "每帧请求上限", ClampMin = "1", ClampMax = "256"))
     int32 MaxRequestsPerFrame = 16;
 
-    /** 达到预算后停止提交 后台没有额外请求队列 单次同步查询无法中断 */
-    UPROPERTY(Config, EditAnywhere, Category = "寻路预算", meta = (DisplayName = "每帧提交时间预算", ToolTip = "软预算 单次同步查询可能超出此值 不包含常规实体状态遍历", Units = "ms", ClampMin = "0.1", ClampMax = "16"))
+    /** 达到预算后停止提交 未完成请求总数同时受每帧请求上限约束 */
+    UPROPERTY(Config, EditAnywhere, Category = "寻路预算", meta = (DisplayName = "每帧提交时间预算", ToolTip = "起终点投影与异步提交的软预算 不包含后台路径计算与常规实体状态遍历", Units = "ms", ClampMin = "0.1", ClampMax = "16"))
     float TimeBudgetMs = 1.0f;
 
     /** 每帧可更新导航墙边缓存的实体数 */

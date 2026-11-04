@@ -19,7 +19,7 @@ namespace
             return false;
         }
         const auto &Reference = bAlternate ? Resource->AlternateLegMesh : Resource->Mesh;
-        USkeletalMesh *Mesh = Reference.LoadSynchronous();
+        USkeletalMesh *Mesh = Reference.Get();
         if (Output.Mesh != Mesh)
         {
             Output.Materials.Reset();
@@ -44,12 +44,12 @@ namespace
         }
         if (!bPatchEnabled && !Resource->PatchMaterialSlot.IsNone())
         {
-            bReady &= Resource->HiddenPatchMaterial.LoadSynchronous() != nullptr;
+            bReady &= Resource->HiddenPatchMaterial.Get() != nullptr;
         }
         TMap<FName, FBBBCharacterAppearanceDisplayAttachment> Previous = MoveTemp(Output.Attachments);
         for (const auto &Attachment : Resource->Attachments)
         {
-            USkeletalMesh *AttachedMesh = Attachment.Value.LoadSynchronous();
+            USkeletalMesh *AttachedMesh = Attachment.Value.Get();
             bReady &= Attachment.Value.IsNull() || AttachedMesh;
             if (!AttachedMesh)
             {
@@ -86,7 +86,7 @@ void FBBBCharacterAppearanceResourceProcessor::Update(FBBBCharacterAppearanceUpd
     const auto &Snapshot = Context.Data.Appearance.ReadCharacterAppearanceSelectionState().Snapshot;
     auto &Display = Context.Data.Appearance.DisplayState;
     const float Now = Context.Data.External.ReadWorldState().WorldTimeSeconds;
-    if (Snapshot.Revision == 0 || (Display.bApplied && Display.AppliedRevision == Snapshot.Revision)
+    if (Context.bWaitingForResources || Snapshot.Revision == 0 || (Display.bApplied && Display.AppliedRevision == Snapshot.Revision)
         || (Display.PreparedRevision == Snapshot.Revision && Now < Display.RetryAfterTime))
     {
         return;

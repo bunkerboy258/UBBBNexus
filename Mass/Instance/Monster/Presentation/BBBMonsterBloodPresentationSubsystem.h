@@ -24,6 +24,9 @@ public:
         return WorldType == EWorldType::EditorPreview || Super::DoesSupportWorldType(WorldType);
     }
 
+    /** @param Settings 当前世界实际使用的血效配置 @return 无 提前准备少量血迹 */
+    void Prepare(const UBBBMonsterBloodPresentationDefinition &Settings);
+
     /**
      * @param Settings	共享静态表现配置
      * @param Impacts	本轮接触事实
@@ -65,6 +68,14 @@ private:
      * @return 无返回值
      */
     void PlaceResidue(const FBBBMonsterBloodDroplet& Droplet, const FHitResult& Contact, int32& TraceBudget);
+
+    /** 当前准备的共享血效配置 */
+    UPROPERTY(Transient)
+    TObjectPtr<const UBBBMonsterBloodPresentationDefinition> PreparationSettings;
+    /** 安全推进阶段每帧至多创建一个血迹组件 */
+    int32 DesiredDecals = 0;
+    /** 已请求首段声音与通道的当前世界资源 */
+    TSet<TWeakObjectPtr<const UBBBMonsterBloodPresentationDefinition>> PreparedSettings;
 
     /** 受上限约束的血迹组件 */
     UPROPERTY(Transient)

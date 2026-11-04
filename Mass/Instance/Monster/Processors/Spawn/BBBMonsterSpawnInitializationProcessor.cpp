@@ -1,6 +1,12 @@
 #include "BBBMonsterSpawnInitializationProcessor.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
+#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterBloodPresentationSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnData.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterSpawnOwnershipFragment.h"
@@ -17,6 +23,7 @@ void UBBBMonsterSpawnInitializationProcessor::ConfigureQueries(const TSharedRef<
 {
     SpawnQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
     SpawnQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadWrite);
+    SpawnQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     SpawnQuery.AddRequirement<FBBBMonsterSpawnOwnershipFragment>(EMassFragmentAccess::ReadWrite);
     SpawnQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadWrite);
 }
@@ -27,6 +34,22 @@ void UBBBMonsterSpawnInitializationProcessor::Execute(FMassEntityManager&, FMass
     int32 Offset = 0;
     SpawnQuery.ForEachEntityChunk(Context, [&Data, &Offset](FMassExecutionContext& Chunk)
     {
+        const auto Rules = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        if (Chunk.GetWorld()->GetNetMode() != NM_DedicatedServer)
+        {
+            for (const auto &Rule : Rules)
+            {
+                if (Rule.Definition.IsValid() && Rule.Definition->Presentation)
+                {
+                    auto *Settings = Rule.Definition->Presentation.Get();
+                    Chunk.GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->Prepare(*Settings);
+                    if (Settings->Blood)
+                    {
+                        Chunk.GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>()->Prepare(*Settings->Blood);
+                    }
+                }
+            }
+        }
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Owners = Chunk.GetMutableFragmentView<FBBBMonsterSpawnOwnershipFragment>();
         auto Variation = Chunk.GetMutableFragmentView<FBBBMonsterVariationFragment>();

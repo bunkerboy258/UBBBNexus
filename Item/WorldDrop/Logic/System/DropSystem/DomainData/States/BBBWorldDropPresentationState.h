@@ -3,11 +3,18 @@
 #include "BBBWorldDropPresentationState.generated.h"
 class UMaterialInstanceDynamic;
 class UBBBItemDefinition;
+struct FStreamableHandle;
 /** 本地掉落物显示资源的独立生命周期 */
 USTRUCT()
 struct FBBBWorldDropPresentationState final
 {
     GENERATED_BODY()
+    /** 所属显示配置的异步资源与引用 保持到对象关闭 */
+    TSharedPtr<FStreamableHandle> ResourceLoad;
+    /** 最近请求的显示资源路径 */
+    TArray<FSoftObjectPath> ResourcePaths;
+    /** 区分未请求与空资源配置 */
+    bool bResourcesRequested = false;
     /** 当前已解析的物品显示来源 */
     UPROPERTY()
     TObjectPtr<UBBBItemDefinition> RenderedDefinition = nullptr;

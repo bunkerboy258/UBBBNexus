@@ -53,32 +53,8 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     Slot = Arguments._Slot;
     bCompact = Arguments._Compact;
     bWearSlot = !Arguments._PositionLabel.IsEmpty();
-    ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
-    const FBBBPlayerItemDisplayData Data =
-        Controller ? Controller->GetItemDisplayData(Slot) : FBBBPlayerItemDisplayData();
-    bOccupied = Data.bOccupied;
-    InstanceId = Data.InstanceId;
-    PropertyTexture.Reset(Data.PropertyIcon);
-    PropertyBrush.SetResourceObject(PropertyTexture.Get());
-    PropertyBrush.DrawAs = ESlateBrushDrawType::Image;
-    PropertyBrush.ImageSize = FVector2D(256.0f);
-    ItemName = Data.Name;
-    IconTexture.Reset(Data.Icon);
-    IconBrush.SetResourceObject(IconTexture.Get());
-    IconBrush.ImageSize =
-        IconTexture.IsValid() ? FVector2D(IconTexture->GetSizeX(), IconTexture->GetSizeY()) : FVector2D(128.0f, 64.0f);
-    IconBrush.DrawAs = ESlateBrushDrawType::Image;
+    Refresh();
 
-    if (bOccupied && !bCompact)
-    {
-        SetToolTip(SNew(SToolTip)
-                       .BorderImage(BBBItemUI::Slot())
-                       .TextMargin(FMargin(12.0f, 8.0f))
-                           [SNew(STextBlock)
-                                .Text(ItemName)
-                                .Font(BBBItemUI::Font(16))
-                                .ColorAndOpacity(FLinearColor::White)]);
-    }
     ChildSlot[SNew(SBox)
                   .WidthOverride(Arguments._Width)
                   .HeightOverride(Arguments._Height)
@@ -88,8 +64,10 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            EStretch::ScaleToFit)[SNew(SImage)
                                                      .Image(&IconBrush)
                                                      .ColorAndOpacity(FLinearColor(0.82f, 0.82f, 0.79f))
-                                                     .Visibility(IconTexture.IsValid() ? EVisibility::HitTestInvisible
-                                                                                       : EVisibility::Hidden)]] +
+                                                     .Visibility_Lambda([this]()
+                                                     {
+                                                         return IconTexture.IsValid() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+                                                     })]] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Center)
                            .VAlign(VAlign_Bottom)
@@ -101,31 +79,67 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
                            .VAlign(bCompact ? VAlign_Bottom : VAlign_Top)
                            .Padding(8.0f, 5.0f)[SNew(STextBlock)
-                                                    .Text(IsQuickSlot() ? FText::AsNumber(Data.QuickIndex + 1)
-                                                                        : FText::GetEmpty())
+                                                    .Text_Lambda([this]() { return QuickLabel; })
                                                     .Font(BBBItemUI::Font(bCompact ? 16 : 14))
-                                                    .ColorAndOpacity_Lambda(
-                                                        [this]()
-                                                        {
-                                                            return IsSelected() ? FLinearColor::White : BBBItemUI::MutedText;
-                                                        })] +
+                                                    .ColorAndOpacity_Lambda([this]()
+                                                    {
+                                                        return IsSelected() ? FLinearColor::White : BBBItemUI::MutedText;
+                                                    })] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Right)
                            .VAlign(VAlign_Top)
-                           .Padding(
-                               8.0f)[SNew(STextBlock)
-                                         .Text(Data.Quantity > 0 && Data.bShowQuantity ? FText::AsNumber(Data.Quantity)
-                                                                                       : FText::GetEmpty())
-                                         .Font(BBBItemUI::Font(18))
-                                         .ColorAndOpacity(FLinearColor::White)] +
+                           .Padding(8.0f)[SNew(STextBlock)
+                                              .Text_Lambda([this]() { return QuantityLabel; })
+                                              .Font(BBBItemUI::Font(18))
+                                              .ColorAndOpacity(FLinearColor::White)] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Right)
                            .VAlign(VAlign_Bottom)
                            .Padding(10.0f)[SNew(SBox).WidthOverride(28.0f).HeightOverride(
                                28.0f)[SNew(SImage)
                                           .Image(&PropertyBrush)
-                                          .Visibility(PropertyTexture.IsValid() ? EVisibility::HitTestInvisible
-                                                                                : EVisibility::Collapsed)]]]];
+                                          .Visibility_Lambda([this]()
+                                          {
+                                              return PropertyTexture.IsValid() ? EVisibility::HitTestInvisible : EVisibility::Collapsed;
+                                          })]]]];
+}
+
+void SBBBPlayerItemSlot::Refresh()
+{
+    ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
+    const FBBBPlayerItemDisplayData Data =
+        Controller ? Controller->GetItemDisplayData(Slot) : FBBBPlayerItemDisplayData();
+    const bool bTooltipChanged = bOccupied != Data.bOccupied || !ItemName.EqualTo(Data.Name);
+    bOccupied = Data.bOccupied;
+    InstanceId = Data.InstanceId;
+    PropertyTexture.Reset(Data.PropertyIcon);
+    PropertyBrush.SetResourceObject(PropertyTexture.Get());
+    PropertyBrush.DrawAs = ESlateBrushDrawType::Image;
+    PropertyBrush.ImageSize = FVector2D(256.0f);
+    ItemName = Data.Name;
+    QuickLabel = Data.bQuick ? FText::AsNumber(Data.QuickIndex + 1) : FText::GetEmpty();
+    QuantityLabel = Data.Quantity > 0 && Data.bShowQuantity ? FText::AsNumber(Data.Quantity) : FText::GetEmpty();
+    IconTexture.Reset(Data.Icon);
+    IconBrush.SetResourceObject(IconTexture.Get());
+    IconBrush.ImageSize =
+        IconTexture.IsValid() ? FVector2D(IconTexture->GetSizeX(), IconTexture->GetSizeY()) : FVector2D(128.0f, 64.0f);
+    IconBrush.DrawAs = ESlateBrushDrawType::Image;
+
+    if (bTooltipChanged && !bCompact)
+    {
+        SetToolTip(TSharedPtr<IToolTip>());
+    }
+    if (bTooltipChanged && bOccupied && !bCompact)
+    {
+        SetToolTip(SNew(SToolTip)
+                       .BorderImage(BBBItemUI::Slot())
+                       .TextMargin(FMargin(12.0f, 8.0f))
+                           [SNew(STextBlock)
+                                .Text(ItemName)
+                                .Font(BBBItemUI::Font(16))
+                                .ColorAndOpacity(FLinearColor::White)]);
+    }
+    Invalidate(EInvalidateWidgetReason::Paint | EInvalidateWidgetReason::Layout);
 }
 
 int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry, const FSlateRect &CullingRect,

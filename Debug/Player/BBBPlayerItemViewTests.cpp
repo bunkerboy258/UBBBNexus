@@ -18,6 +18,7 @@
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "UObject/UObjectGlobals.h"
 #include "Engine/SceneCapture2D.h"
 #include "EngineUtils.h"
 #include "Misc/ScopeExit.h"
@@ -174,7 +175,10 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Controller->SubmitItemSelect(INDEX_NONE);
     Character->Tick(1.0f / 60.0f);
     UBBBPlayerItemPortrait *Portrait = NewObject<UBBBPlayerItemPortrait>(Controller);
-    TestTrue(TEXT("建立穿脱回归捕获"), Portrait->Open(Character));
+    Portrait->Prepare(Character);
+    FlushAsyncLoading();
+    TestTrue(TEXT("建立穿脱回归捕获"), Portrait->Prepare(Character));
+    Portrait->SetActive(true);
     Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet01"));
     Character->Tick(1.0f / 60.0f);
     const FGuid Helmet = Controller->GetItemInstanceId(20);

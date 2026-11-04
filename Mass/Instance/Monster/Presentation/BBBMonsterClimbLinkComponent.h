@@ -11,7 +11,7 @@ class ABBB_EVAC_API UBBBMonsterClimbLinkComponent final : public UNavLinkCustomC
 
 public:
     /**
-     * @param Querier	当前同步导航参数载体
+     * @param Querier	当前请求独占的导航参数载体
      * @return 入口处于允许高度且当前可用
      */
     virtual bool IsLinkPathfindingAllowed(const UObject* Querier) const override;

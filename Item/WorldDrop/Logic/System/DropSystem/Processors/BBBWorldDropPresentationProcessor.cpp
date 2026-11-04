@@ -9,12 +9,54 @@
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
+#include "BBBWork/UBBBNexus/Item/WorldDrop/Logic/Core/Update/BBBWorldDropUpdatePipeline.h"
 void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Context) const
 {
     auto &Drop = Context.Drop;
     const auto &Snapshot = Context.Data.Drop.ReadWorldDropState().Snapshot;
     auto &Presentation = Context.Data.Drop.PresentationState;
     const auto &Config = Drop.Config;
+    if (Drop.GetNetMode() == NM_DedicatedServer)
+    {
+        return;
+    }
+    TArray<FSoftObjectPath> Paths;
+    for (const auto &Path : {Config.AirborneMesh.ToSoftObjectPath(), Config.IconMaterial.ToSoftObjectPath(),
+        Config.BeamMaterial.ToSoftObjectPath(), Config.GroundGlowMaterial.ToSoftObjectPath()})
+    {
+        if (!Path.IsNull())
+        {
+            Paths.AddUnique(Path);
+        }
+    }
+    if (!Presentation.bResourcesRequested || Presentation.ResourcePaths != Paths)
+    {
+        if (Presentation.ResourceLoad)
+        {
+            Presentation.ResourceLoad->CancelHandle();
+        }
+        Presentation.ResourcePaths = Paths;
+        Presentation.bResourcesRequested = true;
+        Presentation.RenderedDefinition = nullptr;
+        Presentation.ResourceLoad = Paths.IsEmpty() ? nullptr : UAssetManager::GetStreamableManager().RequestAsyncLoad(Paths,
+            FStreamableDelegate::CreateWeakLambda(&Drop, [&Drop]()
+            {
+                if (Drop.GetWorld() && !Drop.GetWorld()->IsGameWorld())
+                {
+                    FBBBWorldDropUpdatePipeline::Update(Drop);
+                }
+            }));
+    }
+    if (Presentation.ResourceLoad && !Presentation.ResourceLoad->HasLoadCompleted())
+    {
+        Drop.Airborne->SetVisibility(false);
+        Drop.Icon->SetVisibility(false);
+        Drop.Beam->SetVisibility(false);
+        Drop.GroundGlow->SetVisibility(false);
+        return;
+    }
     const float Aspect = Snapshot.Definition && Snapshot.Definition->Icon
         ? float(Snapshot.Definition->Icon->GetSizeX()) / FMath::Max(1, Snapshot.Definition->Icon->GetSizeY()) : 1.0f;
     const float IconWidth = FMath::Min(FMath::Max(1.0f, Config.IconMaxWidth), FMath::Max(1.0f, Config.IconHeight) * Aspect);
@@ -24,7 +66,7 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
         Presentation.RenderedDefinition = Snapshot.Definition;
         if (Drop.GetNetMode() != NM_DedicatedServer && Snapshot.Definition)
         {
-            auto *Mesh = Config.AirborneMesh.LoadSynchronous();
+            auto *Mesh = Config.AirborneMesh.Get();
             Drop.Airborne->SetStaticMesh(Mesh);
             if (ensureMsgf(Mesh, TEXT("世界掉落物缺少空中实体外观 %s"), *Drop.GetPathName()))
             {
@@ -39,7 +81,7 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
         Drop.Icon->Elements.Reset();
         if (Snapshot.Definition && Snapshot.Definition->Icon)
         {
-            UMaterialInterface *Base = Config.IconMaterial.LoadSynchronous();
+            UMaterialInterface *Base = Config.IconMaterial.Get();
             if (ensureMsgf(Base, TEXT("世界掉落物缺少正式图标材质 %s"), *Drop.GetPathName()))
             {
                 Presentation.IconMaterial = UMaterialInstanceDynamic::Create(Base, &Drop);
@@ -48,12 +90,12 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
                     IconWidth * 0.5f, IconHeight * 0.5f, nullptr);
             }
         }
-        if (auto *Material = Config.BeamMaterial.LoadSynchronous())
+        if (auto *Material = Config.BeamMaterial.Get())
         {
             Presentation.BeamMaterial = UMaterialInstanceDynamic::Create(Material, &Drop);
             Drop.Beam->SetMaterial(0, Presentation.BeamMaterial);
         }
-        if (auto *Material = Config.GroundGlowMaterial.LoadSynchronous())
+        if (auto *Material = Config.GroundGlowMaterial.Get())
         {
             Presentation.GroundGlowMaterial = UMaterialInstanceDynamic::Create(Material, &Drop);
             Drop.GroundGlow->SetMaterial(0, Presentation.GroundGlowMaterial);

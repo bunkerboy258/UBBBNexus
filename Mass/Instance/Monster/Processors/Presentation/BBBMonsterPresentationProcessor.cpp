@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationStateFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationSmoothingFragment.h"
 #include "Engine/World.h"
+#include "Misc/App.h"
 #include "MassActorSubsystem.h"
 #include "MassExecutionContext.h"
 #include "MassMovementFragments.h"
@@ -104,7 +105,26 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
         }
     });
-    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity, &ActiveCorpses](FMassExecutionContext& ChunkContext)
+    int32 PreparationBudget = World->GetNetMode() != NM_DedicatedServer && FApp::CanEverRender() ? 2 : 0;
+    MonsterQuery.ForEachEntityChunk(Context, [&PreparationBudget](FMassExecutionContext &Chunk)
+    {
+        const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
+        const auto Rules = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Facts = Chunk.GetFragmentView<FBBBMonsterGoreFragment>();
+        for (int32 Index = 0; Index < Chunk.GetNumEntities() && PreparationBudget > 0; ++Index)
+        {
+            auto *Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
+            const auto *Rule = Rules[Index].Definition.Get();
+            if (Actor && Rule && Rule->Presentation && Rule->Presentation->Gore
+                && Actor->GetMonsterMesh()->WasRecentlyRendered(0.2f)
+                && Actor->GetMonsterMesh()->GetPredictedLODLevel() <= 2
+                && Actor->GetMonsterGore()->PrepareNext(*Rule->Presentation->Gore, Facts[Index], true))
+            {
+                --PreparationBudget;
+            }
+        }
+    });
+    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity, &ActiveCorpses, &PreparationBudget](FMassExecutionContext& ChunkContext)
     {
         // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
@@ -221,6 +241,12 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
             if (Definition && Definition->Presentation->Gore)
             {
+                auto *Mesh = MonsterActor->GetMonsterMesh();
+                if (PreparationBudget > 0 && Mesh->WasRecentlyRendered(0.2f) && Mesh->GetPredictedLODLevel() <= 2
+                    && MonsterActor->GetMonsterGore()->PrepareNext(*Definition->Presentation->Gore, GoreStates[Index], false))
+                {
+                    --PreparationBudget;
+                }
                 MonsterActor->GetMonsterGore()->Apply(
                     *Definition->Presentation->Gore, GoreStates[Index],
                     HitReactions[Index],

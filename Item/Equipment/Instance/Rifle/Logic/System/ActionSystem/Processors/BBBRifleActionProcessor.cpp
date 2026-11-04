@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "MassEntityConfigAsset.h"
+#include "StructUtils/StructView.h"
 #include "NiagaraDataChannelAsset.h"
 #include "NiagaraSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
@@ -219,10 +220,14 @@ void FBBBRifleActionProcessor::SpawnProjectile(FBBBRifleActionUpdateContext& Con
     Packet.TracerColor = Definition->TracerColor;
     Packet.bCanCauseDamage = Context.bCausal;
 
-    for (int32 Index = 0; Index < Definition->ProjectilesPerShot; ++Index)
+    TArray<FMassEntityHandle> Entities;
+    if (!Mass->CreateEntities(*Definition->EntityConfig, Definition->ProjectilesPerShot, FConstStructView(), nullptr, Entities))
+    {
+        return;
+    }
+    for (const FMassEntityHandle Entity : Entities)
     {
         Packet.LocalDirection = FMath::VRandCone(FVector::ForwardVector, FMath::DegreesToRadians(Definition->SpreadHalfAngleDegrees));
-        const FMassEntityHandle Entity = Mass->CreateEntity(*Definition->EntityConfig);
         ensureMsgf(Entity.IsSet() && Mass->SubmitInput(Entity, Packet),
             TEXT("步枪 Mass 子弹出生失败 %s"), *Context.Equipment.GetName());
     }

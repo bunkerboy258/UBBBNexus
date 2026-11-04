@@ -163,7 +163,14 @@ bool UBBBMassSubsystem::CreateEntities(const UMassEntityConfigAsset& Config, con
     {
         return false;
     }
-    auto Creation = Spawner->SpawnEntities(Template.GetTemplateID(), Count, SpawnData, Initializer, Result);
+    if (!Initializer && SpawnData.IsValid())
+    {
+        ensureMsgf(false, TEXT("带出生数据的批量创建必须提供初始化处理器"));
+        return false;
+    }
+    auto Creation = Initializer
+        ? Spawner->SpawnEntities(Template.GetTemplateID(), Count, SpawnData, Initializer, Result)
+        : Spawner->SpawnEntities(Template, Count, Result);
     return Creation.IsValid() && Result.Num() == Count;
 }
 

@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterAppearanceInputState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterAppearanceDisplayState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterReadabilityState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterAppearanceLoadState.h"
 #include "BBBCharacterAppearanceDomainState.generated.h"
 
 /** 角色外观全部状态的唯一直接持有者 */
@@ -38,7 +39,16 @@ public:
     {
         return ReadabilityState;
     }
+    /** @return 当前外观版本的资源请求 */
+    const FBBBCharacterAppearanceLoadState &ReadCharacterAppearanceLoadState() const
+    {
+        return LoadState;
+    }
 private:
+    friend class FBBBCharacterAppearanceLoadProcessor;
+    /** 异步加载只在本机维护 不参与外观事实 */
+    UPROPERTY()
+    FBBBCharacterAppearanceLoadState LoadState;
     friend class FBBBCharacterReadabilityProcessor;
     /** 本地机械补光与模板属性 */
     UPROPERTY()

@@ -4,6 +4,9 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Config/BBBMinigunDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Minigun/Logic/System/ActionSystem/Processors/BBBMinigunActionProcessor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Config/BBBProjectileDefinition.h"
 
 bool FBBBMinigunInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) const
 {
@@ -26,5 +29,12 @@ bool FBBBMinigunInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) co
         *Equipment.GetName(), *MinigunDefinition->GetPathName(), MinigunDefinition->FireInterval);
 
     FBBBMinigunActionProcessor::Initialize(Equipment.RuntimeData, *MinigunDefinition);
+    if (MinigunDefinition->ProjectileDefinition && Equipment.GetWorld())
+    {
+        if (auto *Display = Equipment.GetWorld()->GetSubsystem<UBBBProjectilePresentationSubsystem>())
+        {
+            Display->Prepare(*MinigunDefinition->ProjectileDefinition);
+        }
+    }
     return true;
 }

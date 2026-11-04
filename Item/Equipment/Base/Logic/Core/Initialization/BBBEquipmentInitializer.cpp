@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Notify/Equipment/Display/BBBEquipmentDisplaySubsystem.h"
 
 bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment) const
 {
@@ -28,5 +30,13 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment) const
         return false;
     }
 
-    return InitializeInstance(Equipment);
+    if (!InitializeInstance(Equipment))
+    {
+        return false;
+    }
+    if (auto *Display = Equipment.GetWorld()->GetSubsystem<UBBBEquipmentDisplaySubsystem>())
+    {
+        Display->Prepare(*Equipment.Definition);
+    }
+    return true;
 }

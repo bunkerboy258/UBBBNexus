@@ -17,6 +17,7 @@ class SBox;
 class SHorizontalBox;
 class SVerticalBox;
 class STextBlock;
+class SBBBPlayerItemSlot;
 
 /** 背包右侧展示页面 与左侧存储分类独立 */
 enum class EBBBItemPanelPage : uint8
@@ -123,6 +124,15 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     TSharedPtr<SHorizontalBox> QuickBar;
     TSharedPtr<SVerticalBox> BackpackSlots;
     TSharedPtr<SVerticalBox> EquipmentSlots;
+    /** 布局不变时只更新内容 保留格子和拖拽身份 */
+    TArray<TSharedPtr<SBBBPlayerItemSlot>> QuickSlotViews;
+    TArray<TSharedPtr<SBBBPlayerItemSlot>> StorageSlotViews;
+    TArray<TSharedPtr<SBBBPlayerItemSlot>> PanelSlotViews;
+    int32 BuiltQuickStart = INDEX_NONE;
+    int32 BuiltStorageStart = INDEX_NONE;
+    int32 BuiltPanelStart = INDEX_NONE;
+    EBBBItemPanelPage BuiltPanelPage = EBBBItemPanelPage::Weapons;
+    TArray<FName> BuiltWearNames;
     TSharedPtr<SBox> DetailImage;
     FSlateBrush DetailBrush;
     FSlateBrush CharacterBrush;

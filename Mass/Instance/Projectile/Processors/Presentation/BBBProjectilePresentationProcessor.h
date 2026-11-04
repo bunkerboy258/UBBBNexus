@@ -25,15 +25,8 @@ protected:
     virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
 
 private:
-    /** 每种弹体网格共用一个批量组件 */
-    UPROPERTY(Transient)
-    TMap<TObjectPtr<UStaticMesh>, TObjectPtr<UInstancedStaticMeshComponent>> MeshComponents;
-
     FMassEntityQuery EntityQuery;
 
-    /** 当前世界唯一的共享子弹光效组件 */
-    UPROPERTY(Transient)
-    TObjectPtr<UNiagaraComponent> SystemComponent;
 
     /** 可重用的表现数据槽位 */
     TArray<int32> FreeSlots;

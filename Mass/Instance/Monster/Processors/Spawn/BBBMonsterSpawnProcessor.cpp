@@ -1,4 +1,5 @@
 #include "BBBMonsterSpawnProcessor.h"
+#include "BBBMonsterSpawnPathRequest.h"
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
 #include "MassCommands.h"
@@ -212,7 +213,7 @@ void UBBBMonsterSpawnProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
 void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefinition& Definition,
     const TArray<FBBBMonsterSpawnRegionDefinition>& Regions, const TArray<FVector>& Candidates,
     const TArray<FVector>& Observers, const TArray<FVector>& Directions, const TArray<FVector>& Occupied,
-    const int32 Count, TArray<FVector>& Result, TArray<FVector>& Rejected, TArray<FString>& Reasons)
+    const int32 Count, TArray<FVector>& Result, TArray<FVector>& Rejected, TArray<FString>& Reasons, const bool bCheckPath)
 {
     Result.Reset();
     Rejected.Reset();
@@ -317,7 +318,7 @@ void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefi
                 }
             }
         }
-        if (Reason.IsEmpty() && Definition.bRequirePath)
+        if (Reason.IsEmpty() && bCheckPath && Definition.bRequirePath)
         {
             bool bReachable = false;
             for (const auto& Observer : Observers)
@@ -440,6 +441,71 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             }
         }
     });
+    auto *Navigation = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+    const auto *NavData = Navigation ? Navigation->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr;
+    int32 PathSubmissions = 0;
+    for (int32 Index = PendingPaths.Num() - 1; Index >= 0; --Index)
+    {
+        auto *Request = PendingPaths[Index].Get();
+        auto *State = EntityManager.IsEntityValid(Request->Entity)
+            ? EntityManager.GetFragmentDataPtr<FBBBMonsterSpawnFragment>(Request->Entity) : nullptr;
+        if (!State || !State->bActive || State->OwnerId != Request->OwnerId || State->RequestId != Request->RequestId
+            || State->Generation != Request->Generation || State->StageIndex != Request->StageIndex
+            || State->Definition != Request->Definition
+            || !NavData || Request->NavigationData.Get() != NavData)
+        {
+            if (Navigation && !Request->bComplete && Request->QueryId != INVALID_NAVQUERYID)
+            {
+                Navigation->AbortAsyncFindPathRequest(Request->QueryId);
+            }
+            PendingPaths.RemoveAtSwap(Index);
+            continue;
+        }
+        if (State->bPaused || !Request->bComplete)
+        {
+            Occupied.Add(Request->Location);
+            continue;
+        }
+        const bool bReachable = Request->Result == ENavigationQueryResult::Success && Request->Path.IsValid()
+            && Request->Path->IsValid() && Request->Path->IsUpToDate() && !Request->Path->IsPartial()
+            && !Request->Path->GetPathPoints().IsEmpty()
+            && FVector::DistSquared(Request->Path->GetPathPoints().Last().Location, Request->Goal) <= FMath::Square(15.0f);
+        const bool bObserverCurrent = Request->Observers.IsValidIndex(Request->ObserverIndex)
+            && Observers.ContainsByPredicate([Request](const FVector &Observer)
+            {
+                return FVector::DistSquared(Observer, Request->Observers[Request->ObserverIndex]) <= FMath::Square(300.0f);
+            });
+        if (bReachable && bObserverCurrent)
+        {
+            if (WorldAlive + PendingPoints < WorldLimit && State->Accepted < State->Requested)
+            {
+                State->Points.Add(Request->Point);
+                ++State->Accepted;
+                ++PendingPoints;
+                Occupied.Add(Request->Location);
+            }
+            PendingPaths.RemoveAtSwap(Index);
+            continue;
+        }
+        if (!bReachable && Request->Observers.IsValidIndex(Request->ObserverIndex + 1)
+            && PathSubmissions < CandidateBudget)
+        {
+            ++Request->ObserverIndex;
+            Request->Start(*Navigation, *NavData);
+            ++PathSubmissions;
+            Occupied.Add(Request->Location);
+            continue;
+        }
+        if (!bReachable && Request->Observers.IsValidIndex(Request->ObserverIndex + 1))
+        {
+            Occupied.Add(Request->Location);
+            continue;
+        }
+        ++State->Rejections.FindOrAdd(bReachable ? TEXT("路径观察目标已经移动") : TEXT("与玩家没有完整可达路径"));
+        PendingPaths.RemoveAtSwap(Index);
+    }
+    CandidateBudget = FMath::Max(0, CandidateBudget - PathSubmissions);
+    PendingPoints += PendingPaths.Num();
     int32 SelectionSlots = FMath::Max(0, WorldLimit - WorldAlive - PendingPoints);
     CreateBudget = FMath::Min(CreateBudget, FMath::Max(0, WorldLimit - WorldAlive));
     const double StartedAt = FPlatformTime::Seconds();
@@ -454,7 +520,13 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
         {
             continue;
         }
-        while (CandidateBudget > 0 && SelectionSlots > 0 && State.Accepted < State.Requested
+        int32 PendingForEntry = 0;
+        for (const auto &Request : PendingPaths)
+        {
+            PendingForEntry += Request->Entity == Entity ? 1 : 0;
+        }
+        while (CandidateBudget > 0 && SelectionSlots > 0 && PendingPaths.Num() < 64
+            && State.Accepted + PendingForEntry < State.Requested
             && State.Cursor < Definition->CandidateCount
             && (FPlatformTime::Seconds() - StartedAt) * 1000.0 < TimeBudgetMs)
         {
@@ -464,7 +536,7 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             TArray<FVector> Selected;
             TArray<FVector> Rejected;
             TArray<FString> Reasons;
-            Filter(*World, *Definition, State.Regions, {Location}, Observers, Directions, Occupied, 1, Selected, Rejected, Reasons);
+            Filter(*World, *Definition, State.Regions, {Location}, Observers, Directions, Occupied, 1, Selected, Rejected, Reasons, false);
             if (Selected.IsEmpty())
             {
                 ++State.Rejections.FindOrAdd(Reasons.IsEmpty() ? TEXT("没有合格候选点") : Reasons[0]);
@@ -478,16 +550,34 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             }
             FRandomStream Heading(RandomBits(State.Seed, CandidateIndex, 0x306u));
             const float Yaw = Definition->bRandomYaw ? Heading.FRandRange(-180.0f, 180.0f) : Definition->FixedYaw;
-            auto& Point = State.Points.AddDefaulted_GetRef();
+            FBBBMonsterSpawnPoint Point;
             Point.Definition = Monster;
             Point.Seed = RandomBits(State.Seed, CandidateIndex, 0x407u);
             Point.Transform = FTransform(FRotator(0.0f, Yaw, 0.0f), Selected[0] + FVector(0.0, 0.0, Monster->CapsuleHalfHeight + 2.0f));
             Occupied.Add(Selected[0]);
-            ++State.Accepted;
             --SelectionSlots;
+            if (Definition->bRequirePath && NavData)
+            {
+                auto *Request = NewObject<UBBBMonsterSpawnPathRequest>(this);
+                Request->Entity = Entity;
+                Request->OwnerId = State.OwnerId;
+                Request->RequestId = State.RequestId;
+                Request->Generation = State.Generation;
+                Request->StageIndex = State.StageIndex;
+                Request->Definition = State.Definition;
+                Request->Point = Point;
+                Request->Location = Selected[0];
+                Request->Observers = Observers;
+                PendingPaths.Add(Request);
+                ++PendingForEntry;
+                Request->Start(*Navigation, *NavData);
+                continue;
+            }
+            State.Points.Add(Point);
+            ++State.Accepted;
         }
         const bool bSelectionDone = State.Accepted >= State.Requested || State.Cursor >= Definition->CandidateCount;
-        if (State.Points.IsEmpty() && bSelectionDone)
+        if (State.Points.IsEmpty() && bSelectionDone && PendingForEntry == 0)
         {
             State.bActive = false;
             State.Reason = FString::Printf(TEXT("实际生成 %d 只 检查 %d 点"), State.Created, State.Cursor);
@@ -599,4 +689,23 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
     {
         NextSpawnIndex = (FirstJob + 1) % SpawnOrder.Num();
     }
+}
+
+void UBBBMonsterSpawnProcessor::BeginDestroy()
+{
+    if (auto *World = GetWorld())
+    {
+        if (auto *Navigation = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World))
+        {
+            for (const auto &Request : PendingPaths)
+            {
+                if (!Request->bComplete && Request->QueryId != INVALID_NAVQUERYID)
+                {
+                    Navigation->AbortAsyncFindPathRequest(Request->QueryId);
+                }
+            }
+        }
+    }
+    PendingPaths.Reset();
+    Super::BeginDestroy();
 }

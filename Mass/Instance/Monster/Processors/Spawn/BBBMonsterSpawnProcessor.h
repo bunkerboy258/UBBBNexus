@@ -52,18 +52,24 @@ public:
      * @param Result	合格地面位置
      * @param Rejected	拒绝位置
      * @param Reasons	对应拒绝原因
+     * @param bCheckPath 编辑器预览是否同步核对路径 运行时由异步阶段核对
      * @return 无返回值
      */
     static void Filter(UWorld& World, const UBBBMonsterSpawnDefinition& Definition,
         const TArray<FBBBMonsterSpawnRegionDefinition>& Regions, const TArray<FVector>& Candidates,
         const TArray<FVector>& Observers, const TArray<FVector>& Directions, const TArray<FVector>& Occupied,
-        int32 Count, TArray<FVector>& Result, TArray<FVector>& Rejected, TArray<FString>& Reasons);
+        int32 Count, TArray<FVector>& Result, TArray<FVector>& Rejected, TArray<FString>& Reasons, bool bCheckPath);
 protected:
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
     virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
+    virtual void BeginDestroy() override;
 private:
     FMassEntityQuery SpawnQuery;
     FMassEntityQuery MonsterQuery;
+
+    /** 待确认的候选同时占用世界选点额度 */
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<class UBBBMonsterSpawnPathRequest>> PendingPaths;
 
     /** 多个入口按帧轮转 避免固定顺序持续占用候选预算 */
     int32 NextSpawnIndex = 0;

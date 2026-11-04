@@ -9,6 +9,19 @@ UBBBCharacterMagazineMotionComponent::UBBBCharacterMagazineMotionComponent()
     PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 }
 
+void UBBBCharacterMagazineMotionComponent::ResetMotion()
+{
+    MotionSampleCount = 0;
+    MeanSampleTime = 0.0;
+    MeanSamplePosition = FVector::ZeroVector;
+    TimeVariance = 0.0;
+    TimePositionCovariance = FVector::ZeroVector;
+    PreviousTransform = FTransform::Identity;
+    PreviousTime = -1.0;
+    LinearVelocity = FVector::ZeroVector;
+    AngularVelocity = FVector::ZeroVector;
+}
+
 void UBBBCharacterMagazineMotionComponent::SampleMotion()
 {
     const UWorld *World = GetWorld();

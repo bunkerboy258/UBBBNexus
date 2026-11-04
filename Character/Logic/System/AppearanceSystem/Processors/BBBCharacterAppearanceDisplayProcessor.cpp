@@ -77,6 +77,22 @@ namespace
         {
             return false;
         }
+        bool bMaterialsMatch = Component.GetNumMaterials() == Materials.Num();
+        for (int32 Index = 0; bMaterialsMatch && Index < Materials.Num(); ++Index)
+        {
+            bMaterialsMatch = Component.GetMaterial(Index) == Materials[Index];
+        }
+        const auto *ExpectedLeader = Mesh && !bRigid ? Body : nullptr;
+        const bool bExpectedSimulation = bAttachment && Mesh;
+        if (Component.GetSkeletalMeshAsset() == Mesh && Component.GetAttachParent() == Body
+            && Component.GetAttachSocketName() == Socket && Component.GetRelativeTransform().Equals(RelativeTransform)
+            && Component.LeaderPoseComponent.Get() == ExpectedLeader && bMaterialsMatch
+            && Component.IsVisible() == (Mesh != nullptr) && Component.bHiddenInGame == (Mesh == nullptr)
+            && Component.bForceRefpose == (bRigid && !bAttachment)
+            && Component.IsAnySimulatingPhysics() == bExpectedSimulation)
+        {
+            return true;
+        }
         const bool bKeepSimulation = bAttachment && Mesh && Component.GetSkeletalMeshAsset() == Mesh
             && Component.GetAttachParent() == Body && Component.GetAttachSocketName() == Socket
             && Component.IsAnySimulatingPhysics();

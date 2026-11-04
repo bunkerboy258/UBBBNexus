@@ -4,6 +4,9 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/BBBLMGDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Logic/System/ActionSystem/Processors/BBBLMGActionProcessor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Config/BBBProjectileDefinition.h"
 
 bool FBBBLMGInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) const
 {
@@ -18,5 +21,12 @@ bool FBBBLMGInitializer::InitializeInstance(ABBBEquipment &BaseEquipment) const
         *Equipment.GetName(), *LMGDefinition->GetPathName(), LMGDefinition->FireInterval);
 
     FBBBLMGActionProcessor::Initialize(Equipment.RuntimeData, *LMGDefinition);
+    if (LMGDefinition->ProjectileDefinition && Equipment.GetWorld())
+    {
+        if (auto *Display = Equipment.GetWorld()->GetSubsystem<UBBBProjectilePresentationSubsystem>())
+        {
+            Display->Prepare(*LMGDefinition->ProjectileDefinition);
+        }
+    }
     return true;
 }

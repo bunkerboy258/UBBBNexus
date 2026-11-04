@@ -14,6 +14,9 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "Sound/SoundCue.h"
+#include "Sound/SoundWave.h"
+#include "AudioMixerBlueprintLibrary.h"
 #include "Math/RotationMatrix.h"
 #include "NiagaraDataChannel.h"
 #include "NiagaraDataChannelAccessor.h"
@@ -53,6 +56,44 @@ namespace
     }
 }
 
+void UBBBMonsterBloodPresentationSubsystem::Prepare(const UBBBMonsterBloodPresentationDefinition &Settings)
+{
+    if (GetWorld()->GetNetMode() == NM_DedicatedServer || !FApp::CanEverRender())
+    {
+        return;
+    }
+    PreparationSettings = &Settings;
+    DesiredDecals = FMath::Max(DesiredDecals, FMath::Min(8, FMath::Clamp(Settings.MaximumDecals, 1, 256)));
+    if (PreparedSettings.Contains(&Settings))
+    {
+        return;
+    }
+    PreparedSettings.Add(&Settings);
+    if (Settings.ImpactChannel)
+    {
+        UNiagaraDataChannelLibrary::GetNiagaraDataChannel(GetWorld(), Settings.ImpactChannel);
+    }
+    const auto *Presentation = Settings.GetTypedOuter<UBBBMonsterPresentationDefinition>();
+    const auto *Sounds = Presentation ? Presentation->Sounds.Get() : nullptr;
+    if (Sounds)
+    {
+        for (const auto *Pool : {&Sounds->FleshImpacts, &Sounds->HeadImpacts, &Sounds->Severings})
+        {
+            for (const auto &Sound : *Pool)
+            {
+                if (auto *Wave = Cast<USoundWave>(Sound.Get()))
+                {
+                    UAudioMixerBlueprintLibrary::PrimeSoundForPlayback(Wave, FOnSoundLoadComplete());
+                }
+                if (auto *Cue = Cast<USoundCue>(Sound.Get()))
+                {
+                    UAudioMixerBlueprintLibrary::PrimeSoundCueForPlayback(Cue);
+                }
+            }
+        }
+    }
+}
+
 void UBBBMonsterBloodPresentationSubsystem::Deinitialize()
 {
     for (UDecalComponent* Decal : Decals)
@@ -65,6 +106,9 @@ void UBBBMonsterBloodPresentationSubsystem::Deinitialize()
     Decals.Reset();
     Residues.Reset();
     Droplets.Reset();
+    PreparationSettings = nullptr;
+    DesiredDecals = 0;
+    PreparedSettings.Reset();
     Super::Deinitialize();
 }
 
@@ -75,6 +119,9 @@ void UBBBMonsterBloodPresentationSubsystem::Publish(const UBBBMonsterBloodPresen
     {
         return;
     }
+    Prepare(Settings);
+    DesiredDecals = FMath::Max(DesiredDecals,
+        FMath::Min(Decals.Num() + Impacts.Num() * 3, FMath::Clamp(Settings.MaximumDecals, 1, 256)));
     const auto* Presentation = Settings.GetTypedOuter<UBBBMonsterPresentationDefinition>();
     const auto* Sounds = Presentation ? Presentation->Sounds.Get() : nullptr;
     if (Sounds && Sounds->Attenuation && Sounds->ContactConcurrency)
@@ -223,6 +270,35 @@ void UBBBMonsterBloodPresentationSubsystem::AdvancePresentation(float DeltaSecon
         return;
     }
     AdvancedFrame = GFrameCounter;
+    const int32 PreparationLimit = World->WorldType == EWorldType::EditorPreview
+        ? FMath::Max(0, DesiredDecals - Decals.Num()) : 1;
+    for (int32 Prepared = 0; PreparationSettings && Decals.Num() < DesiredDecals && Prepared < PreparationLimit; ++Prepared)
+    {
+        TArray<UMaterialInterface *> Materials;
+        for (const auto *Pool : {&PreparationSettings->SplatterMaterials,
+            &PreparationSettings->DropletMaterials, &PreparationSettings->PoolMaterials})
+        {
+            for (const auto &Material : *Pool)
+            {
+                if (Material)
+                {
+                    Materials.Add(Material.Get());
+                }
+            }
+        }
+        auto *Decal = NewObject<UDecalComponent>(this);
+        Decal->SetVisibility(false);
+        Decal->SetFadeScreenSize(0.002f);
+        if (!Materials.IsEmpty())
+        {
+            Decal->SetDecalMaterial(UMaterialInstanceDynamic::Create(Materials[Decals.Num() % Materials.Num()], Decal));
+        }
+        Decal->RegisterComponentWithWorld(World);
+        Decal->PrecachePSOs();
+        Decals.Add(Decal);
+        Residues.AddDefaulted();
+    }
+
 
     int32 TraceBudget = 8;
     for (const auto& Droplet : Droplets)
@@ -409,19 +485,20 @@ void UBBBMonsterBloodPresentationSubsystem::PlaceResidue(const FBBBMonsterBloodD
             Slot = Index;
         }
     }
-    if (Decals.Num() < FMath::Clamp(Settings->MaximumDecals, 1, 256) && Oldest > Now)
-    {
-        auto* Decal = NewObject<UDecalComponent>(this);
-        Decal->SetFadeScreenSize(0.002f);
-        Decal->RegisterComponentWithWorld(World);
-        Slot = Decals.Add(Decal);
-        Residues.AddDefaulted();
-    }
     if (Slot == INDEX_NONE)
     {
         return;
     }
 
+    for (int32 Index = 0; Index < Decals.Num(); ++Index)
+    {
+        const auto *Material = Cast<UMaterialInstanceDynamic>(Decals[Index]->GetDecalMaterial());
+        if (Material && Material->Parent == Source && Residues[Index].CreatedAt + Residues[Index].Lifetime <= Now)
+        {
+            Slot = Index;
+            break;
+        }
+    }
     UDecalComponent* Decal = Decals[Slot];
     auto* Material = Cast<UMaterialInstanceDynamic>(Decal->GetDecalMaterial());
     if (!Material || Material->Parent != Source)

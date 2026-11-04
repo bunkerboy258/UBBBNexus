@@ -8,7 +8,7 @@ namespace
 {
     const FName NewMagazineTag(TEXT("BBB_CharacterNewHandMagazine"));
 
-    UStaticMeshComponent *FindNewMagazine(USkeletalMeshComponent &HandMesh)
+    UStaticMeshComponent *FindNewMagazine(USkeletalMeshComponent &HandMesh, const bool bActiveOnly)
     {
         TArray<USceneComponent *> Children;
         HandMesh.GetChildrenComponents(false, Children);
@@ -16,7 +16,7 @@ namespace
         for (USceneComponent *Child : Children)
         {
             UStaticMeshComponent *Magazine = Cast<UStaticMeshComponent>(Child);
-            if (Magazine && Magazine->ComponentHasTag(NewMagazineTag))
+            if (Magazine && Magazine->ComponentHasTag(NewMagazineTag) && (!bActiveOnly || Magazine->IsVisible()))
             {
                 return Magazine;
             }
@@ -33,7 +33,7 @@ void UBBBCharacterNewMagazineDisplayAnimNotifyState::NotifyBegin(
     const FAnimNotifyEventReference &)
 {
     ABBBCharacter *Character = MeshComp ? Cast<ABBBCharacter>(MeshComp->GetOwner()) : nullptr;
-    if (!Character)
+    if (!Character || Character->GetNetMode() == NM_DedicatedServer)
     {
         return;
     }
@@ -41,7 +41,7 @@ void UBBBCharacterNewMagazineDisplayAnimNotifyState::NotifyBegin(
     if (!ensureMsgf(IsInGameThread() && MagazineMesh
         && MeshComp->GetBoneIndex(HandBoneName) != INDEX_NONE
         && !HandMagazineTransform.ContainsNaN()
-        && !FindNewMagazine(*MeshComp),
+        && !FindNewMagazine(*MeshComp, true),
         TEXT("新弹匣角色表现缺少网格 骨骼 位置或存在重复组件 %s"), *Character->GetName()))
     {
         return;
@@ -57,7 +57,11 @@ void UBBBCharacterNewMagazineDisplayAnimNotifyState::NotifyBegin(
     MagazineFlags |= RF_Transactional;
 #endif
 
-    UStaticMeshComponent *Magazine = NewObject<UStaticMeshComponent>(Character, MagazineName, MagazineFlags);
+    UStaticMeshComponent *Magazine = FindNewMagazine(*MeshComp, false);
+    if (!Magazine)
+    {
+        Magazine = NewObject<UStaticMeshComponent>(Character, MagazineName, MagazineFlags);
+    }
     if (!ensureMsgf(Magazine, TEXT("新弹匣角色表现创建组件失败 %s"), *Character->GetName()))
     {
         return;
@@ -75,12 +79,17 @@ void UBBBCharacterNewMagazineDisplayAnimNotifyState::NotifyBegin(
     Magazine->bWantsEditorEffects = true;
 #endif
 
-    Magazine->RegisterComponent();
+    if (!Magazine->IsRegistered())
+    {
+        Magazine->RegisterComponent();
+    }
+    Magazine->SetVisibility(true);
     if (!ensureMsgf(Magazine->IsRegistered()
         && Magazine->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandBoneName),
         TEXT("新弹匣角色表现注册或手部附着失败 %s"), *Character->GetName()))
     {
-        Magazine->DestroyComponent();
+        Magazine->SetVisibility(false);
+        Magazine->SetComponentTickEnabled(false);
         return;
     }
 
@@ -99,12 +108,13 @@ void UBBBCharacterNewMagazineDisplayAnimNotifyState::NotifyEnd(
         return;
     }
 
-    UStaticMeshComponent *Magazine = FindNewMagazine(*MeshComp);
+    UStaticMeshComponent *Magazine = FindNewMagazine(*MeshComp, true);
     if (!Magazine)
     {
         return;
     }
 
-    Magazine->DestroyComponent();
+    Magazine->SetVisibility(false);
+    Magazine->SetComponentTickEnabled(false);
     UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] New magazine display ended Mesh=%s"), *MeshComp->GetName());
 }

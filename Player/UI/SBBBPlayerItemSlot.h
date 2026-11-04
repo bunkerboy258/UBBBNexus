@@ -27,6 +27,9 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     /** @param Arguments	界面和槽位参数 @return 无 */
     void Construct(const FArguments &Arguments);
 
+    /** @return 无 更新槽位内容并保留拖拽控件身份 */
+    void Refresh();
+
     virtual FReply OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnMouseButtonDoubleClick(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnDragDetected(const FGeometry &Geometry, const FPointerEvent &Event) override;
@@ -50,6 +53,8 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     FSlateBrush PropertyBrush;
     FGuid InstanceId;
     FText ItemName;
+    FText QuickLabel;
+    FText QuantityLabel;
     int32 Slot = INDEX_NONE;
     bool bOccupied = false;
     bool bCompact = false;

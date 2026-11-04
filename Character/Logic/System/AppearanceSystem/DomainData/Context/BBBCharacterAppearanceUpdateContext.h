@@ -21,6 +21,8 @@ struct FBBBCharacterAppearanceUpdateContext final
     bool bIsMirror;
     /** 本次是否需要材质维护和显示应用 */
     bool bPrepareDisplay = false;
+    /** 当前版本仍在异步加载 保留之前显示 */
+    bool bWaitingForResources = false;
     /** 请求资源是否完整可用 */
     bool bResourcesReady = true;
     /** 同一既成事实只报告首次失败 */

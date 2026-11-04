@@ -34,6 +34,9 @@ public:
     void Apply(const UBBBMonsterGoreDefinition& Definition, const FBBBMonsterGoreFragment& Facts,
         const FBBBMonsterHitReactionFragment& Hit, const FVector& Velocity, uint32 Seed, bool bRestore);
 
+    /** @param Definition 当前身体资源 @param Facts 当前毁伤 @param bOnlyRequired 只准备已有伤口需要的组织 @return 本次是否执行了一个准备步骤 */
+    bool PrepareNext(const UBBBMonsterGoreDefinition &Definition, const FBBBMonsterGoreFragment &Facts, bool bOnlyRequired);
+
     /** @return 清除载体参数 不改变实体伤口 */
     void ResetPresentation();
 
@@ -59,6 +62,8 @@ private:
     /** 仅去重短时掉落 不作为损毁事实 */
     uint8 AppliedPresets[5] = {};
     bool bUsingDamageMaterials = false;
+    /** 当前身体的毁伤材质已经提交原生 PSO 准备 */
+    bool bDamagePSORequested = false;
 
     /** @param Definition 共享配置 @return 是否准备完成 */
     bool Prepare(const UBBBMonsterGoreDefinition& Definition);

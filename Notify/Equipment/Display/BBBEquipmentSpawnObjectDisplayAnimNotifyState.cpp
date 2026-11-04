@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "BBBWork/UBBBNexus/Notify/Equipment/Display/BBBEquipmentDisplaySubsystem.h"
 
 void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
     USkeletalMeshComponent *MeshComp,
@@ -50,33 +51,9 @@ void UBBBEquipmentSpawnObjectDisplayAnimNotifyState::NotifyBegin(
         LocalLinearVelocity = FMath::VRandCone(LinearVelocity.GetSafeNormal(), FMath::DegreesToRadians(VelocitySpreadDegrees)) * LinearVelocity.Size();
     }
     const FVector WorldLinearVelocity = SocketTransform.TransformVectorNoScale(LocalLinearVelocity) + InheritedVelocity;
-    FActorSpawnParameters Parameters;
-    Parameters.ObjectFlags |= RF_Transient;
-    Parameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    Parameters.bDeferConstruction = true;
-    AStaticMeshActor *Actor = World->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), Transform, Parameters);
-    if (!ensureMsgf(Actor, TEXT("装备动画物体创建失败 %s"), *ObjectMesh->GetPathName()))
+    if (auto *Display = World->GetSubsystem<UBBBEquipmentDisplaySubsystem>())
     {
-        return;
+        Display->Emit(ObjectMesh, Transform, WorldLinearVelocity,
+            SocketTransform.TransformVectorNoScale(AngularVelocityDegrees) * (PI / 180.0), LifeSeconds, true);
     }
-
-    UStaticMeshComponent *Component = Actor->GetStaticMeshComponent();
-    Component->SetMobility(EComponentMobility::Movable);
-    Component->SetStaticMesh(ObjectMesh);
-    Component->SetCollisionObjectType(ECC_PhysicsBody);
-    Component->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    Component->SetCollisionResponseToAllChannels(ECR_Ignore);
-    Component->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-    Actor->FinishSpawning(Transform);
-    Actor->SetLifeSpan(LifeSeconds);
-    Component->SetSimulatePhysics(true);
-    if (!ensureMsgf(Component->IsSimulatingPhysics(), TEXT("装备动画物体无法开启物理模拟 %s"), *ObjectMesh->GetPathName()))
-    {
-        Actor->Destroy();
-        return;
-    }
-
-    // 只在脱离武器时继承移动速度 后续由独立物理模拟决定轨迹
-    Component->SetPhysicsLinearVelocity(WorldLinearVelocity);
-    Component->SetPhysicsAngularVelocityInDegrees(SocketTransform.TransformVectorNoScale(AngularVelocityDegrees));
 }

@@ -7,6 +7,9 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "BBBMonsterSoundPresentationComponent.h"
 #include "Components/AudioComponent.h"
+#include "Engine/World.h"
+#include "BBBMonsterBloodPresentationSubsystem.h"
+#include "BBBMonsterGibPresentationSubsystem.h"
 #include "BBBMonsterGorePresentationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
@@ -67,6 +70,17 @@ bool ABBBMonsterPresentationActor::ConfigurePresentation(const UBBBMonsterPresen
     MonsterMesh->SetRelativeTransform(Settings->MeshTransform);
     MonsterMesh->SetAnimInstanceClass(Settings->AnimationClass);
     HitReaction->ConfigurePresentation(Settings);
+    if (auto *Gibs = GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>())
+    {
+        Gibs->Prepare(*Settings);
+    }
+    if (Settings->Blood)
+    {
+        if (auto *Blood = GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>())
+        {
+            Blood->Prepare(*Settings->Blood);
+        }
+    }
     PresentationSettings = Settings;
     return true;
 }

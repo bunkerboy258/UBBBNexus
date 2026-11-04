@@ -57,7 +57,7 @@ struct ABBB_EVAC_API FBBBMonsterNavigationFragment final : public FMassFragment
     float LastPathTime = -1;
     /** 当前请求进入等待的时刻 */
     float RequestSince = -1;
-    /** 最近查询毫秒 */
+    /** 最近异步请求从排队到回执的毫秒数 不表示主线程耗时 */
     float LastQueryMs = 0;
     /** 暂时不可达位置的重试时刻 */
     float ExcludedUntil = 0;

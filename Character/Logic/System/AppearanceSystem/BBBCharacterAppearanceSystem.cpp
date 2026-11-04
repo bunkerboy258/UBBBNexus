@@ -20,6 +20,7 @@ void FBBBCharacterAppearanceSystem::Update()
         Character->GetCharacterConfig().Item.WearableCatalog, Data->External.ReadNetworkIdentityState().bIsMirror};
     InputProcessor.Update(Context);
     SelectionProcessor.Update(Context);
+    LoadProcessor.Update(Context);
     ResourceProcessor.Update(Context);
     MaterialProcessor.Update(Context);
     DisplayProcessor.Update(Context);
@@ -35,6 +36,7 @@ void FBBBCharacterAppearanceSystem::Shutdown()
     FBBBCharacterAppearanceUpdateContext Context{*Character, *Data, *Config,
         Character->GetCharacterConfig().Item.WearableCatalog, Data->External.ReadNetworkIdentityState().bIsMirror};
     ReadabilityProcessor.Shutdown(Context);
+    LoadProcessor.Shutdown(Context);
     DisplayProcessor.Shutdown(Context);
     InputProcessor.Shutdown(Context);
     Character = nullptr;

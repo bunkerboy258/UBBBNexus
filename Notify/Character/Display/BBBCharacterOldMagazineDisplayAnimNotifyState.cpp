@@ -9,12 +9,13 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "BBBWork/UBBBNexus/Notify/Equipment/Display/BBBEquipmentDisplaySubsystem.h"
 
 namespace
 {
     const FName OldMagazineTag(TEXT("BBB_CharacterOldHandMagazine"));
 
-    UBBBCharacterMagazineMotionComponent *FindOldMagazine(USkeletalMeshComponent &HandMesh)
+    UBBBCharacterMagazineMotionComponent *FindOldMagazine(USkeletalMeshComponent &HandMesh, const bool bActiveOnly)
     {
         TArray<USceneComponent *> Children;
         HandMesh.GetChildrenComponents(false, Children);
@@ -22,7 +23,7 @@ namespace
         for (USceneComponent *Child : Children)
         {
             UBBBCharacterMagazineMotionComponent *Magazine = Cast<UBBBCharacterMagazineMotionComponent>(Child);
-            if (Magazine && Magazine->ComponentHasTag(OldMagazineTag))
+            if (Magazine && Magazine->ComponentHasTag(OldMagazineTag) && (!bActiveOnly || Magazine->IsVisible()))
             {
                 return Magazine;
             }
@@ -39,7 +40,7 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     const FAnimNotifyEventReference &)
 {
     ABBBCharacter *Character = MeshComp ? Cast<ABBBCharacter>(MeshComp->GetOwner()) : nullptr;
-    if (!Character)
+    if (!Character || Character->GetNetMode() == NM_DedicatedServer)
     {
         return;
     }
@@ -48,7 +49,7 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
         && MeshComp->GetBoneIndex(HandBoneName) != INDEX_NONE
         && !HandMagazineTransform.ContainsNaN()
         && FMath::IsFinite(DroppedLifeSeconds) && DroppedLifeSeconds > 0.0f
-        && !FindOldMagazine(*MeshComp),
+        && !FindOldMagazine(*MeshComp, true),
         TEXT("旧弹匣角色表现缺少网格 骨骼 位置或存在重复组件 %s"), *Character->GetName()))
     {
         return;
@@ -64,7 +65,11 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     MagazineFlags |= RF_Transactional;
 #endif
 
-    UBBBCharacterMagazineMotionComponent *Magazine = NewObject<UBBBCharacterMagazineMotionComponent>(Character, MagazineName, MagazineFlags);
+    UBBBCharacterMagazineMotionComponent *Magazine = FindOldMagazine(*MeshComp, false);
+    if (!Magazine)
+    {
+        Magazine = NewObject<UBBBCharacterMagazineMotionComponent>(Character, MagazineName, MagazineFlags);
+    }
     if (!ensureMsgf(Magazine, TEXT("旧弹匣角色表现创建组件失败 %s"), *Character->GetName()))
     {
         return;
@@ -82,16 +87,23 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyBegin(
     Magazine->bWantsEditorEffects = true;
 #endif
 
-    Magazine->RegisterComponent();
+    if (!Magazine->IsRegistered())
+    {
+        Magazine->RegisterComponent();
+    }
+    Magazine->SetVisibility(true);
     if (!ensureMsgf(Magazine->IsRegistered()
         && Magazine->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandBoneName),
         TEXT("旧弹匣角色表现注册或手部附着失败 %s"), *Character->GetName()))
     {
-        Magazine->DestroyComponent();
+        Magazine->SetVisibility(false);
+        Magazine->SetComponentTickEnabled(false);
         return;
     }
 
     Magazine->SetRelativeTransform(HandMagazineTransform);
+    Magazine->ResetMotion();
+    Magazine->SetComponentTickEnabled(true);
     Magazine->AddTickPrerequisiteComponent(MeshComp);
     Magazine->SampleMotion();
 
@@ -108,7 +120,7 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyEnd(
         return;
     }
 
-    UBBBCharacterMagazineMotionComponent *Magazine = FindOldMagazine(*MeshComp);
+    UBBBCharacterMagazineMotionComponent *Magazine = FindOldMagazine(*MeshComp, true);
     ABBBCharacter *Character = Cast<ABBBCharacter>(MeshComp->GetOwner());
     if (!Magazine || !Character)
     {
@@ -124,7 +136,8 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyEnd(
 
     if (!bReachedRelease)
     {
-        Magazine->DestroyComponent();
+        Magazine->SetVisibility(false);
+        Magazine->SetComponentTickEnabled(false);
         UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Old magazine display cancelled Character=%s"), *Character->GetName());
         return;
     }
@@ -132,32 +145,22 @@ void UBBBCharacterOldMagazineDisplayAnimNotifyState::NotifyEnd(
     UWorld *World = Character->GetWorld();
     if (!ensureMsgf(World && MagazineMesh, TEXT("旧弹匣角色表现无法创建掉落物 %s"), *Character->GetName()))
     {
-        Magazine->DestroyComponent();
+        Magazine->SetVisibility(false);
+        Magazine->SetComponentTickEnabled(false);
         return;
     }
 
     // 通知结束派发时姿势已跨过释放点 只刷新掉落位置 保留释放前的甩动速度
     Magazine->UpdateComponentToWorld();
     const FTransform DropWorld = Magazine->GetComponentTransform();
-    AStaticMeshActor *Dropped = World->SpawnActor<AStaticMeshActor>(DropWorld.GetLocation(), DropWorld.Rotator());
-    if (ensureMsgf(Dropped, TEXT("旧弹匣角色表现生成掉落对象失败 %s"), *Character->GetName()))
+    if (auto *Display = World->GetSubsystem<UBBBEquipmentDisplaySubsystem>())
     {
-        UStaticMeshComponent *DroppedMesh = Dropped->GetStaticMeshComponent();
-        DroppedMesh->SetMobility(EComponentMobility::Movable);
-        DroppedMesh->SetStaticMesh(MagazineMesh);
-        DroppedMesh->SetWorldTransform(DropWorld);
-        DroppedMesh->SetCollisionProfileName(TEXT("PhysicsActor"));
-        DroppedMesh->SetSimulatePhysics(true);
-        DroppedMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-        DroppedMesh->SetPhysicsLinearVelocity(Magazine->GetReleaseLinearVelocity());
-        DroppedMesh->SetPhysicsAngularVelocityInRadians(Magazine->GetReleaseAngularVelocity());
-        Dropped->SetLifeSpan(DroppedLifeSeconds);
-        UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Release motion Character=%s MontageTime=%.6f EndTime=%.6f SampleAge=%.6f Linear=%s Angular=%s"),
-            *Character->GetName(), AnimInstance->Montage_GetPosition(Montage), Event->GetEndTriggerTime(),
-            World->GetTimeSeconds() - Magazine->GetMotionSampleTime(),
-            *Magazine->GetReleaseLinearVelocity().ToString(), *Magazine->GetReleaseAngularVelocity().ToString());
+        Display->Emit(MagazineMesh, DropWorld, Magazine->GetReleaseLinearVelocity(),
+            Magazine->GetReleaseAngularVelocity(), DroppedLifeSeconds, false);
     }
 
-    Magazine->DestroyComponent();
+    Magazine->SetVisibility(false);
+    Magazine->SetComponentTickEnabled(false);
+    Magazine->RemoveTickPrerequisiteComponent(MeshComp);
     UE_LOG(LogTemp, Log, TEXT("[BBBRifleMagazine] Old magazine dropped Character=%s"), *Character->GetName());
 }

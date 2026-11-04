@@ -7,12 +7,14 @@
 #include "StaticMeshResources.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "Misc/App.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Actor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSoundPresentationDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 
 bool UBBBMonsterGibPresentationSubsystem::BuildDetachedPose(const FReferenceSkeleton& SourceSkeleton,
     TConstArrayView<FTransform> ComponentPose, const FReferenceSkeleton& PartSkeleton,
@@ -143,60 +145,119 @@ int32 UBBBMonsterGibPresentationSubsystem::FindSettledRecycleSlot() const
     return Result;
 }
 
-int32 UBBBMonsterGibPresentationSubsystem::AcquireSlot()
+void UBBBMonsterGibPresentationSubsystem::Prepare(const UBBBMonsterPresentationDefinition &Settings)
 {
-    UWorld* World = GetWorld();
-    if (!World || GetSimulatingCount() >= MaximumSimulating)
+    if (GetWorld()->GetNetMode() == NM_DedicatedServer || !FApp::CanEverRender())
     {
-        return INDEX_NONE;
+        return;
     }
-    int32 Slot = BornAt.IndexOfByPredicate([](const float Value) { return Value < 0.0f; });
-    if (Slot == INDEX_NONE && Pieces.Num() >= MaximumSimulating + MaximumSettled)
+    PreparationSettings = &Settings;
+    DesiredSlots = FMath::Max(DesiredSlots, 4);
+    if (GetWorld()->WorldType == EWorldType::EditorPreview)
     {
-        Slot = FindSettledRecycleSlot();
-        if (Slot == INDEX_NONE)
+        while (Pieces.Num() < DesiredSlots)
+        {
+            if (CreateSlot() == INDEX_NONE)
+            {
+                break;
+            }
+        }
+    }
+}
+
+int32 UBBBMonsterGibPresentationSubsystem::CreateSlot()
+{
+    auto *World = GetWorld();
+    if (!ContactMaterial)
+    {
+        ContactMaterial = NewObject<UPhysicalMaterial>(this);
+        ContactMaterial->Friction = 0.65f;
+        ContactMaterial->StaticFriction = 0.8f;
+        ContactMaterial->Restitution = 0.12f;
+    }
+    AActor* PoolActor = Pieces.IsEmpty() ? nullptr : Pieces[0]->GetOwner();
+    if (!PoolActor)
+    {
+        FActorSpawnParameters Parameters;
+        Parameters.ObjectFlags |= RF_Transient;
+        PoolActor = World->SpawnActor<AActor>(Parameters);
+        if (!PoolActor)
         {
             return INDEX_NONE;
         }
-        ReleaseSlot(Slot);
+        PoolActor->SetActorTickEnabled(false);
+        PoolActor->SetReplicates(false);
+    }
+    /** 全池共用载体 UE 碰撞派发要求刚体具有所属 Actor */
+    auto* Piece = NewObject<UStaticMeshComponent>(PoolActor);
+    PoolActor->AddInstanceComponent(Piece);
+    Piece->PrimaryComponentTick.bCanEverTick = false;
+    Piece->SetCanEverAffectNavigation(false);
+    Piece->SetCollisionObjectType(ECC_PhysicsBody);
+    Piece->SetCollisionResponseToAllChannels(ECR_Ignore);
+    Piece->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+    Piece->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+    Piece->SetLinearDamping(0.25f);
+    Piece->SetAngularDamping(0.9f);
+    Piece->SetGenerateOverlapEvents(false);
+    Piece->SetNotifyRigidBodyCollision(true);
+    Piece->OnComponentHit.AddUniqueDynamic(this, &UBBBMonsterGibPresentationSubsystem::OnPieceHit);
+    Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Piece->SetVisibility(false);
+    Piece->RegisterComponentWithWorld(World);
+    const int32 Slot = Pieces.Add(Piece);
+    auto *Pose = NewObject<UPoseableMeshComponent>(PoolActor);
+    PoolActor->AddInstanceComponent(Pose);
+    Pose->PrimaryComponentTick.bCanEverTick = false;
+    Pose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Pose->SetCanEverAffectNavigation(false);
+    Pose->SetupAttachment(Piece);
+    Pose->SetVisibility(false);
+    Pose->RegisterComponentWithWorld(World);
+    Poses.Add(Pose);
+    BornAt.Add(-1.0f);
+    StableSince.Add(-1.0f);
+    SoundConfigs.Add(nullptr);
+    PresentationConfigs.Add(nullptr);
+    LandingPlayed.Add(false);
+    if (PreparationSettings && PreparationSettings->Gore && PreparationSettings->Gore->Dismemberment
+        && !PreparationSettings->Gore->Dismemberment->Parts.IsEmpty())
+    {
+        const auto &Parts = PreparationSettings->Gore->Dismemberment->Parts;
+        const auto &Part = Parts[Slot % Parts.Num()];
+        Piece->SetStaticMesh(Part.DetachedMesh);
+        Pose->SetSkinnedAssetAndUpdate(Part.DetachedSkin);
+        Piece->PrecachePSOs();
+        Pose->PrecachePSOs();
+    }
+    return Slot;
+}
+
+int32 UBBBMonsterGibPresentationSubsystem::AcquireSlot(const UStaticMesh &Mesh)
+{
+    if (!GetWorld() || GetSimulatingCount() >= MaximumSimulating)
+    {
+        return INDEX_NONE;
+    }
+    for (int32 Index = 0; Index < Pieces.Num(); ++Index)
+    {
+        if (BornAt[Index] < 0 && Pieces[Index]->GetStaticMesh() == &Mesh)
+        {
+            return Index;
+        }
+    }
+    int32 Slot = BornAt.IndexOfByPredicate([](float Time) { return Time < 0; });
+    if (Slot == INDEX_NONE && Pieces.Num() >= MaximumSimulating + MaximumSettled)
+    {
+        Slot = FindSettledRecycleSlot();
+        if (Slot != INDEX_NONE)
+        {
+            ReleaseSlot(Slot);
+        }
     }
     if (Slot == INDEX_NONE)
     {
-        AActor* PoolActor = Pieces.IsEmpty() ? nullptr : Pieces[0]->GetOwner();
-        if (!PoolActor)
-        {
-            FActorSpawnParameters Parameters;
-            Parameters.ObjectFlags |= RF_Transient;
-            PoolActor = World->SpawnActor<AActor>(Parameters);
-            if (!PoolActor)
-            {
-                return INDEX_NONE;
-            }
-            PoolActor->SetActorTickEnabled(false);
-            PoolActor->SetReplicates(false);
-        }
-        /** 全池共用载体 UE 碰撞派发要求刚体具有所属 Actor */
-        auto* Piece = NewObject<UStaticMeshComponent>(PoolActor);
-        PoolActor->AddInstanceComponent(Piece);
-        Piece->PrimaryComponentTick.bCanEverTick = false;
-        Piece->SetCanEverAffectNavigation(false);
-        Piece->SetCollisionObjectType(ECC_PhysicsBody);
-        Piece->SetCollisionResponseToAllChannels(ECR_Ignore);
-        Piece->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-        Piece->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-        Piece->SetLinearDamping(0.25f);
-        Piece->SetAngularDamping(0.9f);
-        Piece->SetGenerateOverlapEvents(false);
-        Piece->SetNotifyRigidBodyCollision(true);
-        Piece->OnComponentHit.AddUniqueDynamic(this, &UBBBMonsterGibPresentationSubsystem::OnPieceHit);
-        Piece->RegisterComponentWithWorld(World);
-        Slot = Pieces.Add(Piece);
-        Poses.Add(nullptr);
-        BornAt.Add(-1.0f);
-        StableSince.Add(-1.0f);
-        SoundConfigs.Add(nullptr);
-        PresentationConfigs.Add(nullptr);
-        LandingPlayed.Add(false);
+        DesiredSlots = FMath::Max(DesiredSlots, FMath::Min(Pieces.Num() + 1, MaximumSimulating + MaximumSettled));
     }
     return Slot;
 }
@@ -206,7 +267,7 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
     const uint32 Seed, const UBBBMonsterPresentationDefinition& Settings)
 {
     UWorld* World = GetWorld();
-    if (!World || Direction.ContainsNaN() || Velocity.ContainsNaN() || Part.IsCompiling()
+    if (!World || !FApp::CanEverRender() || Direction.ContainsNaN() || Velocity.ContainsNaN() || Part.IsCompiling()
         || World->GetNetMode() == NM_DedicatedServer || (!Source.WasRecentlyRendered(0.2f) && World->WorldType != EWorldType::EditorPreview)
         || Source.GetPredictedLODLevel() > 2 || Source.bHiddenInGame || (Source.GetOwner() && Source.GetOwner()->IsHidden()))
     {
@@ -225,32 +286,18 @@ bool UBBBMonsterGibPresentationSubsystem::Emit(USkeletalMeshComponent& Source, U
     {
         return false;
     }
-    const int32 Slot = AcquireSlot();
+    Prepare(Settings);
+    const int32 Slot = AcquireSlot(Part);
     if (Slot == INDEX_NONE)
     {
         return false;
     }
     if (!ContactMaterial)
     {
-        ContactMaterial = NewObject<UPhysicalMaterial>(this);
-        ContactMaterial->Friction = 0.65f;
-        ContactMaterial->StaticFriction = 0.8f;
-        ContactMaterial->Restitution = 0.12f;
+        return false;
     }
     auto* Piece = Pieces[Slot].Get();
     auto* Pose = Poses[Slot].Get();
-    if (!Pose)
-    {
-        AActor* PoolActor = Piece->GetOwner();
-        Pose = NewObject<UPoseableMeshComponent>(PoolActor);
-        PoolActor->AddInstanceComponent(Pose);
-        Pose->PrimaryComponentTick.bCanEverTick = false;
-        Pose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        Pose->SetCanEverAffectNavigation(false);
-        Pose->SetupAttachment(Piece);
-        Pose->RegisterComponentWithWorld(World);
-        Poses[Slot] = Pose;
-    }
     Piece->EmptyOverrideMaterials();
     Piece->SetLinearDamping(0.25f);
     Piece->SetAngularDamping(0.9f);
@@ -348,6 +395,13 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
         return;
     }
     AdvancedTime = Now;
+    if (DesiredSlots > 0 && GetWorld()->GetNetMode() != NM_DedicatedServer)
+    {
+        if (Pieces.Num() < DesiredSlots)
+        {
+            CreateSlot();
+        }
+    }
     int32 Settled = GetSettledCount();
     for (int32 Index = 0; Index < Pieces.Num(); ++Index)
     {
@@ -460,5 +514,7 @@ void UBBBMonsterGibPresentationSubsystem::Deinitialize()
     {
         PoolActor->Destroy();
     }
+    PreparationSettings = nullptr;
+    DesiredSlots = 0;
     Super::Deinitialize();
 }

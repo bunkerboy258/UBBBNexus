@@ -1,4 +1,5 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceLoadProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceInputProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceSelectionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceResourceProcessor.h"
@@ -31,6 +32,7 @@ private:
     const FBBBCharacterAppearanceConfig *Config = nullptr;
     FBBBCharacterAppearanceInputProcessor InputProcessor;
     FBBBCharacterAppearanceSelectionProcessor SelectionProcessor;
+    FBBBCharacterAppearanceLoadProcessor LoadProcessor;
     FBBBCharacterAppearanceResourceProcessor ResourceProcessor;
     FBBBCharacterAppearanceMaterialProcessor MaterialProcessor;
     FBBBCharacterAppearanceDisplayProcessor DisplayProcessor;

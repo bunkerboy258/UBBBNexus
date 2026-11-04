@@ -81,8 +81,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     {
         if (CharacterPreview)
         {
-            CharacterPreview->Close();
-            CharacterPreview = nullptr;
+            CharacterPreview->SetActive(false);
         }
         CharacterBrush.SetResourceObject(nullptr);
         return;
@@ -106,8 +105,12 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     InspectedInstance = Controller ? Controller->GetItemDisplayData(InspectedSlot).InstanceId : FGuid();
     StoragePage = EBBBItemType::Equipment;
     PanelPage = EBBBItemPanelPage::Weapons;
-    CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
-    CharacterPreview->Open(Controller ? Controller->GetPawn() : nullptr);
+    if (!CharacterPreview)
+    {
+        CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
+    }
+    CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
+    CharacterPreview->SetActive(PanelPage == EBBBItemPanelPage::Character);
     CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
     CharacterBrush.DrawAs = ESlateBrushDrawType::Image;
     CharacterBrush.ImageSize = FVector2D(640.0f, 1080.0f);
@@ -119,10 +122,15 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
 {
     Super::NativeTick(Geometry, DeltaTime);
     UpdateExplorationPresentation();
-    if (bBackpackOpen && CharacterPreview)
+    if (!CharacterPreview)
     {
-        CharacterPreview->Update(DeltaTime);
+        CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
     }
+    auto *Controller = GetItemController();
+    CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
+    CharacterPreview->SetActive(bBackpackOpen && PanelPage == EBBBItemPanelPage::Character);
+    CharacterPreview->Update(DeltaTime);
+    CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
 }
 
 void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
@@ -206,6 +214,39 @@ void UBBBPlayerItemView::RefreshItems()
     }
     ObservedPawn = Controller->GetPawn();
     ObservedSelectedSlot = Selected;
+    int32 QuickStart = 0;
+    int32 QuickCount = Controller->GetQuickAccessSlotCount();
+    if (bQuickBarHeld)
+    {
+        Controller->GetConsumableQuickRange(QuickStart, QuickCount);
+    }
+    if (BuiltQuickStart != QuickStart || QuickSlotViews.Num() != QuickCount)
+    {
+        QuickBar->ClearChildren();
+        QuickSlotViews.Reset();
+        BuiltQuickStart = QuickStart;
+        for (int32 Index = 0; Index < QuickCount; ++Index)
+        {
+            TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
+            QuickBar->AddSlot().FillWidth(1.0f).Padding(12.0f)
+                [SAssignNew(SlotWidget, SBBBPlayerItemSlot)
+                    .View(this).Slot(QuickStart + Index).Compact(true)
+                    .PositionLabel(bQuickBarHeld
+                        ? FText::FromString(Index < 2 ? FString::Printf(TEXT("投掷 %d"), Index + 1)
+                            : FString::Printf(TEXT("恢复 %d"), Index - 1))
+                        : FText::GetEmpty())
+                    .Width(160.0f).Height(90.0f)];
+            QuickSlotViews.Add(SlotWidget);
+        }
+    }
+    for (const auto &SlotWidget : QuickSlotViews)
+    {
+        SlotWidget->Refresh();
+    }
+    if (!bBackpackOpen)
+    {
+        return;
+    }
     if (InspectedInstance.IsValid())
     {
         InspectedSlot = INDEX_NONE;
@@ -219,46 +260,31 @@ void UBBBPlayerItemView::RefreshItems()
         }
     }
     RefreshDetail();
-    QuickBar->ClearChildren();
-    BackpackSlots->ClearChildren();
-    EquipmentSlots->ClearChildren();
-    int32 QuickStart = 0;
-    int32 QuickCount = Controller->GetQuickAccessSlotCount();
-    if (bQuickBarHeld)
-    {
-        Controller->GetConsumableQuickRange(QuickStart, QuickCount);
-    }
-    for (int32 Index = 0; Index < QuickCount; ++Index)
-    {
-        QuickBar->AddSlot().FillWidth(1.0f).Padding(
-            12.0f)[SNew(SBBBPlayerItemSlot)
-                       .View(this)
-                       .Slot(QuickStart + Index)
-                       .Compact(true)
-                       .PositionLabel(bQuickBarHeld
-                                          ? FText::FromString(Index < 2 ? FString::Printf(TEXT("投掷 %d"), Index + 1)
-                                                                        : FString::Printf(TEXT("恢复 %d"), Index - 1))
-                                          : FText::GetEmpty())
-                       .Width(160.0f)
-                       .Height(90.0f)];
-    }
     int32 Start = 0;
     int32 Count = 0;
     Controller->GetStorageRange(StoragePage, Start, Count);
-    TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
-    const int32 Columns = 5;
-    const float Width = 154.0f;
-    for (int32 Position = 0; Position < Count; ++Position)
+    if (BuiltStorageStart != Start || StorageSlotViews.Num() != Count)
     {
-        Grid->AddSlot(
-            Position % Columns,
-            Position /
-                Columns)[SNew(SBBBPlayerItemSlot).View(this).Slot(Start + Position).Width(Width).Height(Width * 0.72f)];
+        BackpackSlots->ClearChildren();
+        StorageSlotViews.Reset();
+        BuiltStorageStart = Start;
+        TSharedRef<SUniformGridPanel> Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
+        for (int32 Position = 0; Position < Count; ++Position)
+        {
+            TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
+            Grid->AddSlot(Position % 5, Position / 5)
+                [SAssignNew(SlotWidget, SBBBPlayerItemSlot).View(this).Slot(Start + Position)
+                    .Width(154.0f).Height(154.0f * 0.72f)];
+            StorageSlotViews.Add(SlotWidget);
+        }
+        BackpackSlots->AddSlot().AutoHeight()[Grid];
     }
-    BackpackSlots->AddSlot().AutoHeight()[Grid];
+    for (const auto &SlotWidget : StorageSlotViews)
+    {
+        SlotWidget->Refresh();
+    }
     TArray<FName> WearNames;
     Controller->GetWearSlotRange(Start, WearNames);
-    TSharedRef<SUniformGridPanel> Right = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
     int32 RightStart = 0;
     int32 RightCount = Controller->GetQuickAccessSlotCount();
     const bool bCharacterPage = PanelPage == EBBBItemPanelPage::Character;
@@ -268,27 +294,37 @@ void UBBBPlayerItemView::RefreshItems()
     }
     if (bCharacterPage)
     {
+        RightStart = Start;
         RightCount = WearNames.Num();
     }
-    for (int32 Position = 0; Position < RightCount; ++Position)
+    if (BuiltPanelPage != PanelPage || BuiltPanelStart != RightStart || PanelSlotViews.Num() != RightCount
+        || (bCharacterPage && BuiltWearNames != WearNames))
     {
-        Right->AddSlot(
-            bCharacterPage ? Position % 2 : 0,
-            bCharacterPage
-                ? Position / 2
-                : Position)[SNew(SBBBPlayerItemSlot)
-                                .View(this)
-                                .Slot(bCharacterPage ? Start + Position : RightStart + Position)
-                                .PositionLabel(bCharacterPage ? BBBItemText::WearPosition(WearNames[Position])
-                                               : PanelPage == EBBBItemPanelPage::Consumables
-                                                   ? FText::FromString(
-                                                         Position < 2 ? FString::Printf(TEXT("投掷 %d"), Position + 1)
-                                                                      : FString::Printf(TEXT("恢复 %d"), Position - 1))
-                                                   : FText::GetEmpty())
-                                .Width(bCharacterPage ? 162.0f : 340.0f)
-                                .Height(126.0f)];
+        EquipmentSlots->ClearChildren();
+        PanelSlotViews.Reset();
+        BuiltPanelPage = PanelPage;
+        BuiltPanelStart = RightStart;
+        BuiltWearNames = MoveTemp(WearNames);
+        TSharedRef<SUniformGridPanel> Right = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
+        for (int32 Position = 0; Position < RightCount; ++Position)
+        {
+            TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
+            Right->AddSlot(bCharacterPage ? Position % 2 : 0, bCharacterPage ? Position / 2 : Position)
+                [SAssignNew(SlotWidget, SBBBPlayerItemSlot).View(this).Slot(RightStart + Position)
+                    .PositionLabel(bCharacterPage ? BBBItemText::WearPosition(BuiltWearNames[Position])
+                        : PanelPage == EBBBItemPanelPage::Consumables
+                            ? FText::FromString(Position < 2 ? FString::Printf(TEXT("投掷 %d"), Position + 1)
+                                : FString::Printf(TEXT("恢复 %d"), Position - 1))
+                            : FText::GetEmpty())
+                    .Width(bCharacterPage ? 162.0f : 340.0f).Height(126.0f)];
+            PanelSlotViews.Add(SlotWidget);
+        }
+        EquipmentSlots->AddSlot().AutoHeight()[Right];
     }
-    EquipmentSlots->AddSlot().AutoHeight()[Right];
+    for (const auto &SlotWidget : PanelSlotViews)
+    {
+        SlotWidget->Refresh();
+    }
     int32 Revision = 0;
     int32 Succeeded = 0;
     int32 Rejected = 0;

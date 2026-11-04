@@ -18,6 +18,8 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
 #include "BBBMonsterNavigation.h"
+#include "BBBMonsterNavigationRequest.h"
+#include "Async/Async.h"
 #include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 #include "MassActorSubsystem.h"
@@ -96,6 +98,102 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     const float Now = World->GetTimeSeconds();
     const float Dt = FMath::Clamp(Context.GetDeltaTimeSeconds(), 0.0f, 0.25f);
     const auto& Budget = *GetDefault<UBBBMonsterNavigationSettings>();
+    for (int32 Index = PendingQueries.Num() - 1; Index >= 0; --Index)
+    {
+        const auto *Request = PendingQueries[Index].Get();
+        if (!Request->bComplete)
+        {
+            continue;
+        }
+        const auto Entity = Request->Entity;
+        if (!EntityManager.IsEntityValid(Entity))
+        {
+            PendingQueries.RemoveAtSwap(Index);
+            continue;
+        }
+        auto &Path = EntityManager.GetFragmentDataChecked<FBBBMonsterNavigationFragment>(Entity);
+        const auto &State = EntityManager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(Entity);
+        const auto &Target = EntityManager.GetFragmentDataChecked<FBBBMonsterTargetFragment>(Entity);
+        const auto &Injury = EntityManager.GetFragmentDataChecked<FBBBMonsterMobilityFragment>(Entity);
+        const auto *CurrentDefinition = EntityManager.GetFragmentDataChecked<FBBBMonsterNetworkFragment>(Entity).Definition.Get();
+        if (!CurrentDefinition)
+        {
+            PendingQueries.RemoveAtSwap(Index);
+            continue;
+        }
+        const auto &Rule = *CurrentDefinition;
+        const float CurrentTraversal = Rule.Traversal.bEnabled && !Injury.bCrawling && Injury.AttackRatio >= 0.99f
+            ? Rule.Traversal.MaximumHeight : 0;
+        const bool bCurrentBehavior = Request->bChase ? State.State == EBBBMonsterBehavior::Chase
+            : State.State == EBBBMonsterBehavior::Patrol;
+        const auto *Special = EntityManager.GetFragmentDataPtr<FBBBMonsterSpecialFragment>(Entity);
+        const FVector CurrentGoal = Special && Special->Fact.Phase == 5 ? Special->Fact.Goal : Target.TargetLocation;
+        const float GoalThreshold = FVector::Dist2D(Request->Start, CurrentGoal) >= Rule.NavigationFarDistance
+            ? Rule.NavigationFarGoalThreshold : Rule.NavigationNearGoalThreshold;
+        if (Request->NavData.Get() != Nav || Request->Definition.Get() != &Rule
+            || Request->ActionId != State.ActionId || Request->TargetRevision != Target.Revision
+            || Request->bCrawling != Injury.bCrawling || Request->TraversalLimit != CurrentTraversal
+            || !bCurrentBehavior || (Request->bChase && (!Target.bHasTarget
+                || FVector::DistSquared(CurrentGoal, Request->RequestedGoal) > FMath::Square(GoalThreshold))))
+        {
+            Path.NextPathRefreshTime = Now;
+            PendingQueries.RemoveAtSwap(Index);
+            continue;
+        }
+        Path.LastQueryMs = (Request->CompletedAt - Request->StartedAt) * 1000.0;
+        const auto *MeshPath = Request->ResultPath.IsValid() ? Request->ResultPath->CastPath<FNavMeshPath>() : nullptr;
+        const bool bValid = Request->Result == ENavigationQueryResult::Success && MeshPath
+            && Request->ResultPath->IsValid() && Request->ResultPath->IsUpToDate()
+            && !MeshPath->PathCorridor.IsEmpty() && !Request->ResultPath->GetPathPoints().IsEmpty();
+        TSharedPtr<dtPathCorridor> Corridor;
+        if (bValid)
+        {
+            Corridor = MakeShared<dtPathCorridor>();
+        }
+        if (!bValid || !Corridor->init(FMath::Max(64, MeshPath->PathCorridor.Num() + 32)))
+        {
+            ++Path.FailureCount;
+            if (!Path.bHasPath && Path.FailureCount >= Rule.NavigationFailureLimit)
+            {
+                Path.Condition = EBBBMonsterNavigationCondition::Unreachable;
+                Path.StopReason = TEXT("NoRoute");
+                Path.ExcludedPosition = CurrentGoal;
+                Path.ExcludedUntil = Now + Rule.NavigationRetryDuration;
+            }
+            PendingQueries.RemoveAtSwap(Index);
+            continue;
+        }
+        const auto RcStart = Unreal2RecastPoint(Request->Start);
+        const FVector EndPoint = Request->ResultPath->GetPathPoints().Last().Location;
+        const auto RcEnd = Unreal2RecastPoint(EndPoint);
+        Corridor->reset(MeshPath->PathCorridor[0], &RcStart.X);
+        Corridor->setCorridor(&RcEnd.X, MeshPath->PathCorridor.GetData(), MeshPath->PathCorridor.Num());
+        Request->ResultPath->EnableRecalculationOnInvalidation(false);
+        Path.NativePath = Request->ResultPath;
+        Path.Corridor = MoveTemp(Corridor);
+        Path.Query = NavQuery;
+        Path.Filter = Request->Filter;
+        Path.Destination = EndPoint;
+        Path.QueryDestination = EndPoint;
+        Path.RequestedGoal = Request->RequestedGoal;
+        Path.LastPathTime = Now;
+        Path.bHasPath = true;
+        Path.bReachedDestination = false;
+        Path.bPartialPath = Request->ResultPath->IsPartial()
+            || FVector::DistSquared(Request->End, Request->Goal) > FMath::Square(Rule.MaxStepHeight + 25);
+        Path.bCrawlingPath = Request->bCrawling;
+        Path.FailureCount = 0;
+        Path.NextBoundaryTime = 0;
+        Path.TraversalPoly = 0;
+        Path.TraversalLink = FNavLinkId::Invalid;
+        if (LogRequests.GetValueOnGameThread() != 0)
+        {
+            UE_LOG(LogTemp, Log, TEXT("[BBBDetour] Entity=%d Polys=%d AsyncLatencyMs=%.3f Partial=%d"),
+                Entity.Index, MeshPath->PathCorridor.Num(), Path.LastQueryMs, Path.bPartialPath);
+        }
+        PendingQueries.RemoveAtSwap(Index);
+    }
+
     TArray<TPair<FMassEntityHandle, float>> Requests;
     MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
     {
@@ -243,7 +341,11 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
                 {
                     Path.RequestSince = Now;
                 }
-                Requests.Emplace(Chunk.GetEntity(I), Now - Path.RequestSince + (Path.bHasPath ? 0.0f : 2.0f));
+                const auto Entity = Chunk.GetEntity(I);
+                if (!PendingQueries.ContainsByPredicate([Entity](const auto &Request) { return Request->Entity == Entity; }))
+                {
+                    Requests.Emplace(Entity, Now - Path.RequestSince + (Path.bHasPath ? 0.0f : 2.0f));
+                }
             }
         }
     });
@@ -252,7 +354,8 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
     int32 Submitted = 0;
     for (const auto& Request : Requests)
     {
-        if (Submitted >= Budget.MaxRequestsPerFrame || (Submitted > 0 && (FPlatformTime::Seconds() - Started) * 1000 >= Budget.TimeBudgetMs))
+        if (PendingQueries.Num() >= FMath::Max(1, Budget.MaxRequestsPerFrame)
+            || Submitted >= Budget.MaxRequestsPerFrame || (Submitted > 0 && (FPlatformTime::Seconds() - Started) * 1000 >= Budget.TimeBudgetMs))
         {
             break;
         }
@@ -328,57 +431,58 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             continue;
         }
         auto Filter = Nav->GetDefaultQueryFilter()->GetCopy();
-        TraversalLimit = Rule.Traversal.bEnabled && !Injury.bCrawling && Injury.AttackRatio >= 0.99f ? Rule.Traversal.MaximumHeight : 0;
-        if (TraversalLimit <= 0)
+        auto *RequestData = NewObject<UBBBMonsterNavigationRequest>(this);
+        RequestData->Entity = Entity;
+        RequestData->ActionId = State.ActionId;
+        RequestData->TargetRevision = Target.Revision;
+        RequestData->TraversalLimit = Rule.Traversal.bEnabled && !Injury.bCrawling && Injury.AttackRatio >= 0.99f
+            ? Rule.Traversal.MaximumHeight : 0;
+        RequestData->bCrawling = Injury.bCrawling;
+        RequestData->bChase = bChase;
+        RequestData->Start = Start.Location;
+        RequestData->End = End.Location;
+        RequestData->Goal = Goal;
+        RequestData->RequestedGoal = Target.TargetLocation;
+        RequestData->NavData = Nav;
+        RequestData->Definition = &Rule;
+        RequestData->StartedAt = FPlatformTime::Seconds();
+        if (RequestData->TraversalLimit <= 0)
         {
             Filter->SetExcludedArea(Nav->GetAreaID(UBBBMonsterClimbArea::StaticClass()));
         }
-        FPathFindingQuery RequestQuery(this, *Nav, Start.Location, End.Location, Filter);
+        RequestData->Filter = Filter;
+        FPathFindingQuery RequestQuery(RequestData, *Nav, Start.Location, End.Location, Filter);
         RequestQuery.SetAllowPartialPaths(bChase);
-        const double QueryStart = FPlatformTime::Seconds();
-        const auto Result = ARecastNavMesh::FindPath(Nav->GetConfig(), RequestQuery);
-        TraversalLimit = 0;
-        Path.LastQueryMs = (FPlatformTime::Seconds() - QueryStart) * 1000;
-        const auto* MeshPath = Result.Path.IsValid() ? Result.Path->CastPath<FNavMeshPath>() : nullptr;
-        if (!Result.IsSuccessful() || !MeshPath || MeshPath->PathCorridor.IsEmpty() || Result.Path->GetPathPoints().IsEmpty())
+        PendingQueries.Add(RequestData);
+        RequestData->QueryId = Navigation->FindPathAsync(Nav->GetConfig(), RequestQuery,
+            FNavPathQueryDelegate::CreateWeakLambda(RequestData,
+                [Weak = TWeakObjectPtr<UBBBMonsterNavigationRequest>(RequestData)]
+                (uint32, ENavigationQueryResult::Type Result, FNavPathSharedPtr ResultPath)
+                {
+                    auto Complete = [Weak, Result, ResultPath = MoveTemp(ResultPath)]() mutable
+                    {
+                        if (auto *Request = Weak.Get())
+                        {
+                            Request->Result = Result;
+                            Request->ResultPath = MoveTemp(ResultPath);
+                            Request->CompletedAt = FPlatformTime::Seconds();
+                            Request->bComplete = true;
+                        }
+                    };
+                    if (!IsInGameThread())
+                    {
+                        AsyncTask(ENamedThreads::GameThread, MoveTemp(Complete));
+                        return;
+                    }
+                    Complete();
+                }));
+        if (RequestData->QueryId == INVALID_NAVQUERYID)
         {
-            Fail();
-            continue;
-        }
-        auto Corridor = MakeShared<dtPathCorridor>();
-        if (!Corridor->init(FMath::Max(64, MeshPath->PathCorridor.Num() + 32)))
-        {
-            Fail();
-            continue;
-        }
-        const auto RcStart = Unreal2RecastPoint(Start.Location);
-        const FVector EndPoint = Result.Path->GetPathPoints().Last().Location;
-        const auto RcEnd = Unreal2RecastPoint(EndPoint);
-        Corridor->reset(MeshPath->PathCorridor[0], &RcStart.X);
-        Corridor->setCorridor(&RcEnd.X, MeshPath->PathCorridor.GetData(), MeshPath->PathCorridor.Num());
-        Result.Path->EnableRecalculationOnInvalidation(false);
-        Path.NativePath = Result.Path;
-        Path.Corridor = MoveTemp(Corridor);
-        Path.Query = NavQuery;
-        Path.Filter = Filter;
-        Path.Destination = EndPoint;
-        Path.QueryDestination = EndPoint;
-        Path.RequestedGoal = Target.TargetLocation;
-        Path.LastPathTime = Now;
-        Path.bHasPath = true;
-        Path.bReachedDestination = false;
-        Path.bPartialPath = Result.Path->IsPartial() || FVector::DistSquared(End.Location, Goal) > FMath::Square(Rule.MaxStepHeight + 25);
-        Path.bCrawlingPath = Injury.bCrawling;
-        Path.FailureCount = 0;
-        Path.NextBoundaryTime = 0;
-        Path.TraversalPoly = 0;
-        Path.TraversalLink = FNavLinkId::Invalid;
-        if (LogRequests.GetValueOnGameThread() != 0)
-        {
-            UE_LOG(LogTemp, Log, TEXT("[BBBDetour] Entity=%d Polys=%d QueryMs=%.3f Partial=%d"), Entity.Index,
-                MeshPath->PathCorridor.Num(), Path.LastQueryMs, Path.bPartialPath);
+            RequestData->bComplete = true;
+            RequestData->CompletedAt = FPlatformTime::Seconds();
         }
     }
+
     TArray<TPair<FMassEntityHandle, float>> BoundaryRequests;
     MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
     {
@@ -541,4 +645,23 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
             }
         }
     });
+}
+
+void UBBBMonsterNavigationProcessor::BeginDestroy()
+{
+    if (auto *World = GetWorld())
+    {
+        if (auto *Navigation = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World))
+        {
+            for (const auto &Request : PendingQueries)
+            {
+                if (!Request->bComplete && Request->QueryId != INVALID_NAVQUERYID)
+                {
+                    Navigation->AbortAsyncFindPathRequest(Request->QueryId);
+                }
+            }
+        }
+    }
+    PendingQueries.Reset();
+    Super::BeginDestroy();
 }
