@@ -276,6 +276,19 @@ void UBBBMonsterNavigationProcessor::Execute(FMassEntityManager& EntityManager, 
         const float HalfHeight = Ground.CapsuleHalfHeight > 0 ? Ground.CapsuleHalfHeight : Body.CapsuleHalfHeight;
         const FVector Feet = Location - FVector::UpVector * HalfHeight;
         FVector Goal = Target.TargetLocation - FVector::UpVector * (bChase ? Rule.CapsuleHalfHeight : HalfHeight);
+        // 巡逻没有追击目标 从自身脚下选择附近可达点 继续复用后面的路径与地面检查。
+        if (!bChase)
+        {
+            FNavLocation PatrolPoint;
+            if (Navigation->GetRandomReachablePointInRadius(Feet, 600.0f, PatrolPoint, Nav))
+            {
+                Goal = PatrolPoint.Location;
+            }
+            else
+            {
+                Goal = Feet;
+            }
+        }
         if (bChase && Target.bTargetVisible && FVector::Dist2D(Location, Target.TargetLocation) < Rule.ApproachRange
             && FMath::Abs(Feet.Z - Goal.Z) <= Body.MaxStepHeight + 30)
         {
