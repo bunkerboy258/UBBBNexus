@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "Engine/World.h"
 
 void FBBBCharacterLifeProcessor::Initialize(FBBBCharacterLifeUpdateContext &Context) const
 {
@@ -150,7 +151,8 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
     const auto &Physical = Context.Data.PhysicalPresentation.ReadPhysicalPresentationState();
     State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving
         && !Physical.bRagdollRequested && Physical.RagdollSnapshot.Phase == EBBBCharacterPhysicalPhase::Animated;
-    Context.Character.SetCanBeDamaged(State.bInitialized && State.Phase != EBBBCharacterLifePhase::Dead);
+    Context.Character.SetCanBeDamaged(State.bInitialized && State.Phase != EBBBCharacterLifePhase::Dead
+        && !Context.Character.GetWorld()->IsPlayingReplay());
 
     if (!Delivery.Hits.IsEmpty())
     {
