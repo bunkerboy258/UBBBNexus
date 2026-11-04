@@ -24,9 +24,12 @@ struct FBBBMaodieTestConfig final
     /** 首次观察秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "首次观察秒数", ClampMin = "0.1"))
     float ObserveSeconds = 1.5f;
-    /** 投掷间隔秒数 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "投掷间隔秒数", ClampMin = "0.1"))
-    float ThrowInterval = 3.0f;
+    /** 平均投掷频率 单位赫兹 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "平均投掷频率", ClampMin = "0.1"))
+    float ThrowFrequency = 2.0f;
+    /** 间隔相对平均值的随机比例 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "投掷间隔随机比例", ClampMin = "0", ClampMax = "0.9"))
+    float IntervalJitter = 0.2f;
     /** 哈气持续秒数 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "哈气持续秒数", ClampMin = "0.1"))
     float HissDuration = 0.8f;
@@ -36,14 +39,26 @@ struct FBBBMaodieTestConfig final
     /** 看向玩家转向速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "看向玩家转向速度", ClampMin = "0.1"))
     float TurnSpeed = 4.0f;
-    /** 水平投掷速度 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "水平投掷速度", ClampMin = "0"))
-    float ThrowSpeed = 250.0f;
-    /** 向上投掷速度 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "向上投掷速度", ClampMin = "1"))
-    float ThrowUpSpeed = 250.0f;
-    /** 投掷总上限 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "投掷总上限", ClampMin = "0"))
+    /** 水平速度下限 单位厘米或厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "水平速度下限", ClampMin = "0"))
+    float ThrowSpeedMin = 200.0f;
+    /** 水平速度上限 单位厘米或厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "水平速度上限", ClampMin = "0"))
+    float ThrowSpeedMax = 300.0f;
+    /** 向上速度下限 单位厘米或厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "向上速度下限", ClampMin = "0"))
+    float ThrowUpSpeedMin = 200.0f;
+    /** 向上速度上限 单位厘米或厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "向上速度上限", ClampMin = "0"))
+    float ThrowUpSpeedMax = 300.0f;
+    /** 出手高度下限 单位厘米或厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "出手高度下限", ClampMin = "0"))
+    float ThrowHeightMin = 30.0f;
+    /** 出手高度上限 单位厘米或厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "出手高度上限", ClampMin = "0"))
+    float ThrowHeightMax = 45.0f;
+    /** 每位玩家投掷上限 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "每位玩家投掷上限", ClampMin = "0"))
     int32 ThrowLimit = 5;
 
     /** 可重复等概率抽取的物品 每次投掷一件 */

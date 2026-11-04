@@ -11,24 +11,24 @@
 void FBBBMaodieTestInitializer::Construct(ABBBMaodieTest &Actor)
 {
     Actor.PrimaryActorTick.bCanEverTick = true;
-    Actor.PrimaryActorTick.TickInterval = 0.1f;
+    Actor.PrimaryActorTick.TickInterval = 0.02f;
     Actor.bReplicates = true;
     Actor.SetReplicateMovement(true);
     Actor.AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
     Actor.AIControllerClass = AAIController::StaticClass();
     Actor.bUseControllerRotationYaw = false;
-    Actor.GetCapsuleComponent()->InitCapsuleSize(24.0f, 40.0f);
+    Actor.GetCapsuleComponent()->InitCapsuleSize(35.0f, 58.0f);
     Actor.GetCharacterMovement()->bOrientRotationToMovement = true;
     Actor.GetCharacterMovement()->RotationRate = FRotator(0.0f, 240.0f, 0.0f);
-    Actor.GetCharacterMovement()->NavAgentProps.AgentRadius = 24.0f;
-    Actor.GetCharacterMovement()->NavAgentProps.AgentHeight = 80.0f;
-    Actor.GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -40.0f));
+    Actor.GetCharacterMovement()->NavAgentProps.AgentRadius = 35.0f;
+    Actor.GetCharacterMovement()->NavAgentProps.AgentHeight = 116.0f;
+    Actor.GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -58.0f));
     Actor.GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-    Actor.GetMesh()->SetRelativeScale3D(FVector(0.65f));
+    Actor.GetMesh()->SetRelativeScale3D(FVector(100.0f));
     Actor.GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    Actor.GetMesh()->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/_Project/Test/Maodie/Source/MaoDie.MaoDie")));
-    Actor.Config.WalkAnimation = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/_Project/Test/Maodie/Source/Animations/AN_Monster_Chase_Anim.AN_Monster_Chase_Anim"));
-    Actor.Config.IdleAnimation = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/_Project/Test/Maodie/Source/Animations/AN_Monster_Idle_Anim.AN_Monster_Idle_Anim"));
+    Actor.GetMesh()->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/_Project/Test/Maodie/Source/Model/Meshes/MaoDie.MaoDie")));
+    Actor.Config.WalkAnimation = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/_Project/Test/Maodie/Source/Model/Animations/AN_Monster_Chase_Anim.AN_Monster_Chase_Anim"));
+    Actor.Config.IdleAnimation = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/_Project/Test/Maodie/Source/Model/Animations/AN_Monster_Idle_Anim.AN_Monster_Idle_Anim"));
     Actor.Network = Actor.CreateDefaultSubobject<UBBBMaodieTestNetworkComponent>(TEXT("MaodieNetwork"));
 }
 void FBBBMaodieTestInitializer::Initialize(ABBBMaodieTest &Actor)
@@ -38,9 +38,16 @@ void FBBBMaodieTestInitializer::Initialize(ABBBMaodieTest &Actor)
     State.Home = Actor.GetActorLocation();
     Actor.GetCharacterMovement()->MaxWalkSpeed = FMath::Max(1.0f, Config.MoveSpeed);
     const float Times[] = {Config.WanderRadius, Config.MoveSpeed, Config.PauseSeconds, Config.DetectionRadius,
-        Config.ObserveSeconds, Config.ThrowInterval, Config.HissDuration, Config.LoseInterestDelay, Config.TurnSpeed, Config.ThrowUpSpeed};
+        Config.ObserveSeconds, Config.ThrowFrequency, Config.HissDuration, Config.LoseInterestDelay, Config.TurnSpeed};
     bool bValid = Config.ThrowLimit >= 0 && !Config.DropPool.IsEmpty() && Config.HissSound
-        && Config.WalkAnimation && Config.IdleAnimation && FMath::IsFinite(Config.ThrowSpeed) && Config.ThrowSpeed >= 0.0f;
+        && Config.WalkAnimation && Config.IdleAnimation
+        && FMath::IsFinite(Config.IntervalJitter) && Config.IntervalJitter >= 0.0f && Config.IntervalJitter <= 0.9f
+        && FMath::IsFinite(Config.ThrowSpeedMin) && FMath::IsFinite(Config.ThrowSpeedMax)
+        && Config.ThrowSpeedMin >= 0.0f && Config.ThrowSpeedMax >= Config.ThrowSpeedMin
+        && FMath::IsFinite(Config.ThrowUpSpeedMin) && FMath::IsFinite(Config.ThrowUpSpeedMax)
+        && Config.ThrowUpSpeedMin > 0.0f && Config.ThrowUpSpeedMax >= Config.ThrowUpSpeedMin
+        && FMath::IsFinite(Config.ThrowHeightMin) && FMath::IsFinite(Config.ThrowHeightMax)
+        && Config.ThrowHeightMin >= 0.0f && Config.ThrowHeightMax >= Config.ThrowHeightMin;
     for (const float Value : Times)
     {
         bValid &= FMath::IsFinite(Value) && Value > 0.0f;

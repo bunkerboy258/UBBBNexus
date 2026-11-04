@@ -6,6 +6,7 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "NavigationSystem.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/World.h"
 void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaSeconds, bool bCausal)
@@ -24,29 +25,28 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
     auto *Controller = Cast<AAIController>(Actor.GetController());
     APawn *Visible = nullptr;
     float BestDistance = FMath::Square(Config.DetectionRadius);
-    if (State.ThrownCount < Config.ThrowLimit)
+    for (auto It = Actor.GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
-        for (auto It = Actor.GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        APawn *Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
+        APlayerState *Player = Pawn ? Pawn->GetPlayerState() : nullptr;
+        if (!IsValid(Pawn) || Pawn == &Actor || !IsValid(Player)
+            || State.PlayerThrowCounts.FindRef(Player) >= Config.ThrowLimit)
         {
-            APawn *Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
-            if (!IsValid(Pawn) || Pawn == &Actor)
-            {
-                continue;
-            }
-            const float Distance = FVector::DistSquared(Pawn->GetActorLocation(), Actor.GetActorLocation());
-            if (Distance > BestDistance)
-            {
-                continue;
-            }
-            FHitResult Hit;
-            FCollisionQueryParams Query(SCENE_QUERY_STAT(MaodieSight), false, &Actor);
-            const bool bBlocked = Actor.GetWorld()->LineTraceSingleByChannel(Hit,
-                Actor.GetActorLocation() + FVector(0.0f, 0.0f, 20.0f), Pawn->GetActorLocation(), ECC_Visibility, Query);
-            if (!bBlocked || Hit.GetActor() == Pawn)
-            {
-                BestDistance = Distance;
-                Visible = Pawn;
-            }
+            continue;
+        }
+        const float Distance = FVector::DistSquared(Pawn->GetActorLocation(), Actor.GetActorLocation());
+        if (Distance > BestDistance)
+        {
+            continue;
+        }
+        FHitResult Hit;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(MaodieSight), false, &Actor);
+        const bool bBlocked = Actor.GetWorld()->LineTraceSingleByChannel(Hit,
+            Actor.GetActorLocation() + FVector(0.0f, 0.0f, 20.0f), Pawn->GetActorLocation(), ECC_Visibility, Query);
+        if (!bBlocked || Hit.GetActor() == Pawn)
+        {
+            BestDistance = Distance;
+            Visible = Pawn;
         }
     }
     if (Visible)
@@ -54,17 +54,16 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
         if (State.Target.Get() != Visible)
         {
             State.Target = Visible;
-            State.NextActionAt = Now + Config.ObserveSeconds;
+            State.NextThrowAt = Now + Config.ObserveSeconds;
         }
         State.LastSeenAt = Now;
     }
-    if (!Visible && (Now - State.LastSeenAt >= Config.LoseInterestDelay || State.ThrownCount >= Config.ThrowLimit))
+    APawn *RememberedTarget = State.Target.Get();
+    const bool bExhausted = RememberedTarget
+        && State.PlayerThrowCounts.FindRef(RememberedTarget->GetPlayerState()) >= Config.ThrowLimit;
+    if (!Visible && (bExhausted || Now - State.LastSeenAt >= Config.LoseInterestDelay))
     {
         State.Target.Reset();
-    }
-    if (State.Snapshot.Phase == 3 && Now < State.HissEndsAt)
-    {
-        return;
     }
     if (auto *Target = State.Target.Get())
     {
@@ -76,15 +75,18 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
         FVector Direction = Target->GetActorLocation() - Actor.GetActorLocation();
         Direction.Z = 0.0f;
         Actor.SetActorRotation(FMath::RInterpTo(Actor.GetActorRotation(), Direction.Rotation(), DeltaSeconds, Config.TurnSpeed));
-        State.Snapshot.Phase = 2;
-        if (Visible && Now >= State.NextActionAt)
+        State.Snapshot.Phase = Now < State.HissEndsAt ? 3 : 2;
+        if (Visible && Now >= State.NextThrowAt)
         {
-            State.Snapshot.Phase = 3;
-            ++State.Snapshot.HissSerial;
-            State.HissEndsAt = Now + Config.HissDuration;
-            State.NextActionAt = Now + FMath::Max(Config.ThrowInterval, Config.HissDuration);
+            if (Now >= State.HissEndsAt)
+            {
+                State.Snapshot.Phase = 3;
+                ++State.Snapshot.HissSerial;
+                State.HissEndsAt = Now + Config.HissDuration;
+            }
+            State.NextThrowAt = Now + FMath::FRandRange(1.0f - Config.IntervalJitter, 1.0f + Config.IntervalJitter) / Config.ThrowFrequency;
             const FVector Forward = Direction.GetSafeNormal();
-            const FVector Origin = Actor.GetActorLocation() + Forward * 55.0f + FVector(0.0f, 0.0f, 35.0f);
+            const FVector Origin = Actor.GetActorLocation() + Forward * 55.0f + FVector(0.0f, 0.0f, FMath::FRandRange(Config.ThrowHeightMin, Config.ThrowHeightMax));
             FActorSpawnParameters Params;
             Params.Owner = &Actor;
             Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
@@ -94,11 +96,15 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
                 FBBBWorldDropInitialization Initialization;
                 Initialization.Definition = Config.DropPool[FMath::RandHelper(Config.DropPool.Num())];
                 Initialization.Quantity = 1;
-                Initialization.Velocity = Forward * Config.ThrowSpeed + FVector(0.0f, 0.0f, Config.ThrowUpSpeed);
+                Initialization.Velocity = Forward * FMath::FRandRange(Config.ThrowSpeedMin, Config.ThrowSpeedMax)
+                    + FVector(0.0f, 0.0f, FMath::FRandRange(Config.ThrowUpSpeedMin, Config.ThrowUpSpeedMax));
                 FBBBWorldDropInitializeLocalControlPacket Packet;
                 Packet.Initializations.Add(Initialization);
                 Drop->SubmitInput(MoveTemp(Packet));
-                ++State.ThrownCount;
+                const int32 Count = ++State.PlayerThrowCounts.FindOrAdd(Target->GetPlayerState());
+                UE_LOG(LogTemp, Display, TEXT("MaodieThrow Player=%s Count=%d Limit=%d Time=%.3f Velocity=%s Height=%.2f NextInterval=%.3f"),
+                    *Target->GetPlayerState()->GetPlayerName(), Count, Config.ThrowLimit, Now,
+                    *Initialization.Velocity.ToCompactString(), Origin.Z - Actor.GetActorLocation().Z, State.NextThrowAt - Now);
             }
             if (!Drop)
             {

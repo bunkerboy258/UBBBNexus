@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "Materials/MaterialInstanceDynamic.h"
 void FBBBMaodieTestAnimationProcessor::Update(ABBBMaodieTest &Actor, float DeltaSeconds, bool bCausal)
 {
     auto &State = Actor.RuntimeData.Animation.State;
@@ -19,7 +20,14 @@ void FBBBMaodieTestAnimationProcessor::Update(ABBBMaodieTest &Actor, float Delta
         }
         State.LastPhase = Snapshot.Phase;
     }
-    Actor.GetMesh()->SetMorphTarget(TEXT("Hiss"), Snapshot.Phase == 3 ? 1.0f : 0.0f);
+    if (!State.ExpressionMaterial)
+    {
+        State.ExpressionMaterial = Actor.GetMesh()->CreateDynamicMaterialInstance(0);
+    }
+    if (State.ExpressionMaterial)
+    {
+        State.ExpressionMaterial->SetScalarParameterValue(TEXT("Hiss"), Snapshot.Phase == 3 ? 1.0f : 0.0f);
+    }
     if (State.LastHissSerial != Snapshot.HissSerial)
     {
         State.LastHissSerial = Snapshot.HissSerial;
