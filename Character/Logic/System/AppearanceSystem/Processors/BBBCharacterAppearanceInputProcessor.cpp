@@ -13,23 +13,6 @@ void FBBBCharacterAppearanceInputProcessor::Update(FBBBCharacterAppearanceUpdate
         Style.BaseParts = Context.Config.DefaultBaseParts;
         Style.Dirt = Context.Config.Dirt;
         Style.Weathering = Context.Config.Weathering;
-        if (!Context.bIsMirror)
-        {
-            // 同一灰阶系数由材质映射为自然肤色 头部与手臂复用既有颜色事实同步
-            const float SkinTone = FMath::FRand();
-            for (const FName Slot : {FName(TEXT("Head")), FName(TEXT("Arms"))})
-            {
-                const FName *ResourceId = Style.BaseParts.Find(Slot);
-                const FBBBAppearanceResource *Resource = ResourceId ? Context.Config.BaseResources.Find(*ResourceId) : nullptr;
-                if (Resource && Resource->ColorParameters.Num() == 1
-                    && Resource->ColorParameters[0] == TEXT("SkinTone"))
-                {
-                    FBBBCharacterAppearanceStyle &SkinStyle = Style.Styles.AddDefaulted_GetRef();
-                    SkinStyle.Slot = Slot;
-                    SkinStyle.Colors.Add(FLinearColor(SkinTone, SkinTone, SkinTone, 1.0f));
-                }
-            }
-        }
         ++Style.Revision;
     }
     if (Context.bIsMirror)
@@ -83,6 +66,41 @@ void FBBBCharacterAppearanceInputProcessor::Update(FBBBCharacterAppearanceUpdate
         }
         return Stored;
     };
+    // 首次成为控制端时建立肤色 已有本地颜色或镜像结果沿用同一系数
+    float SkinTone = -1.0f;
+    for (const FName Slot : {FName(TEXT("Head")), FName(TEXT("Arms"))})
+    {
+        const FName *ResourceId = Style.BaseParts.Find(Slot);
+        const FBBBAppearanceResource *Resource = ResourceId ? Context.Config.BaseResources.Find(*ResourceId) : nullptr;
+        const bool bStored = Style.Styles.ContainsByPredicate([Slot](const auto &Value)
+        {
+            return !Value.InstanceId.IsValid() && Value.Slot == Slot;
+        });
+        if (!Resource || Resource->ColorParameters.Num() != 1
+            || Resource->ColorParameters[0] != TEXT("SkinTone") || bStored)
+        {
+            continue;
+        }
+        if (SkinTone < 0.0f)
+        {
+            const auto IsSkinColor = [](const auto &Value)
+            {
+                return !Value.InstanceId.IsValid() && Value.Colors.Num() == 1
+                    && (Value.Slot == TEXT("Head") || Value.Slot == TEXT("Arms"));
+            };
+            const auto *Local = Style.Styles.FindByPredicate(IsSkinColor);
+            const auto *Received = Selection.Parts.FindByPredicate(IsSkinColor);
+            SkinTone = Local ? FMath::Clamp(Local->Colors[0].R, 0.0f, 1.0f)
+                : Received ? FMath::Clamp(Received->Colors[0].R, 0.0f, 1.0f) : FMath::FRand();
+        }
+        FBBBCharacterAppearanceStyle *Stored = FindStyle(FGuid(), Slot);
+        if (Stored)
+        {
+            // 灰阶只传递随机系数 自然肤色范围由材质限定
+            Stored->Colors.Add(FLinearColor(SkinTone, SkinTone, SkinTone, 1.0f));
+            ++Style.Revision;
+        }
+    }
     for (int32 Index = 0; Index < Input.PendingColors.Num(); ++Index)
     {
         FBBBCharacterAppearanceStyle *Stored = FindStyle(Input.PendingColorInstances[Index], Input.PendingColorSlots[Index]);
