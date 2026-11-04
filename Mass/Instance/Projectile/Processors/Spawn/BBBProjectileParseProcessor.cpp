@@ -2,6 +2,7 @@
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
+#include "BBBWork/UBBBNexus/Debug/Character/BBBAimDebugSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
@@ -57,6 +58,8 @@ void UBBBProjectileParseProcessor::Execute(FMassEntityManager&, FMassExecutionCo
             if (Slot.Packet.CanApply(Motion[Index]))
             {
                 Slot.Packet.Apply(Transforms[Index], Velocities[Index], Motion[Index], Collision[Index], Life[Index], Presentation[Index]);
+                UBBBAimDebugSubsystem::RecordLaunch(Chunk.GetWorld(), Slot.Packet.Pawn.Get(), Chunk.GetEntity(Index),
+                    Slot.Packet.LaunchTransform, Velocities[Index].Value.GetSafeNormal(), Slot.Packet.AttackId);
             }
         }
     });
