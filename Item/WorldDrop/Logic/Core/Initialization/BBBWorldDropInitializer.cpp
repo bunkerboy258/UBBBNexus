@@ -24,6 +24,14 @@ void FBBBWorldDropInitializer::Construct(ABBBWorldDropItem &Drop)
     Drop.Body->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
     Drop.Body->SetLinearDamping(1.0f);
     Drop.Body->SetAngularDamping(2.0f);
+    Drop.Airborne = Drop.CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DropAirborne"));
+    Drop.Airborne->SetupAttachment(Drop.Body);
+    Drop.Airborne->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Drop.Airborne->SetCastShadow(false);
+    Drop.Airborne->SetReceivesDecals(false);
+    Drop.Airborne->SetAffectDynamicIndirectLighting(false);
+    Drop.Airborne->SetVisibleInRayTracing(false);
+    Drop.Airborne->SetVisibility(false);
     Drop.Icon = Drop.CreateDefaultSubobject<UMaterialBillboardComponent>(TEXT("DropIcon"));
     Drop.Icon->SetupAttachment(Drop.Body);
     Drop.Icon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -52,6 +60,7 @@ void FBBBWorldDropInitializer::Initialize(ABBBWorldDropItem &Drop)
     const auto &Config = Drop.Config;
     Drop.RuntimeData.Drop.PresentationState = {};
     Drop.Body->SetSphereRadius(FMath::Max(1.0f, Config.Radius));
+    Drop.Airborne->SetVisibility(false);
     Drop.Icon->SetVisibility(false);
     Drop.Beam->SetVisibility(false);
     Drop.GroundGlow->SetVisibility(false);

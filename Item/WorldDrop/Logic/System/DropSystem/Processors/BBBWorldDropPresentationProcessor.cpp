@@ -8,6 +8,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Context) const
 {
     auto &Drop = Context.Drop;
@@ -21,6 +22,19 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
     if (Presentation.RenderedDefinition != Snapshot.Definition)
     {
         Presentation.RenderedDefinition = Snapshot.Definition;
+        if (Drop.GetNetMode() != NM_DedicatedServer && Snapshot.Definition)
+        {
+            auto *Mesh = Config.AirborneMesh.LoadSynchronous();
+            Drop.Airborne->SetStaticMesh(Mesh);
+            if (ensureMsgf(Mesh, TEXT("世界掉落物缺少空中实体外观 %s"), *Drop.GetPathName()))
+            {
+                const auto Bounds = Mesh->GetBounds();
+                const float Scale = FMath::Max(1.0f, Config.AirborneSize)
+                    / FMath::Max(1.0f, Bounds.BoxExtent.GetMax() * 2.0f);
+                Drop.Airborne->SetRelativeScale3D(FVector(Scale));
+                Drop.Airborne->SetRelativeLocation(-Bounds.Origin * Scale);
+            }
+        }
         Presentation.IconMaterial = nullptr;
         Drop.Icon->Elements.Reset();
         if (Snapshot.Definition && Snapshot.Definition->Icon)
@@ -49,6 +63,9 @@ void FBBBWorldDropPresentationProcessor::Update(FBBBWorldDropUpdateContext &Cont
         Drop.Icon->MarkRenderStateDirty();
     }
     const bool bVisible = Snapshot.Definition && Snapshot.bLanded && !Snapshot.bConsumed;
+    const bool bAirborne = Snapshot.Definition && Snapshot.Quantity > 0 && !Snapshot.bLanded
+        && !Snapshot.bConsumed && Drop.GetNetMode() != NM_DedicatedServer;
+    Drop.Airborne->SetVisibility(bAirborne && Drop.Airborne->GetStaticMesh());
     const double Now = Drop.GetWorld()->GetTimeSeconds();
     if (bVisible && !Presentation.bWasVisible)
     {

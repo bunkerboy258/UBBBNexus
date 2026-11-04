@@ -62,6 +62,9 @@ private:
     /** 唯一世界物理主体 */
     UPROPERTY(VisibleAnywhere, Category = "掉落物", meta = (DisplayName = "碰撞球"))
     TObjectPtr<USphereComponent> Body;
+    /** 仅飞行阶段显示的实体掉落包 跟随唯一物理主体 */
+    UPROPERTY(VisibleAnywhere, Category = "显示", meta = (DisplayName = "空中掉落包"))
+    TObjectPtr<UStaticMeshComponent> Airborne;
     /** 自动朝向本地相机的材质图标 */
     UPROPERTY(VisibleAnywhere, Category = "显示", meta = (DisplayName = "白色图标"))
     TObjectPtr<UMaterialBillboardComponent> Icon;

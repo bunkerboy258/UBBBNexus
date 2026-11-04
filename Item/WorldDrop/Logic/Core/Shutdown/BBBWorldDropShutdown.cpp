@@ -7,6 +7,7 @@ void FBBBWorldDropShutdown::Shutdown(ABBBWorldDropItem &Drop)
 {
     Drop.SetActorTickEnabled(false);
     Drop.Body->SetSimulatePhysics(false);
+    Drop.Airborne->SetVisibility(false);
     Drop.Icon->SetVisibility(false);
     Drop.Beam->SetVisibility(false);
     Drop.GroundGlow->SetVisibility(false);

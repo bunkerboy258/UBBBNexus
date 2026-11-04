@@ -3,6 +3,7 @@
 #include "BBBWorldDropConfig.generated.h"
 class UBBBItemDefinition;
 class UMaterialInterface;
+class UStaticMesh;
 /** 世界掉落物生成与共用显示配置 */
 USTRUCT(BlueprintType)
 struct FBBBWorldDropConfig final
@@ -20,6 +21,12 @@ struct FBBBWorldDropConfig final
     /** 物理球体半径 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "掉落物", meta = (DisplayName = "碰撞半径", ClampMin = "1", ToolTip = "世界物理碰撞球半径 单位厘米"))
     float Radius = 8.0f;
+    /** 飞行期间随物理主体移动的实体外观 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "显示", meta = (DisplayName = "空中掉落包网格", ToolTip = "仅在尚未落地时显示的实体包裹 复用现有物理主体 不创建独立装备"))
+    TSoftObjectPtr<UStaticMesh> AirborneMesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/_ThirdParty/Environment/ApocalypticCity/StaticMeshs/Bag_sm.Bag_sm")));
+    /** 实体包裹最长边的尺寸 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "显示", meta = (DisplayName = "空中掉落包尺寸", ClampMin = "1", ToolTip = "自动按网格包围盒归一化后的最长边 单位厘米"))
+    float AirborneSize = 24.0f;
     /** 白色图标的显示高度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "显示", meta = (DisplayName = "图标高度", ClampMin = "1", ToolTip = "白色缩略图高度 单位厘米 宽度保持贴图比例"))
     float IconHeight = 39.0f;
