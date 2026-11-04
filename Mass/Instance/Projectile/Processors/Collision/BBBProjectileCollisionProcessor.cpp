@@ -5,7 +5,6 @@
 #include "MassExecutionContext.h"
 #include "MassCommonFragments.h"
 #include "MassMovementFragments.h"
-#include "BBBWork/UBBBNexus/Debug/Character/BBBAimDebugSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerState.h"
@@ -199,7 +198,6 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                     Impact.Normal = WorldHit.ImpactNormal;
                     Impact.Surface = UPhysicalMaterial::DetermineSurfaceType(WorldHit.PhysMaterial.Get());
                 }
-                UBBBAimDebugSubsystem::RecordHit(World, Chunk.GetEntity(Index), Impact.Position, Impact.Normal);
                 if (Presentation[Index].ImpactChannel.IsValid()
                     && ensureMsgf(!ImpactChannel.IsValid() || ImpactChannel == Presentation[Index].ImpactChannel,
                     TEXT("同一世界的子弹命中必须使用同一个批量通道")))
