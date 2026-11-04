@@ -13,6 +13,23 @@ void FBBBCharacterAppearanceInputProcessor::Update(FBBBCharacterAppearanceUpdate
         Style.BaseParts = Context.Config.DefaultBaseParts;
         Style.Dirt = Context.Config.Dirt;
         Style.Weathering = Context.Config.Weathering;
+        if (!Context.bIsMirror)
+        {
+            // 同一灰阶系数由材质映射为自然肤色 头部与手臂复用既有颜色事实同步
+            const float SkinTone = FMath::FRand();
+            for (const FName Slot : {FName(TEXT("Head")), FName(TEXT("Arms"))})
+            {
+                const FName *ResourceId = Style.BaseParts.Find(Slot);
+                const FBBBAppearanceResource *Resource = ResourceId ? Context.Config.BaseResources.Find(*ResourceId) : nullptr;
+                if (Resource && Resource->ColorParameters.Num() == 1
+                    && Resource->ColorParameters[0] == TEXT("SkinTone"))
+                {
+                    FBBBCharacterAppearanceStyle &SkinStyle = Style.Styles.AddDefaulted_GetRef();
+                    SkinStyle.Slot = Slot;
+                    SkinStyle.Colors.Add(FLinearColor(SkinTone, SkinTone, SkinTone, 1.0f));
+                }
+            }
+        }
         ++Style.Revision;
     }
     if (Context.bIsMirror)
