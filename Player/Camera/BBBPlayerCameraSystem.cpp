@@ -34,7 +34,7 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
         InnerOutlineInstance = nullptr;
     }
     const auto &Readability = InCharacter.GetCharacterConfig().Appearance;
-    if (InController.IsLocalController() && Readability.InnerOutlineOpacity > 0.0f)
+    if (InController.IsLocalController())
     {
         UMaterialInterface *Parent = InnerOutlineMaterial.LoadSynchronous();
         if (ensureMsgf(Parent, TEXT("本地角色内侧轮廓材质缺失")))

@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/Config/BBBMaodieTestAppearanceConfig.h"
 #include "BBBMaodieTestConfig.generated.h"
 class UBBBItemDefinition;
 class USoundBase;
@@ -9,6 +10,10 @@ USTRUCT(BlueprintType)
 struct FBBBMaodieTestConfig final
 {
     GENERATED_BODY()
+
+    /** 专用灯光与橙色轮廓配置 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋|外观", meta = (DisplayName = "外观配置"))
+    FBBBMaodieTestAppearanceConfig Appearance;
     /** 游荡半径 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "游荡半径", ClampMin = "1"))
     float WanderRadius = 500.0f;

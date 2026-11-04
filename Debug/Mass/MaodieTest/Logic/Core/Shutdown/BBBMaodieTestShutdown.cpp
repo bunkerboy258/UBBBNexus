@@ -1,10 +1,12 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/Logic/Core/Shutdown/BBBMaodieTestShutdown.h"
 #include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/BBBMaodieTest.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/Logic/System/AppearanceSystem/BBBMaodieTestAppearanceSystem.h"
 #include "AIController.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 void FBBBMaodieTestShutdown::Shutdown(ABBBMaodieTest &Actor)
 {
+    FBBBMaodieTestAppearanceSystem::Shutdown(Actor);
     if (auto *Controller = Cast<AAIController>(Actor.GetController()))
     {
         Controller->StopMovement();
