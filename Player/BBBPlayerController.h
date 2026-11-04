@@ -90,6 +90,13 @@ public:
     /** @param DeltaTime	本帧时长 @return 无 观察物品结果变化并通知玩家 UI */
     virtual void PlayerTick(float DeltaTime) override;
 
+    /** @return 当前本地玩家在本关卡发现的耄耋数量 */
+    UFUNCTION(BlueprintPure, Category = "Exploration")
+    int32 GetDiscoveredMaodieCount() const;
+
+    /** @return 首次全部发现的实际时间 未完成为负值 */
+    double GetExplorationCompletionTime() const;
+
     /** @return 当前玩家是否拥有可读取的真实背包 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     bool HasItemInventory() const;

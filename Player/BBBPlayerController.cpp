@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
+#include "BBBWork/UBBBNexus/Player/BBBPlayerExplorationSystem.h"
+#include "Engine/LocalPlayer.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
@@ -488,6 +490,10 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
     {
         return;
     }
+    if (auto *LocalPlayer = GetLocalPlayer())
+    {
+        LocalPlayer->GetSubsystem<UBBBPlayerExplorationSystem>()->Update(*this);
+    }
     ABBBCharacter *ItemCharacter = GetItemCharacter();
     const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Revision : 0;
     const int32 BarRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().Revision : 0;
@@ -508,6 +514,20 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
         ObservedItemOperationRevision = OperationRevision;
         OnItemsChanged.Broadcast();
     }
+}
+
+int32 ABBBPlayerController::GetDiscoveredMaodieCount() const
+{
+    const auto *LocalPlayer = GetLocalPlayer();
+    const auto *Exploration = LocalPlayer ? LocalPlayer->GetSubsystem<UBBBPlayerExplorationSystem>() : nullptr;
+    return Exploration ? Exploration->GetDiscoveredCount() : 0;
+}
+
+double ABBBPlayerController::GetExplorationCompletionTime() const
+{
+    const auto *LocalPlayer = GetLocalPlayer();
+    const auto *Exploration = LocalPlayer ? LocalPlayer->GetSubsystem<UBBBPlayerExplorationSystem>() : nullptr;
+    return Exploration ? Exploration->GetCompletionTime() : -1.0;
 }
 
 bool ABBBPlayerController::SubmitQuickUse()

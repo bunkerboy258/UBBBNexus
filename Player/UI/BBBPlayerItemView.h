@@ -7,6 +7,8 @@
 class ABBBPlayerController;
 class APawn;
 class UFontFace;
+class USoundBase;
+class UTexture2D;
 class UMaterialInterface;
 class UBBBPlayerItemPortrait;
 class SImage;
@@ -66,6 +68,8 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     int32 GetInspectedSlot() const;
     /** @return 快捷切换提示当前不透明度 */
     float GetQuickSelectionOpacity() const;
+    /** @return 耄耋探索头像及其打包依赖 */
+    UTexture2D *GetMaodieAvatar() const;
 
   protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -84,6 +88,10 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     TSharedRef<SWidget> MakeBackpack();
     /** @return 当前角色战斗数据的全视口覆层 */
     TSharedRef<SWidget> MakeGameplayHud();
+    /** @return 独立探索覆层 完成提示位于背包之上 */
+    TSharedRef<SWidget> MakeExplorationHud();
+    /** @return 无 消费新的完成结果并播放一次本地音效 */
+    void UpdateExplorationPresentation();
     /** @return 当前选择物品的详情画刷 */
     const FSlateBrush *GetDetailBrush() const;
     /** @return 角色实时预览画刷 */
@@ -101,6 +109,15 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     TObjectPtr<UFontFace> InterfaceArtFont;
     UPROPERTY()
     TObjectPtr<UMaterialInterface> InterfaceArtMaterial;
+    /** 探索像素头像的显式打包依赖 */
+    UPROPERTY()
+    TObjectPtr<UTexture2D> MaodieAvatar;
+    /** 已提高响度的完成音效 */
+    UPROPERTY()
+    TObjectPtr<USoundBase> EvacSound;
+    /** 当前世界中的完成音效消费位置 只影响表现 */
+    double LastEvacCompletionAt = -1.0;
+    TWeakObjectPtr<UWorld> EvacPresentationWorld;
 
     /** 两处格子均只引用同一个背包索引 */
     TSharedPtr<SHorizontalBox> QuickBar;

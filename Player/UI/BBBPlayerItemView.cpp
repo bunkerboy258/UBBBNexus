@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
+#include "Sound/SoundBase.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
@@ -26,6 +27,12 @@ UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializ
         TEXT("/Game/_Project/UI/Bag/Materials/M_BagChineseArt.M_BagChineseArt"));
     InterfaceArtFont = ArtFont.Object;
     InterfaceArtMaterial = ArtMaterial.Object;
+    static ConstructorHelpers::FObjectFinder<UTexture2D> Avatar(
+        TEXT("/Game/_Project/UI/Gameplay/T_MaodieAvatar.T_MaodieAvatar"));
+    static ConstructorHelpers::FObjectFinder<USoundBase> CompletionSound(
+        TEXT("/Game/_Project/UI/Gameplay/Evac.Evac"));
+    MaodieAvatar = Avatar.Object;
+    EvacSound = CompletionSound.Object;
 }
 
 ABBBPlayerController *UBBBPlayerItemView::GetItemController() const
@@ -111,6 +118,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
 void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
 {
     Super::NativeTick(Geometry, DeltaTime);
+    UpdateExplorationPresentation();
     if (bBackpackOpen && CharacterPreview)
     {
         CharacterPreview->Update(DeltaTime);

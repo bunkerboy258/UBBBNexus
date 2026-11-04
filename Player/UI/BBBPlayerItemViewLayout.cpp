@@ -42,7 +42,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
                                  return bBackpackOpen ? EVisibility::Visible : EVisibility::Collapsed;
                              }) +
                          SOverlay::Slot()[SNew(SBackgroundBlur).BlurStrength(16.0f)] +
-                         SOverlay::Slot()[MakeBackpack()]];
+                         SOverlay::Slot()[MakeBackpack()]] +
+        SOverlay::Slot()[MakeExplorationHud()];
     RefreshItems();
     return Result;
 }

@@ -11,6 +11,10 @@ struct FBBBMaodieTestConfig final
 {
     GENERATED_BODY()
 
+    /** 本关卡探索编号 零表示不参与十只耄耋探索 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋|探索", meta = (DisplayName = "探索编号", ClampMin = "0", ClampMax = "10", ToolTip = "正式地图的十只耄耋分别配置一至十 同一编号对每位玩家只计数一次"))
+    int32 DiscoveryIndex = 0;
+
     /** 专用灯光与橙色轮廓配置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋|外观", meta = (DisplayName = "外观配置"))
     FBBBMaodieTestAppearanceConfig Appearance;
