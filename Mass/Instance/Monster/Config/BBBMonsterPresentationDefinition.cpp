@@ -116,13 +116,11 @@ bool UBBBMonsterPresentationDefinition::IsValid() const
         || !ValidCycle(Animation.PatrolCycleSeconds) || !ValidCycle(Animation.SlowWalkCycleSeconds) || !ValidCycle(Animation.PursuitWalkCycleSeconds)
         || Animation.LocomotionWeights.ContainsNaN() || Animation.LocomotionWeights.GetMin() < 0
         || Animation.LocomotionWeights.X + Animation.LocomotionWeights.Y + Animation.LocomotionWeights.Z <= 0
-        || !FMath::IsFinite(Animation.AnimationStrideScale) || Animation.AnimationStrideScale <= 0
-        || !FMath::IsFinite(Animation.SlowWalkSampleSpeed) || Animation.SlowWalkSampleSpeed <= 0
+        || !FMath::IsFinite(Animation.PlaybackRate) || Animation.PlaybackRate < 0.8f || Animation.PlaybackRate > 1.2f
+        || Animation.SlowWalkSampleSpeed.ContainsNaN() || Animation.SlowWalkSampleSpeed.GetMin() <= 0
         || !FMath::IsFinite(Animation.AlertCycleSeconds) || Animation.AlertCycleSeconds <= 0.01
         || !FMath::IsFinite(Animation.DeathAnimationDuration) || Animation.DeathAnimationDuration <= 0
-        || !FMath::IsFinite(Animation.CorpseSimulationDuration) || Animation.CorpseSimulationDuration < 0.5
-        || Animation.CorpseSimulationDuration > 10 || !FMath::IsFinite(Animation.AnimationHitFraction)
-        || Animation.AnimationHitFraction <= 0 || Animation.AnimationHitFraction >= 1)
+        || !FMath::IsFinite(Animation.CorpseSimulationDuration) || Animation.CorpseSimulationDuration < 0.5)
     {
         return false;
     }

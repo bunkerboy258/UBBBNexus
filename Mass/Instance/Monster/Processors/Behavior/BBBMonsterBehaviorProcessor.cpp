@@ -1,3 +1,4 @@
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Behavior/BBBMonsterBehaviorProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
@@ -51,6 +52,7 @@ void UBBBMonsterBehaviorProcessor::ConfigureQueries(const TSharedRef<FMassEntity
     MonsterQuery.AddRequirement<FBBBMonsterCombatFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadWrite);
     MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
+    MonsterQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
 }
 
@@ -270,6 +272,11 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             {
                 EnterState(EBBBMonsterBehavior::Attack, true);
                 ++Combat.AttackId;
+                const auto Variations = ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>();
+                const FVector2D Timing = Settings->ResolveAttackTiming(Variations.IsEmpty() ? 0 : Variations[Index].Seed,
+                    State.ActionId, Mobility[Index].bCrawling);
+                Combat.AttackWindup = Timing.X;
+                Combat.AttackRecovery = Timing.Y;
                 Combat.AttackTarget = Target.TargetActor;
                 Combat.bHitAttempted = false;
                 Combat.bAttackFinished = false;

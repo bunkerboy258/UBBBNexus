@@ -330,6 +330,11 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             const auto* Variation = Manager.GetFragmentDataPtr<FBBBMonsterVariationFragment>(Entity);
             const auto* Snapshot = Manager.GetFragmentDataPtr<FBBBMonsterPresentationStateFragment>(Entity);
             const auto* Network = Manager.GetFragmentDataPtr<FBBBMonsterNetworkFragment>(Entity);
+            const auto* BehaviorRules = Network && Network->Definition.IsValid() ? Network->Definition.Get() : nullptr;
+            Sample->SetStringField(TEXT("definitionPath"), GetPathNameSafe(BehaviorRules));
+            Sample->SetNumberField(TEXT("sightRangeCm"), BehaviorRules ? BehaviorRules->SightRange : 0.0f);
+            Sample->SetNumberField(TEXT("sightConfirmMinSeconds"), BehaviorRules ? BehaviorRules->SightConfirmMin : 0.0f);
+            Sample->SetNumberField(TEXT("sightConfirmMaxSeconds"), BehaviorRules ? BehaviorRules->SightConfirmMax : 0.0f);
             Sample->SetStringField(TEXT("instanceId"), Network ? Network->InstanceId.ToString() : TEXT(""));
             Sample->SetNumberField(TEXT("variationSeed"), Variation ? Variation->Seed : 0);
             Sample->SetNumberField(TEXT("infection"), Variation ? Variation->Infection : 0);
@@ -394,15 +399,23 @@ FString UBBBMassValidationLibrary::InspectPopulation(UObject* WorldContext, cons
             Sample->SetStringField(TEXT("targetLocation"), Target ? Target->TargetLocation.ToString() : TEXT(""));
             Sample->SetNumberField(TEXT("targetRevision"), Target ? Target->Revision : 0);
             Sample->SetNumberField(TEXT("visualContacts"), Perception ? Perception->Contacts.Num() : 0);
+            Sample->SetNumberField(TEXT("effectiveSightRangeCm"), Perception ? Perception->SightRange : 0.0f);
+            Sample->SetNumberField(TEXT("lastSenseTime"), Perception ? Perception->LastSenseTime : -1.0f);
             float Awareness = 0.0f;
+            int32 VisibleContacts = 0;
+            int32 ConfirmedContacts = 0;
             if (Perception)
             {
                 for (const auto& Contact : Perception->Contacts)
                 {
                     Awareness = FMath::Max(Awareness, Contact.Awareness);
+                    VisibleContacts += Contact.bVisible ? 1 : 0;
+                    ConfirmedContacts += Contact.bConfirmed ? 1 : 0;
                 }
             }
             Sample->SetNumberField(TEXT("awareness"), Awareness);
+            Sample->SetNumberField(TEXT("visibleContacts"), VisibleContacts);
+            Sample->SetNumberField(TEXT("confirmedContacts"), ConfirmedContacts);
             Sample->SetNumberField(TEXT("pathPoints"), Navigation->Corners.Num());
             TArray<TSharedPtr<FJsonValue>> PathCoordinates;
             for (const FVector& Point : Navigation->Corners)

@@ -62,8 +62,37 @@ const FBBBMonsterBodyPartDefinition& UBBBMonsterDefinition::GetBodyPart(const EB
     }
 }
 
+FVector2D UBBBMonsterDefinition::ResolveAttackTiming(const uint32 Seed, const uint32 ActionId, const bool bCrawling) const
+{
+    const auto& Windups = bCrawling ? CrawlAttackWindup : AttackWindup;
+    const auto& Recoveries = bCrawling ? CrawlAttackRecovery : AttackRecovery;
+    const int32 Choice = (static_cast<uint64>(Seed) + ActionId) % Windups.Num();
+    return FVector2D(Windups[Choice], Recoveries[Choice]);
+}
+
 bool UBBBMonsterDefinition::IsValid() const
 {
+    const auto ValidTiming = [](const TArray<float>& Windups, const TArray<float>& Recoveries)
+    {
+        if (Windups.IsEmpty() || Windups.Num() != Recoveries.Num())
+        {
+            return false;
+        }
+        for (int32 Index = 0; Index < Windups.Num(); ++Index)
+        {
+            if (!FMath::IsFinite(Windups[Index]) || Windups[Index] <= 0.0f ||
+                !FMath::IsFinite(Recoveries[Index]) || Recoveries[Index] <= 0.0f)
+            {
+                return false;
+            }
+        }
+        return true;
+    };
+    if (!ValidTiming(AttackWindup, AttackRecovery) || !ValidTiming(CrawlAttackWindup, CrawlAttackRecovery))
+    {
+        return false;
+    }
+
     float Weight = 0.f;
     for (uint8 Part = 0; Part <= 5; ++Part)
     {
@@ -80,6 +109,18 @@ bool UBBBMonsterDefinition::IsValid() const
     {
         return false;
     }
+    // 三种出生风格各自使用原动画对应的速度 阶段顺序必须完整
+    for (int32 Style = 0; Style < 3; ++Style)
+    {
+        if (!FMath::IsFinite(PatrolSpeed[Style]) || PatrolSpeed[Style] <= 0.0
+            || !FMath::IsFinite(WalkSpeed[Style]) || WalkSpeed[Style] <= 0.0
+            || !FMath::IsFinite(WalkerChaseWalkSpeed[Style]) || WalkerChaseWalkSpeed[Style] <= WalkSpeed[Style]
+            || !FMath::IsFinite(RunSpeed[Style]) || RunSpeed[Style] <= WalkerChaseWalkSpeed[Style]
+            || !FMath::IsFinite(SprintSpeed[Style]) || SprintSpeed[Style] <= RunSpeed[Style])
+        {
+            return false;
+        }
+    }
     const auto* Trait = EntityConfig ? Cast<UBBBMonsterTrait>(EntityConfig->FindTrait(UBBBMonsterTrait::StaticClass())) : nullptr;
     return EntityConfig != nullptr
         && Trait && Trait->Definition == this
@@ -92,12 +133,8 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(RunTurnRate) && RunTurnRate > 0.0f
         && FMath::IsFinite(CrawlTurnRate) && CrawlTurnRate > 0.0f
         && FMath::IsFinite(CorpseLifetime) && CorpseLifetime >= 5.0f
-        && FMath::IsFinite(WalkSpeed) && WalkSpeed > 0.0f
-        && FMath::IsFinite(WalkerChaseWalkSpeed) && WalkerChaseWalkSpeed > WalkSpeed && WalkerChaseWalkSpeed < RunSpeed
         && FMath::IsFinite(WalkerRunDistanceMin) && WalkerRunDistanceMin > 0.0f
         && FMath::IsFinite(WalkerRunDistanceMax) && WalkerRunDistanceMax >= WalkerRunDistanceMin
-        && FMath::IsFinite(RunSpeed) && RunSpeed > WalkSpeed
-        && FMath::IsFinite(SprintSpeed) && SprintSpeed > RunSpeed
         && FMath::IsFinite(Acceleration) && Acceleration > 0.0f
         && FMath::IsFinite(Deceleration) && Deceleration > 0.0f
         && FMath::IsFinite(SprintDistance) && SprintDistance > 0.0f
@@ -109,7 +146,7 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(LegHitSlowDuration) && LegHitSlowDuration > 0.0f
         && FMath::IsFinite(HitSlowHoldDuration) && HitSlowHoldDuration >= 0.0f
         && FMath::IsFinite(HitStopDuration) && HitStopDuration >= 0.0f && HitStopDuration <= 0.2f
-        && FMath::IsFinite(CrawlSpeed) && CrawlSpeed > 0.0f && CrawlSpeed <= WalkSpeed
+        && FMath::IsFinite(CrawlSpeed) && CrawlSpeed > 0.0f && CrawlSpeed <= RunSpeed.GetMin()
         && FMath::IsFinite(CrawlCapsuleHalfHeight) && CrawlCapsuleHalfHeight >= CollisionRadius && CrawlCapsuleHalfHeight <= CapsuleHalfHeight
         && FMath::IsFinite(CrawlTransitionDuration) && CrawlTransitionDuration > 0.0f
         && FMath::IsFinite(CrawlMaxStepHeight) && CrawlMaxStepHeight >= 0.0f && CrawlMaxStepHeight < CrawlCapsuleHalfHeight
@@ -157,9 +194,7 @@ bool UBBBMonsterDefinition::IsValid() const
         && FMath::IsFinite(AttackRange) && AttackRange > 0.0f
         && FMath::IsFinite(AttackDamage) && AttackDamage >= 0.0f
         && FMath::IsFinite(AttackCooldown) && AttackCooldown >= 0.0f
-        && FMath::IsFinite(AttackCooldownVariation) && AttackCooldownVariation >= 0.0f && AttackCooldownVariation <= 0.3f
-        && FMath::IsFinite(AttackWindup) && AttackWindup > 0.0f
-        && FMath::IsFinite(AttackRecovery) && AttackRecovery > 0.0f;
+        && FMath::IsFinite(AttackCooldownVariation) && AttackCooldownVariation >= 0.0f && AttackCooldownVariation <= 0.3f;
 }
 
 #if WITH_EDITOR
@@ -171,7 +206,7 @@ EDataValidationResult UBBBMonsterDefinition::IsDataValid(FDataValidationContext&
         return EDataValidationResult::Invalid;
     }
     if (!Presentation || !Presentation->IsValid()
-        || Presentation->Animation.SlowWalkSampleSpeed >= WalkSpeed
+        || (WalkSpeed - Presentation->Animation.SlowWalkSampleSpeed).GetMin() <= 0.0
         || Presentation->Animation.DeathAnimationDuration >= CorpseLifetime
         || Presentation->Animation.CorpseSimulationDuration >= CorpseLifetime)
     {

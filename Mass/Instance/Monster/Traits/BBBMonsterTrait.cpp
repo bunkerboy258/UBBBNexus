@@ -45,7 +45,7 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
         return;
     }
     if (!BuildContext.IsInspectingData() && !ensureMsgf(Settings->Presentation && Settings->Presentation->IsValid()
-        && Settings->Presentation->Animation.SlowWalkSampleSpeed < Settings->WalkSpeed
+        && (Settings->WalkSpeed - Settings->Presentation->Animation.SlowWalkSampleSpeed).GetMin() > 0.0
         && Settings->Presentation->Animation.DeathAnimationDuration < Settings->CorpseLifetime
         && Settings->Presentation->Animation.CorpseSimulationDuration < Settings->CorpseLifetime,
         TEXT("Mass 小怪表现配置不完整或与逻辑时序不匹配 %s"), *GetPathNameSafe(Settings)))
@@ -95,10 +95,11 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Health.MaxHealth = Settings->MaxHealth;
     Health.CorpseLifetime = Settings->CorpseLifetime;
     auto& Movement = BuildContext.AddFragment_GetRef<FBBBMonsterMovementFragment>();
-    Movement.WalkSpeed = Settings->WalkSpeed;
-    Movement.WalkerChaseWalkSpeed = Settings->WalkerChaseWalkSpeed;
-    Movement.RunSpeed = Settings->RunSpeed;
-    Movement.SprintSpeed = Settings->SprintSpeed;
+    Movement.PatrolSpeed = Settings->PatrolSpeed[0];
+    Movement.WalkSpeed = Settings->WalkSpeed[0];
+    Movement.WalkerChaseWalkSpeed = Settings->WalkerChaseWalkSpeed[0];
+    Movement.RunSpeed = Settings->RunSpeed[0];
+    Movement.SprintSpeed = Settings->SprintSpeed[0];
     Movement.Acceleration = Settings->Acceleration;
     Movement.Deceleration = Settings->Deceleration;
     Movement.SprintDistance = Settings->SprintDistance;
@@ -116,6 +117,6 @@ void UBBBMonsterTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildConte
     Combat.AttackRange = Settings->AttackRange;
     Combat.AttackDamage = Settings->AttackDamage;
     Combat.AttackCooldown = Settings->AttackCooldown;
-    Combat.AttackWindup = Settings->AttackWindup;
-    Combat.AttackRecovery = Settings->AttackRecovery;
+    Combat.AttackWindup = Settings->AttackWindup[0];
+    Combat.AttackRecovery = Settings->AttackRecovery[0];
 }

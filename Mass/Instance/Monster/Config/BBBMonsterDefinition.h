@@ -108,13 +108,17 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "死亡与回收", meta = (ClampMin = "5.0", DisplayName = "尸体保留时长"))
     float CorpseLifetime = 20.0f;
 
-    /** 巡逻与近距离接近速度 */
+    /** 游荡速度按巡逻动画的原始步幅与节奏配置 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "游荡速度"))
+    FVector PatrolSpeed = FVector(35.0f);
+
+    /** 追击步态的基础行走采样速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", DisplayName = "走路速度"))
-    float WalkSpeed = 100.0f;
+    FVector WalkSpeed = FVector(100.0f);
 
     /** 走尸追击尚未转跑时的行走速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", Units = "cm/s", DisplayName = "走尸追击行走速度"))
-    float WalkerChaseWalkSpeed = 180.0f;
+    FVector WalkerChaseWalkSpeed = FVector(180.0f);
 
     /** 每只走尸出生时抽取转跑距离的下界 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", Units = "cm", DisplayName = "走尸转跑距离下界"))
@@ -126,11 +130,11 @@ public:
 
     /** 中距离追击速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", DisplayName = "跑步速度"))
-    float RunSpeed = 300.0f;
+    FVector RunSpeed = FVector(300.0f);
 
     /** 远距离追击速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", DisplayName = "冲刺速度"))
-    float SprintSpeed = 500.0f;
+    FVector SprintSpeed = FVector(500.0f);
 
     /** 正常移动加速度 厘米每平方秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "移动与地面", meta = (ClampMin = "1.0", DisplayName = "加速度"))
@@ -374,11 +378,28 @@ public:
 
     /** 攻击命中前摇 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (ClampMin = "0.0", DisplayName = "攻击前摇时间"))
-    float AttackWindup = 0.35f;
+    TArray<float> AttackWindup = {0.35f};
 
     /** 攻击后摇 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (ClampMin = "0.0", DisplayName = "攻击恢复时间"))
-    float AttackRecovery = 0.45f;
+    TArray<float> AttackRecovery = {0.45f};
+
+
+    /** 爬行攻击各变体的原始接触秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (DisplayName = "爬行攻击接触秒数"))
+    TArray<float> CrawlAttackWindup = {0.35f};
+
+    /** 爬行攻击接触后剩余的原始秒数 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "攻击", meta = (DisplayName = "爬行攻击恢复秒数"))
+    TArray<float> CrawlAttackRecovery = {0.45f};
+
+    /**
+     * @param Seed	出生种子
+     * @param ActionId	当前动作编号 与动画图选择规则一致
+     * @param bCrawling	是否使用爬行动作
+     * @return 选定动作的接触秒数与恢复秒数
+     */
+    FVector2D ResolveAttackTiming(uint32 Seed, uint32 ActionId, bool bCrawling) const;
 
 
     /** @return 参数是否合法 */

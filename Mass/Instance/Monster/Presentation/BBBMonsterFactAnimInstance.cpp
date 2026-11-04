@@ -33,6 +33,7 @@ void UBBBMonsterFactAnimInstance::NativeInitializeAnimation()
     CrawlProgressFact = 0.0f;
     MovementSpeedFact = 0.0f;
     ActionProgressFact = 0.0f;
+    ActionElapsedFact = 0.0f;
     ActionIdFact = 0;
     StateEnteredTimeFact = 0.0f;
     ActorYawFact = GetOwningActor() ? GetOwningActor()->GetActorRotation().Yaw : 0.0f;
@@ -126,6 +127,7 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     ActionProgressFact = Source->ActionProgress;
     ActionIdFact = Source->LastActionId;
     StateEnteredTimeFact = Source->StateEnteredTime;
+    ActionElapsedFact = FMath::Max(0.0f, GetWorld()->GetTimeSeconds() - StateEnteredTimeFact);
     HitRegionFact = static_cast<int32>(Source->HitReaction.Region);
     HitAgeFact = Source->HitReaction.Age;
     HitDirectionFact = GetSkelMeshComponent()->GetComponentTransform().InverseTransformVectorNoScale(Source->HitReaction.Direction);

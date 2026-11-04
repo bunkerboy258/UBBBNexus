@@ -12,7 +12,10 @@ struct ABBB_EVAC_API FBBBMonsterMovementFragment final : public FMassFragment
 {
     GENERATED_BODY()
 
-    /** 巡逻与近距离接近速度 */
+    /** 游荡速度 包含固定出生速度偏差 */
+    float PatrolSpeed = 35.0f;
+
+    /** 追击步态的基础行走速度 */
     float WalkSpeed = 100.0f;
 
     /** 走尸追击行走速度 包含固定出生速度偏差 */

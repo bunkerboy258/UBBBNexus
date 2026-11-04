@@ -91,7 +91,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 && Now >= Injury.HitStopEndsAt && (!Injury.bCrawling || Now >= Injury.CrawlStartedAt + Rule.CrawlTransitionDuration))
             {
                 const auto Gait = UBBBMonsterLocomotionProcessor::SelectGait(Body, Paths[I].RemainingDistance, bPatrol);
-                float Speed = Gait == EBBBMonsterGait::Walk ? (bChase && Body.MaxGait == EBBBMonsterGait::Walk
+                float Speed = bPatrol ? Body.PatrolSpeed : Gait == EBBBMonsterGait::Walk ? (bChase && Body.MaxGait == EBBBMonsterGait::Walk
                     ? Body.WalkerChaseWalkSpeed : Body.WalkSpeed) : Gait == EBBBMonsterGait::Run ? Body.RunSpeed : Body.SprintSpeed;
                 if (Injury.bCrawling)
                 {

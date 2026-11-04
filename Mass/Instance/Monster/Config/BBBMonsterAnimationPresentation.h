@@ -14,17 +14,14 @@ struct FBBBMonsterAnimationPresentation final
     UPROPERTY(EditAnywhere, meta = (DisplayName = "随机初始相位"))
     bool bRandomPhase = true;
 
-    UPROPERTY(EditAnywhere, meta = (DisplayName = "动画步幅比例", ClampMin = "0.1"))
-    float AnimationStrideScale = 1;
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "正常动画播放倍率", ClampMin = "0.8", ClampMax = "1.2"))
+    float PlaybackRate = 1;
 
     UPROPERTY(EditAnywhere, meta = (DisplayName = "死亡动画秒数", ClampMin = "0.1"))
     float DeathAnimationDuration = 1.7f;
 
     UPROPERTY(EditAnywhere, meta = (DisplayName = "尸体活动物理秒数", ClampMin = "0.5", ClampMax = "10"))
     float CorpseSimulationDuration = 4;
-
-    UPROPERTY(EditAnywhere, meta = (DisplayName = "攻击命中动画进度", ClampMin = "0.01", ClampMax = "0.99"))
-    float AnimationHitFraction = 0.4f;
 
     UPROPERTY(EditAnywhere, EditFixedSize, meta = (DisplayName = "三种风格走跑冲刺循环秒数"))
     TArray<FVector> MovementCycleSeconds = {FVector(1, 1, 1), FVector(1, 1, 1), FVector(1, 1, 1)};
@@ -33,7 +30,7 @@ struct FBBBMonsterAnimationPresentation final
     FVector PatrolCycleSeconds = FVector(1, 1, 1);
 
     UPROPERTY(EditAnywhere, meta = (DisplayName = "蹒跚采样速度", ClampMin = "1"))
-    float SlowWalkSampleSpeed = 40;
+    FVector SlowWalkSampleSpeed = FVector(40);
 
     UPROPERTY(EditAnywhere, meta = (DisplayName = "蹒跚循环秒数"))
     FVector SlowWalkCycleSeconds = FVector(1, 1, 1);

@@ -162,6 +162,11 @@ private:
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "动作进度事实"))
     float ActionProgressFact = 0.0f;
 
+    /** 当前动作已经经过的秒数 原速采样攻击与死亡 */
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Facts", meta = (AllowPrivateAccess = "true"))
+    float ActionElapsedFact = 0.0f;
+
+
     /** Mass 动作编号 同状态新动作也改变 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "小怪|事实", meta = (AllowPrivateAccess = "true", DisplayName = "动作标识事实"))
     int64 ActionIdFact = 0;

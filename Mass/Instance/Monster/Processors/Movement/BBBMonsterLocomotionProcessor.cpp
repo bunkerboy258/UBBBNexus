@@ -254,7 +254,9 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
 
         if (bBlocked && !bStepped && !Hit.bStartPenetrating)
         {
-            Location += Hit.Normal * Skin;
+            // 接触留缝不能超过已经向表面行进的距离 避免低速贴墙时被反复推回
+            const float ApproachDistance = FMath::Max(0.0f, -FVector::DotProduct(Delta * Hit.Time, Hit.Normal));
+            Location += Hit.Normal * FMath::Min(Skin, ApproachDistance);
             FVector Remainder = FVector::VectorPlaneProject(Delta * (1.0f - Hit.Time), Hit.Normal);
             if (!Walkable(Hit) || (bWasGrounded && Hit.ImpactPoint.Z > Start.Z - Movement.CapsuleHalfHeight + Movement.MaxStepHeight + Skin))
             {
@@ -395,6 +397,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 HorizontalDelta = FVector(AllowedFeet.X - Location.X, AllowedFeet.Y - Location.Y, 0);
                 const float MaxDelta = Movement.SprintSpeed * DeltaSeconds + 1;
                 HorizontalDelta = HorizontalDelta.GetClampedToMaxSize(MaxDelta);
+                // 大角度改向先转身 小角度随朝向连续恢复行进
+                const float Alignment = FMath::Max(0.0f, FVector::DotProduct(
+                    Transform.GetRotation().GetForwardVector().GetSafeNormal2D(), HorizontalDelta.GetSafeNormal2D()));
+                HorizontalDelta *= Alignment * Alignment;
             }
             if (bMayMove && !Grounds[Index].bGrounded)
             {
@@ -436,7 +442,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 FacingDirection = (Path.TraversalExit - Path.TraversalEntry).GetSafeNormal2D();
             }
-            if (Movement.bFacingTarget && !bAtClimbEntry)
+            if (Movement.bFacingTarget && !bAtClimbEntry &&
+                (!bMayMove || Avoidance[Index].RecommendedVelocity.SizeSquared2D() <= FMath::Square(10.0f)))
             {
                 FacingDirection = (Target.TargetLocation - Location).GetSafeNormal2D();
             }

@@ -74,12 +74,15 @@ bool UBBBMonsterInitializationProcessor::InitializeBirth(const FGuid& Identity, 
     const auto& Weights = Definition.Presentation->Animation.LocomotionWeights;
     const double Style = BirthSample(Variation.Seed, 0x3c6ef372u) * (Weights.X + Weights.Y + Weights.Z);
     Variation.LocomotionStyle = Style < Weights.X ? 0 : (Style < Weights.X + Weights.Y ? 1 : 2);
-    Movement.WalkSpeed = Definition.WalkSpeed * Variation.SpeedScale;
-    Movement.WalkerChaseWalkSpeed = Definition.WalkerChaseWalkSpeed * Variation.SpeedScale;
+    Movement.PatrolSpeed = Definition.PatrolSpeed[Variation.LocomotionStyle] * Variation.SpeedScale;
+    Movement.WalkSpeed = Definition.WalkSpeed[Variation.LocomotionStyle] * Variation.SpeedScale;
+    Movement.WalkerChaseWalkSpeed = Definition.WalkSpeed[Variation.LocomotionStyle] * FMath::Clamp(
+                Definition.WalkerChaseWalkSpeed[Variation.LocomotionStyle] / Definition.WalkSpeed[Variation.LocomotionStyle] * Variation.SpeedScale,
+                0.8f, 1.2f);
     Movement.WalkerRunDistance = FMath::Lerp(Definition.WalkerRunDistanceMin, Definition.WalkerRunDistanceMax,
         BirthSample(Variation.Seed, 0x428a2f98u));
-    Movement.RunSpeed = Definition.RunSpeed * Variation.SpeedScale;
-    Movement.SprintSpeed = Definition.SprintSpeed * Variation.SpeedScale;
+    Movement.RunSpeed = Definition.RunSpeed[Variation.LocomotionStyle] * Variation.SpeedScale;
+    Movement.SprintSpeed = Definition.SprintSpeed[Variation.LocomotionStyle] * Variation.SpeedScale;
     Movement.Acceleration = Definition.Acceleration * (1.0f + (BirthSample(Variation.Seed, 0xbb67ae85u) * 2.0f - 1.0f) * Settings->AccelerationVariation);
     Behavior.AlertDuration = Definition.AlertDuration * (1.0f + (BirthSample(Variation.Seed, 0x6a09e667u) * 2.0f - 1.0f) * Settings->AlertVariation);
     return true;

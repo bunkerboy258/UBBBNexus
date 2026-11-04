@@ -137,7 +137,7 @@ void UBBBMonsterStalkProcessor::Execute(FMassEntityManager&, FMassExecutionConte
             {
                 Combats[I].NextAttackTime = FMath::Min(Combats[I].NextAttackTime,
                     States[I].StateEnteredTime + FMath::Max(Definition->AttackCooldown * Rule->FrenzyCooldownScale,
-                        Definition->AttackWindup + Definition->AttackRecovery));
+                        Combats[I].AttackWindup + Combats[I].AttackRecovery));
                 continue;
             }
             if (Now < Special.ReadyAt)

@@ -131,7 +131,7 @@ bool FBBBMonsterVariationTest::RunTest(const FString& Parameters)
     LoopVariation.LocomotionStyle = 2;
     auto& LoopBehavior = Manager.GetFragmentDataChecked<FBBBMonsterBehaviorFragment>(LoopEntity);
     LoopBehavior.State = EBBBMonsterBehavior::Chase;
-    Manager.GetFragmentDataChecked<FMassVelocityFragment>(LoopEntity).Value = FVector(Definition->WalkSpeed * 1.1f, 0.0f, 0.0f);
+    Manager.GetFragmentDataChecked<FMassVelocityFragment>(LoopEntity).Value = FVector(Definition->WalkSpeed[2] * 1.1f, 0.0f, 0.0f);
     Definition->Presentation->Animation.MovementCycleSeconds[2].X = 4.0;
     auto* SnapshotProcessor = NewObject<UBBBMonsterPresentationStateProcessor>(World);
     SnapshotProcessor->CallInitialize(World, Manager.AsShared());

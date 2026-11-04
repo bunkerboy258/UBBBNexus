@@ -16,7 +16,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBMonsterPresentationConfigurationTest, "UBBB
 bool FBBBMonsterPresentationConfigurationTest::RunTest(const FString&)
 {
     for (const FName Field : {FName(TEXT("Gore")), FName(TEXT("BloodPresentation")), FName(TEXT("SoundPresentation")),
-        FName(TEXT("AnimationStrideScale")), FName(TEXT("DeathAnimationDuration")), FName(TEXT("AnimationHitFraction"))})
+        FName(TEXT("PlaybackRate")), FName(TEXT("DeathAnimationDuration"))})
     {
         TestNull(TEXT("逻辑配置无旧表现入口"), FindFProperty<FProperty>(UBBBMonsterDefinition::StaticClass(), Field));
     }
