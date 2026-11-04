@@ -161,14 +161,15 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         return;
     }
+    const auto *Character = Cast<ABBBCharacter>(Source.Get());
+    const uint64 Revision = Character ? Character->RuntimeData.Appearance.ReadCharacterAppearanceDisplayState().AppliedRevision : 0;
     Elapsed += DeltaTime;
-    if (Elapsed < 1.0f / 12.0f)
+    // 打开背包和穿戴结果变化时立即同步 静止时才限制检查频率
+    if (!bDirty && Revision == ObservedAppearanceRevision && Elapsed < 1.0f / 12.0f)
     {
         return;
     }
     Elapsed = 0.0f;
-    const auto *Character = Cast<ABBBCharacter>(Source.Get());
-    const uint64 Revision = Character ? Character->RuntimeData.Appearance.ReadCharacterAppearanceDisplayState().AppliedRevision : 0;
     bool bChanged = bDirty || Revision != ObservedAppearanceRevision;
     ObservedAppearanceRevision = Revision;
     TArray<USkeletalMeshComponent *> Actual;

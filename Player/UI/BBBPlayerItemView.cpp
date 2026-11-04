@@ -110,7 +110,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
         CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
     }
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
-    CharacterPreview->SetActive(PanelPage == EBBBItemPanelPage::Character);
+    CharacterPreview->SetActive(bBackpackOpen);
     CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
     CharacterBrush.DrawAs = ESlateBrushDrawType::Image;
     CharacterBrush.ImageSize = FVector2D(640.0f, 1080.0f);
@@ -128,7 +128,7 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     }
     auto *Controller = GetItemController();
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
-    CharacterPreview->SetActive(bBackpackOpen && PanelPage == EBBBItemPanelPage::Character);
+    CharacterPreview->SetActive(bBackpackOpen);
     CharacterPreview->Update(DeltaTime);
     CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
 }
