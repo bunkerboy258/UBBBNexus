@@ -320,7 +320,7 @@ void UBBBPlayerInputSystem::Bind(UEnhancedInputComponent &Input)
 FVector UBBBPlayerInputSystem::ResolveAimTargetWorld(const FVector& ViewLocation, const FVector& ViewDirection) const
 {
     const FVector Direction = ViewDirection.GetSafeNormal();
-    const float Distance = FMath::Max(AimTargetDistance, 1.0f);
+    const float Distance = FMath::IsFinite(AimTargetDistance) ? FMath::Clamp(AimTargetDistance, 1.0f, 10000.0f) : 10000.0f;
     const FVector End = ViewLocation + Direction * Distance;
     UWorld* World = GetWorld();
     if (!World || Direction.IsNearlyZero())

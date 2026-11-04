@@ -60,7 +60,7 @@ public:
     /** 视角输入每单位对应的旋转角度 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|输入", meta = (ClampMin = "0.0", DisplayName = "基础转向速率"))
     float BaseTurnRate = 1.0f;
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|瞄准", meta = (DisplayName = "瞄准目标距离"))
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|瞄准", meta = (DisplayName = "瞄准目标距离", ClampMin = "1.0", ClampMax = "10000.0", Units = "cm"))
     float AimTargetDistance = 10000.0f;
 
 private:
