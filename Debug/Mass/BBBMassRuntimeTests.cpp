@@ -404,7 +404,8 @@ bool FBBBMonsterPresentationSmoothingTest::RunTest(const FString& Parameters)
         FBBBMonsterAvoidanceFragment::StaticStruct(), FBBBMonsterHealthFragment::StaticStruct(), FBBBMonsterDeathFragment::StaticStruct(),
         FBBBMonsterPresentationStateFragment::StaticStruct(), FBBBMonsterPresentationSmoothingFragment::StaticStruct(),
         FBBBMonsterHitReactionFragment::StaticStruct(), FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterVariationFragment::StaticStruct(),
-        FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct()
+        FBBBMonsterGroundFragment::StaticStruct(), FBBBMonsterGoreFragment::StaticStruct(),
+        FBBBMonsterTraversalFragment::StaticStruct()
     });
     const FMassEntityHandle Entity = Manager.CreateEntity(Type);
     Manager.GetFragmentDataChecked<FMassActorFragment>(Entity).SetNoHandleMapUpdate(Entity, Actor, true);

@@ -113,6 +113,15 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
         const TConstArrayView<FBBBMonsterAvoidanceFragment> Avoidances = ChunkContext.GetFragmentView<FBBBMonsterAvoidanceFragment>();
         const TConstArrayView<FBBBMonsterPresentationStateFragment> PresentationStates = ChunkContext.GetFragmentView<FBBBMonsterPresentationStateFragment>();
         auto SmoothingStates = ChunkContext.GetMutableFragmentView<FBBBMonsterPresentationSmoothingFragment>();
+        const auto Specials = ChunkContext.GetFragmentView<FBBBMonsterSpecialFragment>();
+        const auto MobilityStates = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto NetworkStates = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto GoreStates = ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>();
+        const auto HitReactions = ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>();
+        const auto DeathStates = ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>();
+        const auto Variations = ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>();
+        const auto Traversals = ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>();
+        const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
@@ -181,7 +190,10 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             Smoothing.LastActor = MonsterActor;
 
             // 同步实体位置和朝向到骨骼表现 Actor
-            if (!MonsterActor->GetMonsterPresentation()->IsCorpseActive())
+            const FTransform& CurrentTransform = MonsterActor->GetActorTransform();
+            const bool bTransformChanged = !CurrentTransform.GetLocation().Equals(Smoothing.DisplayTransform.GetLocation(), UE_KINDA_SMALL_NUMBER)
+                || !CurrentTransform.GetRotation().Equals(Smoothing.DisplayTransform.GetRotation(), UE_KINDA_SMALL_NUMBER);
+            if (!MonsterActor->GetMonsterPresentation()->IsCorpseActive() && bTransformChanged)
             {
                 MonsterActor->SetActorLocationAndRotation(
                     Smoothing.DisplayTransform.GetLocation(),
@@ -198,12 +210,11 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 continue;
             }
 
-            const auto Specials = ChunkContext.GetFragmentView<FBBBMonsterSpecialFragment>();
             Presentation->ApplySpecialFact(!Specials.IsEmpty() ? Specials[Index].Fact : FBBBMonsterSpecialFact{});
 
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
-            const auto& Mobility = ChunkContext.GetFragmentView<FBBBMonsterMobilityFragment>()[Index];
-            const auto* Definition = ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].Definition.Get();
+            const auto& Mobility = MobilityStates[Index];
+            const auto* Definition = NetworkStates[Index].Definition.Get();
             if (!Definition || !MonsterActor->ConfigurePresentation(Definition->Presentation))
             {
                 continue;
@@ -211,16 +222,16 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             if (Definition && Definition->Presentation->Gore)
             {
                 MonsterActor->GetMonsterGore()->Apply(
-                    *Definition->Presentation->Gore, ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>()[Index],
-                    ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
+                    *Definition->Presentation->Gore, GoreStates[Index],
+                    HitReactions[Index],
                     PresentationState.State == EBBBMonsterBehavior::Dead
-                        ? ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity : Velocities[Index].Value,
-                    ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index].Seed,
+                        ? DeathStates[Index].InitialVelocity : Velocities[Index].Value,
+                    Variations[Index].Seed,
                     bNewActor);
             }
             Presentation->ApplyTraversalFact(
-                ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>()[Index].Fact, Definition->Presentation);
-            Presentation->ApplyVariationFacts(ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>()[Index], PresentationState.LoopPhase);
+                Traversals[Index].Fact, Definition->Presentation);
+            Presentation->ApplyVariationFacts(Variations[Index], PresentationState.LoopPhase);
             if (Definition)
             {
                 const float Progress = Mobility.bCrawling ? FMath::Clamp((Now - Mobility.CrawlStartedAt) / Definition->CrawlTransitionDuration, 0.0f, 1.0f) : 0.0f;
@@ -237,20 +248,20 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const float StaggerProgress = Mobility.StaggerEndsAt > Mobility.StaggerStartedAt
                 ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
             Presentation->ApplyStaggerState(Mobility.IsStaggering(Now), StaggerProgress, Mobility.StaggerRegion);
-            Presentation->ApplyHitReaction(ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index]);
+            Presentation->ApplyHitReaction(HitReactions[Index]);
             if (Definition && PresentationState.State == EBBBMonsterBehavior::Dead && !Presentation->IsCorpseActive())
             {
                 const float Age = Now - PresentationState.StateEnteredTime;
                 const bool bSimulate = ActiveCorpses < 32 && Age < Definition->Presentation->Animation.DeathAnimationDuration;
                 if ((bSimulate || Age >= Definition->Presentation->Animation.DeathAnimationDuration) &&
-                    Presentation->BeginCorpsePresentation(ChunkContext.GetFragmentView<FBBBMonsterDeathFragment>()[Index].InitialVelocity,
-                        ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index], Now, bSimulate))
+                    Presentation->BeginCorpsePresentation(DeathStates[Index].InitialVelocity,
+                        HitReactions[Index], Now, bSimulate))
                 {
                     ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
                     const uint8 LostParts = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts;
                     if (Definition->Presentation->Gore)
                     {
-                        const auto& Wounds = ChunkContext.GetFragmentView<FBBBMonsterGoreFragment>()[Index].DismembermentPresets;
+                        const auto& Wounds = GoreStates[Index].DismembermentPresets;
                         for (int32 WoundIndex = 0; WoundIndex < 5; ++WoundIndex)
                         {
                             const auto* Part = Definition->Presentation->Gore->Dismemberment->Find(Wounds[WoundIndex]);
@@ -271,7 +282,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 const FMassEntityHandle Entity = ChunkContext.GetEntity(Index);
                 const FGuid SoundInstance = bStandalone
                     ? FGuid(WorldIdentity, static_cast<uint32>(Entity.Index), static_cast<uint32>(Entity.SerialNumber), 1u)
-                    : ChunkContext.GetFragmentView<FBBBMonsterNetworkFragment>()[Index].InstanceId;
+                    : NetworkStates[Index].InstanceId;
                 if (!SoundInstance.IsValid())
                 {
                     continue;
@@ -298,10 +309,10 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                     SoundInstance,
                     Definition ? Definition->Presentation->Sounds.Get() : nullptr,
                     VoiceState, VoiceAction, VoiceProgress,
-                    ChunkContext.GetFragmentView<FBBBMonsterHitReactionFragment>()[Index],
+                    HitReactions[Index],
                     Mobility.bCrawling, Velocities[Index].Value.Size2D(), Now, bNewActor);
                 SoundPresentation->ApplyContactFacts(*MonsterActor->GetMonsterContactAudio(),
-                    ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>()[Index].bGrounded,
+                    Grounds[Index].bGrounded,
                     Mobility.bCrawling, Velocities[Index].Value.Size2D(), Now, bNewActor);
             }
         }

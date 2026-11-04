@@ -211,6 +211,7 @@ bool FBBBMonsterGroundTest::RunTest(const FString& Parameters)
         FTransformFragment::StaticStruct(), FMassVelocityFragment::StaticStruct(),
         FBBBMonsterMovementFragment::StaticStruct(), FBBBMonsterGroundFragment::StaticStruct(),
         FBBBMonsterNavigationFragment::StaticStruct(), FBBBMonsterAvoidanceFragment::StaticStruct(),
+        FBBBMonsterTraversalFragment::StaticStruct(),
         FBBBMonsterBehaviorFragment::StaticStruct(), FBBBMonsterTag::StaticStruct(),
         FBBBMonsterMobilityFragment::StaticStruct(), FBBBMonsterNetworkFragment::StaticStruct(), FBBBMonsterTargetFragment::StaticStruct()
     });

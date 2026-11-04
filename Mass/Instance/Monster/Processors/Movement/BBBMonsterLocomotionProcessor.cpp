@@ -183,13 +183,17 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         }
     }
 
-    // 静止活体仍逐帧检测真实支撑 无水平运动时不重复执行移动扫掠和落地吸附
-    if (Ground.bGrounded && Velocity.Z <= 0.0f && HorizontalDelta.IsNearlyZero() &&
-        FindSupport(Location, SupportDistance, Ground.SupportNormal))
+    // 静止活体仍逐帧检测真实支撑 失败结果在本帧首个子步直接使用
+    const bool bCheckedStationarySupport = Ground.bGrounded && Velocity.Z <= 0.0f && HorizontalDelta.IsNearlyZero();
+    if (bCheckedStationarySupport)
     {
-        Velocity = FVector::ZeroVector;
-        Ground.UnsimulatedSeconds = 0.0f;
-        return;
+        Ground.bGrounded = FindSupport(Location, SupportDistance, Ground.SupportNormal);
+        if (Ground.bGrounded)
+        {
+            Velocity = FVector::ZeroVector;
+            Ground.UnsimulatedSeconds = 0.0f;
+            return;
+        }
     }
 
     /** 长帧仅保留有限欠账 单轮至多八步 不用大步长穿越障碍 */
@@ -206,7 +210,11 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     const FVector FrameStart = Location;
     for (int32 Step = 0; Step < Steps; ++Step)
     {
-        Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SupportDistance, Ground.SupportNormal);
+        // 后续子步沿用上一子步末尾的支撑结果 两次查询之间位置没有再次变化
+        if (Step == 0 && !bCheckedStationarySupport)
+        {
+            Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SupportDistance, Ground.SupportNormal);
+        }
         const bool bWasGrounded = Ground.bGrounded;
         FVector Delta = HorizontalStep;
         if (bWasGrounded)
