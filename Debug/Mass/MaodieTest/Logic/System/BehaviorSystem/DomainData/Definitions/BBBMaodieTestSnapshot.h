@@ -9,6 +9,12 @@ struct FBBBMaodieTestSnapshot final
     /** 当前动作 */
     UPROPERTY()
     uint8 Phase = 0;
+    /** 当前是否注视目标 */
+    UPROPERTY()
+    bool bHasLookTarget = false;
+    /** 当前注视的世界位置 */
+    UPROPERTY()
+    FVector LookTarget = FVector::ZeroVector;
     /** 哈气触发序号 */
     UPROPERTY()
     uint32 HissSerial = 0;

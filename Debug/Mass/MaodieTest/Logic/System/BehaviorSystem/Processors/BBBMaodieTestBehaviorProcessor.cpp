@@ -23,6 +23,22 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
     const auto &Config = Actor.GetTestConfig();
     const double Now = Actor.GetWorld()->GetTimeSeconds();
     auto *Controller = Cast<AAIController>(Actor.GetController());
+    State.Snapshot.bHasLookTarget = false;
+    State.Snapshot.LookTarget = FVector::ZeroVector;
+    const auto LookAtPlayer = [&](APawn &Player, bool bTurnBody)
+    {
+        State.Snapshot.bHasLookTarget = true;
+        State.Snapshot.LookTarget = Player.GetPawnViewLocation();
+        if (bTurnBody)
+        {
+            const FVector LocalDirection = Actor.GetActorQuat().UnrotateVector(Player.GetActorLocation() - Actor.GetActorLocation());
+            if (FMath::Abs(LocalDirection.Rotation().Yaw) > Config.HeadYawLimit)
+            {
+                const float Yaw = (Player.GetActorLocation() - Actor.GetActorLocation()).Rotation().Yaw;
+                Actor.SetActorRotation(FMath::RInterpTo(Actor.GetActorRotation(), FRotator(0.0f, Yaw, 0.0f), DeltaSeconds, Config.TurnSpeed));
+            }
+        }
+    };
     APawn *Visible = nullptr;
     float BestDistance = FMath::Square(Config.DetectionRadius);
     for (auto It = Actor.GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -55,6 +71,7 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
         {
             State.Target = Visible;
             State.NextThrowAt = Now + Config.ObserveSeconds;
+            State.Snapshot.Phase = 2;
         }
         State.LastSeenAt = Now;
     }
@@ -71,19 +88,17 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
         {
             Controller->StopMovement();
         }
+        Actor.GetCharacterMovement()->MaxWalkSpeed = Config.MoveSpeed;
+        State.bFollowing = false;
+        State.NextFollowRequestAt = 0.0;
         Actor.GetCharacterMovement()->bOrientRotationToMovement = false;
+        LookAtPlayer(*Target, true);
         FVector Direction = Target->GetActorLocation() - Actor.GetActorLocation();
         Direction.Z = 0.0f;
-        Actor.SetActorRotation(FMath::RInterpTo(Actor.GetActorRotation(), Direction.Rotation(), DeltaSeconds, Config.TurnSpeed));
-        State.Snapshot.Phase = Now < State.HissEndsAt ? 3 : 2;
+        const bool bContinueThrowing = Visible && State.Snapshot.Phase == 3;
+        State.Snapshot.Phase = bContinueThrowing ? 3 : 2;
         if (Visible && Now >= State.NextThrowAt)
         {
-            if (Now >= State.HissEndsAt)
-            {
-                State.Snapshot.Phase = 3;
-                ++State.Snapshot.HissSerial;
-                State.HissEndsAt = Now + Config.HissDuration;
-            }
             State.NextThrowAt = Now + FMath::FRandRange(1.0f - Config.IntervalJitter, 1.0f + Config.IntervalJitter) / Config.ThrowFrequency;
             const FVector Forward = Direction.GetSafeNormal();
             const FVector Origin = Actor.GetActorLocation() + Forward * 55.0f + FVector(0.0f, 0.0f, FMath::FRandRange(Config.ThrowHeightMin, Config.ThrowHeightMax));
@@ -101,7 +116,17 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
                 FBBBWorldDropInitializeLocalControlPacket Packet;
                 Packet.Initializations.Add(Initialization);
                 Drop->SubmitInput(MoveTemp(Packet));
+                if (!bContinueThrowing || Now >= State.HissEndsAt)
+                {
+                    ++State.Snapshot.HissSerial;
+                    State.HissEndsAt = Now + Config.HissDuration;
+                }
+                State.Snapshot.Phase = 3;
                 const int32 Count = ++State.PlayerThrowCounts.FindOrAdd(Target->GetPlayerState());
+                if (Count >= Config.ThrowLimit)
+                {
+                    State.FollowPlayer = Target->GetPlayerState();
+                }
                 UE_LOG(LogTemp, Display, TEXT("MaodieThrow Player=%s Count=%d Limit=%d Time=%.3f Velocity=%s Height=%.2f NextInterval=%.3f"),
                     *Target->GetPlayerState()->GetPlayerName(), Count, Config.ThrowLimit, Now,
                     *Initialization.Velocity.ToCompactString(), Origin.Z - Actor.GetActorLocation().Z, State.NextThrowAt - Now);
@@ -113,6 +138,57 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
         }
         return;
     }
+    APawn *FollowTarget = nullptr;
+    if (State.FollowPlayer.IsValid())
+    {
+        for (auto It = Actor.GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        {
+            APlayerController *Player = It->Get();
+            if (Player && Player->PlayerState == State.FollowPlayer.Get() && IsValid(Player->GetPawn()))
+            {
+                FollowTarget = Player->GetPawn();
+                break;
+            }
+        }
+    }
+    if (FollowTarget)
+    {
+        const float Distance = FVector::Dist2D(Actor.GetActorLocation(), FollowTarget->GetActorLocation());
+        const bool bWasFollowing = State.bFollowing;
+        if (Distance > Config.FollowStartDistance)
+        {
+            State.bFollowing = true;
+        }
+        if (Distance <= Config.FollowStopDistance + 5.0f)
+        {
+            State.bFollowing = false;
+        }
+        if (bWasFollowing != State.bFollowing)
+        {
+            UE_LOG(LogTemp, Display, TEXT("MaodieFollow Moving=%d Distance=%.1f Player=%s"),
+                State.bFollowing, Distance, *State.FollowPlayer->GetPlayerName());
+        }
+        Actor.GetCharacterMovement()->MaxWalkSpeed = Config.FollowSpeed;
+        Actor.GetCharacterMovement()->bOrientRotationToMovement = State.bFollowing;
+        LookAtPlayer(*FollowTarget, !State.bFollowing);
+        if (Controller && State.bFollowing && Now >= State.NextFollowRequestAt)
+        {
+            FAIMoveRequest Request(FollowTarget);
+            Request.SetAcceptanceRadius(Config.FollowStopDistance);
+            Request.SetReachTestIncludesAgentRadius(false);
+            Request.SetReachTestIncludesGoalRadius(false);
+            Controller->MoveTo(Request);
+            State.NextFollowRequestAt = Now + 0.5;
+        }
+        if (Controller && !State.bFollowing)
+        {
+            Controller->StopMovement();
+        }
+        State.Snapshot.Phase = Actor.GetVelocity().SizeSquared2D() > 25.0f ? 1 : 0;
+        return;
+    }
+    State.bFollowing = false;
+    Actor.GetCharacterMovement()->MaxWalkSpeed = Config.MoveSpeed;
     Actor.GetCharacterMovement()->bOrientRotationToMovement = true;
     State.Snapshot.Phase = Actor.GetVelocity().SizeSquared2D() > 25.0f ? 1 : 0;
     if (Controller && Controller->GetMoveStatus() == EPathFollowingStatus::Moving)

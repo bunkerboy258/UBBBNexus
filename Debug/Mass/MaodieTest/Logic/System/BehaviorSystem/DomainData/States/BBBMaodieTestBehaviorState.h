@@ -26,6 +26,12 @@ struct FBBBMaodieTestBehaviorState final
     double NextThrowAt = 0.0;
     /** 当前观察玩家 */
     TWeakObjectPtr<APawn> Target;
+    /** 最近一位已领满物品的跟随玩家 */
+    TWeakObjectPtr<APlayerState> FollowPlayer;
+    /** 当前是否处于跟随行走 */
+    bool bFollowing = false;
+    /** 下次允许更新跟随路径的时间 */
+    double NextFollowRequestAt = 0.0;
     /** 配置是否可运行 */
     bool bEnabled = false;
 };

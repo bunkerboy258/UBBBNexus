@@ -7,7 +7,7 @@ struct FBBBMaodieTestSnapshotAuthorityFactPacket final
     /** @return 事实是否合法 */
     bool IsValid() const
     {
-        return Snapshot.Phase <= 3;
+        return Snapshot.Phase <= 3 && !Snapshot.LookTarget.ContainsNaN();
     }
     /** @param bCausal 是否为业务控制端 @return 是否可应用 */
     bool CanApply(bool bCausal) const

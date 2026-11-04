@@ -46,25 +46,44 @@ struct FBBBMaodieTestConfig final
     float TurnSpeed = 4.0f;
     /** 水平速度下限 单位厘米或厘米每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "水平速度下限", ClampMin = "0"))
-    float ThrowSpeedMin = 200.0f;
+    float ThrowSpeedMin = 400.0f;
     /** 水平速度上限 单位厘米或厘米每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "水平速度上限", ClampMin = "0"))
-    float ThrowSpeedMax = 300.0f;
+    float ThrowSpeedMax = 550.0f;
     /** 向上速度下限 单位厘米或厘米每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "向上速度下限", ClampMin = "0"))
-    float ThrowUpSpeedMin = 200.0f;
+    float ThrowUpSpeedMin = 400.0f;
     /** 向上速度上限 单位厘米或厘米每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "向上速度上限", ClampMin = "0"))
-    float ThrowUpSpeedMax = 300.0f;
+    float ThrowUpSpeedMax = 550.0f;
     /** 出手高度下限 单位厘米或厘米每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "出手高度下限", ClampMin = "0"))
-    float ThrowHeightMin = 30.0f;
+    float ThrowHeightMin = 45.0f;
     /** 出手高度上限 单位厘米或厘米每秒 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "出手高度上限", ClampMin = "0"))
-    float ThrowHeightMax = 45.0f;
+    float ThrowHeightMax = 60.0f;
     /** 每位玩家投掷上限 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "每位玩家投掷上限", ClampMin = "0"))
-    int32 ThrowLimit = 5;
+    int32 ThrowLimit = 8;
+
+    /** 距离超过此厘米值才开始跟随 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "开始跟随距离", ClampMin = "1"))
+    float FollowStartDistance = 400.0f;
+    /** 距离小于此厘米值时停步等待 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "停止跟随距离", ClampMin = "1"))
+    float FollowStopDistance = 250.0f;
+    /** 跟随时的最大行走速度 单位厘米每秒 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "跟随速度", ClampMin = "1"))
+    float FollowSpeed = 180.0f;
+    /** 头部相对身体的最大偏航角 单位度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "头部左右转动上限", ClampMin = "1"))
+    float HeadYawLimit = 60.0f;
+    /** 头部相对身体的最大俯仰角 单位度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "头部上下转动上限", ClampMin = "1"))
+    float HeadPitchLimit = 35.0f;
+    /** 注视与回正使用的旋转插值速度 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "头部转动平滑速度", ClampMin = "0.1"))
+    float HeadTurnSpeed = 6.0f;
 
     /** 可重复等概率抽取的物品 每次投掷一件 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "随机掉落池"))

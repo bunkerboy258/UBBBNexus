@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"
 #include "Animation/AnimSequence.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/Animation/BBBMaodieTestAnimInstance.h"
 #include "Engine/SkeletalMesh.h"
 void FBBBMaodieTestInitializer::Construct(ABBBMaodieTest &Actor)
 {
@@ -36,10 +37,13 @@ void FBBBMaodieTestInitializer::Initialize(ABBBMaodieTest &Actor)
     auto &State = Actor.RuntimeData.Behavior.State;
     const auto &Config = Actor.Config;
     State.Home = Actor.GetActorLocation();
+    Actor.GetMesh()->SetAnimInstanceClass(UBBBMaodieTestAnimInstance::StaticClass());
     Actor.GetCharacterMovement()->MaxWalkSpeed = FMath::Max(1.0f, Config.MoveSpeed);
     const float Times[] = {Config.WanderRadius, Config.MoveSpeed, Config.PauseSeconds, Config.DetectionRadius,
-        Config.ObserveSeconds, Config.ThrowFrequency, Config.HissDuration, Config.LoseInterestDelay, Config.TurnSpeed};
-    bool bValid = Config.ThrowLimit >= 0 && !Config.DropPool.IsEmpty() && Config.HissSound
+        Config.ObserveSeconds, Config.ThrowFrequency, Config.HissDuration, Config.LoseInterestDelay, Config.TurnSpeed, Config.FollowStartDistance, Config.FollowStopDistance,
+        Config.FollowSpeed, Config.HeadYawLimit, Config.HeadPitchLimit, Config.HeadTurnSpeed};
+    bool bValid = Config.ThrowLimit >= 0 && Config.FollowStartDistance > Config.FollowStopDistance
+        && Config.HeadYawLimit <= 85.0f && Config.HeadPitchLimit <= 60.0f && !Config.DropPool.IsEmpty() && Config.HissSound
         && Config.WalkAnimation && Config.IdleAnimation
         && FMath::IsFinite(Config.IntervalJitter) && Config.IntervalJitter >= 0.0f && Config.IntervalJitter <= 0.9f
         && FMath::IsFinite(Config.ThrowSpeedMin) && FMath::IsFinite(Config.ThrowSpeedMax)

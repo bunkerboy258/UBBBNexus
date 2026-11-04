@@ -9,7 +9,9 @@ void FBBBMaodieTestNetworkProcessor::Update(ABBBMaodieTest &Actor, float DeltaSe
     }
     auto &State = Actor.RuntimeData.Network.State;
     const auto &Snapshot = Actor.RuntimeData.Behavior.ReadMaodieTestBehaviorState().Snapshot;
-    if (Snapshot.Phase != State.Published.Phase || Snapshot.HissSerial != State.Published.HissSerial)
+    if (Snapshot.Phase != State.Published.Phase || Snapshot.HissSerial != State.Published.HissSerial
+        || Snapshot.bHasLookTarget != State.Published.bHasLookTarget
+        || FVector::DistSquared(Snapshot.LookTarget, State.Published.LookTarget) >= 25.0f)
     {
         Actor.Network->Publish(Snapshot);
         State.Published = Snapshot;
