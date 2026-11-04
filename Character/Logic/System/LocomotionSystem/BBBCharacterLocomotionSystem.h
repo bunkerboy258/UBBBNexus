@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterRescueMovementProcessor.h"
 
 #include "CoreMinimal.h"
+#include "Curves/CurveFloat.h"
+#include "UObject/StrongObjectPtr.h"
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLocomotionProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LocomotionSystem/Processors/BBBCharacterLifeMovementProcessor.h"
@@ -12,7 +14,6 @@
 class ACharacter;
 struct FBBBCharacterRuntimeData;
 class UCharacterMovementComponent;
-class UCurveFloat;
 class FBBBCharacterInitializer;
 struct FBBBCharacterLocomotionConfig;
 struct FBBBCharacterLocomotionDomainState;
@@ -61,7 +62,8 @@ private:
 
     const FBBBCharacterLocomotionConfig *Config = nullptr;
 
-    const UCurveFloat *StrafeSpeedMapCurve = nullptr;
+    /** 在移动系统存续期间强持有软加载曲线 防止地图旅行或回放垃圾回收释放该依赖 */
+    TStrongObjectPtr<UCurveFloat> StrafeSpeedMapCurve;
 
     FBBBCharacterRuntimeData *CharacterData = nullptr;
     FBBBCharacterLocomotionProcessor LocomotionProcessor;

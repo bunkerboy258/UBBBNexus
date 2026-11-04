@@ -24,7 +24,7 @@ void FBBBCharacterLocomotionSystem::Initialize(
     ControlData = &InIntentData;
     Config = &InConfig;
     CharacterData = &InCharacterData;
-    StrafeSpeedMapCurve = InConfig.StrafeSpeedMapCurve.LoadSynchronous();
+    StrafeSpeedMapCurve.Reset(InConfig.StrafeSpeedMapCurve.LoadSynchronous());
 }
 
 void FBBBCharacterLocomotionSystem::Update()
