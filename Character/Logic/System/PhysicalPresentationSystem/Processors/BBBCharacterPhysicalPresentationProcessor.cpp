@@ -65,6 +65,8 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
         Context.Mesh.bPauseAnims = true;
         Context.Mesh.SetCollisionProfileName(TEXT("Ragdoll"));
         Context.Mesh.SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+        // 布娃娃身体不阻挡相机探测 避免弹簧臂被身体顶回角色内部
+        Context.Mesh.SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
         Context.Mesh.SetAllBodiesSimulatePhysics(true);
         Context.Mesh.SetAllBodiesPhysicsBlendWeight(1.0f);
         Context.Mesh.SetSimulatePhysics(true);
