@@ -90,13 +90,22 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
             {
                 Style = Specials[Index].Fact.Phase == 5 ? 1 : 2;
             }
-            const uint32 IdleIndex = Variation.Seed % 3u;
-            float Duration = static_cast<float>(Settings.IdleCycleSeconds[IdleIndex]);
+            float Duration = static_cast<float>(Settings.IdleCycleSeconds[Style]);
             if (States[Index].State == EBBBMonsterBehavior::Alert)
             {
                 Duration = Settings.AlertCycleSeconds;
             }
-            if (States[Index].State == EBBBMonsterBehavior::Patrol || States[Index].State == EBBBMonsterBehavior::Chase)
+            if (States[Index].State == EBBBMonsterBehavior::Patrol)
+            {
+                const float Stride = static_cast<float>(Settings.PatrolCycleSeconds[Style]) * Definition->WalkSpeed;
+                Duration = Stride / FMath::Max(NormalizedSpeed, Settings.SlowWalkSampleSpeed);
+                if (NormalizedSpeed < Settings.SlowWalkSampleSpeed)
+                {
+                    Duration = FMath::Lerp(static_cast<float>(Settings.IdleCycleSeconds[Style]), Duration,
+                        FMath::Clamp(NormalizedSpeed / Settings.SlowWalkSampleSpeed, 0.0f, 1.0f));
+                }
+            }
+            if (States[Index].State == EBBBMonsterBehavior::Chase)
             {
                 const FVector& Cycle = Settings.MovementCycleSeconds[Style];
                 Duration = static_cast<float>(Settings.IdleCycleSeconds[Style]);
@@ -107,23 +116,31 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
                 }
                 if (NormalizedSpeed > Settings.SlowWalkSampleSpeed && NormalizedSpeed <= Definition->WalkSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Settings.SlowWalkCycleSeconds[Style]), static_cast<float>(Cycle.X),
+                    const float Stride = FMath::Lerp(static_cast<float>(Settings.SlowWalkCycleSeconds[Style]) * Settings.SlowWalkSampleSpeed,
+                        static_cast<float>(Cycle.X) * Definition->WalkSpeed,
                         FMath::Clamp((NormalizedSpeed - Settings.SlowWalkSampleSpeed) / (Definition->WalkSpeed - Settings.SlowWalkSampleSpeed), 0.0f, 1.0f));
+                    Duration = Stride / NormalizedSpeed;
                 }
                 if (NormalizedSpeed > Definition->WalkSpeed && NormalizedSpeed <= Definition->WalkerChaseWalkSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Cycle.X), static_cast<float>(Settings.PursuitWalkCycleSeconds[Style]),
+                    const float Stride = FMath::Lerp(static_cast<float>(Cycle.X) * Definition->WalkSpeed,
+                        static_cast<float>(Settings.PursuitWalkCycleSeconds[Style]) * Definition->WalkerChaseWalkSpeed,
                         FMath::Clamp((NormalizedSpeed - Definition->WalkSpeed) / (Definition->WalkerChaseWalkSpeed - Definition->WalkSpeed), 0.0f, 1.0f));
+                    Duration = Stride / NormalizedSpeed;
                 }
                 if (NormalizedSpeed > Definition->WalkerChaseWalkSpeed && NormalizedSpeed <= Definition->RunSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Settings.PursuitWalkCycleSeconds[Style]), static_cast<float>(Cycle.Y),
+                    const float Stride = FMath::Lerp(static_cast<float>(Settings.PursuitWalkCycleSeconds[Style]) * Definition->WalkerChaseWalkSpeed,
+                        static_cast<float>(Cycle.Y) * Definition->RunSpeed,
                         FMath::Clamp((NormalizedSpeed - Definition->WalkerChaseWalkSpeed) / (Definition->RunSpeed - Definition->WalkerChaseWalkSpeed), 0.0f, 1.0f));
+                    Duration = Stride / NormalizedSpeed;
                 }
                 if (NormalizedSpeed > Definition->RunSpeed)
                 {
-                    Duration = FMath::Lerp(static_cast<float>(Cycle.Y), static_cast<float>(Cycle.Z),
+                    const float Stride = FMath::Lerp(static_cast<float>(Cycle.Y) * Definition->RunSpeed,
+                        static_cast<float>(Cycle.Z) * Definition->SprintSpeed,
                         FMath::Clamp((NormalizedSpeed - Definition->RunSpeed) / (Definition->SprintSpeed - Definition->RunSpeed), 0.0f, 1.0f));
+                    Duration = Stride / NormalizedSpeed;
                 }
             }
             const bool bMovingLoop = States[Index].State == EBBBMonsterBehavior::Patrol || States[Index].State == EBBBMonsterBehavior::Chase;

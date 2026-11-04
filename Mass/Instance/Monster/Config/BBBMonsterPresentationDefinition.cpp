@@ -113,7 +113,7 @@ bool UBBBMonsterPresentationDefinition::IsValid() const
         return !Value.ContainsNaN() && Value.GetMin() > 0.01;
     };
     if (Animation.MovementCycleSeconds.Num() != 3 || !ValidCycle(Animation.IdleCycleSeconds)
-        || !ValidCycle(Animation.SlowWalkCycleSeconds) || !ValidCycle(Animation.PursuitWalkCycleSeconds)
+        || !ValidCycle(Animation.PatrolCycleSeconds) || !ValidCycle(Animation.SlowWalkCycleSeconds) || !ValidCycle(Animation.PursuitWalkCycleSeconds)
         || Animation.LocomotionWeights.ContainsNaN() || Animation.LocomotionWeights.GetMin() < 0
         || Animation.LocomotionWeights.X + Animation.LocomotionWeights.Y + Animation.LocomotionWeights.Z <= 0
         || !FMath::IsFinite(Animation.AnimationStrideScale) || Animation.AnimationStrideScale <= 0

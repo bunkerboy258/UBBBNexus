@@ -29,6 +29,9 @@ struct FBBBMonsterAnimationPresentation final
     UPROPERTY(EditAnywhere, EditFixedSize, meta = (DisplayName = "三种风格走跑冲刺循环秒数"))
     TArray<FVector> MovementCycleSeconds = {FVector(1, 1, 1), FVector(1, 1, 1), FVector(1, 1, 1)};
 
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "三种风格巡逻循环秒数"))
+    FVector PatrolCycleSeconds = FVector(1, 1, 1);
+
     UPROPERTY(EditAnywhere, meta = (DisplayName = "蹒跚采样速度", ClampMin = "1"))
     float SlowWalkSampleSpeed = 40;
 
