@@ -7,6 +7,8 @@
 class ABBBCharacter;
 class APlayerController;
 class UCameraComponent;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
 class USpringArmComponent;
 class FBBBPlayerCameraImpulseProcessor;
 class UBBBAnimInstance;
@@ -21,6 +23,8 @@ class ABBB_EVAC_API ABBBPlayerCameraSystem : public AActor
 public:
     ABBBPlayerCameraSystem();
     virtual void Tick(float DeltaSeconds) override;
+    /** @param EndPlayReason 结束原因 @return 无 释放相机专属轮廓材质 */
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     /**
      * 绑定观察目标
      * @param InCharacter	观察角色
@@ -49,6 +53,12 @@ public:
 
 private:
     friend class FBBBPlayerCameraImpulseProcessor;
+    /** 仅本地玩家视图使用的可见内侧轮廓材质 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|角色可读性", meta = (DisplayName = "角色内侧轮廓材质"))
+    TSoftObjectPtr<UMaterialInterface> InnerOutlineMaterial;
+    /** 相机独占的轮廓参数 不写入共享材质 */
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> InnerOutlineInstance;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|相机", meta = (AllowPrivateAccess = "true", DisplayName = "相机臂"))
     TObjectPtr<USpringArmComponent> Boom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|相机", meta = (AllowPrivateAccess = "true", DisplayName = "相机"))

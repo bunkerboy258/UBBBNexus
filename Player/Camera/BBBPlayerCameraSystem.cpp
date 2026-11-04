@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Player/Camera/Processors/BBBPlayerCameraImpulseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -9,6 +10,8 @@
 
 ABBBPlayerCameraSystem::ABBBPlayerCameraSystem()
 {
+    InnerOutlineMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(
+        TEXT("/Game/_Project/Characters/BBBC_UA/Appearance/Materials/M_LocalCharacterInnerOutline.M_LocalCharacterInnerOutline")));
     PrimaryActorTick.bCanEverTick = true;
     // 步枪在 PostUpdateWork 发布快照 相机在该组全部完成后读取
     // NOTE: 相机缓存早于 PostUpdateWork 跟随必须在 PostPhysics 完成 武器贡献读取最近已发布快照
@@ -25,6 +28,24 @@ ABBBPlayerCameraSystem::ABBBPlayerCameraSystem()
 
 void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerController &InController)
 {
+    if (InnerOutlineInstance)
+    {
+        Camera->PostProcessSettings.RemoveBlendable(InnerOutlineInstance.Get());
+        InnerOutlineInstance = nullptr;
+    }
+    const auto &Readability = InCharacter.GetCharacterConfig().Appearance;
+    if (InController.IsLocalController() && Readability.InnerOutlineOpacity > 0.0f)
+    {
+        UMaterialInterface *Parent = InnerOutlineMaterial.LoadSynchronous();
+        if (ensureMsgf(Parent, TEXT("本地角色内侧轮廓材质缺失")))
+        {
+            InnerOutlineInstance = UMaterialInstanceDynamic::Create(Parent, this);
+            InnerOutlineInstance->SetScalarParameterValue(TEXT("MaskStencil"), FMath::Clamp(Readability.ReadabilityStencil, 1, 255));
+            InnerOutlineInstance->SetScalarParameterValue(TEXT("OutlineWidth"), FMath::Clamp(Readability.InnerOutlineWidth, 0.0f, 2.0f));
+            InnerOutlineInstance->SetScalarParameterValue(TEXT("OutlineOpacity"), FMath::Clamp(Readability.InnerOutlineOpacity, 0.0f, 1.0f));
+            Camera->PostProcessSettings.AddBlendable(InnerOutlineInstance.Get(), 1.0f);
+        }
+    }
     Character = &InCharacter;
     Controller = &InController;
     ActiveRecoilSettings = DefaultRecoilSettings;
@@ -79,4 +100,14 @@ void ABBBPlayerCameraSystem::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     FBBBPlayerCameraImpulseProcessor::Update(*this, DeltaSeconds);
+}
+
+void ABBBPlayerCameraSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (InnerOutlineInstance)
+    {
+        Camera->PostProcessSettings.RemoveBlendable(InnerOutlineInstance.Get());
+        InnerOutlineInstance = nullptr;
+    }
+    Super::EndPlay(EndPlayReason);
 }

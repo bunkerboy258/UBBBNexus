@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceResourceProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceMaterialProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterAppearanceDisplayProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/Processors/BBBCharacterReadabilityProcessor.h"
 class ABBBCharacter;
 struct FBBBCharacterRuntimeData;
 struct FBBBCharacterAppearanceConfig;
@@ -33,4 +34,5 @@ private:
     FBBBCharacterAppearanceResourceProcessor ResourceProcessor;
     FBBBCharacterAppearanceMaterialProcessor MaterialProcessor;
     FBBBCharacterAppearanceDisplayProcessor DisplayProcessor;
+    FBBBCharacterReadabilityProcessor ReadabilityProcessor;
 };

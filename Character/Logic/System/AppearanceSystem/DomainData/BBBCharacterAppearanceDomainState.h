@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterAppearanceStyleState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterAppearanceInputState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterAppearanceDisplayState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/States/BBBCharacterReadabilityState.h"
 #include "BBBCharacterAppearanceDomainState.generated.h"
 
 /** 角色外观全部状态的唯一直接持有者 */
@@ -32,7 +33,16 @@ public:
     {
         return DisplayState;
     }
+    /** @return 本地角色可读性显示结果 */
+    const FBBBCharacterReadabilityState &ReadCharacterReadabilityState() const
+    {
+        return ReadabilityState;
+    }
 private:
+    friend class FBBBCharacterReadabilityProcessor;
+    /** 本地机械补光与模板属性 */
+    UPROPERTY()
+    FBBBCharacterReadabilityState ReadabilityState;
     friend class FBBBCharacterParseSystem;
     friend class FBBBCharacterAppearanceInputProcessor;
     friend class FBBBCharacterAppearanceSelectionProcessor;
