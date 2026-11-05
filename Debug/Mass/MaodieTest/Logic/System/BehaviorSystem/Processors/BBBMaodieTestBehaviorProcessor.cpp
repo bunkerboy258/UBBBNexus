@@ -19,6 +19,7 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
     auto &State = Actor.RuntimeData.Behavior.State;
     if (!State.bEnabled)
     {
+        State.PendingShooters.Reset();
         return;
     }
     const auto &Config = Actor.GetTestConfig();
@@ -40,6 +41,40 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
             }
         }
     };
+    if (State.ShotHissEndsAt > 0.0 && (Now >= State.ShotHissEndsAt || !State.ShotHissTarget.IsValid()))
+    {
+        State.ShotHissTarget.Reset();
+        State.ShotHissEndsAt = 0.0;
+        State.Snapshot.Phase = 0;
+    }
+    for (const auto &PendingShooter : State.PendingShooters)
+    {
+        auto *Shooter = PendingShooter.Get();
+        if (Shooter && Shooter->IsPlayerControlled() && Shooter->GetWorld() == Actor.GetWorld())
+        {
+            State.ShotHissTarget = Shooter;
+            if (State.ShotHissEndsAt == 0.0)
+            {
+                State.ShotHissEndsAt = Now + Config.HissDuration;
+                ++State.Snapshot.HissSerial;
+            }
+        }
+    }
+    State.PendingShooters.Reset();
+    if (auto *Shooter = State.ShotHissTarget.Get())
+    {
+        if (Controller)
+        {
+            Controller->StopMovement();
+        }
+        Actor.GetCharacterMovement()->bOrientRotationToMovement = false;
+        const FVector Direction = Shooter->GetActorLocation() - Actor.GetActorLocation();
+        const FRotator Facing(0.0f, Direction.Rotation().Yaw, 0.0f);
+        Actor.SetActorRotation(FMath::RInterpTo(Actor.GetActorRotation(), Facing, DeltaSeconds, Config.TurnSpeed));
+        LookAtPlayer(*Shooter, false);
+        State.Snapshot.Phase = 3;
+        return;
+    }
     APawn *Visible = nullptr;
     float BestDistance = FMath::Square(Config.DetectionRadius);
     for (auto It = Actor.GetWorld()->GetPlayerControllerIterator(); It; ++It)

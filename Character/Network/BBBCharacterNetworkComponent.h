@@ -16,6 +16,7 @@
 
 class APawn;
 class ABBBCharacter;
+class ABBBMaodieTest;
 
 /** 角色 RPC 与属性复制边界 */
 UCLASS(ClassGroup = "BBB")
@@ -33,6 +34,9 @@ public:
     /** @param Receipt\t已成立的入包结果 @return 无 */
     UFUNCTION(Server, Reliable)
     void ServerCompletePickup(FBBBCharacterPickupReceipt Receipt);
+    /** @param Target 客机弹丸已命中的耄耋 @return 无 */
+    UFUNCTION(Server, Reliable)
+    void ServerReportMaodieProjectileHit(ABBBMaodieTest *Target);
     /** 构造无 Tick 的角色网络传输组件 */
     UBBBCharacterNetworkComponent();
 

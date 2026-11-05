@@ -245,7 +245,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                         Hit.AddWound = Data.WoundStrength;
                         Hit.Normal = WorldHit.ImpactNormal;
                         Hit.AttackId = Data.AttackId;
-                        BBBHitReceiver::Submit(Actor, Hit);
+                        BBBHitReceiver::SubmitProjectileHit(Actor, Hit, Data.InstigatorPawn.Get());
                     }
 
                     Params.AddIgnoredActor(Actor);

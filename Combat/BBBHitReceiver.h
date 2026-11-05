@@ -5,6 +5,8 @@
 #include "FBBBHitContribution.h"
 #include "BBBHitReceiver.generated.h"
 
+class APawn;
+
 UINTERFACE()
 class ABBB_EVAC_API UBBBHitReceiver : public UInterface
 {
@@ -36,4 +38,6 @@ namespace BBBHitReceiver
 {
     /** @param Target 受击目标 @param Hit 完整单次命中贡献 @return 无 */
     ABBB_EVAC_API void Submit(AActor* Target, const FBBBHitContribution& Hit);
+    /** @param Target 命中目标 @param Hit 单发直击贡献 @param Shooter 发射者 @return 无 */
+    ABBB_EVAC_API void SubmitProjectileHit(AActor* Target, const FBBBHitContribution& Hit, APawn* Shooter);
 }

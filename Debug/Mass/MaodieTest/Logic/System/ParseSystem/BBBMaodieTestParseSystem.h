@@ -11,9 +11,26 @@ public:
     template<typename TPacket>
     static void Submit(FBBBMaodieTestRuntimeData &Data, TPacket &&Packet)
     {
-        static_assert(std::is_same_v<std::decay_t<TPacket>, FBBBMaodieTestSnapshotAuthorityFactPacket>);
-        Data.Parse.State.Pending = Packet.Snapshot;
-        Data.Parse.State.bActive = true;
+        using FPacket = std::decay_t<TPacket>;
+        static_assert(std::is_same_v<FPacket, FBBBMaodieTestSnapshotAuthorityFactPacket>
+            || std::is_same_v<FPacket, FBBBMaodieTestProjectileHitLocalControlPacket>
+            || std::is_same_v<FPacket, FBBBMaodieTestProjectileHitRemoteMessagePacket>);
+        auto &State = Data.Parse.State;
+        if constexpr (std::is_same_v<FPacket, FBBBMaodieTestSnapshotAuthorityFactPacket>)
+        {
+            State.Pending = Packet.Snapshot;
+            State.bActive = true;
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBMaodieTestProjectileHitLocalControlPacket>)
+        {
+            State.LocalHits.Shooters.Append(Packet.Shooters);
+            State.bLocalHitsActive = true;
+        }
+        if constexpr (std::is_same_v<FPacket, FBBBMaodieTestProjectileHitRemoteMessagePacket>)
+        {
+            State.RemoteHits.Shooters.Append(Packet.Shooters);
+            State.bRemoteHitsActive = true;
+        }
     }
 
     /** @param Actor 耄耋 @param DeltaSeconds 帧间隔 @param bCausal 业务控制身份 @return 无 */

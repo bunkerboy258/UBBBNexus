@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterUseAuthorityFactPacket.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/BBBMaodieTest.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
@@ -359,6 +360,15 @@ void UBBBCharacterNetworkComponent::ClientDeliverDamage_Implementation(FBBBHitCo
     {
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{
             {Hit}});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerReportMaodieProjectileHit_Implementation(ABBBMaodieTest *Target)
+{
+    auto *Shooter = Cast<ABBBCharacter>(GetOwner());
+    if (IsValid(Target) && IsValid(Shooter) && Target->GetWorld() == Shooter->GetWorld())
+    {
+        Target->SubmitInput(FBBBMaodieTestProjectileHitRemoteMessagePacket{{TWeakObjectPtr<APawn>(Shooter)}});
     }
 }
 

@@ -1,8 +1,33 @@
 #include "BBBHitReceiver.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Network/BBBCharacterNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/BBBMaodieTest.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "Components/PrimitiveComponent.h"
+
+void BBBHitReceiver::SubmitProjectileHit(AActor* Target, const FBBBHitContribution& Hit, APawn* Shooter)
+{
+    auto* Maodie = Cast<ABBBMaodieTest>(Target);
+    if (!IsValid(Maodie))
+    {
+        Submit(Target, Hit);
+        return;
+    }
+    if (!Hit.IsValid() || !IsValid(Shooter) || !Shooter->IsPlayerControlled() || !Shooter->IsLocallyControlled())
+    {
+        return;
+    }
+    if (Maodie->HasAuthority())
+    {
+        Maodie->SubmitInput(FBBBMaodieTestProjectileHitLocalControlPacket{{TWeakObjectPtr<APawn>(Shooter)}});
+        return;
+    }
+    if (auto* Character = Cast<ABBBCharacter>(Shooter))
+    {
+        Character->GetCharacterNetworkComponent()->ServerReportMaodieProjectileHit(Maodie);
+    }
+}
 
 void UBBBPhysicsHitReceiver::ReceiveHit(const FBBBHitContribution& Hit)
 {
