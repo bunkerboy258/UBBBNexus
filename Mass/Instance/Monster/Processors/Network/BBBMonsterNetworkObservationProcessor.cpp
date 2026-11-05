@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Combat/BBBMonsterSpecialFragment.h"
 
 #include "EngineUtils.h"
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "MassExecutionContext.h"
@@ -48,7 +49,7 @@ void UBBBMonsterNetworkObservationProcessor::ConfigureQueries(const TSharedRef<F
 void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
     UWorld* World = Context.GetWorld();
-    if (World->GetNetMode() == NM_Standalone)
+    if (!World || (World->GetNetMode() == NM_Standalone && !World->IsRecordingReplay()))
     {
         return;
     }

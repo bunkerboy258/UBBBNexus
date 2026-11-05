@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
 
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/GameStateBase.h"
@@ -25,6 +26,39 @@ void ABBBMassNetworkActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABBBMassNetworkActor, Monsters);
     DOREPLIFETIME(ABBBMassNetworkActor, Slimes);
+}
+
+void ABBBMassNetworkActor::EndPlay(const EEndPlayReason::Type Reason)
+{
+    // 回放跳转会销毁并重建动态复制载体 镜像实体必须跟随其唯一持有者一起回收
+    if (!HasAuthority() && GetWorld() && !GetWorld()->bIsTearingDown)
+    {
+        UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
+        UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
+        if (Mass && Entities)
+        {
+            for (const auto& Pair : LocalEntities)
+            {
+                Mass->DestroyEntity(Pair.Value);
+            }
+            const auto& Manager = Entities->GetEntityManager();
+            for (const auto& Pair : LocalSlimes)
+            {
+                if (Manager.IsEntityValid(Pair.Value))
+                {
+                    const auto* State = Manager.GetFragmentDataPtr<FBBBSlimeFragment>(Pair.Value);
+                    if (State && State->Presentation.IsValid())
+                    {
+                        State->Presentation->Destroy();
+                    }
+                    Mass->DestroyEntity(Pair.Value);
+                }
+            }
+        }
+    }
+    LocalEntities.Reset();
+    LocalSlimes.Reset();
+    Super::EndPlay(Reason);
 }
 
 void ABBBMassNetworkActor::PublishSlimes(const TArray<FBBBSlimeFact>& States)

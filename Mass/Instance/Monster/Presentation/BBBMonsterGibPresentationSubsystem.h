@@ -79,6 +79,10 @@ public:
     virtual void Deinitialize() override;
 
 private:
+    /** @param DestroyedActor	已销毁的共享表现载体 @return 无 释放同一世界回放跳转后失效的池缓存 */
+    UFUNCTION()
+    void OnPoolDestroyed(AActor* DestroyedActor);
+
     /** @return 可复用残肢槽位或负一 */
     int32 AcquireSlot(const UStaticMesh &Mesh);
     /** @return 新准备的空闲槽位 每次最多创建一个 */

@@ -175,7 +175,7 @@ int32 UBBBMonsterGibPresentationSubsystem::CreateSlot()
         ContactMaterial->StaticFriction = 0.8f;
         ContactMaterial->Restitution = 0.12f;
     }
-    AActor* PoolActor = Pieces.IsEmpty() ? nullptr : Pieces[0]->GetOwner();
+    AActor* PoolActor = Pieces.IsEmpty() || !IsValid(Pieces[0]) ? nullptr : Pieces[0]->GetOwner();
     if (!PoolActor)
     {
         FActorSpawnParameters Parameters;
@@ -187,6 +187,7 @@ int32 UBBBMonsterGibPresentationSubsystem::CreateSlot()
         }
         PoolActor->SetActorTickEnabled(false);
         PoolActor->SetReplicates(false);
+        PoolActor->OnDestroyed.AddUniqueDynamic(this, &UBBBMonsterGibPresentationSubsystem::OnPoolDestroyed);
     }
     /** 全池共用载体 UE 碰撞派发要求刚体具有所属 Actor */
     auto* Piece = NewObject<UStaticMeshComponent>(PoolActor);
@@ -488,19 +489,35 @@ void UBBBMonsterGibPresentationSubsystem::AdvancePresentation(const float Now)
     }
 }
 
+void UBBBMonsterGibPresentationSubsystem::OnPoolDestroyed(AActor*)
+{
+    // 原生回放跳转会销毁本地临时载体 子系统仍属于同一个世界
+    Poses.Reset();
+    Pieces.Reset();
+    BornAt.Reset();
+    StableSince.Reset();
+    SoundConfigs.Reset();
+    PresentationConfigs.Reset();
+    LandingPlayed.Reset();
+    AdvancedTime = -1.0f;
+}
+
 void UBBBMonsterGibPresentationSubsystem::Deinitialize()
 {
-    AActor* PoolActor = Pieces.IsEmpty() ? nullptr : Pieces[0]->GetOwner();
+    AActor* PoolActor = Pieces.IsEmpty() || !IsValid(Pieces[0]) ? nullptr : Pieces[0]->GetOwner();
     for (UPoseableMeshComponent* Pose : Poses)
     {
-        if (Pose)
+        if (IsValid(Pose))
         {
             Pose->DestroyComponent();
         }
     }
     for (UStaticMeshComponent* Piece : Pieces)
     {
-        Piece->DestroyComponent();
+        if (IsValid(Piece))
+        {
+            Piece->DestroyComponent();
+        }
     }
     Poses.Reset();
     Pieces.Reset();
@@ -512,6 +529,7 @@ void UBBBMonsterGibPresentationSubsystem::Deinitialize()
     ContactMaterial = nullptr;
     if (IsValid(PoolActor))
     {
+        PoolActor->OnDestroyed.RemoveDynamic(this, &UBBBMonsterGibPresentationSubsystem::OnPoolDestroyed);
         PoolActor->Destroy();
     }
     PreparationSettings = nullptr;

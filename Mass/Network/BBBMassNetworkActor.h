@@ -19,6 +19,21 @@ public:
     ABBBMassNetworkActor();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+    /** @param Reason	载体结束原因 @return 无 仅回收本载体在非权威端创建的镜像实体 */
+    virtual void EndPlay(const EEndPlayReason::Type Reason) override;
+
+    /** @return 原生 FastArray 当前小怪快照的只读视图 */
+    TConstArrayView<FBBBMonsterReplicationItem> ReadMonsterFacts() const
+    {
+        return Monsters.Items;
+    }
+
+    /** @return 当前粘液复制快照的只读视图 */
+    TConstArrayView<FBBBSlimeFact> ReadSlimeFacts() const
+    {
+        return Slimes;
+    }
+
     void BeginPublish();
 
     /**

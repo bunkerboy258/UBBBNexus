@@ -12,7 +12,7 @@ UBBBSlimeNetworkObservationProcessor::UBBBSlimeNetworkObservationProcessor() : S
     bRequiresGameThreadExecution = true;
     QueryBasedPruning = EMassQueryBasedPruning::Never;
     ProcessingPhase = EMassProcessingPhase::PrePhysics;
-    ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::Server);
+    ExecutionFlags = static_cast<uint8>(EProcessorExecutionFlags::Server | EProcessorExecutionFlags::Standalone);
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Network;
     ExecutionOrder.ExecuteAfter.Add(BBBMassProcessingGroups::Movement);
 }
@@ -25,7 +25,8 @@ void UBBBSlimeNetworkObservationProcessor::ConfigureQueries(const TSharedRef<FMa
 void UBBBSlimeNetworkObservationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
     UWorld* World = Context.GetWorld();
-    if (!World || World->GetTimeSeconds() < NextPublishTime)
+    if (!World || (World->GetNetMode() == NM_Standalone && !World->IsRecordingReplay())
+        || World->GetTimeSeconds() < NextPublishTime)
     {
         return;
     }
