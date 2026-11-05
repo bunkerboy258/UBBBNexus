@@ -94,18 +94,23 @@ void FBBBCharacterGetUpAnimationProcessor::Update(FBBBCharacterAnimationUpdateCo
         {
             return;
         }
-        const FAnimMontageInstance *MontageInstance = Anim.GetActiveInstanceForMontage(Result.GetUpMontage);
+        const FAnimMontageInstance *MontageInstance = Anim.GetInstanceForMontage(Result.GetUpMontage);
+        State.bGetUpBlendOutComplete = !MontageInstance
+            || (MontageInstance->IsStopped() && MontageInstance->GetWeight() <= UE_KINDA_SMALL_NUMBER);
         // 起身动作覆盖全身后切回正常底姿 让自然淡出直接接回运动
-        if (State.bUseRecoveryPose && (!MontageInstance || MontageInstance->GetWeight() >= 1.0f - UE_KINDA_SMALL_NUMBER))
+        if (State.bUseRecoveryPose && (!MontageInstance || MontageInstance->IsStopped()
+            || MontageInstance->GetWeight() >= 1.0f - UE_KINDA_SMALL_NUMBER))
         {
             State.bUseRecoveryPose = false;
         }
-        if (MontageInstance && FMath::Abs(MontageInstance->GetPosition() - Result.GetUpPosition) > 0.2f)
+        if (MontageInstance && MontageInstance->IsActive()
+            && FMath::Abs(MontageInstance->GetPosition() - Result.GetUpPosition) > 0.2f)
         {
             Anim.Montage_SetPosition(Result.GetUpMontage, Result.GetUpPosition);
         }
         return;
     }
+    State.bGetUpBlendOutComplete = false;
     if (Result.Phase != EBBBCharacterPhysicalPhase::Recovering)
     {
         State.bUseRecoveryPose = false;

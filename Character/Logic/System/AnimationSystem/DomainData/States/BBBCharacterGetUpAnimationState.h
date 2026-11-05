@@ -22,6 +22,8 @@ struct FBBBCharacterGetUpAnimationState final
     FPoseSnapshot RecoveryPose;
     /** 退出物理姿态是否仍参与起身淡入 */
     bool bUseRecoveryPose = false;
+    /** 本次起身动作是否已完成淡出 */
+    bool bGetUpBlendOutComplete = false;
     /** 捕获姿态时的网格世界变换 */
     FTransform CaptureMeshTransform;
     /** 进入恢复前的根运动模式 用于动作结束后还原 */

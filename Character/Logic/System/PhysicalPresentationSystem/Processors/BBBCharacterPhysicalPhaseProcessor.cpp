@@ -59,16 +59,24 @@ void FBBBCharacterPhysicalPhaseProcessor::Update(FBBBCharacterPhysicalPresentati
                 State.bWasDowned = false;
             }
         }
-        if (State.bGetUpComplete && !State.bRagdollRequested && Life.Phase == EBBBCharacterLifePhase::Alive
-            && Result.Phase == EBBBCharacterPhysicalPhase::Recovering)
-        {
-            Result.Phase = EBBBCharacterPhysicalPhase::Animated;
-            Result.RecoveryTransform = Context.Character.GetActorTransform();
-            ++Result.Transition;
-            ++Result.Revision;
-        }
-        State.bGetUpComplete = false;
         const auto &Animation = Context.Data.Animation.ReadGetUpAnimationState();
+        if (State.bGetUpComplete)
+        {
+            if (State.bRagdollRequested || Life.Phase != EBBBCharacterLifePhase::Alive
+                || Result.Phase != EBBBCharacterPhysicalPhase::Recovering)
+            {
+                State.bGetUpComplete = false;
+            }
+            else if (Animation.AppliedTransition == Result.Transition && Animation.bGetUpBlendOutComplete)
+            {
+                // 结束通知可以早于淡出完成 全身起身姿势退出后才恢复移动与朝向
+                Result.Phase = EBBBCharacterPhysicalPhase::Animated;
+                Result.RecoveryTransform = Context.Character.GetActorTransform();
+                State.bGetUpComplete = false;
+                ++Result.Transition;
+                ++Result.Revision;
+            }
+        }
         if (State.bRagdoll && State.bGetUpRequested && State.bCanGetUp && !State.bRagdollRequested
             && Life.Phase == EBBBCharacterLifePhase::Alive && Animation.SelectedMontage
             && Animation.SelectedEpisode == Result.Episode)

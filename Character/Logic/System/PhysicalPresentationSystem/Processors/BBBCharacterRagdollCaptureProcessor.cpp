@@ -16,7 +16,11 @@ void FBBBCharacterRagdollCaptureProcessor::Update(FBBBCharacterPhysicalPresentat
     {
         if (UAnimInstance *Anim = Context.Mesh.GetAnimInstance())
         {
-            Snapshot.GetUpPosition = Anim->Montage_GetPosition(Snapshot.GetUpMontage);
+            // 淡出中的实例仍提供播放位置 实例销毁后保留最后一个有效位置
+            if (const FAnimMontageInstance *MontageInstance = Anim->GetInstanceForMontage(Snapshot.GetUpMontage))
+            {
+                Snapshot.GetUpPosition = MontageInstance->GetPosition();
+            }
             Snapshot.RecoveryTransform = Context.Character.GetActorTransform();
             ++Snapshot.Revision;
         }
