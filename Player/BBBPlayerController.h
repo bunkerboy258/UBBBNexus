@@ -59,6 +59,8 @@ public:
     //让下方函数按照所列规则参与反射调用或远程调用
     UFUNCTION(BlueprintCallable, Category = "BBB|输入")
     void ToggleMouseCursor();
+    /** @param bCaptured\t前端是否接管输入 @return 无 在前端与正常游玩之间交接 */
+    void SetFrontendInputCaptured(bool bCaptured);
 
     /** @return 无 按 B 打开或关闭背包 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")

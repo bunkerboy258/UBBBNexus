@@ -22,6 +22,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "Engine/GameViewportClient.h"
+#include "Framework/Application/SlateApplication.h"
 #include "UObject/ConstructorHelpers.h"
 //定义当前编译单元使用的日志分类
 // 声明控制器专用日志分类
@@ -141,6 +143,7 @@ void ABBBPlayerController::BeginPlay()
         //确保 Escape 切换不会被默认映射覆盖
         Subsystem->AddMappingContext(ToggleMouseIMC, MappingContextPriority + 1);
     }
+    SetMouseMenuMode(false);
 }
 
 //切换鼠标指针与游戏输入模式
@@ -246,6 +249,12 @@ void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
         FInputModeGameAndUI InputMode;
         //鼠标被视口捕获时仍保持指针可见
         InputMode.SetHideCursorDuringCapture(false);
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        if (auto* Viewport = GetWorld() ? GetWorld()->GetGameViewport() : nullptr)
+        {
+            Viewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+            Viewport->SetMouseLockMode(EMouseLockMode::DoNotLock);
+        }
         //应用界面可交互的输入模式
         SetInputMode(InputMode);
         //显示鼠标指针供菜单操作
@@ -254,9 +263,34 @@ void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
         return;
     }
     //关闭菜单后恢复纯游戏输入
-    SetInputMode(FInputModeGameOnly());
+    FInputModeGameOnly InputMode;
+    InputMode.SetConsumeCaptureMouseDown(false);
+    SetInputMode(InputMode);
     //隐藏鼠标指针避免影响瞄准
     bShowMouseCursor = false;
+    if (auto* Viewport = GetWorld() ? GetWorld()->GetGameViewport() : nullptr)
+    {
+        Viewport->SetMouseCaptureMode(EMouseCaptureMode::CapturePermanently_IncludingInitialMouseDown);
+        Viewport->SetMouseLockMode(EMouseLockMode::LockOnCapture);
+    }
+    if (FSlateApplication::IsInitialized())
+    {
+        FSlateApplication::Get().SetAllUserFocusToGameViewport();
+    }
+}
+
+void ABBBPlayerController::SetFrontendInputCaptured(bool bCaptured)
+{
+    if (!IsLocalController())
+    {
+        return;
+    }
+    if (bCaptured && IsBackpackOpen())
+    {
+        ItemView->SetBackpackOpen(false);
+    }
+    EndQuickBar();
+    SetMouseMenuMode(bCaptured);
 }
 
 ABBBCharacter *ABBBPlayerController::GetItemCharacter() const
