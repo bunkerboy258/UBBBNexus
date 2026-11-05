@@ -89,7 +89,7 @@ struct FBBBMaodieTestConfig final
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "头部转动平滑速度", ClampMin = "0.1"))
     float HeadTurnSpeed = 6.0f;
 
-    /** 可重复等概率抽取的物品 每次投掷一件 */
+    /** 可重复等概率抽取的物品 破片手雷每次十个 其余物品每次一件 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "耄耋", meta = (DisplayName = "随机掉落池"))
     TArray<TObjectPtr<UBBBItemDefinition>> DropPool;
     /** 发现玩家时的哈气音效 */

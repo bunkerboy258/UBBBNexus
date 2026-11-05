@@ -3,6 +3,7 @@
 #include "BBBWork/UBBBNexus/Item/BBBItemType.h"
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Test/V01/Gameplay/BBBV01PlayerRuntimeData.h"
 #include "BBBPlayerController.generated.h"
 
 class ABBBCharacter;
@@ -28,6 +29,19 @@ public:
      * 创建并配置玩家控制器 加载默认输入映射并创建鼠标切换动作
      */
     ABBBPlayerController();
+
+    /** @return 无 本地场景加载遮罩揭开后通知房主放行初次出生 */
+    void NotifyV01SceneReady();
+
+    /** @return 房主是否已经收到本玩家的初次出生就绪通知 */
+    bool IsV01SceneReady() const;
+
+    /** @param Location	出生区域视点 @param Rotation	出生朝向 @return 无 在生成角色前预热正确区域 */
+    UFUNCTION(Client, Reliable)
+    void ClientPrepareV01SpawnView(FVector Location, FRotator Rotation);
+
+    /** 试玩控制器功能的唯一运行时黑板 */
+    FBBBV01PlayerRuntimeData V01RuntimeData;
 
     /**
      * 进入游戏时为本地玩家注册默认与鼠标切换输入映射
@@ -183,6 +197,10 @@ protected:
     //更新int32MappingContextPriority供后续步骤读取
     int32 MappingContextPriority = 0;
 private:
+    /** @return 无 将本玩家的场景就绪通知交给房主 */
+    UFUNCTION(Server, Reliable)
+    void ServerNotifyV01SceneReady();
+
     /** G 按键的输入适配 */
     void QuickUse();
     /** @return 无 请求角色快速近战 */

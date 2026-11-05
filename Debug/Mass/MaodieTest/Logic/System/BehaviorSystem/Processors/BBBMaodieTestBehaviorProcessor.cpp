@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/Logic/System/BehaviorSystem/Processors/BBBMaodieTestBehaviorProcessor.h"
 #include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/BBBMaodieTest.h"
 #include "BBBWork/UBBBNexus/Item/WorldDrop/BBBWorldDropItem.h"
+#include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/WorldDrop/Input/LocalControl/Initialize/FBBBWorldDropInitializeLocalControlPacket.h"
 #include "AIController.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -110,7 +111,7 @@ void FBBBMaodieTestBehaviorProcessor::Update(ABBBMaodieTest &Actor, float DeltaS
             {
                 FBBBWorldDropInitialization Initialization;
                 Initialization.Definition = Config.DropPool[FMath::RandHelper(Config.DropPool.Num())];
-                Initialization.Quantity = 1;
+                Initialization.Quantity = Initialization.Definition->ItemId == TEXT("Grenade_01") ? 10 : 1;
                 Initialization.Velocity = Forward * FMath::FRandRange(Config.ThrowSpeedMin, Config.ThrowSpeedMax)
                     + FVector(0.0f, 0.0f, FMath::FRandRange(Config.ThrowUpSpeedMin, Config.ThrowUpSpeedMax));
                 FBBBWorldDropInitializeLocalControlPacket Packet;

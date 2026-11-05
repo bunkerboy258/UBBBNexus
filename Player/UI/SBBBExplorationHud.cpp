@@ -6,6 +6,7 @@
 #include "Rendering/DrawElements.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Fonts/FontMeasure.h"
+#include "Test/V01/Gameplay/BBBV01TutorialPresentation.h"
 
 void SBBBExplorationHud::Construct(const FArguments &Arguments)
 {
@@ -62,7 +63,7 @@ int32 SBBBExplorationHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
     if (!Owner->IsBackpackOpen() && !Controller->IsPlayerMenuOpen())
     {
         const FVector2D Origin = FVector2D(36.0f, 32.0f) * Scale;
-        Box(Origin, FVector2D(166.0f, 72.0f) * Scale, FLinearColor(0.008f, 0.009f, 0.011f, 0.65f), 0);
+        Box(Origin, FVector2D(296.0f, 72.0f) * Scale, FLinearColor(0.008f, 0.009f, 0.011f, 0.65f), 0);
         Box(Origin, FVector2D(2.0f, 72.0f) * Scale, BBBItemUI::Accent.CopyWithNewOpacity(0.85f), 1);
         if (auto *Texture = Owner->GetMaodieAvatar())
         {
@@ -75,9 +76,11 @@ int32 SBBBExplorationHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
                 &Avatar, ESlateDrawEffect::None, FLinearColor::White);
         }
         const FString Count = FString::Printf(TEXT("%d/10"), Controller->GetDiscoveredMaodieCount());
-        const auto Font = BBBItemUI::Font(FMath::RoundToInt(32.0f * Scale));
-        const FVector2D Extent = FSlateApplication::Get().GetRenderer()->GetFontMeasureService()->Measure(Count, Font);
-        const FVector2D Position = Origin + FVector2D(78.0f * Scale, (72.0f * Scale - Extent.Y) * 0.5f);
+        const auto LabelFont = BBBItemUI::Font(FMath::RoundToInt(23.0f * Scale));
+        Text(TEXT("找到所有呆耄!"), Origin + FVector2D(78.0f, 8.0f) * Scale,
+            LabelFont, FLinearColor::White, 2);
+        const auto Font = BBBItemUI::Font(FMath::RoundToInt(28.0f * Scale));
+        const FVector2D Position = Origin + FVector2D(78.0f * Scale, 38.0f * Scale);
         const float Pulse = 1.0f - FMath::Clamp(PulseAge / 0.65f, 0.0f, 1.0f);
         Text(Count, Position + FVector2D(1.0f, 2.0f) * Scale, Font, FLinearColor(0, 0, 0, 0.9f), 1);
         Text(Count, Position, Font, FLinearColor::LerpUsingHSV(FLinearColor::White, BBBItemUI::Accent, Pulse), 2);
@@ -100,5 +103,5 @@ int32 SBBBExplorationHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         Text(Title, Position + FVector2D(3.0f, 4.0f) * Scale, Font, FLinearColor(0, 0, 0, Alpha), 4);
         Text(Title, Position, Font, FLinearColor(1, 1, 1, Alpha), 5);
     }
-    return Layer + 5;
+    return FBBBV01TutorialPresentation::Paint(*Controller, Geometry, Elements, Layer + 5);
 }

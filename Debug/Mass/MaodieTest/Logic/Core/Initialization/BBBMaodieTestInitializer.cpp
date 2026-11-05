@@ -9,8 +9,15 @@
 #include "Animation/AnimSequence.h"
 #include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/Animation/BBBMaodieTestAnimInstance.h"
 #include "Engine/SkeletalMesh.h"
+#include "UObject/ConstructorHelpers.h"
 void FBBBMaodieTestInitializer::Construct(ABBBMaodieTest &Actor)
 {
+    static ConstructorHelpers::FObjectFinder<UBBBItemDefinition> Grenade(TEXT(
+        "/Game/_Project/Characters/BBBC_UA/Items/Consumable/Grenade/破片手雷/DA_Grenade_01.DA_Grenade_01"));
+    if (Grenade.Succeeded())
+    {
+        Actor.Config.DropPool.AddUnique(Grenade.Object);
+    }
     Actor.PrimaryActorTick.bCanEverTick = true;
     Actor.PrimaryActorTick.TickInterval = 0.02f;
     Actor.bReplicates = true;

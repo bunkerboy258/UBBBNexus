@@ -1,4 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
+#include "Test/V01/Gameplay/BBBV01SceneReadinessProcessor.h"
+#include "Test/V01/Gameplay/BBBV01TutorialSubsystem.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerExplorationSystem.h"
 #include "Engine/LocalPlayer.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
@@ -493,6 +495,7 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
     if (auto *LocalPlayer = GetLocalPlayer())
     {
         LocalPlayer->GetSubsystem<UBBBPlayerExplorationSystem>()->Update(*this);
+        LocalPlayer->GetSubsystem<UBBBV01TutorialSubsystem>()->Update(*this, DeltaTime);
     }
     ABBBCharacter *ItemCharacter = GetItemCharacter();
     const int32 InventoryRevision = ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState().Revision : 0;
@@ -562,5 +565,39 @@ void ABBBPlayerController::QuickMelee()
     if (auto *ItemCharacter = GetItemCharacter(); ItemCharacter && !IsPlayerMenuOpen())
     {
         ItemCharacter->SubmitInput(FBBBCharacterQuickMeleeLocalControlPacket{});
+    }
+}
+
+void ABBBPlayerController::NotifyV01SceneReady()
+{
+    if (!FBBBV01SceneReadinessProcessor::NotifyLocalReady(*this))
+    {
+        return;
+    }
+    if (HasAuthority())
+    {
+        FBBBV01SceneReadinessProcessor::AcceptAuthorityReady(*this);
+        return;
+    }
+    ServerNotifyV01SceneReady();
+}
+
+void ABBBPlayerController::ServerNotifyV01SceneReady_Implementation()
+{
+    FBBBV01SceneReadinessProcessor::AcceptAuthorityReady(*this);
+}
+
+bool ABBBPlayerController::IsV01SceneReady() const
+{
+    const auto &State = V01RuntimeData.SceneReadiness.ReadV01SceneReadinessState();
+    return HasAuthority() ? State.bAuthorityReady : State.bLocalReady;
+}
+
+void ABBBPlayerController::ClientPrepareV01SpawnView_Implementation(FVector Location, FRotator Rotation)
+{
+    if (!GetPawn())
+    {
+        SetInitialLocationAndRotation(Location, Rotation);
+        SetViewTarget(this);
     }
 }
