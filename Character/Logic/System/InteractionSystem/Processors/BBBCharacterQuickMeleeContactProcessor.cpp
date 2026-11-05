@@ -52,8 +52,17 @@ void FBBBCharacterQuickMeleeContactProcessor::Update(FBBBCharacterInteractionUpd
         const FVector Start = Index < 0 ? Base : FMath::Lerp(PreviousBase, PreviousTip, Fraction);
         const FVector End = Index < 0 ? Tip : FMath::Lerp(Base, Tip, Fraction);
         FHitResult Hit;
-        const bool bWorldHit = World.SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility,
+        bool bWorldHit = World.SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility,
                                                           FCollisionShape::MakeSphere(Config.QuickMeleeRadius), Params);
+        FHitResult PawnHit;
+        if (World.SweepSingleByObjectType(PawnHit, Start, End, FQuat::Identity,
+                                          FCollisionObjectQueryParams(ECC_Pawn),
+                                          FCollisionShape::MakeSphere(Config.QuickMeleeRadius), Params)
+            && (!bWorldHit || PawnHit.Time < Hit.Time))
+        {
+            Hit = PawnHit;
+            bWorldHit = true;
+        }
         FMassEntityHandle Entity;
         float HitTime = 1.0f;
         FVector Position = FVector::ZeroVector;

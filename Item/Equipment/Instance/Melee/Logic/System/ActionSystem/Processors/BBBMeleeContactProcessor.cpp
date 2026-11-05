@@ -39,8 +39,16 @@ void FBBBMeleeContactProcessor::Update(FBBBMeleeActionUpdateContext &Context)
         const FVector Start = Index < 0 ? Base : FMath::Lerp(PreviousBase, PreviousTip, Fraction);
         const FVector End = Index < 0 ? Tip : FMath::Lerp(Base, Tip, Fraction);
         FHitResult Hit;
-        const bool bWorldHit = Context.World.SweepSingleByChannel(Hit, Start, End, FQuat::Identity,
+        bool bWorldHit = Context.World.SweepSingleByChannel(Hit, Start, End, FQuat::Identity,
             Context.Definition.CollisionChannel, FCollisionShape::MakeSphere(Context.Definition.TraceRadius), Params);
+        FHitResult PawnHit;
+        if (Context.World.SweepSingleByObjectType(PawnHit, Start, End, FQuat::Identity,
+            FCollisionObjectQueryParams(ECC_Pawn), FCollisionShape::MakeSphere(Context.Definition.TraceRadius), Params)
+            && (!bWorldHit || PawnHit.Time < Hit.Time))
+        {
+            Hit = PawnHit;
+            bWorldHit = true;
+        }
         FMassEntityHandle Entity;
         float HitTime = 1.0f;
         FVector Position = FVector::ZeroVector;
