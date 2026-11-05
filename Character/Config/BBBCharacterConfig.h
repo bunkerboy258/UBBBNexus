@@ -18,6 +18,8 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 {
     GENERATED_BODY()
   public:
+    UBBBCharacterConfig();
+
     /** 世界掉落物自动拾取配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "拾取配置"))
     FBBBCharacterPickupConfig Pickup;

@@ -1,6 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "BBBCharacterPickupConfig.generated.h"
+class USoundBase;
+
 /** 角色自动拾取的静态配置 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterPickupConfig final
@@ -11,8 +13,11 @@ struct FBBBCharacterPickupConfig final
     float Distance = 150.0f;
     /** 无交付时的探测间隔 单位秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "拾取", meta = (DisplayName = "探测间隔", ClampMin = "0.05", ToolTip = "附近世界掉落物的探测间隔 单位秒"))
-    float ProbeInterval = 0.2f;
+    float ProbeInterval = 0.075f;
     /** 入包拒绝后的重试间隔 单位秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "拾取", meta = (DisplayName = "拒绝重试间隔", ClampMin = "0.1", ToolTip = "满包等拒绝结果后再次尝试领取的间隔 单位秒"))
     float RejectedRetryInterval = 1.0f;
+    /** 本机角色确认入包时播放的提示音 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "拾取", meta = (DisplayName = "拾取音效", ToolTip = "仅在本机角色成功获得掉落物时播放"))
+    TObjectPtr<USoundBase> PickupSound;
 };

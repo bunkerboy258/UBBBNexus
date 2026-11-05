@@ -4,8 +4,11 @@
 #include "BBBWork/UBBBNexus/Character/Config/Pickup/BBBCharacterPickupConfig.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/WorldDrop/BBBWorldDropItem.h"
+#include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Context) const
 {
     auto &State = Context.Data.Pickup.PickupState;
@@ -20,6 +23,7 @@ void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Cont
     }
     const double Now = Context.Data.External.ReadWorldState().WorldTimeSeconds;
     const auto &Results = Context.Data.Item.ReadCharacterItemOperationState().AcquisitionResults;
+    bool bAcquiredDrop = false;
     for (auto &Entry : State.Records)
     {
         auto &Record = Entry.Value;
@@ -31,12 +35,19 @@ void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Cont
                 Record.bAwaitingResult = false;
                 Record.Receipt.bSucceeded = Result.bSucceeded;
                 State.Receipts.Add(Record.Receipt);
+                State.NextProbeAt = Now;
+                bAcquiredDrop |= Result.bSucceeded;
                 if (!Result.bSucceeded)
                 {
-                    State.NextProbeAt = FMath::Max(State.NextProbeAt, Now + Context.Config.RejectedRetryInterval);
+                    Record.RetryAt = Now + Context.Config.RejectedRetryInterval;
                 }
             }
         }
+    }
+    if (bAcquiredDrop && Context.Config.PickupSound && Context.Character.IsLocallyControlled()
+        && Context.Character.IsPlayerControlled())
+    {
+        UGameplayStatics::PlaySound2D(&Context.Character, Context.Config.PickupSound);
     }
     for (const auto &Grant : State.PendingGrants)
     {
@@ -80,7 +91,9 @@ void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Cont
         && Context.Data.Life.ReadLifeState().Phase == EBBBCharacterLifePhase::Alive)
     {
         State.NextProbeAt = Now + FMath::Max(0.05f, Context.Config.ProbeInterval);
-        const FVector Origin = Context.Character.GetActorLocation();
+        const auto *Capsule = Context.Character.GetCapsuleComponent();
+        const FVector Origin = Capsule->GetComponentLocation();
+        const double AxisHalfLength = Capsule->GetScaledCapsuleHalfHeight_WithoutHemisphere();
         const float Radius = FMath::Max(1.0f, Context.Config.Distance);
         FCollisionQueryParams Query(SCENE_QUERY_STAT(BBBAutoPickup), false, &Context.Character);
         TArray<AActor *> Attached;
@@ -88,9 +101,10 @@ void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Cont
         Query.AddIgnoredActors(Attached);
         TArray<FOverlapResult> Overlaps;
         Context.Character.GetWorld()->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
-            FCollisionObjectQueryParams(ECC_WorldDynamic), FCollisionShape::MakeSphere(Radius), Query);
+            FCollisionObjectQueryParams(ECC_WorldDynamic),
+            FCollisionShape::MakeCapsule(Radius, Radius + AxisHalfLength), Query);
         ABBBWorldDropItem *Nearest = nullptr;
-        float NearestDistance = FMath::Square(Radius);
+        double NearestDistance = FMath::Square(static_cast<double>(Radius));
         for (const auto &Overlap : Overlaps)
         {
             auto *Drop = Cast<ABBBWorldDropItem>(Overlap.GetActor());
@@ -98,7 +112,16 @@ void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Cont
             {
                 continue;
             }
-            const float Distance = FVector::DistSquared(Origin, Drop->GetActorLocation());
+            const auto *Record = State.Records.Find(Drop);
+            if (Record && Record->Receipt.Grant.DropId == Drop->ReadDropSnapshot().DropId
+                && (Record->Receipt.bSucceeded || Now < Record->RetryAt))
+            {
+                continue;
+            }
+            const FVector DropLocation = Drop->GetActorLocation();
+            FVector ReachOrigin = Origin;
+            ReachOrigin.Z += FMath::Clamp(DropLocation.Z - Origin.Z, -AxisHalfLength, AxisHalfLength);
+            const double Distance = FVector::DistSquared(ReachOrigin, DropLocation);
             if (Distance > NearestDistance)
             {
                 continue;
@@ -107,7 +130,7 @@ void FBBBCharacterPickupProcessor::Update(FBBBCharacterPickupUpdateContext &Cont
             FCollisionQueryParams SightQuery = Query;
             SightQuery.AddIgnoredActor(Drop);
             if (Context.Character.GetWorld()->LineTraceSingleByChannel(Hit, Origin,
-                Drop->GetActorLocation(), ECC_Visibility, SightQuery))
+                DropLocation, ECC_Visibility, SightQuery))
             {
                 continue;
             }

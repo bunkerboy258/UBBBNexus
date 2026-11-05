@@ -36,8 +36,11 @@ void FBBBWorldDropProcessor::Update(FBBBWorldDropUpdateContext &Context) const
         FHitResult Hit;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(BBBWorldDropGround), false, &Drop);
         const float Radius = Drop.Body->GetScaledSphereRadius();
-        if (Drop.GetWorld()->LineTraceSingleByChannel(Hit, Drop.GetActorLocation(),
-            Drop.GetActorLocation() - FVector(0, 0, Radius + 5.0f), ECC_Visibility, Query)
+        const FCollisionResponseParams Responses(Drop.Body->GetCollisionResponseToChannels());
+        const FVector Location = Drop.Body->GetComponentLocation();
+        const FCollisionShape SupportShape = FCollisionShape::MakeSphere(FMath::Max(0.5f, Radius - 1.0f));
+        if (Drop.GetWorld()->SweepSingleByChannel(Hit, Location, Location - FVector(0, 0, 6.0f),
+            FQuat::Identity, Drop.Body->GetCollisionObjectType(), SupportShape, Query, Responses)
             && Hit.ImpactNormal.Z > 0.2f)
         {
             Snapshot.bLanded = true;

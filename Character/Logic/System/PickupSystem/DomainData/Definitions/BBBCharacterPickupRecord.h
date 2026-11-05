@@ -14,4 +14,6 @@ struct FBBBCharacterPickupRecord final
     /** 是否等待 ItemSystem 生成结果 */
     UPROPERTY()
     bool bAwaitingResult = false;
+    /** 本掉落物入包被拒绝后的下次领取时间 */
+    double RetryAt = 0.0;
 };
