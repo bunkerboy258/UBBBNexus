@@ -64,5 +64,7 @@ void FBBBCharacterAnimationSystem::Update()
     AnimInstance->PublishAnimationFacts(Context.AnimationFactState,
         RuntimeData->Animation.ReadRecoilState(), RuntimeData->Animation.ReadWeaponHandlingState());
     AnimInstance->SourcePhysicalPhase = RuntimeData->PhysicalPresentation.ReadPhysicalPresentationState().RagdollSnapshot.Phase;
-    AnimInstance->SourceRecoveryPose = RuntimeData->Animation.ReadGetUpAnimationState().RecoveryPose;
+    const auto &GetUpState = RuntimeData->Animation.ReadGetUpAnimationState();
+    AnimInstance->SourceRecoveryPose = GetUpState.RecoveryPose;
+    AnimInstance->bSourceUseRecoveryPose = GetUpState.bUseRecoveryPose;
 }

@@ -20,6 +20,8 @@ struct FBBBCharacterGetUpAnimationState final
     /** 原始物理姿态 只用于退出物理的混合 */
     UPROPERTY(Transient)
     FPoseSnapshot RecoveryPose;
+    /** 退出物理姿态是否仍参与起身淡入 */
+    bool bUseRecoveryPose = false;
     /** 捕获姿态时的网格世界变换 */
     FTransform CaptureMeshTransform;
     /** 进入恢复前的根运动模式 用于动作结束后还原 */

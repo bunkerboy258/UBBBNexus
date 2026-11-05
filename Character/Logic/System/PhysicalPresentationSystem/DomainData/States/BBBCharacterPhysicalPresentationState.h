@@ -18,6 +18,8 @@ struct FBBBCharacterPhysicalPresentationState final
     bool bFallRagdoll = false;
     /** 本轮首次身体撞地已经结算 */
     bool bFallLanded = false;
+    /** 高处跌落的躯干开始连续稳定的世界时间 负值表示尚未稳定 */
+    double FallGetUpStableSince = -1.0;
     /** 物理求解前躯干部位的向下速度 */
     TMap<FName, float> FallBodySpeeds;
     /** 高处下落接管前的身体线性阻尼 起身后恢复 */

@@ -90,9 +90,17 @@ void FBBBCharacterGetUpAnimationProcessor::Update(FBBBCharacterAnimationUpdateCo
     }
     if (Result.Transition == State.AppliedTransition)
     {
-        if (Result.Phase == EBBBCharacterPhysicalPhase::Recovering && Result.GetUpMontage
-            && Anim.Montage_IsActive(Result.GetUpMontage)
-            && FMath::Abs(Anim.Montage_GetPosition(Result.GetUpMontage) - Result.GetUpPosition) > 0.2f)
+        if (Result.Phase != EBBBCharacterPhysicalPhase::Recovering || !Result.GetUpMontage)
+        {
+            return;
+        }
+        const FAnimMontageInstance *MontageInstance = Anim.GetActiveInstanceForMontage(Result.GetUpMontage);
+        // 起身动作覆盖全身后切回正常底姿 让自然淡出直接接回运动
+        if (State.bUseRecoveryPose && (!MontageInstance || MontageInstance->GetWeight() >= 1.0f - UE_KINDA_SMALL_NUMBER))
+        {
+            State.bUseRecoveryPose = false;
+        }
+        if (MontageInstance && FMath::Abs(MontageInstance->GetPosition() - Result.GetUpPosition) > 0.2f)
         {
             Anim.Montage_SetPosition(Result.GetUpMontage, Result.GetUpPosition);
         }
@@ -100,15 +108,7 @@ void FBBBCharacterGetUpAnimationProcessor::Update(FBBBCharacterAnimationUpdateCo
     }
     if (Result.Phase != EBBBCharacterPhysicalPhase::Recovering)
     {
-        if (Result.Phase == EBBBCharacterPhysicalPhase::Animated && State.RecoveryPose.bIsValid)
-        {
-            // 起身完成通过已有退出动作覆盖固定全身槽 不直接停止蒙太奇
-            if (ensureMsgf(Context.AnimationConfig.LifeActionReturnMontage, TEXT("起身缺少退出动作")))
-            {
-                Anim.RegisterMontageContribution(BBBCharacterMontageSlots::FullBody,
-                    Context.AnimationConfig.LifeActionReturnMontage);
-            }
-        }
+        State.bUseRecoveryPose = false;
         State.AppliedTransition = Result.Transition;
         return;
     }
@@ -133,6 +133,7 @@ void FBBBCharacterGetUpAnimationProcessor::Update(FBBBCharacterAnimationUpdateCo
     if (Anim.RegisterMontageContribution(BBBCharacterMontageSlots::FullBody, Result.GetUpMontage))
     {
         Anim.Montage_SetPosition(Result.GetUpMontage, Result.GetUpPosition);
+        State.bUseRecoveryPose = State.RecoveryPose.bIsValid;
         State.AppliedTransition = Result.Transition;
     }
 }

@@ -49,11 +49,13 @@ public:
     /** 退出物理时的姿态 用于起身蒙太奇的源姿态 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "Animation|Facts")
     FPoseSnapshot SourceRecoveryPose;
-    /** @return 身体当前是否由起身动作接管 */
+    /** 起身淡入是否仍使用退出物理姿态 */
+    bool bSourceUseRecoveryPose = false;
+    /** @return 是否仍从布娃娃姿态淡入起身 */
     UFUNCTION(BlueprintPure, Category = "Animation|Facts", meta = (BlueprintThreadSafe))
     bool IsRecoveringFromRagdoll() const
     {
-        return GetBBBMainAnimInstanceThreadSafe()->SourcePhysicalPhase == EBBBCharacterPhysicalPhase::Recovering;
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceUseRecoveryPose;
     }
     /** 当前动画层提供的不可变搜索库选择配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "运动匹配", meta = (DisplayName = "基础运动搜索配置"))

@@ -11,20 +11,40 @@ void FBBBCharacterGetUpCandidateProcessor::Update(FBBBCharacterPhysicalPresentat
 {
     auto &State = Context.Data.PhysicalPresentation.PhysicalPresentationState;
     State.bCanGetUp = false;
+    const double PreviousStableSince = State.FallGetUpStableSince;
+    State.FallGetUpStableSince = -1.0;
+    const double Now = Context.Data.External.ReadWorldState().WorldTimeSeconds;
     const auto &Life = Context.Data.Life.ReadLifeState();
     if (!State.bRagdoll || Life.Phase == EBBBCharacterLifePhase::Dead
         || Context.Data.External.ReadNetworkIdentityState().bIsMirror
-        || Context.Data.External.ReadWorldState().WorldTimeSeconds < State.ImpactReleaseAt)
+        || Now < State.ImpactReleaseAt || (State.bFallRagdoll && !State.bFallLanded))
     {
         return;
     }
-    FBodyInstance *Body = Context.Mesh.GetBodyInstance(TEXT("pelvis"));
+    const auto IsBodyMoving = [](const FBodyInstance &Body)
+    {
+        return Body.GetUnrealWorldVelocity().SizeSquared() > FMath::Square(80.0f)
+            || Body.GetUnrealWorldAngularVelocityInRadians().SizeSquared() > FMath::Square(PI / 2.0f);
+    };
+    const FBodyInstance *Body = Context.Mesh.GetBodyInstance(TEXT("pelvis"));
     UWorld *World = Context.Character.GetWorld();
-    if (!Body || !World || Body->GetUnrealWorldVelocity().SizeSquared() > FMath::Square(80.0f)
-        || Body->GetUnrealWorldAngularVelocityInRadians().SizeSquared() > FMath::Square(PI / 2.0f))
+    if (!Body || !World || IsBodyMoving(*Body))
     {
         return;
     }
+    if (State.bFallRagdoll)
+    {
+        // 骨盆短暂停住时 躯干仍可能在撞地后翻转
+        for (const FName Bone : {FName(TEXT("spine_01")), FName(TEXT("spine_02")), FName(TEXT("spine_03"))})
+        {
+            const FBodyInstance *Spine = Context.Mesh.GetBodyInstance(Bone);
+            if (Spine && IsBodyMoving(*Spine))
+            {
+                return;
+            }
+        }
+    }
+
     FCollisionQueryParams Query(SCENE_QUERY_STAT(BBBGetUpSpace), false, &Context.Character);
     TArray<AActor *> Attached;
     Context.Character.GetAttachedActors(Attached, true, true);
@@ -53,5 +73,18 @@ void FBBBCharacterGetUpCandidateProcessor::Update(FBBBCharacterPhysicalPresentat
             Context.Character.GetActorScale3D());
         return true;
     };
-    State.bCanGetUp = Fits(Config.CapsuleHalfHeight);
+    if (!Fits(Config.CapsuleHalfHeight))
+    {
+        return;
+    }
+    if (State.bFallRagdoll)
+    {
+        constexpr double FallGetUpStableSeconds = 0.2;
+        State.FallGetUpStableSince = PreviousStableSince >= 0.0 ? PreviousStableSince : Now;
+        if (Now - State.FallGetUpStableSince < FallGetUpStableSeconds)
+        {
+            return;
+        }
+    }
+    State.bCanGetUp = true;
 }
