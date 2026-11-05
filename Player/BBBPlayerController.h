@@ -47,6 +47,8 @@ public:
      * 进入游戏时为本地玩家注册默认与鼠标切换输入映射
      */
     virtual void BeginPlay() override;
+    /** @return 无 由本地相机系统管理游戏视角 */
+    virtual void SpawnPlayerCameraManager() override;
 
     /**
      * 绑定鼠标切换输入动作到控制器回调

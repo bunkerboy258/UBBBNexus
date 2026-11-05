@@ -2,6 +2,7 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "MassExecutionContext.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnInputFragment.h"
@@ -55,6 +56,15 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
 {
     UWorld* World = Context.GetWorld();
     const double Now = World->GetTimeSeconds();
+    int32 PlayerCount = 0;
+    for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+    {
+        const auto* Character = Cast<ABBBCharacter>(It->Get() ? It->Get()->GetPawn() : nullptr);
+        if (Character && Character->GetLifePhase() != EBBBCharacterLifePhase::Dead)
+        {
+            ++PlayerCount;
+        }
+    }
     TMap<FGuid, FIntPoint> Counts;
     int32 WorldAlive = 0;
     MonsterQuery.ForEachEntityChunk(Context, [&Counts, &WorldAlive](FMassExecutionContext& Chunk)
@@ -91,7 +101,7 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
         }
     });
 
-    DirectorQuery.ForEachEntityChunk(Context, [World, Now, &Counts, &Reserved, WorldAlive, WorldLimit](FMassExecutionContext& Chunk)
+    DirectorQuery.ForEachEntityChunk(Context, [World, Now, PlayerCount, &Counts, &Reserved, WorldAlive, WorldLimit](FMassExecutionContext& Chunk)
     {
         auto States = Chunk.GetMutableFragmentView<FBBBMonsterDirectorFragment>();
         auto Spawns = Chunk.GetMutableFragmentView<FBBBMonsterDirectorSpawnFragment>();
@@ -135,7 +145,20 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
                 ++State.Revision;
                 continue;
             }
-            const auto& Stage = Definition->Stages[State.StageIndex];
+            auto Stage = Definition->Stages[State.StageIndex];
+            if (Definition->AdditionalPlayerScale > 0.0f)
+            {
+                if (PlayerCount == 0)
+                {
+                    continue;
+                }
+
+                const double Scale = 1.0 + static_cast<double>(Definition->AdditionalPlayerScale) * (PlayerCount - 1);
+                Stage.MaxAlive = FMath::RoundToInt32(FMath::Min(Scale * Stage.MaxAlive, static_cast<double>(WorldLimit)));
+                Stage.BatchCount = FMath::RoundToInt32(FMath::Min(Scale * Stage.BatchCount, static_cast<double>(Stage.MaxAlive)));
+                const int32 TotalLimit = Stage.Mode == EBBBMonsterDirectorSpawnMode::Once ? Stage.MaxAlive : MAX_int32;
+                Stage.TotalCount = FMath::RoundToInt32(FMath::Min(Scale * Stage.TotalCount, static_cast<double>(TotalLimit)));
+            }
             if (State.Phase == EBBBMonsterDirectorPhase::Waiting)
             {
                 bool bActivate = Stage.Activation == EBBBMonsterDirectorActivation::Automatic;

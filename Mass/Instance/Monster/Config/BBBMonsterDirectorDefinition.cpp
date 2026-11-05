@@ -7,6 +7,7 @@
 bool UBBBMonsterDirectorDefinition::Validate(FString& Error) const
 {
     if (Stages.IsEmpty() || WorldMaxAlive < 1
+        || !FMath::IsFinite(AdditionalPlayerScale) || AdditionalPlayerScale < 0.0f || AdditionalPlayerScale > 1.0f
         || !FMath::IsFinite(RetryInterval) || RetryInterval < 0.1f
         || !FMath::IsFinite(QueryTimeout) || QueryTimeout < 1.0f
         || !FMath::IsFinite(UpdateInterval) || UpdateInterval < 0.05f)

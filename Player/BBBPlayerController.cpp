@@ -3,6 +3,7 @@
 #include "Test/V01/Gameplay/BBBV01TutorialSubsystem.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerExplorationSystem.h"
 #include "Engine/LocalPlayer.h"
+#include "Camera/PlayerCameraManager.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
@@ -44,6 +45,15 @@ ABBBPlayerController::ABBBPlayerController()
     {
         //保存默认映射供本地玩家进入游戏时注册
         DefaultMappingContext = DefaultMappingContextAsset.Object;
+    }
+}
+
+void ABBBPlayerController::SpawnPlayerCameraManager()
+{
+    Super::SpawnPlayerCameraManager();
+    if (PlayerCameraManager)
+    {
+        PlayerCameraManager->bClientSimulatingViewTarget = true;
     }
 }
 

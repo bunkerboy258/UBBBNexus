@@ -91,7 +91,6 @@ void UBBBPlayerInputSystem::SetCharacter(ABBBCharacter *Target)
     if (ensureMsgf(Camera, TEXT("[BBBInput]Camera creation failed")))
     {
         Camera->Initialize(*Target, *Controller);
-        Controller->SetViewTarget(Camera);
     }
 }
 
@@ -384,6 +383,11 @@ void UBBBPlayerInputSystem::TickComponent(const float DeltaTime, const ELevelTic
     if (!Character.IsValid())
     {
         return;
+    }
+    // 本地角色持有期间由输入系统维护唯一游戏视角
+    if (IsValid(Camera) && Controller->GetViewTarget() != Camera)
+    {
+        Controller->SetViewTarget(Camera);
     }
     FRotator Facing = Controller->GetControlRotation();
     Facing.Yaw += LookAxis.X * BaseTurnRate;

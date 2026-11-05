@@ -18,6 +18,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "数量", meta = (DisplayName = "世界存活上限", ClampMin = "1"))
     int32 WorldMaxAlive = 80;
 
+    /** 每名额外玩家增加的阶段数量比例 世界上限不随人数增加 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "数量", meta = (DisplayName = "每名额外玩家数量倍率", ClampMin = "0", ClampMax = "1"))
+    float AdditionalPlayerScale = 0.0f;
+
     /** 无可用位置或额度时的重试间隔 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "时间", meta = (DisplayName = "重试间隔", ClampMin = "0.1", Units = "s"))
     float RetryInterval = 2.0f;
