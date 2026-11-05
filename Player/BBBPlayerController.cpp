@@ -34,6 +34,8 @@ ABBBPlayerController::ABBBPlayerController()
 {
     //允许控制器参与服务器到客户端的属性复制
     bReplicates = true;
+    //本地输入系统负责相机目标 避免联网接管角色时引擎自动切回角色视角
+    bAutoManageActiveCameraTarget = false;
     PlayerInputSystem = CreateDefaultSubobject<UBBBPlayerInputSystem>(TEXT("PlayerInputSystem"));
     //在类默认对象构造期间加载所需资源
     static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextAsset(TEXT("/Game/_Project/Input/IMC_Default.IMC_Default"));
