@@ -1,6 +1,7 @@
 # BBBWork 更新日志
 
 ## 2026-11-08
+- [BBBWork] 将仓库根迁至 BBBWork，合并 Constitution 与 UBBBNexus 并保留原提交历史
 - [UBBBNexus] Align source layout with repository law
 ## 2026-11-05
 - [UBBBNexus] Prevent life updates from re-enabling damage during replay playback
