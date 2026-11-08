@@ -2,6 +2,7 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "Misc/App.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
@@ -17,16 +18,16 @@ void UBBBEquipmentSpawnEffectDisplayAnimNotifyState::NotifyBegin(
         return;
     }
 
+    if (!FApp::CanEverRender())
+    {
+        return;
+    }
+
     UWorld *World = MeshComp ? MeshComp->GetWorld() : nullptr;
     if (!ensureMsgf(IsInGameThread() && IsValid(MeshComp) && World
         && (SocketName.IsNone() || MeshComp->DoesSocketExist(SocketName))
         && !RelativeTransform.ContainsNaN() && !Effect->IsLooping(),
         TEXT("装备生成特效通知缺少有效网格 插槽 变换或使用了循环特效 %s"), *GetPathName()))
-    {
-        return;
-    }
-
-    if (World->GetNetMode() == NM_DedicatedServer)
     {
         return;
     }

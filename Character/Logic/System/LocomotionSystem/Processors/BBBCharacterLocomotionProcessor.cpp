@@ -153,12 +153,10 @@ void FBBBCharacterLocomotionProcessor::Update(
     const bool bWantsCrouch = ControlData.bCrouch;
     if (!Context.Execution.bIsMirror)
     {
-        // 地面保持完整目标朝向差 视觉转身由 MM 与根骨偏移完成 空中保留原有追向速率
-        // NOTE: 重大技术路线 BUG 修复 GASP 地面 Strafe 的胶囊朝向与动画转身必须分工
-        // 胶囊及时采用 FacingWorld 身体的视觉转向由 MM 转身动画与 Offset Root Bone 完成
-        // 地面若使用 FixedTurn 限速追向 会改变根骨朝向差和预测轨迹 延迟大转向选片并造成碎步与手脚回顿
-        // 保留地面直接赋值与镜像地面 RotationRate.Yaw=-1 的配套策略 仅空中使用下方限速
-        // 原版对照与回归证据见项目 Docs/Animation/UnarmedStrafeTurn20261028.md
+        // NOTE: 重大技术路线 BUG
+        // 之前这里加了 360°/秒限速 让胶囊本身也慢慢转过去
+        // 因为这条限速代码，改变了 MM 判断“现在需要怎样转身”的依据
+        // 导致“大转身没有及时出现，身体一直用小碎步蹭过去”的表现问题
         float Yaw = ControlData.FacingWorld.Yaw;
         if (!Movement.IsMovingOnGround())
         {

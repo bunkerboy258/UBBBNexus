@@ -107,10 +107,8 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
 
     if (NetworkIdentityState.bIsMirror)
     {
-        // Mirror：消费远端结果并维护本地表现，不执行物品与瞄准决策
         Character->InteractionSystem.Update();
         Character->AppearanceSystem.Update();
-
         Character->LifeSystem.Update();
         Character->PhysicalPresentationSystem.Update();
         Character->TraversalSystem.Update();
@@ -119,24 +117,18 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
     }
     else
     {
-        // Causal：本机控制角色生成物品、瞄准及其它玩法结果
         Character->ItemSystem.Update();
-
         Character->InteractionSystem.Update();
         Character->AppearanceSystem.Update();
-
         Character->LifeSystem.Update();
         Character->PhysicalPresentationSystem.Update();
         Character->AimSystem.Update();
         Character->PickupSystem.Update();
-
-        // 攀爬生成交接结果，装备使用许可随后更新，移动系统独占 CMC 写入
         Character->TraversalSystem.Update();
         Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
     }
 
-    // 两条路径都在领域更新完成后进行网络观察
     Character->NetworkSystem.Update();
 }
 
