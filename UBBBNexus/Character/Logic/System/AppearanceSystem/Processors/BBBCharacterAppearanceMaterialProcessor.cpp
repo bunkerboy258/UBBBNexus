@@ -8,20 +8,34 @@ namespace
 {
     bool UpdateMaterials(ABBBCharacter &Character, USkeletalMesh *Mesh,
         TArray<TObjectPtr<UMaterialInterface>> &Materials, const FBBBAppearanceResource &Resource,
-        const FBBBCharacterAppearancePart *Parameters, const float Dirt, const float Weathering)
+        const FBBBCharacterAppearancePart *Parameters, const float Dirt, const float Weathering,
+        const bool bApplyOverrides)
     {
         if (!Mesh)
         {
             Materials.Reset();
-            return true;
+            return !bApplyOverrides || Resource.MaterialOverrides.IsEmpty();
         }
         const bool bPatchEnabled = Parameters && Parameters->bPatchEnabled;
-        Materials.SetNum(Mesh->GetMaterials().Num());
+        const auto &Slots = Mesh->GetMaterials();
+        Materials.SetNum(Slots.Num());
         bool bReady = true;
+        if (bApplyOverrides)
+        {
+            for (const auto &Override : Resource.MaterialOverrides)
+            {
+                bReady &= IsValid(Override.Value.Get()) && Slots.ContainsByPredicate(
+                    [&Override](const FSkeletalMaterial &Slot) { return Slot.MaterialSlotName == Override.Key; });
+            }
+        }
         for (int32 Index = 0; Index < Materials.Num(); ++Index)
         {
-            const auto &Slot = Mesh->GetMaterials()[Index];
+            const auto &Slot = Slots[Index];
             UMaterialInterface *Parent = Slot.MaterialInterface.Get();
+            if (const auto *Override = bApplyOverrides ? Resource.MaterialOverrides.Find(Slot.MaterialSlotName) : nullptr)
+            {
+                Parent = Override->Get();
+            }
             if (!bPatchEnabled && !Resource.PatchMaterialSlot.IsNone() && Slot.MaterialSlotName == Resource.PatchMaterialSlot)
             {
                 Parent = Resource.HiddenPatchMaterial.Get();
@@ -101,11 +115,11 @@ void FBBBCharacterAppearanceMaterialProcessor::Update(FBBBCharacterAppearanceUpd
             const auto *Parameters = !bFallback && !Part.bFallback && Snapshot.Parts.IsValidIndex(Index)
                 ? &Snapshot.Parts[Index] : nullptr;
             bReady &= UpdateMaterials(Context.Character, Part.Mesh, Part.Materials, Resource, Parameters,
-                Snapshot.Dirt, Snapshot.Weathering);
+                Snapshot.Dirt, Snapshot.Weathering, true);
             for (auto &Attachment : Part.Attachments)
             {
                 bReady &= UpdateMaterials(Context.Character, Attachment.Value.Mesh, Attachment.Value.Materials,
-                    Resource, Parameters, Snapshot.Dirt, Snapshot.Weathering);
+                    Resource, Parameters, Snapshot.Dirt, Snapshot.Weathering, false);
             }
         }
         return bReady;

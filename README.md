@@ -1,5 +1,9 @@
 # BBBWork 更新日志
 
+## 2026-11-19
+- [UBBBNexus] 外观资源支持按主网格材质槽覆盖材质 PLA 穿戴沿用原套装的配套网格与颜色贴图
+- [UBBBNexus] 物品调试器按当前角色的物品目录筛选样例并检查重复登记
+
 ## 2026-11-08
 - [BBBWork] 将仓库根迁至 BBBWork，合并 Constitution 与 UBBBNexus 并保留原提交历史
 - [UBBBNexus] Align source layout with repository law

@@ -16,6 +16,9 @@ struct FBBBAppearanceResource
     /** 显示模型 空引用表示空部件 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "模型"))
     TSoftObjectPtr<USkeletalMesh> Mesh;
+    /** 按主模型材质槽名称替换材质 保留原有网格和蒙皮 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "材质槽覆盖"))
+    TMap<FName, TSoftObjectPtr<UMaterialInterface>> MaterialOverrides;
     /** 保持模型形状时跟随的骨骼 空名称表示使用角色蒙皮姿势 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "刚性跟随骨骼"))
     FName RigidAttachBone;

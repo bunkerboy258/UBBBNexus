@@ -42,6 +42,7 @@ void ABBBItemDebugActor::BeginPlay()
         SetActorTickEnabled(false);
         return;
     }
+    TSet<FName> ItemIds;
     for (const UBBBItemDefinition *Definition : ItemDefinitions)
     {
         if (!IsValid(Definition) || Definition->ItemId.IsNone())
@@ -50,6 +51,13 @@ void ABBBItemDebugActor::BeginPlay()
             SetActorTickEnabled(false);
             return;
         }
+        if (ItemIds.Contains(Definition->ItemId))
+        {
+            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品列表重复配置 %s"), *GetPathName(), *Definition->ItemId.ToString());
+            SetActorTickEnabled(false);
+            return;
+        }
+        ItemIds.Add(Definition->ItemId);
     }
 }
 
@@ -101,20 +109,32 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     for (const UBBBItemDefinition *Definition : ItemDefinitions)
     {
         int32 Registered = 0;
+        const UBBBItemDefinition *RegisteredDefinition = nullptr;
         if (const auto Entry = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            Registered += Entry.GetDefaultObject()->GetDefinition() == Definition ? 1 : 0;
+            ++Registered;
+            RegisteredDefinition = Entry.GetDefaultObject()->GetDefinition();
         }
         if (const auto *Entry = Config.WearableCatalog ? Config.WearableCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            Registered += Entry->Definition == Definition ? 1 : 0;
+            ++Registered;
+            RegisteredDefinition = Entry->Definition;
         }
         if (const auto Entry = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Definition->ItemId) : nullptr)
         {
-            Registered += Entry == Definition ? 1 : 0;
+            ++Registered;
+            RegisteredDefinition = Entry;
         }
-        Registered += Config.MiscCatalog && Config.MiscCatalog->FindItem(Definition->ItemId) == Definition ? 1 : 0;
-        if (Registered != 1)
+        if (const auto *Entry = Config.MiscCatalog ? Config.MiscCatalog->FindItem(Definition->ItemId) : nullptr)
+        {
+            ++Registered;
+            RegisteredDefinition = Entry;
+        }
+        if (Registered == 0)
+        {
+            continue;
+        }
+        if (Registered != 1 || RegisteredDefinition != Definition)
         {
             UE_LOG(LogBBBItemDebug, Error, TEXT("物品必须唯一登记 %s"), *Definition->ItemId.ToString());
             SetActorTickEnabled(false);
@@ -122,6 +142,12 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
         }
         Packet.ItemIds.Add(Definition->ItemId);
         Packet.Quantities.Add(Definition->ItemType == EBBBItemType::Consumable ? Definition->MaxStack : 1);
+    }
+    if (Packet.ItemIds.IsEmpty())
+    {
+        UE_LOG(LogBBBItemDebug, Warning, TEXT("%s 未配置适用于角色 %s 的调试物品"), *GetPathName(), *Character->GetPathName());
+        SetActorTickEnabled(false);
+        return;
     }
     const FString ItemNames = FString::JoinBy(Packet.ItemIds, TEXT(" "), [](const FName Id)
     {

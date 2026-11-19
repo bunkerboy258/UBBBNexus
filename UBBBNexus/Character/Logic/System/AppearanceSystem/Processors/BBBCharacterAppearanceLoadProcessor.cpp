@@ -18,6 +18,10 @@ namespace
             }
         };
         Add((bAlternate ? Resource.AlternateLegMesh : Resource.Mesh).ToSoftObjectPath());
+        for (const auto &Override : Resource.MaterialOverrides)
+        {
+            Add(Override.Value.ToSoftObjectPath());
+        }
         if (!bPatchEnabled && !Resource.PatchMaterialSlot.IsNone())
         {
             Add(Resource.HiddenPatchMaterial.ToSoftObjectPath());
