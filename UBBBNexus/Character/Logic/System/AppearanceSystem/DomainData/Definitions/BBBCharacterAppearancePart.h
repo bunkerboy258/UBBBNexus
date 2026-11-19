@@ -15,7 +15,7 @@ struct FBBBCharacterAppearancePart
             && BaseResourceId == Other.BaseResourceId && bVisible == Other.bVisible
             && bAlternateLegs == Other.bAlternateLegs && Colors == Other.Colors
             && bCamouflage == Other.bCamouflage && bPatchEnabled == Other.bPatchEnabled
-            && Patch == Other.Patch;
+            && Patch == Other.Patch && PaletteChoices == Other.PaletteChoices;
     }
 
     /** 显示部件标识 */
@@ -48,5 +48,9 @@ struct FBBBCharacterAppearancePart
     /** 已经确定的国旗坐标 */
     UPROPERTY(BlueprintReadOnly)
     FVector2D Patch = FVector2D::ZeroVector;
+
+    /** 按整套预设配置顺序记录已经确定的部位配色 */
+    UPROPERTY(BlueprintReadOnly)
+    TArray<int32> PaletteChoices;
 
 };

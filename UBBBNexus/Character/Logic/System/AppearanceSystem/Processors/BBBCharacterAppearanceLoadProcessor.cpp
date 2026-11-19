@@ -31,6 +31,24 @@ namespace
             Add(Attachment.Value.ToSoftObjectPath());
         }
     }
+
+    void GatherPalette(TArray<FSoftObjectPath> &Paths, const FBBBCharacterAppearancePreset *Preset,
+        const TArray<int32> *Choices)
+    {
+        if (!Preset)
+        {
+            return;
+        }
+        for (int32 Index = 0; Index < Preset->Palettes.Num(); ++Index)
+        {
+            const auto &Palette = Preset->Palettes[Index];
+            const int32 Choice = Choices && Choices->IsValidIndex(Index) ? (*Choices)[Index] : Palette.DefaultIndex;
+            if (Palette.Textures.IsValidIndex(Choice) && !Palette.Textures[Choice].IsNull())
+            {
+                Paths.AddUnique(Palette.Textures[Choice].ToSoftObjectPath());
+            }
+        }
+    }
 }
 
 void FBBBCharacterAppearanceLoadProcessor::Update(FBBBCharacterAppearanceUpdateContext &Context) const
@@ -71,6 +89,7 @@ void FBBBCharacterAppearanceLoadProcessor::Update(FBBBCharacterAppearanceUpdateC
             if (Resource && Resource->Part == Part.Slot)
             {
                 Gather(Paths, *Resource, Part.bAlternateLegs, Part.bPatchEnabled);
+                GatherPalette(Paths, Context.Config.MaterialPresets.Find(Part.BaseResourceId), &Part.PaletteChoices);
             }
         }
         for (const auto &Part : Context.Config.DefaultBaseParts)
@@ -78,6 +97,7 @@ void FBBBCharacterAppearanceLoadProcessor::Update(FBBBCharacterAppearanceUpdateC
             if (const auto *Resource = Context.Config.BaseResources.Find(Part.Value))
             {
                 Gather(Paths, *Resource, false, false);
+                GatherPalette(Paths, Context.Config.MaterialPresets.Find(Part.Value), nullptr);
                 if (!Resource->AlternateLegMesh.IsNull())
                 {
                     Paths.AddUnique(Resource->AlternateLegMesh.ToSoftObjectPath());

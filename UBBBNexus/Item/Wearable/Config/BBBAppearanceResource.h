@@ -19,6 +19,9 @@ struct FBBBAppearanceResource
     /** 按主模型材质槽名称替换材质 保留原有网格和蒙皮 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "材质槽覆盖"))
     TMap<FName, TSoftObjectPtr<UMaterialInterface>> MaterialOverrides;
+    /** 整身配色预设中的部位序号 负一表示此穿戴物使用独立网格 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "整套配色序号"))
+    int32 PaletteIndex = INDEX_NONE;
     /** 保持模型形状时跟随的骨骼 空名称表示使用角色蒙皮姿势 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "刚性跟随骨骼"))
     FName RigidAttachBone;

@@ -2,14 +2,47 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/Context/BBBCharacterAppearanceUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/Texture.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 namespace
 {
+    bool ResolvePalette(const USkeletalMesh &Mesh, const FBBBCharacterAppearancePreset *Preset,
+        const FBBBCharacterAppearancePart *Parameters, TMap<FName, UTexture *> &Textures)
+    {
+        if (!Preset)
+        {
+            return !Parameters || Parameters->PaletteChoices.IsEmpty();
+        }
+        if (Parameters && Parameters->PaletteChoices.Num() != Preset->Palettes.Num())
+        {
+            return false;
+        }
+        for (int32 Index = 0; Index < Preset->Palettes.Num(); ++Index)
+        {
+            const auto &Palette = Preset->Palettes[Index];
+            const int32 Choice = Parameters ? Parameters->PaletteChoices[Index] : Palette.DefaultIndex;
+            if (Choice == INDEX_NONE)
+            {
+                continue;
+            }
+            UTexture *Texture = Palette.Textures.IsValidIndex(Choice) ? Palette.Textures[Choice].Get() : nullptr;
+            if (!Texture || !Mesh.GetMaterials().ContainsByPredicate([&Palette](const FSkeletalMaterial &Slot)
+            {
+                return Slot.MaterialSlotName == Palette.MaterialSlot;
+            }))
+            {
+                return false;
+            }
+            Textures.Add(Palette.MaterialSlot, Texture);
+        }
+        return true;
+    }
+
     bool UpdateMaterials(ABBBCharacter &Character, USkeletalMesh *Mesh,
         TArray<TObjectPtr<UMaterialInterface>> &Materials, const FBBBAppearanceResource &Resource,
         const FBBBCharacterAppearancePart *Parameters, const float Dirt, const float Weathering,
-        const bool bApplyOverrides)
+        const bool bApplyOverrides, const TMap<FName, UTexture *> &Textures)
     {
         if (!Mesh)
         {
@@ -52,6 +85,10 @@ namespace
                 continue;
             }
             Dynamic->ClearParameterValues();
+            if (UTexture *const *Texture = Textures.Find(Slot.MaterialSlotName))
+            {
+                Dynamic->SetTextureParameterValue(TEXT("Color"), *Texture);
+            }
             for (int32 Color = 0; Color < Resource.ColorParameters.Num(); ++Color)
             {
                 FLinearColor Value = FLinearColor::White;
@@ -114,12 +151,19 @@ void FBBBCharacterAppearanceMaterialProcessor::Update(FBBBCharacterAppearanceUpd
             const auto &Resource = *Resources[Index];
             const auto *Parameters = !bFallback && !Part.bFallback && Snapshot.Parts.IsValidIndex(Index)
                 ? &Snapshot.Parts[Index] : nullptr;
+            const auto *BaseId = Parameters ? &Parameters->BaseResourceId : Context.Config.DefaultBaseParts.Find(Part.Slot);
+            TMap<FName, UTexture *> Textures;
+            if (Part.Mesh)
+            {
+                bReady &= ResolvePalette(*Part.Mesh, BaseId ? Context.Config.MaterialPresets.Find(*BaseId) : nullptr,
+                    Parameters, Textures);
+            }
             bReady &= UpdateMaterials(Context.Character, Part.Mesh, Part.Materials, Resource, Parameters,
-                Snapshot.Dirt, Snapshot.Weathering, true);
+                Snapshot.Dirt, Snapshot.Weathering, true, Textures);
             for (auto &Attachment : Part.Attachments)
             {
                 bReady &= UpdateMaterials(Context.Character, Attachment.Value.Mesh, Attachment.Value.Materials,
-                    Resource, Parameters, Snapshot.Dirt, Snapshot.Weathering, false);
+                    Resource, Parameters, Snapshot.Dirt, Snapshot.Weathering, false, {});
             }
         }
         return bReady;

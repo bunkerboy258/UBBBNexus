@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBCharacterAppearancePreset.h"
 #include "BBBWork/UBBBNexus/Item/Wearable/Config/BBBAppearanceResource.h"
 #include "BBBCharacterAppearanceConfig.generated.h"
 
@@ -12,6 +13,9 @@ struct FBBBCharacterAppearanceConfig
     /** 非物品资源标识与资源定义 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "基础外观资源"))
     TMap<FName, FBBBAppearanceResource> BaseResources;
+    /** 按整身基础资源标识配置作者支持的部位配色 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "整套配色预设"))
+    TMap<FName, FBBBCharacterAppearancePreset> MaterialPresets;
     /** 部件对应的默认基础资源 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "默认基础部件"))
     TMap<FName, FName> DefaultBaseParts;

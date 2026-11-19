@@ -14,6 +14,7 @@
 #include "BBBWork/UBBBNexus/Player/Input/BBBPlayerInputSystem.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Appearance/FBBBCharacterAppearanceBaseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemSelectLocalControlPacket.h"
@@ -515,6 +516,17 @@ bool ABBBPlayerController::SubmitItemSelect(const int32 Slot)
         ItemView->NotifyQuickSelection();
     }
     return bSubmitted;
+}
+
+bool ABBBPlayerController::SubmitAppearancePreset(const FName PresetId)
+{
+    auto *ItemCharacter = Cast<ABBBCharacter>(GetPawn());
+    if (!ItemCharacter || !IsLocalController() || PresetId.IsNone())
+    {
+        return false;
+    }
+    ItemCharacter->SubmitInput(FBBBCharacterAppearanceBaseLocalControlPacket{{TEXT("Soldier")}, {PresetId}});
+    return true;
 }
 
 void ABBBPlayerController::GetItemOperationResult(int32 &Revision, int32 &SucceededCount, int32 &RejectedCount) const

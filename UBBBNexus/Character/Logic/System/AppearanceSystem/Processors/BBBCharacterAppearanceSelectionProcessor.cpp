@@ -4,6 +4,22 @@
 #include "BBBWork/UBBBNexus/Character/Config/Appearance/BBBCharacterAppearanceConfig.h"
 #include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
 
+namespace
+{
+    void PublishSelection(FBBBCharacterAppearanceSnapshot &Selection, TArray<FBBBCharacterAppearancePart> &&Parts,
+        const FBBBCharacterAppearanceStyleState &Style)
+    {
+        if (Selection.Revision == 0 || Parts != Selection.Parts
+            || Style.Dirt != Selection.Dirt || Style.Weathering != Selection.Weathering)
+        {
+            Selection.Parts = MoveTemp(Parts);
+            Selection.Dirt = Style.Dirt;
+            Selection.Weathering = Style.Weathering;
+            ++Selection.Revision;
+        }
+    }
+}
+
 void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUpdateContext &Context) const
 {
     if (Context.bIsMirror)
@@ -14,6 +30,45 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
     const auto &Style = Context.Data.Appearance.ReadCharacterAppearanceStyleState();
     auto &Selection = Context.Data.Appearance.SelectionState.Snapshot;
     TArray<FBBBCharacterAppearancePart> Parts;
+    const FName *SoldierId = Style.BaseParts.Find(TEXT("Soldier"));
+    const auto *Preset = SoldierId ? Context.Config.MaterialPresets.Find(*SoldierId) : nullptr;
+    if (Preset)
+    {
+        auto &Part = Parts.AddDefaulted_GetRef();
+        Part.Slot = TEXT("Soldier");
+        Part.BaseResourceId = *SoldierId;
+        for (const auto &Palette : Preset->Palettes)
+        {
+            Part.PaletteChoices.Add(Palette.DefaultIndex);
+        }
+        for (int32 Index = Inventory.BackpackSlotCount; Index < Inventory.Slots.Num(); ++Index)
+        {
+            const auto &Item = Inventory.Slots[Index];
+            const auto *Entry = Item.Definition && Context.Catalog
+                ? Context.Catalog->FindItem(Item.Definition->ItemId) : nullptr;
+            if (!Entry)
+            {
+                continue;
+            }
+            const FName WearSlot = Inventory.WearSlots[Index - Inventory.BackpackSlotCount];
+            if (Entry->Appearance.Part != WearSlot)
+            {
+                continue;
+            }
+            const int32 PaletteIndex = Preset->Palettes.IndexOfByPredicate([WearSlot](const auto &Palette)
+            {
+                return Palette.WearSlot == WearSlot;
+            });
+            const int32 Choice = Entry->Appearance.PaletteIndex;
+            if (Preset->Palettes.IsValidIndex(PaletteIndex) && Preset->Palettes[PaletteIndex].Textures.IsValidIndex(Choice))
+            {
+                Part.PaletteChoices[PaletteIndex] = Choice;
+            }
+        }
+        PublishSelection(Selection, MoveTemp(Parts), Style);
+        return;
+    }
+
     TArray<FName> BaseSlots;
     Style.BaseParts.GetKeys(BaseSlots);
     BaseSlots.Sort(FNameLexicalLess());
@@ -136,12 +191,5 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
     {
         Flag->bVisible = false;
     }
-    if (Selection.Revision == 0 || Parts != Selection.Parts
-        || Style.Dirt != Selection.Dirt || Style.Weathering != Selection.Weathering)
-    {
-        Selection.Parts = MoveTemp(Parts);
-        Selection.Dirt = Style.Dirt;
-        Selection.Weathering = Style.Weathering;
-        ++Selection.Revision;
-    }
+    PublishSelection(Selection, MoveTemp(Parts), Style);
 }

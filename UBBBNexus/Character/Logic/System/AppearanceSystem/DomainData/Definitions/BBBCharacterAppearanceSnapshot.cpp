@@ -12,6 +12,7 @@ bool FBBBCharacterAppearanceSnapshot::IsValid() const
     for (const FBBBCharacterAppearancePart &Part : Parts)
     {
         if (Part.Slot.IsNone() || Slots.Contains(Part.Slot) || Part.Colors.Num() > 8
+            || Part.PaletteChoices.Num() > 8
             || Part.Patch.ContainsNaN() || Part.Patch.X < 0.0 || Part.Patch.X > 0.875
             || Part.Patch.Y < 0.0 || Part.Patch.Y > 0.875
             || (!Part.ItemId.IsNone() && !Part.InstanceId.IsValid()))
@@ -25,6 +26,13 @@ bool FBBBCharacterAppearanceSnapshot::IsValid() const
             return false;
         }
         Slots.Add(Part.Slot);
+        for (const int32 Choice : Part.PaletteChoices)
+        {
+            if (Choice < INDEX_NONE || Choice >= 64)
+            {
+                return false;
+            }
+        }
         for (const FLinearColor &Color : Part.Colors)
         {
             if (!FMath::IsFinite(Color.R) || !FMath::IsFinite(Color.G)

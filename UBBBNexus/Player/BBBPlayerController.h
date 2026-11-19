@@ -175,6 +175,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")
     bool SubmitItemSelect(int32 Slot);
 
+    /** @param PresetId 整套外观资源标识 @return 是否提交切换请求 */
+    UFUNCTION(BlueprintCallable, Category = "Appearance")
+    bool SubmitAppearancePreset(FName PresetId);
+
     /**
      * 查询最近一次处理批次的结果
      * @param Revision	完成操作版本
