@@ -21,6 +21,24 @@
 #include "Brushes/SlateColorBrush.h"
 #include "Styling/CoreStyle.h"
 
+namespace
+{
+/** @param bUpper	是否为菜单上包边 @return 从素材包磨损边框切出的横向画刷 */
+const FSlateBrush *MenuTrim(bool bUpper)
+{
+    const auto CropEdge = [](float Top, float Bottom)
+    {
+        FSlateBrush Edge = *BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Attachment_Slot.T_Attachment_Slot"));
+        Edge.SetUVRegion(FBox2f(FVector2f(0.0f, Top), FVector2f(1.0f, Bottom)));
+        return Edge;
+    };
+    // 让磨损边沿朝向页面内容
+    static const FSlateBrush Upper = CropEdge(372.0f / 394.0f, 1.0f);
+    static const FSlateBrush Lower = CropEdge(0.0f, 22.0f / 394.0f);
+    return bUpper ? &Upper : &Lower;
+}
+}
+
 TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
 {
     QuickSlotViews.Reset();
@@ -103,29 +121,41 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         Place(X, Y, W, 3, SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Settings_Screen/T_SeparatorLine.T_SeparatorLine")))
             .ColorAndOpacity(FLinearColor(0.84f, 0.78f, 0.65f, 0.7f)));
     };
+    const auto PlaceTrim = [&Place](float Y, bool bUpper)
+    {
+        Place(60, Y, 1800, 22, SNew(SImage).Image(MenuTrim(bUpper)).Visibility(EVisibility::HitTestInvisible)
+            .ColorAndOpacity(FLinearColor(0.87f, 0.81f, 0.71f, 0.9f)));
+    };
     Place(510, 30, 300, 74, Tab(INVTEXT("INVENTORY"), EBBBItemPanelPage::Inventory));
     Place(815, 30, 290, 74, Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character));
     Place(1150, 33, 290, 66, SNew(STextBlock).Text(INVTEXT("EXTENSIBLE")).Font(ArtFont(32))
         .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f)));
-    Hairline(60, 116, 1800);
+    PlaceTrim(108, true);
     Place(676, 187, 568, 830, SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
         [SNew(SImage).Image_Lambda([this] { return GetCharacterBrush(); })]);
-    Place(700, 128, 520, 52, SNew(SHorizontalBox)
-        + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 12, 0)
-            [SNew(SBox).WidthOverride(18).HeightOverride(18)
-                [SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/HUD/T_HUD_03.T_HUD_03")))]]
-        + SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
-            [SNew(STextBlock).Font(ArtFont(27)).Justification(ETextJustify::Left)
-                .Text_Lambda([this]
-                {
-                    const auto *Controller = GetItemController();
-                    const auto *Player = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
-                    if (!Player) return FText::GetEmpty();
-                    const float Maximum = Player->GetLifePhase() == EBBBCharacterLifePhase::Downed
-                        ? Player->GetCharacterConfig().DownedHealth : Player->GetCharacterConfig().MaximumHealth;
-                    return FText::Format(INVTEXT("{0}   /   {1}"), FText::AsNumber(FMath::RoundToInt(Player->GetHealth())),
-                        FText::AsNumber(FMath::RoundToInt(Maximum)));
-                })]);
+    Place(676, 155, 568, 48, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+        [
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 11, 0)
+                [SNew(SBox).WidthOverride(24).HeightOverride(24)
+                    [SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/HUD/T_HUD_03.T_HUD_03")))]]
+            + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+                [SNew(STextBlock).Font(ArtFont(30)).ColorAndOpacity(FLinearColor::White)
+                    .ShadowOffset(FVector2D(1, 2)).ShadowColorAndOpacity(FLinearColor(0, 0, 0, 0.9f))
+                    .Text_Lambda([this]
+                    {
+                        const auto *Controller = GetItemController();
+                        const auto *Player = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
+                        if (!Player)
+                        {
+                            return FText::GetEmpty();
+                        }
+                        const float Maximum = Player->GetLifePhase() == EBBBCharacterLifePhase::Downed
+                            ? Player->GetCharacterConfig().DownedHealth : Player->GetCharacterConfig().MaximumHealth;
+                        return FText::Format(INVTEXT("{0}  /  {1}"), FText::AsNumber(FMath::RoundToInt(Player->GetHealth())),
+                            FText::AsNumber(FMath::RoundToInt(Maximum)));
+                    })]
+        ]);
     Place(105, 184, 475, 68, Label(INVTEXT("BACKPACK"), 44));
     Hairline(105, 254, 480);
     const auto Filter = [this](const FText &Text, EBBBItemType Type)
@@ -150,7 +180,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     Place(1328, 275, 476, 40, SNew(STextBlock).Font(ArtFont(20)).ColorAndOpacity(MutedText)
         .Text_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("EQUIPPED") : INVTEXT("WEAPONS"); }));
     Place(1320, 330, 494, 664, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
-    Hairline(60, 986, 1800);
+    PlaceTrim(984, false);
     Place(102, 1004, 160, 54, SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left)
         .OnClicked_Lambda([this] { GetItemController()->ToggleBackpack(); return FReply::Handled(); })
         [Label(INVTEXT("B    CLOSE"), 22)]);

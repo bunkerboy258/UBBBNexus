@@ -99,13 +99,16 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
         FVector Location;
         FLinearColor Color;
         float Candela;
+        float SourceRadius;
+        float SoftSourceRadius;
+        float SpecularScale;
         bool bShadow;
     };
-    const FPortraitLight Lights[] = {
-        {FVector(90.0f, -123.0f, 211.0f), FLinearColor(1.0f, 0.84f, 0.68f), 28.0f, true},
-        {FVector(-75.0f, 70.0f, 188.0f), FLinearColor(0.62f, 0.80f, 1.0f), 31.0f, false},
-        {FVector(147.0f, 55.0f, 137.0f), FLinearColor(1.0f, 0.95f, 0.91f), 4.5f, false},
-    };
+    // 从镜头看正 Y 位于画面左侧 暖主光顺着背景的左侧亮区照入
+    const FPortraitLight Key{FVector(136.0f, 84.0f, 223.0f), FLinearColor(1.0f, 0.81f, 0.57f), 42.0f, 10.0f, 16.0f, 0.36f, true};
+    const FPortraitLight Side{FVector(59.0f, -142.0f, 140.0f), FLinearColor(0.66f, 0.79f, 1.0f), 13.0f, 30.0f, 42.0f, 0.22f, false};
+    const FPortraitLight Rim{FVector(-95.0f, 72.0f, 173.0f), FLinearColor(1.0f, 0.70f, 0.42f), 36.0f, 8.0f, 12.0f, 0.34f, false};
+    const FPortraitLight Lights[] = {Key, Side, Rim};
     for (const FPortraitLight &Rig : Lights)
     {
         UPointLightComponent *Light = NewObject<UPointLightComponent>(Display);
@@ -116,9 +119,9 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
         Light->SetAttenuationRadius(420.0f);
         Light->SetIntensityUnits(ELightUnits::Candelas);
         Light->SetIntensity(Rig.Candela);
-        Light->SetSpecularScale(0.28f);
-        Light->SetSourceRadius(Rig.bShadow ? 8.0f : 28.0f);
-        Light->SetSoftSourceRadius(Rig.bShadow ? 14.0f : 40.0f);
+        Light->SetSpecularScale(Rig.SpecularScale);
+        Light->SetSourceRadius(Rig.SourceRadius);
+        Light->SetSoftSourceRadius(Rig.SoftSourceRadius);
         Light->ContactShadowLength = Rig.bShadow ? 0.12f : 0.0f;
         Light->ShadowResolutionScale = 2.0f;
         Light->SetLightColor(Rig.Color);
@@ -140,6 +143,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Pose = NewObject<USkeletalMeshComponent>(Display);
     Display->AddInstanceComponent(Pose);
     Pose->SetSkeletalMesh(Character->GetMesh()->GetSkeletalMeshAsset());
+    Pose->SetForcedLOD(1);
     Pose->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     Pose->SetVisibility(false);
     Pose->SetVisibleInSceneCaptureOnly(true);
@@ -158,8 +162,10 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Texture = NewObject<UTextureRenderTarget2D>(this);
     Texture->ClearColor = FLinearColor::Transparent;
     Texture->RenderTargetFormat = RTF_RGBA16f;
-    Texture->InitAutoFormat(640, 1080);
     Texture->SRGB = false;
+    Texture->Filter = TF_Bilinear;
+    // 保持构图比例并为全高清和 1440p 菜单提供降采样余量
+    Texture->InitAutoFormat(1024, 1728);
 
     Material = UMaterialInstanceDynamic::Create(Parent, this);
     Material->SetTextureParameterValue(TEXT("Preview"), Texture);
@@ -249,6 +255,7 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         {
             Part->EmptyOverrideMaterials();
             Part->SetSkeletalMesh(Original->GetSkeletalMeshAsset());
+            Part->SetForcedLOD(1);
             Part->SetOverlayMaterial(nullptr);
         }
         if (!Original->GetSkeletalMeshAsset())
@@ -261,12 +268,18 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         {
             Part->SetVisibility(bVisible);
         }
+        bool bSurfaceChanged = bMeshChanged;
         for (int32 MaterialIndex = 0; MaterialIndex < Original->GetNumMaterials(); ++MaterialIndex)
         {
             if (Part->GetMaterial(MaterialIndex) != Original->GetMaterial(MaterialIndex))
             {
                 Part->SetMaterial(MaterialIndex, Original->GetMaterial(MaterialIndex));
+                bSurfaceChanged = true;
             }
+        }
+        if (bVisible && bSurfaceChanged)
+        {
+            Part->PrestreamTextures(4.0f, true);
         }
         const FName Socket = Original->GetAttachSocketName();
         const bool bRigid = !Socket.IsNone() && !Original->LeaderPoseComponent.IsValid();
