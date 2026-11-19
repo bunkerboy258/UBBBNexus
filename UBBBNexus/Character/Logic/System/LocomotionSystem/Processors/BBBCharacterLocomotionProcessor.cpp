@@ -110,6 +110,164 @@ float ResolveMaxSpeed(
     return ResolveDirectionalSpeed(Config.WalkSpeeds, DirectionMap);
 }
 
+// 坡度相对滑行方向的有符号角度 下坡为正
+float ResolveSlideSlopeDegrees(const UCharacterMovementComponent &Movement)
+{
+    if (!Movement.CurrentFloor.bBlockingHit)
+    {
+        return 0.0f;
+    }
+
+    const FVector Normal = Movement.CurrentFloor.HitResult.ImpactNormal.GetSafeNormal();
+    if (Normal.IsNearlyZero())
+    {
+        return 0.0f;
+    }
+
+    const float UpDot = FMath::Clamp(FVector::DotProduct(Normal, FVector::UpVector), -1.0f, 1.0f);
+    const float SlopeDegrees = FMath::RadiansToDegrees(FMath::Acos(UpDot));
+    const FVector DownHill = FVector::VectorPlaneProject(FVector::DownVector, Normal).GetSafeNormal();
+    if (DownHill.IsNearlyZero())
+    {
+        return 0.0f;
+    }
+
+    return SlopeDegrees * FVector::DotProduct(Movement.Velocity.GetSafeNormal2D(), DownHill);
+}
+
+float ResolveSlideMaxSpeed(
+    const FBBBCharacterLocomotionConfig &Config,
+    const float SignedSlopeDegrees)
+{
+    if (SignedSlopeDegrees <= Config.SlideShallowSlopeAngle)
+    {
+        return Config.SlideFlatGroundSpeed;
+    }
+
+    const float DownAlpha = FMath::Clamp(
+        FMath::GetRangePct(Config.SlideShallowSlopeAngle, Config.SlideSteepSlopeAngle, SignedSlopeDegrees),
+        0.0f,
+        1.0f);
+    return FMath::Lerp(Config.SlideShallowSlopeSpeed, Config.SlideSteepSlopeSpeed, DownAlpha);
+}
+
+float ResolveSlideDeceleration(
+    const FBBBCharacterLocomotionConfig &Config,
+    const float SignedSlopeDegrees)
+{
+    const float Uphill = -SignedSlopeDegrees;
+    if (Uphill <= Config.SlideShallowSlopeAngle)
+    {
+        return Config.SlideFlatGroundDeceleration;
+    }
+
+    const float UpAlpha = FMath::Clamp(
+        FMath::GetRangePct(Config.SlideShallowSlopeAngle, Config.SlideSteepSlopeAngle, Uphill),
+        0.0f,
+        1.0f);
+    return FMath::Lerp(Config.SlideFlatGroundDeceleration, Config.SlideSteepSlopeDeceleration, UpAlpha);
+}
+
+void UpdateSlideState(
+    FBBBCharacterLocomotionState &RuntimeData,
+    const UCharacterMovementComponent &Movement,
+    const bool bCrouchPressed,
+    const FBBBCharacterLocomotionConfig &Config,
+    const float DeltaSeconds)
+{
+    const float Speed = Movement.Velocity.Size2D();
+    const bool bOnGround = Movement.IsMovingOnGround();
+    if (RuntimeData.bSlide)
+    {
+        if (!bOnGround || Speed <= Config.SlideExitSpeed)
+        {
+            RuntimeData.bSlide = false;
+            RuntimeData.SlideElapsed = 0.0f;
+        }
+        else
+        {
+            RuntimeData.SlideElapsed += FMath::Max(DeltaSeconds, 0.0f);
+        }
+        return;
+    }
+
+    if (bOnGround && bCrouchPressed && Speed >= Config.SlideEnterSpeed)
+    {
+        RuntimeData.bSlide = true;
+        RuntimeData.SlideElapsed = 0.0f;
+    }
+}
+
+void ApplySlideMovement(
+    ACharacter &Character,
+    UCharacterMovementComponent &Movement,
+    FBBBCharacterLocomotionState &RuntimeData,
+    const FBBBCharacterControlState &ControlData,
+    const FBBBCharacterLocomotionConfig &Config,
+    const float SpeedScale,
+    const bool bMirror,
+    const float DeltaSeconds)
+{
+    const float SignedSlope = ResolveSlideSlopeDegrees(Movement);
+    float MaxSpeed = ResolveSlideMaxSpeed(Config, SignedSlope);
+    const bool bBoost = !bMirror && RuntimeData.SlideElapsed < Config.SlideInitialBoostTime;
+    if (bBoost)
+    {
+        MaxSpeed = FMath::Max(MaxSpeed, Config.SlideInitialBoostSpeed);
+    }
+
+    MaxSpeed = FMath::Max(MaxSpeed * FMath::Max(SpeedScale, 0.0f), 1.0f);
+    Movement.MaxWalkSpeed = MaxSpeed;
+    Movement.MaxWalkSpeedCrouched = MaxSpeed;
+    Movement.GroundFriction = FMath::Max(Config.SlideGroundFriction, 0.0f);
+    Movement.BrakingFriction = 0.0f;
+    Movement.BrakingFrictionFactor = 0.0f;
+    Movement.bUseSeparateBrakingFriction = false;
+    Movement.BrakingDecelerationWalking = FMath::Max(ResolveSlideDeceleration(Config, SignedSlope), 0.0f);
+    Movement.MaxAcceleration = 0.0f;
+    if (bBoost)
+    {
+        Movement.MaxAcceleration = FMath::Max(Config.SlideInitialBoostAcceleration, 0.0f);
+    }
+
+    if (bMirror)
+    {
+        return;
+    }
+
+    const bool bHasInput = !ControlData.MoveWorld.IsNearlyZero();
+    // 平地和上坡在初始加速后进入制动 下坡仍允许输入沿滑行方向加速
+    const bool bDriveDownhill = bHasInput && SignedSlope > Config.SlideShallowSlopeAngle;
+    if (!bBoost && bDriveDownhill)
+    {
+        Movement.MaxAcceleration = FMath::Max(Config.SlideAfterBoostAcceleration, 0.0f);
+    }
+
+    FVector Drive = Movement.Velocity.GetSafeNormal2D();
+    const FVector Wish = ControlData.MoveWorld.GetSafeNormal2D();
+    if (!Drive.IsNearlyZero() && !Wish.IsNearlyZero())
+    {
+        const float DeltaYaw = FMath::FindDeltaAngleDegrees(Drive.Rotation().Yaw, Wish.Rotation().Yaw);
+        const float Yaw = Drive.Rotation().Yaw
+            + DeltaYaw * FMath::Max(Config.SlideTurningStrength, 0.0f) * FMath::Max(DeltaSeconds, 0.0f);
+        const FVector Turned = FRotator(0.0f, Yaw, 0.0f).Vector();
+        const float PlanarSpeed = Movement.Velocity.Size2D();
+        Movement.Velocity = FVector(Turned.X * PlanarSpeed, Turned.Y * PlanarSpeed, Movement.Velocity.Z);
+        Drive = Turned;
+    }
+
+    if (!Drive.IsNearlyZero() && (bBoost || bDriveDownhill))
+    {
+        const float Scale = bBoost ? 1.0f : ControlData.MoveWorld.Size();
+        Character.AddMovementInput(Drive, Scale);
+    }
+
+    if (!Movement.Velocity.GetSafeNormal2D().IsNearlyZero())
+    {
+        Character.SetActorRotation(FRotator(0.0f, Movement.Velocity.Rotation().Yaw, 0.0f));
+    }
+}
+
 }
 
 void FBBBCharacterLocomotionProcessor::Update(
@@ -118,6 +276,14 @@ void FBBBCharacterLocomotionProcessor::Update(
     ACharacter &Character = Context.Character;
     UCharacterMovementComponent &Movement = Context.Movement;
     FBBBCharacterLocomotionState &RuntimeData = Context.LocomotionState;
+    const FBBBCharacterControlState &ControlData = Context.ControlState;
+    const bool bIsLocal = !Context.Execution.bIsMirror;
+    const bool bCrouchPressed = bIsLocal && ControlData.bCrouch && !RuntimeData.bWasCrouchRequested;
+    if (bIsLocal)
+    {
+        RuntimeData.bWasCrouchRequested = ControlData.bCrouch;
+    }
+
     if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().bRagdoll)
     {
         Character.StopJumping();
@@ -131,14 +297,23 @@ void FBBBCharacterLocomotionProcessor::Update(
         Movement.NetworkSmoothingMode = ENetworkSmoothingMode::Disabled;
         Character.GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         RuntimeData.bRun = false;
+        RuntimeData.bSlide = false;
+        RuntimeData.SlideElapsed = 0.0f;
         return;
     }
     if (Context.Data.PhysicalPresentation.ReadPhysicalPresentationState().RagdollSnapshot.Phase
             == EBBBCharacterPhysicalPhase::Recovering || !Context.Life.bActionsAllowed)
     {
+        if (RuntimeData.bSlide)
+        {
+            RuntimeData.bSlide = false;
+            RuntimeData.SlideElapsed = 0.0f;
+            Movement.GroundFriction = FMath::Max(Context.Config.GroundFriction, 0.0f);
+            Movement.BrakingDecelerationWalking = FMath::Max(Context.Config.BrakingDeceleration, 0.0f);
+            Movement.BrakingFriction = FMath::Max(Context.Config.BrakingFriction, 0.0f);
+        }
         return;
     }
-    const FBBBCharacterControlState &ControlData = Context.ControlState;
     const FBBBCharacterLocomotionConfig &Config = Context.Config;
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
     // 镜像使用 CMC 已接收的控制朝向还原旋转 地面保持即时到达 空中保留追向速率
@@ -149,9 +324,43 @@ void FBBBCharacterLocomotionProcessor::Update(
         Movement.RotationRate.Yaw = -1.0f;
     }
 
+    if (bIsLocal)
+    {
+        // 使用蹲伏与普通步态限速生效之前的水平速度裁决滑铲
+        UpdateSlideState(RuntimeData, Movement, bCrouchPressed, Config, Context.DeltaSeconds);
+        // 滑铲期间本机暂停生成站立跑步状态
+        if (RuntimeData.bSlide)
+        {
+            RuntimeData.bRun = false;
+        }
+    }
+
+    const bool bWantsCrouch = ControlData.bCrouch || RuntimeData.bSlide;
+    if (bIsLocal && bWantsCrouch)
+    {
+        Character.Crouch();
+    }
+    if (bIsLocal && !bWantsCrouch)
+    {
+        Character.UnCrouch();
+    }
+
+    if (RuntimeData.bSlide)
+    {
+        ApplySlideMovement(
+            Character,
+            Movement,
+            RuntimeData,
+            ControlData,
+            Config,
+            Context.Life.MovementSpeedScale,
+            Context.Execution.bIsMirror,
+            Context.DeltaSeconds);
+        return;
+    }
+
     // 朝向来自外部提交的世界空间事实 不读取玩家控制器
-    const bool bWantsCrouch = ControlData.bCrouch;
-    if (!Context.Execution.bIsMirror)
+    if (bIsLocal)
     {
         // NOTE: 重大技术路线 BUG
         // 之前这里加了 360°/秒限速 让胶囊本身也慢慢转过去
@@ -165,21 +374,7 @@ void FBBBCharacterLocomotionProcessor::Update(
             Yaw = FMath::FixedTurn(Character.GetActorRotation().Yaw, Yaw, YawStep);
         }
         Character.SetActorRotation(FRotator(0.0f, Yaw, 0.0f));
-    }
-
-    if (!Context.Execution.bIsMirror && bWantsCrouch)
-    {
-        Character.Crouch();
-    }
-
-    if (!Context.Execution.bIsMirror && !bWantsCrouch)
-    {
-        Character.UnCrouch();
-    }
-
-    // 跑步只表示站立移动档位 蹲伏由 CMC 独立维护和复制
-    if (!Context.Execution.bIsMirror)
-    {
+        // 跑步只表示站立移动档位 蹲伏由 CMC 独立维护和复制
         RuntimeData.bRun = ResolveRun(
             Character,
             ControlData,

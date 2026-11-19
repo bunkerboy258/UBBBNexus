@@ -37,6 +37,8 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
         Movement.CurrentRootMotion.Clear();
         Movement.RootMotionParams.Clear();
         State.bRun = false;
+        State.bSlide = false;
+        State.SlideElapsed = 0.0f;
         UCapsuleComponent *Capsule = Character.GetCapsuleComponent();
         if (Phase == EBBBCharacterLifePhase::Downed)
         {

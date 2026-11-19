@@ -173,6 +173,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.FacingWorld = RuntimeData.Locomotion.ReadLocomotionState().FacingWorld;
     FactState.ControlRotation = Character.GetControlRotation();
     FactState.bIsRunning = RuntimeData.Locomotion.ReadLocomotionState().bRun;
+    FactState.bIsSliding = RuntimeData.Locomotion.ReadLocomotionState().bSlide;
     FactState.MovementMode = Movement->MovementMode;
     FactState.GroundFriction = Movement->GroundFriction;
     FactState.BrakingFriction = Movement->BrakingFriction;

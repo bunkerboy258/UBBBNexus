@@ -30,6 +30,7 @@ void FBBBCharacterNetworkSystem::Update()
     FBBBCharacterNetworkUpdateContext Context{
         RuntimeData->Network.AimObservationState,
         RuntimeData->Network.RunObservationState,
+        RuntimeData->Network.SlideObservationState,
         NetworkIdentityState,
         RuntimeData->External.ReadWorldState(),
         RuntimeData->Aim.ReadAimState(),
@@ -55,5 +56,6 @@ void FBBBCharacterNetworkSystem::Update()
     // 固定处理顺序先观察瞄准状态再观察跑步状态
     AimObservationProcessor.Update(Context);
     RunObservationProcessor.Update(Context);
+    SlideObservationProcessor.Update(Context);
     AccelerationObservationProcessor.Update(Context);
 }

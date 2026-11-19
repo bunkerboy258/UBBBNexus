@@ -21,6 +21,8 @@ void FBBBCharacterRescueMovementProcessor::Update(FBBBCharacterLocomotionUpdateC
     Context.Movement.StopMovementImmediately();
     Context.Movement.ClearAccumulatedForces();
     Context.LocomotionState.bRun = false;
+    Context.LocomotionState.bSlide = false;
+    Context.LocomotionState.SlideElapsed = 0.0f;
     if (!Context.Execution.bIsMirror && Rescue.bHelping && Rescue.Partner.IsValid())
     {
         const FVector Direction = Rescue.Partner->GetActorLocation() - Context.Character.GetActorLocation();

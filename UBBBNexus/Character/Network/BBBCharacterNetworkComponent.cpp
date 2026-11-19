@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Debug/Mass/MaodieTest/BBBMaodieTest.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Aim/FBBBAimStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBSlideStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Interaction/FBBBCharacterInteractionSelectionRemoteMessagePacket.h"
@@ -140,6 +141,10 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
         UBBBCharacterNetworkComponent,
         bReplicatedRun,
         COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(
+        UBBBCharacterNetworkComponent,
+        bReplicatedSlide,
+        COND_SimulatedOnly);
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(
@@ -264,6 +269,40 @@ void UBBBCharacterNetworkComponent::SubmitRunStateInput(const bool bRun)
     if (Character)
     {
         Character->SubmitInput(FBBBRunStateAuthorityFactPacket{bRun});
+    }
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitSlideState_Implementation(const bool bSlide)
+{
+    if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("滑铲状态网络投递被拒绝")))
+    {
+        return;
+    }
+
+    SubmitSlideStateInput(bSlide);
+}
+
+void UBBBCharacterNetworkComponent::OnRep_ReplicatedSlideState()
+{
+    SubmitSlideStateInput(bReplicatedSlide);
+}
+
+void UBBBCharacterNetworkComponent::ReplicateSlideState(const bool bSlide)
+{
+    if (!IsOwnerAuthority())
+    {
+        return;
+    }
+
+    bReplicatedSlide = bSlide;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::SubmitSlideStateInput(const bool bSlide)
+{
+    if (Character)
+    {
+        Character->SubmitInput(FBBBSlideStateAuthorityFactPacket{bSlide});
     }
 }
 

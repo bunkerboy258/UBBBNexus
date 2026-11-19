@@ -106,4 +106,64 @@ struct FBBBCharacterLocomotionConfig
     /** 跪姿独立碰撞胶囊半高 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|倒地", meta = (DisplayName = "倒地胶囊半高", ClampMin = "1"))
     float DownedCapsuleHalfHeight = 40.0f;
+
+    /** 进入滑铲所需的水平速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲进入速度"))
+    float SlideEnterSpeed = 380.0f;
+
+    /** 低于该水平速度时结束滑铲 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲退出速度"))
+    float SlideExitSpeed = 200.0f;
+
+    /** 进入后保持加速的时间 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲初始加速时间"))
+    float SlideInitialBoostTime = 0.2f;
+
+    /** 初始加速阶段允许达到的速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲初始加速速度"))
+    float SlideInitialBoostSpeed = 800.0f;
+
+    /** 初始加速阶段的加速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲初始加速度"))
+    float SlideInitialBoostAcceleration = 2000.0f;
+
+    /** 初始加速结束后沿滑行方向保留的加速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲后续加速度"))
+    float SlideAfterBoostAcceleration = 300.0f;
+
+    /** 下坡达到该坡度时使用陡坡速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", ClampMax = "90.0", DisplayName = "滑铲陡坡角度"))
+    float SlideSteepSlopeAngle = 40.0f;
+
+    /** 小于该坡度时视为平地 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", ClampMax = "90.0", DisplayName = "滑铲缓坡角度"))
+    float SlideShallowSlopeAngle = 10.0f;
+
+    /** 陡下坡允许的最高速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲陡坡速度"))
+    float SlideSteepSlopeSpeed = 800.0f;
+
+    /** 陡上坡允许的最高速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲缓坡速度"))
+    float SlideShallowSlopeSpeed = 500.0f;
+
+    /** 平地滑行允许的最高速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲平地速度"))
+    float SlideFlatGroundSpeed = 100.0f;
+
+    /** 陡上坡使用的制动减速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲陡坡减速度"))
+    float SlideSteepSlopeDeceleration = 2000.0f;
+
+    /** 平地与下坡使用的制动减速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲平地减速度"))
+    float SlideFlatGroundDeceleration = 500.0f;
+
+    /** 滑行中按输入方向追向的强度 1 约在一秒内对齐 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲转向强度"))
+    float SlideTurningStrength = 1.0f;
+
+    /** 滑行期间的地面摩擦 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|滑铲", meta = (ClampMin = "0.0", DisplayName = "滑铲地面摩擦"))
+    float SlideGroundFriction = 0.0f;
 };

@@ -197,6 +197,13 @@ public:
         return Main->bSourceRunning && !Main->bSourceCrouching;
     }
 
+    /** @return 角色是否正在滑铲 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    bool IsSliding() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceSliding;
+    }
+
     /** @return 玩家是否具有瞄准意图 */
     UFUNCTION(BlueprintPure, Category = "Aiming", meta = (BlueprintThreadSafe))
     bool IsAiming() const
@@ -434,6 +441,9 @@ private:
 
     UPROPERTY(Transient)
     bool bSourceRunning = false;
+
+    UPROPERTY(Transient)
+    bool bSourceSliding = false;
 
     UPROPERTY(Transient)
     bool bSourceAiming = false;

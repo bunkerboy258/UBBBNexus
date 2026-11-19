@@ -50,5 +50,7 @@ void FBBBCharacterRecoveryMovementProcessor::Update(FBBBCharacterLocomotionUpdat
         Movement.bUseControllerDesiredRotation = false;
         Movement.MaxAcceleration = 0.0f;
         State.bRun = false;
+        State.bSlide = false;
+        State.SlideElapsed = 0.0f;
     }
 }

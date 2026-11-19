@@ -48,6 +48,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceWeaponRecoilAnimation = HandlingState.RecoilAnimation.Get();
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
+    bSourceSliding = FactState.bIsSliding;
 
     SourceGroundFriction = FactState.GroundFriction;
     SourceBrakingFriction = FactState.BrakingFriction;

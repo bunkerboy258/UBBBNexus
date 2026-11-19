@@ -12,6 +12,14 @@ struct FBBBCharacterLocomotionState final
 
     /** 当前本地计算或网络恢复后的跑步状态 */
     bool bRun = false;
+
+    /** 当前本地计算或网络恢复后的滑铲状态 */
+    bool bSlide = false;
+    /** 上一次移动更新是否收到持续蹲伏意图 用于识别按下的瞬间 */
+    bool bWasCrouchRequested = false;
+
+    /** 本次滑铲已经持续的时间 单位秒 */
+    float SlideElapsed = 0.0f;
     /** 胶囊与移动模式已经还原的全身物理阶段版本 */
     uint64 AppliedPhysicalTransition = 0;
 

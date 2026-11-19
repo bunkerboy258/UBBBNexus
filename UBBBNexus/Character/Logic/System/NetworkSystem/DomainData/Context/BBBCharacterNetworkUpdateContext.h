@@ -11,6 +11,7 @@ struct FBBBCharacterNetworkConfig;
 struct FBBBCharacterNetworkIdentityState;
 struct FBBBCharacterWorldState;
 struct FBBBRunNetworkObservationState;
+struct FBBBSlideNetworkObservationState;
 struct FBBBCharacterRuntimeData;
 
 /** 本次角色网络观察与发送使用的栈上上下文 */
@@ -21,6 +22,9 @@ struct FBBBCharacterNetworkUpdateContext final
 
     /** 跑步网络观察器跨帧状态 */
     FBBBRunNetworkObservationState &RunObservationState;
+
+    /** 滑铲网络观察器跨帧状态 */
+    FBBBSlideNetworkObservationState &SlideObservationState;
 
     /** 当前机器上的角色网络身份 */
     const FBBBCharacterNetworkIdentityState &NetworkIdentityState;

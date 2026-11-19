@@ -104,6 +104,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsRunning = false;
 
+    /** 角色当前是否滑铲 */
+    UPROPERTY(Transient)
+    bool bIsSliding = false;
+
     /** 移动组件当前移动模式 */
     UPROPERTY(Transient)
     TEnumAsByte<EMovementMode> MovementMode = MOVE_None;

@@ -234,6 +234,7 @@ private:
 
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
+    friend class FBBBSlideObservationProcessor;
     friend class FBBBAccelerationObservationProcessor;
 
     /** 向镜像分发控制者已经产生的当前加速度 */
@@ -315,6 +316,36 @@ private:
     /** 模拟代理收到跑步状态时投递领域输入 */
     UFUNCTION()
     void OnRep_ReplicatedRunState();
+
+    /**
+     * 将权威滑铲状态复制给模拟代理
+     * @param bSlide	已经成立的滑铲状态
+     * @return 无
+     */
+    void ReplicateSlideState(bool bSlide);
+
+    /**
+     * 将接收的滑铲状态投递为领域输入
+     * @param bSlide	已经成立的滑铲状态
+     * @return 无
+     */
+    void SubmitSlideStateInput(bool bSlide);
+
+    /**
+     * 接收本机控制客户端最新滑铲状态
+     * @param bSlide	客户端最新滑铲状态
+     * @return 无
+     */
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitSlideState(bool bSlide);
+
+    /** 模拟代理收到滑铲状态时投递领域输入 */
+    UFUNCTION()
+    void OnRep_ReplicatedSlideState();
+
+    /** 只复制给模拟代理的当前滑铲状态 */
+    UPROPERTY(ReplicatedUsing = OnRep_ReplicatedSlideState)
+    bool bReplicatedSlide = false;
 
     /** 只复制给模拟代理的瞄准最终状态 */
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedAimState)
