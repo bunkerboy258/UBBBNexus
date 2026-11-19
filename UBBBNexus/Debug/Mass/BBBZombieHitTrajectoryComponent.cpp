@@ -243,7 +243,10 @@ bool UBBBZombieHitTrajectoryComponent::ApplyProfileTuning(UHitReactProfile* Prof
         for (const auto& Pair : (*BoneWeights)->Values)
         {
             FHitReactBoneOverride Override;
-            Override.BlendWeightScalar = Pair.Value->AsNumber();
+            const float Weight = static_cast<float>(Pair.Value->AsNumber());
+            // 权重 0 表示彻底禁物理 与脚部覆盖同语义 避免父骨仍模拟时子骨继承位移
+            Override.bDisablePhysics = Weight <= KINDA_SMALL_NUMBER;
+            Override.BlendWeightScalar = Override.bDisablePhysics ? 1.0f : Weight;
             Profile->BoneOverrides.Add(FName(*Pair.Key), Override);
         }
     }
