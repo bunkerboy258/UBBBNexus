@@ -86,9 +86,9 @@ bool FBBBConsumableTest::RunTest(const FString &)
     int32 Start = 0;
     int32 Count = 0;
     Controller->GetConsumableQuickRange(Start, Count);
-    TestEqual(TEXT("五个消耗品快捷位置"), Count, 5);
+    TestEqual(TEXT("三个消耗品快捷位置"), Count, 3);
     TestEqual(TEXT("投掷物进入第一个位置"), Controller->GetItemDisplayData(Start).Quantity, 4);
-    TestEqual(TEXT("恢复物进入第三个位置"), Controller->GetItemDisplayData(Start + 2).Quantity, 4);
+    TestEqual(TEXT("恢复物进入第二个位置"), Controller->GetItemDisplayData(Start + 1).Quantity, 4);
     TestNull(TEXT("库存消耗品没有手持 Actor"),
              Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots[Start].HeldInstance.Get());
     TestNull(TEXT("未使用时没有消耗品运行时"), Character->RuntimeData.Item.ReadCharacterItemUseState().Runtime.Get());
@@ -135,10 +135,10 @@ bool FBBBConsumableTest::RunTest(const FString &)
         }
         TestTrue(TEXT("使用占用已经成立"), Use.bBusy);
         Controller->SubmitItemSelect(INDEX_NONE);
-        Controller->SubmitItemMove(Start, Start + 1, Controller->GetItemInstanceId(Start));
+        Controller->SubmitItemMove(Start, Start + 2, Controller->GetItemInstanceId(Start));
         Step();
         TestEqual(TEXT("使用期间拒绝装备切换"), Character->GetHeldItem(), Weapon);
-        TestEqual(TEXT("使用期间拒绝库存移动"), Controller->GetItemDisplayData(Start + 1).Quantity, 0);
+        TestEqual(TEXT("使用期间拒绝库存移动"), Controller->GetItemDisplayData(Start + 2).Quantity, 0);
         Release();
         Release();
         Step();
@@ -158,13 +158,13 @@ bool FBBBConsumableTest::RunTest(const FString &)
         TestEqual(TEXT("耗尽不清空有效装备"), Character->GetHeldItem(), Weapon);
         TestEqual(TEXT("结束不销毁已投出的世界实体"), CountThrowables(), Baseline + Index + 1);
     }
-    Controller->SubmitItemSelect(Start + 2);
+    Controller->SubmitItemSelect(Start + 1);
     Step();
     TestNull(TEXT("满血不能开始血药使用"), Character->GetActiveConsumable());
     UGameplayStatics::ApplyDamage(Character, 200.0f, Controller, nullptr, nullptr);
     Step();
     const float BeforeRecovery = Character->GetHealth();
-    Controller->SubmitItemSelect(Start + 2);
+    Controller->SubmitItemSelect(Start + 1);
     Step();
     if (!TestNotNull(TEXT("受伤后可以使用血药"), Character->GetActiveConsumable()))
     {
@@ -177,7 +177,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
     const float Expected = FMath::Min(Character->GetCharacterConfig().MaximumHealth,
                                       BeforeRecovery + Character->GetCharacterConfig().MaximumHealth * 0.30f);
     TestEqual(TEXT("恢复通知只生效一次且封顶"), Character->GetHealth(), Expected);
-    TestEqual(TEXT("恢复只扣除一件"), Controller->GetItemDisplayData(Start + 2).Quantity, 3);
+    TestEqual(TEXT("恢复只扣除一件"), Controller->GetItemDisplayData(Start + 1).Quantity, 3);
     Finish();
     Step();
     Step();

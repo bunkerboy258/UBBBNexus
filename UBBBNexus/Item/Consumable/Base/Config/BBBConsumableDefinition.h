@@ -42,7 +42,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|消耗品", meta = (DisplayName = "使用运行时类型"))
     TSubclassOf<UBBBConsumable> RuntimeClass;
 
-    /** 是否属于两个投掷快捷位置 恢复物使用后三个位置 */
+    /** 是否按投掷物使用，快捷位置允许自由放置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|消耗品", meta = (DisplayName = "投掷物"))
     bool bThrowable = true;
 

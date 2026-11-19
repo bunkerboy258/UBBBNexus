@@ -22,9 +22,8 @@ class SBBBPlayerItemSlot;
 /** 背包右侧展示页面 与左侧存储分类独立 */
 enum class EBBBItemPanelPage : uint8
 {
-    Weapons,
-    Character,
-    Consumables
+    Inventory,
+    Character
 };
 
 /** 读取玩家物品结果并转交界面输入 */
@@ -80,8 +79,6 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     virtual FReply NativeOnPreviewKeyDown(const FGeometry &Geometry, const FKeyEvent &KeyEvent) override;
 
   private:
-    /** @return 无 只刷新详情展示 保持当前鼠标拖拽控件身份 */
-    void RefreshDetail();
     /** 重新读取唯一背包并更新界面 */
     UFUNCTION()
     void RefreshItems();
@@ -93,8 +90,6 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     TSharedRef<SWidget> MakeExplorationHud();
     /** @return 无 消费新的完成结果并播放一次本地音效 */
     void UpdateExplorationPresentation();
-    /** @return 当前选择物品的详情画刷 */
-    const FSlateBrush *GetDetailBrush() const;
     /** @return 角色实时预览画刷 */
     const FSlateBrush *GetCharacterBrush() const;
     /** @param Type\t左侧存储分类 @return 已处理 */
@@ -131,10 +126,9 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     int32 BuiltQuickStart = INDEX_NONE;
     int32 BuiltStorageStart = INDEX_NONE;
     int32 BuiltPanelStart = INDEX_NONE;
-    EBBBItemPanelPage BuiltPanelPage = EBBBItemPanelPage::Weapons;
+    int32 BuiltConsumableStart = INDEX_NONE;
+    EBBBItemPanelPage BuiltPanelPage = EBBBItemPanelPage::Inventory;
     TArray<FName> BuiltWearNames;
-    TSharedPtr<SBox> DetailImage;
-    FSlateBrush DetailBrush;
     FSlateBrush CharacterBrush;
     /** 只复制实际显示结果的本地预览 */
     UPROPERTY(Transient)
@@ -142,7 +136,8 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     int32 InspectedSlot = INDEX_NONE;
     FGuid InspectedInstance;
     EBBBItemType StoragePage = EBBBItemType::Equipment;
-    EBBBItemPanelPage PanelPage = EBBBItemPanelPage::Weapons;
+    EBBBItemPanelPage PanelPage = EBBBItemPanelPage::Inventory;
+    FVector2D MenuParallax = FVector2D::ZeroVector;
     bool bQuickBarHeld = false;
     TSharedPtr<STextBlock> StatusText;
     /** 上次收到的操作结果版本 */

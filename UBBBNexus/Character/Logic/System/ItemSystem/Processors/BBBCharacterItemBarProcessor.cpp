@@ -15,7 +15,7 @@ void FBBBCharacterItemBarProcessor::Update(FBBBCharacterItemUpdateContext &Conte
     {
         ++Operations.Revision;
         const bool bEquipment = Slot >= 0 && Slot < Inventory.QuickAccessSlotCount;
-        const bool bConsumable = Slot >= Start && Slot < Start + 5;
+        const bool bConsumable = Slot >= Start && Slot < Start + Inventory.ConsumableQuickAccessSlotCount;
         if (Slot != INDEX_NONE && (!Inventory.Slots.IsValidIndex(Slot) || (!bEquipment && !bConsumable)))
         {
             ++Operations.RejectedCount;
@@ -24,12 +24,13 @@ void FBBBCharacterItemBarProcessor::Update(FBBBCharacterItemUpdateContext &Conte
         if (bConsumable)
         {
             Bar.SelectedConsumableSlot = Slot - Start;
-            bRecoverySelected = Bar.SelectedConsumableSlot >= 2;
-            if (!bRecoverySelected)
+            const auto *Definition = Cast<UBBBConsumableDefinition>(Inventory.Slots[Slot].Definition);
+            bRecoverySelected = Definition && !Definition->bThrowable;
+            if (Definition && Definition->bThrowable)
             {
                 Bar.SelectedThrowableSlot = Bar.SelectedConsumableSlot;
             }
-            Operations.bQuickUse |= Bar.SelectedConsumableSlot >= 2;
+            Operations.bQuickUse |= bRecoverySelected;
         }
         if (!bConsumable)
         {
@@ -59,11 +60,11 @@ void FBBBCharacterItemBarProcessor::Update(FBBBCharacterItemUpdateContext &Conte
     const int32 UseSelection =
         Operations.bQuickUse && !bRecoverySelected ? Bar.SelectedThrowableSlot : Bar.SelectedConsumableSlot;
     const int32 Slot = Start + UseSelection;
-    if (Inventory.Slots.IsValidIndex(Slot))
+    if (UseSelection >= 0 && UseSelection < Inventory.ConsumableQuickAccessSlotCount && Inventory.Slots.IsValidIndex(Slot))
     {
         const auto &Item = Inventory.Slots[Slot];
         auto *Definition = Cast<UBBBConsumableDefinition>(Item.Definition);
-        if (Definition && Item.Quantity > 0 && ((UseSelection < 2) == Definition->bThrowable))
+        if (Definition && Item.Quantity > 0 && (!Operations.bQuickUse || bRecoverySelected || Definition->bThrowable))
         {
             Bar.DesiredConsumableIdentity = Item.InstanceId;
             Bar.DesiredConsumableDefinition = Definition;

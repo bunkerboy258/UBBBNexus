@@ -10,8 +10,8 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
     auto &Operations = Context.RuntimeData.Item.ItemOperationState;
     if (Inventory.Slots.IsEmpty())
     {
-        Inventory.QuickAccessSlotCount = 5;
-        Inventory.ConsumableQuickAccessSlotCount = 5;
+        Inventory.QuickAccessSlotCount = Context.Config.QuickAccessSlotCount;
+        Inventory.ConsumableQuickAccessSlotCount = Context.Config.ConsumableQuickAccessSlotCount;
         Inventory.EquipmentSlotCount = FMath::Max(Inventory.QuickAccessSlotCount, Context.Config.EquipmentSlotCount);
         Inventory.WearableSlotCount = FMath::Max(0, Context.Config.WearableSlotCount);
         Inventory.ConsumableSlotCount = FMath::Max(Inventory.ConsumableQuickAccessSlotCount, Context.Config.ConsumableSlotCount);
@@ -58,10 +58,7 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
         }
         if (Slot < Inventory.EquipmentSlotCount + Inventory.WearableSlotCount + Inventory.ConsumableSlotCount)
         {
-            const int32 Index = Slot - Inventory.EquipmentSlotCount - Inventory.WearableSlotCount;
-            const auto *Definition = Cast<UBBBConsumableDefinition>(Item.Definition);
-            return Type == EBBBItemType::Consumable && Definition &&
-                   (Index >= 5 || ((Index < 2) == Definition->bThrowable));
+            return Type == EBBBItemType::Consumable && Cast<UBBBConsumableDefinition>(Item.Definition);
         }
         if (Slot < Inventory.BackpackSlotCount)
         {

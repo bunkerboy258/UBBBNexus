@@ -81,11 +81,6 @@ void FBBBCharacterItemAcquisitionProcessor::Update(FBBBCharacterItemUpdateContex
             {
                 const auto &Item = Inventory.Slots[Slot];
                 const bool bExisting = Item.Definition == Definition && Item.Quantity > 0;
-                const auto *UseDefinition = Cast<UBBBConsumableDefinition>(Definition);
-                if (UseDefinition && Slot < Start + 5 && ((Slot - Start < 2) != UseDefinition->bThrowable))
-                {
-                    continue;
-                }
                 if ((Pass == 0 && !bExisting) || (Pass == 1 && Item.Definition))
                 {
                     continue;

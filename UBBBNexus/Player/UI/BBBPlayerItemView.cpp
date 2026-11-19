@@ -12,6 +12,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
+#include "Framework/Application/SlateApplication.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -76,12 +77,13 @@ void UBBBPlayerItemView::NativeDestruct()
 void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
 {
     bBackpackOpen = bOpen;
+    MenuParallax = FVector2D::ZeroVector;
     bQuickBarHeld = false;
     if (!bOpen)
     {
         if (CharacterPreview)
         {
-            CharacterPreview->SetActive(false);
+            CharacterPreview->Close();
         }
         CharacterBrush.SetResourceObject(nullptr);
         return;
@@ -104,7 +106,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     }
     InspectedInstance = Controller ? Controller->GetItemDisplayData(InspectedSlot).InstanceId : FGuid();
     StoragePage = EBBBItemType::Equipment;
-    PanelPage = EBBBItemPanelPage::Weapons;
+    PanelPage = EBBBItemPanelPage::Inventory;
     if (!CharacterPreview)
     {
         CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
@@ -122,6 +124,18 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
 {
     Super::NativeTick(Geometry, DeltaTime);
     UpdateExplorationPresentation();
+    if (!bBackpackOpen)
+    {
+        return;
+    }
+    const FVector2D Size = Geometry.GetLocalSize();
+    if (Size.X > 0 && Size.Y > 0)
+    {
+        const FVector2D Mouse = Geometry.AbsoluteToLocal(FSlateApplication::Get().GetCursorPos());
+        const FVector2D Target(FMath::Clamp(Mouse.X / Size.X * 2 - 1, -1.0, 1.0),
+            FMath::Clamp(Mouse.Y / Size.Y * 2 - 1, -1.0, 1.0));
+        MenuParallax = FMath::Vector2DInterpTo(MenuParallax, Target, DeltaTime, 7.0f);
+    }
     if (!CharacterPreview)
     {
         CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
@@ -165,7 +179,6 @@ void UBBBPlayerItemView::InspectSlot(int32 SlotIndex)
     }
     InspectedSlot = SlotIndex;
     InspectedInstance = Controller->GetItemDisplayData(SlotIndex).InstanceId;
-    RefreshDetail();
 }
 
 FReply UBBBPlayerItemView::ShowStorage(EBBBItemType Type)
@@ -177,27 +190,27 @@ FReply UBBBPlayerItemView::ShowStorage(EBBBItemType Type)
 FReply UBBBPlayerItemView::ShowPanel(EBBBItemPanelPage Page)
 {
     PanelPage = Page;
+    StoragePage = Page == EBBBItemPanelPage::Character ? EBBBItemType::Wearable : EBBBItemType::Equipment;
     RefreshItems();
     return FReply::Handled();
 }
 
-const FSlateBrush *UBBBPlayerItemView::GetDetailBrush() const
-{
-    return &DetailBrush;
-}
 const FSlateBrush *UBBBPlayerItemView::GetCharacterBrush() const
 {
     return &CharacterBrush;
 }
 
-void UBBBPlayerItemView::RefreshDetail()
+namespace
 {
-    const auto *Controller = GetItemController();
-    const auto Data = Controller ? Controller->GetItemDisplayData(InspectedSlot) : FBBBPlayerItemDisplayData();
-    UTexture2D *Image = Data.DisplayImage ? Data.DisplayImage : Data.Icon;
-    DetailBrush.SetResourceObject(Data.DisplayMaterial ? static_cast<UObject *>(Data.DisplayMaterial) : Image);
-    DetailBrush.DrawAs = Data.DisplayMaterial || Image ? ESlateBrushDrawType::Image : ESlateBrushDrawType::NoDrawType;
-    DetailBrush.ImageSize = Image ? FVector2D(Image->GetSizeX(), Image->GetSizeY()) : FVector2D(512.0f);
+// Project each cell about the centre of its wing. Applying the transform to the widget also projects its hit area.
+void ProjectInventoryCell(const TSharedRef<SWidget>& Cell, float Inward, float RowOffset, float Facing, float Width)
+{
+    const float Depth = 1.0f / (1.0f + Inward * 0.095f);
+    const float Slope = -Facing * RowOffset * 0.095f / 480.0f;
+    Cell->SetRenderTransformPivot(FVector2D(0.5, 0.5));
+    Cell->SetRenderTransform(FSlateRenderTransform(FMatrix2x2(Depth, Slope, 0.f, Depth),
+        FVector2f(-Facing * Inward * (1.0f - Depth) * Width, RowOffset * (Depth - 1.0f))));
+}
 }
 
 void UBBBPlayerItemView::RefreshItems()
@@ -231,10 +244,6 @@ void UBBBPlayerItemView::RefreshItems()
             QuickBar->AddSlot().FillWidth(1.0f).Padding(12.0f)
                 [SAssignNew(SlotWidget, SBBBPlayerItemSlot)
                     .View(this).Slot(QuickStart + Index).Compact(true)
-                    .PositionLabel(bQuickBarHeld
-                        ? FText::FromString(Index < 2 ? FString::Printf(TEXT("投掷 %d"), Index + 1)
-                            : FString::Printf(TEXT("恢复 %d"), Index - 1))
-                        : FText::GetEmpty())
                     .Width(160.0f).Height(90.0f)];
             QuickSlotViews.Add(SlotWidget);
         }
@@ -259,7 +268,6 @@ void UBBBPlayerItemView::RefreshItems()
             }
         }
     }
-    RefreshDetail();
     int32 Start = 0;
     int32 Count = 0;
     Controller->GetStorageRange(StoragePage, Start, Count);
@@ -272,9 +280,11 @@ void UBBBPlayerItemView::RefreshItems()
         for (int32 Position = 0; Position < Count; ++Position)
         {
             TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
-            Grid->AddSlot(Position % 5, Position / 5)
+            Grid->AddSlot(Position % 3, Position / 3)
                 [SAssignNew(SlotWidget, SBBBPlayerItemSlot).View(this).Slot(Start + Position)
-                    .Width(154.0f).Height(154.0f * 0.72f)];
+                    .Width(145.0f).Height(142.0f)];
+            ProjectInventoryCell(SlotWidget.ToSharedRef(), (Position % 3) / 2.0f,
+                (FMath::Min(Position / 3, 4) - 1.5f) * 150, 1, 145);
             StorageSlotViews.Add(SlotWidget);
         }
         BackpackSlots->AddSlot().AutoHeight()[Grid];
@@ -285,41 +295,51 @@ void UBBBPlayerItemView::RefreshItems()
     }
     TArray<FName> WearNames;
     Controller->GetWearSlotRange(Start, WearNames);
-    int32 RightStart = 0;
-    int32 RightCount = Controller->GetQuickAccessSlotCount();
     const bool bCharacterPage = PanelPage == EBBBItemPanelPage::Character;
-    if (PanelPage == EBBBItemPanelPage::Consumables)
-    {
-        Controller->GetConsumableQuickRange(RightStart, RightCount);
-    }
-    if (bCharacterPage)
-    {
-        RightStart = Start;
-        RightCount = WearNames.Num();
-    }
-    if (BuiltPanelPage != PanelPage || BuiltPanelStart != RightStart || PanelSlotViews.Num() != RightCount
-        || (bCharacterPage && BuiltWearNames != WearNames))
+    int32 ConsumableStart = 0;
+    int32 ConsumableCount = 0;
+    Controller->GetConsumableQuickRange(ConsumableStart, ConsumableCount);
+    const int32 RightStart = bCharacterPage ? Start : 0;
+    const int32 WeaponCount = Controller->GetQuickAccessSlotCount();
+    const int32 Total = bCharacterPage ? WearNames.Num() : WeaponCount + ConsumableCount;
+    if (BuiltPanelPage != PanelPage || BuiltPanelStart != RightStart || BuiltConsumableStart != ConsumableStart
+        || PanelSlotViews.Num() != Total || (bCharacterPage && BuiltWearNames != WearNames))
     {
         EquipmentSlots->ClearChildren();
         PanelSlotViews.Reset();
         BuiltPanelPage = PanelPage;
         BuiltPanelStart = RightStart;
+        BuiltConsumableStart = ConsumableStart;
         BuiltWearNames = MoveTemp(WearNames);
-        TSharedRef<SUniformGridPanel> Right = SNew(SUniformGridPanel).SlotPadding(FMargin(5.0f));
-        for (int32 Position = 0; Position < RightCount; ++Position)
+        auto AddGroup = [this](int32 First, int32 Size, int32 Columns, float Width, float Height, bool bWear)
         {
-            TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
-            Right->AddSlot(bCharacterPage ? Position % 2 : 0, bCharacterPage ? Position / 2 : Position)
-                [SAssignNew(SlotWidget, SBBBPlayerItemSlot).View(this).Slot(RightStart + Position)
-                    .PositionLabel(bCharacterPage ? BBBItemText::WearPosition(BuiltWearNames[Position])
-                        : PanelPage == EBBBItemPanelPage::Consumables
-                            ? FText::FromString(Position < 2 ? FString::Printf(TEXT("投掷 %d"), Position + 1)
-                                : FString::Printf(TEXT("恢复 %d"), Position - 1))
-                            : FText::GetEmpty())
-                    .Width(bCharacterPage ? 162.0f : 340.0f).Height(126.0f)];
-            PanelSlotViews.Add(SlotWidget);
+            auto Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(4.0f));
+            for (int32 Index = 0; Index < Size; ++Index)
+            {
+                TSharedPtr<SBBBPlayerItemSlot> Cell;
+                Grid->AddSlot(Index % Columns, Index / Columns)
+                    [SAssignNew(Cell, SBBBPlayerItemSlot).View(this).Slot(First + Index)
+                        .PositionLabel(bWear ? FText::FromName(BuiltWearNames[Index]) : FText::GetEmpty())
+                        .Width(Width).Height(Height)];
+                const float Inward = Columns == 1 ? 0.5f : 1.0f - static_cast<float>(Index % Columns) / (Columns - 1);
+                const float RowOffset = (Index / Columns - 1.5f) * Height + (!bWear && Columns > 1 ? 360.f : 0.f);
+                ProjectInventoryCell(Cell.ToSharedRef(), Inward, RowOffset, -1, Width);
+                PanelSlotViews.Add(Cell);
+            }
+            EquipmentSlots->AddSlot().AutoHeight()[Grid];
+        };
+        if (bCharacterPage)
+        {
+            AddGroup(RightStart, Total, 3, 148, 145, true);
         }
-        EquipmentSlots->AddSlot().AutoHeight()[Right];
+        else
+        {
+            AddGroup(0, WeaponCount, 1, 472, 105, false);
+            EquipmentSlots->AddSlot().AutoHeight().Padding(4, 24, 0, 6)
+                [SNew(STextBlock).Text(INVTEXT("CONSUMABLES")).Font(BBBItemUI::ArtFont(22))
+                    .ColorAndOpacity(BBBItemUI::MutedText)];
+            AddGroup(ConsumableStart, ConsumableCount, 3, 148, 145, false);
+        }
     }
     for (const auto &SlotWidget : PanelSlotViews)
     {
@@ -389,7 +409,7 @@ FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, con
 {
     if (bBackpackOpen && PanelPage != EBBBItemPanelPage::Character)
     {
-        const FKey Keys[] = {EKeys::One, EKeys::Two, EKeys::Three, EKeys::Four, EKeys::Five};
+        const FKey Keys[] = {EKeys::One, EKeys::Two, EKeys::Three};
         for (int32 SlotIndex = 0; SlotIndex < UE_ARRAY_COUNT(Keys); ++SlotIndex)
         {
             if (Event.GetKey() == Keys[SlotIndex])
@@ -398,7 +418,7 @@ FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, con
                 {
                     int32 Start = 0;
                     int32 Count = 0;
-                    if (PanelPage == EBBBItemPanelPage::Consumables)
+                    if (StoragePage == EBBBItemType::Consumable)
                     {
                         GetItemController()->GetConsumableQuickRange(Start, Count);
                     }

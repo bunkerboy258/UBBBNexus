@@ -3,6 +3,7 @@
 #include "UObject/Object.h"
 #include "BBBPlayerItemPortrait.generated.h"
 
+class FPreviewScene;
 class APawn;
 class AActor;
 class ASceneCapture2D;
@@ -11,7 +12,7 @@ class USkeletalMeshComponent;
 class UMaterialInstanceDynamic;
 struct FStreamableHandle;
 
-/** 在所属玩家世界内捕获固定正面显示 只复制外观结果 */
+/** 在本地独立预览世界捕获固定正面显示 只复制外观结果 */
 UCLASS()
 class ABBB_EVAC_API UBBBPlayerItemPortrait final : public UObject
 {
@@ -30,6 +31,7 @@ public:
     virtual void BeginDestroy() override;
 
 private:
+    TSharedPtr<FPreviewScene> PreviewScene;
     TWeakObjectPtr<APawn> Source;
     UPROPERTY(Transient)
     TObjectPtr<AActor> Display;

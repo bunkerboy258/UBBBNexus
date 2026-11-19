@@ -30,7 +30,7 @@ struct FBBBCharacterItemConfig final
         TEXT("Backpack"), TEXT("Gloves"), TEXT("Attachments"), TEXT("Flag"), TEXT("Legs"), TEXT("Belt")};
 
     /** 包含装备快捷位置的总容量 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备格子", ClampMin = "5"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备格子", ClampMin = "3"))
     int32 EquipmentSlotCount = 20;
 
     /** 不含身体穿戴位置的存储容量 */
@@ -38,18 +38,13 @@ struct FBBBCharacterItemConfig final
     int32 WearableSlotCount = 20;
 
     /** 包含消耗品快捷位置的总容量 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "消耗品格子", ClampMin = "5"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "消耗品格子", ClampMin = "3"))
     int32 ConsumableSlotCount = 30;
 
     /** 杂物存储容量 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "杂物格子", ClampMin = "0"))
     int32 MiscSlotCount = 30;
 
-    /** 装备区域内的快捷位置 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "装备快捷格子", ClampMin = "1"))
-    int32 QuickAccessSlotCount = 5;
-
-    /** 消耗品区域内的快捷位置 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "消耗品快捷格子", ClampMin = "1"))
-    int32 ConsumableQuickAccessSlotCount = 5;
+    static constexpr int32 QuickAccessSlotCount = 3;
+    static constexpr int32 ConsumableQuickAccessSlotCount = 3;
 };

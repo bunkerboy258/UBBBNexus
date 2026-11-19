@@ -2,6 +2,9 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/PointLightComponent.h"
+#include "PreviewScene.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Components/SceneComponent.h"
 #include "Engine/SceneCapture2D.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -73,7 +76,10 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     FActorSpawnParameters Spawn;
     Spawn.ObjectFlags |= RF_Transient;
     Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    Origin = Pawn->GetActorLocation() + FVector(0.0f, 0.0f, 10000.0f);
+    PreviewScene = MakeShared<FPreviewScene>(FPreviewScene::ConstructionValues().SetEditor(false)
+        .SetCreateDefaultLighting(false).AllowAudioPlayback(false).SetCreatePhysicsScene(false)
+        .ShouldSimulatePhysics(false).SetTransactional(false));
+    World = PreviewScene->GetWorld();
     Display = World->SpawnActor<AActor>(AActor::StaticClass(), Origin, FRotator::ZeroRotator, Spawn);
     Capture = World->SpawnActor<ASceneCapture2D>(ASceneCapture2D::StaticClass(), Origin, FRotator::ZeroRotator, Spawn);
     if (!Display || !Capture)
@@ -88,20 +94,49 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Display->SetRootComponent(Root);
     Root->RegisterComponent();
     Root->SetWorldLocation(Origin);
-    for (int32 Index = 0; Index < 2; ++Index)
+    struct FPortraitLight
+    {
+        FVector Location;
+        FLinearColor Color;
+        float Candela;
+        bool bShadow;
+    };
+    const FPortraitLight Lights[] = {
+        {FVector(90.0f, -123.0f, 211.0f), FLinearColor(1.0f, 0.84f, 0.68f), 28.0f, true},
+        {FVector(-75.0f, 70.0f, 188.0f), FLinearColor(0.62f, 0.80f, 1.0f), 31.0f, false},
+        {FVector(147.0f, 55.0f, 137.0f), FLinearColor(1.0f, 0.95f, 0.91f), 4.5f, false},
+    };
+    for (const FPortraitLight &Rig : Lights)
     {
         UPointLightComponent *Light = NewObject<UPointLightComponent>(Display);
         Display->AddInstanceComponent(Light);
         Light->SetupAttachment(Root);
-        Light->SetLightingChannels(false, true, false);
-        Light->SetCastShadows(false);
-        Light->SetAttenuationRadius(650.0f);
-        Light->SetIntensity(Index == 0 ? 3800.0f : 1800.0f);
-        Light->SetLightColor(Index == 0 ? FLinearColor(1.0f, 0.91f, 0.78f) : FLinearColor(0.68f, 0.78f, 1.0f));
-        Light->SetRelativeLocation(Index == 0 ? FVector(190.0f, -155.0f, 240.0f) : FVector(100.0f, 170.0f, 130.0f));
+        Light->SetLightingChannels(true, false, false);
+        Light->SetCastShadows(Rig.bShadow);
+        Light->SetAttenuationRadius(420.0f);
+        Light->SetIntensityUnits(ELightUnits::Candelas);
+        Light->SetIntensity(Rig.Candela);
+        Light->SetSpecularScale(0.28f);
+        Light->SetSourceRadius(Rig.bShadow ? 8.0f : 28.0f);
+        Light->SetSoftSourceRadius(Rig.bShadow ? 14.0f : 40.0f);
+        Light->ContactShadowLength = Rig.bShadow ? 0.12f : 0.0f;
+        Light->ShadowResolutionScale = 2.0f;
+        Light->SetLightColor(Rig.Color);
+        Light->SetRelativeLocation(Rig.Location);
         Light->SetVisibility(bActive);
         Light->RegisterComponent();
     }
+    auto *Floor = NewObject<UStaticMeshComponent>(Display);
+    Display->AddInstanceComponent(Floor);
+    Floor->SetupAttachment(Root);
+    Floor->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")));
+    Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Floor->SetLightingChannels(true, false, false);
+    Floor->SetCastShadow(false);
+    Floor->SetRelativeScale3D(FVector(0.58f, 0.36f, 1.0f));
+    Floor->SetRelativeLocation(FVector(8.0f, 0.0f, -1.2f));
+    Floor->RegisterComponent();
+    Floor->SetMaterial(0, LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/_Project/UI/Bag/M_InventoryGround.M_InventoryGround")));
     Pose = NewObject<USkeletalMeshComponent>(Display);
     Display->AddInstanceComponent(Pose);
     Pose->SetSkeletalMesh(Character->GetMesh()->GetSkeletalMeshAsset());
@@ -109,11 +144,13 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Pose->SetVisibility(false);
     Pose->SetVisibleInSceneCaptureOnly(true);
     Pose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Pose->SetOverlayMaterial(nullptr);
+    Pose->SetRenderCustomDepth(false);
     Pose->RegisterComponent();
     FTransform StandingTransform = Character->GetMesh()->GetRelativeTransform();
     StandingTransform.AddToTranslation(Origin + FVector(0.0f, 0.0f, Pawn->GetSimpleCollisionHalfHeight()));
     Pose->SetWorldTransform(StandingTransform);
-    Pose->PlayAnimation(Standing, false);
+    Pose->PlayAnimation(Standing, true);
     Pose->SetPosition(0.0f, false);
     Pose->TickAnimation(1.0f / 30.0f, false);
     Pose->RefreshBoneTransforms();
@@ -122,9 +159,11 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Texture->ClearColor = FLinearColor::Transparent;
     Texture->RenderTargetFormat = RTF_RGBA16f;
     Texture->InitAutoFormat(640, 1080);
+    Texture->SRGB = false;
 
     Material = UMaterialInstanceDynamic::Create(Parent, this);
     Material->SetTextureParameterValue(TEXT("Preview"), Texture);
+    Material->SetScalarParameterValue(TEXT("Exposure"), 0.55f);
     auto *Camera = Capture->GetCaptureComponent2D();
     Camera->TextureTarget = Texture;
     Camera->bCaptureEveryFrame = false;
@@ -134,7 +173,9 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Camera->ShowFlags.SetAtmosphere(false);
     Camera->ShowFlags.SetFog(false);
     Camera->ShowFlags.SetSkyLighting(false);
-    Camera->ShowFlags.SetDynamicShadows(false);
+    Camera->ShowFlags.SetLighting(true);
+    Camera->ShowFlags.SetDynamicShadows(true);
+    Camera->ShowFlags.SetBloom(false);
     Camera->ShowFlags.SetScreenSpaceReflections(false);
     Camera->ShowFlags.SetLumenReflections(false);
     Camera->ShowFlags.SetReflectionEnvironment(false);
@@ -144,12 +185,18 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Camera->PostProcessSettings.bOverride_ReflectionMethod = true;
     Camera->PostProcessSettings.ReflectionMethod = EReflectionMethod::None;
     Camera->ProjectionType = ECameraProjectionMode::Orthographic;
-    Camera->OrthoWidth = 114.0f;
+    Camera->OrthoWidth = 130.0f;
     Camera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
     Camera->PostProcessSettings.bOverride_AutoExposureMethod = true;
     Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
-    Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 95.0f));
-    Capture->SetActorRotation(FRotator(0.0f, 180.0f, 0.0f));
+    Camera->PostProcessSettings.bOverride_AutoExposureBias = true;
+    Camera->PostProcessSettings.AutoExposureBias = 0.35f;
+    Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+    Camera->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
+    Camera->PostProcessSettings.bOverride_BloomIntensity = true;
+    Camera->PostProcessSettings.BloomIntensity = 0.0f;
+    Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 113.0f));
+    Capture->SetActorRotation(FRotator(-5.0f, 180.0f, 0.0f));
     bDirty = true;
     return true;
 }
@@ -157,7 +204,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
 void UBBBPlayerItemPortrait::Update(float DeltaTime)
 {
     if (!bActive || !Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || !IsValid(Pose)
-        || Source->GetWorld() != Capture->GetWorld())
+        || !PreviewScene.IsValid())
     {
         return;
     }
@@ -169,14 +216,14 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         return;
     }
+    Pose->TickAnimation(Elapsed, false);
+    Pose->RefreshBoneTransforms();
     Elapsed = 0.0f;
-    bool bChanged = bDirty || Revision != ObservedAppearanceRevision;
     ObservedAppearanceRevision = Revision;
     TArray<USkeletalMeshComponent *> Actual;
     Source->GetComponents(Actual);
     while (Components.Num() > Actual.Num())
     {
-        bChanged = true;
         Components.Last()->DestroyComponent();
         Components.Pop();
     }
@@ -188,38 +235,36 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
             Display->AddInstanceComponent(Part);
             Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             Part->SetVisibleInSceneCaptureOnly(true);
-            Part->SetLightingChannels(false, true, false);
+            Part->SetLightingChannels(true, false, false);
+            Part->SetOverlayMaterial(nullptr);
+            Part->SetRenderCustomDepth(false);
             Part->SetComponentTickEnabled(false);
             Part->RegisterComponent();
             Components.Add(Part);
-            bChanged = true;
         }
         auto *Part = Components[Index].Get();
         auto *Original = Actual[Index];
         const bool bMeshChanged = Part->GetSkeletalMeshAsset() != Original->GetSkeletalMeshAsset();
         if (bMeshChanged)
         {
-            bChanged = true;
             Part->EmptyOverrideMaterials();
             Part->SetSkeletalMesh(Original->GetSkeletalMeshAsset());
+            Part->SetOverlayMaterial(nullptr);
         }
         if (!Original->GetSkeletalMeshAsset())
         {
-            bChanged |= Part->IsVisible();
             Part->SetVisibility(false);
             continue;
         }
         const bool bVisible = Original->IsVisible() && !Original->bHiddenInGame && !Original->GetOwner()->IsHidden();
         if (Part->IsVisible() != bVisible)
         {
-            bChanged = true;
             Part->SetVisibility(bVisible);
         }
         for (int32 MaterialIndex = 0; MaterialIndex < Original->GetNumMaterials(); ++MaterialIndex)
         {
             if (Part->GetMaterial(MaterialIndex) != Original->GetMaterial(MaterialIndex))
             {
-                bChanged = true;
                 Part->SetMaterial(MaterialIndex, Original->GetMaterial(MaterialIndex));
             }
         }
@@ -228,13 +273,11 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         USkeletalMeshComponent *Leader = bRigid ? nullptr : Pose.Get();
         if (Part->LeaderPoseComponent.Get() != Leader)
         {
-            bChanged = true;
             Part->SetLeaderPoseComponent(Leader);
         }
         const bool bPoseChanged = Part->bForceRefpose != bRigid;
         if (bPoseChanged)
         {
-            bChanged = true;
             Part->SetForceRefPose(bRigid);
         }
         if (bRigid && (bMeshChanged || bPoseChanged))
@@ -254,15 +297,12 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
         }
         if (!Part->GetComponentTransform().Equals(Relative))
         {
-            bChanged = true;
             Part->SetWorldTransform(Relative);
         }
     }
-    if (bChanged)
-    {
-        Capture->GetCaptureComponent2D()->CaptureSceneDeferred();
-        bDirty = false;
-    }
+    PreviewScene->GetWorld()->SendAllEndOfFrameUpdates();
+    Capture->GetCaptureComponent2D()->CaptureScene();
+    bDirty = false;
 }
 
 void UBBBPlayerItemPortrait::Close()
@@ -286,6 +326,7 @@ void UBBBPlayerItemPortrait::Close()
     Display = nullptr;
     Texture = nullptr;
     Material = nullptr;
+    PreviewScene.Reset();
     Source.Reset();
     Elapsed = 0.0f;
     bActive = false;

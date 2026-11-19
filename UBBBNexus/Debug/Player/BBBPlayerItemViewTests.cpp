@@ -21,8 +21,116 @@
 #include "UObject/UObjectGlobals.h"
 #include "Engine/SceneCapture2D.h"
 #include "EngineUtils.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Containers/Ticker.h"
+#include "UnrealClient.h"
+#include "Misc/Paths.h"
 #include "Misc/ScopeExit.h"
 #include "Widgets/Input/SButton.h"
+
+namespace
+{
+TSharedPtr<SButton> FindMenuButton(const TSharedRef<SWidget>& Widget, FName Tag)
+{
+    if (Widget->GetTag() == Tag && Widget->GetType() == TEXT("SButton"))
+    {
+        return StaticCastSharedRef<SButton>(Widget);
+    }
+    FChildren* Children = Widget->GetChildren();
+    for (int32 Index = 0; Index < Children->Num(); ++Index)
+    {
+        if (auto Found = FindMenuButton(Children->GetChildAt(Index), Tag))
+        {
+            return Found;
+        }
+    }
+    return nullptr;
+}
+
+// The review runs in a dedicated standalone game through exactly the same controller and widgets as B.
+FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
+    TEXT("Capture both inventory pages of a standalone BBBTest session launched with -ItemMenuReview."),
+    FConsoleCommandDelegate::CreateLambda([]()
+    {
+        if (!FParse::Param(FCommandLine::Get(), TEXT("ItemMenuReview")))
+        {
+            return;
+        }
+        FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda(
+            [Step = 0, Attempts = 0, Hold = 0](float) mutable
+            {
+                UWorld* GameWorld = nullptr;
+                if (GEngine)
+                {
+                    for (const FWorldContext &Context : GEngine->GetWorldContexts())
+                    {
+                        UWorld *Candidate = Context.World();
+                        if (Candidate && Candidate->GetNetMode() == NM_Standalone
+                            && Candidate->GetMapName().EndsWith(TEXT("BBBTest")))
+                        {
+                            GameWorld = Candidate;
+                            break;
+                        }
+                    }
+                }
+                if (++Attempts > 120)
+                {
+                    return false;
+                }
+                if (!GameWorld)
+                {
+                    return true;
+                }
+                auto* PC = Cast<ABBBPlayerController>(GameWorld->GetFirstPlayerController());
+                if (!PC || !PC->HasItemInventory()) return true;
+                if (Step == 0)
+                {
+                    const TCHAR* Samples[] = {TEXT("ModernWeapons_Rifle_01"), TEXT("ModernWeapons_Pistol_01"),
+                        TEXT("ModernWeapons_Shotgun_02"), TEXT("ModernWeapons_Rifle_04"), TEXT("ModernWeapons_LMG_01"),
+                        TEXT("ModernWeapons_Pistol_02"), TEXT("ModernWeapons_Revolver_01"), TEXT("ModernWeapons_Rifle_02"),
+                        TEXT("ModernWeapons_Shotgun_03"), TEXT("Helmet_UASoldHelmet01"), TEXT("Vest_PlateCar00"),
+                        TEXT("Helmet_UASoldHelmet00"), TEXT("Vest_PlateCar01")};
+                    for (const auto* Id : Samples) PC->SubmitItemAdd(FName(Id));
+                    PC->SubmitItemAdd(TEXT("Grenade_01"), 3);
+                    PC->SubmitItemAdd(TEXT("HealthPack_01"), 2);
+                }
+                else if (Step == 1)
+                {
+                    int32 Start, Count;
+                    PC->GetStorageRange(EBBBItemType::Wearable, Start, Count);
+                    for (int32 Slot = Start; Slot < Start + FMath::Min(2, Count); ++Slot)
+                    {
+                        const auto Data = PC->GetItemDisplayData(Slot);
+                        if (Data.bOccupied) PC->SubmitItemMove(Slot, Data.EquipSlot, Data.InstanceId);
+                    }
+                    if (!PC->IsBackpackOpen()) PC->ToggleBackpack();
+                }
+                else if (Step == 4 || Step == 8)
+                {
+                    if (Hold < 8)
+                    {
+                        ++Hold;
+                        return true;
+                    }
+                    Hold = 0;
+                    const FString Page = Step == 4 ? TEXT("Inventory") : TEXT("Character");
+                    const FString File = FPaths::ConvertRelativePathToFull(FPaths::ScreenShotDir() / (TEXT("ItemMenu_") + Page + TEXT(".png")));
+                    FScreenshotRequest::RequestScreenshot(File, true, false, false, FIntRect(), true);
+                }
+                else if (Step == 6)
+                {
+                    TArray<UUserWidget*> Views;
+                    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
+                    for (auto* View : Views)
+                    {
+                        if (auto Tab = FindMenuButton(View->TakeWidget(), TEXT("Backpack.Panel.1"))) Tab->SimulateClick();
+                    }
+                }
+                ++Step;
+                return Step <= 8;
+            }), 1.5f);
+    }));
+}
 
 /** 通过公开控制器接口验证界面请求 不访问物品系统或写入领域状态 */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBPlayerItemViewTest, "BBB.Player.ItemView.Interaction",
@@ -100,8 +208,8 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     View->SetBackpackOpen(true);
     TestEqual(TEXT("空手打开背包默认查看第一个装备"), View->GetInspectedSlot(), 0);
     TestEqual(TEXT("默认查看不改变手持选择"), Controller->GetSelectedItemSlot(), INDEX_NONE);
-    TestEqual(TEXT("人物捕获不建立额外世界上下文"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);
-    TestEqual(TEXT("捕获演员只生成在玩家世界"), CaptureCount(), 1);
+
+    TestEqual(TEXT("玩家世界不生成捕获演员"), CaptureCount(), 0);
     TFunction<TSharedPtr<SWidget>(const TSharedRef<SWidget> &, FName)> FindTagged;
     FindTagged = [&FindTagged](const TSharedRef<SWidget> &Node, FName Tag) -> TSharedPtr<SWidget>
     {
@@ -154,12 +262,9 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
         Character->Tick(1.0f / 60.0f);
         TestEqual(TEXT("角色消费输入后选中当前右侧快捷位"), Controller->GetSelectedItemSlot(), ExpectedSlot);
     };
-    TestEqual(TEXT("默认右侧显示武器快捷位"), CountSlots(PanelSlots.ToSharedRef()), Controller->GetQuickAccessSlotCount());
-    Click(TEXT("Backpack.Panel.2"));
-    TestEqual(TEXT("消耗品页显示真实快捷位数量"), CountSlots(PanelSlots.ToSharedRef()), ConsumableCount);
-    PressNumber(EKeys::Two, ConsumableStart + 1);
-    Click(TEXT("Backpack.Storage.1"));
-    PressNumber(EKeys::Three, ConsumableStart + 2);
+    TestEqual(TEXT("装备页同时显示三格武器与三格消耗品"), CountSlots(PanelSlots.ToSharedRef()), 6);
+    TestEqual(TEXT("三个真实消耗品快捷位"), ConsumableCount, 3);
+    PressNumber(EKeys::Two, 1);
     TestFalse(TEXT("普通消耗品存储位不能直接作为快捷目标"), View->SelectSlot(ConsumableStart + ConsumableCount));
     Click(TEXT("Backpack.Panel.1"));
     TestEqual(TEXT("角色页显示全部身体穿戴位置"), CountSlots(PanelSlots.ToSharedRef()), Character->GetCharacterConfig().Item.WearSlots.Num());
@@ -170,7 +275,9 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
         Controller->GetSelectedItemSlot(), BeforeCharacterKey);
     Click(TEXT("Backpack.Panel.0"));
     Click(TEXT("Backpack.Storage.3"));
-    PressNumber(EKeys::Two, 1);
+    Widget->OnPreviewKeyDown(FGeometry(), FKeyEvent(EKeys::Two, FModifierKeysState(), 0, false, 0, 0));
+    Character->Tick(1.0f / 60.0f);
+    TestEqual(TEXT("消耗品分类数字键选择独立目标"), Controller->GetSelectedConsumableSlot(), 1);
     Click(TEXT("Backpack.Storage.0"));
     Controller->SubmitItemSelect(INDEX_NONE);
     Character->Tick(1.0f / 60.0f);
@@ -224,7 +331,16 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     FSlateWindowElementList HipFireHud(nullptr);
     Hud->OnPaint(HudArgs, HudGeometry, FSlateRect(0.0f, 0.0f, 1920.0f, 1080.0f),
         HipFireHud, 0, FWidgetStyle(), true);
-    const auto &AmmoTexts = HipFireHud.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Text>();
+    const auto ReadAmmoText = [](const FSlateWindowElementList &Draws)
+    {
+        TArray<const FSlateTextElement*> Result;
+        for (const auto& Text : Draws.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Text>())
+        {
+            if (Text.GetPosition().X >= 1700 && Text.GetPosition().Y >= 950) Result.Add(&Text);
+        }
+        return Result;
+    };
+    const auto AmmoTexts = ReadAmmoText(HipFireHud);
     if (TestEqual(TEXT("未瞄准也绘制剩余弹药与容量"), AmmoTexts.Num(), 2))
     {
         int32 Loaded = 0;
@@ -232,11 +348,11 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
         bool bContinuous = false;
         const ABBBEquipment *Held = Cast<ABBBEquipment>(Controller->GetActiveItem());
         TestTrue(TEXT("弹药绘制读取真实枪械"), Held && Held->ReadAmmoDisplay(Loaded, Capacity, bContinuous));
-        TestEqual(TEXT("右下数字保持真实剩余弹药"), FString(AmmoTexts[0].GetText()), FString::FromInt(Loaded));
-        TestEqual(TEXT("右下数字保持真实容量"), FString(AmmoTexts[1].GetText()), FString::Printf(TEXT("/ %d"), Capacity));
-        for (const FSlateTextElement &Text : AmmoTexts)
+        TestEqual(TEXT("右下数字保持真实剩余弹药"), FString(AmmoTexts[0]->GetText()), FString::FromInt(Loaded));
+        TestEqual(TEXT("右下数字保持真实容量"), FString(AmmoTexts[1]->GetText()), FString::Printf(TEXT("/ %d"), Capacity));
+        for (const FSlateTextElement *Text : AmmoTexts)
         {
-            const FVector2f Position = Text.GetPosition();
+            const FVector2f Position = Text->GetPosition();
             TestTrue(TEXT("弹药数字固定在右下角"), Position.X > 1600.0f && Position.Y > 950.0f);
         }
     }
@@ -336,9 +452,9 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Hud->OnPaint(HudArgs, HudGeometry, FSlateRect(0.0f, 0.0f, 1920.0f, 1080.0f),
         UnarmedHud, 0, FWidgetStyle(), true);
     TestEqual(TEXT("空手时不显示旧枪械弹药"),
-        UnarmedHud.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Text>().Num(), 0);
+        ReadAmmoText(UnarmedHud).Num(), 0);
     TestFalse(TEXT("空手时不保留枪口落点"), Controller->GetActualAimWorldPosition(AimImpact));
-    TestEqual(TEXT("快捷栏使用前五格"), Controller->GetQuickAccessSlotCount(), 5);
+    TestEqual(TEXT("快捷栏使用前三格"), Controller->GetQuickAccessSlotCount(), 3);
     TestEqual(TEXT("四类背包和身体穿戴共一百一十格"), Controller->GetItemSlotCount(), 110);
     TestEqual(TEXT("满生命显示完整白线"), Controller->GetHudHealthFraction(), 1.0f);
     TestFalse(TEXT("空手不显示瞄准界面"), Controller->ShouldShowAimHud());

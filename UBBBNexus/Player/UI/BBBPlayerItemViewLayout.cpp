@@ -19,6 +19,7 @@
 #include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Brushes/SlateColorBrush.h"
+#include "Styling/CoreStyle.h"
 
 TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
 {
@@ -58,165 +59,104 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
 {
     using namespace BBBItemUI;
     TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
-    const auto Place = [&Canvas](float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
+    const auto LeftWing = SNew(SConstraintCanvas);
+    const auto RightWing = SNew(SConstraintCanvas);
+    const auto MountWing = [this, &Canvas](TSharedRef<SConstraintCanvas> Wing, float X, float Facing)
     {
-        Canvas->AddSlot().Alignment(FVector2D::ZeroVector).Offset(FMargin(X, Y, W, H))[Widget];
+        Canvas->AddSlot().Alignment(FVector2D::ZeroVector).Offset(FMargin(X, 174, 520, 800))
+            [SNew(SBox).RenderTransformPivot(FVector2D(0.5, 0.5))
+                .RenderTransform_Lambda([this, Facing]() -> TOptional<FSlateRenderTransform>
+                {
+                    const float Lean = Facing * 0.060f;
+                    return FSlateRenderTransform(FMatrix2x2(0.965f, Lean, -Facing * 0.014f, 1.0f),
+                        FVector2f(MenuParallax.X * 8.0, MenuParallax.Y * 4.0));
+                })[Wing]];
     };
-    static const FSlateColorBrush Dim(FLinearColor(0.002f, 0.003f, 0.003f, 0.82f));
-    constexpr float StorageLeft = 58.0f;
-    Place(StorageLeft, 20.0f, 480.0f, 160.0f,
-          SNew(STextBlock).Text(BBBItemText::Backpack).Font(ChineseArtFont(64))
-              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.96f)));
-    Place(StorageLeft, 150.0f, 862.0f, 365.0f,
-          SAssignNew(DetailImage, SBox)
-              [SNew(SOverlay) +
-               SOverlay::Slot()
-                   [SNew(SScaleBox).Stretch(EStretch::ScaleToFit).VAlign(VAlign_Center)
-                       [SNew(SImage).Image_Lambda(
-                           [this]()
-                           {
-                               return GetDetailBrush();
-                           })]] +
-               SOverlay::Slot().HAlign(HAlign_Right).VAlign(VAlign_Bottom).Padding(0.0f, 0.0f, 16.0f, 14.0f)
-                   [SNew(STextBlock)
-                        .Text_Lambda(
-                            [this]()
-                            {
-                                auto *Controller = GetItemController();
-                                return Controller ? Controller->GetItemDisplayData(InspectedSlot).Name : FText::GetEmpty();
-                            })
-                        .Font(ArtFont(52))
-                        .Justification(ETextJustify::Right)
-                        .WrapTextAt(620.0f)
-                        .ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.85f))
-                        .ShadowOffset(FVector2D(2.0f, 2.0f))
-                        .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.92f))]]);
-    const auto TabButton = [this](const FText &Text, EBBBItemType Type)
+    MountWing(LeftWing, 90, 1);
+    MountWing(RightWing, 1306, -1);
+    const auto Place = [&Canvas, &LeftWing, &RightWing](float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
     {
-        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Storage.%d"), static_cast<int32>(Type))))
-            .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left).OnClicked_Lambda(
-            [this, Type]()
-            {
-                return ShowStorage(Type);
-            })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
-                   .Text(Text)
-                   .Font(ChineseArtFont(18))
-                   .ColorAndOpacity_Lambda(
-                       [this, Type]()
-                       {
-                           return StoragePage == Type ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
-                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Center)
-                [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
-                    [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
-                        .Visibility_Lambda([this, Type]()
-                        {
-                            return StoragePage == Type ? EVisibility::HitTestInvisible : EVisibility::Hidden;
-                        })]]];
+        const bool Left = X < 600 && Y >= 180 && Y < 980;
+        const bool Right = X >= 1300 && Y >= 180 && Y < 980;
+        auto Target = Left ? LeftWing : Right ? RightWing : Canvas;
+        Target->AddSlot().Alignment(FVector2D::ZeroVector)
+            .Offset(FMargin(X - (Left ? 90 : Right ? 1306 : 0), Y - (Left || Right ? 174 : 0), W, H))[Widget];
     };
-    Place(60.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Weapons, EBBBItemType::Equipment));
-    Place(280.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Wearables, EBBBItemType::Wearable));
-    Place(500.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Consumables, EBBBItemType::Consumable));
-    Place(720.0f, 558.0f, 160.0f, 46.0f, TabButton(BBBItemText::Misc, EBBBItemType::Misc));
-    Place(StorageLeft, 608.0f, 862.0f, 398.0f,
-          SNew(SImage).Image(Selection())
-              .ColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 0.38f)));
-    static const FScrollBarStyle Scroll = []()
+    const auto Label = [](const FText &Text, int32 Size)
     {
-        FScrollBarStyle Result;
-        const auto *Track = Brush(
-            TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Big.T_Scrollbar_Big"));
-        const auto *Handle = Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/"
-                                        "T_Scrollbar_Handler.T_Scrollbar_Handler"));
-        Result.SetHorizontalBackgroundImage(*Track).SetVerticalBackgroundImage(*Track);
-        Result.SetNormalThumbImage(*Handle).SetHoveredThumbImage(*Handle).SetDraggedThumbImage(*Handle);
-        return Result;
-    }();
-    TSharedRef<SScrollBar> Bar =
-        SNew(SScrollBar).Style(&Scroll).Orientation(Orient_Horizontal).AlwaysShowScrollbar(true)
-            .Padding(FMargin(0.0f)).Thickness(FVector2D(3.0f));
-    Place(65.0f, 1018.0f, 845.0f, 3.0f, Bar);
-    Place(
-        68.0f, 620.0f, 844.0f, 373.0f,
-        SNew(SScrollBox).ExternalScrollbar(Bar).Orientation(Orient_Vertical).ScrollBarThickness(FVector2D(7.0f, 7.0f)) +
-            SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
-    Place(1000.0f, 160.0f, 350.0f, 710.0f, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
-    const auto MakeNavigation = [this](const FText &Text, EBBBItemPanelPage Page)
-    {
-        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Panel.%d"), static_cast<int32>(Page))))
-            .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left).OnClicked_Lambda(
-            [this, Page]()
-            {
-                return ShowPanel(Page);
-            })[SNew(SOverlay) + SOverlay::Slot().VAlign(VAlign_Top)[SNew(STextBlock)
-                   .Text(Text)
-                   .Font(ChineseArtFont(18))
-                   .ColorAndOpacity_Lambda(
-                       [this, Page]()
-                       {
-                           return PanelPage == Page ? FSlateColor(FLinearColor::White) : FSlateColor(MutedText);
-                       })] + SOverlay::Slot().VAlign(VAlign_Bottom).HAlign(HAlign_Center)
-                [SNew(SBox).WidthOverride(11.0f).HeightOverride(10.0f)
-                    [SNew(SImage).Image(BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Marker.T_Marker")))
-                        .Visibility_Lambda([this, Page]()
-                        {
-                            return PanelPage == Page ? EVisibility::HitTestInvisible : EVisibility::Hidden;
-                        })]]];
+        return SNew(STextBlock).Text(Text).Font(ArtFont(Size)).ColorAndOpacity(FLinearColor::White)
+            .ShadowOffset(FVector2D(1, 2)).ShadowColorAndOpacity(FLinearColor(0, 0, 0, 0.8f));
     };
-    Place(1000.0f, 41.0f, 180.0f, 46.0f, MakeNavigation(BBBItemText::Weapons, EBBBItemPanelPage::Weapons));
-    Place(1280.0f, 41.0f, 180.0f, 46.0f, MakeNavigation(BBBItemText::Character, EBBBItemPanelPage::Character));
-    Place(1560.0f, 41.0f, 180.0f, 46.0f, MakeNavigation(BBBItemText::Consumables, EBBBItemPanelPage::Consumables));
-    Place(1420.0f, 115.0f, 435.0f, 765.0f,
-          SNew(SScaleBox).Stretch(EStretch::ScaleToFit)[SNew(SImage).Image_Lambda(
-              [this]()
-              {
-                  return GetCharacterBrush();
-              })]);
-    Place(1007.0f, 896.0f, 340.0f, 30.0f,
-          SNew(STextBlock)
-              .Text_Lambda(
-                  [this]()
-                  {
-                      const auto *Controller = GetItemController();
-                      const auto *ItemCharacter = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
-                      return ItemCharacter ? FText::Format(BBBItemText::Health,
-                                                 FText::AsNumber(FMath::RoundToInt(ItemCharacter->GetHealth())),
-                                                 FText::AsNumber(FMath::RoundToInt(
-                                                     ItemCharacter->GetLifePhase() == EBBBCharacterLifePhase::Downed
-                                                         ? ItemCharacter->GetCharacterConfig().DownedHealth
-                                                         : ItemCharacter->GetCharacterConfig().MaximumHealth)))
-                                           : FText::GetEmpty();
-                  })
-              .Font(ChineseArtFont(16))
-              .ColorAndOpacity(FLinearColor::White));
-    static const FProgressBarStyle Health = []()
+    const auto Tab = [this, &Label](const FText &Text, EBBBItemPanelPage Page)
     {
-        FProgressBarStyle Result;
-        Result.SetBackgroundImage(*Brush(TEXT(
-            "/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Big.T_Scrollbar_Big")));
-        Result.SetFillImage(*Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/"
-                                        "T_Scrollbar_Handler.T_Scrollbar_Handler")));
-        Result.EnableFillAnimation = false;
-        return Result;
-    }();
-    Place(1007.0f, 938.0f, 340.0f, 3.0f,
-          SNew(SProgressBar)
-              .Style(&Health)
-              .FillColorAndOpacity(FLinearColor::White)
-              .Percent_Lambda(
-                  [this]()
-                  {
-                      return GetItemController() ? GetItemController()->GetHudHealthFraction() : 0.0f;
-                  }));
-    Place(60.0f, 1033.0f, 820.0f, 24.0f, SAssignNew(StatusText, STextBlock).Font(ChineseArtFont(14)).ColorAndOpacity(MutedText));
-    Place(1510.0f, 931.0f, 280.0f, 82.0f,
-          SNew(SButton).ButtonStyle(ExitButton()).HAlign(HAlign_Center).VAlign(VAlign_Center).OnClicked_Lambda(
-              [this]()
-              {
-                  GetItemController()->ToggleBackpack();
-                  return FReply::Handled();
-              })[SNew(STextBlock).Text(BBBItemText::Return).Font(ChineseArtFont(28)).ColorAndOpacity(FLinearColor::White)]);
-    return SNew(SOverlay) +
-        SOverlay::Slot()[SNew(SBorder).BorderImage(&Dim).Padding(0.0f).Visibility(EVisibility::HitTestInvisible)] +
-        SOverlay::Slot()[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
-            [SNew(SBox).WidthOverride(1920.0f).HeightOverride(1080.0f)[Canvas]]];
+        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Panel.%d"), static_cast<int>(Page))))
+            .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Center).OnClicked_Lambda([this, Page] { return ShowPanel(Page); })
+            [SNew(SVerticalBox)
+                + SVerticalBox::Slot().AutoHeight()[Label(Text, 34)]
+                + SVerticalBox::Slot().AutoHeight().Padding(0, 3)
+                    [SNew(SBox).HeightOverride(3)[SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Settings_Screen/T_SeparatorLine.T_SeparatorLine")))
+                        .ColorAndOpacity(Accent).Visibility_Lambda([this, Page]
+                        { return PanelPage == Page ? EVisibility::HitTestInvisible : EVisibility::Hidden; })]]];
+    };
+    const auto Hairline = [&Place](float X, float Y, float W)
+    {
+        Place(X, Y, W, 3, SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Settings_Screen/T_SeparatorLine.T_SeparatorLine")))
+            .ColorAndOpacity(FLinearColor(0.84f, 0.78f, 0.65f, 0.7f)));
+    };
+    Place(510, 30, 300, 74, Tab(INVTEXT("INVENTORY"), EBBBItemPanelPage::Inventory));
+    Place(815, 30, 290, 74, Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character));
+    Place(1150, 33, 290, 66, SNew(STextBlock).Text(INVTEXT("EXTENSIBLE")).Font(ArtFont(32))
+        .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f)));
+    Hairline(60, 116, 1800);
+    Place(676, 187, 568, 830, SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+        [SNew(SImage).Image_Lambda([this] { return GetCharacterBrush(); })]);
+    Place(700, 128, 520, 52, SNew(SHorizontalBox)
+        + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 12, 0)
+            [SNew(SBox).WidthOverride(18).HeightOverride(18)
+                [SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/HUD/T_HUD_03.T_HUD_03")))]]
+        + SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
+            [SNew(STextBlock).Font(ArtFont(27)).Justification(ETextJustify::Left)
+                .Text_Lambda([this]
+                {
+                    const auto *Controller = GetItemController();
+                    const auto *Player = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
+                    if (!Player) return FText::GetEmpty();
+                    const float Maximum = Player->GetLifePhase() == EBBBCharacterLifePhase::Downed
+                        ? Player->GetCharacterConfig().DownedHealth : Player->GetCharacterConfig().MaximumHealth;
+                    return FText::Format(INVTEXT("{0}   /   {1}"), FText::AsNumber(FMath::RoundToInt(Player->GetHealth())),
+                        FText::AsNumber(FMath::RoundToInt(Maximum)));
+                })]);
+    Place(105, 184, 475, 68, Label(INVTEXT("BACKPACK"), 44));
+    Hairline(105, 254, 480);
+    const auto Filter = [this](const FText &Text, EBBBItemType Type)
+    {
+        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Storage.%d"), static_cast<int>(Type))))
+            .ButtonStyle(BBBItemUI::Navigation()).OnClicked_Lambda([this, Type] { return ShowStorage(Type); })
+            [SNew(STextBlock).Text(Text).Font(ArtFont(18)).ColorAndOpacity_Lambda([this, Type]
+            { return Type == StoragePage ? FLinearColor::White : FLinearColor(0.69f, 0.65f, 0.57f); })];
+    };
+    Place(108, 275, 476, 42, SNew(SHorizontalBox).Visibility_Lambda([this]
+        { return PanelPage == EBBBItemPanelPage::Inventory ? EVisibility::Visible : EVisibility::Collapsed; })
+        + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 23, 0)[Filter(INVTEXT("WEAPONS"), EBBBItemType::Equipment)]
+        + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 23, 0)[Filter(INVTEXT("CONSUMABLES"), EBBBItemType::Consumable)]
+        + SHorizontalBox::Slot().AutoWidth()[Filter(INVTEXT("MISC"), EBBBItemType::Misc)]);
+    Place(108, 275, 470, 42, SNew(STextBlock).Text(INVTEXT("WEARABLES")).Font(ArtFont(18))
+        .Visibility_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? EVisibility::HitTestInvisible : EVisibility::Hidden; }));
+    Place(101, 330, 491, 612, SNew(SScrollBox).ScrollBarVisibility(EVisibility::Collapsed)
+        + SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
+    Place(1324, 184, 490, 68, SNew(STextBlock).Font(ArtFont(44)).Text_Lambda([this]
+        { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("GEAR") : INVTEXT("LOADOUT"); }));
+    Hairline(1324, 254, 490);
+    Place(1328, 275, 476, 40, SNew(STextBlock).Font(ArtFont(20)).ColorAndOpacity(MutedText)
+        .Text_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("EQUIPPED") : INVTEXT("WEAPONS"); }));
+    Place(1320, 330, 494, 664, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
+    Hairline(60, 986, 1800);
+    Place(102, 1004, 160, 54, SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left)
+        .OnClicked_Lambda([this] { GetItemController()->ToggleBackpack(); return FReply::Handled(); })
+        [Label(INVTEXT("B    CLOSE"), 22)]);
+    Place(340, 1011, 780, 36, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText));
+    return SNew(SOverlay)
+        + SOverlay::Slot()[SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/T_InventoryForest.T_InventoryForest")))]
+        + SOverlay::Slot()[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+            [SNew(SBox).WidthOverride(1920).HeightOverride(1080)[Canvas]]];
 }

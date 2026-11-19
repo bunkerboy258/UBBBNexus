@@ -4,9 +4,11 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "Engine/Texture2D.h"
+#include "Materials/MaterialInterface.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
 #include "Brushes/SlateColorBrush.h"
+#include "Styling/CoreStyle.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/SOverlay.h"
@@ -60,20 +62,26 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                   .HeightOverride(Arguments._Height)
                       [SNew(SOverlay) +
                        SOverlay::Slot().Padding(12.0f, 12.0f, 12.0f,
-                                                bCompact || bWearSlot ? 25.0f : 12.0f)[SNew(SScaleBox).Stretch(
-                           EStretch::ScaleToFit)[SNew(SImage)
+                                                bCompact || bWearSlot ? 25.0f : 12.0f)[SNew(SScaleBox)
+                                                                                          .Stretch(EStretch::ScaleToFit)
+                                                                                          .RenderTransformPivot(FVector2D(0.5, 0.5))
+                                                                                          .RenderTransform_Lambda([this]()
+                                                                                          {
+                                                                                              const bool bLift = !bCompact && bOccupied && (IsHovered() || bDropTarget);
+                                                                                              return FSlateRenderTransform(FVector2f(0.0f, bLift ? -8.0f : 0.0f));
+                                                                                          })[SNew(SImage)
                                                      .Image(&IconBrush)
-                                                     .ColorAndOpacity(FLinearColor(0.82f, 0.82f, 0.79f))
+                                                     .ColorAndOpacity(FLinearColor(0.98f, 0.95f, 0.89f))
                                                      .Visibility_Lambda([this]()
                                                      {
-                                                         return IconTexture.IsValid() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+                                                         return IconBrush.GetResourceObject() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
                                                      })]] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Center)
                            .VAlign(VAlign_Bottom)
                            .Padding(0.0f, 4.0f)[SNew(STextBlock)
                                                     .Text(Arguments._PositionLabel)
-                                                    .Font(BBBItemUI::ChineseArtFont(14))
+                                                    .Font(BBBItemUI::ArtFont(14))
                                                     .ColorAndOpacity(BBBItemUI::MutedText)] +
                        SOverlay::Slot()
                            .HAlign(bCompact ? HAlign_Center : HAlign_Left)
@@ -119,8 +127,8 @@ void SBBBPlayerItemSlot::Refresh()
     ItemName = Data.Name;
     QuickLabel = Data.bQuick ? FText::AsNumber(Data.QuickIndex + 1) : FText::GetEmpty();
     QuantityLabel = Data.Quantity > 0 && Data.bShowQuantity ? FText::AsNumber(Data.Quantity) : FText::GetEmpty();
-    IconTexture.Reset(Data.Icon);
-    IconBrush.SetResourceObject(IconTexture.Get());
+    IconTexture.Reset(!bCompact && Data.DisplayImage ? Data.DisplayImage : Data.Icon);
+    IconBrush.SetResourceObject(!bCompact && Data.DisplayMaterial ? static_cast<UObject *>(Data.DisplayMaterial) : IconTexture.Get());
     IconBrush.ImageSize =
         IconTexture.IsValid() ? FVector2D(IconTexture->GetSizeX(), IconTexture->GetSizeY()) : FVector2D(128.0f, 64.0f);
     IconBrush.DrawAs = ESlateBrushDrawType::Image;
@@ -148,17 +156,33 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
 {
     if (!bCompact)
     {
-        const bool bSelected = View.IsValid() && View->GetInspectedSlot() == Slot;
-        const FLinearColor Tint = bSelected ? FLinearColor(1.0f, 0.72f, 0.38f, 0.94f)
-                                          : FLinearColor(1.0f, 1.0f, 0.98f, IsHovered() ? 1.0f : 0.85f);
-        FSlateDrawElement::MakeBox(Elements, Layer, Geometry.ToPaintGeometry(),
-                                   BBBItemUI::Slot(), ESlateDrawEffect::None,
-                                   Tint * Style.GetColorAndOpacityTint());
-        if (bSelected || (bOccupied && IsHovered()))
+        const bool bSelected = (View.IsValid() && View->GetInspectedSlot() == Slot) || IsSelected();
+        const bool bHover = IsHovered() || bDropTarget;
+        const FVector2D Size = Geometry.GetLocalSize();
+        const bool bWide = Size.X > Size.Y * 1.6f;
+        const auto *Frame = BBBItemUI::SlotFrame(bWide
+            ? TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_BigSlot.T_Inventory_BigSlot")
+            : TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_SmallSlot.T_Inventory_SmallSlot"));
+        const FSlateBrush *Surface = BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_MediumSlot.T_Inventory_MediumSlot"));
+        const FSlateBrush *EdgeArt = BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Handler.T_Scrollbar_Handler"));
+        const float Wash = bDropTarget ? 0.34f : bSelected ? 0.46f : bHover ? (bOccupied ? 0.24f : 0.1f) : bOccupied ? 0.5f : 0.04f;
+        FSlateDrawElement::MakeBox(Elements, Layer,
+            Geometry.ToPaintGeometry(Size - FVector2D(8.0, 8.0), FSlateLayoutTransform(FVector2f(4.0f, 6.0f))),
+            Surface, ESlateDrawEffect::None, FLinearColor(0.0f, 0.0f, 0.0f, bOccupied ? 0.28f : 0.0f));
+        FSlateDrawElement::MakeBox(Elements, ++Layer,
+            Geometry.ToPaintGeometry(Size - FVector2D(14.0, 14.0), FSlateLayoutTransform(FVector2f(7.0f, 7.0f))),
+            Surface, ESlateDrawEffect::None, FLinearColor(0.03f, 0.025f, 0.02f, Wash));
+        const FLinearColor FrameTint = bSelected ? FLinearColor(BBBItemUI::Accent.R, BBBItemUI::Accent.G, BBBItemUI::Accent.B, 0.95f)
+            : bHover ? FLinearColor(0.96f, 0.9f, 0.78f, 0.92f)
+                     : FLinearColor(0.72f, 0.68f, 0.58f, bOccupied ? 0.7f : 0.42f);
+        FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(), Frame, ESlateDrawEffect::None,
+            FrameTint * Style.GetColorAndOpacityTint());
+        if (bHover || bSelected)
         {
-            const FLinearColor Edge = bSelected ? BBBItemUI::Accent : BBBItemUI::MutedText * 0.55f;
-            FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(), BBBItemUI::Selection(),
-                                       ESlateDrawEffect::None, Edge * Style.GetColorAndOpacityTint());
+            const FLinearColor Edge = bSelected ? BBBItemUI::Accent : FLinearColor(0.95f, 0.86f, 0.68f, 0.85f);
+            FSlateDrawElement::MakeBox(Elements, ++Layer,
+                Geometry.ToPaintGeometry(FVector2D(3.0, Size.Y - 16.0), FSlateLayoutTransform(FVector2f(2.0f, 8.0f))),
+                EdgeArt, ESlateDrawEffect::None, Edge);
         }
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
@@ -221,7 +245,19 @@ FReply SBBBPlayerItemSlot::OnDragDetected(const FGeometry &Geometry, const FPoin
 FReply SBBBPlayerItemSlot::OnDragOver(const FGeometry &Geometry, const FDragDropEvent &Event)
 {
     const TSharedPtr<FBBBPlayerItemDrag> Operation = Event.GetOperationAs<FBBBPlayerItemDrag>();
-    return Operation.IsValid() && Operation->View == View ? FReply::Handled() : FReply::Unhandled();
+    const bool bAccept = Operation.IsValid() && Operation->View == View;
+    if (bDropTarget != bAccept)
+    {
+        bDropTarget = bAccept;
+        Invalidate(EInvalidateWidgetReason::Paint);
+    }
+    return bAccept ? FReply::Handled() : FReply::Unhandled();
+}
+
+void SBBBPlayerItemSlot::OnDragLeave(const FDragDropEvent &Event)
+{
+    bDropTarget = false;
+    Invalidate(EInvalidateWidgetReason::Paint);
 }
 
 FReply SBBBPlayerItemSlot::OnDrop(const FGeometry &Geometry, const FDragDropEvent &Event)
@@ -231,6 +267,7 @@ FReply SBBBPlayerItemSlot::OnDrop(const FGeometry &Geometry, const FDragDropEven
     {
         return FReply::Unhandled();
     }
+    bDropTarget = false;
     View->MoveItem(Operation->Source, Slot, Operation->Pawn.Get(), Operation->InstanceId);
     return FReply::Handled();
 }

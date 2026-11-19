@@ -35,6 +35,7 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     virtual FReply OnDragDetected(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnDragOver(const FGeometry &Geometry, const FDragDropEvent &Event) override;
     virtual FReply OnDrop(const FGeometry &Geometry, const FDragDropEvent &Event) override;
+    virtual void OnDragLeave(const FDragDropEvent &Event) override;
     virtual int32 OnPaint(const FPaintArgs &Args, const FGeometry &Geometry, const FSlateRect &CullingRect,
                           FSlateWindowElementList &Elements, int32 Layer, const FWidgetStyle &Style,
                           bool bParentEnabled) const override;
@@ -59,4 +60,5 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     bool bOccupied = false;
     bool bCompact = false;
     bool bWearSlot = false;
+    bool bDropTarget = false;
 };
