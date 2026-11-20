@@ -4,6 +4,50 @@
 #include "NavigationSystem.h"
 #include "Engine/World.h"
 
+namespace
+{
+    constexpr float LedgeClearance = 2.0f;
+}
+
+FVector FBBBMonsterTraversalGeometry::EvaluateFeet(const FVector& Start, const FVector& Ledge,
+    const FVector& End, const float Radius, const float Progress)
+{
+    const FVector Direction = (End - Start).GetSafeNormal2D();
+    const float Distance = FVector::Dist2D(Start, End);
+    const float EdgeDistance = FVector::DotProduct(Ledge - Start, Direction);
+    const float ApproachDistance = FMath::Clamp(EdgeDistance - Radius, 0.0f, Distance);
+    const float ClearanceHeight = FMath::Max3(Start.Z, Ledge.Z, End.Z) + LedgeClearance;
+    FVector Approach = Start + Direction * ApproachDistance;
+    Approach.Z = ClearanceHeight;
+    FVector AboveExit = End;
+    AboveExit.Z = ClearanceHeight;
+
+    const float Lift = FMath::SmoothStep(0.0f, 0.42f, Progress);
+    const float Cross = FMath::SmoothStep(0.42f, 0.82f, Progress);
+    const float Settle = FMath::SmoothStep(0.82f, 1.0f, Progress);
+    return FMath::Lerp(Start, Approach, Lift) + (AboveExit - Approach) * Cross + (End - AboveExit) * Settle;
+}
+
+bool FBBBMonsterTraversalGeometry::IsPathClear(UWorld& World, const FVector& Start, const FVector& Ledge,
+    const FVector& End, const FBBBMonsterMovementFragment& Body, const FCollisionQueryParams& Params)
+{
+    const FVector Offset(0, 0, Body.CapsuleHalfHeight + 1.0f);
+    const auto Capsule = FCollisionShape::MakeCapsule(Body.CapsuleRadius - 0.5f, Body.CapsuleHalfHeight - 0.5f);
+    FVector Last = Start + Offset;
+    FHitResult Hit;
+    for (int32 Sample = 1; Sample <= 30; ++Sample)
+    {
+        const FVector Next = EvaluateFeet(Start, Ledge, End, Body.CapsuleRadius, Sample / 30.0f) + Offset;
+        if (World.SweepSingleByChannel(Hit, Last, Next, FQuat::Identity, ECC_Pawn, Capsule, Params))
+        {
+            return false;
+        }
+        Last = Next;
+    }
+    return World.LineTraceSingleByChannel(Hit, End + FVector(0, 0, 10), End - FVector(0, 0, 15), ECC_Pawn, Params)
+        && Hit.ImpactNormal.Z >= Body.WalkableFloorZ;
+}
+
 bool FBBBMonsterTraversalGeometry::Find(UWorld& World, const FVector& Feet, const FVector& Direction,
     const FBBBMonsterMovementFragment& Body, const float MaxHeight, const FCollisionQueryParams& Params,
     FVector& Ledge, FVector& Exit)
@@ -39,20 +83,10 @@ bool FBBBMonsterTraversalGeometry::Find(UWorld& World, const FVector& Feet, cons
         return false;
     }
     Ledge = FVector(Wall.ImpactPoint.X, Wall.ImpactPoint.Y, Top.ImpactPoint.Z);
-    const FVector Raised(Feet.X, Feet.Y, Ledge.Z + 12);
-    FHitResult Block;
-    if (World.SweepSingleByChannel(Block, Feet + Offset, Raised + Offset, FQuat::Identity, ECC_Pawn, Capsule, Params))
-    {
-        return false;
-    }
     for (int32 Sample = 0; Sample < 8; ++Sample)
     {
         const FVector Across = Ledge + Inward * (Body.CapsuleRadius + 15 + Sample * 40);
-        const FVector Above(Across.X, Across.Y, Ledge.Z + 12);
-        if (World.SweepSingleByChannel(Block, Raised + Offset, Above + Offset, FQuat::Identity, ECC_Pawn, Capsule, Params))
-        {
-            continue;
-        }
+        const FVector Above(Across.X, Across.Y, Ledge.Z + LedgeClearance);
         FHitResult Floor;
         const FVector Below(Across.X, Across.Y, Feet.Z - Body.MaxStepHeight - 5);
         if (!World.SweepSingleByChannel(Floor, Above + Offset, Below + Offset, FQuat::Identity, ECC_Pawn, Capsule, Params)
@@ -77,9 +111,7 @@ bool FBBBMonsterTraversalGeometry::Find(UWorld& World, const FVector& Feet, cons
             continue;
         }
         Landing.Z = Support.ImpactPoint.Z;
-        const FVector LandingAbove(Landing.X, Landing.Y, Ledge.Z + 12);
-        if (World.SweepSingleByChannel(Block, Raised + Offset, LandingAbove + Offset, FQuat::Identity, ECC_Pawn, Capsule, Params)
-            || World.SweepSingleByChannel(Block, LandingAbove + Offset, Landing + Offset, FQuat::Identity, ECC_Pawn, Capsule, Params))
+        if (!IsPathClear(World, Feet, Ledge, Landing, Body, Params))
         {
             continue;
         }

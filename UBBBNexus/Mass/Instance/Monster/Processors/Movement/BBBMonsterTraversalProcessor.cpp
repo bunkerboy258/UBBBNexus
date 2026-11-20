@@ -29,12 +29,6 @@ namespace
 {
     TAutoConsoleVariable<int32> DrawTraversal(TEXT("bbb.Monster.Traversal.Draw"), 0,
         TEXT("显示攀爬入口 台沿 出口及轨迹 0关闭 1全部 2仅活动"), ECVF_Cheat);
-
-    float Smooth(const float A, const float B, const float Value)
-    {
-        const float T = FMath::Clamp((Value - A) / (B - A), 0.0f, 1.0f);
-        return T * T * (3.0f - 2.0f * T);
-    }
 }
 
 UBBBMonsterTraversalProcessor::UBBBMonsterTraversalProcessor() : MonsterQuery(*this)
@@ -46,18 +40,6 @@ UBBBMonsterTraversalProcessor::UBBBMonsterTraversalProcessor() : MonsterQuery(*t
     ExecutionOrder.ExecuteInGroup = BBBMassProcessingGroups::Movement;
     ExecutionOrder.ExecuteAfter.Add(UBBBMonsterNavigationProcessor::StaticClass()->GetFName());
     ExecutionOrder.ExecuteBefore.Add(UBBBMonsterLocomotionProcessor::StaticClass()->GetFName());
-}
-
-FVector UBBBMonsterTraversalProcessor::EvaluateFeet(const FBBBMonsterTraversalFact& Fact,
-    const float Progress)
-{
-    const float P = FMath::Clamp(Progress, 0.0f, 1.0f);
-    const float Forward = Smooth(0.42f, 0.82f, P);
-    FVector Feet = FMath::Lerp(Fact.Start, Fact.End, Forward);
-    const float Apex = FMath::Max3(Fact.Start.Z, Fact.End.Z, Fact.Ledge.Z) + 12;
-    Feet.Z = FMath::Lerp(Fact.Start.Z, Apex, Smooth(0.02f, 0.42f, P));
-    Feet.Z = FMath::Lerp(Feet.Z, Fact.End.Z, Smooth(0.82f, 1.0f, P));
-    return Feet;
 }
 
 void UBBBMonsterTraversalProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>&)
@@ -195,14 +177,20 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
                     continue;
                 }
                 const float P = FMath::Clamp((Now - Fact.StartedAt) / Fact.Duration, 0.0f, 1.0f);
-                const FVector Destination = EvaluateFeet(Fact, P) + Offset;
+                const FVector Destination = FBBBMonsterTraversalGeometry::EvaluateFeet(
+                    Fact.Start, Fact.Ledge, Fact.End, Body.CapsuleRadius, P) + Offset;
                 const FVector Previous = Transform.GetLocation();
-                const int32 Steps = FMath::Clamp(FMath::CeilToInt((Destination - Previous).Size() / 10.0f), 1, 32);
+                const float PreviousProgress = FMath::Clamp(
+                    (Now - Context.GetDeltaTimeSeconds() - Fact.StartedAt) / Fact.Duration, 0.0f, P);
+                const int32 Steps = FMath::Clamp(FMath::CeilToInt(FMath::Max(
+                    (Destination - Previous).Size() / 10.0, (P - PreviousProgress) * 30.0)), 1, 32);
                 bool bClear = true;
                 FVector Last = Previous;
                 for (int32 Step = 1; Step <= Steps; ++Step)
                 {
-                    const FVector Next = FMath::Lerp(Previous, Destination, static_cast<float>(Step) / Steps);
+                    const float SampleProgress = FMath::Lerp(PreviousProgress, P, static_cast<float>(Step) / Steps);
+                    const FVector Next = FBBBMonsterTraversalGeometry::EvaluateFeet(
+                        Fact.Start, Fact.Ledge, Fact.End, Body.CapsuleRadius, SampleProgress) + Offset;
                     if (!ClearMotion(Last, Next))
                     {
                         bClear = false;
@@ -331,18 +319,7 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
             Proposed.Ledge = Ledge;
             const float Variation = 0.94f + (GetTypeHash(Chunk.GetEntity(Index).Index) % 13) * 0.01f;
             Proposed.Duration = (Proposed.Kind == 1 ? Rule.MantleSeconds : Rule.ClimbSeconds) * Variation;
-            bool bClear = true;
-            FVector Last = Transform.GetLocation();
-            for (int32 Sample = 1; bClear && Sample <= 24; ++Sample)
-            {
-                const FVector Next = EvaluateFeet(Proposed, Sample / 24.0f) + Offset;
-                bClear = ClearMotion(Last, Next);
-                Last = Next;
-            }
-            FHitResult Floor;
-            bClear = bClear && World->LineTraceSingleByChannel(Floor, End + FVector(0, 0, 10), End - FVector(0, 0, 15), ECC_Pawn, Params)
-                && Floor.ImpactNormal.Z >= Body.WalkableFloorZ;
-            if (!bClear)
+            if (bLinked && !FBBBMonsterTraversalGeometry::IsPathClear(*World, Feet, Ledge, End, Body, Params))
             {
                 Traversal.Failure = TEXT("NoSafeCorridor");
                 Traversal.RetryAt = Now + Rule.RetrySeconds;
@@ -364,7 +341,7 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
         MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
         {
             const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
-            const auto Networks = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+            const auto Movements = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
             const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
             for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
             {
@@ -377,15 +354,11 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
                     }
                     continue;
                 }
-                const auto* D = Networks[Index].Definition.Get();
-                if (!D)
-                {
-                    continue;
-                }
                 FVector Previous = T.Fact.Start;
                 for (int32 Sample = 1; Sample <= 24; ++Sample)
                 {
-                    const FVector Next = EvaluateFeet(T.Fact, Sample / 24.0f);
+                    const FVector Next = FBBBMonsterTraversalGeometry::EvaluateFeet(
+                        T.Fact.Start, T.Fact.Ledge, T.Fact.End, Movements[Index].CapsuleRadius, Sample / 24.0f);
                     DrawDebugLine(World, Previous, Next, FColor::Cyan, false, 0, 0, 2);
                     Previous = Next;
                 }
