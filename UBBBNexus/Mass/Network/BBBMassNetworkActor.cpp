@@ -220,9 +220,36 @@ bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBB
     {
         return false;
     }
-    Connection->ServerReportDamage(InstanceId, Contribution);
-    SubmittedDamage.Add(InstanceId, Contribution);
+    PendingDamageReports.Add(InstanceId, Contribution);
     return true;
+}
+
+void ABBBMassNetworkActor::FlushPendingDamageReports()
+{
+    if (PendingDamageReports.IsEmpty())
+    {
+        return;
+    }
+    APlayerController* Controller = GetWorld()->GetFirstPlayerController();
+    UBBBMassNetworkComponent* Connection = Controller != nullptr
+        ? Controller->FindComponentByClass<UBBBMassNetworkComponent>() : nullptr;
+    if (Connection == nullptr)
+    {
+        return;
+    }
+
+    TArray<FGuid> InstanceIds;
+    TArray<FBBBMonsterDamageTotals> Contributions;
+    InstanceIds.Reserve(PendingDamageReports.Num());
+    Contributions.Reserve(PendingDamageReports.Num());
+    for (const auto& Pair : PendingDamageReports)
+    {
+        InstanceIds.Add(Pair.Key);
+        Contributions.Add(Pair.Value);
+        SubmittedDamage.Add(Pair.Key, Pair.Value);
+    }
+    PendingDamageReports.Reset();
+    Connection->ServerReportDamageBatch(InstanceIds, Contributions);
 }
 
 void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,

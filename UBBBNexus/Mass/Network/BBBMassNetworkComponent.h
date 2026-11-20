@@ -16,4 +16,8 @@ public:
     /** 来源由连接所属 PlayerState 确定 只传这一代小怪的最新累计值 */
     UFUNCTION(Server, Reliable)
     void ServerReportDamage(FGuid InstanceId, FBBBMonsterDamageTotals Contribution);
+
+    /** 同帧多条累计贡献一次上报 */
+    UFUNCTION(Server, Reliable)
+    void ServerReportDamageBatch(const TArray<FGuid>& InstanceIds, const TArray<FBBBMonsterDamageTotals>& Contributions);
 };

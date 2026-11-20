@@ -128,6 +128,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Motion.bResting = false;
         Motion.SpawnLocation = LaunchTransform.GetLocation();
         Motion.PreviousLocation = LaunchTransform.GetLocation();
+        Motion.LastCheckLocation = LaunchTransform.GetLocation();
         Motion.bInitialized = true;
         Collision.Damage = Damage;
         Collision.DurableDamage = DurableDamage;

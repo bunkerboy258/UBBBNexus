@@ -158,6 +158,10 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
     {
         Transport->EndPublish();
     }
+    if (!bHost)
+    {
+        Transport->FlushPendingDamageReports();
+    }
 }
 
 bool UBBBMonsterNetworkObservationProcessor::QueryIdentity(UWorld& World, FMassEntityHandle Entity, FGuid& Result)

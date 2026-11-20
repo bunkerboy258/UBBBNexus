@@ -17,6 +17,9 @@ struct ABBB_EVAC_API FBBBProjectileMotionFragment final : public FMassFragment
     /** 当前步进前的位置 */
     FVector PreviousLocation = FVector::ZeroVector;
 
+    /** 上次完成碰撞检测的位置 远端预算弹用此点追赶到当前位置 */
+    FVector LastCheckLocation = FVector::ZeroVector;
+
     /** 是否已经消费出生输入 */
     bool bInitialized = false;
 

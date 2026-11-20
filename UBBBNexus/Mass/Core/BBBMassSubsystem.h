@@ -59,6 +59,20 @@ public:
         TSubclassOf<UMassProcessor> Initializer, TArray<FMassEntityHandle>& Result);
 
     /**
+     * @param Config	弹丸实体模板
+     * @param Count	需要的数量
+     * @param Result	池中复用或新创建的句柄
+     * @return 是否凑齐数量
+     */
+    bool AcquireProjectiles(const UMassEntityConfigAsset& Config, int32 Count, TArray<FMassEntityHandle>& Result);
+
+    /**
+     * @param Entity	结束飞行的弹丸
+     * @return 无 优先回池 池满则销毁
+     */
+    void ReleaseProjectile(FMassEntityHandle Entity);
+
+    /**
      * @param Entity	待回收实体
      * @return 无返回值
      */
@@ -165,4 +179,10 @@ private:
 
     /** 每帧重建的空间桶 不持有实体玩法状态 */
     TMap<FIntPoint, TArray<FBBBMassCollisionBody>> CollisionCells;
+
+    /** 弹丸模板到空闲实体 */
+    TMap<const UMassEntityConfigAsset*, TArray<FMassEntityHandle>> ProjectilePool;
+
+    /** 活动或池中弹丸所属模板 */
+    TMap<FMassEntityHandle, const UMassEntityConfigAsset*> ProjectileConfigs;
 };

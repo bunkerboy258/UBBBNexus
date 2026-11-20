@@ -4,7 +4,7 @@
 #include "MassEntityQuery.h"
 #include "BBBProjectileCollisionProcessor.generated.h"
 
-/** 比较世界碰撞与逻辑实体碰撞并提交合法伤害 */
+/** 本机弹全量造伤碰撞 远端弹按距离预算只发击中特效 */
 UCLASS()
 class ABBB_EVAC_API UBBBProjectileCollisionProcessor final : public UMassProcessor
 {
@@ -21,4 +21,6 @@ protected:
 private:
     FMassEntityQuery EntityQuery;
 
+    /** 近中远三档游标 下一帧从该下标继续 */
+    int32 TierCursor[3] = {};
 };

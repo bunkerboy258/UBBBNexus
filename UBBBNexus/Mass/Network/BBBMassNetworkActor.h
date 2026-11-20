@@ -59,6 +59,9 @@ public:
      */
     bool ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Contribution);
 
+    /** 将本帧排队的本地伤害一次上报 */
+    void FlushPendingDamageReports();
+
 private:
     UFUNCTION()
     void OnRep_Slimes();
@@ -87,6 +90,9 @@ private:
     TMap<FGuid, int32> ReplicationIndices;
     TSet<FGuid> Observed;
     TMap<FGuid, FBBBMonsterDamageTotals> SubmittedDamage;
+
+    /** 同帧待上报的本地累计贡献 */
+    TMap<FGuid, FBBBMonsterDamageTotals> PendingDamageReports;
 
     /** 可靠字典早于出生属性到达时暂存当前结果 不保存消息历史 */
     TMap<FGuid, FBBBMassPendingDamageSnapshot> PendingDamageSnapshots;

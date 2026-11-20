@@ -238,7 +238,7 @@ void FBBBLMGActionProcessor::SpawnProjectile(FBBBLMGActionUpdateContext& Context
     Packet.bCanCauseDamage = Context.bCausal;
 
     TArray<FMassEntityHandle> Entities;
-    if (!Mass->CreateEntities(*Definition->EntityConfig, Definition->ProjectilesPerShot, FConstStructView(), nullptr, Entities))
+    if (!Mass->AcquireProjectiles(*Definition->EntityConfig, Definition->ProjectilesPerShot, Entities))
     {
         return;
     }

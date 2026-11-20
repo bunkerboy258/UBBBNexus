@@ -6,7 +6,14 @@
 #include "MassCommands.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorInputFragment.h"
+#include "MassCommonFragments.h"
+#include "MassMovementFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Spawn/BBBProjectileSpawnInputFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileCollisionFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Lifetime/BBBProjectileLifetimeFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Presentation/BBBProjectilePresentationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
@@ -174,8 +181,123 @@ bool UBBBMassSubsystem::CreateEntities(const UMassEntityConfigAsset& Config, con
     return Creation.IsValid() && Result.Num() == Count;
 }
 
+bool UBBBMassSubsystem::AcquireProjectiles(const UMassEntityConfigAsset& Config, const int32 Count,
+    TArray<FMassEntityHandle>& Result)
+{
+    Result.Reset();
+    if (Count <= 0)
+    {
+        return false;
+    }
+
+    UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
+    if (!Entities)
+    {
+        return false;
+    }
+    FMassEntityManager& Manager = Entities->GetMutableEntityManager();
+    TArray<FMassEntityHandle>& Pool = ProjectilePool.FindOrAdd(&Config);
+    while (Result.Num() < Count && Pool.Num() > 0)
+    {
+        const FMassEntityHandle Entity = Pool.Pop(EAllowShrinking::No);
+        if (!Manager.IsEntityValid(Entity))
+        {
+            ProjectileConfigs.Remove(Entity);
+            continue;
+        }
+        ProjectileConfigs.Add(Entity, &Config);
+        Result.Add(Entity);
+    }
+
+    const int32 Need = Count - Result.Num();
+    if (Need <= 0)
+    {
+        return Result.Num() == Count;
+    }
+
+    TArray<FMassEntityHandle> Created;
+    if (!CreateEntities(Config, Need, FConstStructView(), nullptr, Created))
+    {
+        return false;
+    }
+    for (const FMassEntityHandle Entity : Created)
+    {
+        ProjectileConfigs.Add(Entity, &Config);
+        Result.Add(Entity);
+    }
+    return Result.Num() == Count;
+}
+
+void UBBBMassSubsystem::ReleaseProjectile(const FMassEntityHandle Entity)
+{
+    UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
+    if (!Entities || !Entities->GetEntityManager().IsEntityValid(Entity))
+    {
+        ProjectileConfigs.Remove(Entity);
+        return;
+    }
+
+    FMassEntityManager& Manager = Entities->GetMutableEntityManager();
+    const auto ResetDormant = [&Manager](const FMassEntityHandle Handle)
+    {
+        if (auto* Motion = Manager.GetFragmentDataPtr<FBBBProjectileMotionFragment>(Handle))
+        {
+            *Motion = FBBBProjectileMotionFragment{};
+        }
+        if (auto* Collision = Manager.GetFragmentDataPtr<FBBBProjectileCollisionFragment>(Handle))
+        {
+            *Collision = FBBBProjectileCollisionFragment{};
+        }
+        if (auto* Life = Manager.GetFragmentDataPtr<FBBBProjectileLifetimeFragment>(Handle))
+        {
+            *Life = FBBBProjectileLifetimeFragment{};
+        }
+        if (auto* Presentation = Manager.GetFragmentDataPtr<FBBBProjectilePresentationFragment>(Handle))
+        {
+            *Presentation = FBBBProjectilePresentationFragment{};
+        }
+        if (auto* Velocity = Manager.GetFragmentDataPtr<FMassVelocityFragment>(Handle))
+        {
+            Velocity->Value = FVector::ZeroVector;
+        }
+        if (auto* Spawn = Manager.GetFragmentDataPtr<FBBBProjectileSpawnInputFragment>(Handle))
+        {
+            Spawn->Spawn.bActive = false;
+            Spawn->Spawn.Packet = {};
+        }
+    };
+
+    constexpr int32 MaxPoolPerConfig = 256;
+    const UMassEntityConfigAsset* const* ConfigPtr = ProjectileConfigs.Find(Entity);
+    const UMassEntityConfigAsset* Config = ConfigPtr != nullptr ? *ConfigPtr : nullptr;
+    if (Config == nullptr)
+    {
+        DestroyEntity(Entity);
+        return;
+    }
+
+    TArray<FMassEntityHandle>& Pool = ProjectilePool.FindOrAdd(Config);
+    if (Pool.Num() >= MaxPoolPerConfig)
+    {
+        ProjectileConfigs.Remove(Entity);
+        DestroyEntity(Entity);
+        return;
+    }
+
+    if (Manager.IsProcessing())
+    {
+        ResetDormant(Entity);
+        Pool.Add(Entity);
+        return;
+    }
+
+    ResetDormant(Entity);
+    Pool.Add(Entity);
+}
+
 void UBBBMassSubsystem::DestroyEntity(const FMassEntityHandle Entity)
 {
+    ProjectileConfigs.Remove(Entity);
     UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
     if (!Entities || !Entities->GetEntityManager().IsEntityValid(Entity))
     {
