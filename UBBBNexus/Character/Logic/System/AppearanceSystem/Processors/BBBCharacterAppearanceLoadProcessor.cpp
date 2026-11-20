@@ -74,6 +74,10 @@ void FBBBCharacterAppearanceLoadProcessor::Update(FBBBCharacterAppearanceUpdateC
         Load.RequestedRevision = Snapshot.Revision;
         Load.RequestedRetryTime = bRetry ? Display.RetryAfterTime : 0.0f;
         TArray<FSoftObjectPath> Paths;
+        if (!Context.Config.ReplacedPartMaterial.IsNull())
+        {
+            Paths.Add(Context.Config.ReplacedPartMaterial.ToSoftObjectPath());
+        }
         for (const auto &Part : Snapshot.Parts)
         {
             if (!Part.bVisible)

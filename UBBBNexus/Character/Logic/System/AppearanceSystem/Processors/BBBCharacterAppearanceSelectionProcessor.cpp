@@ -34,12 +34,12 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
     const auto *Preset = SoldierId ? Context.Config.MaterialPresets.Find(*SoldierId) : nullptr;
     if (Preset)
     {
-        auto &Part = Parts.AddDefaulted_GetRef();
-        Part.Slot = TEXT("Soldier");
-        Part.BaseResourceId = *SoldierId;
+        Parts.AddDefaulted();
+        Parts[0].Slot = TEXT("Soldier");
+        Parts[0].BaseResourceId = *SoldierId;
         for (const auto &Palette : Preset->Palettes)
         {
-            Part.PaletteChoices.Add(Palette.DefaultIndex);
+            Parts[0].PaletteChoices.Add(Palette.DefaultIndex);
         }
         for (int32 Index = Inventory.BackpackSlotCount; Index < Inventory.Slots.Num(); ++Index)
         {
@@ -55,6 +55,14 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
             {
                 continue;
             }
+            if (!Entry->Appearance.Mesh.IsNull())
+            {
+                auto &Part = Parts.AddDefaulted_GetRef();
+                Part.Slot = WearSlot;
+                Part.ItemId = Item.Definition->ItemId;
+                Part.InstanceId = Item.InstanceId;
+                continue;
+            }
             const int32 PaletteIndex = Preset->Palettes.IndexOfByPredicate([WearSlot](const auto &Palette)
             {
                 return Palette.WearSlot == WearSlot;
@@ -62,7 +70,7 @@ void FBBBCharacterAppearanceSelectionProcessor::Update(FBBBCharacterAppearanceUp
             const int32 Choice = Entry->Appearance.PaletteIndex;
             if (Preset->Palettes.IsValidIndex(PaletteIndex) && Preset->Palettes[PaletteIndex].Textures.IsValidIndex(Choice))
             {
-                Part.PaletteChoices[PaletteIndex] = Choice;
+                Parts[0].PaletteChoices[PaletteIndex] = Choice;
             }
         }
         PublishSelection(Selection, MoveTemp(Parts), Style);

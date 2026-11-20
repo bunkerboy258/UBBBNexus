@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Item/Wearable/Config/BBBAppearanceResource.h"
 #include "BBBCharacterAppearanceConfig.generated.h"
 
+class UMaterialInterface;
+
 /** 角色外观的基础静态配置 */
 USTRUCT(BlueprintType)
 struct FBBBCharacterAppearanceConfig
@@ -16,6 +18,9 @@ struct FBBBCharacterAppearanceConfig
     /** 按整身基础资源标识配置作者支持的部位配色 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "整套配色预设"))
     TMap<FName, FBBBCharacterAppearancePreset> MaterialPresets;
+    /** 独立穿戴网格替换整身模型对应部位时 用于隐藏原材质槽的材质 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "整身替换部位隐藏材质"))
+    TSoftObjectPtr<UMaterialInterface> ReplacedPartMaterial;
     /** 部件对应的默认基础资源 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "默认基础部件"))
     TMap<FName, FName> DefaultBaseParts;

@@ -8,7 +8,8 @@
 namespace
 {
     bool ResolvePalette(const USkeletalMesh &Mesh, const FBBBCharacterAppearancePreset *Preset,
-        const FBBBCharacterAppearancePart *Parameters, TMap<FName, UTexture *> &Textures)
+        const FBBBCharacterAppearancePart *Parameters, const TSet<FName> &ReplacementSlots,
+        TMap<FName, UTexture *> &Textures, TSet<FName> &HiddenMaterialSlots)
     {
         if (!Preset)
         {
@@ -22,19 +23,27 @@ namespace
         {
             const auto &Palette = Preset->Palettes[Index];
             const int32 Choice = Parameters ? Parameters->PaletteChoices[Index] : Palette.DefaultIndex;
-            if (Choice == INDEX_NONE)
+            const bool bReplacePart = ReplacementSlots.Contains(Palette.WearSlot);
+            if (Choice == INDEX_NONE && !bReplacePart)
             {
                 continue;
             }
             UTexture *Texture = Palette.Textures.IsValidIndex(Choice) ? Palette.Textures[Choice].Get() : nullptr;
-            if (!Texture || !Mesh.GetMaterials().ContainsByPredicate([&Palette](const FSkeletalMaterial &Slot)
+            if ((!bReplacePart && !Texture) || !Mesh.GetMaterials().ContainsByPredicate([&Palette](const FSkeletalMaterial &Slot)
             {
                 return Slot.MaterialSlotName == Palette.MaterialSlot;
             }))
             {
                 return false;
             }
-            Textures.Add(Palette.MaterialSlot, Texture);
+            if (bReplacePart)
+            {
+                HiddenMaterialSlots.Add(Palette.MaterialSlot);
+            }
+            else
+            {
+                Textures.Add(Palette.MaterialSlot, Texture);
+            }
         }
         return true;
     }
@@ -42,7 +51,8 @@ namespace
     bool UpdateMaterials(ABBBCharacter &Character, USkeletalMesh *Mesh,
         TArray<TObjectPtr<UMaterialInterface>> &Materials, const FBBBAppearanceResource &Resource,
         const FBBBCharacterAppearancePart *Parameters, const float Dirt, const float Weathering,
-        const bool bApplyOverrides, const TMap<FName, UTexture *> &Textures)
+        const bool bApplyOverrides, const TMap<FName, UTexture *> &Textures,
+        const TSet<FName> &HiddenMaterialSlots, UMaterialInterface *ReplacedPartMaterial)
     {
         if (!Mesh)
         {
@@ -72,6 +82,10 @@ namespace
             if (!bPatchEnabled && !Resource.PatchMaterialSlot.IsNone() && Slot.MaterialSlotName == Resource.PatchMaterialSlot)
             {
                 Parent = Resource.HiddenPatchMaterial.Get();
+            }
+            if (HiddenMaterialSlots.Contains(Slot.MaterialSlotName))
+            {
+                Parent = ReplacedPartMaterial;
             }
             UMaterialInstanceDynamic *Dynamic = Cast<UMaterialInstanceDynamic>(Materials[Index]);
             if (!Dynamic || Dynamic->Parent != Parent)
@@ -138,7 +152,17 @@ void FBBBCharacterAppearanceMaterialProcessor::Update(FBBBCharacterAppearanceUpd
     }
     const auto &Snapshot = Context.Data.Appearance.ReadCharacterAppearanceSelectionState().Snapshot;
     auto &Display = Context.Data.Appearance.DisplayState;
-    const auto UpdateParts = [&Context, &Snapshot](auto &Parts, const auto &Resources, const bool bFallback)
+    TSet<FName> ReplacementSlots;
+    for (const auto &Part : Snapshot.Parts)
+    {
+        if (Part.bVisible && !Part.ItemId.IsNone())
+        {
+            ReplacementSlots.Add(Part.Slot);
+        }
+    }
+    const TSet<FName> NoReplacementSlots;
+    const auto UpdateParts = [&Context, &Snapshot, &ReplacementSlots, &NoReplacementSlots](
+        auto &Parts, const auto &Resources, const bool bFallback)
     {
         bool bReady = true;
         for (int32 Index = 0; Index < Parts.Num(); ++Index)
@@ -153,17 +177,19 @@ void FBBBCharacterAppearanceMaterialProcessor::Update(FBBBCharacterAppearanceUpd
                 ? &Snapshot.Parts[Index] : nullptr;
             const auto *BaseId = Parameters ? &Parameters->BaseResourceId : Context.Config.DefaultBaseParts.Find(Part.Slot);
             TMap<FName, UTexture *> Textures;
+            TSet<FName> HiddenMaterialSlots;
             if (Part.Mesh)
             {
                 bReady &= ResolvePalette(*Part.Mesh, BaseId ? Context.Config.MaterialPresets.Find(*BaseId) : nullptr,
-                    Parameters, Textures);
+                    Parameters, Parameters ? ReplacementSlots : NoReplacementSlots, Textures, HiddenMaterialSlots);
             }
             bReady &= UpdateMaterials(Context.Character, Part.Mesh, Part.Materials, Resource, Parameters,
-                Snapshot.Dirt, Snapshot.Weathering, true, Textures);
+                Snapshot.Dirt, Snapshot.Weathering, true, Textures, HiddenMaterialSlots,
+                Context.Config.ReplacedPartMaterial.Get());
             for (auto &Attachment : Part.Attachments)
             {
                 bReady &= UpdateMaterials(Context.Character, Attachment.Value.Mesh, Attachment.Value.Materials,
-                    Resource, Parameters, Snapshot.Dirt, Snapshot.Weathering, false, {});
+                    Resource, Parameters, Snapshot.Dirt, Snapshot.Weathering, false, {}, NoReplacementSlots, nullptr);
             }
         }
         return bReady;
