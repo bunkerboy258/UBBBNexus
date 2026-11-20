@@ -19,8 +19,6 @@ struct FBBBCharacterLocomotionState final
     bool bWasCrouchRequested = false;
     /** 滑铲期间上一次有效地面速度是否低于退出阈值 */
     bool bSlideBelowExitSpeed = false;
-    /** 本次滑铲在 CMC 更新后记录的最高水平速度 */
-    float SlidePeakSpeed = 0.0f;
 
     /** 本次滑铲已经持续的时间 单位秒 */
     float SlideElapsed = 0.0f;

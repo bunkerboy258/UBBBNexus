@@ -11,9 +11,6 @@ void FBBBCharacterMovementFactProcessor::Update(FBBBCharacterMovementFactContext
     State.Acceleration = Context.Movement.GetCurrentAcceleration();
     State.MovementInput = Control.MoveWorld;
     State.FacingWorld = Control.FacingWorld;
-    State.SlidePeakSpeed = State.bSlide
-        ? FMath::Max(State.SlidePeakSpeed, static_cast<float>(Context.Movement.Velocity.Size2D()))
-        : 0.0f;
     if (Context.bRestoreFacts)
     {
         State.Acceleration = State.RestoredAcceleration;

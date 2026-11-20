@@ -4,8 +4,59 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "Animation/AnimSequenceBase.h"
+#include "BBBWork/UBBBNexus/Notify/Character/Display/BBBCharacterEarlyTransitionAnimNotifyState.h"
+#include "PoseSearch/PoseSearchResult.h"
+#include "PoseSearch/PoseSearchAnimNotifies.h"
+#include "PoseSearch/PoseSearchDatabase.h"
+#include "PoseSearch/PoseSearchSchema.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Chooser.h"
+
+bool UBBBAnimInstance::ShouldContinueMatchedTransition(
+    const FMotionMatchingAnimNodeReference &Node,
+    const UPoseSearchDatabase *Database)
+{
+    FPoseSearchBlueprintResult Match;
+    bool bValid = false;
+    UMotionMatchingAnimNodeLibrary::GetMotionMatchingSearchResult(Node, Match, bValid);
+    const UAnimSequenceBase *Sequence = Cast<UAnimSequenceBase>(Match.SelectedAnim);
+    if (!bValid || !Database || Match.SelectedDatabase != Database || !Sequence)
+    {
+        return false;
+    }
+    const float EndTime = Sequence->GetPlayLength();
+    const float SearchSample = 1.0f / FMath::Max(Database->Schema ? Database->Schema->SampleRate : 30, 1);
+    float EarlyTime = EndTime;
+    float TailExclusionTime = EndTime;
+    float BlockTime = EndTime;
+    for (const FAnimNotifyEvent &Event : Sequence->Notifies)
+    {
+        if (Cast<UBBBCharacterEarlyTransitionAnimNotifyState>(Event.NotifyStateClass))
+        {
+            EarlyTime = FMath::Min(EarlyTime, Event.GetTriggerTime());
+        }
+        else if (Cast<UAnimNotifyState_PoseSearchExcludeFromDatabase>(Event.NotifyStateClass)
+            && Event.GetEndTriggerTime() >= EndTime - SearchSample)
+        {
+            TailExclusionTime = FMath::Min(TailExclusionTime, Event.GetTriggerTime());
+        }
+        else if (Cast<UAnimNotifyState_PoseSearchBlockTransition>(Event.NotifyStateClass))
+        {
+            BlockTime = FMath::Min(BlockTime, Event.GetTriggerTime());
+        }
+    }
+    if (EarlyTime < EndTime)
+    {
+        return Match.SelectedTime < EarlyTime;
+    }
+    if (TailExclusionTime < EndTime)
+    {
+        // 候选库会把末尾排除区间之前的最后采样点判作边界 提前交回普通库以免重选退出片段
+        return Match.SelectedTime + SearchSample * 2.0f < TailExclusionTime;
+    }
+    return Match.SelectedTime < BlockTime;
+}
 
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 {
@@ -49,7 +100,6 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
     bSourceSliding = FactState.bIsSliding;
-    SourceSlideBrakingProgress = FactState.SlideBrakingProgress;
     bSourceCrouchRequested = FactState.bCrouchRequested;
     bSourceRunRequested = FactState.bRunRequested;
 

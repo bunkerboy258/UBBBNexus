@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/PoseSnapshot.h"
+#include "PoseSearch/MotionMatchingAnimNodeLibrary.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterPhysicalPhase.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
 #include "BBBAnimInstance.generated.h"
@@ -18,6 +19,7 @@ class UBBBEquipmentAnimInstance;
 class UAnimMontage;
 class UAnimSequence;
 class UChooserTable;
+class UPoseSearchDatabase;
 
 namespace BBBCharacterMontageSlots
 {
@@ -204,12 +206,11 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->bSourceSliding;
     }
 
-    /** @return 滑铲从最高水平速度降低到退出速度的进度 */
+    /** @return 当前匹配片段仍需播放至其动画交接标记 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
-    float GetSlideBrakingProgress() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceSlideBrakingProgress;
-    }
+    static bool ShouldContinueMatchedTransition(
+        const FMotionMatchingAnimNodeReference &Node,
+        const UPoseSearchDatabase *Database);
 
     /** @return 玩家是否持续请求蹲伏 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
@@ -465,7 +466,6 @@ private:
 
     UPROPERTY(Transient)
     bool bSourceSliding = false;
-    float SourceSlideBrakingProgress = 0.0f;
     bool bSourceCrouchRequested = false;
     bool bSourceRunRequested = false;
 
