@@ -1,6 +1,58 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Logic/System/NetworkSystem/Processors/BBBThrowableNetworkProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Network/BBBThrowableNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/BBBThrowableDefinition.h"
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+
+namespace
+{
+/** 依照权威起爆结果向受影响的控制端分发一次视听渐退 */
+void PublishFlash(ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Fact)
+{
+    const auto* Definition = Actor.GetDefinition();
+    if (!Definition || Definition->Explosion.FlashSeconds <= 0.0f)
+    {
+        return;
+    }
+
+    const auto& Config = Definition->Explosion;
+    UWorld& World = *Actor.GetWorld();
+    for (FConstPlayerControllerIterator It = World.GetPlayerControllerIterator(); It; ++It)
+    {
+        APlayerController* Controller = It->Get();
+        const APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
+        if (!Pawn || !Pawn->CanBeDamaged())
+        {
+            continue;
+        }
+
+        FVector Eye;
+        FRotator View;
+        Pawn->GetActorEyesViewPoint(Eye, View);
+        const float Distance = FVector::Distance(Fact.Position, Eye);
+        if (Distance >= Config.Radius)
+        {
+            continue;
+        }
+
+        FCollisionQueryParams Occlusion(SCENE_QUERY_STAT(BBBThrowableFlash), false, &Actor);
+        Occlusion.AddIgnoredActor(Pawn);
+        if (World.LineTraceTestByChannel(Fact.Position, Eye, ECC_Visibility, Occlusion))
+        {
+            continue;
+        }
+
+        const FVector Direction = (Fact.Position - Eye).GetSafeNormal();
+        const float Facing = FMath::Max(0.0, FVector::DotProduct(View.Vector(), Direction));
+        const float Strength = (1.0f - Distance / Config.Radius) * FMath::Lerp(0.18f, 1.0f, Facing);
+        Controller->ClientSetCameraFade(true, FColor::White, FVector2D(Strength, 0.0),
+            Config.FlashSeconds * FMath::Lerp(0.35f, 1.0f, Strength), true, false);
+    }
+}
+}
+
 void FBBBThrowableNetworkProcessor::Update(ABBBThrowable& Actor) const
 {
     const auto& State = Actor.RuntimeData.Explosion.ReadExplosionState();
@@ -15,7 +67,9 @@ void FBBBThrowableNetworkProcessor::Update(ABBBThrowable& Actor) const
     {
         Network.bPublished = true;
         Actor.Network->Publish(State.Fact);
+        PublishFlash(Actor, State.Fact);
         Actor.ForceNetUpdate();
-        Actor.SetLifeSpan(5.0f);
+        const float AreaDuration = State.Fact.bHasArea ? Actor.GetDefinition()->Explosion.Area.Duration : 0.0f;
+        Actor.SetLifeSpan(FMath::Max(5.0f, AreaDuration + 2.0f));
     }
 }

@@ -10,11 +10,14 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/BBBThrowableDefinition.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/GameStateBase.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "MassActorSubsystem.h"
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
@@ -78,12 +81,29 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
     {
         return;
     }
+    TArray<FBox, TInlineAllocator<8>> SmokeBounds;
+    for (TActorIterator<ABBBThrowable> It(World); It; ++It)
+    {
+        const auto* Definition = It->GetDefinition();
+        const auto& Fact = It->RuntimeData.Explosion.ReadExplosionState().Fact;
+        if (!Definition || !Fact.bHasArea)
+        {
+            continue;
+        }
+        const auto& Area = Definition->Explosion.Area;
+        if (Area.bObscuresSight && ServerTime >= Fact.Time + 0.6 && ServerTime < Fact.Time + Area.Duration - 0.8)
+        {
+            const FVector Extent(Area.Radius * 0.707, Area.Radius * 0.707, Area.Height * 0.5);
+            const FVector Center = Fact.AreaGround + FVector(0.0, 0.0, Extent.Z);
+            SmokeBounds.Emplace(Center - Extent, Center + Extent);
+        }
+    }
     const int32 FirstSenseIndex = NextSenseEntityIndex % EntityCount;
     int32 EntityIndex = 0;
     bool bWrap = false;
 
     // 每帧根据视野范围更新目标请求
-    const auto SenseChunk = [this, &Players, &Alerts, &AlertOrigins, &AlertRanges, &TraceBudget, &EntityIndex, &bWrap,
+    const auto SenseChunk = [this, &Players, &Alerts, &AlertOrigins, &AlertRanges, &TraceBudget, &EntityIndex, &bWrap, &SmokeBounds,
         FirstSenseIndex, EntityCount, World, Now, ServerTime, FrameDelta](FMassExecutionContext& Chunk)
     {
         const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
@@ -194,8 +214,16 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                     for (float Height : {0.65f, 0.0f, -0.5f})
                     {
                         --TraceBudget;
+                        const FVector Sample = Center + FVector::UpVector * HalfHeight * Height;
+                        if (SmokeBounds.ContainsByPredicate([&](const FBox& Bounds)
+                        {
+                            return FMath::LineBoxIntersection(Bounds, Eye, Sample, Sample - Eye);
+                        }))
+                        {
+                            continue;
+                        }
                         FHitResult Blocker;
-                        if (!World->LineTraceSingleByChannel(Blocker, Eye, Center + FVector::UpVector * HalfHeight * Height, ECC_Visibility, Params))
+                        if (!World->LineTraceSingleByChannel(Blocker, Eye, Sample, ECC_Visibility, Params))
                         {
                             ++VisibleSamples;
                         }

@@ -51,4 +51,12 @@ struct FBBBThrowablePresentationConfig final
     /** 爆炸效果的整体缩放倍率 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "爆炸特效缩放", ToolTip = "爆炸效果的整体缩放倍率", ClampMin = "0.01"))
     float EffectScale = 1.0f;
+
+    /** 随持续区域出现和回收的 Niagara 系统 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "持续区域特效"))
+    TObjectPtr<UNiagaraSystem> AreaEffect = nullptr;
+
+    /** 持续区域效果缩放倍率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "区域特效缩放", ClampMin = "0.01"))
+    float AreaEffectScale = 1.0f;
 };

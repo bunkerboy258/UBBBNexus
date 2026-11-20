@@ -9,4 +9,6 @@ struct FBBBThrowableExplosionState final
     bool bPresented = false;
     /** 当前唯一的爆炸结果 */
     FBBBThrowableExplosionFact Fact;
+    /** 下次区域伤害结算的房主时间 */
+    double NextAreaDamageTime = 0.0;
 };

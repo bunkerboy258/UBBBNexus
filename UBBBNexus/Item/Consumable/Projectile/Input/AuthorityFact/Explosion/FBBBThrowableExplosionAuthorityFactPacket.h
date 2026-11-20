@@ -6,7 +6,10 @@ struct FBBBThrowableExplosionAuthorityFactPacket final
 {
     FBBBThrowableExplosionFact Fact;
     /** @return 事实结构是否有效 */
-    bool IsValid() const { return Fact.bExploded && !Fact.Position.ContainsNaN() && FMath::IsFinite(Fact.Time); }
+    bool IsValid() const
+    {
+        return Fact.bExploded && !Fact.Position.ContainsNaN() && !Fact.AreaGround.ContainsNaN() && FMath::IsFinite(Fact.Time);
+    }
     /** @param State	爆炸状态 @return 是否未接收终态 */
     bool CanApply(const FBBBThrowableExplosionState& State) const { return !State.Fact.bExploded; }
     /** @param State	爆炸状态 @return 无 */

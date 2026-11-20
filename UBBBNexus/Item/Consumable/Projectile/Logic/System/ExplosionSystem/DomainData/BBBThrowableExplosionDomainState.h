@@ -11,5 +11,6 @@ private:
     friend class FBBBThrowableExplosionProcessor;
     friend class FBBBThrowableNetworkProcessor;
     friend class FBBBThrowableShutdown;
+    friend class FBBBThrowableAreaProcessor;
     FBBBThrowableExplosionState State;
 };

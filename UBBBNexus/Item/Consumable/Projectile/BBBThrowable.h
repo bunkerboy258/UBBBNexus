@@ -10,6 +10,7 @@ class UBBBThrowableNetworkComponent;
 class FBBBThrowableInitializer;
 class FBBBThrowableUpdatePipeline;
 class FBBBThrowableShutdown;
+class FBBBThrowableAreaProcessor;
 
 /** 房主权威物理投掷物 运动由 UE Chaos 与 Predictive Interpolation 管理 */
 UCLASS(BlueprintType, NotBlueprintable)
@@ -38,6 +39,7 @@ private:
     friend class FBBBThrowableExplosionProcessor;
     friend class FBBBThrowableNetworkProcessor;
     friend class FBBBThrowableShutdown;
+    friend class FBBBThrowableAreaProcessor;
     UFUNCTION()
     void OnRep_Definition();
     UFUNCTION()
@@ -50,6 +52,9 @@ private:
     /** 沿引擎实际运动生成的本地尾迹 */
     UPROPERTY()
     TObjectPtr<UNiagaraComponent> Trail;
+    /** 持续区域的本地特效组件 */
+    UPROPERTY()
+    TObjectPtr<UNiagaraComponent> AreaEffect;
     UPROPERTY()
     TObjectPtr<UBBBThrowableNetworkComponent> Network;
     UPROPERTY(ReplicatedUsing = OnRep_Definition)

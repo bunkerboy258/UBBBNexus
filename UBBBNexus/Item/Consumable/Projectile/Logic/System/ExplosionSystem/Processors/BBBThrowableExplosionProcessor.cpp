@@ -35,6 +35,19 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
         Fact.Position = Actor.GetActorLocation();
         Fact.PlayerId = Actor.RuntimeData.Lifetime.ReadLifetimeState().PlayerId;
         Fact.Time = World.GetGameState() ? World.GetGameState()->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
+        if (Config.Area.Duration > 0.0f)
+        {
+            FHitResult Ground;
+            FCollisionQueryParams Query(SCENE_QUERY_STAT(BBBThrowableAreaGround), false, &Actor);
+            const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
+            Fact.bHasArea = World.LineTraceSingleByObjectType(Ground, Fact.Position + FVector(0.0, 0.0, 12.0),
+                Fact.Position - FVector(0.0, 0.0, 180.0), StaticWorld, Query) && Ground.ImpactNormal.Z >= 0.45;
+            if (Fact.bHasArea)
+            {
+                Fact.AreaGround = Ground.ImpactPoint;
+                State.NextAreaDamageTime = Fact.Time + Config.Area.DamageInterval;
+            }
+        }
         const FGuid AttackId = FGuid::NewGuid();
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableExplosion), false, &Actor);
         Params.AddIgnoredActor(Actor.GetInstigator());
@@ -154,7 +167,9 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
         Actor.PhysicsBody->SetSimulatePhysics(false);
         Actor.PhysicsBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Actor.Mesh->SetVisibility(false);
-        if (World.GetNetMode() != NM_DedicatedServer)
+        const auto* GameState = World.GetGameState();
+        const double Now = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
+        if (World.GetNetMode() != NM_DedicatedServer && Now - State.Fact.Time < 2.0)
         {
             if (Definition->Presentation.ExplosionEffect)
             {

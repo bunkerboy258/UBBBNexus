@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/Explosion/BBBThrowableAreaConfig.h"
 #include "BBBThrowableExplosionConfig.generated.h"
 
 /** 投掷物Explosion静态配置 */
@@ -39,6 +40,14 @@ struct FBBBThrowableExplosionConfig final
     /** 一次爆炸每个目标的踉跄强度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "踉跄强度", ToolTip = "一次爆炸每个目标的踉跄强度", ClampMin = "0"))
     float Stagger = 80.0f;
+
+    /** 正视起爆点时的最长白闪恢复时间 零为关闭 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "白闪恢复时间", ClampMin = "0", ForceUnits = "s"))
+    float FlashSeconds = 0.0f;
+
+    /** 起爆后从地面锚点生效的区域 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "持续区域"))
+    FBBBThrowableAreaConfig Area;
 
     /** 世界静态遮挡阻止范围伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "检查遮挡", ToolTip = "世界静态遮挡阻止范围伤害"))

@@ -15,4 +15,10 @@ struct FBBBThrowableExplosionFact final
     int32 PlayerId = INDEX_NONE;
     UPROPERTY()
     double Time = 0.0;
+    /** 是否取得可用的区域地面锚点 */
+    UPROPERTY()
+    bool bHasArea = false;
+    /** 权威地面锚点 */
+    UPROPERTY()
+    FVector AreaGround = FVector::ZeroVector;
 };
