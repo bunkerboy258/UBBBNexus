@@ -13,9 +13,13 @@
 #include "MassCommonFragments.h"
 #include "Components/BoxComponent.h"
 #include "Input/HittestGrid.h"
+#include "Layout/WidgetPath.h"
 #include "Types/PaintArgs.h"
 #include "Rendering/DrawElements.h"
 #include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Widgets/SWindow.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "UObject/UObjectGlobals.h"
@@ -30,24 +34,69 @@
 
 namespace
 {
-TSharedPtr<SButton> FindMenuButton(const TSharedRef<SWidget>& Widget, FName Tag)
+void SendReviewPointer(const UBBBPlayerItemView& View, FVector2D From, FVector2D To, int32 Phase = 0)
 {
-    if (Widget->GetTag() == Tag && Widget->GetType() == TEXT("SButton"))
+    const auto Window = GEngine->GameViewport ? GEngine->GameViewport->GetWindow() : nullptr;
+    if (!Window)
     {
-        return StaticCastSharedRef<SButton>(Widget);
+        return;
     }
-    FChildren* Children = Widget->GetChildren();
-    for (int32 Index = 0; Index < Children->Num(); ++Index)
+    const FGeometry& Geometry = View.GetCachedGeometry();
+    const auto Project = [&Geometry](FVector2D Point)
     {
-        if (auto Found = FindMenuButton(Children->GetChildAt(Index), Tag))
+        return Geometry.LocalToAbsolute(Point / FVector2D(1920.0, 1080.0) * Geometry.GetLocalSize());
+    };
+    auto& Application = FSlateApplication::Get();
+    const FVector2D Start = Project(From);
+    const FVector2D End = Project(To);
+    const auto HitPath = [&Window](FVector2D Desktop)
+    {
+        auto Path = Window->GetHittestGrid().GetBubblePath(Desktop, 0, false, 0);
+        return FWidgetPath(MakeArrayView(Path));
+    };
+    const FKey Left = EKeys::LeftMouseButton;
+    const TSet<FKey> Pressed{Left};
+    const auto Event = [](FVector2D Position, FVector2D Previous, const TSet<FKey>& Buttons, FKey Changed)
+    {
+        return FPointerEvent(FSlateApplication::CursorPointerIndex, Position, Previous, Buttons, Changed, 0, FModifierKeysState());
+    };
+    const FVector2D Near = Project(From + FVector2D(25, 0));
+    const FVector2D Middle = (Start + End) * 0.5;
+    if (Phase == 0)
+    {
+        Application.ReleaseAllPointerCapture();
+        Application.SetCursorPos(Start);
+        const auto StartPath = HitPath(Start);
+        if (!StartPath.IsValid())
         {
-            return Found;
+            return;
         }
+        Application.RoutePointerMoveEvent(StartPath, Event(Start, Start - FVector2D(2, 2), {}, FKey()), false);
+        Application.RoutePointerDownEvent(StartPath, Event(Start, Start, Pressed, Left));
+        if (From == To)
+        {
+            Application.RoutePointerUpEvent(StartPath, Event(Start, Start, {}, Left));
+        }
+        return;
     }
-    return nullptr;
+    if (Phase == 1)
+    {
+        Application.SetCursorPos(Near);
+        Application.RoutePointerMoveEvent(HitPath(Near), Event(Near, Start, Pressed, FKey()), false);
+        Application.SetCursorPos(Middle);
+        Application.RoutePointerMoveEvent(HitPath(Middle), Event(Middle, Near, Pressed, FKey()), false);
+        return;
+    }
+    if (Phase == 2)
+    {
+        Application.SetCursorPos(End);
+        Application.RoutePointerMoveEvent(HitPath(End), Event(End, Middle, Pressed, FKey()), false);
+        return;
+    }
+    Application.RoutePointerUpEvent(HitPath(End), Event(End, End, {}, Left));
 }
 
-// The review runs in a dedicated standalone game through exactly the same controller and widgets as B.
+// 在独立游戏窗口沿正式背包输入路径采集验收画面
 FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
     TEXT("Capture both inventory pages of a standalone BBBTest session launched with -ItemMenuReview."),
     FConsoleCommandDelegate::CreateLambda([]()
@@ -57,7 +106,7 @@ FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
             return;
         }
         FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda(
-            [Step = 0, Attempts = 0, Hold = 0](float) mutable
+            [Step = 0, Attempts = 0, Hold = 0, Dragged = FGuid()](float) mutable
             {
                 UWorld* GameWorld = nullptr;
                 if (GEngine)
@@ -105,8 +154,42 @@ FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
                     }
                     if (!PC->IsBackpackOpen()) PC->ToggleBackpack();
                 }
+                else if (Step == 2 || Step == 3)
+                {
+                    TArray<UUserWidget*> Views;
+                    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
+                    for (auto* Widget : Views)
+                    {
+                        const auto* View = CastChecked<UBBBPlayerItemView>(Widget);
+                        if (Step == 2)
+                        {
+                            for (const auto& Panel : View->GetMenuPanels())
+                            {
+                                Panel->SetVisibility(EVisibility::Collapsed);
+                            }
+                        }
+                        else
+                        {
+                            const FString File = FPaths::ConvertRelativePathToFull(
+                                FPaths::ScreenShotDir() / TEXT("ItemMenu_Room.png"));
+                            FScreenshotRequest::RequestScreenshot(File, true, false, false, FIntRect(), true);
+                        }
+                    }
+                }
                 else if (Step == 4 || Step == 8)
                 {
+                    if (Step == 4 && Hold == 0)
+                    {
+                        TArray<UUserWidget*> Views;
+                        UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
+                        for (auto* Widget : Views)
+                        {
+                            for (const auto& Panel : CastChecked<UBBBPlayerItemView>(Widget)->GetMenuPanels())
+                            {
+                                Panel->SetVisibility(EVisibility::SelfHitTestInvisible);
+                            }
+                        }
+                    }
                     if (Hold < 8)
                     {
                         ++Hold;
@@ -117,13 +200,34 @@ FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
                     const FString File = FPaths::ConvertRelativePathToFull(FPaths::ScreenShotDir() / (TEXT("ItemMenu_") + Page + TEXT(".png")));
                     FScreenshotRequest::RequestScreenshot(File, true, false, false, FIntRect(), true);
                 }
-                else if (Step == 6)
+                else if (Step == 5 || Step == 6)
                 {
                     TArray<UUserWidget*> Views;
                     UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
-                    for (auto* View : Views)
+                    for (auto* Widget : Views)
                     {
-                        if (auto Tab = FindMenuButton(View->TakeWidget(), TEXT("Backpack.Panel.1"))) Tab->SimulateClick();
+                        auto* View = CastChecked<UBBBPlayerItemView>(Widget);
+                        if (Step == 5)
+                        {
+                            int32 Start, Count;
+                            PC->GetStorageRange(EBBBItemType::Equipment, Start, Count);
+                            if (Hold == 0)
+                            {
+                                Dragged = PC->GetItemDisplayData(Start).InstanceId;
+                            }
+                            SendReviewPointer(*View, FVector2D(188, 399), FVector2D(1558, 383), Hold);
+                            if (++Hold < 4)
+                            {
+                                return true;
+                            }
+                            Hold = 0;
+                        }
+                        else
+                        {
+                            const bool bMoved = Dragged.IsValid() && PC->GetItemDisplayData(0).InstanceId == Dragged;
+                            UE_LOG(LogTemp, Display, TEXT("Item room review cross-panel drag %s"), bMoved ? TEXT("PASS") : TEXT("FAIL"));
+                            SendReviewPointer(*View, FVector2D(960, 55), FVector2D(960, 55));
+                        }
                     }
                 }
                 ++Step;
@@ -227,9 +331,20 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
         }
         return nullptr;
     };
+    const auto FindPanelWidget = [&FindTagged, View](FName Tag)
+    {
+        for (const auto& Panel : View->GetMenuPanels())
+        {
+            if (auto Found = FindTagged(Panel.ToSharedRef(), Tag))
+            {
+                return Found;
+            }
+        }
+        return TSharedPtr<SWidget>();
+    };
     const auto Click = [&](FName Tag)
     {
-        const TSharedPtr<SWidget> Button = FindTagged(Widget, Tag);
+        const TSharedPtr<SWidget> Button = FindPanelWidget(Tag);
         if (TestTrue(FString::Printf(TEXT("导航按钮存在 %s"), *Tag.ToString()),
             Button.IsValid() && Button->GetType() == TEXT("SButton")))
         {
@@ -247,7 +362,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
         }
         return Count;
     };
-    const TSharedPtr<SWidget> PanelSlots = FindTagged(Widget, TEXT("Backpack.PanelSlots"));
+    const TSharedPtr<SWidget> PanelSlots = FindPanelWidget(TEXT("Backpack.PanelSlots"));
     if (!TestTrue(TEXT("右侧物品展示面板存在"), PanelSlots.IsValid()))
     {
         return false;

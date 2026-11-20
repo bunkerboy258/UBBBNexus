@@ -1,7 +1,9 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "Components/PointLightComponent.h"
+#include "Components/LightComponent.h"
+#include "Components/WidgetComponent.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "PreviewScene.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -12,7 +14,6 @@
 #include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Animation/AnimSequence.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 
@@ -26,7 +27,7 @@ void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
     bDirty |= bActive;
     if (IsValid(Display))
     {
-        TArray<UPointLightComponent *> Lights;
+        TArray<ULightComponent *> Lights;
         Display->GetComponents(Lights);
         for (auto *Light : Lights)
         {
@@ -56,20 +57,20 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     {
         return true;
     }
-    const FSoftObjectPath StandingPath(TEXT("/Game/_Project/Characters/BBBC_UA/Animation/UsedAnimation/unarmed/MM_Unarmed_Idle_Ready.MM_Unarmed_Idle_Ready"));
-    const FSoftObjectPath MaterialPath(TEXT("/Game/_Project/UI/Bag/M_CharacterPreview.M_CharacterPreview"));
+    const FSoftObjectPath StandingPath(TEXT("/Game/_Project/Characters/BBBC_UA/Animation/OtherAnimation/Project/AS_Rifle_Idle_GunDown_SG550.AS_Rifle_Idle_GunDown_SG550"));
+    const FSoftObjectPath RiflePath(TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Rifle/SG550/DA_ModernWeapons_Rifle_02.DA_ModernWeapons_Rifle_02"));
     if (!ResourceLoad)
     {
-        ResourceLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(TArray<FSoftObjectPath>{StandingPath, MaterialPath});
+        ResourceLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(TArray<FSoftObjectPath>{StandingPath, RiflePath});
     }
     if (ResourceLoad && !ResourceLoad->HasLoadCompleted())
     {
         return false;
     }
     auto *Standing = Cast<UAnimSequence>(StandingPath.ResolveObject());
-    auto *Parent = Cast<UMaterialInterface>(MaterialPath.ResolveObject());
+    auto *Rifle = Cast<UBBBEquipmentDefinition>(RiflePath.ResolveObject());
     const auto *Character = Cast<ABBBCharacter>(Pawn);
-    if (!Character || !Standing || !Parent)
+    if (!Character || !Standing || !Rifle || !Rifle->EquipmentMesh)
     {
         return false;
     }
@@ -94,52 +95,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Display->SetRootComponent(Root);
     Root->RegisterComponent();
     Root->SetWorldLocation(Origin);
-    struct FPortraitLight
-    {
-        FVector Location;
-        FLinearColor Color;
-        float Candela;
-        float SourceRadius;
-        float SoftSourceRadius;
-        float SpecularScale;
-        bool bShadow;
-    };
-    // 从镜头看正 Y 位于画面左侧 暖主光顺着背景的左侧亮区照入
-    const FPortraitLight Key{FVector(136.0f, 84.0f, 223.0f), FLinearColor(1.0f, 0.81f, 0.57f), 42.0f, 10.0f, 16.0f, 0.36f, true};
-    const FPortraitLight Side{FVector(59.0f, -142.0f, 140.0f), FLinearColor(0.66f, 0.79f, 1.0f), 13.0f, 30.0f, 42.0f, 0.22f, false};
-    const FPortraitLight Rim{FVector(-95.0f, 72.0f, 173.0f), FLinearColor(1.0f, 0.70f, 0.42f), 36.0f, 8.0f, 12.0f, 0.34f, false};
-    const FPortraitLight Lights[] = {Key, Side, Rim};
-    for (const FPortraitLight &Rig : Lights)
-    {
-        UPointLightComponent *Light = NewObject<UPointLightComponent>(Display);
-        Display->AddInstanceComponent(Light);
-        Light->SetupAttachment(Root);
-        Light->SetLightingChannels(true, false, false);
-        Light->SetCastShadows(Rig.bShadow);
-        Light->SetAttenuationRadius(420.0f);
-        Light->SetIntensityUnits(ELightUnits::Candelas);
-        Light->SetIntensity(Rig.Candela);
-        Light->SetSpecularScale(Rig.SpecularScale);
-        Light->SetSourceRadius(Rig.SourceRadius);
-        Light->SetSoftSourceRadius(Rig.SoftSourceRadius);
-        Light->ContactShadowLength = Rig.bShadow ? 0.12f : 0.0f;
-        Light->ShadowResolutionScale = 2.0f;
-        Light->SetLightColor(Rig.Color);
-        Light->SetRelativeLocation(Rig.Location);
-        Light->SetVisibility(bActive);
-        Light->RegisterComponent();
-    }
-    auto *Floor = NewObject<UStaticMeshComponent>(Display);
-    Display->AddInstanceComponent(Floor);
-    Floor->SetupAttachment(Root);
-    Floor->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")));
-    Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    Floor->SetLightingChannels(true, false, false);
-    Floor->SetCastShadow(false);
-    Floor->SetRelativeScale3D(FVector(0.58f, 0.36f, 1.0f));
-    Floor->SetRelativeLocation(FVector(8.0f, 0.0f, -1.2f));
-    Floor->RegisterComponent();
-    Floor->SetMaterial(0, LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/_Project/UI/Bag/M_InventoryGround.M_InventoryGround")));
+    BuildRoom(*Root);
     Pose = NewObject<USkeletalMeshComponent>(Display);
     Display->AddInstanceComponent(Pose);
     Pose->SetSkeletalMesh(Character->GetMesh()->GetSkeletalMeshAsset());
@@ -159,50 +115,62 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Pose->TickAnimation(1.0f / 30.0f, false);
     Pose->RefreshBoneTransforms();
     Pose->SetComponentTickEnabled(false);
-    Texture = NewObject<UTextureRenderTarget2D>(this);
-    Texture->ClearColor = FLinearColor::Transparent;
-    Texture->RenderTargetFormat = RTF_RGBA16f;
-    Texture->SRGB = false;
-    Texture->Filter = TF_Bilinear;
-    // 保持构图比例并为全高清和 1440p 菜单提供降采样余量
-    Texture->InitAutoFormat(1024, 1728);
+    const FName Grip = Character->GetCharacterConfig().Interaction.RightHandSocketName;
+    if (ensureMsgf(Pose->DoesSocketExist(Grip), TEXT("整备间 PLA 骨架缺少挂接点 %s"), *Grip.ToString()))
+    {
+        auto* Gun = NewObject<USkeletalMeshComponent>(Display);
+        Display->AddInstanceComponent(Gun);
+        Gun->SetSkeletalMesh(Rifle->EquipmentMesh);
+        Gun->SetupAttachment(Pose, Grip);
+        Gun->SetRelativeTransform(Rifle->SpawnOffset);
+        Gun->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Gun->SetForcedLOD(1);
+        Gun->RegisterComponent();
+    }
 
-    Material = UMaterialInstanceDynamic::Create(Parent, this);
-    Material->SetTextureParameterValue(TEXT("Preview"), Texture);
-    Material->SetScalarParameterValue(TEXT("Exposure"), 0.55f);
+    Texture = NewObject<UTextureRenderTarget2D>(this);
+    Texture->ClearColor = FLinearColor::Black;
+    Texture->RenderTargetFormat = RTF_RGBA8_SRGB;
+    Texture->Filter = TF_Bilinear;
+    Texture->InitAutoFormat(1920, 1080);
     auto *Camera = Capture->GetCaptureComponent2D();
     Camera->TextureTarget = Texture;
     Camera->bCaptureEveryFrame = false;
     Camera->bCaptureOnMovement = false;
+    Camera->bAlwaysPersistRenderingState = true;
     Camera->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
     Camera->ShowOnlyActors.Add(Display);
     Camera->ShowFlags.SetAtmosphere(false);
-    Camera->ShowFlags.SetFog(false);
+    Camera->ShowFlags.SetFog(true);
+    Camera->ShowFlags.SetVolumetricFog(true);
     Camera->ShowFlags.SetSkyLighting(false);
     Camera->ShowFlags.SetLighting(true);
     Camera->ShowFlags.SetDynamicShadows(true);
-    Camera->ShowFlags.SetBloom(false);
+    Camera->ShowFlags.SetBloom(true);
+    Camera->ShowFlags.SetMotionBlur(false);
     Camera->ShowFlags.SetScreenSpaceReflections(false);
     Camera->ShowFlags.SetLumenReflections(false);
     Camera->ShowFlags.SetReflectionEnvironment(false);
-    Camera->ShowFlags.SetTemporalAA(false);
+    Camera->ShowFlags.SetTemporalAA(true);
     Camera->PostProcessSettings.bOverride_DynamicGlobalIlluminationMethod = true;
     Camera->PostProcessSettings.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::None;
     Camera->PostProcessSettings.bOverride_ReflectionMethod = true;
     Camera->PostProcessSettings.ReflectionMethod = EReflectionMethod::None;
-    Camera->ProjectionType = ECameraProjectionMode::Orthographic;
-    Camera->OrthoWidth = 130.0f;
-    Camera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+    Camera->ProjectionType = ECameraProjectionMode::Perspective;
+    Camera->FOVAngle = 49.0f;
+    Camera->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
     Camera->PostProcessSettings.bOverride_AutoExposureMethod = true;
     Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
     Camera->PostProcessSettings.bOverride_AutoExposureBias = true;
-    Camera->PostProcessSettings.AutoExposureBias = 0.35f;
+    Camera->PostProcessSettings.AutoExposureBias = -0.8f;
     Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
     Camera->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
     Camera->PostProcessSettings.bOverride_BloomIntensity = true;
-    Camera->PostProcessSettings.BloomIntensity = 0.0f;
-    Capture->SetActorLocation(Origin + FVector(300.0f, 0.0f, 113.0f));
-    Capture->SetActorRotation(FRotator(-5.0f, 180.0f, 0.0f));
+    Camera->PostProcessSettings.BloomIntensity = 0.38f;
+    Camera->PostProcessSettings.bOverride_FilmGrainIntensity = true;
+    Camera->PostProcessSettings.FilmGrainIntensity = 0.0f;
+    Capture->SetActorLocation(Origin + FVector(525.0f, 0.0f, 139.0f));
+    Capture->SetActorRotation(FRotator(-4.5f, 180.0f, 0.0f));
     bDirty = true;
     return true;
 }
@@ -313,6 +281,14 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
             Part->SetWorldTransform(Relative);
         }
     }
+    for (UWidgetComponent* Panel : Panels)
+    {
+        Panel->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
+    }
+    for (UWidgetComponent* Sign : RoomSigns)
+    {
+        Sign->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
+    }
     PreviewScene->GetWorld()->SendAllEndOfFrameUpdates();
     Capture->GetCaptureComponent2D()->CaptureScene();
     bDirty = false;
@@ -338,17 +314,14 @@ void UBBBPlayerItemPortrait::Close()
     Capture = nullptr;
     Display = nullptr;
     Texture = nullptr;
-    Material = nullptr;
+    Panels.Reset();
+    RoomSigns.Reset();
     PreviewScene.Reset();
     Source.Reset();
     Elapsed = 0.0f;
     bActive = false;
     bDirty = true;
     ObservedAppearanceRevision = 0;
-}
-UMaterialInstanceDynamic *UBBBPlayerItemPortrait::GetMaterial() const
-{
-    return Material;
 }
 void UBBBPlayerItemPortrait::BeginDestroy()
 {

@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemText.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "Engine/FontFace.h"
@@ -77,7 +78,6 @@ void UBBBPlayerItemView::NativeDestruct()
 void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
 {
     bBackpackOpen = bOpen;
-    MenuParallax = FVector2D::ZeroVector;
     bQuickBarHeld = false;
     if (!bOpen)
     {
@@ -113,9 +113,9 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     }
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
     CharacterPreview->SetActive(bBackpackOpen);
-    CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
+    CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
     CharacterBrush.DrawAs = ESlateBrushDrawType::Image;
-    CharacterBrush.ImageSize = FVector2D(640.0f, 1080.0f);
+    CharacterBrush.ImageSize = FVector2D(1920.0f, 1080.0f);
     RefreshItems();
     SetKeyboardFocus();
 }
@@ -128,14 +128,6 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     {
         return;
     }
-    const FVector2D Size = Geometry.GetLocalSize();
-    if (Size.X > 0 && Size.Y > 0)
-    {
-        const FVector2D Mouse = Geometry.AbsoluteToLocal(FSlateApplication::Get().GetCursorPos());
-        const FVector2D Target(FMath::Clamp(Mouse.X / Size.X * 2 - 1, -1.0, 1.0),
-            FMath::Clamp(Mouse.Y / Size.Y * 2 - 1, -1.0, 1.0));
-        MenuParallax = FMath::Vector2DInterpTo(MenuParallax, Target, DeltaTime, 7.0f);
-    }
     if (!CharacterPreview)
     {
         CharacterPreview = NewObject<UBBBPlayerItemPortrait>(this);
@@ -143,8 +135,9 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     auto *Controller = GetItemController();
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
     CharacterPreview->SetActive(bBackpackOpen);
+    CharacterPreview->SetPanels(MenuPanels);
     CharacterPreview->Update(DeltaTime);
-    CharacterBrush.SetResourceObject(CharacterPreview->GetMaterial());
+    CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
 }
 
 void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
@@ -197,20 +190,7 @@ FReply UBBBPlayerItemView::ShowPanel(EBBBItemPanelPage Page)
 
 const FSlateBrush *UBBBPlayerItemView::GetCharacterBrush() const
 {
-    return &CharacterBrush;
-}
-
-namespace
-{
-// Project each cell about the centre of its wing. Applying the transform to the widget also projects its hit area.
-void ProjectInventoryCell(const TSharedRef<SWidget>& Cell, float Inward, float RowOffset, float Facing, float Width)
-{
-    const float Depth = 1.0f / (1.0f + Inward * 0.095f);
-    const float Slope = -Facing * RowOffset * 0.095f / 480.0f;
-    Cell->SetRenderTransformPivot(FVector2D(0.5, 0.5));
-    Cell->SetRenderTransform(FSlateRenderTransform(FMatrix2x2(Depth, Slope, 0.f, Depth),
-        FVector2f(-Facing * Inward * (1.0f - Depth) * Width, RowOffset * (Depth - 1.0f))));
-}
+    return CharacterBrush.GetResourceObject() ? &CharacterBrush : nullptr;
 }
 
 void UBBBPlayerItemView::RefreshItems()
@@ -283,8 +263,6 @@ void UBBBPlayerItemView::RefreshItems()
             Grid->AddSlot(Position % 3, Position / 3)
                 [SAssignNew(SlotWidget, SBBBPlayerItemSlot).View(this).Slot(Start + Position)
                     .Width(145.0f).Height(142.0f)];
-            ProjectInventoryCell(SlotWidget.ToSharedRef(), (Position % 3) / 2.0f,
-                (FMath::Min(Position / 3, 4) - 1.5f) * 150, 1, 145);
             StorageSlotViews.Add(SlotWidget);
         }
         BackpackSlots->AddSlot().AutoHeight()[Grid];
@@ -318,12 +296,9 @@ void UBBBPlayerItemView::RefreshItems()
             {
                 TSharedPtr<SBBBPlayerItemSlot> Cell;
                 Grid->AddSlot(Index % Columns, Index / Columns)
-                    [SAssignNew(Cell, SBBBPlayerItemSlot).View(this).Slot(First + Index)
+                    [SAssignNew(Cell, SBBBPlayerItemSlot).View(this).Slot(First + Index).OuterRight(true)
                         .PositionLabel(bWear ? FText::FromName(BuiltWearNames[Index]) : FText::GetEmpty())
                         .Width(Width).Height(Height)];
-                const float Inward = Columns == 1 ? 0.5f : 1.0f - static_cast<float>(Index % Columns) / (Columns - 1);
-                const float RowOffset = (Index / Columns - 1.5f) * Height + (!bWear && Columns > 1 ? 360.f : 0.f);
-                ProjectInventoryCell(Cell.ToSharedRef(), Inward, RowOffset, -1, Width);
                 PanelSlotViews.Add(Cell);
             }
             EquipmentSlots->AddSlot().AutoHeight()[Grid];

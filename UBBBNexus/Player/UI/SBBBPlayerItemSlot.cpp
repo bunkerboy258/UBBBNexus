@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "Engine/Texture2D.h"
+#include "Algo/Reverse.h"
 #include "Materials/MaterialInterface.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
@@ -54,6 +55,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     View = Arguments._View;
     Slot = Arguments._Slot;
     bCompact = Arguments._Compact;
+    bOuterRight = Arguments._OuterRight;
     bWearSlot = !Arguments._PositionLabel.IsEmpty();
     Refresh();
 
@@ -159,31 +161,30 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         const bool bSelected = (View.IsValid() && View->GetInspectedSlot() == Slot) || IsSelected();
         const bool bHover = IsHovered() || bDropTarget;
         const FVector2D Size = Geometry.GetLocalSize();
-        const bool bWide = Size.X > Size.Y * 1.6f;
-        const auto *Frame = BBBItemUI::SlotFrame(bWide
-            ? TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_BigSlot.T_Inventory_BigSlot")
-            : TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_SmallSlot.T_Inventory_SmallSlot"));
-        const FSlateBrush *Surface = BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_MediumSlot.T_Inventory_MediumSlot"));
-        const FSlateBrush *EdgeArt = BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Handler.T_Scrollbar_Handler"));
-        const float Wash = bDropTarget ? 0.34f : bSelected ? 0.46f : bHover ? (bOccupied ? 0.24f : 0.1f) : bOccupied ? 0.5f : 0.04f;
-        FSlateDrawElement::MakeBox(Elements, Layer,
-            Geometry.ToPaintGeometry(Size - FVector2D(8.0, 8.0), FSlateLayoutTransform(FVector2f(4.0f, 6.0f))),
-            Surface, ESlateDrawEffect::None, FLinearColor(0.0f, 0.0f, 0.0f, bOccupied ? 0.28f : 0.0f));
-        FSlateDrawElement::MakeBox(Elements, ++Layer,
-            Geometry.ToPaintGeometry(Size - FVector2D(14.0, 14.0), FSlateLayoutTransform(FVector2f(7.0f, 7.0f))),
-            Surface, ESlateDrawEffect::None, FLinearColor(0.03f, 0.025f, 0.02f, Wash));
-        const FLinearColor FrameTint = bSelected ? FLinearColor(BBBItemUI::Accent.R, BBBItemUI::Accent.G, BBBItemUI::Accent.B, 0.95f)
-            : bHover ? FLinearColor(0.96f, 0.9f, 0.78f, 0.92f)
-                     : FLinearColor(0.72f, 0.68f, 0.58f, bOccupied ? 0.7f : 0.42f);
-        FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(), Frame, ESlateDrawEffect::None,
-            FrameTint * Style.GetColorAndOpacityTint());
-        if (bHover || bSelected)
+        const float Width = Size.X / 3.0f;
+        const float Left = bOuterRight ? Size.X - Width : 0.0f;
+        const float Strength = bDropTarget || bHover ? 1.0f : bSelected ? 0.89f : bOccupied ? 0.65f : 0.33f;
+        const auto Position = [this, Width](float Distance)
         {
-            const FLinearColor Edge = bSelected ? BBBItemUI::Accent : FLinearColor(0.95f, 0.86f, 0.68f, 0.85f);
-            FSlateDrawElement::MakeBox(Elements, ++Layer,
-                Geometry.ToPaintGeometry(FVector2D(3.0, Size.Y - 16.0), FSlateLayoutTransform(FVector2f(2.0f, 8.0f))),
-                EdgeArt, ESlateDrawEffect::None, Edge);
+            return FVector2f(bOuterRight ? Width - Distance : Distance, 0.0f);
+        };
+        TArray<FSlateGradientStop> Stops;
+        Stops.Emplace(Position(0.0f), FLinearColor(1.0f, 0.42f, 0.045f, Strength));
+        Stops.Emplace(Position(2.5f), FLinearColor(1.0f, 0.25f, 0.035f, Strength));
+        Stops.Emplace(Position(Width * 0.11f), FLinearColor(0.52f, 0.12f, 0.24f, Strength * 0.77f));
+        Stops.Emplace(Position(Width * 0.39f), FLinearColor(0.25f, 0.075f, 0.46f, Strength * 0.56f));
+        Stops.Emplace(Position(Width), FLinearColor(0.17f, 0.05f, 0.34f, 0.0f));
+        if (bOuterRight)
+        {
+            Algo::Reverse(Stops);
         }
+        FSlateDrawElement::MakeGradient(Elements, Layer,
+            Geometry.ToPaintGeometry(FVector2D(Width, Size.Y), FSlateLayoutTransform(FVector2f(Left, 0))),
+            MoveTemp(Stops), Orient_Vertical);
+        const auto* Strip = BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Handler.T_Scrollbar_Handler"));
+        FSlateDrawElement::MakeBox(Elements, ++Layer,
+            Geometry.ToPaintGeometry(FVector2D(2.0f, Size.Y), FSlateLayoutTransform(FVector2f(bOuterRight ? Size.X - 2.0f : 0.0f, 0))),
+            Strip, ESlateDrawEffect::None, FLinearColor(1.0f, 0.93f, 0.8f, Strength));
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

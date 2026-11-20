@@ -2,7 +2,6 @@
 #include "CoreMinimal.h"
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Fonts/CompositeFont.h"
 #include "Styling/SlateTypes.h"
@@ -31,34 +30,6 @@ inline const FSlateBrush *Brush(const TCHAR *Path)
         Brushes.Add(Key, Value);
     }
     return Brushes[Key].Get();
-}
-/** @param TexturePath 素材包槽位图 @return 只保留亮色角标的透明槽框 */
-inline const FSlateBrush *SlotFrame(const TCHAR *TexturePath)
-{
-    static TMap<FString, TSharedPtr<FSlateBrush>> Frames;
-    static TArray<TStrongObjectPtr<UMaterialInstanceDynamic>> Instances;
-    static TArray<TStrongObjectPtr<UTexture2D>> Textures;
-    const FString Key(TexturePath);
-    if (!Frames.Contains(Key))
-    {
-        UMaterialInterface *Parent = LoadObject<UMaterialInterface>(nullptr,
-            TEXT("/Game/_Project/UI/Bag/M_SlotFrame.M_SlotFrame"));
-        UTexture2D *Texture = LoadObject<UTexture2D>(nullptr, TexturePath);
-        ensureMsgf(Parent && Texture, TEXT("背包槽框缺失 %s"), TexturePath);
-        auto *Instance = Parent ? UMaterialInstanceDynamic::Create(Parent, GetTransientPackage()) : nullptr;
-        if (Instance)
-        {
-            Instance->SetTextureParameterValue(TEXT("Slot"), Texture);
-        }
-        Instances.Emplace(Instance);
-        Textures.Emplace(Texture);
-        TSharedPtr<FSlateBrush> Value = MakeShared<FSlateBrush>();
-        Value->SetResourceObject(Instance);
-        Value->DrawAs = Instance ? ESlateBrushDrawType::Image : ESlateBrushDrawType::NoDrawType;
-        Value->ImageSize = Texture ? FVector2D(Texture->GetSizeX(), Texture->GetSizeY()) : FVector2D(64.0);
-        Frames.Add(Key, Value);
-    }
-    return Frames[Key].Get();
 }
 /** @return P08 普通物品格子 */
 inline const FSlateBrush *Slot()

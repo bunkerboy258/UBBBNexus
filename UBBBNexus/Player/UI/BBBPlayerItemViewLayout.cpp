@@ -5,7 +5,6 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
-#include "Widgets/Layout/SBackgroundBlur.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SScrollBar.h"
@@ -13,16 +12,174 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Images/SImage.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Components/WidgetComponent.h"
+#include "Engine/SceneCapture2D.h"
+#include "Input/HittestGrid.h"
+#include "Layout/ArrangedChildren.h"
+#include "Layout/WidgetPath.h"
+#include "Types/PaintArgs.h"
+#include "Widgets/SWindow.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Notifications/SProgressBar.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Brushes/SlateColorBrush.h"
+#include "Brushes/SlateNoResource.h"
 #include "Styling/CoreStyle.h"
 
 namespace
 {
+class FBBBInventoryHitPath final : public ICustomHitTestPath
+{
+public:
+    TAttribute<UBBBPlayerItemPortrait*> Room;
+    TWeakPtr<SWidget> Surface;
+
+    TArray<FWidgetAndPointer> GetBubblePathAndVirtualCursors(const FGeometry& Geometry,
+        FVector2D DesktopPosition, bool bIgnoreEnabled) const override
+    {
+        const auto* Preview = Room.Get();
+        if (Preview)
+        {
+            const auto& Panels = Preview->GetPanels();
+            for (int32 Index = Panels.Num() - 1; Index >= 0; --Index)
+            {
+                UWidgetComponent* Panel = Panels[Index];
+                const auto Point = Project(Geometry, *Panel, DesktopPosition);
+                if (Point.IsSet())
+                {
+                    const FVector2D Size = Panel->GetCurrentDrawSize();
+                    if (Point->X >= 0 && Point->Y >= 0 && Point->X < Size.X && Point->Y < Size.Y)
+                    {
+                        auto Path = Panel->GetHitWidgetPath(*Point, bIgnoreEnabled);
+                        if (Path.Num() > 1)
+                        {
+                            auto Window = Panel->GetSlateWindow();
+                            auto Parent = Surface.Pin();
+                            if (Window && Parent && Window->GetParentWidget() != Parent)
+                            {
+                                Window->AssignParentWidget(Parent);
+                            }
+                            return Path;
+                        }
+                    }
+                }
+            }
+        }
+        return {};
+    }
+
+    void ArrangeCustomHitTestChildren(FArrangedChildren& Children) const override
+    {
+        const auto* Preview = Room.Get();
+        if (Preview)
+        {
+            for (const UWidgetComponent* Panel : Preview->GetPanels())
+            {
+                if (auto Window = Panel->GetSlateWindow())
+                {
+                    Children.AddWidget(FArrangedWidget(Window.ToSharedRef(),
+                        FGeometry::MakeRoot(FVector2D(Panel->GetCurrentDrawSize()), FSlateLayoutTransform())));
+                }
+            }
+        }
+    }
+
+    TOptional<FVirtualPointerPosition> TranslateMouseCoordinateForCustomHitTestChild(const SWidget& Child,
+        const FGeometry& Geometry, FVector2D Current, FVector2D Last) const override
+    {
+        const auto* Preview = Room.Get();
+        if (Preview)
+        {
+            for (const UWidgetComponent* Panel : Preview->GetPanels())
+            {
+                if (Panel->GetSlateWindow().Get() == &Child)
+                {
+                    const auto Point = Project(Geometry, *Panel, Current);
+                    const auto LastPoint = Project(Geometry, *Panel, Last);
+                    if (Point.IsSet())
+                    {
+                        return FVirtualPointerPosition(*Point, LastPoint.Get(*Point));
+                    }
+                }
+            }
+        }
+        return {};
+    }
+
+private:
+    TOptional<FVector2D> Project(const FGeometry& Geometry, const UWidgetComponent& Panel, FVector2D DesktopPosition) const
+    {
+        const auto* Preview = Room.Get();
+        const auto* CameraActor = Preview ? Preview->GetCamera() : nullptr;
+        const FVector2D Size = Geometry.GetLocalSize();
+        if (!CameraActor || Size.X <= 0 || Size.Y <= 0)
+        {
+            return {};
+        }
+        const auto* Camera = CameraActor->GetCaptureComponent2D();
+        const FVector2D UV = Geometry.AbsoluteToLocal(DesktopPosition) / Size;
+        const double HalfWidth = FMath::Tan(FMath::DegreesToRadians(Camera->FOVAngle * 0.5));
+        const FVector Ray = Camera->GetForwardVector() + Camera->GetRightVector() * ((UV.X * 2.0 - 1.0) * HalfWidth)
+            + Camera->GetUpVector() * ((1.0 - UV.Y * 2.0) * HalfWidth * 9.0 / 16.0);
+        const FVector Start = Camera->GetComponentLocation();
+        const FVector Normal = Panel.GetForwardVector();
+        const double Divisor = FVector::DotProduct(Normal, Ray);
+        if (Divisor >= -UE_SMALL_NUMBER)
+        {
+            return {};
+        }
+        const double Distance = FVector::DotProduct(Normal, Panel.GetComponentLocation() - Start) / Divisor;
+        FVector2D Result;
+        Panel.GetLocalHitLocation(Start + Ray * Distance, Result);
+        return Result;
+    }
+};
+
+class SBBBInventoryRoomImage final : public SImage
+{
+public:
+    SLATE_BEGIN_ARGS(SBBBInventoryRoomImage) {}
+        SLATE_ATTRIBUTE(UBBBPlayerItemPortrait*, Room)
+        SLATE_ATTRIBUTE(const FSlateBrush*, Image)
+    SLATE_END_ARGS()
+
+    void Construct(const FArguments& Args)
+    {
+        Path = MakeShared<FBBBInventoryHitPath>();
+        Path->Room = Args._Room;
+        Path->Surface = AsShared();
+        SImage::Construct(SImage::FArguments().Image(Args._Image));
+    }
+
+    void OnArrangeChildren(const FGeometry& Geometry, FArrangedChildren& Children) const override
+    {
+        if (Children.Allows3DWidgets())
+        {
+            Path->ArrangeCustomHitTestChildren(Children);
+        }
+    }
+
+    TOptional<FVirtualPointerPosition> TranslateMouseCoordinateForCustomHitTestChild(const SWidget& Child,
+        const FGeometry& Geometry, FVector2D Current, FVector2D Last) const override
+    {
+        return Path->TranslateMouseCoordinateForCustomHitTestChild(Child, Geometry, Current, Last);
+    }
+
+    int32 OnPaint(const FPaintArgs& Args, const FGeometry& Geometry, const FSlateRect& Culling,
+        FSlateWindowElementList& Elements, int32 Layer, const FWidgetStyle& Style, bool bParentEnabled) const override
+    {
+        Args.GetHittestGrid().InsertCustomHitTestPath(this, Path.ToSharedRef());
+        return SImage::OnPaint(Args, Geometry, Culling, Elements, Layer, Style, bParentEnabled);
+    }
+
+private:
+    TSharedPtr<FBBBInventoryHitPath> Path;
+};
+
 /** @param bUpper	是否为菜单上包边 @return 从素材包磨损边框切出的横向画刷 */
 const FSlateBrush *MenuTrim(bool bUpper)
 {
@@ -66,7 +223,6 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
                              {
                                  return bBackpackOpen ? EVisibility::Visible : EVisibility::Collapsed;
                              }) +
-                         SOverlay::Slot()[SNew(SBackgroundBlur).BlurStrength(16.0f)] +
                          SOverlay::Slot()[MakeBackpack()]] +
         SOverlay::Slot()[MakeExplorationHud()];
     RefreshItems();
@@ -79,26 +235,15 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
     const auto LeftWing = SNew(SConstraintCanvas);
     const auto RightWing = SNew(SConstraintCanvas);
-    const auto MountWing = [this, &Canvas](TSharedRef<SConstraintCanvas> Wing, float X, float Facing)
-    {
-        Canvas->AddSlot().Alignment(FVector2D::ZeroVector).Offset(FMargin(X, 174, 520, 800))
-            [SNew(SBox).RenderTransformPivot(FVector2D(0.5, 0.5))
-                .RenderTransform_Lambda([this, Facing]() -> TOptional<FSlateRenderTransform>
-                {
-                    const float Lean = Facing * 0.060f;
-                    return FSlateRenderTransform(FMatrix2x2(0.965f, Lean, -Facing * 0.014f, 1.0f),
-                        FVector2f(MenuParallax.X * 8.0, MenuParallax.Y * 4.0));
-                })[Wing]];
-    };
-    MountWing(LeftWing, 90, 1);
-    MountWing(RightWing, 1306, -1);
-    const auto Place = [&Canvas, &LeftWing, &RightWing](float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
+    const auto TopActions = SNew(SConstraintCanvas);
+    const auto BottomActions = SNew(SConstraintCanvas);
+    const auto Place = [&Canvas, &LeftWing, &RightWing, &TopActions, &BottomActions](float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
     {
         const bool Left = X < 600 && Y >= 180 && Y < 980;
         const bool Right = X >= 1300 && Y >= 180 && Y < 980;
-        auto Target = Left ? LeftWing : Right ? RightWing : Canvas;
+        auto Target = Left ? LeftWing : Right ? RightWing : Y < 108 ? TopActions : Y >= 984 ? BottomActions : Canvas;
         Target->AddSlot().Alignment(FVector2D::ZeroVector)
-            .Offset(FMargin(X - (Left ? 90 : Right ? 1306 : 0), Y - (Left || Right ? 174 : 0), W, H))[Widget];
+            .Offset(FMargin(X - (Left ? 90 : Right ? 1306 : 0), Y - (Left || Right ? 174 : Y >= 984 ? 984 : 0), W, H))[Widget];
     };
     const auto Label = [](const FText &Text, int32 Size)
     {
@@ -121,18 +266,41 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         Place(X, Y, W, 3, SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Settings_Screen/T_SeparatorLine.T_SeparatorLine")))
             .ColorAndOpacity(FLinearColor(0.84f, 0.78f, 0.65f, 0.7f)));
     };
-    const auto PlaceTrim = [&Place](float Y, bool bUpper)
+    static const FSlateColorBrush BarBase(FLinearColor(0.024f, 0.022f, 0.024f));
+    static const FSlateBrush BarGrain = []()
     {
-        Place(60, Y, 1800, 22, SNew(SImage).Image(MenuTrim(bUpper)).Visibility(EVisibility::HitTestInvisible)
-            .ColorAndOpacity(FLinearColor(0.87f, 0.81f, 0.71f, 0.9f)));
+        FSlateBrush Grain = *Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_ContextMenuBG.T_Inventory_ContextMenuBG"));
+        Grain.SetUVRegion(FBox2f(FVector2f(0.04f, 0.1f), FVector2f(0.96f, 0.9f)));
+        return Grain;
+    }();
+    const auto Fit = [](TSharedRef<SWidget> Content, float DesignHeight)
+    {
+        return SNew(SScaleBox).Stretch(EStretch::ScaleToFit).Visibility(EVisibility::SelfHitTestInvisible)
+            [SNew(SBox).WidthOverride(1920).HeightOverride(DesignHeight).Visibility(EVisibility::SelfHitTestInvisible)[Content]];
+    };
+    const auto MenuBar = [this, &Fit](TSharedRef<SWidget> Actions, bool bUpper)
+    {
+        const float Height = bUpper ? 108.0f : 96.0f;
+        const auto Scale = [this]
+        {
+            const FVector2D Size = GetCachedGeometry().GetLocalSize();
+            return FMath::Min(Size.X / 1920.0, Size.Y / 1080.0);
+        };
+        return SNew(SBox).HeightOverride_Lambda([Scale, Height] { return FOptionalSize(Scale() * Height); })
+            [SNew(SOverlay)
+                + SOverlay::Slot()[SNew(SImage).Image(&BarBase).Visibility(EVisibility::HitTestInvisible)]
+                + SOverlay::Slot()[SNew(SImage).Image(&BarGrain).Visibility(EVisibility::HitTestInvisible)
+                    .ColorAndOpacity(FLinearColor(0.29f, 0.26f, 0.23f, 0.8f))]
+                + SOverlay::Slot().VAlign(bUpper ? VAlign_Bottom : VAlign_Top)
+                    [SNew(SBox).HeightOverride_Lambda([Scale] { return FOptionalSize(Scale() * 9.0); })
+                        [SNew(SImage).Image(MenuTrim(bUpper)).Visibility(EVisibility::HitTestInvisible)
+                            .ColorAndOpacity(FLinearColor(0.87f, 0.81f, 0.71f, 0.9f))]]
+                + SOverlay::Slot()[Fit(Actions, Height)]];
     };
     Place(510, 30, 300, 74, Tab(INVTEXT("INVENTORY"), EBBBItemPanelPage::Inventory));
     Place(815, 30, 290, 74, Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character));
     Place(1150, 33, 290, 66, SNew(STextBlock).Text(INVTEXT("EXTENSIBLE")).Font(ArtFont(32))
         .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f)));
-    PlaceTrim(108, true);
-    Place(676, 187, 568, 830, SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
-        [SNew(SImage).Image_Lambda([this] { return GetCharacterBrush(); })]);
     Place(676, 155, 568, 48, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [
             SNew(SHorizontalBox)
@@ -172,7 +340,9 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         + SHorizontalBox::Slot().AutoWidth()[Filter(INVTEXT("MISC"), EBBBItemType::Misc)]);
     Place(108, 275, 470, 42, SNew(STextBlock).Text(INVTEXT("WEARABLES")).Font(ArtFont(18))
         .Visibility_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? EVisibility::HitTestInvisible : EVisibility::Hidden; }));
-    Place(101, 330, 491, 612, SNew(SScrollBox).ScrollBarVisibility(EVisibility::Collapsed)
+    static const FScrollBoxStyle StorageScroll = FScrollBoxStyle()
+        .SetTopShadowBrush(FSlateNoResource()).SetBottomShadowBrush(FSlateNoResource());
+    Place(101, 330, 491, 612, SNew(SScrollBox).Style(&StorageScroll).ScrollBarVisibility(EVisibility::Collapsed)
         + SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
     Place(1324, 184, 490, 68, SNew(STextBlock).Font(ArtFont(44)).Text_Lambda([this]
         { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("GEAR") : INVTEXT("LOADOUT"); }));
@@ -180,13 +350,20 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     Place(1328, 275, 476, 40, SNew(STextBlock).Font(ArtFont(20)).ColorAndOpacity(MutedText)
         .Text_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("EQUIPPED") : INVTEXT("WEAPONS"); }));
     Place(1320, 330, 494, 664, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
-    PlaceTrim(984, false);
     Place(102, 1004, 160, 54, SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left)
         .OnClicked_Lambda([this] { GetItemController()->ToggleBackpack(); return FReply::Handled(); })
         [Label(INVTEXT("B    CLOSE"), 22)]);
     Place(340, 1011, 780, 36, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText));
+    auto Chrome = SNew(SOverlay).Visibility(EVisibility::SelfHitTestInvisible)
+        + SOverlay::Slot()[Fit(Canvas, 1080)]
+        + SOverlay::Slot().VAlign(VAlign_Top)[MenuBar(TopActions, true)]
+        + SOverlay::Slot().VAlign(VAlign_Bottom)[MenuBar(BottomActions, false)];
+    MenuPanels = {Chrome, LeftWing, RightWing};
+    static const FSlateColorBrush Matte(FLinearColor::Black);
     return SNew(SOverlay)
-        + SOverlay::Slot()[SNew(SImage).Image(Brush(TEXT("/Game/_Project/UI/Bag/T_InventoryForest.T_InventoryForest")))]
-        + SOverlay::Slot()[SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
-            [SNew(SBox).WidthOverride(1920).HeightOverride(1080)[Canvas]]];
+        + SOverlay::Slot()[SNew(SImage).Image(&Matte).Visibility(EVisibility::HitTestInvisible)]
+        + SOverlay::Slot()[Fit(SNew(SBBBInventoryRoomImage)
+            .Room_Lambda([this] { return CharacterPreview.Get(); })
+            .Image_Lambda([this] { return GetCharacterBrush(); }), 1080)]
+        + SOverlay::Slot()[Chrome];
 }

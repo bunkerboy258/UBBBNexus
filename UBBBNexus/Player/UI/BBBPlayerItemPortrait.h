@@ -9,7 +9,9 @@ class AActor;
 class ASceneCapture2D;
 class UTextureRenderTarget2D;
 class USkeletalMeshComponent;
-class UMaterialInstanceDynamic;
+class UWidgetComponent;
+class USceneComponent;
+class SWidget;
 struct FStreamableHandle;
 
 /** 在本地独立预览世界捕获固定正面显示 只复制外观结果 */
@@ -26,8 +28,14 @@ public:
     void Update(float DeltaTime);
     /** @return 无 销毁所属世界内的临时显示演员 */
     void Close();
-    /** @return 透明人物捕获材质 */
-    UMaterialInstanceDynamic *GetMaterial() const;
+    /** @return 整备间最终画面 */
+    UTextureRenderTarget2D *GetTexture() const { return Texture; }
+    /** @return 整备间用于视口投影的相机 */
+    const ASceneCapture2D *GetCamera() const { return Capture; }
+    /** @return 可交互的空间面板 */
+    const TArray<TObjectPtr<UWidgetComponent>>& GetPanels() const { return Panels; }
+    /** @param Content 三块面板的控件树 @return 无 */
+    void SetPanels(const TArray<TSharedPtr<SWidget>>& Content);
     virtual void BeginDestroy() override;
 
 private:
@@ -40,7 +48,10 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UTextureRenderTarget2D> Texture;
     UPROPERTY(Transient)
-    TObjectPtr<UMaterialInstanceDynamic> Material;
+    TArray<TObjectPtr<UWidgetComponent>> Panels;
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UWidgetComponent>> RoomSigns;
+    void BuildRoom(USceneComponent& Root);
     UPROPERTY(Transient)
     TArray<TObjectPtr<USkeletalMeshComponent>> Components;
     UPROPERTY(Transient)

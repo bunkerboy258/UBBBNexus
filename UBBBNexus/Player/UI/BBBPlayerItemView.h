@@ -70,6 +70,8 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     float GetQuickSelectionOpacity() const;
     /** @return 耄耋探索头像及其打包依赖 */
     UTexture2D *GetMaodieAvatar() const;
+    /** @return 独立预览世界中的空间面板控件 */
+    const TArray<TSharedPtr<SWidget>>& GetMenuPanels() const { return MenuPanels; }
 
   protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -137,7 +139,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     FGuid InspectedInstance;
     EBBBItemType StoragePage = EBBBItemType::Equipment;
     EBBBItemPanelPage PanelPage = EBBBItemPanelPage::Inventory;
-    FVector2D MenuParallax = FVector2D::ZeroVector;
+    TArray<TSharedPtr<SWidget>> MenuPanels;
     bool bQuickBarHeld = false;
     TSharedPtr<STextBlock> StatusText;
     /** 上次收到的操作结果版本 */
