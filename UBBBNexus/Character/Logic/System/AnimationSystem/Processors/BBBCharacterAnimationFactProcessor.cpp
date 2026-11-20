@@ -172,8 +172,17 @@ void FBBBCharacterAnimationFactProcessor::Update(
     FactState.MaxAcceleration = Movement->GetMaxAcceleration();
     FactState.FacingWorld = RuntimeData.Locomotion.ReadLocomotionState().FacingWorld;
     FactState.ControlRotation = Character.GetControlRotation();
-    FactState.bIsRunning = RuntimeData.Locomotion.ReadLocomotionState().bRun;
-    FactState.bIsSliding = RuntimeData.Locomotion.ReadLocomotionState().bSlide;
+    const auto &LocomotionState = RuntimeData.Locomotion.ReadLocomotionState();
+    const auto &ControlState = RuntimeData.Parse.ReadControlState();
+    FactState.bIsRunning = LocomotionState.bRun;
+    FactState.bIsSliding = LocomotionState.bSlide;
+    FactState.bCrouchRequested = ControlState.bCrouch;
+    FactState.bRunRequested = ControlState.bRun;
+    const float ExitSpeed = Character.GetCharacterConfig().Locomotion.SlideExitSpeed;
+    const float BrakingRange = LocomotionState.SlidePeakSpeed - ExitSpeed;
+    FactState.SlideBrakingProgress = LocomotionState.bSlide && BrakingRange > UE_SMALL_NUMBER
+        ? FMath::Clamp((LocomotionState.SlidePeakSpeed - static_cast<float>(Movement->Velocity.Size2D())) / BrakingRange, 0.0f, 1.0f)
+        : 0.0f;
     FactState.MovementMode = Movement->MovementMode;
     FactState.GroundFriction = Movement->GroundFriction;
     FactState.BrakingFriction = Movement->BrakingFriction;

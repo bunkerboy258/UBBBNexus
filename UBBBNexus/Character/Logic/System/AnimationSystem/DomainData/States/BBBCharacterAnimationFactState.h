@@ -108,6 +108,15 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsSliding = false;
 
+    /** 实际滑铲速度从峰值向玩法退出阈值下降的进度 */
+    float SlideBrakingProgress = 0.0f;
+
+    /** 玩家当前是否保持蹲伏输入 */
+    bool bCrouchRequested = false;
+
+    /** 玩家当前是否保持跑步输入 */
+    bool bRunRequested = false;
+
     /** 移动组件当前移动模式 */
     UPROPERTY(Transient)
     TEnumAsByte<EMovementMode> MovementMode = MOVE_None;

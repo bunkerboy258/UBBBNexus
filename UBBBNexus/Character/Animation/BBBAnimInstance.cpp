@@ -49,6 +49,9 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
     bSourceSliding = FactState.bIsSliding;
+    SourceSlideBrakingProgress = FactState.SlideBrakingProgress;
+    bSourceCrouchRequested = FactState.bCrouchRequested;
+    bSourceRunRequested = FactState.bRunRequested;
 
     SourceGroundFriction = FactState.GroundFriction;
     SourceBrakingFriction = FactState.BrakingFriction;

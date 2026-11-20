@@ -204,6 +204,27 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->bSourceSliding;
     }
 
+    /** @return 滑铲从最高水平速度降低到退出速度的进度 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    float GetSlideBrakingProgress() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->SourceSlideBrakingProgress;
+    }
+
+    /** @return 玩家是否持续请求蹲伏 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    bool WantsCrouch() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceCrouchRequested;
+    }
+
+    /** @return 玩家是否持续请求跑步 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    bool WantsRun() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->bSourceRunRequested;
+    }
+
     /** @return 玩家是否具有瞄准意图 */
     UFUNCTION(BlueprintPure, Category = "Aiming", meta = (BlueprintThreadSafe))
     bool IsAiming() const
@@ -444,6 +465,9 @@ private:
 
     UPROPERTY(Transient)
     bool bSourceSliding = false;
+    float SourceSlideBrakingProgress = 0.0f;
+    bool bSourceCrouchRequested = false;
+    bool bSourceRunRequested = false;
 
     UPROPERTY(Transient)
     bool bSourceAiming = false;

@@ -179,14 +179,17 @@ void UpdateSlideState(
     const bool bOnGround = Movement.IsMovingOnGround();
     if (RuntimeData.bSlide)
     {
-        if (!bOnGround || Speed <= Config.SlideExitSpeed)
+        const bool bBelowExitSpeed = Speed < Config.SlideExitSpeed;
+        if (!bOnGround || (bBelowExitSpeed && RuntimeData.bSlideBelowExitSpeed))
         {
             RuntimeData.bSlide = false;
             RuntimeData.SlideElapsed = 0.0f;
+            RuntimeData.bSlideBelowExitSpeed = false;
         }
         else
         {
             RuntimeData.SlideElapsed += FMath::Max(DeltaSeconds, 0.0f);
+            RuntimeData.bSlideBelowExitSpeed = bBelowExitSpeed;
         }
         return;
     }
@@ -194,6 +197,7 @@ void UpdateSlideState(
     if (bOnGround && bCrouchPressed && Speed >= Config.SlideEnterSpeed)
     {
         RuntimeData.bSlide = true;
+        RuntimeData.bSlideBelowExitSpeed = false;
         RuntimeData.SlideElapsed = 0.0f;
     }
 }
