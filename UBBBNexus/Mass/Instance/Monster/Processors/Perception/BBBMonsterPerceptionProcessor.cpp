@@ -83,7 +83,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
     {
         return;
     }
-    TArray<FBox, TInlineAllocator<8>> SmokeBounds;
+    TArray<TPair<FVector, FVector2D>, TInlineAllocator<8>> SmokeAreas;
     for (TActorIterator<ABBBThrowable> It(World); It; ++It)
     {
         const auto* Definition = It->GetDefinition();
@@ -95,9 +95,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto& Area = Definition->Explosion.Area;
         if (Area.bObscuresSight && ServerTime >= Fact.Time + 0.6 && ServerTime < Fact.Time + Area.Duration - 0.8)
         {
-            const FVector Extent(Area.Radius * 0.707, Area.Radius * 0.707, Area.Height * 0.5);
-            const FVector Center = Fact.AreaGround + FVector(0.0, 0.0, Extent.Z);
-            SmokeBounds.Emplace(Center - Extent, Center + Extent);
+            SmokeAreas.Emplace(Fact.AreaGround, FVector2D(Area.RadiusAtAge(ServerTime - Fact.Time), Area.Height));
         }
     }
     const int32 FirstSenseIndex = NextSenseEntityIndex % EntityCount;
@@ -105,7 +103,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
     bool bWrap = false;
 
     // 每帧根据视野范围更新目标请求
-    const auto SenseChunk = [this, &Players, &Alerts, &AlertOrigins, &AlertRanges, &TraceBudget, &EntityIndex, &bWrap, &SmokeBounds,
+    const auto SenseChunk = [this, &Players, &Alerts, &AlertOrigins, &AlertRanges, &TraceBudget, &EntityIndex, &bWrap, &SmokeAreas,
         FirstSenseIndex, EntityCount, World, Now, ServerTime, FrameDelta](FMassExecutionContext& Chunk)
     {
         const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
@@ -223,9 +221,33 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                     {
                         --TraceBudget;
                         const FVector Sample = Center + FVector::UpVector * HalfHeight * Height;
-                        if (SmokeBounds.ContainsByPredicate([&](const FBox& Bounds)
+                        if (SmokeAreas.ContainsByPredicate([&](const TPair<FVector, FVector2D>& Area)
                         {
-                            return FMath::LineBoxIntersection(Bounds, Eye, Sample, Sample - Eye);
+                            const FVector Ray = Sample - Eye;
+                            const FVector Start = Eye - Area.Key;
+                            double Begin = 0.0;
+                            double End = 1.0;
+                            if (FMath::IsNearlyZero(Ray.Z))
+                            {
+                                if (Start.Z < 0.0 || Start.Z > Area.Value.Y)
+                                {
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                const double Bottom = -Start.Z / Ray.Z;
+                                const double Top = (Area.Value.Y - Start.Z) / Ray.Z;
+                                Begin = FMath::Max(Begin, FMath::Min(Bottom, Top));
+                                End = FMath::Min(End, FMath::Max(Bottom, Top));
+                                if (Begin > End)
+                                {
+                                    return false;
+                                }
+                            }
+                            const double Closest = FMath::Clamp(-(Start.X * Ray.X + Start.Y * Ray.Y)
+                                / FMath::Max(Ray.SizeSquared2D(), UE_SMALL_NUMBER), Begin, End);
+                            return (Start + Closest * Ray).SizeSquared2D() <= FMath::Square(Area.Value.X);
                         }))
                         {
                             continue;

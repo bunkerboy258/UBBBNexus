@@ -16,6 +16,14 @@ struct FBBBThrowableAreaConfig final
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "区域半径", ClampMin = "0", ForceUnits = "cm"))
     float Radius = 0.0f;
 
+    /** 首次生效时覆盖的最大半径比例 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "初始区域半径比例", ClampMin = "0", ClampMax = "1"))
+    float InitialRadiusRatio = 1.0f;
+
+    /** 展开到最大半径所需时间 零为立即展开 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "区域展开时间", ClampMin = "0", ForceUnits = "s"))
+    float ExpansionSeconds = 0.0f;
+
     /** 自落点往上的有效高度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "区域高度", ClampMin = "0", ForceUnits = "cm"))
     float Height = 0.0f;
@@ -31,4 +39,15 @@ struct FBBBThrowableAreaConfig final
     /** 相邻两次区域伤害的最短间隔 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "伤害间隔", ClampMin = "0.2", ForceUnits = "s"))
     float DamageInterval = 1.0f;
+
+    /** @param Age	起爆后经过的服务器时间 @return 当前生效半径 */
+    float RadiusAtAge(const double Age) const
+    {
+        if (ExpansionSeconds <= 0.0f)
+        {
+            return Radius;
+        }
+        const float Alpha = static_cast<float>(FMath::Clamp(Age / ExpansionSeconds, 0.0, 1.0));
+        return Radius * FMath::Lerp(InitialRadiusRatio, 1.0f, FMath::SmoothStep(0.0f, 1.0f, Alpha));
+    }
 };

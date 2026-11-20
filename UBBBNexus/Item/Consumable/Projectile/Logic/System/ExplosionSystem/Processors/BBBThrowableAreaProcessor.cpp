@@ -15,10 +15,10 @@ namespace
 {
 /** 查询该点是否在区域中 且区域与目标之间没有场景遮挡 */
 bool IsCovered(const ABBBThrowable& Source, const FVector& Ground, const FBBBThrowableAreaConfig& Area,
-    const FVector& Position, const AActor* Target)
+    const double Age, const FVector& Position, const AActor* Target)
 {
     const FVector Relative = Position - Ground;
-    if (Relative.Z < 0.0 || Relative.Z > Area.Height || Relative.SizeSquared2D() > FMath::Square(Area.Radius))
+    if (Relative.Z < 0.0 || Relative.Z > Area.Height || Relative.SizeSquared2D() > FMath::Square(Area.RadiusAtAge(Age)))
     {
         return false;
     }
@@ -52,7 +52,7 @@ bool HasEarlierArea(const ABBBThrowable& Actor, const FBBBThrowableExplosionFact
         {
             continue;
         }
-        if (IsCovered(*Other, Fact.AreaGround, Area, Position, Target))
+        if (IsCovered(*Other, Fact.AreaGround, Area, Now - Fact.Time, Position, Target))
         {
             return true;
         }
@@ -75,6 +75,8 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     const auto* GameState = World.GetGameState();
     const double Now = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
     const auto& Area = Definition->Explosion.Area;
+    const double Age = Now - Fact.Time;
+    const float CurrentRadius = Area.RadiusAtAge(Age);
     const double Remaining = Fact.Time + Area.Duration - Now;
     if (Remaining <= 0.0)
     {
@@ -93,7 +95,20 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         Actor.AreaEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.AreaEffect,
             Fact.AreaGround, FRotator::ZeroRotator, FVector(Definition->Presentation.AreaEffectScale),
             false, false, ENCPoolMethod::None);
-        if (Actor.AreaEffect)
+    }
+    if (Actor.AreaEffect && Remaining > FadeTime)
+    {
+        if (Area.bObscuresSight)
+        {
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Radius"), CurrentRadius * 0.67f);
+        }
+        else
+        {
+            const float Scale = Definition->Presentation.AreaEffectScale;
+            const float SpreadScale = Scale * CurrentRadius / Area.Radius;
+            Actor.AreaEffect->SetWorldScale3D(FVector(SpreadScale, SpreadScale, Scale));
+        }
+        if (!Actor.AreaEffect->IsActive())
         {
             Actor.AreaEffect->Activate(true);
         }
@@ -128,7 +143,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             continue;
         }
         const FVector Position = Pawn->GetActorLocation();
-        if (IsCovered(Actor, Fact.AreaGround, Area, Position, Pawn) &&
+        if (IsCovered(Actor, Fact.AreaGround, Area, Age, Position, Pawn) &&
             !HasEarlierArea(Actor, Fact, Now, Position, Pawn))
         {
             Hit.Position = Position;
@@ -139,11 +154,11 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     if (auto* Mass = World.GetSubsystem<UBBBMassSubsystem>())
     {
         TArray<FBBBMassCollisionBody> Bodies;
-        Mass->OverlapEntities(Fact.AreaGround, FMath::Sqrt(FMath::Square(Area.Radius) + FMath::Square(Area.Height)), Bodies);
+        Mass->OverlapEntities(Fact.AreaGround, FMath::Sqrt(FMath::Square(CurrentRadius) + FMath::Square(Area.Height)), Bodies);
         TSet<FMassEntityHandle> Damaged;
         for (const auto& Body : Bodies)
         {
-            if (Damaged.Contains(Body.Entity) || !IsCovered(Actor, Fact.AreaGround, Area, Body.Center, nullptr) ||
+            if (Damaged.Contains(Body.Entity) || !IsCovered(Actor, Fact.AreaGround, Area, Age, Body.Center, nullptr) ||
                 HasEarlierArea(Actor, Fact, Now, Body.Center, nullptr))
             {
                 continue;
