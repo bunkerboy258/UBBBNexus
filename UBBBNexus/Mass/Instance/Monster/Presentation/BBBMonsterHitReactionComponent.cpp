@@ -217,6 +217,70 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 }
 
+void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const float Age,
+    const float Remaining, const bool bCrawling)
+{
+    if (Remaining <= 0.0f)
+    {
+        ShockPosePulse = INDEX_NONE;
+        return;
+    }
+    if (Start != ShockPoseStart)
+    {
+        ShockPoseStart = Start;
+        ShockPosePulse = INDEX_NONE;
+    }
+    const float Delay = bCrawling ? 0.0f : 0.5f;
+    const float Time = Age - Delay;
+    if (Time < 0.0f || !CanHitReact() || !PresentationSettings)
+    {
+        return;
+    }
+
+    const int32 Cycle = FMath::FloorToInt(Time / 0.62f);
+    const int32 Pulse = Cycle * 2 + (Time - Cycle * 0.62f >= 0.21f ? 1 : 0);
+    if (Pulse == ShockPosePulse)
+    {
+        return;
+    }
+    ShockPosePulse = Pulse;
+
+    EBBBMonsterHitRegion Region = EBBBMonsterHitRegion::Head;
+    int32 ProfileIndex = 1;
+    if (!bCrawling && Pulse % 3 != 0)
+    {
+        Region = Pulse % 3 == 1 ? EBBBMonsterHitRegion::LeftArm : EBBBMonsterHitRegion::RightArm;
+        ProfileIndex = 2;
+    }
+    const auto& Rule = PresentationSettings->HitReaction.ReadRegion(Region);
+    const auto* PhysicsAsset = Mesh->GetPhysicsAsset();
+    if (!PhysicsAsset || PhysicsAsset->FindBodyIndex(Rule.Bone) == INDEX_NONE ||
+        Mesh->IsBoneHiddenByName(Rule.Bone) || !AvailableProfiles.IsValidIndex(ProfileIndex) ||
+        !AvailableProfiles[ProfileIndex])
+    {
+        return;
+    }
+
+    const float Strength = FMath::Clamp(Remaining / 2.5f, 0.15f, 1.0f);
+    FHitReactImpulseParams Impulse;
+    Impulse.AngularImpulse.bApplyImpulse = true;
+    Impulse.AngularImpulse.Impulse = Rule.AngularImpulse * (bCrawling ? 0.38f : 0.55f) * Strength;
+    FHitReactImpulse_WorldParams Axes;
+    Axes.AngularDirection = Mesh->GetForwardVector() * (Pulse % 2 == 0 ? 1.0f : -1.0f);
+    const FHitReactInputParams Params(AvailableProfiles[ProfileIndex], Rule.Bone, true);
+    RequestAnimationUpdate();
+    if (HitReact(Params, Impulse, Axes, 1.0f))
+    {
+        PendingAnchorRoot = Rule.Bone;
+        bHasAppliedReaction = true;
+        if (IsValid(PhysicalAnimation))
+        {
+            PhysicalAnimation->AddTickPrerequisiteComponent(this);
+            PhysicalAnimation->SetComponentTickEnabled(true);
+        }
+    }
+}
+
 bool UBBBMonsterHitReactionComponent::CanHitReact_Implementation() const
 {
     return bPresentationAlive
@@ -373,6 +437,8 @@ void UBBBMonsterHitReactionComponent::ResetPresentation()
 {
     ResetHitReactSystem();
     ObservedHitSerial = 0;
+    ShockPoseStart = 0.0f;
+    ShockPosePulse = INDEX_NONE;
     bPresentationAlive = true;
 }
 

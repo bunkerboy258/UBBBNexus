@@ -46,6 +46,13 @@ struct FBBBMonsterDamageTotals final
     UPROPERTY()
     FBBBMonsterStaggerContribution Stagger;
 
+    /** 房主世界来源最近一次连续震撼的服务器起止时间 */
+    UPROPERTY()
+    double ShockStartedAt = 0.0;
+
+    UPROPERTY()
+    double ShockEndsAt = 0.0;
+
     /** 世界来源由房主独占写入 与同一投掷者的枪伤分别合并 */
     UPROPERTY()
     bool bWorldSource = false;
@@ -63,7 +70,10 @@ struct FBBBMonsterDamageTotals final
     {
         return (PlayerId >= 0 || bWorldSource) && Parts.IsValid()
             && FMath::IsFinite(LastHitTime) && LastHitRegion <= EBBBMonsterHitRegion::RightLeg
-            && !LastSourcePosition.ContainsNaN() && Stagger.IsValid() && LastHitResult.IsValid();
+            && !LastSourcePosition.ContainsNaN() && Stagger.IsValid() && LastHitResult.IsValid()
+            && FMath::IsFinite(ShockStartedAt) && ShockStartedAt >= 0.0
+            && FMath::IsFinite(ShockEndsAt) && ShockEndsAt >= ShockStartedAt
+            && (bWorldSource || ShockEndsAt == 0.0);
     }
 
     bool operator==(const FBBBMonsterDamageTotals& Other) const
@@ -71,7 +81,8 @@ struct FBBBMonsterDamageTotals final
         return PlayerId == Other.PlayerId && bWorldSource == Other.bWorldSource && Parts == Other.Parts
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
             && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition
-            && LastHitResult == Other.LastHitResult && Stagger == Other.Stagger && Destruction == Other.Destruction;
+            && LastHitResult == Other.LastHitResult && Stagger == Other.Stagger && Destruction == Other.Destruction
+            && ShockStartedAt == Other.ShockStartedAt && ShockEndsAt == Other.ShockEndsAt;
     }
 
     /**
@@ -85,6 +96,9 @@ struct FBBBMonsterDamageTotals final
         Combined.MergeMax(Other.Parts);
         FBBBMonsterStaggerContribution CombinedStagger = Stagger;
         CombinedStagger.Merge(Other.Stagger);
+        const bool bTakeShock = Other.ShockEndsAt > ShockEndsAt;
+        const double ShockStart = bTakeShock ? Other.ShockStartedAt : ShockStartedAt;
+        const double ShockEnd = FMath::Max(ShockEndsAt, Other.ShockEndsAt);
         FBBBMonsterDestructionContribution CombinedDestruction = Destruction;
         CombinedDestruction.MergeMax(Other.Destruction);
         if ((PlayerId == INDEX_NONE && !bWorldSource) || Other.LastHitTime > LastHitTime
@@ -96,6 +110,8 @@ struct FBBBMonsterDamageTotals final
         LastHitResult = SavedHit;
         Parts = Combined;
         Stagger = CombinedStagger;
+        ShockStartedAt = ShockStart;
+        ShockEndsAt = ShockEnd;
         Destruction = CombinedDestruction;
     }
 };

@@ -26,6 +26,15 @@ public:
     void ApplyHitFacts(const FBBBMonsterHitReactionFragment& Hit, bool bAlive);
 
     /**
+     * @param Start	连续震撼的本机起始时间
+     * @param Age	当前震撼已经持续的时间
+     * @param Remaining	当前震撼剩余的时间
+     * @param bCrawling	是否保持贴地支撑
+     * @return 无返回值
+     */
+    void ApplyShockPose(float Start, float Age, float Remaining, bool bCrawling);
+
+    /**
      * 清除表现对象上一代实体的全部受力状态
      * @return 无返回值
      */
@@ -67,6 +76,10 @@ private:
 
     /** 最近接收的存活事实 */
     bool bPresentationAlive = true;
+
+    /** 最近已播放的抽动及所属连续震撼 */
+    float ShockPoseStart = 0.0f;
+    int32 ShockPosePulse = INDEX_NONE;
 
     /** 只在活动受击期间请求完整骨骼更新 */
     void RequestAnimationUpdate() const;

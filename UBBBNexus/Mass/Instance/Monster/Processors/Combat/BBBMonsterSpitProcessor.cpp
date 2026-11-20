@@ -81,7 +81,7 @@ void UBBBMonsterSpitProcessor::Execute(FMassEntityManager&, FMassExecutionContex
             }
             auto& State = Specials[I];
             auto& Fact = State.Fact;
-            if (Health[I].CurrentHealth <= 0 || Injury[I].bCrawling || Injury[I].IsStaggering(Now)
+            if (Health[I].CurrentHealth <= 0 || Injury[I].bCrawling || Injury[I].IsStaggering(Now) || Injury[I].IsShocked(Now)
                 || Traversal[I].Fact.Kind != 0 || !Ground[I].bGrounded)
             {
                 Fact.Phase = 0;

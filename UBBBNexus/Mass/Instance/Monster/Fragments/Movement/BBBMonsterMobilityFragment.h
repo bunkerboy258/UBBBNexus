@@ -37,12 +37,29 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
     /** 当前已还原的踉跄身份 重复快照不重新开始动作 */
     FGuid StaggerAttackId;
 
+    /** 连续震撼的本机时间窗口 */
+    float ShockStartedAt = 0.0f;
+    float ShockEndsAt = 0.0f;
+
+    /** 失衡起手截取时间 */
+    static constexpr float ShockRecoilSeconds = 0.5f;
+
+    /** @param Now	本机世界秒数 @return 当前是否失能 */
+    bool IsShocked(const float Now) const
+    {
+        return ShockEndsAt > ShockStartedAt && Now >= ShockStartedAt && Now < ShockEndsAt;
+    }
+
     /**
      * @param Now	本机世界秒数
      * @return 当前是否处于站立踉跄
      */
     bool IsStaggering(const float Now) const
     {
+        if (IsShocked(Now))
+        {
+            return !bCrawling && Now - ShockStartedAt < ShockRecoilSeconds;
+        }
         return !bCrawling && StaggerEndsAt > StaggerStartedAt && Now >= StaggerStartedAt && Now < StaggerEndsAt;
     }
 

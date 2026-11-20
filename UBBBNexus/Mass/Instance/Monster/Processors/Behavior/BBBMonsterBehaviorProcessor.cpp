@@ -157,6 +157,15 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
                 continue;
             }
 
+            if (Mobility[Index].IsShocked(WorldTime))
+            {
+                Combat.AttackTarget.Reset();
+                Combat.bHitAttempted = true;
+                Combat.bAttackFinished = true;
+                EnterState(EBBBMonsterBehavior::Idle);
+                continue;
+            }
+
             const auto Specials = ChunkContext.GetFragmentView<FBBBMonsterSpecialFragment>();
             if (!Specials.IsEmpty() && (Specials[Index].Fact.HoldsMovement() || Specials[Index].Fact.Phase == 5))
             {

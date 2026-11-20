@@ -273,8 +273,17 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 PresentationState.ActionProgress);
             const float StaggerProgress = Mobility.StaggerEndsAt > Mobility.StaggerStartedAt
                 ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
-            Presentation->ApplyStaggerState(Mobility.IsStaggering(Now), StaggerProgress, Mobility.StaggerRegion);
+            const bool bShocked = Mobility.IsShocked(Now);
+            const float ShockAge = Now - Mobility.ShockStartedAt;
+            Presentation->ApplyStaggerState(Mobility.IsStaggering(Now),
+                bShocked ? FMath::Clamp(ShockAge / 2.3333333f, 0.0f, 1.0f) : StaggerProgress,
+                bShocked ? EBBBMonsterHitRegion::Head : Mobility.StaggerRegion);
             Presentation->ApplyHitReaction(HitReactions[Index]);
+            if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
+            {
+                Reaction->ApplyShockPose(bShocked ? Mobility.ShockStartedAt : 0.0f, ShockAge,
+                    bShocked ? Mobility.ShockEndsAt - Now : 0.0f, Mobility.bCrawling);
+            }
             if (Definition && PresentationState.State == EBBBMonsterBehavior::Dead && !Presentation->IsCorpseActive())
             {
                 const float Age = Now - PresentationState.StateEnteredTime;

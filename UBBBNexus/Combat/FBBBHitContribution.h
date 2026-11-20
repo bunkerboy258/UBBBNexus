@@ -33,6 +33,10 @@ struct ABBB_EVAC_API FBBBHitContribution final
     UPROPERTY()
     float AddStagger = 0;
 
+    /** 仅允许权威世界来源提供的僵尸失能时长 */
+    UPROPERTY()
+    float MonsterShockSeconds = 0.0f;
+
     /** 伤口强度 */
     UPROPERTY()
     float AddWound = 0;
@@ -94,10 +98,12 @@ struct ABBB_EVAC_API FBBBHitContribution final
     {
         return FMath::IsFinite(AddDamage) && AddDamage >= 0 && FMath::IsFinite(AddDurableDamage) && AddDurableDamage >= 0
             && FMath::IsFinite(AddStagger) && AddStagger >= 0 && FMath::IsFinite(AddWound) && AddWound >= 0
+            && FMath::IsFinite(MonsterShockSeconds) && MonsterShockSeconds >= 0.0f && MonsterShockSeconds <= 10.0f
+            && (MonsterShockSeconds == 0.0f || (bWorldSource && AttackId.IsValid()))
             && FMath::IsFinite(AddHoldSeconds) && AddHoldSeconds >= 0
             && FMath::IsFinite(AttackTime) && AttackTime >= 0 && !Position.ContainsNaN() && !Direction.ContainsNaN()
             && !SourcePosition.ContainsNaN() && !Normal.ContainsNaN() && !AddImpulse.ContainsNaN() && !AddVelocity.ContainsNaN()
             && (AddDamage > 0 || AddDurableDamage > 0 || AddHoldSeconds > 0 || !AddVelocity.IsNearlyZero()
-                || !AddImpulse.IsNearlyZero() || AddWound > 0 || AddStagger > 0);
+                || !AddImpulse.IsNearlyZero() || AddWound > 0 || AddStagger > 0 || MonsterShockSeconds > 0.0f);
     }
 };

@@ -448,7 +448,7 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 FacingDirection = (Target.TargetLocation - Location).GetSafeNormal2D();
             }
             if (States[Index].State != EBBBMonsterBehavior::Attack && States[Index].State != EBBBMonsterBehavior::Dead
-                && !Injury.IsStaggering(Now) && Settings && !FacingDirection.IsNearlyZero())
+                && !Injury.IsStaggering(Now) && !Injury.IsShocked(Now) && Settings && !FacingDirection.IsNearlyZero())
             {
                 const float Rate = Injury.bCrawling ? Settings->CrawlTurnRate
                     : Movement.Gait == EBBBMonsterGait::Walk ? Settings->WalkTurnRate : Settings->RunTurnRate;

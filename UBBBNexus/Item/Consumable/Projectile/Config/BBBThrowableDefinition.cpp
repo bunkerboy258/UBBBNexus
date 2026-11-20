@@ -12,6 +12,8 @@ bool UBBBThrowableDefinition::IsValid() const
         && Explosion.Damage >= 0.0f && Explosion.DurableDamage >= 0.0f
         && Explosion.MinimumDamageRatio >= 0.0f && Explosion.MinimumDamageRatio <= 1.0f
         && Explosion.Stagger >= 0.0f && FMath::IsFinite(Explosion.FlashSeconds) && Explosion.FlashSeconds >= 0.0f
+        && FMath::IsFinite(Explosion.MonsterShockSeconds) && Explosion.MonsterShockSeconds >= 0.0f
+        && Explosion.MonsterShockSeconds <= 10.0f
         && FMath::IsFinite(Area.Duration) && Area.Duration >= 0.0f
         && (Area.Duration == 0.0f || (Presentation.AreaEffect && Presentation.AreaEffectScale > 0.0f
             && FMath::IsFinite(Area.Radius) && Area.Radius > 0.0f && FMath::IsFinite(Area.Height) && Area.Height > 0.0f

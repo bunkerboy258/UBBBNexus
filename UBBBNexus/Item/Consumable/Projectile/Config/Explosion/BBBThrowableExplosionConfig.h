@@ -45,6 +45,10 @@ struct FBBBThrowableExplosionConfig final
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "白闪恢复时间", ClampMin = "0", ForceUnits = "s"))
     float FlashSeconds = 0.0f;
 
+    /** 僵尸受到震撼后的失能时间 零为关闭 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "僵尸震撼时间", ClampMin = "0", ClampMax = "10", ForceUnits = "s"))
+    float MonsterShockSeconds = 0.0f;
+
     /** 起爆后从地面锚点生效的区域 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "持续区域"))
     FBBBThrowableAreaConfig Area;

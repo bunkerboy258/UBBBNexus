@@ -65,7 +65,8 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 const float Ratio = bDamage ? FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius) : 0.f;
                 FBBBHitContribution Hit{Config.Damage * Ratio, NAME_None, Surface, Direction};
                 Hit.AddDurableDamage = Config.DurableDamage * Ratio;
-                Hit.AddStagger = bDamage ? Config.Stagger : 0.f;
+                Hit.AddStagger = bDamage && Config.MonsterShockSeconds == 0.0f ? Config.Stagger : 0.f;
+                Hit.MonsterShockSeconds = bDamage ? Config.MonsterShockSeconds : 0.f;
                 if (Distance < Config.ImpulseRadius)
                 {
                     const FVector Force = Direction * Config.ImpulseStrength * (1.f - Distance / Config.ImpulseRadius);

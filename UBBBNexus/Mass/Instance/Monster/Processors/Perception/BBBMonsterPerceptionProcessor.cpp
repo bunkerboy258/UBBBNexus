@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Health/BBBMonsterDamageProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/BBBThrowableDefinition.h"
@@ -42,6 +43,7 @@ void UBBBMonsterPerceptionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
     MonsterQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterStimulusFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddTagRequirement<FBBBMonsterTag>(EMassFragmentPresence::All);
@@ -113,6 +115,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Health = Chunk.GetFragmentView<FBBBMonsterHealthFragment>();
         const auto Damage = Chunk.GetFragmentView<FBBBMonsterDamageFragment>();
         const auto Navigation = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
+        const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         const auto Stimuli = Chunk.GetFragmentView<FBBBMonsterStimulusFragment>();
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
@@ -143,10 +146,15 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 ClearTarget();
             }
-            if (Health[Index].CurrentHealth <= 0.0f)
+            if (Health[Index].CurrentHealth <= 0.0f || Mobility[Index].IsShocked(Now))
             {
                 ClearTarget();
                 Sense.Contacts.Reset();
+                if (Mobility[Index].IsShocked(Now))
+                {
+                    Sense.InvestigationFinishedAt = Now;
+                    Sense.LastSenseTime = Now;
+                }
                 continue;
             }
             const FVector Location = Transforms[Index].GetTransform().GetLocation();
@@ -417,10 +425,12 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Networks = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Navigation = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Perceptions = Chunk.GetFragmentView<FBBBMonsterPerceptionFragment>();
+        const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Target = Targets[Index];
-            if (Health[Index].CurrentHealth <= 0.0f || Target.bHasTarget || !Networks[Index].Definition.IsValid() ||
+            if (Health[Index].CurrentHealth <= 0.0f || Mobility[Index].IsShocked(Now)
+                || Target.bHasTarget || !Networks[Index].Definition.IsValid() ||
                 Now < Perceptions[Index].InvestigationFinishedAt + Networks[Index].Definition->InvestigationAlertDuration)
             {
                 continue;

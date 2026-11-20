@@ -143,7 +143,8 @@ void UBBBMonsterTraversalProcessor::Execute(FMassEntityManager&, FMassExecutionC
             const uint8 RequiredParts = (1 << static_cast<uint8>(EBBBMonsterHitRegion::LeftArm))
                 | (1 << static_cast<uint8>(EBBBMonsterHitRegion::RightArm));
             const bool bAble = Rule.bEnabled && Rule.IsValid() && !Mobility[Index].bCrawling
-                && Health[Index].CurrentHealth > 0 && (Health[Index].DestroyedParts & RequiredParts) == 0;
+                && !Mobility[Index].IsShocked(Now) && Health[Index].CurrentHealth > 0
+                && (Health[Index].DestroyedParts & RequiredParts) == 0;
             FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMonsterTraversal), false);
             if (Actors[Index].Get())
             {

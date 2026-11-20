@@ -46,6 +46,23 @@ namespace
             auto& Value = Ledger.FindOrAdd(Identity.WriterKey());
             Value.PlayerId = Hit.PlayerId;
             Value.bWorldSource = Hit.bWorldSource;
+            if (Hit.MonsterShockSeconds > 0.0f)
+            {
+                const double End = Hit.AttackTime + Hit.MonsterShockSeconds;
+                if (End > Value.ShockEndsAt)
+                {
+                    if (Hit.AttackTime >= Value.ShockEndsAt)
+                    {
+                        Value.ShockStartedAt = Hit.AttackTime;
+                    }
+                    Value.ShockEndsAt = End;
+                }
+                if (Hit.AddDamage <= 0.0f && Hit.AddDurableDamage <= 0.0f &&
+                    Hit.AddImpulse.IsNearlyZero() && Hit.AddVelocity.IsNearlyZero())
+                {
+                    continue;
+                }
+            }
             Value.LastHitTime = Time;
             const auto ContactRegion = Hit.Part <= 5 ? static_cast<EBBBMonsterHitRegion>(Hit.Part) : EBBBMonsterHitRegion::Torso;
             Value.LastHitRegion = ContactRegion;
@@ -298,8 +315,15 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             FBBBMonsterPartDamage Totals;
             const FBBBMonsterDamageTotals* Latest = nullptr;
             const FBBBMonsterStaggerContribution* ActiveStagger = nullptr;
+            double ShockStart = ServerTime;
+            double ShockEnd = ServerTime;
             for (const auto& Value : Damage[Index].Contributions)
             {
+                if (Value.Value.bWorldSource && Value.Value.ShockEndsAt > ServerTime)
+                {
+                    ShockStart = FMath::Min(ShockStart, Value.Value.ShockStartedAt);
+                    ShockEnd = FMath::Max(ShockEnd, Value.Value.ShockEndsAt);
+                }
                 for (uint8 Part = 0; Part <= static_cast<uint8>(EBBBMonsterHitRegion::RightLeg); ++Part)
                 {
                     const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
@@ -364,6 +388,8 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 Motion.HitStopEndsAt = Now;
                 Motion.StaggerEndsAt = Now;
                 Motion.StaggerStartedAt = Now;
+                Motion.ShockStartedAt = Now;
+                Motion.ShockEndsAt = Now;
                 continue;
             }
             const uint8 LegMask = (1 << static_cast<uint8>(EBBBMonsterHitRegion::LeftLeg))
@@ -379,7 +405,17 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 UE_LOG(LogTemp, Log, TEXT("[BBBMonsterCrawl] Entity=%d Destroyed=%d"),
                     Chunk.GetEntity(Index).Index, Destroyed);
             }
-            if (!Motion.bCrawling && ActiveStagger != nullptr && ActiveStagger->ActiveAttackId != Motion.StaggerAttackId)
+            if (ShockEnd > ServerTime)
+            {
+                if (!Motion.IsShocked(Now))
+                {
+                    Motion.ShockStartedAt = Now + static_cast<float>(ShockStart - ServerTime);
+                }
+                Motion.ShockEndsAt = Now + static_cast<float>(ShockEnd - ServerTime);
+                Motion.HitStopEndsAt = FMath::Max(Motion.HitStopEndsAt, Motion.ShockEndsAt);
+            }
+            if (!Motion.IsShocked(Now) && !Motion.bCrawling && ActiveStagger != nullptr
+                && ActiveStagger->ActiveAttackId != Motion.StaggerAttackId)
             {
                 const bool bMayStart = !Motion.IsStaggering(Now)
                     && (Motion.StaggerEndsAt <= Motion.StaggerStartedAt

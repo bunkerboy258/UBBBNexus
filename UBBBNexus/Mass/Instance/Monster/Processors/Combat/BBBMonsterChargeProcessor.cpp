@@ -101,7 +101,7 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 Fact.Duration = Duration;
                 UE_LOG(LogTemp, Verbose, TEXT("[BBBCharger] Entity=%d Serial=%u Phase=%u"), Chunk.GetEntity(I).Index, Fact.Serial, Phase);
             };
-            if (Health[I].CurrentHealth <= 0 || Injury[I].bCrawling || Injury[I].IsStaggering(Now)
+            if (Health[I].CurrentHealth <= 0 || Injury[I].bCrawling || Injury[I].IsStaggering(Now) || Injury[I].IsShocked(Now)
                 || Traversal[I].Fact.Kind != 0 || !Ground[I].bGrounded)
             {
                 if (Fact.Phase != 0)
