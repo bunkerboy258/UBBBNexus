@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
+#include "GameFramework/Pawn.h"
 #include "Sound/SoundBase.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
@@ -143,14 +144,14 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
     CharacterPreview->SetActive(bBackpackOpen);
     CharacterPreview->SetPanels(MenuPanels);
-    CharacterPreview->Update(DeltaTime, ReadOrbitCursor());
+    CharacterPreview->Update(DeltaTime, ReadParallaxCursor());
     if (CharacterBrush.GetResourceObject() != CharacterPreview->GetTexture())
     {
         CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
     }
 }
 
-TOptional<FVector2D> UBBBPlayerItemView::ReadOrbitCursor() const
+TOptional<FVector2D> UBBBPlayerItemView::ReadParallaxCursor() const
 {
     if (!RoomImage || !FSlateApplication::IsInitialized())
     {
@@ -175,7 +176,13 @@ TOptional<FVector2D> UBBBPlayerItemView::ReadOrbitCursor() const
     {
         return FVector2D::ZeroVector;
     }
-    return FVector2D(2.0 * UV.X - 1.0, 1.0 - 2.0 * UV.Y);
+    const auto ApplyDeadZone = [](double Axis)
+    {
+        constexpr double DeadZone = 0.04;
+        const double Magnitude = FMath::Max(0.0, (FMath::Abs(Axis) - DeadZone) / (1.0 - DeadZone));
+        return FMath::Sign(Axis) * Magnitude;
+    };
+    return FVector2D(ApplyDeadZone(2.0 * UV.X - 1.0), ApplyDeadZone(1.0 - 2.0 * UV.Y));
 }
 
 void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
@@ -255,7 +262,7 @@ void UBBBPlayerItemView::RefreshItems()
     {
         NotifyQuickSelection();
     }
-    ObservedPawn = Controller->GetPawn();
+    ObservedPawn = Controller->GetPawn().Get();
     ObservedSelectedSlot = Selected;
     int32 QuickStart = 0;
     int32 QuickCount = Controller->GetQuickAccessSlotCount();

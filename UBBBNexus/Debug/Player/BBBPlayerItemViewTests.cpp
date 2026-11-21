@@ -21,11 +21,13 @@
 #include "Types/PaintArgs.h"
 #include "Rendering/DrawElements.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SWindow.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "UObject/Package.h"
 #include "UObject/UObjectGlobals.h"
 #include "Engine/SceneCapture2D.h"
 #include "EngineUtils.h"
@@ -390,7 +392,6 @@ private:
         Key.SetSoftSourceRadius(Radius * 0.5f);
 
         SetRim(*Portrait.Display, TEXT("ItemRoomCoolRim"), TEXT("Cool"), FVector(0, 0, 114), Request);
-        SetRim(*Portrait.Display, TEXT("ItemRoomWarmRim"), TEXT("Warm"), FVector(0, 0, 130), Request);
         SetLight(*Portrait.Display, TEXT("ItemRoomFill"), TEXT("Fill="), Request);
         auto* Camera = Portrait.Capture->GetCaptureComponent2D();
         Camera->bCameraCutThisFrame = true;

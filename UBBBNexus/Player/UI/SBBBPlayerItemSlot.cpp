@@ -3,8 +3,8 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
-#include "Engine/Texture2D.h"
 #include "Algo/Reverse.h"
+#include "GameFramework/Pawn.h"
 #include "Materials/MaterialInterface.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
@@ -12,9 +12,12 @@
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Images/SImage.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/SToolTip.h"
+#include "Widgets/Text/STextBlock.h"
 
 namespace
 {
@@ -33,7 +36,7 @@ class FBBBPlayerItemDrag final : public FDragDropOperation
     {
         TSharedRef<FBBBPlayerItemDrag> Operation = MakeShared<FBBBPlayerItemDrag>();
         Operation->View = &Owner;
-        Operation->Pawn = Owner.GetItemController()->GetPawn();
+        Operation->Pawn = Owner.GetItemController()->GetPawn().Get();
         Operation->InstanceId = Identity;
         Operation->Source = Slot;
         Operation->Name = MoveTemp(Label);
@@ -202,7 +205,7 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         static const FSlateRoundedBoxBrush HighlightedFrame(FLinearColor::Transparent, 1.0f,
             FLinearColor(0.93f, 0.76f, 0.58f, 0.91f), Border);
         FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(),
-            bHover || bSelected ? &HighlightedFrame : &Frame);
+            bHover || bSelected ? &HighlightedFrame : &Frame, ESlateDrawEffect::None, FLinearColor::Transparent);
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

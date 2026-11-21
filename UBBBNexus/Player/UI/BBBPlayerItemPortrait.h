@@ -61,7 +61,7 @@ private:
     TArray<TObjectPtr<UWidgetComponent>> Panels;
     void BuildRoom(USceneComponent& Root);
     void UpdateRoomMist();
-    void ApplyCameraOrbit(FVector2D Orbit);
+    void ApplyCameraParallax(FVector2D Offset);
     void SyncAppearance(const ABBBCharacter* Character);
     UPROPERTY(Transient)
     TObjectPtr<USpotLightComponent> RoomKey;
@@ -73,9 +73,8 @@ private:
     TObjectPtr<USkeletalMeshComponent> Pose;
     FVector Origin = FVector::ZeroVector;
     FTransform HomeCamera = FTransform::Identity;
-    FVector2D DisplayedOrbit = FVector2D::ZeroVector;
-    float CaptureCredit = 0.0f;
-    float PendingPoseTime = 0.0f;
+    FVector2D CameraOffset = FVector2D::ZeroVector;
+    FVector2D CameraOffsetVelocity = FVector2D::ZeroVector;
     TSharedPtr<FStreamableHandle> ResourceLoad;
     uint64 ObservedAppearanceRevision = 0;
     bool bActive = false;

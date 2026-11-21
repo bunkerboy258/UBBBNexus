@@ -24,8 +24,7 @@ void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
     }
     bActive = bInActive;
     bDirty |= bActive;
-    CaptureCredit = 0.0f;
-    PendingPoseTime = 0.0f;
+    CameraOffsetVelocity = FVector2D::ZeroVector;
 }
 
 bool UBBBPlayerItemPortrait::IsForPawn(const APawn* Pawn) const
@@ -172,15 +171,15 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     return true;
 }
 
-void UBBBPlayerItemPortrait::ApplyCameraOrbit(FVector2D Orbit)
+void UBBBPlayerItemPortrait::ApplyCameraParallax(FVector2D Offset)
 {
     const FQuat BaseRotation = HomeCamera.GetRotation();
     const FVector BasePosition = HomeCamera.GetLocation();
     const FVector Pivot = Origin + FVector(0.0, 0.0, 112.0);
-    const FQuat Offset = FRotator(Orbit.Y * 1.05, Orbit.X * 1.6, 0.0).Quaternion();
-    const FQuat Rotation = BaseRotation * Offset;
+    const FQuat Rotation = BaseRotation * FRotator(Offset.Y * 0.39, Offset.X * 0.85, 0.0).Quaternion();
     const FQuat WorldOffset = Rotation * BaseRotation.Inverse();
-    Capture->SetActorLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot), Rotation);
+    const FVector Truck = Rotation.GetRightVector() * (-1.6 * Offset.X) + Rotation.GetUpVector() * (-0.8 * Offset.Y);
+    Capture->SetActorLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot) + Truck, Rotation);
 }
 
 void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>& Cursor)
@@ -192,22 +191,18 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     }
     const auto *Character = Cast<ABBBCharacter>(Source.Get());
     const uint64 Revision = Character ? Character->RuntimeData.Appearance.ReadCharacterAppearanceDisplayState().AppliedRevision : 0;
-    FVector2D TargetOrbit = Cursor.Get(DisplayedOrbit);
+    TOptional<FVector2D> TargetOffset = Cursor;
 #if WITH_DEV_AUTOMATION_TESTS
     if (ReviewPoseTime >= 0.0f)
     {
-        TargetOrbit = FVector2D::ZeroVector;
+        TargetOffset = FVector2D::ZeroVector;
     }
 #endif
-    constexpr float CaptureInterval = 1.0f / 60.0f;
-    CaptureCredit += DeltaTime;
-    PendingPoseTime += DeltaTime;
     const bool bNeedsSync = bDirty || Revision != ObservedAppearanceRevision;
-    if (!bNeedsSync && CaptureCredit + UE_KINDA_SMALL_NUMBER < CaptureInterval)
+    if (!bNeedsSync && DeltaTime <= 0.0f)
     {
         return;
     }
-    CaptureCredit = CaptureCredit >= CaptureInterval ? FMath::Fmod(CaptureCredit, CaptureInterval) : 0.0f;
 
 #if WITH_DEV_AUTOMATION_TESTS
     if (ReviewPoseTime >= 0.0f)
@@ -218,7 +213,7 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     else
 #endif
     {
-        Pose->TickAnimation(PendingPoseTime, false);
+        Pose->TickAnimation(DeltaTime, false);
     }
     Pose->RefreshBoneTransforms();
 
@@ -229,18 +224,28 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     }
     for (UWidgetComponent* Panel : Panels)
     {
-        Panel->TickComponent(PendingPoseTime, LEVELTICK_All, nullptr);
+        Panel->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
     }
 
-    const FVector2D NextOrbit = DisplayedOrbit.Equals(TargetOrbit, 0.001)
-        ? TargetOrbit
-        : FMath::Lerp(DisplayedOrbit, TargetOrbit, 1.0 - FMath::Exp(-16.0 * PendingPoseTime));
-    PendingPoseTime = 0.0f;
-    // 命中检测读取对应这次捕获的机位
-    if (NextOrbit != DisplayedOrbit)
+    const FVector2D PreviousOffset = CameraOffset;
+    if (TargetOffset.IsSet())
     {
-        ApplyCameraOrbit(NextOrbit);
-        DisplayedOrbit = NextOrbit;
+        FMath::SpringDamperSmoothing(CameraOffset, CameraOffsetVelocity, TargetOffset.GetValue(),
+            FVector2D::ZeroVector, DeltaTime, 0.073f, 1.0f);
+        if (CameraOffset.Equals(TargetOffset.GetValue(), 0.001) && CameraOffsetVelocity.IsNearlyZero(0.015))
+        {
+            CameraOffset = TargetOffset.GetValue();
+            CameraOffsetVelocity = FVector2D::ZeroVector;
+        }
+    }
+    else
+    {
+        CameraOffsetVelocity = FVector2D::ZeroVector;
+    }
+    // 命中检测读取对应这次捕获的机位
+    if (CameraOffset != PreviousOffset)
+    {
+        ApplyCameraParallax(CameraOffset);
     }
     Capture->GetCaptureComponent2D()->CaptureScene();
 #if WITH_DEV_AUTOMATION_TESTS
@@ -266,7 +271,7 @@ void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character)
             Display->AddInstanceComponent(Part);
             Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             Part->SetVisibleInSceneCaptureOnly(true);
-            Part->SetLightingChannels(true, false, false);
+            Part->SetLightingChannels(true, true, false);
             Part->SetOverlayMaterial(nullptr);
             Part->SetRenderCustomDepth(false);
             Part->SetComponentTickEnabled(false);
@@ -370,9 +375,8 @@ void UBBBPlayerItemPortrait::Close()
     Panels.Reset();
     PreviewScene.Reset();
     Source.Reset();
-    DisplayedOrbit = FVector2D::ZeroVector;
-    CaptureCredit = 0.0f;
-    PendingPoseTime = 0.0f;
+    CameraOffset = FVector2D::ZeroVector;
+    CameraOffsetVelocity = FVector2D::ZeroVector;
     bActive = false;
     bDirty = true;
     ObservedAppearanceRevision = 0;

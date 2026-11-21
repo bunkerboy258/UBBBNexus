@@ -98,7 +98,7 @@ private:
     /** @return 角色实时预览画刷 */
     const FSlateBrush *GetCharacterBrush() const;
     /** @return 图像内的归一化光标位置 空值保持机位 */
-    TOptional<FVector2D> ReadOrbitCursor() const;
+    TOptional<FVector2D> ReadParallaxCursor() const;
     /** @param Type\t左侧存储分类 @return 已处理 */
     FReply ShowStorage(EBBBItemType Type);
     /** @param Page\t右侧展示页面 @return 已处理 */

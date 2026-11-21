@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/Texture2D.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Styling/SlateBrush.h"
 #include "UObject/StrongObjectPtr.h"
 
 class UBBBPlayerItemView;
-class UTexture2D;
 
 /** 背包索引对应的单个显示与拖动控件 */
 class SBBBPlayerItemSlot final : public SCompoundWidget
