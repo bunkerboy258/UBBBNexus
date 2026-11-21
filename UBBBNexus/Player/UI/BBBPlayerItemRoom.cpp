@@ -96,7 +96,7 @@ void UBBBPlayerItemPortrait::BuildRoom(USceneComponent& Root)
         Light->RegisterComponent();
     };
     AddRim(TEXT("ItemRoomCoolRim"), FVector(-14, -137, 214), FVector(0, 0, 114),
-        FLinearColor(0.65f, 0.78f, 1.0f), 52.0f, 38.0f, 42.0f);
+        FLinearColor(0.68f, 0.19f, 1.0f), 118.0f, 38.0f, 42.0f);
     AddRim(TEXT("ItemRoomWarmRim"), FVector(-41, 126, 222), FVector(0, 0, 130),
         FLinearColor(1.0f, 0.80f, 0.60f), 37.0f, 36.0f, 30.0f);
 
