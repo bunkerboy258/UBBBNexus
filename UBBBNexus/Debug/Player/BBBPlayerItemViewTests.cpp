@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
@@ -138,7 +139,7 @@ public:
             bPerfComplete = !TickPerformance(ItemView, Portrait);
             return true;
         }
-        if (!Portrait || !Portrait->RoomKey || !Portrait->RoomMist || Portrait->GetPanels().Num() != 2)
+        if (!Portrait || !Portrait->Stage || Portrait->GetPanels().Num() != 2)
         {
             return FPlatformTime::Seconds() < ReadyDeadline;
         }
@@ -366,7 +367,7 @@ private:
         FParse::Value(Request, TEXT("Pose="), PoseTime);
         Portrait.ReviewPoseTime = PoseTime;
         Portrait.bDirty = true;
-        USpotLightComponent& Key = *Portrait.RoomKey;
+        USpotLightComponent& Key = *Portrait.Stage->GetKey();
         FVector Position = Key.GetRelativeLocation();
         const FVector Direction = Key.GetForwardVector();
         FVector Target = Position - Direction * (Position.Z / FMath::Min(-0.01, Direction.Z));
@@ -391,9 +392,9 @@ private:
         Key.SetSourceRadius(Radius);
         Key.SetSoftSourceRadius(Radius * 0.5f);
 
-        SetRim(*Portrait.Display, TEXT("ItemRoomCoolRim"), TEXT("Cool"), FVector(0, 0, 114), Request);
-        SetLight(*Portrait.Display, TEXT("ItemRoomFill"), TEXT("Fill="), Request);
-        auto* Camera = Portrait.Capture->GetCaptureComponent2D();
+        SetRim(*Portrait.Stage, TEXT("ItemRoomCoolRim"), TEXT("Cool"), FVector(0, 0, 114), Request);
+        SetLight(*Portrait.Stage, TEXT("ItemRoomFill"), TEXT("Fill="), Request);
+        auto* Camera = Portrait.Stage->GetCapture();
         Camera->bCameraCutThisFrame = true;
         float Exposure = Camera->PostProcessSettings.AutoExposureBias;
         float Bloom = Camera->PostProcessSettings.BloomIntensity;
@@ -405,17 +406,18 @@ private:
         float Mist = 0.0f;
         int32 Native = 0;
         FParse::Value(Request, TEXT("Native="), Native);
-        Portrait.UpdateRoomMist();
+        Portrait.Stage->UpdateMist();
+        auto* RoomMist = Portrait.Stage->GetMist();
         const bool bOverrideMist = FParse::Value(Request, TEXT("Mist="), Mist);
-        Portrait.RoomMist->SetVisibility(Native == 0 && (!bOverrideMist || Mist > 0.0f));
+        RoomMist->SetVisibility(Native == 0 && (!bOverrideMist || Mist > 0.0f));
         if (bOverrideMist)
         {
-            Portrait.RoomMist->SetCustomPrimitiveDataFloat(10, Mist);
+            RoomMist->SetCustomPrimitiveDataFloat(10, Mist);
         }
         float Halo = 0.0f;
         if (FParse::Value(Request, TEXT("MistHalo="), Halo))
         {
-            Portrait.RoomMist->SetCustomPrimitiveDataFloat(11, Halo);
+            RoomMist->SetCustomPrimitiveDataFloat(11, Halo);
         }
         if (Native != 0 && !NativeHaze.IsValid())
         {

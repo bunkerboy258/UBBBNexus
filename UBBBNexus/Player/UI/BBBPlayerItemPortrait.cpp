@@ -1,13 +1,13 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/WidgetComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "PreviewScene.h"
-#include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
 #include "Components/SceneComponent.h"
-#include "Engine/SceneCapture2D.h"
+#include "Engine/LevelStreamingDynamic.h"
+#include "Engine/Level.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -32,6 +32,72 @@ bool UBBBPlayerItemPortrait::IsForPawn(const APawn* Pawn) const
     return Source.IsValid() && Source.Get() == Pawn;
 }
 
+const USceneCaptureComponent2D* UBBBPlayerItemPortrait::GetCamera() const
+{
+    return Stage ? Stage->GetCapture() : nullptr;
+}
+
+bool UBBBPlayerItemPortrait::PrepareStage()
+{
+    if (bStageLoadFailed)
+    {
+        return false;
+    }
+    if (!PreviewScene)
+    {
+        PreviewScene = MakeShared<FPreviewScene>(FPreviewScene::ConstructionValues().SetEditor(false)
+            .SetCreateDefaultLighting(false).AllowAudioPlayback(false).SetCreatePhysicsScene(false)
+            .ShouldSimulatePhysics(false).SetTransactional(false));
+        const TSoftObjectPtr<UWorld> Map(FSoftObjectPath(TEXT("/Game/_Project/UI/Bag/Scenes/L_InventoryStudio.L_InventoryStudio")));
+        bool bAccepted = false;
+        StageLevel = ULevelStreamingDynamic::LoadLevelInstanceBySoftObjectPtr(
+            PreviewScene->GetWorld(), Map, FTransform::Identity, bAccepted, FString(), nullptr, true);
+        if (!bAccepted || !StageLevel)
+        {
+            UE_LOG(LogTemp, Error, TEXT("无法加载整备间关卡 %s"), *Map.ToString());
+            bStageLoadFailed = true;
+            return false;
+        }
+    }
+    PreviewScene->GetWorld()->UpdateLevelStreaming();
+    if (StageLevel->GetLevelStreamingState() == ELevelStreamingState::FailedToLoad)
+    {
+        UE_LOG(LogTemp, Error, TEXT("整备间关卡流送失败"));
+        bStageLoadFailed = true;
+        return false;
+    }
+    if (!StageLevel->IsLevelVisible())
+    {
+        return false;
+    }
+    if (!Stage)
+    {
+        for (AActor* Actor : StageLevel->GetLoadedLevel()->Actors)
+        {
+            auto* Candidate = Cast<ABBBPlayerItemStage>(Actor);
+            if (Candidate && Stage)
+            {
+                UE_LOG(LogTemp, Error, TEXT("整备间关卡只能放置一个整备间摆件"));
+                Stage = nullptr;
+                bStageLoadFailed = true;
+                return false;
+            }
+            if (Candidate)
+            {
+                Stage = Candidate;
+            }
+        }
+        if (!Stage)
+        {
+            UE_LOG(LogTemp, Error, TEXT("整备间关卡缺少整备间摆件"));
+            bStageLoadFailed = true;
+            return false;
+        }
+        Stage->UpdateMist();
+    }
+    return true;
+}
+
 bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
 {
     if (Source.Get() != Pawn)
@@ -49,7 +115,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     {
         return false;
     }
-    if (IsValid(Display) && IsValid(Capture) && IsValid(Pose))
+    if (IsValid(Display) && IsValid(Stage) && IsValid(Pose))
     {
         return true;
     }
@@ -59,7 +125,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     {
         ResourceLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(TArray<FSoftObjectPath>{StandingPath, RiflePath});
     }
-    if (ResourceLoad && !ResourceLoad->HasLoadCompleted())
+    if (!PrepareStage() || (ResourceLoad && !ResourceLoad->HasLoadCompleted()))
     {
         return false;
     }
@@ -73,25 +139,20 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     FActorSpawnParameters Spawn;
     Spawn.ObjectFlags |= RF_Transient;
     Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    PreviewScene = MakeShared<FPreviewScene>(FPreviewScene::ConstructionValues().SetEditor(false)
-        .SetCreateDefaultLighting(false).AllowAudioPlayback(false).SetCreatePhysicsScene(false)
-        .ShouldSimulatePhysics(false).SetTransactional(false));
     World = PreviewScene->GetWorld();
-    Display = World->SpawnActor<AActor>(AActor::StaticClass(), Origin, FRotator::ZeroRotator, Spawn);
-    Capture = World->SpawnActor<ASceneCapture2D>(ASceneCapture2D::StaticClass(), Origin, FRotator::ZeroRotator, Spawn);
-    if (!Display || !Capture)
+    const FTransform CharacterTransform = Stage->GetCharacterAnchor().GetComponentTransform();
+    Display = World->SpawnActor<AActor>(AActor::StaticClass(), CharacterTransform, Spawn);
+    if (!Display)
     {
         Close();
         return false;
     }
     Display->SetReplicates(false);
-    Capture->SetReplicates(false);
     USceneComponent *Root = NewObject<USceneComponent>(Display);
     Display->AddInstanceComponent(Root);
     Display->SetRootComponent(Root);
     Root->RegisterComponent();
-    Root->SetWorldLocation(Origin);
-    BuildRoom(*Root);
+    Root->SetWorldTransform(CharacterTransform);
     Pose = NewObject<USkeletalMeshComponent>(Display);
     Display->AddInstanceComponent(Pose);
     Pose->SetSkeletalMesh(Character->GetMesh()->GetSkeletalMeshAsset());
@@ -104,8 +165,8 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Pose->SetRenderCustomDepth(false);
     Pose->RegisterComponent();
     FTransform StandingTransform = Character->GetMesh()->GetRelativeTransform();
-    StandingTransform.AddToTranslation(Origin + FVector(0.0f, 0.0f, Pawn->GetSimpleCollisionHalfHeight()));
-    Pose->SetWorldTransform(StandingTransform);
+    StandingTransform.AddToTranslation(FVector(0.0f, 0.0f, Pawn->GetSimpleCollisionHalfHeight()));
+    Pose->SetWorldTransform(StandingTransform * CharacterTransform);
     Pose->PlayAnimation(Standing, true);
     Pose->SetPosition(0.0f, false);
     Pose->TickAnimation(1.0f / 30.0f, false);
@@ -129,44 +190,16 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Texture->RenderTargetFormat = RTF_RGBA8_SRGB;
     Texture->Filter = TF_Bilinear;
     Texture->InitAutoFormat(1920, 1080);
-    auto *Camera = Capture->GetCaptureComponent2D();
+    auto* Camera = Stage->GetCapture();
     Camera->TextureTarget = Texture;
-    Camera->bCaptureEveryFrame = false;
-    Camera->bCaptureOnMovement = false;
-    Camera->bAlwaysPersistRenderingState = true;
-    Camera->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-    Camera->ShowOnlyActors.Add(Display);
-    Camera->ShowFlags.SetAtmosphere(false);
-    Camera->ShowFlags.SetFog(true);
-    Camera->ShowFlags.SetVolumetricFog(true);
-    Camera->ShowFlags.SetSkyLighting(false);
-    Camera->ShowFlags.SetLighting(true);
-    Camera->ShowFlags.SetDynamicShadows(true);
-    Camera->ShowFlags.SetBloom(true);
-    Camera->ShowFlags.SetMotionBlur(false);
-    Camera->ShowFlags.SetScreenSpaceReflections(false);
-    Camera->ShowFlags.SetLumenReflections(false);
-    Camera->ShowFlags.SetReflectionEnvironment(false);
-    Camera->ShowFlags.SetTemporalAA(true);
-    Camera->PostProcessSettings.bOverride_DynamicGlobalIlluminationMethod = true;
-    Camera->PostProcessSettings.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::None;
-    Camera->PostProcessSettings.bOverride_ReflectionMethod = true;
-    Camera->PostProcessSettings.ReflectionMethod = EReflectionMethod::None;
-    Camera->ProjectionType = ECameraProjectionMode::Perspective;
-    Camera->FOVAngle = 49.0f;
-    Camera->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-    Camera->PostProcessSettings.bOverride_AutoExposureMethod = true;
-    Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
-    Camera->PostProcessSettings.bOverride_AutoExposureBias = true;
-    Camera->PostProcessSettings.AutoExposureBias = -1.18f;
-    Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
-    Camera->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
-    Camera->PostProcessSettings.bOverride_BloomIntensity = true;
-    Camera->PostProcessSettings.BloomIntensity = 0.48f;
-    Camera->PostProcessSettings.bOverride_FilmGrainIntensity = true;
-    Camera->PostProcessSettings.FilmGrainIntensity = 0.0f;
-    HomeCamera = FTransform(FRotator(-4.5f, 180.0f, 0.0f), Origin + FVector(525.0f, 0.0f, 139.0f));
-    Capture->SetActorTransform(HomeCamera);
+    for (AActor* Actor : StageLevel->GetLoadedLevel()->Actors)
+    {
+        if (Actor && Actor->IsEditorOnly())
+        {
+            Camera->HiddenActors.AddUnique(Actor);
+        }
+    }
+    HomeCamera = Camera->GetComponentTransform();
     bDirty = true;
     return true;
 }
@@ -175,16 +208,16 @@ void UBBBPlayerItemPortrait::ApplyCameraParallax(FVector2D Offset)
 {
     const FQuat BaseRotation = HomeCamera.GetRotation();
     const FVector BasePosition = HomeCamera.GetLocation();
-    const FVector Pivot = Origin + FVector(0.0, 0.0, 112.0);
+    const FVector Pivot = Stage->GetOrbitAnchor().GetComponentLocation();
     const FQuat Rotation = BaseRotation * FRotator(Offset.Y * 0.39, Offset.X * 0.85, 0.0).Quaternion();
     const FQuat WorldOffset = Rotation * BaseRotation.Inverse();
     const FVector Truck = Rotation.GetRightVector() * (-1.6 * Offset.X) + Rotation.GetUpVector() * (-0.8 * Offset.Y);
-    Capture->SetActorLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot) + Truck, Rotation);
+    Stage->GetCapture()->SetWorldLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot) + Truck, Rotation);
 }
 
 void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>& Cursor)
 {
-    if (!bActive || !Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || !IsValid(Pose)
+    if (!bActive || !Source.IsValid() || !IsValid(Display) || !IsValid(Stage) || !IsValid(Pose)
         || !PreviewScene.IsValid())
     {
         return;
@@ -247,7 +280,7 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     {
         ApplyCameraParallax(CameraOffset);
     }
-    Capture->GetCaptureComponent2D()->CaptureScene();
+    Stage->GetCapture()->CaptureScene();
 #if WITH_DEV_AUTOMATION_TESTS
     ++CaptureRevision;
 #endif
@@ -345,8 +378,8 @@ void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character)
             Part->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
         }
         FTransform Relative = Original->GetComponentTransform().GetRelativeTransform(Source->GetActorTransform());
-        Relative.AddToTranslation(Origin + FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
-        Part->SetWorldTransform(Relative);
+        Relative.AddToTranslation(FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
+        Part->SetWorldTransform(Relative * Stage->GetCharacterAnchor().GetComponentTransform());
     }
 }
 
@@ -357,20 +390,15 @@ void UBBBPlayerItemPortrait::Close()
         ResourceLoad->CancelHandle();
     }
     ResourceLoad.Reset();
-    if (IsValid(Capture))
-    {
-        Capture->Destroy();
-    }
     if (IsValid(Display))
     {
         Display->Destroy();
     }
     Components.Reset();
     Pose = nullptr;
-    Capture = nullptr;
+    Stage = nullptr;
     Display = nullptr;
-    RoomKey = nullptr;
-    RoomMist = nullptr;
+    StageLevel = nullptr;
     Texture = nullptr;
     Panels.Reset();
     PreviewScene.Reset();
@@ -379,6 +407,7 @@ void UBBBPlayerItemPortrait::Close()
     CameraOffsetVelocity = FVector2D::ZeroVector;
     bActive = false;
     bDirty = true;
+    bStageLoadFailed = false;
     ObservedAppearanceRevision = 0;
 }
 void UBBBPlayerItemPortrait::BeginDestroy()

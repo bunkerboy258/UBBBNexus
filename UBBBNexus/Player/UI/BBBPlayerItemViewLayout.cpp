@@ -120,13 +120,12 @@ private:
     TOptional<FVector2D> Project(const FGeometry& Geometry, const UWidgetComponent& Panel, FVector2D DesktopPosition) const
     {
         const auto* Preview = Room.Get();
-        const auto* CameraActor = Preview ? Preview->GetCamera() : nullptr;
+        const auto* Camera = Preview ? Preview->GetCamera() : nullptr;
         const FVector2D Size = Geometry.GetLocalSize();
-        if (!CameraActor || Size.X <= 0 || Size.Y <= 0)
+        if (!Camera || Size.X <= 0 || Size.Y <= 0)
         {
             return {};
         }
-        const auto* Camera = CameraActor->GetCaptureComponent2D();
         const FVector2D UV = Geometry.AbsoluteToLocal(DesktopPosition) / Size;
         const double HalfWidth = FMath::Tan(FMath::DegreesToRadians(Camera->FOVAngle * 0.5));
         const FVector Ray = Camera->GetForwardVector() + Camera->GetRightVector() * ((UV.X * 2.0 - 1.0) * HalfWidth)
