@@ -16,7 +16,7 @@ struct FBBBCharacterQuickMeleeLocalControlPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
         return !Context.bIsMirror && Context.Life.bActionsAllowed &&
-               !Context.InteractionUse.bBusy && Context.InteractionUse.bQuickUseAllowed &&
+               !Context.InteractionUse.bBusy && Context.InteractionUse.bSwitchAllowed &&
                !Context.ItemOperations.bQuickUse;
     }
     /** @param Context 输入状态 @return 无 */

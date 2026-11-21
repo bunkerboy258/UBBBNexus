@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyMontageAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBUpperBodyAdditiveMontageAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Input/LocalControl/Reload/FBBBEquipmentInterruptReloadLocalControlPacket.h"
 #include "Animation/AnimMontage.h"
 #include "HAL/PlatformTime.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -76,16 +77,20 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
         }
         return;
     }
-    if (Inputs.bQuickMelee && !Use.bBusy && Context.Character.IsItemUsable()
+    if (Inputs.bQuickMelee && !Use.bBusy && Use.bSwitchAllowed && Context.Character.IsItemUsable()
         && Context.Character.GetStamina() > 0.0f)
     {
-        const auto *Equipment = Context.Character.GetHeldEquipment();
+        auto *Equipment = Context.Character.GetHeldEquipment();
         const auto *Definition = Equipment ? Equipment->GetDefinition() : nullptr;
         UAnimMontage *Montage = Definition
                                     ? Definition->QuickMeleeMontage.Get()
                                     : Context.Character.GetCharacterConfig().Animation.UnarmedQuickMeleeMontage.Get();
         if (Montage)
         {
+            if (Equipment && Equipment->IsReloading())
+            {
+                Equipment->SubmitInput(FBBBEquipmentInterruptReloadLocalControlPacket<>{});
+            }
             const uint64 Revision = Use.Fact.Revision + 1;
             Use.Fact = {};
             Use.Fact.Revision = Revision;
