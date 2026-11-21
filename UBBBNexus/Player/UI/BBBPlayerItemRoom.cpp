@@ -1,5 +1,4 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
-#include "Components/ExponentialHeightFogComponent.h"
 #include "Components/RectLightComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SpotLightComponent.h"
@@ -58,29 +57,29 @@ void UBBBPlayerItemPortrait::BuildRoom(USceneComponent& Root)
     AddSurface(FVector(-1110, 570, 190), FVector(35, 0.4, 3.8), Plaster);
     AddSurface(FVector(-1110, 0, 380), FVector(35, 12, 0.4), Plaster);
 
-    auto* Key = NewObject<USpotLightComponent>(Display);
+    auto* Key = NewObject<USpotLightComponent>(Display, TEXT("ItemRoomKey"));
+    RoomKey = Key;
     Display->AddInstanceComponent(Key);
     Key->SetupAttachment(&Root);
-    const FVector FloorCentre = FVector::ZeroVector;
-    Key->SetRelativeLocation(FVector(65, 25, 344));
-    Key->SetRelativeRotation((FloorCentre - Key->GetRelativeLocation()).Rotation());
+    const FVector FloorAim(-38.0, -32.0, 0.0);
+    Key->SetRelativeLocation(FVector(76, 103, 296));
+    Key->SetRelativeRotation((FloorAim - Key->GetRelativeLocation()).Rotation());
     Key->SetIntensityUnits(ELightUnits::Candelas);
-    Key->SetIntensity(51.0f);
-    Key->SetLightColor(FLinearColor(1.0f, 0.85f, 0.70f));
-    Key->SetInnerConeAngle(12.0f);
-    Key->SetOuterConeAngle(34.0f);
-    Key->SetSourceRadius(24);
-    Key->SetSoftSourceRadius(12);
+    Key->SetIntensity(55.0f);
+    Key->SetLightColor(FLinearColor(1.0f, 0.84f, 0.68f));
+    Key->SetInnerConeAngle(13.0f);
+    Key->SetOuterConeAngle(29.0f);
+    Key->SetSourceRadius(46.0f);
+    Key->SetSoftSourceRadius(23.0f);
     Key->SetAttenuationRadius(625);
     Key->SetCastShadows(true);
-    Key->ContactShadowLength = 0.15f;
+    Key->ContactShadowLength = 0.10f;
     Key->ShadowResolutionScale = 2.0f;
-    Key->SetVolumetricScatteringIntensity(4.0f);
     Key->RegisterComponent();
 
-    const auto AddFill = [&](FVector Location, FVector Target, FLinearColor Color, float Intensity, float Cone)
+    const auto AddRim = [&](FName Name, FVector Location, FVector Target, FLinearColor Color, float Intensity, float Cone)
     {
-        auto* Light = NewObject<USpotLightComponent>(Display);
+        auto* Light = NewObject<USpotLightComponent>(Display, Name);
         Display->AddInstanceComponent(Light);
         Light->SetupAttachment(&Root);
         Light->SetRelativeLocation(Location);
@@ -96,17 +95,18 @@ void UBBBPlayerItemPortrait::BuildRoom(USceneComponent& Root)
         Light->SetVolumetricScatteringIntensity(0.0f);
         Light->RegisterComponent();
     };
-    AddFill(FVector(108, -144, 157), FVector(0, 0, 123), FLinearColor(0.72f, 0.79f, 1.0f), 3.8f, 28.0f);
-    AddFill(FVector(-95, -90, 202), FVector(0, 0, 124), FLinearColor(0.65f, 0.77f, 1.0f), 24.0f, 36.0f);
-    AddFill(FVector(-55, 137, 230), FVector(0, 0, 149), FLinearColor(1.0f, 0.85f, 0.67f), 34.0f, 30.0f);
+    AddRim(TEXT("ItemRoomCoolRim"), FVector(-88, -109, 202), FVector(0, 0, 114),
+        FLinearColor(0.65f, 0.78f, 1.0f), 29.0f, 38.0f);
+    AddRim(TEXT("ItemRoomWarmRim"), FVector(-41, 126, 222), FVector(0, 0, 130),
+        FLinearColor(1.0f, 0.80f, 0.60f), 53.0f, 36.0f);
 
-    auto* Bounce = NewObject<URectLightComponent>(Display);
+    auto* Bounce = NewObject<URectLightComponent>(Display, TEXT("ItemRoomFill"));
     Display->AddInstanceComponent(Bounce);
     Bounce->SetupAttachment(&Root);
     Bounce->SetRelativeLocation(FVector(135, 78, 145));
     Bounce->SetRelativeRotation((FVector(12, 0, 109) - Bounce->GetRelativeLocation()).Rotation());
     Bounce->SetIntensityUnits(ELightUnits::Candelas);
-    Bounce->SetIntensity(6.0f);
+    Bounce->SetIntensity(2.6f);
     Bounce->SetSourceWidth(105.0f);
     Bounce->SetSourceHeight(50.0f);
     Bounce->SetAttenuationRadius(275.0f);
@@ -115,32 +115,33 @@ void UBBBPlayerItemPortrait::BuildRoom(USceneComponent& Root)
     Bounce->SetVolumetricScatteringIntensity(0.0f);
     Bounce->RegisterComponent();
 
-    auto* Haze = NewObject<UExponentialHeightFogComponent>(Display);
-    Display->AddInstanceComponent(Haze);
-    Haze->SetupAttachment(&Root);
-    Haze->SetFogDensity(0.027f);
-    Haze->SetFogHeightFalloff(0.1f);
-    Haze->SetFogMaxOpacity(0.18f);
-    Haze->SetFogInscatteringColor(FLinearColor(0.025f, 0.019f, 0.014f));
-    Haze->SetVolumetricFog(true);
-    Haze->SetVolumetricFogDistance(2200.0f);
-    Haze->SetVolumetricFogAlbedo(FColor(204, 174, 145));
-    Haze->SetVolumetricFogExtinctionScale(0.8f);
-    Haze->SetVolumetricFogScatteringDistribution(0.13f);
-    Haze->RegisterComponent();
-
     auto* WarmMist = NewObject<UStaticMeshComponent>(Display);
+    RoomMist = WarmMist;
     Display->AddInstanceComponent(WarmMist);
     WarmMist->SetupAttachment(&Root);
     WarmMist->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")));
     WarmMist->SetMaterial(0, LoadObject<UMaterialInterface>(nullptr,
         TEXT("/Game/_Project/UI/Bag/Materials/M_InventoryWarmMist.M_InventoryWarmMist")));
-    WarmMist->SetRelativeLocation(FVector(-340, 108, 272));
-    WarmMist->SetRelativeScale3D(FVector(4.4, 4.0, 6.1));
+    WarmMist->SetRelativeLocation(FVector(-50, 52, 158));
+    WarmMist->SetRelativeScale3D(FVector(8.2, 8.0, 7.8));
     WarmMist->SetCastShadow(false);
     WarmMist->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     WarmMist->SetTranslucentSortPriority(-1);
     WarmMist->RegisterComponent();
+    UpdateRoomMist();
+}
+
+void UBBBPlayerItemPortrait::UpdateRoomMist()
+{
+    // 雾束与落在人物及地面的聚光共享灯位和锥角
+    USpotLightComponent& Key = *RoomKey;
+    const FVector LightOrigin = Key.GetComponentLocation() - RoomMist->Bounds.Origin;
+    const FVector Direction = Key.GetForwardVector();
+    const double OuterCos = FMath::Cos(FMath::DegreesToRadians(Key.OuterConeAngle));
+    const double InnerCos = FMath::Cos(FMath::DegreesToRadians(Key.InnerConeAngle));
+    RoomMist->SetCustomPrimitiveDataVector4(0, FVector4(LightOrigin, Key.Intensity));
+    RoomMist->SetCustomPrimitiveDataVector4(4, FVector4(Direction, OuterCos));
+    RoomMist->SetCustomPrimitiveDataVector4(8, FVector4(InnerCos, Key.AttenuationRadius, 5.4, 0.0));
 }
 
 void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Content)

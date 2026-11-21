@@ -80,7 +80,10 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     virtual void NativeTick(const FGeometry &Geometry, float DeltaTime) override;
     virtual FReply NativeOnPreviewKeyDown(const FGeometry &Geometry, const FKeyEvent &KeyEvent) override;
 
-  private:
+private:
+#if WITH_DEV_AUTOMATION_TESTS
+    friend class FBBBItemRoomReview;
+#endif
     /** 重新读取唯一背包并更新界面 */
     UFUNCTION()
     void RefreshItems();

@@ -190,7 +190,17 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         return;
     }
-    Pose->TickAnimation(Elapsed, false);
+#if WITH_DEV_AUTOMATION_TESTS
+    if (ReviewPoseTime >= 0.0f)
+    {
+        Pose->SetPosition(ReviewPoseTime, false);
+        Pose->TickAnimation(0.0f, false);
+    }
+    else
+#endif
+    {
+        Pose->TickAnimation(Elapsed, false);
+    }
     Pose->RefreshBoneTransforms();
     Elapsed = 0.0f;
     ObservedAppearanceRevision = Revision;
@@ -287,6 +297,9 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     }
     PreviewScene->GetWorld()->SendAllEndOfFrameUpdates();
     Capture->GetCaptureComponent2D()->CaptureScene();
+#if WITH_DEV_AUTOMATION_TESTS
+    ++CaptureRevision;
+#endif
     bDirty = false;
 }
 
@@ -309,6 +322,8 @@ void UBBBPlayerItemPortrait::Close()
     Pose = nullptr;
     Capture = nullptr;
     Display = nullptr;
+    RoomKey = nullptr;
+    RoomMist = nullptr;
     Texture = nullptr;
     Panels.Reset();
     PreviewScene.Reset();

@@ -11,6 +11,8 @@ class UTextureRenderTarget2D;
 class USkeletalMeshComponent;
 class UWidgetComponent;
 class USceneComponent;
+class USpotLightComponent;
+class UStaticMeshComponent;
 class SWidget;
 struct FStreamableHandle;
 
@@ -39,6 +41,11 @@ public:
     virtual void BeginDestroy() override;
 
 private:
+#if WITH_DEV_AUTOMATION_TESTS
+    friend class FBBBItemRoomReview;
+    float ReviewPoseTime = -1.0f;
+    uint64 CaptureRevision = 0;
+#endif
     TSharedPtr<FPreviewScene> PreviewScene;
     TWeakObjectPtr<APawn> Source;
     UPROPERTY(Transient)
@@ -50,6 +57,11 @@ private:
     UPROPERTY(Transient)
     TArray<TObjectPtr<UWidgetComponent>> Panels;
     void BuildRoom(USceneComponent& Root);
+    void UpdateRoomMist();
+    UPROPERTY(Transient)
+    TObjectPtr<USpotLightComponent> RoomKey;
+    UPROPERTY(Transient)
+    TObjectPtr<UStaticMeshComponent> RoomMist;
     UPROPERTY(Transient)
     TArray<TObjectPtr<USkeletalMeshComponent>> Components;
     UPROPERTY(Transient)

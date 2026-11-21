@@ -12,6 +12,10 @@
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "MassCommonFragments.h"
 #include "Components/BoxComponent.h"
+#include "Components/ExponentialHeightFogComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Components/SpotLightComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Input/HittestGrid.h"
 #include "Layout/WidgetPath.h"
 #include "Types/PaintArgs.h"
@@ -29,6 +33,10 @@
 #include "Containers/Ticker.h"
 #include "UnrealClient.h"
 #include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Parse.h"
+#include "HAL/IConsoleManager.h"
+#include "Test/V01/Frontend/BBBV01FrontendSubsystem.h"
 #include "Misc/ScopeExit.h"
 #include "Widgets/Input/SButton.h"
 
@@ -96,143 +104,333 @@ void SendReviewPointer(const UBBBPlayerItemView& View, FVector2D From, FVector2D
     Application.RoutePointerUpEvent(HitPath(End), Event(End, End, {}, Left));
 }
 
-// 在独立游戏窗口沿正式背包输入路径采集验收画面
-FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
-    TEXT("Capture both inventory pages of a standalone BBBTest session launched with -ItemMenuReview."),
-    FConsoleCommandDelegate::CreateLambda([]()
+}
+
+class FBBBItemRoomReview final
+{
+public:
+    FBBBItemRoomReview()
     {
-        if (!FParse::Param(FCommandLine::Get(), TEXT("ItemMenuReview")))
+        bLive = FParse::Value(FCommandLine::Get(), TEXT("ItemMenuReviewDir="), Directory);
+        if (!bLive)
+        {
+            Directory = FPaths::ScreenShotDir();
+        }
+        ReadyDeadline = FPlatformTime::Seconds() + 150.0;
+    }
+
+    bool Tick(float)
+    {
+        if (!View.IsValid())
+        {
+            FindView();
+            return View.IsValid() || FPlatformTime::Seconds() < ReadyDeadline;
+        }
+
+        UBBBPlayerItemView& ItemView = *View.Get();
+        UBBBPlayerItemPortrait* Portrait = ItemView.CharacterPreview.Get();
+        if (!Portrait || !Portrait->RoomKey || !Portrait->RoomMist || Portrait->GetPanels().Num() != 2)
+        {
+            return FPlatformTime::Seconds() < ReadyDeadline;
+        }
+
+        if (const auto* Frontend = ItemView.GetWorld()->GetGameInstance()->GetSubsystem<UBBBV01FrontendSubsystem>())
+        {
+            const auto& Presentation = Frontend->RuntimeData.Frontend.ReadBBBV01FrontendState();
+            if (Presentation.bLoading || !Presentation.bSceneReady)
+            {
+                return FPlatformTime::Seconds() < ReadyDeadline;
+            }
+        }
+
+        if (bReadingCapture)
+        {
+            return AwaitCapture(*Portrait);
+        }
+
+        FString Request;
+        if (bLive)
+        {
+            if (!FFileHelper::LoadFileToString(Request, *(Directory / TEXT("request.txt"))))
+            {
+                return true;
+            }
+        }
+        else
+        {
+            static const TCHAR* Requests[] = {
+                TEXT("Name=ItemMenu_Room Page=Room"),
+                TEXT("Name=ItemMenu_Inventory Page=Inventory Drag=1"),
+                TEXT("Name=ItemMenu_Character Page=Character")};
+            if (AutomaticIndex == UE_ARRAY_COUNT(Requests))
+            {
+                return false;
+            }
+            Request = Requests[AutomaticIndex];
+        }
+
+        FString Name;
+        if (!FParse::Value(*Request, TEXT("Name="), Name) || Name == LastName ||
+            Name.IsEmpty() || Name != FPaths::MakeValidFileName(Name) || Name == TEXT(".") || Name == TEXT(".."))
+        {
+            return true;
+        }
+        LastName = MoveTemp(Name);
+        Configure(ItemView, *Portrait, *Request);
+        return true;
+    }
+
+private:
+    void FindView()
+    {
+        if (!GEngine || !GEngine->GameViewport)
         {
             return;
         }
-        FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda(
-            [Step = 0, Attempts = 0, Hold = 0, Dragged = FGuid()](float) mutable
+
+        UWorld* World = GEngine->GameViewport->GetWorld();
+        if (!World || World->GetNetMode() != NM_Standalone || !World->GetMapName().EndsWith(TEXT("BBBTest")))
+        {
+            return;
+        }
+
+        auto* Controller = Cast<ABBBPlayerController>(World->GetFirstPlayerController());
+        if (!Controller || !Controller->HasItemInventory())
+        {
+            return;
+        }
+
+        if (!bSeeded)
+        {
+            const TCHAR* Samples[] = {TEXT("ModernWeapons_Rifle_01"), TEXT("ModernWeapons_Pistol_01"),
+                TEXT("ModernWeapons_Shotgun_02"), TEXT("ModernWeapons_Rifle_04"), TEXT("ModernWeapons_LMG_01"),
+                TEXT("ModernWeapons_Rifle_02"), TEXT("ModernWeapons_Shotgun_03"), TEXT("Grenade_01")};
+            for (const TCHAR* Id : Samples)
             {
-                UWorld* GameWorld = nullptr;
-                if (GEngine)
+                Controller->SubmitItemAdd(FName(Id));
+            }
+            bSeeded = true;
+            return;
+        }
+
+        if (!bEquipped)
+        {
+            int32 Start = INDEX_NONE;
+            int32 Count = 0;
+            Controller->GetStorageRange(EBBBItemType::Wearable, Start, Count);
+            for (int32 Slot = Start; Slot < Start + FMath::Min(2, Count); ++Slot)
+            {
+                const auto Item = Controller->GetItemDisplayData(Slot);
+                if (Item.bOccupied)
                 {
-                    for (const FWorldContext &Context : GEngine->GetWorldContexts())
-                    {
-                        UWorld *Candidate = Context.World();
-                        if (Candidate && Candidate->GetNetMode() == NM_Standalone
-                            && Candidate->GetMapName().EndsWith(TEXT("BBBTest")))
-                        {
-                            GameWorld = Candidate;
-                            break;
-                        }
-                    }
+                    Controller->SubmitItemMove(Slot, Item.EquipSlot, Item.InstanceId);
                 }
-                if (++Attempts > 120)
+            }
+            bEquipped = true;
+            return;
+        }
+
+        if (!Controller->IsBackpackOpen())
+        {
+            Controller->ToggleBackpack();
+        }
+        TArray<UUserWidget*> Views;
+        UWidgetBlueprintLibrary::GetAllWidgetsOfClass(Controller, Views, UBBBPlayerItemView::StaticClass(), false);
+        for (UUserWidget* Candidate : Views)
+        {
+            auto* ItemView = CastChecked<UBBBPlayerItemView>(Candidate);
+            if (ItemView->IsBackpackOpen())
+            {
+                View = ItemView;
+                break;
+            }
+        }
+    }
+
+    void Configure(UBBBPlayerItemView& ItemView, UBBBPlayerItemPortrait& Portrait, const TCHAR* Request)
+    {
+        FString Page;
+        FParse::Value(Request, TEXT("Page="), Page);
+        const bool bRoom = Page.Equals(TEXT("Room"), ESearchCase::IgnoreCase);
+        ExpectedPage = Page.Equals(TEXT("Character"), ESearchCase::IgnoreCase) ? EBBBItemPanelPage::Character
+            : EBBBItemPanelPage::Inventory;
+        ItemView.ShowPanel(ExpectedPage);
+        for (const auto& Panel : ItemView.GetMenuPanels())
+        {
+            Panel->SetVisibility(bRoom ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible);
+        }
+
+        float PoseTime = 0.34f;
+        FParse::Value(Request, TEXT("Pose="), PoseTime);
+        Portrait.ReviewPoseTime = PoseTime;
+        Portrait.bDirty = true;
+        USpotLightComponent& Key = *Portrait.RoomKey;
+        FVector Position = Key.GetRelativeLocation();
+        const FVector Direction = Key.GetForwardVector();
+        FVector Target = Position - Direction * (Position.Z / FMath::Min(-0.01, Direction.Z));
+        FParse::Value(Request, TEXT("KeyX="), Position.X);
+        FParse::Value(Request, TEXT("KeyY="), Position.Y);
+        FParse::Value(Request, TEXT("KeyZ="), Position.Z);
+        FParse::Value(Request, TEXT("AimX="), Target.X);
+        FParse::Value(Request, TEXT("AimY="), Target.Y);
+        Key.SetRelativeLocation(Position);
+        Key.SetRelativeRotation((Target - Position).Rotation());
+        float Intensity = Key.Intensity;
+        float Inner = Key.InnerConeAngle;
+        float Outer = Key.OuterConeAngle;
+        float Radius = Key.SourceRadius;
+        FParse::Value(Request, TEXT("Key="), Intensity);
+        FParse::Value(Request, TEXT("Inner="), Inner);
+        FParse::Value(Request, TEXT("Outer="), Outer);
+        FParse::Value(Request, TEXT("Radius="), Radius);
+        Key.SetIntensity(Intensity);
+        Key.SetInnerConeAngle(Inner);
+        Key.SetOuterConeAngle(Outer);
+        Key.SetSourceRadius(Radius);
+        Key.SetSoftSourceRadius(Radius * 0.5f);
+
+        SetLight(*Portrait.Display, TEXT("ItemRoomCoolRim"), TEXT("Cool="), Request);
+        SetLight(*Portrait.Display, TEXT("ItemRoomWarmRim"), TEXT("Warm="), Request);
+        SetLight(*Portrait.Display, TEXT("ItemRoomFill"), TEXT("Fill="), Request);
+        auto* Camera = Portrait.Capture->GetCaptureComponent2D();
+        Camera->bCameraCutThisFrame = true;
+        float Exposure = Camera->PostProcessSettings.AutoExposureBias;
+        float Bloom = Camera->PostProcessSettings.BloomIntensity;
+        FParse::Value(Request, TEXT("Exposure="), Exposure);
+        FParse::Value(Request, TEXT("Bloom="), Bloom);
+        Camera->PostProcessSettings.AutoExposureBias = Exposure;
+        Camera->PostProcessSettings.BloomIntensity = Bloom;
+
+        float Mist = 0.0f;
+        int32 Native = 0;
+        FParse::Value(Request, TEXT("Native="), Native);
+        Portrait.UpdateRoomMist();
+        const bool bOverrideMist = FParse::Value(Request, TEXT("Mist="), Mist);
+        Portrait.RoomMist->SetVisibility(Native == 0 && (!bOverrideMist || Mist > 0.0f));
+        if (bOverrideMist)
+        {
+            Portrait.RoomMist->SetCustomPrimitiveDataFloat(10, Mist);
+        }
+        if (Native != 0 && !NativeHaze.IsValid())
+        {
+            auto* Fog = NewObject<UExponentialHeightFogComponent>(Portrait.Display.Get(), TEXT("ItemRoomReviewNativeFog"));
+            Portrait.Display->AddInstanceComponent(Fog);
+            Fog->SetupAttachment(Portrait.Display->GetRootComponent());
+            Fog->SetFogDensity(0.035f);
+            Fog->SetFogMaxOpacity(0.08f);
+            Fog->SetFogInscatteringColor(FLinearColor::Black);
+            Fog->SetVolumetricFog(true);
+            Fog->SetVolumetricFogDistance(1500.0f);
+            Fog->RegisterComponent();
+            NativeHaze = Fog;
+        }
+        if (NativeHaze.IsValid())
+        {
+            NativeHaze->SetVisibility(Native != 0);
+        }
+        Key.SetVolumetricScatteringIntensity(Native != 0 ? 4.0f : 0.0f);
+        Key.SetCastVolumetricShadow(Native != 0);
+        const IConsoleVariable* FogSetting = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VolumetricFog"));
+        UE_LOG(LogTemp, Display, TEXT("Item room review request %s page=%s r.VolumetricFog=%d"),
+            *LastName, *Page, FogSetting ? FogSetting->GetInt() : -1);
+
+        int32 Drag = 0;
+        FParse::Value(Request, TEXT("Drag="), Drag);
+        DragPhase = Drag != 0 && !bRoom && ExpectedPage == EBBBItemPanelPage::Inventory ? 0 : INDEX_NONE;
+        RequestedAt = FPlatformTime::Seconds();
+        CaptureAfter = Portrait.CaptureRevision + 4;
+        bReadingCapture = true;
+    }
+
+    static void SetLight(AActor& Owner, FName Name, const TCHAR* Parameter, const TCHAR* Request)
+    {
+        float Intensity = 0.0f;
+        if (FParse::Value(Request, Parameter, Intensity))
+        {
+            if (auto* Light = FindObjectFast<ULightComponent>(&Owner, Name))
+            {
+                Light->SetIntensity(Intensity);
+            }
+        }
+    }
+
+    bool AwaitCapture(UBBBPlayerItemPortrait& Portrait)
+    {
+        UBBBPlayerItemView& ItemView = *View.Get();
+        if (FPlatformTime::Seconds() - RequestedAt > 8.0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Item room review capture timed out: %s"), *LastName);
+            bReadingCapture = false;
+            ++AutomaticIndex;
+            return bLive;
+        }
+        if (Portrait.CaptureRevision < CaptureAfter || ItemView.PanelPage != ExpectedPage ||
+            ItemView.BuiltPanelPage != ExpectedPage || FScreenshotRequest::IsScreenshotRequested())
+        {
+            return true;
+        }
+
+        if (DragPhase != INDEX_NONE)
+        {
+            auto* Controller = ItemView.GetItemController();
+            if (DragPhase == 0)
+            {
+                int32 Start = INDEX_NONE;
+                int32 Count = 0;
+                Controller->GetStorageRange(EBBBItemType::Equipment, Start, Count);
+                Dragged = Controller->GetItemDisplayData(Start).InstanceId;
+            }
+            if (DragPhase < 4)
+            {
+                SendReviewPointer(ItemView, FVector2D(188, 399), FVector2D(1558, 383), DragPhase++);
+                CaptureAfter = Portrait.CaptureRevision + 1;
+                return true;
+            }
+            const bool bMoved = Dragged.IsValid() && Controller->GetItemDisplayData(0).InstanceId == Dragged;
+            UE_LOG(LogTemp, Display, TEXT("Item room review cross-panel drag %s"), bMoved ? TEXT("PASS") : TEXT("FAIL"));
+            DragPhase = INDEX_NONE;
+        }
+
+        const FString File = FPaths::ConvertRelativePathToFull(Directory / (LastName + TEXT(".png")));
+        FScreenshotRequest::RequestScreenshot(File, true, false, false, FIntRect(), true);
+        UE_LOG(LogTemp, Display, TEXT("Item room review capture %s %.2fs"), *LastName,
+            FPlatformTime::Seconds() - RequestedAt);
+        bReadingCapture = false;
+        ++AutomaticIndex;
+        return true;
+    }
+
+    TWeakObjectPtr<UBBBPlayerItemView> View;
+    TWeakObjectPtr<UExponentialHeightFogComponent> NativeHaze;
+    FString Directory;
+    FString LastName;
+    FGuid Dragged;
+    EBBBItemPanelPage ExpectedPage = EBBBItemPanelPage::Inventory;
+    double ReadyDeadline = 0.0;
+    double RequestedAt = 0.0;
+    uint64 CaptureAfter = 0;
+    int32 AutomaticIndex = 0;
+    int32 DragPhase = INDEX_NONE;
+    bool bLive = false;
+    bool bSeeded = false;
+    bool bEquipped = false;
+    bool bReadingCapture = false;
+};
+
+namespace
+{
+FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
+    TEXT("Capture BBBTest inventory. With -ItemMenuReviewDir=Path apply request.txt and capture each named request."),
+    FConsoleCommandDelegate::CreateLambda([]()
+    {
+        if (FParse::Param(FCommandLine::Get(), TEXT("ItemMenuReview")))
+        {
+            FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda(
+                [Review = MakeShared<FBBBItemRoomReview>()](float DeltaTime)
                 {
-                    return false;
-                }
-                if (!GameWorld)
-                {
-                    return true;
-                }
-                auto* PC = Cast<ABBBPlayerController>(GameWorld->GetFirstPlayerController());
-                if (!PC || !PC->HasItemInventory()) return true;
-                if (Step == 0)
-                {
-                    const TCHAR* Samples[] = {TEXT("ModernWeapons_Rifle_01"), TEXT("ModernWeapons_Pistol_01"),
-                        TEXT("ModernWeapons_Shotgun_02"), TEXT("ModernWeapons_Rifle_04"), TEXT("ModernWeapons_LMG_01"),
-                        TEXT("ModernWeapons_Pistol_02"), TEXT("ModernWeapons_Revolver_01"), TEXT("ModernWeapons_Rifle_02"),
-                        TEXT("ModernWeapons_Shotgun_03"), TEXT("Helmet_UASoldHelmet01"), TEXT("Vest_PlateCar00"),
-                        TEXT("Helmet_UASoldHelmet00"), TEXT("Vest_PlateCar01")};
-                    for (const auto* Id : Samples) PC->SubmitItemAdd(FName(Id));
-                    PC->SubmitItemAdd(TEXT("Grenade_01"), 3);
-                    PC->SubmitItemAdd(TEXT("HealthPack_01"), 2);
-                }
-                else if (Step == 1)
-                {
-                    int32 Start, Count;
-                    PC->GetStorageRange(EBBBItemType::Wearable, Start, Count);
-                    for (int32 Slot = Start; Slot < Start + FMath::Min(2, Count); ++Slot)
-                    {
-                        const auto Data = PC->GetItemDisplayData(Slot);
-                        if (Data.bOccupied) PC->SubmitItemMove(Slot, Data.EquipSlot, Data.InstanceId);
-                    }
-                    if (!PC->IsBackpackOpen()) PC->ToggleBackpack();
-                }
-                else if (Step == 2 || Step == 3)
-                {
-                    TArray<UUserWidget*> Views;
-                    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
-                    for (auto* Widget : Views)
-                    {
-                        const auto* View = CastChecked<UBBBPlayerItemView>(Widget);
-                        if (Step == 2)
-                        {
-                            for (const auto& Panel : View->GetMenuPanels())
-                            {
-                                Panel->SetVisibility(EVisibility::Collapsed);
-                            }
-                        }
-                        else
-                        {
-                            const FString File = FPaths::ConvertRelativePathToFull(
-                                FPaths::ScreenShotDir() / TEXT("ItemMenu_Room.png"));
-                            FScreenshotRequest::RequestScreenshot(File, true, false, false, FIntRect(), true);
-                        }
-                    }
-                }
-                else if (Step == 4 || Step == 8)
-                {
-                    if (Step == 4 && Hold == 0)
-                    {
-                        TArray<UUserWidget*> Views;
-                        UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
-                        for (auto* Widget : Views)
-                        {
-                            for (const auto& Panel : CastChecked<UBBBPlayerItemView>(Widget)->GetMenuPanels())
-                            {
-                                Panel->SetVisibility(EVisibility::SelfHitTestInvisible);
-                            }
-                        }
-                    }
-                    if (Hold < 8)
-                    {
-                        ++Hold;
-                        return true;
-                    }
-                    Hold = 0;
-                    const FString Page = Step == 4 ? TEXT("Inventory") : TEXT("Character");
-                    const FString File = FPaths::ConvertRelativePathToFull(FPaths::ScreenShotDir() / (TEXT("ItemMenu_") + Page + TEXT(".png")));
-                    FScreenshotRequest::RequestScreenshot(File, true, false, false, FIntRect(), true);
-                }
-                else if (Step == 5 || Step == 6)
-                {
-                    TArray<UUserWidget*> Views;
-                    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Views, UBBBPlayerItemView::StaticClass(), false);
-                    for (auto* Widget : Views)
-                    {
-                        auto* View = CastChecked<UBBBPlayerItemView>(Widget);
-                        if (Step == 5)
-                        {
-                            int32 Start, Count;
-                            PC->GetStorageRange(EBBBItemType::Equipment, Start, Count);
-                            if (Hold == 0)
-                            {
-                                Dragged = PC->GetItemDisplayData(Start).InstanceId;
-                            }
-                            SendReviewPointer(*View, FVector2D(188, 399), FVector2D(1558, 383), Hold);
-                            if (++Hold < 4)
-                            {
-                                return true;
-                            }
-                            Hold = 0;
-                        }
-                        else
-                        {
-                            const bool bMoved = Dragged.IsValid() && PC->GetItemDisplayData(0).InstanceId == Dragged;
-                            UE_LOG(LogTemp, Display, TEXT("Item room review cross-panel drag %s"), bMoved ? TEXT("PASS") : TEXT("FAIL"));
-                            SendReviewPointer(*View, FVector2D(960, 55), FVector2D(960, 55));
-                        }
-                    }
-                }
-                ++Step;
-                return Step <= 8;
-            }), 1.5f);
+                    return Review->Tick(DeltaTime);
+                }), 0.06f);
+        }
     }));
 }
 
