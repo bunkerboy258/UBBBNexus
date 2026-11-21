@@ -33,6 +33,16 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     {
         return;
     }
+    if (!ensureMsgf(FMath::IsFinite(Config.MaximumStamina) && Config.MaximumStamina >= 0.0f
+        && FMath::IsFinite(Config.RunDrainPerSecond) && Config.RunDrainPerSecond >= 0.0f
+        && FMath::IsFinite(Config.SlideDrainPerSecond) && Config.SlideDrainPerSecond >= 0.0f
+        && FMath::IsFinite(Config.MeleeAttackCost) && Config.MeleeAttackCost >= 0.0f
+        && FMath::IsFinite(Config.RegenPerSecond) && Config.RegenPerSecond >= 0.0f
+        && FMath::IsFinite(Config.RegenDelaySeconds) && Config.RegenDelaySeconds >= 0.0f,
+        TEXT("角色体力配置必须为有限非负数 %s"), *Character.GetName()))
+    {
+        return;
+    }
     if (!ensureMsgf(FMath::IsFinite(Config.RescueDistance) && Config.RescueDistance > 0.0f
         && FMath::IsFinite(Config.RescueDuration) && Config.RescueDuration > 0.0f
         && FMath::IsFinite(Config.RescueHealth) && Config.RescueHealth > 0.0f
@@ -87,6 +97,7 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
     Character.AppearanceSystem.Initialize(Character, Character.RuntimeData, Config.Appearance);
 
     Character.LifeSystem.Initialize(Character, Character.RuntimeData, Config);
+    Character.StaminaSystem.Initialize(Character, Character.RuntimeData, Config);
     Character.HitReaction->BindBodyContacts(*Character.GetMesh(), true);
     Character.PhysicalAnimation->SetSkeletalMeshComponent(Character.GetMesh());
     Character.PhysicalPresentationSystem.Initialize(Character, Character.RuntimeData,

@@ -235,7 +235,34 @@ private:
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
     friend class FBBBSlideObservationProcessor;
+    friend class FBBBStaminaObservationProcessor;
     friend class FBBBAccelerationObservationProcessor;
+
+    /** 复制已经成立的体力结果 */
+    void ReplicateStamina(float Current, float Maximum, uint64 Revision);
+
+    /** 控制者上报自己的既成体力结果 */
+    UFUNCTION(Server, Unreliable)
+    void ServerSubmitStamina(float Current, float Maximum, uint64 Revision);
+
+    /** 当前体力结果到达时提交还原输入 */
+    UFUNCTION()
+    void OnRep_Stamina();
+
+    /** 将接收的体力结果投递为领域输入 */
+    void SubmitStaminaInput(float Current, float Maximum, uint64 Revision);
+
+    /** 当前体力 */
+    UPROPERTY(Replicated)
+    float ReplicatedStamina = 0.0f;
+
+    /** 当前体力上限 */
+    UPROPERTY(Replicated)
+    float ReplicatedMaximumStamina = 0.0f;
+
+    /** 当前体力结果版本 */
+    UPROPERTY(ReplicatedUsing = OnRep_Stamina)
+    uint64 ReplicatedStaminaRevision = 0;
 
     /** 向镜像分发控制者已经产生的当前加速度 */
     void ReplicateAcceleration(uint64 Revision, const FVector &Acceleration, const FVector &MovementInput);

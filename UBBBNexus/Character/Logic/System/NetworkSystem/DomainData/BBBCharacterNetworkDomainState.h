@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAimNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBRunNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBSlideNetworkObservationState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBStaminaNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBAccelerationNetworkObservationState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueInboxState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/DomainData/States/BBBCharacterRescueNetworkObservationState.h"
@@ -19,6 +20,7 @@
 class FBBBAimObservationProcessor;
 class FBBBRunObservationProcessor;
 class FBBBSlideObservationProcessor;
+class FBBBStaminaObservationProcessor;
 class FBBBCharacterNetworkSystem;
 
 /** 角色网络领域全部观察状态的唯一直接持有者 */
@@ -69,6 +71,12 @@ public:
     const FBBBSlideNetworkObservationState &ReadSlideNetworkObservationState() const
     {
         return SlideObservationState;
+    }
+
+    /** @return 体力网络观察状态 */
+    const FBBBStaminaNetworkObservationState &ReadStaminaNetworkObservationState() const
+    {
+        return StaminaObservationState;
     }
 
     /** @return 加速度同步观察基准 */
@@ -136,6 +144,7 @@ private:
     friend class FBBBAimObservationProcessor;
     friend class FBBBRunObservationProcessor;
     friend class FBBBSlideObservationProcessor;
+    friend class FBBBStaminaObservationProcessor;
     friend class FBBBCharacterNetworkSystem;
 
     /** 瞄准网络观察状态 */
@@ -149,4 +158,8 @@ private:
     /** 滑铲网络观察状态 */
     UPROPERTY(Transient)
     FBBBSlideNetworkObservationState SlideObservationState;
+
+    /** 体力网络观察状态 */
+    UPROPERTY(Transient)
+    FBBBStaminaNetworkObservationState StaminaObservationState;
 };

@@ -15,6 +15,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/BBBCharacterItemSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/TraversalSystem/BBBCharacterTraversalSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/BBBCharacterLifeSystem.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/StaminaSystem/BBBCharacterStaminaSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/BBBCharacterAppearanceSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/BBBCharacterPickupSystem.h"
 #include "BBBCharacter.generated.h"
@@ -76,6 +77,20 @@ public:
     float GetHealth() const
     {
         return RuntimeData.Life.ReadLifeState().Health;
+    }
+
+    /** @return 当前剩余体力 */
+    UFUNCTION(BlueprintPure, Category = "BBB|体力", meta = (DisplayName = "当前体力"))
+    float GetStamina() const
+    {
+        return RuntimeData.Stamina.ReadStaminaState().Current;
+    }
+
+    /** @return 当前体力上限 */
+    UFUNCTION(BlueprintPure, Category = "BBB|体力", meta = (DisplayName = "最大体力"))
+    float GetMaximumStamina() const
+    {
+        return RuntimeData.Stamina.ReadStaminaState().Maximum;
     }
 
     /** @return 本轮倒地标识 */
@@ -293,6 +308,9 @@ private:
 
     /** 独立维护生命阶段和受击事实 */
     FBBBCharacterLifeSystem LifeSystem;
+
+    /** 独立维护体力池 */
+    FBBBCharacterStaminaSystem StaminaSystem;
 
     FBBBCharacterItemSystem ItemSystem;
     /** 世界掉落物的独立领取协调 */

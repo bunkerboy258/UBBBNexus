@@ -114,6 +114,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         Character->TraversalSystem.Update();
         Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
+        Character->StaminaSystem.Update();
     }
     else
     {
@@ -127,6 +128,7 @@ void FBBBCharacterUpdatePipeline::Update(const float DeltaSeconds)
         Character->TraversalSystem.Update();
         Character->InteractionSystem.UpdateUsage();
         Character->LocomotionSystem.Update();
+        Character->StaminaSystem.Update();
     }
 
     Character->NetworkSystem.Update();

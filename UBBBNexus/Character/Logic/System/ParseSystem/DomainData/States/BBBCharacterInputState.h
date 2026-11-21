@@ -53,6 +53,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Locomotion/FBBBCharacterMovementLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBRunStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBSlideStateAuthorityFactPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Stamina/FBBBStaminaAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
@@ -163,6 +164,8 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBRunStateAuthorityFactPacket> RunState;
     /** 滑铲状态输入槽位 */
     TBBBCharacterInputSlot<FBBBSlideStateAuthorityFactPacket> SlideState;
+    /** 体力结果输入槽位 */
+    TBBBCharacterInputSlot<FBBBStaminaAuthorityFactPacket> StaminaState;
     /** 控制者已经产生的加速度结果 */
     TBBBCharacterInputSlot<FBBBAccelerationRemoteMessagePacket> RemoteAcceleration;
     /** 当前加速度事实的镜像还原 */

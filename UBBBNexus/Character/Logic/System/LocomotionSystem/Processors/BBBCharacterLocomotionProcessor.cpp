@@ -26,9 +26,10 @@ FVector ResolveWorldMoveDirection(
 bool CanRun(
     const ACharacter &Character,
     const FBBBCharacterControlState &ControlData,
-    const FBBBCharacterLocomotionConfig &Config)
+    const FBBBCharacterLocomotionConfig &Config,
+    const float StaminaCurrent)
 {
-    if (!ControlData.bRun)
+    if (!ControlData.bRun || StaminaCurrent <= 0.0f)
     {
         return false;
     }
@@ -53,11 +54,12 @@ bool ResolveRun(
     const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config,
     const bool bWasRunning,
-    const FVector &CurrentVelocity)
+    const FVector &CurrentVelocity,
+    const float StaminaCurrent)
 {
     const bool bFullMovementInput = ControlData.MoveWorld.Size() >= Config.AnalogRunThreshold;
 
-    if (ControlData.bAim || ControlData.bCrouch)
+    if (ControlData.bAim || ControlData.bCrouch || StaminaCurrent <= 0.0f)
     {
         return false;
     }
@@ -69,7 +71,7 @@ bool ResolveRun(
         return true;
     }
 
-    return bFullMovementInput && CanRun(Character, ControlData, Config);
+    return bFullMovementInput && CanRun(Character, ControlData, Config, StaminaCurrent);
 }
 
 // 根据局部速度和方向曲线得到方向映射值
@@ -173,7 +175,8 @@ void UpdateSlideState(
     const UCharacterMovementComponent &Movement,
     const bool bCrouchPressed,
     const FBBBCharacterLocomotionConfig &Config,
-    const float DeltaSeconds)
+    const float DeltaSeconds,
+    const float StaminaCurrent)
 {
     const float Speed = Movement.Velocity.Size2D();
     const bool bOnGround = Movement.IsMovingOnGround();
@@ -194,7 +197,7 @@ void UpdateSlideState(
         return;
     }
 
-    if (bOnGround && bCrouchPressed && Speed >= Config.SlideEnterSpeed)
+    if (bOnGround && bCrouchPressed && Speed >= Config.SlideEnterSpeed && StaminaCurrent > 0.0f)
     {
         RuntimeData.bSlide = true;
         RuntimeData.bSlideBelowExitSpeed = false;
@@ -328,10 +331,12 @@ void FBBBCharacterLocomotionProcessor::Update(
         Movement.RotationRate.Yaw = -1.0f;
     }
 
+    const float StaminaCurrent = Context.Data.Stamina.ReadStaminaState().Current;
     if (bIsLocal)
     {
         // 使用蹲伏与普通步态限速生效之前的水平速度裁决滑铲
-        UpdateSlideState(RuntimeData, Movement, bCrouchPressed, Config, Context.DeltaSeconds);
+        UpdateSlideState(
+            RuntimeData, Movement, bCrouchPressed, Config, Context.DeltaSeconds, StaminaCurrent);
         // 滑铲期间本机暂停生成站立跑步状态
         if (RuntimeData.bSlide)
         {
@@ -384,7 +389,8 @@ void FBBBCharacterLocomotionProcessor::Update(
             ControlData,
             Config,
             RuntimeData.bRun,
-            Movement.Velocity);
+            Movement.Velocity,
+            StaminaCurrent);
     }
 
     // 计算并提交当前方向速度映射

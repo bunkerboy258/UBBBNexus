@@ -34,6 +34,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Life/FBBBCharacterLifeAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterLifeRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Life/FBBBCharacterDamageDeliveryRemoteMessagePacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Stamina/FBBBStaminaAuthorityFactPacket.h"
 
 UBBBCharacterNetworkComponent::UBBBCharacterNetworkComponent()
 {
@@ -117,6 +118,9 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitBone, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitPosition, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitDirection, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedStamina, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMaximumStamina, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedStaminaRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionGeneration, COND_SimulatedOnly);
 
@@ -360,6 +364,46 @@ void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, 
     ReplicatedHitPosition = Position;
     ReplicatedHitDirection = Direction;
     GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::ReplicateStamina(const float Current, const float Maximum, const uint64 Revision)
+{
+    if (!IsOwnerAuthority() || Revision <= ReplicatedStaminaRevision)
+    {
+        return;
+    }
+    ReplicatedStamina = Current;
+    ReplicatedMaximumStamina = Maximum;
+    ReplicatedStaminaRevision = Revision;
+    GetOwner()->ForceNetUpdate();
+}
+
+void UBBBCharacterNetworkComponent::ServerSubmitStamina_Implementation(
+    const float Current, const float Maximum, const uint64 Revision)
+{
+    SubmitStaminaInput(Current, Maximum, Revision);
+    if (IsOwnerAuthority())
+    {
+        ReplicateStamina(Current, Maximum, Revision);
+    }
+}
+
+void UBBBCharacterNetworkComponent::OnRep_Stamina()
+{
+    if (!Character)
+    {
+        Character = Cast<ABBBCharacter>(GetOwner());
+    }
+    SubmitStaminaInput(ReplicatedStamina, ReplicatedMaximumStamina, ReplicatedStaminaRevision);
+}
+
+void UBBBCharacterNetworkComponent::SubmitStaminaInput(
+    const float Current, const float Maximum, const uint64 Revision)
+{
+    if (Character && Revision > 0)
+    {
+        Character->SubmitInput(FBBBStaminaAuthorityFactPacket{Current, Maximum, Revision});
+    }
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitLife_Implementation(EBBBCharacterLifePhase Phase, float Health,

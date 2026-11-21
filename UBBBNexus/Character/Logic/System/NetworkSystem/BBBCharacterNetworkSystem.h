@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAimObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBRunObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBSlideObservationProcessor.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBStaminaObservationProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/NetworkSystem/Processors/BBBAccelerationObservationProcessor.h"
 
 class FBBBCharacterInitializer;
@@ -60,5 +61,6 @@ private:
     FBBBAimObservationProcessor AimObservationProcessor;
     FBBBRunObservationProcessor RunObservationProcessor;
     FBBBSlideObservationProcessor SlideObservationProcessor;
+    FBBBStaminaObservationProcessor StaminaObservationProcessor;
     FBBBAccelerationObservationProcessor AccelerationObservationProcessor;
 };

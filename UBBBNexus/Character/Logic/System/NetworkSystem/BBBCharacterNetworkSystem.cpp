@@ -45,6 +45,7 @@ void FBBBCharacterNetworkSystem::Update()
     AppearanceObservationProcessor.Update(Context);
     DamageObservationProcessor.Update(Context);
     LifeObservationProcessor.Update(Context);
+    StaminaObservationProcessor.Update(Context);
     RagdollObservationProcessor.Update(Context);
     RescueObservationProcessor.Update(Context);
     PickupObservationProcessor.Update(Context);

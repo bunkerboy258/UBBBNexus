@@ -71,7 +71,7 @@ void FBBBMeleeActionProcessor::Update(FBBBMeleeActionUpdateContext &Context)
             UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Attack ended Sequence=%d"), State.AttackSequence);
         }
     }
-    if (!Input.bPrimary || State.bAttacking)
+    if (!Input.bPrimary || State.bAttacking || Context.Character.GetStamina() <= 0.0f)
     {
         return;
     }

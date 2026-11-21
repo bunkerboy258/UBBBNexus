@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/BBBCharacterParseDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/BBBCharacterItemDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/BBBCharacterLifeDomainState.h"
+#include "BBBWork/UBBBNexus/Character/Logic/System/StaminaSystem/DomainData/BBBCharacterStaminaDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AppearanceSystem/DomainData/BBBCharacterAppearanceDomainState.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PickupSystem/DomainData/BBBCharacterPickupDomainState.h"
 #include "BBBCharacterRuntimeData.generated.h"
@@ -43,6 +44,11 @@ struct FBBBCharacterRuntimeData final
     /** 角色生命和独立受击事实 */
     UPROPERTY(Transient)
     FBBBCharacterLifeDomainState Life;
+
+    /** 角色体力结果 */
+    UPROPERTY(Transient)
+    FBBBCharacterStaminaDomainState Stamina;
+
     /** 独立骨骼物理表现结果 */
     UPROPERTY(Transient)
     FBBBCharacterPhysicalPresentationDomainState PhysicalPresentation;
