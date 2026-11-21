@@ -54,22 +54,22 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 
     /** 体力上限与出生体力 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "最大体力", ClampMin = "0"))
-    float MaximumStamina = 100.0f;
+    float MaximumStamina = 150.0f;
     /** 站立奔跑每秒消耗 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "奔跑每秒消耗", ClampMin = "0"))
-    float RunDrainPerSecond = 8.0f;
+    float RunDrainPerSecond = 5.0f;
     /** 滑铲每秒消耗 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "滑铲每秒消耗", ClampMin = "0"))
-    float SlideDrainPerSecond = 15.0f;
+    float SlideDrainPerSecond = 10.0f;
     /** 快速近战与装备近战每次攻击消耗 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "近战攻击消耗", ClampMin = "0"))
-    float MeleeAttackCost = 12.0f;
+    float MeleeAttackCost = 8.0f;
     /** 无消耗后每秒回复 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "每秒回复", ClampMin = "0"))
-    float RegenPerSecond = 20.0f;
+    float RegenPerSecond = 30.0f;
     /** 无消耗后开始回复前的等待秒数 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "回复延迟", ClampMin = "0", ForceUnits = "s"))
-    float RegenDelaySeconds = 1.0f;
+    float RegenDelaySeconds = 0.5f;
 
     /** 从本次最高点下降到此距离时在空中进入布娃娃 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落布娃娃距离", ClampMin = "1"))
