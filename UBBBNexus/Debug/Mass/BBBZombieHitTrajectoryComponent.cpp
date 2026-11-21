@@ -529,7 +529,7 @@ void UBBBZombieHitTrajectoryComponent::TickComponent(float DeltaTime, ELevelTick
         }
         if (bCommand)
         {
-            Target->PreviewHit(Region, Direction, 1.0f);
+            Target->PreviewHit(Region, Direction, 1.0f, 10.0f);
             Hit.BoneName = Target->LastHitBone;
         }
         auto Row = MakeShared<FJsonObject>();

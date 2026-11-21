@@ -241,11 +241,12 @@ FString ABBBZombieHitReactionTarget::GetHitTrajectoryStatus() const
     return Trajectory->Status();
 }
 
-bool ABBBZombieHitReactionTarget::PreviewHit(const int32 Region, FVector Direction, const float WoundStrength)
+bool ABBBZombieHitReactionTarget::PreviewHit(const int32 Region, FVector Direction, const float WoundStrength,
+    const float DamageAmount)
 {
     if (!bConfigurationReady || !GetWorld() || !GetWorld()->IsGameWorld() || Region < 0 || Region >= 6
         || Direction.ContainsNaN() || !Direction.Normalize() || !FMath::IsFinite(WoundStrength)
-        || WoundStrength <= 0.0f || WoundStrength > 10.0f)
+        || WoundStrength < 0.0f || WoundStrength > 10.0f || !FMath::IsFinite(DamageAmount) || DamageAmount <= 0.0f)
     {
         return false;
     }
@@ -262,7 +263,7 @@ bool ABBBZombieHitReactionTarget::PreviewHit(const int32 Region, FVector Directi
     {
         return false;
     }
-    FBBBHitContribution Value{1.f, Bones[Region], ImpactPoint, Direction};
+    FBBBHitContribution Value{DamageAmount, Bones[Region], ImpactPoint, Direction};
     Value.Normal = -Direction;
     Value.AddWound = WoundStrength;
     const uint32 Before = HitCount;
@@ -296,6 +297,12 @@ float ABBBZombieHitReactionTarget::TakeDamage(const float DamageAmount, const FD
 void ABBBZombieHitReactionTarget::ReceiveHit(const FBBBHitContribution& Value)
 {
     if (!bConfigurationReady || !GetWorld() || !GetWorld()->IsGameWorld() || !Value.IsValid() || Value.Direction.IsNearlyZero())
+    {
+        return;
+    }
+    const auto* Trait = ZombieVersion
+        ? Cast<UBBBMonsterTrait>(ZombieVersion->FindTrait(UBBBMonsterTrait::StaticClass())) : nullptr;
+    if (!Trait || !Trait->Definition)
     {
         return;
     }
@@ -348,5 +355,5 @@ void ABBBZombieHitReactionTarget::ReceiveHit(const FBBBHitContribution& Value)
     {
         HitReaction->ApplyHitFacts(Hit, true);
     }
-    GorePreview->ApplyHit(Hit, Value.AddWound);
+    GorePreview->ApplyHit(Hit, Value, *Trait->Definition);
 }

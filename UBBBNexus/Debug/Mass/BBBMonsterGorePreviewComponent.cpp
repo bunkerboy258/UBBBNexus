@@ -1,9 +1,11 @@
 #include "BBBMonsterGorePreviewComponent.h"
 
 #include "BBBZombieHitReactionTarget.h"
+#include "BBBWork/UBBBNexus/Combat/FBBBHitContribution.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDestructionSystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterDismembermentSystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDestructionContribution.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGorePresentationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterHitReactionComponent.h"
@@ -26,7 +28,8 @@ void UBBBMonsterGorePreviewComponent::BeginPlay()
     }
 }
 
-void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragment &Hit, const float Strength)
+void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragment& Hit,
+    const FBBBHitContribution& HitContribution, const UBBBMonsterDefinition& Rules)
 {
     if (!Definition || !Definition->IsReady() || !GetWorld())
     {
@@ -37,23 +40,40 @@ void UBBBMonsterGorePreviewComponent::ApplyHit(const FBBBMonsterHitReactionFragm
     {
         return;
     }
+    const auto BodyPart = static_cast<EBBBMonsterHitRegion>(Region);
+    const auto& PartRule = Rules.GetBodyPart(BodyPart);
+    if (!PartRule.IsValid() || !FMath::IsFinite(Rules.MaxHealth) || Rules.MaxHealth <= 0.0f)
+    {
+        return;
+    }
+    const double EffectiveDamage = PartRule.ResolveDamage(HitContribution.AddDamage,
+        HitContribution.AddDurableDamage);
+    if (!FMath::IsFinite(EffectiveDamage) || EffectiveDamage < 0.0)
+    {
+        return;
+    }
     CurrentHit = Hit;
     auto* Target = Cast<ABBBZombieHitReactionTarget>(GetOwner());
-    if (Region == 0 && Target && Target->TargetMesh && Strength > 0)
+    if (bAllowSevering && EffectiveDamage > 0.0)
     {
-        FBBBMonsterDestructionContribution Contribution;
-        FMemory::Memcpy(Contribution.Regions, Result.DestructionStrengths, sizeof(Contribution.Regions));
+        PartDamage.Add(BodyPart, EffectiveDamage);
+        if (Region > 0 && PartRule.HasReachedHealthThreshold(PartDamage.Get(BodyPart), Rules.MaxHealth))
+        {
+            Destroyed |= 1 << Region;
+        }
+    }
+    if (Region == 0 && Target && Target->TargetMesh && HitContribution.AddWound > 0.0f && EffectiveDamage > 0.0)
+    {
+        FBBBMonsterDestructionContribution Destruction;
+        FMemory::Memcpy(Destruction.Regions, Result.DestructionStrengths, sizeof(Destruction.Regions));
         const int32 Zone = FBBBMonsterDestructionSystem::Select(*Definition, Hit.Position, Hit.Direction,
             Target->TargetMesh->GetComponentTransform(), Target->TargetMesh);
-        Contribution.Add(Zone, Strength * Definition->Destruction->HitAccumulation);
-        FMemory::Memcpy(Result.DestructionStrengths, Contribution.Regions, sizeof(Contribution.Regions));
-    }
-    if (bAllowSevering && Region > 0 && ++RegionHits[Region] >= FMath::Max(1, HitsToSever))
-    {
-        Destroyed |= 1 << Region;
+        Destruction.Add(Zone, HitContribution.AddWound * Definition->Destruction->HitAccumulation);
+        FMemory::Memcpy(Result.DestructionStrengths, Destruction.Regions, sizeof(Destruction.Regions));
     }
     const double Now = GetWorld()->GetTimeSeconds();
-    if (Definition->GetBlood() && FMath::IsFinite(Strength) && Strength > 0 && Now >= NextBlood)
+    if (Definition->GetBlood() && FMath::IsFinite(HitContribution.AddWound)
+        && HitContribution.AddWound > 0.0f && Now >= NextBlood)
     {
         NextBlood = Now + 1 / FMath::Clamp(Definition->WoundUpdatesPerSecond, 1.0f, 30.0f);
         FBBBMonsterBloodImpact Impact;
@@ -93,7 +113,7 @@ void UBBBMonsterGorePreviewComponent::ResetTarget()
     Target->Gore->ResetPresentation();
     Result = FBBBMonsterGoreFragment();
     CurrentHit = FBBBMonsterHitReactionFragment();
-    FMemory::Memzero(RegionHits);
+    PartDamage = FBBBMonsterPartDamage();
     Destroyed = 0;
     NextBlood = 0;
     NextReset = GetWorld()->GetTimeSeconds() + FMath::Max(0.0f, ResetInterval);

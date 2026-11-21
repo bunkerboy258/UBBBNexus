@@ -61,10 +61,11 @@ public:
      * @param Region	零至五的命中部位
      * @param Direction	世界受力方向
      * @param WoundStrength	独立于物理受力的血效强度
+     * @param DamageAmount	用于预览部位阈值的普通伤害
      * @return 是否通过正式点命中入口消费本次预览命中
      */
     UFUNCTION(BlueprintCallable, Category = "受击调参", meta = (DisplayName = "指令预览命中"))
-    bool PreviewHit(int32 Region, FVector Direction, float WoundStrength = 1.0f);
+    bool PreviewHit(int32 Region, FVector Direction, float WoundStrength, float DamageAmount);
 
     /** @return 更新正式动画蓝图需要的本地预览快照 无返回值 */
     void UpdatePreviewAnimation();

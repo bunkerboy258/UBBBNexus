@@ -93,7 +93,7 @@ namespace
                 const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
                 const auto& Rule = Definition.GetBodyPart(Region);
                 const float Share = Hit.bRadial ? Rule.RadialWeight / Weight : 1.0f;
-                const double Amount = Share * (Hit.AddDamage * (1.0 - Rule.Durability) + Hit.AddDurableDamage * Rule.Durability);
+                const double Amount = Share * Rule.ResolveDamage(Hit.AddDamage, Hit.AddDurableDamage);
                 Value.Parts.Add(Region, Amount);
                 if (Part == 0 && Mass && Hit.AddWound > 0 && Amount > 0)
                 {
@@ -357,9 +357,9 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
                 const auto& Definition = Settings->GetBodyPart(Region);
                 const double Amount = Totals.Get(Region);
-                Ratios.Add(Region, FMath::Clamp(Amount / (Health[Index].MaxHealth * Definition.HealthFraction), 0.0, 1.0));
+                Ratios.Add(Region, FMath::Clamp(Amount / Definition.GetHealthThreshold(Health[Index].MaxHealth), 0.0, 1.0));
                 MainDamage += Amount * Definition.MainTransfer;
-                if (Amount + UE_SMALL_NUMBER >= Health[Index].MaxHealth * Definition.HealthFraction)
+                if (Definition.HasReachedHealthThreshold(Amount, Health[Index].MaxHealth))
                 {
                     Destroyed |= 1 << Part;
                     bFatal |= Definition.bFatal;

@@ -37,6 +37,35 @@ struct FBBBMonsterBodyPartDefinition final
     UPROPERTY(EditAnywhere, Category = "部位", meta = (ClampMin = "0.1", ClampMax = "10.0", Units = "s", DisplayName = "完整踉跄时长"))
     float StaggerDuration = 2.3333333f;
 
+    /**
+     * @param Damage	普通伤害
+     * @param DurableDamage	耐久伤害
+     * @return 按本部位耐久比例计算的有效伤害
+     */
+    double ResolveDamage(const double Damage, const double DurableDamage) const
+    {
+        return Damage * (1.0 - Durability) + DurableDamage * Durability;
+    }
+
+    /**
+     * @param MaxHealth	小怪最大生命值
+     * @return 本部位损毁所需的累计有效伤害
+     */
+    double GetHealthThreshold(const double MaxHealth) const
+    {
+        return MaxHealth * HealthFraction;
+    }
+
+    /**
+     * @param Damage	部位累计有效伤害
+     * @param MaxHealth	小怪最大生命值
+     * @return 部位生命是否耗尽
+     */
+    bool HasReachedHealthThreshold(const double Damage, const double MaxHealth) const
+    {
+        return Damage + UE_SMALL_NUMBER >= GetHealthThreshold(MaxHealth);
+    }
+
     /** @return 静态规则是否有效 */
     bool IsValid() const
     {

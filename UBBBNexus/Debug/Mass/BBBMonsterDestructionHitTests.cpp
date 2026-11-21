@@ -42,7 +42,6 @@ bool FBBBMonsterDestructionHitTest::RunTest(const FString&)
         return false;
     }
     Target->GorePreview->ResetInterval = 0;
-    Target->GorePreview->HitsToSever = 1;
     Target->GorePreview->bEnablePhysicalReaction = false;
     auto* Mesh = Target->TargetMesh.Get();
     Mesh->TickAnimation(0, false);
@@ -60,7 +59,7 @@ bool FBBBMonsterDestructionHitTest::RunTest(const FString&)
         const FTransform Current = Mesh->GetSocketTransform(BoneName);
         const FVector Position = Current.TransformPosition(Reference.InverseTransformPosition(Contact));
         const FVector WorldNormal = Current.TransformVectorNoScale(Reference.InverseTransformVectorNoScale(Normal)).GetSafeNormal();
-        FBBBHitContribution Value{1.f, BoneName, Position, -WorldNormal};
+        FBBBHitContribution Value{1000.f, BoneName, Position, -WorldNormal};
         Value.Normal = WorldNormal;
         Value.AddWound = 1;
         Target->ReceiveHit(Value);
