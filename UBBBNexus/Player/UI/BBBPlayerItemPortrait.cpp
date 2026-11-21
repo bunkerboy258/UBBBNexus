@@ -24,8 +24,8 @@ void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
     }
     bActive = bInActive;
     bDirty |= bActive;
-    CaptureElapsed = 0.0f;
-    AppearanceElapsed = 0.0f;
+    CaptureCredit = 0.0f;
+    PendingPoseTime = 0.0f;
 }
 
 bool UBBBPlayerItemPortrait::IsForPawn(const APawn* Pawn) const
@@ -176,13 +176,8 @@ void UBBBPlayerItemPortrait::ApplyCameraOrbit(FVector2D Orbit)
 {
     const FQuat BaseRotation = HomeCamera.GetRotation();
     const FVector BasePosition = HomeCamera.GetLocation();
-    const auto* Camera = Capture->GetCaptureComponent2D();
-    const double Depth = FVector::DotProduct(Origin - BasePosition, BaseRotation.GetForwardVector());
-    const double HalfWidth = Depth * FMath::Tan(FMath::DegreesToRadians(Camera->FOVAngle * 0.5));
-    const double HalfHeight = HalfWidth * Texture->SizeY / Texture->SizeX;
-    const FVector Pivot = BasePosition + BaseRotation.GetForwardVector() * Depth
-        + BaseRotation.GetRightVector() * (Orbit.X * HalfWidth) + BaseRotation.GetUpVector() * (Orbit.Y * HalfHeight);
-    const FQuat Offset = FRotator(Orbit.Y * 2.4, Orbit.X * 3.6, 0.0).Quaternion();
+    const FVector Pivot = Origin + FVector(0.0, 0.0, 112.0);
+    const FQuat Offset = FRotator(Orbit.Y * 1.05, Orbit.X * 1.6, 0.0).Quaternion();
     const FQuat Rotation = BaseRotation * Offset;
     const FQuat WorldOffset = Rotation * BaseRotation.Inverse();
     Capture->SetActorLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot), Rotation);
@@ -204,27 +199,43 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
         TargetOrbit = FVector2D::ZeroVector;
     }
 #endif
-    const bool bOrbitMoving = !DisplayedOrbit.Equals(TargetOrbit, 0.008);
-    const float CaptureInterval = bOrbitMoving ? 1.0f / 24.0f : 1.0f / 12.0f;
-    CaptureElapsed += DeltaTime;
-    AppearanceElapsed += DeltaTime;
+    constexpr float CaptureInterval = 1.0f / 60.0f;
+    CaptureCredit += DeltaTime;
+    PendingPoseTime += DeltaTime;
     const bool bNeedsSync = bDirty || Revision != ObservedAppearanceRevision;
-    if (!bNeedsSync && CaptureElapsed < CaptureInterval)
+    if (!bNeedsSync && CaptureCredit + UE_KINDA_SMALL_NUMBER < CaptureInterval)
     {
         return;
     }
+    CaptureCredit = CaptureCredit >= CaptureInterval ? FMath::Fmod(CaptureCredit, CaptureInterval) : 0.0f;
 
-    if (bNeedsSync || AppearanceElapsed >= 1.0f / 12.0f)
+#if WITH_DEV_AUTOMATION_TESTS
+    if (ReviewPoseTime >= 0.0f)
     {
-        SyncAppearance(Character, AppearanceElapsed);
-        AppearanceElapsed = 0.0f;
+        Pose->SetPosition(ReviewPoseTime, false);
+        Pose->TickAnimation(0.0f, false);
+    }
+    else
+#endif
+    {
+        Pose->TickAnimation(PendingPoseTime, false);
+    }
+    Pose->RefreshBoneTransforms();
+
+    if (bNeedsSync)
+    {
+        SyncAppearance(Character);
         ObservedAppearanceRevision = Revision;
     }
+    for (UWidgetComponent* Panel : Panels)
+    {
+        Panel->TickComponent(PendingPoseTime, LEVELTICK_All, nullptr);
+    }
 
-    const FVector2D NextOrbit = bOrbitMoving
-        ? FMath::Lerp(DisplayedOrbit, TargetOrbit, 1.0 - FMath::Exp(-14.0 * CaptureElapsed))
-        : TargetOrbit;
-    CaptureElapsed = 0.0f;
+    const FVector2D NextOrbit = DisplayedOrbit.Equals(TargetOrbit, 0.001)
+        ? TargetOrbit
+        : FMath::Lerp(DisplayedOrbit, TargetOrbit, 1.0 - FMath::Exp(-16.0 * PendingPoseTime));
+    PendingPoseTime = 0.0f;
     // 命中检测读取对应这次捕获的机位
     if (NextOrbit != DisplayedOrbit)
     {
@@ -238,20 +249,8 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     bDirty = false;
 }
 
-void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character, float DeltaTime)
+void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character)
 {
-#if WITH_DEV_AUTOMATION_TESTS
-    if (ReviewPoseTime >= 0.0f)
-    {
-        Pose->SetPosition(ReviewPoseTime, false);
-        Pose->TickAnimation(0.0f, false);
-    }
-    else
-#endif
-    {
-        Pose->TickAnimation(DeltaTime, false);
-    }
-    Pose->RefreshBoneTransforms();
     TArray<USkeletalMeshComponent *> Actual;
     Source->GetComponents(Actual);
     while (Components.Num() > Actual.Num())
@@ -323,25 +322,26 @@ void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character, floa
         {
             Part->RefreshBoneTransforms();
         }
+        const bool bBody = Character && Original == Character->GetMesh();
+        const bool bBodyAttachment = Character && Original->GetAttachParent() == Character->GetMesh();
+        if (bBody || bBodyAttachment)
+        {
+            const FName PreviewSocket = bBody ? NAME_None : Socket;
+            if (Part->GetAttachParent() != Pose || Part->GetAttachSocketName() != PreviewSocket)
+            {
+                Part->AttachToComponent(Pose, FAttachmentTransformRules::KeepRelativeTransform, PreviewSocket);
+            }
+            Part->SetRelativeTransform(bBody ? FTransform::Identity : Original->GetRelativeTransform());
+            continue;
+        }
+
+        if (Part->GetAttachParent())
+        {
+            Part->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        }
         FTransform Relative = Original->GetComponentTransform().GetRelativeTransform(Source->GetActorTransform());
-        Relative.AddToTranslation(FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
-        Relative.AddToTranslation(Origin);
-        if (Character && Original == Character->GetMesh())
-        {
-            Relative = Pose->GetComponentTransform();
-        }
-        if (Character && Original->GetAttachParent() == Character->GetMesh())
-        {
-            Relative = Original->GetRelativeTransform() * Pose->GetSocketTransform(Socket, RTS_World);
-        }
-        if (!Part->GetComponentTransform().Equals(Relative))
-        {
-            Part->SetWorldTransform(Relative);
-        }
-    }
-    for (UWidgetComponent* Panel : Panels)
-    {
-        Panel->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
+        Relative.AddToTranslation(Origin + FVector(0.0f, 0.0f, Source->GetSimpleCollisionHalfHeight()));
+        Part->SetWorldTransform(Relative);
     }
 }
 
@@ -371,8 +371,8 @@ void UBBBPlayerItemPortrait::Close()
     PreviewScene.Reset();
     Source.Reset();
     DisplayedOrbit = FVector2D::ZeroVector;
-    CaptureElapsed = 0.0f;
-    AppearanceElapsed = 0.0f;
+    CaptureCredit = 0.0f;
+    PendingPoseTime = 0.0f;
     bActive = false;
     bDirty = true;
     ObservedAppearanceRevision = 0;

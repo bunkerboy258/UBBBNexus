@@ -16,6 +16,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SceneCapture2D.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "Input/HittestGrid.h"
 #include "Layout/ArrangedChildren.h"
 #include "Layout/WidgetPath.h"
@@ -28,6 +29,7 @@
 #include "Widgets/Text/STextBlock.h"
 #include "Brushes/SlateColorBrush.h"
 #include "Brushes/SlateNoResource.h"
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 
 namespace
@@ -48,11 +50,11 @@ public:
             for (int32 Index = Panels.Num() - 1; Index >= 0; --Index)
             {
                 UWidgetComponent* Panel = Panels[Index];
+                const auto* RenderTarget = Panel->GetRenderTarget();
                 const auto Point = Project(Geometry, *Panel, DesktopPosition);
-                if (Point.IsSet())
+                if (RenderTarget && Point.IsSet())
                 {
-                    const FVector2D Size = Panel->GetCurrentDrawSize();
-                    if (Point->X >= 0 && Point->Y >= 0 && Point->X < Size.X && Point->Y < Size.Y)
+                    if (Point->X >= 0 && Point->Y >= 0 && Point->X < RenderTarget->SizeX && Point->Y < RenderTarget->SizeY)
                     {
                         auto Path = Panel->GetHitWidgetPath(*Point, bIgnoreEnabled);
                         if (Path.Num() > 1)
@@ -79,10 +81,14 @@ public:
         {
             for (const UWidgetComponent* Panel : Preview->GetPanels())
             {
-                if (auto Window = Panel->GetSlateWindow())
+                const auto* RenderTarget = Panel->GetRenderTarget();
+                const FVector2D DrawSize = Panel->GetCurrentDrawSize();
+                const auto Window = Panel->GetSlateWindow();
+                if (Window && RenderTarget && DrawSize.X > 0)
                 {
+                    const float PaintScale = RenderTarget->SizeX / DrawSize.X;
                     Children.AddWidget(FArrangedWidget(Window.ToSharedRef(),
-                        FGeometry::MakeRoot(FVector2D(Panel->GetCurrentDrawSize()), FSlateLayoutTransform())));
+                        FGeometry::MakeRoot(DrawSize, FSlateLayoutTransform(PaintScale))));
                 }
             }
         }
@@ -245,32 +251,29 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         return SNew(STextBlock).Text(Text).Font(ArtFont(Size)).ColorAndOpacity(FLinearColor::White)
             .ShadowOffset(FVector2D(1, 2)).ShadowColorAndOpacity(FLinearColor(0, 0, 0, 0.8f));
     };
+    static const FSlateRoundedBoxBrush TabFrame(FLinearColor::Transparent, 1.0f,
+        FLinearColor(0.66f, 0.64f, 0.60f, 0.50f), 1.5f);
+    static const FSlateRoundedBoxBrush ActiveTab(FLinearColor(0.41f, 0.18f, 0.012f, 0.94f), 1.0f,
+        FLinearColor(0.90f, 0.48f, 0.05f, 0.85f), 1.5f);
     const auto Tab = [this](const FText &Text, EBBBItemPanelPage Page)
     {
         return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Panel.%d"), static_cast<int>(Page))))
             .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Fill).VAlign(VAlign_Fill)
             .OnClicked_Lambda([this, Page] { return ShowPanel(Page); })
             [SNew(SOverlay)
-                + SOverlay::Slot()[SNew(SImage).Image(Selection()).ColorAndOpacity(FLinearColor(1, 1, 1, 0.65f))]
-                + SOverlay::Slot().Padding(2)[SNew(SImage)
-                    .Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Inventory/T_Inventory_ContextMenu_HoverOpt.T_Inventory_ContextMenu_HoverOpt")))
-                    .ColorAndOpacity(FLinearColor(0.54f, 0.52f, 0.50f, 0.88f))
-                    .Visibility_Lambda([this, Page] { return PanelPage == Page ? EVisibility::HitTestInvisible : EVisibility::Hidden; })]
+                + SOverlay::Slot()[SNew(SImage)
+                    .Image_Lambda([this, Page]() -> const FSlateBrush* { return PanelPage == Page ? &ActiveTab : &TabFrame; })
+                    .Visibility(EVisibility::HitTestInvisible)]
                 + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)[SNew(STextBlock).Text(Text).Font(ArtFont(26))
                     .ColorAndOpacity(FLinearColor::White)]];
     };
     const auto Hairline = [&Place](float X, float Y, float W)
     {
-        Place(X, Y, W, 3, SNew(SImage).Image(Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Settings_Screen/T_SeparatorLine.T_SeparatorLine")))
-            .ColorAndOpacity(FLinearColor(0.84f, 0.78f, 0.65f, 0.7f)));
+        static const FSlateColorBrush Divider(FLinearColor(0.72f, 0.37f, 0.05f, 0.86f));
+        Place(X, Y, W, 2.0f, SNew(SImage).Image(&Divider).Visibility(EVisibility::HitTestInvisible));
     };
-    static const FSlateBrush Keycap = []()
-    {
-        FSlateBrush Cap = *Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Settings_Screen/T_Esc_Key.T_Esc_Key"));
-        Cap.DrawAs = ESlateBrushDrawType::Border;
-        Cap.Margin = FMargin(0.19f);
-        return Cap;
-    }();
+    static const FSlateRoundedBoxBrush Keycap(FLinearColor::Transparent, 1.0f,
+        FLinearColor(0.84f, 0.81f, 0.76f, 0.74f), 1.5f);
     const auto Fit = [](TSharedRef<SWidget> Content, float DesignHeight)
     {
         return SNew(SScaleBox).Stretch(EStretch::ScaleToFit).Visibility(EVisibility::SelfHitTestInvisible)

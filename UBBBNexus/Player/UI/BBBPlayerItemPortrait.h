@@ -62,7 +62,7 @@ private:
     void BuildRoom(USceneComponent& Root);
     void UpdateRoomMist();
     void ApplyCameraOrbit(FVector2D Orbit);
-    void SyncAppearance(const ABBBCharacter* Character, float DeltaTime);
+    void SyncAppearance(const ABBBCharacter* Character);
     UPROPERTY(Transient)
     TObjectPtr<USpotLightComponent> RoomKey;
     UPROPERTY(Transient)
@@ -74,8 +74,8 @@ private:
     FVector Origin = FVector::ZeroVector;
     FTransform HomeCamera = FTransform::Identity;
     FVector2D DisplayedOrbit = FVector2D::ZeroVector;
-    float CaptureElapsed = 0.0f;
-    float AppearanceElapsed = 0.0f;
+    float CaptureCredit = 0.0f;
+    float PendingPoseTime = 0.0f;
     TSharedPtr<FStreamableHandle> ResourceLoad;
     uint64 ObservedAppearanceRevision = 0;
     bool bActive = false;

@@ -3,7 +3,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/WidgetComponent.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPanelComponent.h"
 #include "Engine/SceneCapture2D.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -13,7 +13,7 @@ namespace
 UWidgetComponent* CreateRoomWidget(AActor& Owner, const TSharedPtr<SWidget>& Widget, FVector2D Size,
     FVector Location, FRotator Rotation, float UnitsPerPixel)
 {
-    auto* Panel = NewObject<UWidgetComponent>(&Owner);
+    auto* Panel = NewObject<UBBBPlayerItemPanelComponent>(&Owner);
     Owner.AddInstanceComponent(Panel);
     Panel->SetupAttachment(Owner.GetRootComponent());
     Panel->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -21,6 +21,8 @@ UWidgetComponent* CreateRoomWidget(AActor& Owner, const TSharedPtr<SWidget>& Wid
     Panel->SetVisibleInSceneCaptureOnly(true);
     Panel->SetTickWhenOffscreen(true);
     Panel->SetBlendMode(EWidgetBlendMode::Transparent);
+    Panel->SetOutputDepthAndVelocity(true);
+    Panel->SetRenderTargetPixelsPerCentimeter(1.5f);
     Panel->SetBackgroundColor(FLinearColor::Transparent);
     Panel->SetDrawSize(Size);
     Panel->SetRelativeTransform(FTransform(Rotation, Location, FVector(UnitsPerPixel)));

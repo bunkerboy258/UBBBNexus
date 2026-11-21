@@ -9,6 +9,7 @@
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
 #include "Brushes/SlateColorBrush.h"
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SScaleBox.h"
@@ -189,20 +190,19 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
             Geometry.ToPaintGeometry(FVector2D(Width, Size.Y), FSlateLayoutTransform(FVector2f(Left, 0))),
             MoveTemp(Stops), Orient_Vertical);
 
-        constexpr float Border = 1.35f;
+        constexpr float Border = 2.0f;
         constexpr float Strip = 3.8f;
         const float InnerHeight = Size.Y - 2.0f * Border;
         const float StripX = bOuterRight ? Size.X - Border - Strip : Border;
         PaintRect(++Layer, FVector2D(Strip, InnerHeight), FVector2f(StripX, Border),
             FLinearColor(1.0f, 0.42f, 0.10f, Strength));
 
-        const FLinearColor Edge = bHover || bSelected ? FLinearColor(0.93f, 0.76f, 0.58f, 0.91f)
-            : FLinearColor(0.67f, 0.68f, 0.69f, 0.57f);
-        ++Layer;
-        PaintRect(Layer, FVector2D(Size.X, Border), FVector2f::ZeroVector, Edge);
-        PaintRect(Layer, FVector2D(Size.X, Border), FVector2f(0.0f, Size.Y - Border), Edge);
-        PaintRect(Layer, FVector2D(Border, InnerHeight), FVector2f(0.0f, Border), Edge);
-        PaintRect(Layer, FVector2D(Border, InnerHeight), FVector2f(Size.X - Border, Border), Edge);
+        static const FSlateRoundedBoxBrush Frame(FLinearColor::Transparent, 1.0f,
+            FLinearColor(0.67f, 0.68f, 0.69f, 0.57f), Border);
+        static const FSlateRoundedBoxBrush HighlightedFrame(FLinearColor::Transparent, 1.0f,
+            FLinearColor(0.93f, 0.76f, 0.58f, 0.91f), Border);
+        FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(),
+            bHover || bSelected ? &HighlightedFrame : &Frame);
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }
@@ -228,6 +228,18 @@ bool SBBBPlayerItemSlot::IsSelected() const
         return Slot - Start == Controller->GetSelectedConsumableSlot();
     }
     return Slot == Controller->GetSelectedItemSlot();
+}
+
+void SBBBPlayerItemSlot::OnMouseEnter(const FGeometry& Geometry, const FPointerEvent& Event)
+{
+    SCompoundWidget::OnMouseEnter(Geometry, Event);
+    Invalidate(EInvalidateWidgetReason::Paint);
+}
+
+void SBBBPlayerItemSlot::OnMouseLeave(const FPointerEvent& Event)
+{
+    SCompoundWidget::OnMouseLeave(Event);
+    Invalidate(EInvalidateWidgetReason::Paint);
 }
 
 FReply SBBBPlayerItemSlot::OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event)
@@ -287,6 +299,7 @@ FReply SBBBPlayerItemSlot::OnDrop(const FGeometry &Geometry, const FDragDropEven
         return FReply::Unhandled();
     }
     bDropTarget = false;
+    Invalidate(EInvalidateWidgetReason::Paint);
     View->MoveItem(Operation->Source, Slot, Operation->Pawn.Get(), Operation->InstanceId);
     return FReply::Handled();
 }

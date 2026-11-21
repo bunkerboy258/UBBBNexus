@@ -30,7 +30,11 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
 
     /** @return 无 更新槽位内容并保留拖拽控件身份 */
     void Refresh();
+    /** @return 当前格子对应的背包槽位 */
+    int32 GetSlotIndex() const { return Slot; }
 
+    virtual void OnMouseEnter(const FGeometry& Geometry, const FPointerEvent& Event) override;
+    virtual void OnMouseLeave(const FPointerEvent& Event) override;
     virtual FReply OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnMouseButtonDoubleClick(const FGeometry &Geometry, const FPointerEvent &Event) override;
     virtual FReply OnDragDetected(const FGeometry &Geometry, const FPointerEvent &Event) override;

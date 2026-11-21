@@ -165,13 +165,16 @@ TOptional<FVector2D> UBBBPlayerItemView::ReadOrbitCursor() const
 
     const FGeometry& Image = RoomImage->GetTickSpaceGeometry();
     const FVector2D Size = Image.GetLocalSize();
-    const FVector2D Cursor = Slate.GetCursorPos();
-    if (!Slate.IsActive() || Size.X <= 0 || Size.Y <= 0 || !Image.IsUnderLocation(Cursor))
+    if (!Slate.IsActive() || Size.X <= 0 || Size.Y <= 0)
     {
         return FVector2D::ZeroVector;
     }
 
-    const FVector2D UV = Image.AbsoluteToLocal(Cursor) / Size;
+    const FVector2D UV = Image.AbsoluteToLocal(Slate.GetCursorPos()) / Size;
+    if (UV.X < 0.0 || UV.Y < 0.0 || UV.X > 1.0 || UV.Y > 1.0)
+    {
+        return FVector2D::ZeroVector;
+    }
     return FVector2D(2.0 * UV.X - 1.0, 1.0 - 2.0 * UV.Y);
 }
 
@@ -205,8 +208,20 @@ void UBBBPlayerItemView::InspectSlot(int32 SlotIndex)
     {
         return;
     }
+    const int32 PreviousSlot = InspectedSlot;
     InspectedSlot = SlotIndex;
     InspectedInstance = Controller->GetItemDisplayData(SlotIndex).InstanceId;
+    for (const auto* Slots : {&StorageSlotViews, &PanelSlotViews})
+    {
+        for (const auto& SlotView : *Slots)
+        {
+            const int32 Index = SlotView->GetSlotIndex();
+            if (Index == PreviousSlot || Index == InspectedSlot)
+            {
+                SlotView->Invalidate(EInvalidateWidgetReason::Paint);
+            }
+        }
+    }
 }
 
 FReply UBBBPlayerItemView::ShowStorage(EBBBItemType Type)

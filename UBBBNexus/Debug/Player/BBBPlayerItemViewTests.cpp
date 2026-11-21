@@ -154,6 +154,11 @@ public:
         {
             return AwaitCapture(*Portrait);
         }
+        if (FScreenshotRequest::IsScreenshotRequested())
+        {
+            return true;
+        }
+        Portrait->ReviewPoseTime = -1.0f;
 
         FString Request;
         if (bLive)
@@ -493,6 +498,7 @@ private:
         if (FPlatformTime::Seconds() - RequestedAt > 8.0)
         {
             UE_LOG(LogTemp, Error, TEXT("Item room review capture timed out: %s"), *LastName);
+            Portrait.ReviewPoseTime = -1.0f;
             bReadingCapture = false;
             ++AutomaticIndex;
             return bLive;
@@ -754,7 +760,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("头盔双击目标为对应穿戴位置"), Controller->GetItemDisplayData(20).EquipSlot, 100);
     TestTrue(TEXT("双击穿戴请求接受"), View->EquipItem(20, Character, Helmet));
     Character->Tick(1.0f / 60.0f);
-    Portrait->Update(1.0f);
+    Portrait->Update(1.0f, {});
     TestTrue(TEXT("穿戴后捕获真实位置"), Controller->GetItemInstanceId(100) == Helmet);
     Controller->SubmitItemAdd(TEXT("Helmet_UASoldHelmet00"));
     Character->Tick(1.0f / 60.0f);
@@ -765,10 +771,10 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("旧头盔回到替换来源格"), Controller->GetItemInstanceId(20), Helmet);
     Controller->SubmitItemMove(100, 20, ReplacementHelmet);
     Character->Tick(1.0f / 60.0f);
-    Portrait->Update(1.0f);
+    Portrait->Update(1.0f, {});
     Controller->SubmitItemMove(100, 21, Helmet);
     Character->Tick(1.0f / 60.0f);
-    Portrait->Update(1.0f);
+    Portrait->Update(1.0f, {});
     TestTrue(TEXT("脱下清空网格后捕获安全"), Controller->GetItemInstanceId(21) == Helmet
         && !Controller->GetItemInstanceId(100).IsValid());
     Portrait->Close();
