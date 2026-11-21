@@ -1,9 +1,9 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
-#include "Components/RectLightComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SceneComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/SpotLight.h"
 
 ABBBPlayerItemStage::ABBBPlayerItemStage()
 {
@@ -11,16 +11,6 @@ ABBBPlayerItemStage::ABBBPlayerItemStage()
     Floor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Floor"));
     Floor->SetupAttachment(GetRootComponent());
     Floor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-    Key = CreateDefaultSubobject<USpotLightComponent>(TEXT("ItemRoomKey"));
-    Key->SetupAttachment(GetRootComponent());
-    Key->SetMobility(EComponentMobility::Movable);
-    Rim = CreateDefaultSubobject<USpotLightComponent>(TEXT("ItemRoomCoolRim"));
-    Rim->SetupAttachment(GetRootComponent());
-    Rim->SetMobility(EComponentMobility::Movable);
-    Fill = CreateDefaultSubobject<URectLightComponent>(TEXT("ItemRoomFill"));
-    Fill->SetupAttachment(GetRootComponent());
-    Fill->SetMobility(EComponentMobility::Movable);
 
     Mist = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mist"));
     Mist->SetupAttachment(GetRootComponent());
@@ -53,8 +43,19 @@ void ABBBPlayerItemStage::PostRegisterAllComponents()
     UpdateMist();
 }
 
+USpotLightComponent* ABBBPlayerItemStage::GetKey() const
+{
+    return IsValid(MistKeyLight) ? MistKeyLight->SpotLightComponent : nullptr;
+}
+
 void ABBBPlayerItemStage::UpdateMist() const
 {
+    const USpotLightComponent* Key = GetKey();
+    if (!Key)
+    {
+        Mist->SetCustomPrimitiveDataFloat(3, 0.0f);
+        return;
+    }
     const FVector FogCenter = Mist->CalcBounds(Mist->GetComponentTransform()).Origin;
     const FVector LightOrigin = Key->GetComponentLocation() - FogCenter;
     const double OuterCos = FMath::Cos(FMath::DegreesToRadians(MistOuterAngle));

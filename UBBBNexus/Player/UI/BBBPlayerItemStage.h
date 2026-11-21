@@ -3,7 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "BBBPlayerItemStage.generated.h"
 
-class URectLightComponent;
+class ASpotLight;
 class USceneCaptureComponent2D;
 class USpotLightComponent;
 class UStaticMeshComponent;
@@ -26,7 +26,7 @@ public:
     /** @return 关卡内配置好的背包捕获机位 */
     USceneCaptureComponent2D* GetCapture() const { return Capture; }
     /** @return 决定暖雾方向和亮度的主灯 */
-    USpotLightComponent* GetKey() const { return Key; }
+    USpotLightComponent* GetKey() const;
     /** @return 当前的暖雾散射体积 */
     UStaticMeshComponent* GetMist() const { return Mist; }
     /** 同步体积雾材质的灯位和散射参数 @return 无 */
@@ -39,12 +39,8 @@ private:
 
     UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<UStaticMeshComponent> Floor;
-    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
-    TObjectPtr<USpotLightComponent> Key;
-    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
-    TObjectPtr<USpotLightComponent> Rim;
-    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
-    TObjectPtr<URectLightComponent> Fill;
+    UPROPERTY(EditInstanceOnly, Category="雾束", meta=(DisplayName="暖主光引用", ToolTip="选择决定暖雾方向与亮度的关卡聚光灯"))
+    TObjectPtr<ASpotLight> MistKeyLight;
     UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<UStaticMeshComponent> Mist;
     UPROPERTY(VisibleAnywhere, Category="Inventory Studio")

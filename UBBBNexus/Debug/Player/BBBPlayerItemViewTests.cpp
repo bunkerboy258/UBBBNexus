@@ -27,6 +27,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SWindow.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/Level.h"
 #include "Engine/World.h"
 #include "UObject/Package.h"
 #include "UObject/UObjectGlobals.h"
@@ -139,7 +140,7 @@ public:
             bPerfComplete = !TickPerformance(ItemView, Portrait);
             return true;
         }
-        if (!Portrait || !Portrait->Stage || Portrait->GetPanels().Num() != 2)
+        if (!Portrait || !Portrait->Stage || !Portrait->Stage->GetKey() || Portrait->GetPanels().Num() != 2)
         {
             return FPlatformTime::Seconds() < ReadyDeadline;
         }
@@ -392,8 +393,8 @@ private:
         Key.SetSourceRadius(Radius);
         Key.SetSoftSourceRadius(Radius * 0.5f);
 
-        SetRim(*Portrait.Stage, TEXT("ItemRoomCoolRim"), TEXT("Cool"), FVector(0, 0, 114), Request);
-        SetLight(*Portrait.Stage, TEXT("ItemRoomFill"), TEXT("Fill="), Request);
+        SetRim(*Portrait.Stage, TEXT("Cool"), FVector(0, 0, 114), Request);
+        SetLight(*Portrait.Stage, TEXT("Fill="), Request);
         auto* Camera = Portrait.Stage->GetCapture();
         Camera->bCameraCutThisFrame = true;
         float Exposure = Camera->PostProcessSettings.AutoExposureBias;
@@ -450,9 +451,21 @@ private:
         bReadingCapture = true;
     }
 
-    static void SetRim(AActor& Owner, FName Name, const TCHAR* Prefix, FVector Target, const TCHAR* Request)
+    static ULightComponent* FindLevelLight(const AActor& Owner, FName Tag)
     {
-        auto* Light = FindObjectFast<USpotLightComponent>(&Owner, Name);
+        for (AActor* Actor : Owner.GetLevel()->Actors)
+        {
+            if (Actor && Actor->ActorHasTag(Tag))
+            {
+                return Actor->FindComponentByClass<ULightComponent>();
+            }
+        }
+        return nullptr;
+    }
+
+    static void SetRim(AActor& Owner, const TCHAR* Prefix, FVector Target, const TCHAR* Request)
+    {
+        auto* Light = Cast<USpotLightComponent>(FindLevelLight(Owner, TEXT("InventoryRim")));
         if (!Light)
         {
             return;
@@ -483,12 +496,12 @@ private:
         }
     }
 
-    static void SetLight(AActor& Owner, FName Name, const TCHAR* Parameter, const TCHAR* Request)
+    static void SetLight(AActor& Owner, const TCHAR* Parameter, const TCHAR* Request)
     {
         float Intensity = 0.0f;
         if (FParse::Value(Request, Parameter, Intensity))
         {
-            if (auto* Light = FindObjectFast<ULightComponent>(&Owner, Name))
+            if (auto* Light = FindLevelLight(Owner, TEXT("InventoryFill")))
             {
                 Light->SetIntensity(Intensity);
             }
