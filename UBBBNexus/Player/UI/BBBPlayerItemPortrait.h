@@ -24,8 +24,10 @@ class ABBB_EVAC_API UBBBPlayerItemPortrait final : public UObject
 public:
     /** @param Pawn 当前世界的玩家角色 @return 显示资源是否准备完成 */
     bool Prepare(APawn *Pawn);
-    /** @param bInActive 是否需要显示预览 @return 无 关闭时停用灯光与捕获 */
+    /** @param bInActive 是否需要显示预览 @return 无 关闭时暂停捕获 */
     void SetActive(bool bInActive);
+    /** @param Pawn 当前拥有角色 @return 预览资源是否仍属于此角色 */
+    bool IsForPawn(const APawn* Pawn) const;
     /** @param DeltaTime 帧时长 @return 无 同步穿戴与材质 */
     void Update(float DeltaTime);
     /** @return 无 销毁所属世界内的临时显示演员 */

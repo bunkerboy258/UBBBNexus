@@ -185,6 +185,12 @@ private:
 
 TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
 {
+    if (CharacterPreview)
+    {
+        CharacterPreview->Close();
+        CharacterPreview = nullptr;
+        CharacterBrush.SetResourceObject(nullptr);
+    }
     QuickSlotViews.Reset();
     StorageSlotViews.Reset();
     PanelSlotViews.Reset();
@@ -275,7 +281,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
                 [SNew(STextBlock).Text(INVTEXT("EXTENSIBLE")).Font(ArtFont(24))
                     .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f))]]);
-    Place(676, 155, 568, 48, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+    Place(676, 124, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [
             SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 11, 4)
@@ -298,6 +304,30 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             FText::AsNumber(FMath::RoundToInt(Maximum)));
                     })]
         ]);
+    Place(676, 169, 568, 25, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+        [SNew(STextBlock)
+            .Font(ArtFont(19))
+            .ColorAndOpacity(FLinearColor(0.86f, 0.78f, 0.63f))
+            .ShadowOffset(FVector2D(1, 1))
+            .ShadowColorAndOpacity(FLinearColor(0, 0, 0, 0.9f))
+            .Text_Lambda([this, LastCurrent = int32{INDEX_NONE}, LastMaximum = int32{INDEX_NONE}, Text = FText{}]() mutable
+            {
+                const auto* Controller = GetItemController();
+                const auto* Player = Controller ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
+                if (!Player)
+                {
+                    return FText::GetEmpty();
+                }
+                const int32 Current = FMath::RoundToInt(Player->GetStamina());
+                const int32 Maximum = FMath::RoundToInt(Player->GetMaximumStamina());
+                if (Current != LastCurrent || Maximum != LastMaximum)
+                {
+                    LastCurrent = Current;
+                    LastMaximum = Maximum;
+                    Text = FText::Format(INVTEXT("STAMINA   {0}  /  {1}"), FText::AsNumber(Current), FText::AsNumber(Maximum));
+                }
+                return Text;
+            })]);
     Place(105, 184, 475, 68, Label(INVTEXT("BACKPACK"), 44));
     Hairline(105, 254, 480);
     const auto Filter = [this](const FText &Text, EBBBItemType Type)

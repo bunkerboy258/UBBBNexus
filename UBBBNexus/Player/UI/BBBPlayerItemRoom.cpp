@@ -62,22 +62,22 @@ void UBBBPlayerItemPortrait::BuildRoom(USceneComponent& Root)
     Display->AddInstanceComponent(Key);
     Key->SetupAttachment(&Root);
     const FVector FloorAim(-38.0, -32.0, 0.0);
-    Key->SetRelativeLocation(FVector(76, 103, 296));
+    Key->SetRelativeLocation(FVector(78, 65, 327));
     Key->SetRelativeRotation((FloorAim - Key->GetRelativeLocation()).Rotation());
     Key->SetIntensityUnits(ELightUnits::Candelas);
-    Key->SetIntensity(55.0f);
+    Key->SetIntensity(58.0f);
     Key->SetLightColor(FLinearColor(1.0f, 0.84f, 0.68f));
-    Key->SetInnerConeAngle(13.0f);
-    Key->SetOuterConeAngle(29.0f);
-    Key->SetSourceRadius(46.0f);
-    Key->SetSoftSourceRadius(23.0f);
+    Key->SetInnerConeAngle(12.0f);
+    Key->SetOuterConeAngle(30.0f);
+    Key->SetSourceRadius(53.0f);
+    Key->SetSoftSourceRadius(26.5f);
     Key->SetAttenuationRadius(625);
     Key->SetCastShadows(true);
     Key->ContactShadowLength = 0.10f;
     Key->ShadowResolutionScale = 2.0f;
     Key->RegisterComponent();
 
-    const auto AddRim = [&](FName Name, FVector Location, FVector Target, FLinearColor Color, float Intensity, float Cone)
+    const auto AddRim = [&](FName Name, FVector Location, FVector Target, FLinearColor Color, float Intensity, float Cone, float Radius)
     {
         auto* Light = NewObject<USpotLightComponent>(Display, Name);
         Display->AddInstanceComponent(Light);
@@ -90,15 +90,15 @@ void UBBBPlayerItemPortrait::BuildRoom(USceneComponent& Root)
         Light->SetIntensity(Intensity);
         Light->SetLightColor(Color);
         Light->SetAttenuationRadius(425.0f);
-        Light->SetSourceRadius(20.0f);
+        Light->SetSourceRadius(Radius);
         Light->SetCastShadows(false);
         Light->SetVolumetricScatteringIntensity(0.0f);
         Light->RegisterComponent();
     };
-    AddRim(TEXT("ItemRoomCoolRim"), FVector(-88, -109, 202), FVector(0, 0, 114),
-        FLinearColor(0.65f, 0.78f, 1.0f), 29.0f, 38.0f);
+    AddRim(TEXT("ItemRoomCoolRim"), FVector(-14, -137, 214), FVector(0, 0, 114),
+        FLinearColor(0.65f, 0.78f, 1.0f), 52.0f, 38.0f, 42.0f);
     AddRim(TEXT("ItemRoomWarmRim"), FVector(-41, 126, 222), FVector(0, 0, 130),
-        FLinearColor(1.0f, 0.80f, 0.60f), 53.0f, 36.0f);
+        FLinearColor(1.0f, 0.80f, 0.60f), 37.0f, 36.0f, 30.0f);
 
     auto* Bounce = NewObject<URectLightComponent>(Display, TEXT("ItemRoomFill"));
     Display->AddInstanceComponent(Bounce);
@@ -141,7 +141,7 @@ void UBBBPlayerItemPortrait::UpdateRoomMist()
     const double InnerCos = FMath::Cos(FMath::DegreesToRadians(Key.InnerConeAngle));
     RoomMist->SetCustomPrimitiveDataVector4(0, FVector4(LightOrigin, Key.Intensity));
     RoomMist->SetCustomPrimitiveDataVector4(4, FVector4(Direction, OuterCos));
-    RoomMist->SetCustomPrimitiveDataVector4(8, FVector4(InnerCos, Key.AttenuationRadius, 5.4, 0.0));
+    RoomMist->SetCustomPrimitiveDataVector4(8, FVector4(InnerCos, Key.AttenuationRadius, 4.9, 0.58));
 }
 
 void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Content)

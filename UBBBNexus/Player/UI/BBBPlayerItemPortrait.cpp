@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "Components/LightComponent.h"
 #include "Components/WidgetComponent.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "PreviewScene.h"
@@ -25,15 +24,12 @@ void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
     }
     bActive = bInActive;
     bDirty |= bActive;
-    if (IsValid(Display))
-    {
-        TArray<ULightComponent *> Lights;
-        Display->GetComponents(Lights);
-        for (auto *Light : Lights)
-        {
-            Light->SetVisibility(bActive);
-        }
-    }
+    Elapsed = 0.0f;
+}
+
+bool UBBBPlayerItemPortrait::IsForPawn(const APawn* Pawn) const
+{
+    return Source.IsValid() && Source.Get() == Pawn;
 }
 
 bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
@@ -162,7 +158,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Camera->PostProcessSettings.bOverride_AutoExposureMethod = true;
     Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
     Camera->PostProcessSettings.bOverride_AutoExposureBias = true;
-    Camera->PostProcessSettings.AutoExposureBias = -0.8f;
+    Camera->PostProcessSettings.AutoExposureBias = -1.18f;
     Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
     Camera->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
     Camera->PostProcessSettings.bOverride_BloomIntensity = true;
@@ -295,7 +291,6 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         Panel->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
     }
-    PreviewScene->GetWorld()->SendAllEndOfFrameUpdates();
     Capture->GetCaptureComponent2D()->CaptureScene();
 #if WITH_DEV_AUTOMATION_TESTS
     ++CaptureRevision;

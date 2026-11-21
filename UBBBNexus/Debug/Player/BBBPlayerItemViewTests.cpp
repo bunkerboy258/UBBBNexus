@@ -36,6 +36,8 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
 #include "HAL/IConsoleManager.h"
+#include "DynamicRHI.h"
+#include "RenderTimer.h"
 #include "Test/V01/Frontend/BBBV01FrontendSubsystem.h"
 #include "Misc/ScopeExit.h"
 #include "Widgets/Input/SButton.h"
@@ -129,6 +131,11 @@ public:
 
         UBBBPlayerItemView& ItemView = *View.Get();
         UBBBPlayerItemPortrait* Portrait = ItemView.CharacterPreview.Get();
+        if (!bPerfComplete && FParse::Param(FCommandLine::Get(), TEXT("ItemMenuPerf")))
+        {
+            bPerfComplete = !TickPerformance(ItemView, Portrait);
+            return true;
+        }
         if (!Portrait || !Portrait->RoomKey || !Portrait->RoomMist || Portrait->GetPanels().Num() != 2)
         {
             return FPlatformTime::Seconds() < ReadyDeadline;
@@ -232,7 +239,17 @@ private:
 
         if (!Controller->IsBackpackOpen())
         {
+            if (FParse::Param(FCommandLine::Get(), TEXT("ItemMenuPerf")))
+            {
+                const auto* Frontend = World->GetGameInstance()->GetSubsystem<UBBBV01FrontendSubsystem>();
+                if (Frontend && Frontend->RuntimeData.Frontend.ReadBBBV01FrontendState().bLoading)
+                {
+                    return;
+                }
+            }
+            PerfOpenAt = FPlatformTime::Seconds();
             Controller->ToggleBackpack();
+            PerfToggleMs = (FPlatformTime::Seconds() - PerfOpenAt) * 1000.0;
         }
         TArray<UUserWidget*> Views;
         UWidgetBlueprintLibrary::GetAllWidgetsOfClass(Controller, Views, UBBBPlayerItemView::StaticClass(), false);
@@ -245,6 +262,84 @@ private:
                 break;
             }
         }
+    }
+
+    bool TickPerformance(UBBBPlayerItemView& ItemView, const UBBBPlayerItemPortrait* Portrait)
+    {
+        const double Now = FPlatformTime::Seconds();
+        const double FrameMs = (Now - PerfPreviousFrame) * 1000.0;
+        PerfPreviousFrame = Now;
+        if (Now >= ReadyDeadline)
+        {
+            UE_LOG(LogTemp, Error, TEXT("ItemRoomPerf timed out"));
+            return false;
+        }
+
+        if (PerfOpenCount < 6)
+        {
+            auto* Controller = ItemView.GetItemController();
+            if (!ItemView.IsBackpackOpen())
+            {
+                if (++PerfFrame == 12)
+                {
+                    PerfBeforeCapture = Portrait ? Portrait->CaptureRevision : 0;
+                    PerfOpenAt = FPlatformTime::Seconds();
+                    Controller->ToggleBackpack();
+                    PerfToggleMs = (FPlatformTime::Seconds() - PerfOpenAt) * 1000.0;
+                    PerfFrame = 0;
+                }
+                return true;
+            }
+            if (!Portrait || Portrait->CaptureRevision == PerfBeforeCapture || !Portrait->GetTexture())
+            {
+                return true;
+            }
+            if (PerfFrame == 0)
+            {
+                UE_LOG(LogTemp, Display, TEXT("ItemRoomPerf Open=%d ToggleMs=%.3f CaptureMs=%.3f"),
+                    PerfOpenCount, PerfToggleMs, (Now - PerfOpenAt) * 1000.0);
+            }
+            if (++PerfFrame == 18)
+            {
+                ++PerfOpenCount;
+                PerfFrame = 0;
+                if (PerfOpenCount < 6)
+                {
+                    Controller->ToggleBackpack();
+                }
+            }
+            return true;
+        }
+
+        if (PerfFrame >= 8)
+        {
+            PerfWallMs.Add(FrameMs);
+            PerfGameMs.Add(FPlatformTime::ToMilliseconds(GGameThreadTime));
+            PerfRenderMs.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
+            PerfGpuMs.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles()));
+        }
+        if (++PerfFrame < 128)
+        {
+            return true;
+        }
+        const auto Report = [](const TCHAR* Name, TArray<double>& Values)
+        {
+            Values.Sort();
+            UE_LOG(LogTemp, Display, TEXT("ItemRoomPerf %s Median=%.3f P95=%.3f Max=%.3f"), Name,
+                Values[Values.Num() / 2], Values[(Values.Num() * 95 - 1) / 100], Values.Last());
+        };
+        Report(TEXT("FrameMs"), PerfWallMs);
+        Report(TEXT("GameMs"), PerfGameMs);
+        Report(TEXT("RenderMs"), PerfRenderMs);
+        Report(TEXT("GpuMs"), PerfGpuMs);
+        for (int32 Switch = 0; Switch < 6; ++Switch)
+        {
+            const double Start = FPlatformTime::Seconds();
+            ItemView.ShowPanel(Switch % 2 == 0 ? EBBBItemPanelPage::Character : EBBBItemPanelPage::Inventory);
+            UE_LOG(LogTemp, Display, TEXT("ItemRoomPerf Switch=%d ApplyMs=%.3f"), Switch,
+                (FPlatformTime::Seconds() - Start) * 1000.0);
+        }
+        return false;
     }
 
     void Configure(UBBBPlayerItemView& ItemView, UBBBPlayerItemPortrait& Portrait, const TCHAR* Request)
@@ -289,8 +384,8 @@ private:
         Key.SetSourceRadius(Radius);
         Key.SetSoftSourceRadius(Radius * 0.5f);
 
-        SetLight(*Portrait.Display, TEXT("ItemRoomCoolRim"), TEXT("Cool="), Request);
-        SetLight(*Portrait.Display, TEXT("ItemRoomWarmRim"), TEXT("Warm="), Request);
+        SetRim(*Portrait.Display, TEXT("ItemRoomCoolRim"), TEXT("Cool"), FVector(0, 0, 114), Request);
+        SetRim(*Portrait.Display, TEXT("ItemRoomWarmRim"), TEXT("Warm"), FVector(0, 0, 130), Request);
         SetLight(*Portrait.Display, TEXT("ItemRoomFill"), TEXT("Fill="), Request);
         auto* Camera = Portrait.Capture->GetCaptureComponent2D();
         Camera->bCameraCutThisFrame = true;
@@ -310,6 +405,11 @@ private:
         if (bOverrideMist)
         {
             Portrait.RoomMist->SetCustomPrimitiveDataFloat(10, Mist);
+        }
+        float Halo = 0.0f;
+        if (FParse::Value(Request, TEXT("MistHalo="), Halo))
+        {
+            Portrait.RoomMist->SetCustomPrimitiveDataFloat(11, Halo);
         }
         if (Native != 0 && !NativeHaze.IsValid())
         {
@@ -340,6 +440,39 @@ private:
         RequestedAt = FPlatformTime::Seconds();
         CaptureAfter = Portrait.CaptureRevision + 4;
         bReadingCapture = true;
+    }
+
+    static void SetRim(AActor& Owner, FName Name, const TCHAR* Prefix, FVector Target, const TCHAR* Request)
+    {
+        auto* Light = FindObjectFast<USpotLightComponent>(&Owner, Name);
+        if (!Light)
+        {
+            return;
+        }
+        const FString Key(Prefix);
+        auto Read = [&](const TCHAR* Suffix, auto& Value)
+        {
+            return FParse::Value(Request, *(Key + Suffix + TEXT("=")), Value);
+        };
+        FVector Position = Light->GetRelativeLocation();
+        const bool bX = Read(TEXT("X"), Position.X);
+        const bool bY = Read(TEXT("Y"), Position.Y);
+        const bool bZ = Read(TEXT("Z"), Position.Z);
+        if (bX || bY || bZ)
+        {
+            Light->SetRelativeLocation(Position);
+            Light->SetRelativeRotation((Target - Position).Rotation());
+        }
+        float Radius = Light->SourceRadius;
+        if (Read(TEXT("Radius"), Radius))
+        {
+            Light->SetSourceRadius(Radius);
+        }
+        float Intensity = Light->Intensity;
+        if (Read(TEXT(""), Intensity))
+        {
+            Light->SetIntensity(Intensity);
+        }
     }
 
     static void SetLight(AActor& Owner, FName Name, const TCHAR* Parameter, const TCHAR* Request)
@@ -415,6 +548,17 @@ private:
     bool bSeeded = false;
     bool bEquipped = false;
     bool bReadingCapture = false;
+    bool bPerfComplete = false;
+    double PerfPreviousFrame = 0.0;
+    double PerfOpenAt = 0.0;
+    double PerfToggleMs = 0.0;
+    uint64 PerfBeforeCapture = 0;
+    int32 PerfOpenCount = 0;
+    int32 PerfFrame = 0;
+    TArray<double> PerfWallMs;
+    TArray<double> PerfGameMs;
+    TArray<double> PerfRenderMs;
+    TArray<double> PerfGpuMs;
 };
 
 namespace
@@ -429,7 +573,7 @@ FAutoConsoleCommand CaptureItemMenu(TEXT("BBB.Player.CaptureItemMenu"),
                 [Review = MakeShared<FBBBItemRoomReview>()](float DeltaTime)
                 {
                     return Review->Tick(DeltaTime);
-                }), 0.06f);
+                }), FParse::Param(FCommandLine::Get(), TEXT("ItemMenuPerf")) ? 0.0f : 0.06f);
         }
     }));
 }

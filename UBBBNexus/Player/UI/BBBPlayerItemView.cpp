@@ -83,7 +83,7 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
     {
         if (CharacterPreview)
         {
-            CharacterPreview->Close();
+            CharacterPreview->SetActive(false);
         }
         CharacterBrush.SetResourceObject(nullptr);
         return;
@@ -126,6 +126,12 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     UpdateExplorationPresentation();
     if (!bBackpackOpen)
     {
+        const auto* Controller = GetItemController();
+        if (CharacterPreview && !CharacterPreview->IsForPawn(Controller ? Controller->GetPawn() : nullptr))
+        {
+            CharacterPreview->Close();
+            CharacterPreview = nullptr;
+        }
         return;
     }
     if (!CharacterPreview)
@@ -137,7 +143,10 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     CharacterPreview->SetActive(bBackpackOpen);
     CharacterPreview->SetPanels(MenuPanels);
     CharacterPreview->Update(DeltaTime);
-    CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
+    if (CharacterBrush.GetResourceObject() != CharacterPreview->GetTexture())
+    {
+        CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
+    }
 }
 
 void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
@@ -228,9 +237,12 @@ void UBBBPlayerItemView::RefreshItems()
             QuickSlotViews.Add(SlotWidget);
         }
     }
-    for (const auto &SlotWidget : QuickSlotViews)
+    else
     {
-        SlotWidget->Refresh();
+        for (const auto &SlotWidget : QuickSlotViews)
+        {
+            SlotWidget->Refresh();
+        }
     }
     if (!bBackpackOpen)
     {
@@ -267,9 +279,12 @@ void UBBBPlayerItemView::RefreshItems()
         }
         BackpackSlots->AddSlot().AutoHeight()[Grid];
     }
-    for (const auto &SlotWidget : StorageSlotViews)
+    else
     {
-        SlotWidget->Refresh();
+        for (const auto &SlotWidget : StorageSlotViews)
+        {
+            SlotWidget->Refresh();
+        }
     }
     TArray<FName> WearNames;
     Controller->GetWearSlotRange(Start, WearNames);
@@ -316,9 +331,12 @@ void UBBBPlayerItemView::RefreshItems()
             AddGroup(ConsumableStart, ConsumableCount, 3, 148, 145, false);
         }
     }
-    for (const auto &SlotWidget : PanelSlotViews)
+    else
     {
-        SlotWidget->Refresh();
+        for (const auto &SlotWidget : PanelSlotViews)
+        {
+            SlotWidget->Refresh();
+        }
     }
     int32 Revision = 0;
     int32 Succeeded = 0;
