@@ -33,12 +33,19 @@ struct ABBB_EVAC_API FBBBMonsterGroundFragment final : public FMassFragment
     /** 连续失去真实支撑的开始时刻 有支撑时为负 */
     float UnsupportedSince = -1.0f;
 
-    /** 最近一次静止求解确认的静态支撑 */
+    /** 最近一次求解确认的静态支撑 */
     TWeakObjectPtr<UPrimitiveComponent> StaticSupport;
 
     /** 确认支撑时的组件变换与胶囊中心 */
     FTransform StaticSupportTransform = FTransform::Identity;
     FVector StaticSupportCenter = FVector::ZeroVector;
+
+    /** 确认静态支撑时使用的胶囊尺寸 */
+    float StaticSupportRadius = 0.0f;
+    float StaticSupportHalfHeight = 0.0f;
+
+    /** 静态支撑是否来自连续移动的最后一次落脚查询 */
+    bool bStaticSupportFromMovement = false;
 
     /** 下次远处静止支撑查询的世界时间 */
     double NextSupportCheckTime = 0.0;

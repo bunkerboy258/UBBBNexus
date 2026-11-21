@@ -173,10 +173,29 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     };
 
     const bool bStationary = Ground.bGrounded && Velocity.Z == 0.0f && HorizontalDelta.IsNearlyZero();
+    const bool bMoving = !bDead && !HorizontalDelta.IsNearlyZero();
     const double Now = World.GetTimeSeconds();
+    const auto RememberStaticSupport = [&](UPrimitiveComponent* Support, const bool bFromMovement)
+    {
+        if (!Support || Support->Mobility != EComponentMobility::Static)
+        {
+            return;
+        }
+        Ground.StaticSupport = Support;
+        Ground.StaticSupportCenter = Location;
+        Ground.StaticSupportTransform = Support->GetComponentTransform();
+        Ground.StaticSupportRadius = Movement.CapsuleRadius;
+        Ground.StaticSupportHalfHeight = Movement.CapsuleHalfHeight;
+        Ground.bStaticSupportFromMovement = bFromMovement;
+        Ground.NextSupportCheckTime = Now + SupportCheckInterval;
+    };
+    const bool bCanReuseStationary = bStationary && Velocity.IsNearlyZero() && (bDead || SupportCheckInterval > 0.0)
+        && (bDead || (!Ground.bStaticSupportFromMovement && Now < Ground.NextSupportCheckTime));
+    const bool bCanReuseMoving = bMoving && Ground.bGrounded && Velocity.Z == 0.0f && Ground.bStaticSupportFromMovement;
     bool bCanReuseSupport = false;
-    if (bStationary && Velocity.IsNearlyZero() && (bDead || SupportCheckInterval > 0.0)
-        && (bDead || Now < Ground.NextSupportCheckTime) && Location.Equals(Ground.StaticSupportCenter))
+    if ((bCanReuseStationary || bCanReuseMoving) && Location.Equals(Ground.StaticSupportCenter)
+        && Ground.StaticSupportRadius == Movement.CapsuleRadius
+        && Ground.StaticSupportHalfHeight == Movement.CapsuleHalfHeight)
     {
         const UPrimitiveComponent* Support = Ground.StaticSupport.Get();
         bCanReuseSupport = Support && Support->IsRegistered() && Support->Mobility == EComponentMobility::Static
@@ -192,7 +211,7 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     // 即使脚下支撑可复用 活体仍检测外物挤入胶囊
     const bool bCheckPenetration = !Ground.bGrounded || Velocity.Z > 0.0f || !HorizontalDelta.IsNearlyZero()
         || World.OverlapBlockingTestByChannel(Location, FQuat::Identity, ECC_Pawn, Capsule, Params);
-    if (bCanReuseSupport && !bCheckPenetration)
+    if (bCanReuseStationary && bCanReuseSupport && !bCheckPenetration)
     {
         Velocity = FVector::ZeroVector;
         Ground.UnsimulatedSeconds = 0.0f;
@@ -200,7 +219,9 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     }
 
     Ground.StaticSupport.Reset();
+    Ground.bStaticSupportFromMovement = false;
     Ground.NextSupportCheckTime = 0.0;
+    bool bCorrectedPenetration = false;
     if (bCheckPenetration)
     {
         for (int32 Attempt = 0; Attempt < 4; ++Attempt)
@@ -211,10 +232,11 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
                 break;
             }
             Location += Penetration.Normal * (Penetration.PenetrationDepth + Skin);
+            bCorrectedPenetration = true;
         }
     }
 
-    // 只记录静止求解命中的真实静态支撑
+    // 静止实体只缓存真实查询命中的静态支撑
     const bool bCheckedStationarySupport = Ground.bGrounded && Velocity.Z <= 0.0f && HorizontalDelta.IsNearlyZero();
     if (bCheckedStationarySupport)
     {
@@ -224,12 +246,9 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         {
             Velocity = FVector::ZeroVector;
             Ground.UnsimulatedSeconds = 0.0f;
-            if ((bDead || SupportCheckInterval > 0.0) && Support && Support->Mobility == EComponentMobility::Static)
+            if (bDead || SupportCheckInterval > 0.0)
             {
-                Ground.StaticSupport = Support;
-                Ground.StaticSupportCenter = Location;
-                Ground.StaticSupportTransform = Support->GetComponentTransform();
-                Ground.NextSupportCheckTime = Now + SupportCheckInterval;
+                RememberStaticSupport(Support, false);
             }
             return;
         }
@@ -247,10 +266,12 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     Ground.RequestedDistance = BoundedHorizontal.Size2D();
     const FVector HorizontalStep = FVector(BoundedHorizontal.X, BoundedHorizontal.Y, 0.0f) / Steps;
     const FVector FrameStart = Location;
+    const bool bReuseFirstSupport = bCanReuseMoving && bCanReuseSupport && !bCorrectedPenetration;
+    bool bContinuousGroundMove = bMoving && !bCorrectedPenetration;
     for (int32 Step = 0; Step < Steps; ++Step)
     {
-        // 后续子步沿用上一子步末尾的支撑结果 两次查询之间位置没有再次变化
-        if (Step == 0 && !bCheckedStationarySupport)
+        // 位置与支撑未改变时 沿用上一帧或上一子步的落脚结果
+        if (Step == 0 && !bCheckedStationarySupport && !bReuseFirstSupport)
         {
             Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SupportDistance, Ground.SupportNormal);
         }
@@ -315,10 +336,21 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         }
 
         const float SnapDistance = bWasGrounded ? Movement.MaxStepHeight + SupportDistance : SupportDistance;
-        Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SnapDistance, Ground.SupportNormal);
+        UPrimitiveComponent* LandingSupport = nullptr;
+        bContinuousGroundMove = bContinuousGroundMove && bWasGrounded && !bBlocked && !HorizontalStep.IsNearlyZero();
+        const bool bRecordLanding = bContinuousGroundMove && Step == Steps - 1;
+        Ground.bGrounded = Velocity.Z <= 0.0f && FindSupport(Location, SnapDistance, Ground.SupportNormal,
+            bRecordLanding ? &LandingSupport : nullptr);
+        bContinuousGroundMove = bContinuousGroundMove && Ground.bGrounded
+            && Ground.SupportNormal.Z > 0.99f && FMath::Abs(Location.Z - Start.Z) <= Skin;
         if (Ground.bGrounded)
         {
             Velocity.Z = 0.0f;
+            // 只复用平缓路面上的连续落脚 台阶与跌落后仍完整找地
+            if (bRecordLanding && bContinuousGroundMove)
+            {
+                RememberStaticSupport(LandingSupport, true);
+            }
         }
         if (!Ground.bGrounded)
         {
