@@ -5,6 +5,7 @@
 
 class FPreviewScene;
 class APawn;
+class ABBBCharacter;
 class AActor;
 class ASceneCapture2D;
 class UTextureRenderTarget2D;
@@ -16,7 +17,7 @@ class UStaticMeshComponent;
 class SWidget;
 struct FStreamableHandle;
 
-/** 在本地独立预览世界捕获固定正面显示 只复制外观结果 */
+/** 在本地独立预览世界捕获背包画面 只复制外观结果 */
 UCLASS()
 class ABBB_EVAC_API UBBBPlayerItemPortrait final : public UObject
 {
@@ -28,8 +29,8 @@ public:
     void SetActive(bool bInActive);
     /** @param Pawn 当前拥有角色 @return 预览资源是否仍属于此角色 */
     bool IsForPawn(const APawn* Pawn) const;
-    /** @param DeltaTime 帧时长 @return 无 同步穿戴与材质 */
-    void Update(float DeltaTime);
+    /** @param DeltaTime 帧时长 @param Cursor 图像内的归一化光标位置 空值保持机位 @return 无 */
+    void Update(float DeltaTime, const TOptional<FVector2D>& Cursor);
     /** @return 无 销毁所属世界内的临时显示演员 */
     void Close();
     /** @return 整备间最终画面 */
@@ -60,6 +61,8 @@ private:
     TArray<TObjectPtr<UWidgetComponent>> Panels;
     void BuildRoom(USceneComponent& Root);
     void UpdateRoomMist();
+    void ApplyCameraOrbit(FVector2D Orbit);
+    void SyncAppearance(const ABBBCharacter* Character, float DeltaTime);
     UPROPERTY(Transient)
     TObjectPtr<USpotLightComponent> RoomKey;
     UPROPERTY(Transient)
@@ -69,7 +72,10 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<USkeletalMeshComponent> Pose;
     FVector Origin = FVector::ZeroVector;
-    float Elapsed = 0.0f;
+    FTransform HomeCamera = FTransform::Identity;
+    FVector2D DisplayedOrbit = FVector2D::ZeroVector;
+    float CaptureElapsed = 0.0f;
+    float AppearanceElapsed = 0.0f;
     TSharedPtr<FStreamableHandle> ResourceLoad;
     uint64 ObservedAppearanceRevision = 0;
     bool bActive = false;

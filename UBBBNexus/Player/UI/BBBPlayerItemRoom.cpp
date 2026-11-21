@@ -154,10 +154,11 @@ void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Conten
     const auto* Camera = Capture->GetCaptureComponent2D();
     constexpr float Depth = 240.0f;
     const float Units = 2.0f * Depth * FMath::Tan(FMath::DegreesToRadians(Camera->FOVAngle * 0.5f)) / 1920.0f;
-    const FVector Forward = Camera->GetForwardVector();
-    const FVector Right = Camera->GetRightVector();
-    const FVector Up = Camera->GetUpVector();
-    const FVector Centre = Camera->GetComponentLocation() + Forward * Depth - Origin;
+    const FQuat RotationAtRest = HomeCamera.GetRotation();
+    const FVector Forward = RotationAtRest.GetForwardVector();
+    const FVector Right = RotationAtRest.GetRightVector();
+    const FVector Up = RotationAtRest.GetUpVector();
+    const FVector Centre = HomeCamera.GetLocation() + Forward * Depth - Origin;
     const FVector2D Centres[] = {FVector2D(960, 540), FVector2D(350, 574), FVector2D(1566, 574)};
     const FVector2D Sizes[] = {FVector2D(1920, 1080), FVector2D(520, 800), FVector2D(520, 800)};
     const float Lean[] = {0.0f, -24.0f, 24.0f};

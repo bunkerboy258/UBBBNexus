@@ -133,6 +133,10 @@ private:
             return {};
         }
         const double Distance = FVector::DotProduct(Normal, Panel.GetComponentLocation() - Start) / Divisor;
+        if (Distance <= 0.0)
+        {
+            return {};
+        }
         FVector2D Result;
         Panel.GetLocalHitLocation(Start + Ray * Distance, Result);
         return Result;
@@ -368,10 +372,12 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     const auto Chrome = Fit(Canvas, 1080);
     MenuPanels = {Chrome, LeftWing, RightWing};
     static const FSlateColorBrush Matte(FLinearColor::Black);
+    const auto CaptureImage = SNew(SBBBInventoryRoomImage)
+        .Room_Lambda([this] { return CharacterPreview.Get(); })
+        .Image_Lambda([this] { return GetCharacterBrush(); });
+    RoomImage = CaptureImage;
     return SNew(SOverlay)
         + SOverlay::Slot()[SNew(SImage).Image(&Matte).Visibility(EVisibility::HitTestInvisible)]
-        + SOverlay::Slot()[Fit(SNew(SBBBInventoryRoomImage)
-            .Room_Lambda([this] { return CharacterPreview.Get(); })
-            .Image_Lambda([this] { return GetCharacterBrush(); }), 1080)]
+        + SOverlay::Slot()[Fit(CaptureImage, 1080)]
         + SOverlay::Slot()[Chrome];
 }

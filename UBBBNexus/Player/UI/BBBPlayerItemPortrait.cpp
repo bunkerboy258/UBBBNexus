@@ -24,7 +24,8 @@ void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
     }
     bActive = bInActive;
     bDirty |= bActive;
-    Elapsed = 0.0f;
+    CaptureElapsed = 0.0f;
+    AppearanceElapsed = 0.0f;
 }
 
 bool UBBBPlayerItemPortrait::IsForPawn(const APawn* Pawn) const
@@ -165,13 +166,29 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Camera->PostProcessSettings.BloomIntensity = 0.48f;
     Camera->PostProcessSettings.bOverride_FilmGrainIntensity = true;
     Camera->PostProcessSettings.FilmGrainIntensity = 0.0f;
-    Capture->SetActorLocation(Origin + FVector(525.0f, 0.0f, 139.0f));
-    Capture->SetActorRotation(FRotator(-4.5f, 180.0f, 0.0f));
+    HomeCamera = FTransform(FRotator(-4.5f, 180.0f, 0.0f), Origin + FVector(525.0f, 0.0f, 139.0f));
+    Capture->SetActorTransform(HomeCamera);
     bDirty = true;
     return true;
 }
 
-void UBBBPlayerItemPortrait::Update(float DeltaTime)
+void UBBBPlayerItemPortrait::ApplyCameraOrbit(FVector2D Orbit)
+{
+    const FQuat BaseRotation = HomeCamera.GetRotation();
+    const FVector BasePosition = HomeCamera.GetLocation();
+    const auto* Camera = Capture->GetCaptureComponent2D();
+    const double Depth = FVector::DotProduct(Origin - BasePosition, BaseRotation.GetForwardVector());
+    const double HalfWidth = Depth * FMath::Tan(FMath::DegreesToRadians(Camera->FOVAngle * 0.5));
+    const double HalfHeight = HalfWidth * Texture->SizeY / Texture->SizeX;
+    const FVector Pivot = BasePosition + BaseRotation.GetForwardVector() * Depth
+        + BaseRotation.GetRightVector() * (Orbit.X * HalfWidth) + BaseRotation.GetUpVector() * (Orbit.Y * HalfHeight);
+    const FQuat Offset = FRotator(Orbit.Y * 2.4, Orbit.X * 3.6, 0.0).Quaternion();
+    const FQuat Rotation = BaseRotation * Offset;
+    const FQuat WorldOffset = Rotation * BaseRotation.Inverse();
+    Capture->SetActorLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot), Rotation);
+}
+
+void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>& Cursor)
 {
     if (!bActive || !Source.IsValid() || !IsValid(Display) || !IsValid(Capture) || !IsValid(Pose)
         || !PreviewScene.IsValid())
@@ -180,12 +197,49 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     }
     const auto *Character = Cast<ABBBCharacter>(Source.Get());
     const uint64 Revision = Character ? Character->RuntimeData.Appearance.ReadCharacterAppearanceDisplayState().AppliedRevision : 0;
-    Elapsed += DeltaTime;
-    // 打开背包和穿戴结果变化时立即同步 静止时才限制检查频率
-    if (!bDirty && Revision == ObservedAppearanceRevision && Elapsed < 1.0f / 12.0f)
+    FVector2D TargetOrbit = Cursor.Get(DisplayedOrbit);
+#if WITH_DEV_AUTOMATION_TESTS
+    if (ReviewPoseTime >= 0.0f)
+    {
+        TargetOrbit = FVector2D::ZeroVector;
+    }
+#endif
+    const bool bOrbitMoving = !DisplayedOrbit.Equals(TargetOrbit, 0.008);
+    const float CaptureInterval = bOrbitMoving ? 1.0f / 24.0f : 1.0f / 12.0f;
+    CaptureElapsed += DeltaTime;
+    AppearanceElapsed += DeltaTime;
+    const bool bNeedsSync = bDirty || Revision != ObservedAppearanceRevision;
+    if (!bNeedsSync && CaptureElapsed < CaptureInterval)
     {
         return;
     }
+
+    if (bNeedsSync || AppearanceElapsed >= 1.0f / 12.0f)
+    {
+        SyncAppearance(Character, AppearanceElapsed);
+        AppearanceElapsed = 0.0f;
+        ObservedAppearanceRevision = Revision;
+    }
+
+    const FVector2D NextOrbit = bOrbitMoving
+        ? FMath::Lerp(DisplayedOrbit, TargetOrbit, 1.0 - FMath::Exp(-14.0 * CaptureElapsed))
+        : TargetOrbit;
+    CaptureElapsed = 0.0f;
+    // 命中检测读取对应这次捕获的机位
+    if (NextOrbit != DisplayedOrbit)
+    {
+        ApplyCameraOrbit(NextOrbit);
+        DisplayedOrbit = NextOrbit;
+    }
+    Capture->GetCaptureComponent2D()->CaptureScene();
+#if WITH_DEV_AUTOMATION_TESTS
+    ++CaptureRevision;
+#endif
+    bDirty = false;
+}
+
+void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character, float DeltaTime)
+{
 #if WITH_DEV_AUTOMATION_TESTS
     if (ReviewPoseTime >= 0.0f)
     {
@@ -195,11 +249,9 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     else
 #endif
     {
-        Pose->TickAnimation(Elapsed, false);
+        Pose->TickAnimation(DeltaTime, false);
     }
     Pose->RefreshBoneTransforms();
-    Elapsed = 0.0f;
-    ObservedAppearanceRevision = Revision;
     TArray<USkeletalMeshComponent *> Actual;
     Source->GetComponents(Actual);
     while (Components.Num() > Actual.Num())
@@ -291,11 +343,6 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         Panel->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
     }
-    Capture->GetCaptureComponent2D()->CaptureScene();
-#if WITH_DEV_AUTOMATION_TESTS
-    ++CaptureRevision;
-#endif
-    bDirty = false;
 }
 
 void UBBBPlayerItemPortrait::Close()
@@ -323,7 +370,9 @@ void UBBBPlayerItemPortrait::Close()
     Panels.Reset();
     PreviewScene.Reset();
     Source.Reset();
-    Elapsed = 0.0f;
+    DisplayedOrbit = FVector2D::ZeroVector;
+    CaptureElapsed = 0.0f;
+    AppearanceElapsed = 0.0f;
     bActive = false;
     bDirty = true;
     ObservedAppearanceRevision = 0;

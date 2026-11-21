@@ -16,6 +16,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Widgets/Images/SImage.h"
 
 UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -142,11 +143,36 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
     CharacterPreview->SetActive(bBackpackOpen);
     CharacterPreview->SetPanels(MenuPanels);
-    CharacterPreview->Update(DeltaTime);
+    CharacterPreview->Update(DeltaTime, ReadOrbitCursor());
     if (CharacterBrush.GetResourceObject() != CharacterPreview->GetTexture())
     {
         CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
     }
+}
+
+TOptional<FVector2D> UBBBPlayerItemView::ReadOrbitCursor() const
+{
+    if (!RoomImage || !FSlateApplication::IsInitialized())
+    {
+        return FVector2D::ZeroVector;
+    }
+
+    const auto& Slate = FSlateApplication::Get();
+    if (Slate.IsDragDropping() || Slate.GetPressedMouseButtons().Contains(EKeys::LeftMouseButton))
+    {
+        return {};
+    }
+
+    const FGeometry& Image = RoomImage->GetTickSpaceGeometry();
+    const FVector2D Size = Image.GetLocalSize();
+    const FVector2D Cursor = Slate.GetCursorPos();
+    if (!Slate.IsActive() || Size.X <= 0 || Size.Y <= 0 || !Image.IsUnderLocation(Cursor))
+    {
+        return FVector2D::ZeroVector;
+    }
+
+    const FVector2D UV = Image.AbsoluteToLocal(Cursor) / Size;
+    return FVector2D(2.0 * UV.X - 1.0, 1.0 - 2.0 * UV.Y);
 }
 
 void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
