@@ -18,4 +18,7 @@ public:
 protected:
     /** 将小怪标签加入各级可视查询 */
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
+
+    /** 按本地视角裁剪远处表现 */
+    virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
 };
