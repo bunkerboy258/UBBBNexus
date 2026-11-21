@@ -15,7 +15,7 @@ struct FBBBCharacterInteractionSecondaryLocalControlPacket final
     bool CanApply(const FBBBCharacterInputContext &Context) const
     {
         return !Context.bIsMirror && Context.Life.bActionsAllowed &&
-               !Context.InteractionUse.bBusy;
+               !Context.InteractionUse.bBusy && !Context.InteractionInputs.bQuickMelee;
     }
     /** @param Context	角色输入上下文 @return 无 */
     void Apply(FBBBCharacterInputContext &Context) const
