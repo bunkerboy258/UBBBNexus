@@ -52,7 +52,12 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
 {
     const float Now = Context.GetWorld()->GetTimeSeconds();
     const float Dt = Context.GetDeltaTimeSeconds();
-    constexpr float CellSize = 500;
+    constexpr double CellSize = 250.0;
+    constexpr int32 MaxNeighbors = 16;
+    const auto FindCell = [CellSize](const FVector& Position)
+    {
+        return FIntPoint(FMath::FloorToInt(Position.X / CellSize), FMath::FloorToInt(Position.Y / CellSize));
+    };
     using FNeighbor = TTuple<FMassEntityHandle, FVector, FVector, FVector, float, float>;
     TMap<FIntPoint, TArray<FNeighbor>> Buckets;
     MonsterQuery.ForEachEntityChunk(Context, [&](FMassExecutionContext& Chunk)
@@ -131,15 +136,14 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 }
                 C.DesiredVelocity = Direction * Accelerated;
             }
-            const FIntPoint Cell(FMath::FloorToInt(Location.X / CellSize), FMath::FloorToInt(Location.Y / CellSize));
-            Buckets.FindOrAdd(Cell).Emplace(Chunk.GetEntity(I), Location, Velocities[I].Value,
+            Buckets.FindOrAdd(FindCell(Location)).Emplace(Chunk.GetEntity(I), Location, Velocities[I].Value,
                 C.DesiredVelocity, C.CollisionRadius, Injury.bCrawling ? Rule.CrawlCapsuleHalfHeight : Body.CapsuleHalfHeight);
         }
     });
     if (!Sampler)
     {
         Sampler = MakeShared<dtObstacleAvoidanceQuery>();
-        if (!Sampler->init(16, 24, 0))
+        if (!Sampler->init(MaxNeighbors, 24, 0))
         {
             Sampler.Reset();
             return;
@@ -161,39 +165,69 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
             }
             Sampler->reset();
             const FVector Location = Transforms[I].GetTransform().GetLocation();
-            const FIntPoint Cell(FMath::FloorToInt(Location.X / CellSize), FMath::FloorToInt(Location.Y / CellSize));
-            TArray<TPair<float, const FNeighbor*>, TInlineAllocator<16>> Closest;
+            const FMassEntityHandle Self = Chunk.GetEntity(I);
             const float Search = FMath::Clamp(FMath::Max(C.NeighborSearchRadius, C.DesiredVelocity.Size() * 0.7f), 180.0f, 500.0f);
-            for (int32 X = -1; X <= 1; ++X)
+            const double SearchSquared = FMath::Square(static_cast<double>(Search));
+            const FIntPoint MinCell = FindCell(Location - FVector(Search));
+            const FIntPoint MaxCell = FindCell(Location + FVector(Search));
+            TArray<TPair<double, const TArray<FNeighbor>*>, TInlineAllocator<25>> NearbyBuckets;
+            for (int32 X = MinCell.X; X <= MaxCell.X; ++X)
             {
-                for (int32 Y = -1; Y <= 1; ++Y)
+                for (int32 Y = MinCell.Y; Y <= MaxCell.Y; ++Y)
                 {
-                    const auto* Neighbors = Buckets.Find(Cell + FIntPoint(X, Y));
-                    if (!Neighbors)
+                    const double Dx = Location.X - FMath::Clamp(Location.X, X * CellSize, X * CellSize + CellSize);
+                    const double Dy = Location.Y - FMath::Clamp(Location.Y, Y * CellSize, Y * CellSize + CellSize);
+                    const double MinDistanceSquared = FMath::Square(Dx) + FMath::Square(Dy);
+                    if (MinDistanceSquared > SearchSquared)
                     {
                         continue;
                     }
-                    for (const auto& N : *Neighbors)
+                    if (const auto* Neighbors = Buckets.Find(FIntPoint(X, Y)))
                     {
-                        const float Distance = FVector::DistSquared2D(Location, N.Get<1>());
-                        if (N.Get<0>() == Chunk.GetEntity(I) || Distance > FMath::Square(Search)
-                            || FMath::Abs(Location.Z - N.Get<1>().Z) >= FMath::Min(Bodies[I].CapsuleHalfHeight, N.Get<5>()) * 1.5f)
-                        {
-                            continue;
-                        }
-                        if (Closest.Num() == 16 && Distance >= Closest.Last().Key)
-                        {
-                            continue;
-                        }
-                        if (Closest.Num() == 16)
-                        {
-                            Closest.Pop(EAllowShrinking::No);
-                        }
-                        Closest.Emplace(Distance, &N);
-                        Closest.Sort([](const auto& A, const auto& B) { return A.Key < B.Key; });
+                        NearbyBuckets.Emplace(MinDistanceSquared, Neighbors);
                     }
                 }
             }
+            NearbyBuckets.Sort([](const auto& A, const auto& B) { return A.Key < B.Key; });
+
+            using FCandidate = TPair<double, const FNeighbor*>;
+            const auto IsCloser = [](const FCandidate& A, const FCandidate& B)
+            {
+                return A.Key < B.Key || (A.Key == B.Key && A.Value->Get<0>().Index < B.Value->Get<0>().Index);
+            };
+            const auto IsFarther = [&IsCloser](const FCandidate& A, const FCandidate& B)
+            {
+                return IsCloser(B, A);
+            };
+            TArray<FCandidate, TInlineAllocator<MaxNeighbors>> Closest;
+            for (const auto& Bucket : NearbyBuckets)
+            {
+                // 桶内最短距离已超过当前最远的入选邻居时 可跳过剩余桶
+                if (Closest.Num() == MaxNeighbors && Bucket.Key > Closest.HeapTop().Key)
+                {
+                    break;
+                }
+                for (const auto& N : *Bucket.Value)
+                {
+                    const double DistanceSquared = FVector::DistSquared2D(Location, N.Get<1>());
+                    if (N.Get<0>() == Self || DistanceSquared > SearchSquared
+                        || FMath::Abs(Location.Z - N.Get<1>().Z) >= FMath::Min(Bodies[I].CapsuleHalfHeight, N.Get<5>()) * 1.5f)
+                    {
+                        continue;
+                    }
+                    const FCandidate Candidate(DistanceSquared, &N);
+                    if (Closest.Num() == MaxNeighbors)
+                    {
+                        if (!IsCloser(Candidate, Closest.HeapTop()))
+                        {
+                            continue;
+                        }
+                        Closest.HeapPopDiscard(IsFarther, EAllowShrinking::No);
+                    }
+                    Closest.HeapPush(Candidate, IsFarther);
+                }
+            }
+            Closest.Sort(IsCloser);
             for (const auto& Entry : Closest)
             {
                 const auto& N = *Entry.Value;

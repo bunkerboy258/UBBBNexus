@@ -22,6 +22,9 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterTargetFragment.h"
 #include "BBBMonsterSteering.h"
+#include "Components/PrimitiveComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 
 UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
     : MonsterQuery(*this)
@@ -103,7 +106,7 @@ FQuat UBBBMonsterLocomotionProcessor::TurnTowards(const FQuat& Current, const FV
 
 void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
     FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
-    const FVector& HorizontalDelta, const float DeltaSeconds)
+    const FVector& HorizontalDelta, const float DeltaSeconds, const double SupportCheckInterval, const bool bDead)
 {
     Ground.RequestedDistance = 0.0f;
     Ground.MovedDistance = 0.0f;
@@ -133,7 +136,8 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     {
         return Hit.IsValidBlockingHit() && Hit.ImpactNormal.Z >= Movement.WalkableFloorZ;
     };
-    const auto FindSupport = [&World, &Movement, &SupportCapsule, &Params, &Walkable, SupportShrink](FVector& Center, const float Distance, FVector& Normal, float* SurfaceHeight = nullptr)
+    const auto FindSupport = [&World, &Movement, &SupportCapsule, &Params, &Walkable, SupportShrink](
+        FVector& Center, const float Distance, FVector& Normal, UPrimitiveComponent** Support = nullptr)
     {
         FHitResult Floor;
         // 支撑查询略缩胶囊 避免贴墙的零时刻侧面命中遮住脚下地面
@@ -151,26 +155,53 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
             {
                 Center.Z = CenterFloor.ImpactPoint.Z + Movement.CapsuleHalfHeight + Skin;
                 Normal = CenterFloor.ImpactNormal;
-                if (SurfaceHeight)
+                if (Support)
                 {
-                    *SurfaceHeight = Floor.ImpactPoint.Z;
+                    *Support = CenterFloor.GetComponent();
                 }
                 return true;
             }
             Center.Z = Floor.Location.Z + Skin + SupportShrink / Floor.Normal.Z;
             Normal = Floor.ImpactNormal;
-            if (SurfaceHeight)
+            if (Support)
             {
-                *SurfaceHeight = Floor.ImpactPoint.Z;
+                *Support = Floor.GetComponent();
             }
             return true;
         }
         return false;
     };
 
-    // 出生或外部支撑移动造成的浅层重叠只在此处消解 不另建位置写入者
-    if (!Ground.bGrounded || Velocity.Z > 0.0f || !HorizontalDelta.IsNearlyZero() ||
-        World.OverlapBlockingTestByChannel(Location, FQuat::Identity, ECC_Pawn, Capsule, Params))
+    const bool bStationary = Ground.bGrounded && Velocity.Z == 0.0f && HorizontalDelta.IsNearlyZero();
+    const double Now = World.GetTimeSeconds();
+    bool bCanReuseSupport = false;
+    if (bStationary && Velocity.IsNearlyZero() && (bDead || SupportCheckInterval > 0.0)
+        && (bDead || Now < Ground.NextSupportCheckTime) && Location.Equals(Ground.StaticSupportCenter))
+    {
+        const UPrimitiveComponent* Support = Ground.StaticSupport.Get();
+        bCanReuseSupport = Support && Support->IsRegistered() && Support->Mobility == EComponentMobility::Static
+            && Support->IsQueryCollisionEnabled() && Support->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block
+            && Support->GetComponentTransform().Equals(Ground.StaticSupportTransform);
+    }
+    if (bDead && bCanReuseSupport)
+    {
+        Ground.UnsimulatedSeconds = 0.0f;
+        return;
+    }
+
+    // 即使脚下支撑可复用 活体仍检测外物挤入胶囊
+    const bool bCheckPenetration = !Ground.bGrounded || Velocity.Z > 0.0f || !HorizontalDelta.IsNearlyZero()
+        || World.OverlapBlockingTestByChannel(Location, FQuat::Identity, ECC_Pawn, Capsule, Params);
+    if (bCanReuseSupport && !bCheckPenetration)
+    {
+        Velocity = FVector::ZeroVector;
+        Ground.UnsimulatedSeconds = 0.0f;
+        return;
+    }
+
+    Ground.StaticSupport.Reset();
+    Ground.NextSupportCheckTime = 0.0;
+    if (bCheckPenetration)
     {
         for (int32 Attempt = 0; Attempt < 4; ++Attempt)
         {
@@ -183,15 +214,23 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
         }
     }
 
-    // 静止活体仍逐帧检测真实支撑 失败结果在本帧首个子步直接使用
+    // 只记录静止求解命中的真实静态支撑
     const bool bCheckedStationarySupport = Ground.bGrounded && Velocity.Z <= 0.0f && HorizontalDelta.IsNearlyZero();
     if (bCheckedStationarySupport)
     {
-        Ground.bGrounded = FindSupport(Location, SupportDistance, Ground.SupportNormal);
+        UPrimitiveComponent* Support = nullptr;
+        Ground.bGrounded = FindSupport(Location, SupportDistance, Ground.SupportNormal, &Support);
         if (Ground.bGrounded)
         {
             Velocity = FVector::ZeroVector;
             Ground.UnsimulatedSeconds = 0.0f;
+            if ((bDead || SupportCheckInterval > 0.0) && Support && Support->Mobility == EComponentMobility::Static)
+            {
+                Ground.StaticSupport = Support;
+                Ground.StaticSupportCenter = Location;
+                Ground.StaticSupportTransform = Support->GetComponentTransform();
+                Ground.NextSupportCheckTime = Now + SupportCheckInterval;
+            }
             return;
         }
     }
@@ -316,7 +355,17 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
     {
         return;
     }
-    MonsterQuery.ForEachEntityChunk(Context, [World, DeltaSeconds](FMassExecutionContext& Chunk)
+    TArray<FVector, TInlineAllocator<16>> PlayerLocations;
+    for (auto It = World->GetPlayerControllerIterator(); It; ++It)
+    {
+        const APawn* Pawn = It->IsValid() ? It->Get()->GetPawn() : nullptr;
+        if (IsValid(Pawn) && Pawn->CanBeDamaged())
+        {
+            PlayerLocations.Add(Pawn->GetActorLocation());
+        }
+    }
+    const float Now = World->GetTimeSeconds();
+    MonsterQuery.ForEachEntityChunk(Context, [World, DeltaSeconds, Now, &PlayerLocations](FMassExecutionContext& Chunk)
     {
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Velocities = Chunk.GetMutableFragmentView<FMassVelocityFragment>();
@@ -334,6 +383,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
             if (Traversals[Index].Fact.Kind != 0 || (!Specials.IsEmpty() && Specials[Index].Fact.HoldsMovement()))
             {
+                Grounds[Index].StaticSupport.Reset();
+                Grounds[Index].bFarFromPlayers = false;
                 continue;
             }
             FTransform& Transform = Transforms[Index].GetMutableTransform();
@@ -349,7 +400,6 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             FVector Location = Transform.GetLocation();
             const auto& Injury = Mobility[Index];
             const auto* Settings = Network[Index].Definition.Get();
-            const float Now = World->GetTimeSeconds();
             const auto& Target = Targets[Index];
             const float TargetDistance = Target.bHasTarget ? FVector::Distance(Location, Target.TargetLocation) : MAX_flt;
             const bool bCrowdStationary = Velocity.Size2D() < 10.0f
@@ -376,9 +426,13 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 Geometry.MaxStepHeight = Settings->CrawlMaxStepHeight;
                 bChangingPosture = Progress < 1.0f;
             }
-            if (Grounds[Index].CapsuleHalfHeight > 0.0f && Grounds[Index].bGrounded)
+            if (Grounds[Index].CapsuleHalfHeight != Geometry.CapsuleHalfHeight)
             {
-                Location.Z += Geometry.CapsuleHalfHeight - Grounds[Index].CapsuleHalfHeight;
+                if (Grounds[Index].CapsuleHalfHeight > 0.0f && Grounds[Index].bGrounded)
+                {
+                    Location.Z += Geometry.CapsuleHalfHeight - Grounds[Index].CapsuleHalfHeight;
+                }
+                Grounds[Index].StaticSupport.Reset();
             }
             Grounds[Index].CapsuleHalfHeight = Geometry.CapsuleHalfHeight;
             FVector HorizontalDelta = FVector::ZeroVector;
@@ -412,7 +466,21 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
 
             const bool bPreviouslyGrounded = Grounds[Index].bGrounded;
-            SolveGroundMotion(*World, Geometry, Grounds[Index], Location, Velocity, HorizontalDelta, DeltaSeconds);
+            auto& Ground = Grounds[Index];
+            const bool bDead = States[Index].State == EBBBMonsterBehavior::Dead;
+            const bool bIdle = States[Index].State == EBBBMonsterBehavior::Idle && !Target.bHasTarget
+                && bPreviouslyGrounded && Velocity.IsNearlyZero() && !bChangingPosture
+                && !Injury.IsStaggering(Now) && !Injury.IsShocked(Now) && Now >= Injury.HitStopEndsAt;
+            const double NearRadius = Ground.bFarFromPlayers ? 3000.0 : 3500.0;
+            Ground.bFarFromPlayers = bIdle && !PlayerLocations.ContainsByPredicate([&](const FVector& PlayerLocation)
+            {
+                return FVector::DistSquared(Location, PlayerLocation) <= FMath::Square(NearRadius);
+            });
+            const auto Entity = Chunk.GetEntity(Index);
+            const double SupportCheckInterval = Ground.bFarFromPlayers
+                ? 0.25 + (GetTypeHash(Entity.Index) % 16) * (0.25 / 15.0) : 0.0;
+            SolveGroundMotion(*World, Geometry, Ground, Location, Velocity, HorizontalDelta, DeltaSeconds,
+                SupportCheckInterval, bDead && !bChangingPosture);
             if (!ensureMsgf(!Location.ContainsNaN() && !Velocity.ContainsNaN(), TEXT("[UBBBM]Ground solver produced invalid motion")))
             {
                 continue;

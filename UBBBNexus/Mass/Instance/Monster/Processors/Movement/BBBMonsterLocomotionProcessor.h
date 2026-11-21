@@ -63,11 +63,13 @@ public:
      * @param Velocity		唯一速度状态
      * @param HorizontalDelta		本帧水平移动意图
      * @param DeltaSeconds		完整更新时长
+     * @param SupportCheckInterval		静止支撑复查间隔 零表示逐帧查询
+     * @param bDead		已死亡的实体落稳后停用逻辑地面查询
      * @return 无
      */
     static void SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
         FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
-        const FVector& HorizontalDelta, float DeltaSeconds);
+        const FVector& HorizontalDelta, float DeltaSeconds, double SupportCheckInterval = 0.0, bool bDead = false);
 
 protected:
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;

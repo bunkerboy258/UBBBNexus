@@ -1,7 +1,10 @@
 #pragma once
 
 #include "MassEntityTypes.h"
+#include "UObject/WeakObjectPtrTemplates.h"
 #include "BBBMonsterGroundFragment.generated.h"
+
+class UPrimitiveComponent;
 
 /** 由移动处理器维护的地面支撑结果 */
 USTRUCT()
@@ -29,4 +32,17 @@ struct ABBB_EVAC_API FBBBMonsterGroundFragment final : public FMassFragment
 
     /** 连续失去真实支撑的开始时刻 有支撑时为负 */
     float UnsupportedSince = -1.0f;
+
+    /** 最近一次静止求解确认的静态支撑 */
+    TWeakObjectPtr<UPrimitiveComponent> StaticSupport;
+
+    /** 确认支撑时的组件变换与胶囊中心 */
+    FTransform StaticSupportTransform = FTransform::Identity;
+    FVector StaticSupportCenter = FVector::ZeroVector;
+
+    /** 下次远处静止支撑查询的世界时间 */
+    double NextSupportCheckTime = 0.0;
+
+    /** 按最近玩家距离维持的远处判定 */
+    bool bFarFromPlayers = false;
 };
