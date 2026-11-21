@@ -9,6 +9,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnData.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterSpawnOwnershipFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
 
@@ -26,6 +27,7 @@ void UBBBMonsterSpawnInitializationProcessor::ConfigureQueries(const TSharedRef<
     SpawnQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     SpawnQuery.AddRequirement<FBBBMonsterSpawnOwnershipFragment>(EMassFragmentAccess::ReadWrite);
     SpawnQuery.AddRequirement<FBBBMonsterVariationFragment>(EMassFragmentAccess::ReadWrite);
+    SpawnQuery.AddRequirement<FBBBMonsterPerceptionFragment>(EMassFragmentAccess::ReadWrite);
 }
 
 void UBBBMonsterSpawnInitializationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
@@ -53,6 +55,7 @@ void UBBBMonsterSpawnInitializationProcessor::Execute(FMassEntityManager&, FMass
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
         auto Owners = Chunk.GetMutableFragmentView<FBBBMonsterSpawnOwnershipFragment>();
         auto Variation = Chunk.GetMutableFragmentView<FBBBMonsterVariationFragment>();
+        auto Perception = Chunk.GetMutableFragmentView<FBBBMonsterPerceptionFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (!ensureMsgf(Data.Transforms.IsValidIndex(Offset), TEXT("导演出生数据与批量实体数量不一致")))
@@ -64,6 +67,7 @@ void UBBBMonsterSpawnInitializationProcessor::Execute(FMassEntityManager&, FMass
             Owners[Index].DirectorId = Data.DirectorId;
             Owners[Index].Generation = Data.Generation;
             Owners[Index].StageIndex = Data.StageIndex;
+            Perception[Index].InitialTargetPlayerId = Data.InitialTargetPlayerId;
         }
     });
 }

@@ -25,6 +25,8 @@ struct ABBB_EVAC_API FBBBMonsterSpawnFragment final : public FMassFragment
     TArray<FBBBMonsterSpawnRegionDefinition> Regions;
     /** 请求级随机种子 */
     uint32 Seed = 1;
+    /** 本次出生可选的初始目标玩家编号 */
+    int32 InitialTargetPlayerId = INDEX_NONE;
     /** 请求数量 */
     int32 Requested = 0;
     /** 已实际创建数量 取消也不清零 */

@@ -15,6 +15,7 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/BBBThrowableDefinition.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "GameFramework/GameStateBase.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
@@ -67,11 +68,17 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
 
     // 获取当前世界中的玩家目标
     TArray<APawn*, TInlineAllocator<8>> Players;
+    TMap<int32, APawn*> PlayersById;
     for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
     {
         if (It->IsValid() && IsValid(It->Get()->GetPawn()) && It->Get()->GetPawn()->CanBeDamaged())
         {
-            Players.Add(It->Get()->GetPawn());
+            APawn* Pawn = It->Get()->GetPawn();
+            Players.Add(Pawn);
+            if (const auto* PlayerState = It->Get()->GetPlayerState<APlayerState>(); PlayerState && PlayerState->GetPlayerId() >= 0)
+            {
+                PlayersById.Add(PlayerState->GetPlayerId(), Pawn);
+            }
         }
     }
     TArray<TPair<FMassEntityHandle, FVector>> Alerts;
@@ -103,7 +110,7 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
     bool bWrap = false;
 
     // 每帧根据视野范围更新目标请求
-    const auto SenseChunk = [this, &Players, &Alerts, &AlertOrigins, &AlertRanges, &TraceBudget, &EntityIndex, &bWrap, &SmokeAreas,
+    const auto SenseChunk = [this, &Players, &PlayersById, &Alerts, &AlertOrigins, &AlertRanges, &TraceBudget, &EntityIndex, &bWrap, &SmokeAreas,
         FirstSenseIndex, EntityCount, World, Now, ServerTime, FrameDelta](FMassExecutionContext& Chunk)
     {
         const auto Transforms = Chunk.GetFragmentView<FTransformFragment>();
@@ -130,17 +137,25 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 continue;
             }
-            const auto ClearTarget = [&Target]()
+            const bool bRetaliationOnly = Settings->TargetAcquisitionMode == EBBBMonsterTargetAcquisitionMode::RetaliationOnly;
+            const auto ClearTarget = [&Target, &Sense, bRetaliationOnly, Now]()
             {
                 if (Target.bHasTarget)
                 {
                     ++Target.Revision;
+                    if (bRetaliationOnly)
+                    {
+                        Sense.InvestigationFinishedAt = Now;
+                    }
                 }
                 Target.bHasTarget = false;
                 Target.bTargetVisible = false;
+                Target.bIsInitialTarget = false;
                 Target.TargetActor.Reset();
             };
-            if (Target.TargetActor.IsStale() || (Target.TargetActor.IsValid() && !Target.TargetActor->CanBeDamaged()))
+            AActor* TargetActor = Target.TargetActor.Get();
+            const bool bTargetLeft = bRetaliationOnly && TargetActor && !Players.Contains(Cast<APawn>(TargetActor));
+            if (Target.TargetActor.IsStale() || bTargetLeft || (TargetActor && !TargetActor->CanBeDamaged()))
             {
                 ClearTarget();
             }
@@ -157,7 +172,8 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             }
             const FVector Location = Transforms[Index].GetTransform().GetLocation();
             const auto& Path = Navigation[Index];
-            if (Target.bHasTarget && !Target.bTargetVisible && Path.TargetRevision == Target.Revision && Path.bReachedDestination)
+            if (!bRetaliationOnly && Target.bHasTarget && !Target.bTargetVisible &&
+                Path.TargetRevision == Target.Revision && Path.bReachedDestination)
             {
                 Sense.InvestigationFinishedAt = Now;
                 for (auto& Contact : Sense.Contacts)
@@ -167,7 +183,8 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                 }
                 ClearTarget();
             }
-            if (Now < Sense.NextSenseTime || TraceBudget < Players.Num() * 3)
+            const int32 MaxTraces = (bRetaliationOnly ? 1 : Players.Num()) * 3;
+            if (Now < Sense.NextSenseTime || TraceBudget < MaxTraces)
             {
                 continue;
             }
@@ -175,14 +192,87 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
             Sense.LastSenseTime = Now;
             Sense.NextSenseTime = Now + 0.1f;
             NextSenseEntityIndex = (CurrentIndex + 1) % EntityCount;
-            Sense.Contacts.RemoveAll([&Players](const auto& Contact)
+            const FBBBMonsterDamageTotals* Latest = nullptr;
+            for (const auto& Pair : Damage[Index].Contributions)
             {
-                return !Contact.Actor.IsValid() || !Players.Contains(Cast<APawn>(Contact.Actor.Get()));
+                if (Pair.Value.Parts.Sum() > 0.0 && (!Latest || Pair.Value.LastHitTime > Latest->LastHitTime))
+                {
+                    Latest = &Pair.Value;
+                }
+            }
+            const FBBBMonsterDamageTotals* RecentDamage = nullptr;
+            float DamageEvidenceTime = -FLT_MAX;
+            if (Latest && Latest->LastHitTime > Sense.LastDamageTime)
+            {
+                Sense.LastDamageTime = Latest->LastHitTime;
+                const double Age = ServerTime - Latest->LastHitTime;
+                if (Age >= -0.1 && Age < Settings->TargetMemoryDuration)
+                {
+                    RecentDamage = Latest;
+                    DamageEvidenceTime = Now - static_cast<float>(FMath::Max(Age, 0.0));
+                }
+            }
+            const bool bDamageEvidence = RecentDamage && RecentDamage->bHasSourcePosition;
+            FVector EvidencePosition = bDamageEvidence ? RecentDamage->LastSourcePosition : FVector::ZeroVector;
+            float EvidenceTime = bDamageEvidence ? DamageEvidenceTime : -FLT_MAX;
+
+            const int32 InitialTargetPlayerId = Sense.InitialTargetPlayerId;
+            Sense.InitialTargetPlayerId = INDEX_NONE;
+            if (bRetaliationOnly && !Target.bHasTarget)
+            {
+                APawn* AssignedPawn = PlayersById.FindRef(InitialTargetPlayerId);
+                const bool bInitialTarget = AssignedPawn != nullptr;
+                if (bInitialTarget)
+                {
+                    EvidencePosition = AssignedPawn->GetActorLocation();
+                    EvidenceTime = Now;
+                }
+                else if (RecentDamage)
+                {
+                    AssignedPawn = PlayersById.FindRef(RecentDamage->PlayerId);
+                    if (AssignedPawn && !bDamageEvidence)
+                    {
+                        EvidencePosition = AssignedPawn->GetActorLocation();
+                        EvidenceTime = DamageEvidenceTime;
+                    }
+                }
+
+                if (AssignedPawn && EvidenceTime > Sense.InvestigationFinishedAt &&
+                    FVector::DistSquared(Location, EvidencePosition) <= FMath::Square(Settings->TargetLeashDistance))
+                {
+                    ++Target.Revision;
+                    Target.TargetActor = AssignedPawn;
+                    Target.TargetLocation = EvidencePosition;
+                    Target.LastSeenTime = EvidenceTime;
+                    Target.EvidenceTime = EvidenceTime;
+                    Target.bHasTarget = true;
+                    Target.bTargetVisible = false;
+                    Target.bIsInitialTarget = bInitialTarget;
+
+                    // 已有目标身份 近战仍须等到实际视觉确认
+                    Sense.Contacts.Reset();
+                    auto& Contact = Sense.Contacts.AddDefaulted_GetRef();
+                    Contact.Actor = AssignedPawn;
+                    Contact.Position = EvidencePosition;
+                    Contact.ConfirmedAt = EvidenceTime;
+                    Contact.bConfirmed = true;
+                }
+            }
+
+            Sense.Contacts.RemoveAll([&Players, &Target, bRetaliationOnly](const auto& Contact)
+            {
+                return !Contact.Actor.IsValid() || !Players.Contains(Cast<APawn>(Contact.Actor.Get()))
+                    || (bRetaliationOnly && Contact.Actor != Target.TargetActor);
             });
             const FVector Eye = Location + FVector::UpVector * (Settings->CapsuleHalfHeight * 0.65f);
             const FVector Facing = Transforms[Index].GetTransform().GetRotation().GetForwardVector().GetSafeNormal2D();
             for (APawn* Player : Players)
             {
+                if (bRetaliationOnly && Target.TargetActor != Player)
+                {
+                    continue;
+                }
+
                 auto* Found = Sense.Contacts.FindByPredicate([Player](const auto& Contact)
                 {
                     return Contact.Actor == Player;
@@ -356,36 +446,22 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                 Sense.SwitchCandidate.Reset();
             }
 
-            const FBBBMonsterDamageTotals* Latest = nullptr;
-            for (const auto& Pair : Damage[Index].Contributions)
+            if (bRetaliationOnly && Target.bHasTarget && (!Selected || !Selected->bVisible) &&
+                Path.TargetRevision == Target.Revision && Path.bReachedDestination)
             {
-                if (Pair.Value.Parts.Sum() > 0.0 && (!Latest || Pair.Value.LastHitTime > Latest->LastHitTime))
-                {
-                    Latest = &Pair.Value;
-                }
+                Sense.Contacts.Reset();
+                ClearTarget();
+                continue;
             }
-            bool bDamageEvidence = false;
-            FVector EvidencePosition = FVector::ZeroVector;
-            float EvidenceTime = -FLT_MAX;
-            if (Latest && Latest->LastHitTime > Sense.LastDamageTime)
-            {
-                Sense.LastDamageTime = Latest->LastHitTime;
-                const double Age = ServerTime - Latest->LastHitTime;
-                if (Latest->bHasSourcePosition && Age >= -0.1 && Age < Settings->TargetMemoryDuration)
-                {
-                    bDamageEvidence = true;
-                    EvidencePosition = Latest->LastSourcePosition;
-                    EvidenceTime = Now - static_cast<float>(FMath::Max(Age, 0.0));
-                }
-            }
-            if (!Selected && Stimuli[Index].Time <= Now && Now < Stimuli[Index].EndsAt &&
+
+            if (!bRetaliationOnly && !Selected && Stimuli[Index].Time <= Now && Now < Stimuli[Index].EndsAt &&
                 Stimuli[Index].Time > Sense.InvestigationFinishedAt && Stimuli[Index].Time > Target.EvidenceTime &&
                 Stimuli[Index].Time > EvidenceTime)
             {
                 EvidencePosition = Stimuli[Index].Position;
                 EvidenceTime = Stimuli[Index].Time;
             }
-            if (Selected && (!bDamageEvidence || Selected->bVisible))
+            if (Selected && (bRetaliationOnly || !bDamageEvidence || Selected->bVisible))
             {
                 if (Target.TargetActor != Selected->Actor || !Target.bHasTarget)
                 {
@@ -407,7 +483,8 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
                 }
                 continue;
             }
-            if (EvidenceTime > Sense.InvestigationFinishedAt && EvidenceTime > Target.EvidenceTime &&
+            if ((!bRetaliationOnly || !Target.bHasTarget) &&
+                EvidenceTime > Sense.InvestigationFinishedAt && EvidenceTime > Target.EvidenceTime &&
                 FVector::DistSquared(Location, EvidencePosition) <= FMath::Square(Settings->TargetLeashDistance))
             {
                 ++Target.Revision;
@@ -452,8 +529,9 @@ void UBBBMonsterPerceptionProcessor::Execute(FMassEntityManager& EntityManager, 
         {
             auto& Target = Targets[Index];
             if (Health[Index].CurrentHealth <= 0.0f || Mobility[Index].IsShocked(Now)
-                || Target.bHasTarget || !Networks[Index].Definition.IsValid() ||
-                Now < Perceptions[Index].InvestigationFinishedAt + Networks[Index].Definition->InvestigationAlertDuration)
+                || Target.bHasTarget || !Networks[Index].Definition.IsValid()
+                || Networks[Index].Definition->TargetAcquisitionMode == EBBBMonsterTargetAcquisitionMode::RetaliationOnly
+                || Now < Perceptions[Index].InvestigationFinishedAt + Networks[Index].Definition->InvestigationAlertDuration)
             {
                 continue;
             }

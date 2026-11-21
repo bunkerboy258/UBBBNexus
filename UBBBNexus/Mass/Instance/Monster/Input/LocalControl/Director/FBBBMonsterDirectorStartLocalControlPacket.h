@@ -35,6 +35,7 @@ struct FBBBMonsterDirectorStartLocalControlPacket final
      */
     void Apply(FBBBMonsterDirectorFragment& State, FBBBMonsterDirectorSpawnFragment& Spawn) const
     {
+        Spawn.InitialTargetPlayerId = INDEX_NONE;
         ++State.Generation;
         ++State.Revision;
         State.StageIndex = 0;

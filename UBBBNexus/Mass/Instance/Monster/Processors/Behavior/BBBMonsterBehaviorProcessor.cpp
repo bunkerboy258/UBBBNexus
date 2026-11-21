@@ -261,7 +261,13 @@ void UBBBMonsterBehaviorProcessor::Execute(FMassEntityManager& EntityManager, FM
             if (!State.bHadTarget)
             {
                 State.bHadTarget = true;
-                EnterState(EBBBMonsterBehavior::Alert, true);
+                if (!Target.bIsInitialTarget)
+                {
+                    EnterState(EBBBMonsterBehavior::Alert, true);
+                    continue;
+                }
+
+                EnterState(EBBBMonsterBehavior::Chase);
                 continue;
             }
             if (State.State == EBBBMonsterBehavior::Alert && WorldTime < State.StateEndsAtTime)

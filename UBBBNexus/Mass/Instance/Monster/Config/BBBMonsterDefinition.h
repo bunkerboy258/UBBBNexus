@@ -2,6 +2,7 @@
 
 #include "Engine/DataAsset.h"
 #include "BBBMonsterBodyPartDefinition.h"
+#include "BBBMonsterTargetAcquisitionMode.h"
 #include "BBBMonsterTraversalSettings.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitRegion.h"
 #include "BBBMonsterHitShapeDefinition.h"
@@ -215,6 +216,10 @@ public:
     /** 发现或丢失目标后的警觉停留时间 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "巡逻与警觉", meta = (ClampMin = "0.1", DisplayName = "警觉时间"))
     float AlertDuration = 1.2f;
+
+    /** 决定没有目标时允许使用哪些索敌线索 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "感知与索敌", meta = (DisplayName = "索敌模式"))
+    EBBBMonsterTargetAcquisitionMode TargetAcquisitionMode = EBBBMonsterTargetAcquisitionMode::ActivePerception;
 
     /** 感知范围 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "感知与索敌", meta = (ClampMin = "0.0", DisplayName = "视野范围"))

@@ -1,4 +1,5 @@
 #include "BBBMonsterSpawnerPresentationActor.h"
+#include "GameFramework/PlayerState.h"
 #include "Components/SceneComponent.h"
 #include "MassEntityConfigAsset.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
@@ -35,8 +36,13 @@ FBBBMonsterSpawnRegionDefinition ABBBMonsterSpawnerPresentationActor::ReadRegion
     return Result;
 }
 
-bool ABBBMonsterSpawnerPresentationActor::StartSpawning()
+bool ABBBMonsterSpawnerPresentationActor::StartSpawning(APlayerState* InitialTarget)
 {
+    if (InitialTarget && (!IsValid(InitialTarget) || InitialTarget->GetWorld() != GetWorld() || InitialTarget->GetPlayerId() < 0))
+    {
+        return false;
+    }
+
     if (!EnsureEntity())
     {
         return false;
@@ -57,6 +63,7 @@ bool ABBBMonsterSpawnerPresentationActor::StartSpawning()
     const int32 Seed = SeedOverride != 0 ? SeedOverride : Definition->Seed;
     Packet.Seed = Seed != 0 ? static_cast<uint32>(Seed) : (static_cast<uint32>(FMath::Rand()) | 1u);
     Packet.Count = Count;
+    Packet.InitialTargetPlayerId = InitialTarget ? InitialTarget->GetPlayerId() : INDEX_NONE;
     if (!Packet.IsValid())
     {
         return false;

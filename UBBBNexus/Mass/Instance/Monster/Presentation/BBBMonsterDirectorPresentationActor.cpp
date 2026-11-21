@@ -1,4 +1,5 @@
 #include "BBBMonsterDirectorPresentationActor.h"
+#include "GameFramework/PlayerState.h"
 #include "BBBMonsterSpawnRegionPresentationActor.h"
 #include "Components/SceneComponent.h"
 #include "MassEntityConfigAsset.h"
@@ -162,12 +163,18 @@ bool ABBBMonsterDirectorPresentationActor::StopDirector()
     return HasAuthority() && SubmitInput(FBBBMonsterDirectorStopLocalControlPacket());
 }
 
-bool ABBBMonsterDirectorPresentationActor::TriggerStage()
+bool ABBBMonsterDirectorPresentationActor::TriggerStage(APlayerState* InitialTarget)
 {
+    if (InitialTarget && (!IsValid(InitialTarget) || InitialTarget->GetWorld() != GetWorld() || InitialTarget->GetPlayerId() < 0))
+    {
+        return false;
+    }
+
     const auto State = ReadState();
     FBBBMonsterDirectorTriggerLocalControlPacket Packet;
     Packet.Generation = State.Generation;
     Packet.StageIndex = State.StageIndex;
+    Packet.InitialTargetPlayerId = InitialTarget ? InitialTarget->GetPlayerId() : INDEX_NONE;
     return HasAuthority() && SubmitInput(MoveTemp(Packet));
 }
 

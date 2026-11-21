@@ -193,6 +193,7 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
             }
             if (State.Phase == EBBBMonsterDirectorPhase::Clearing && State.Alive == 0 && Spawn.Reserved == 0)
             {
+                Spawn.InitialTargetPlayerId = INDEX_NONE;
                 ++State.StageIndex;
                 State.StageSpawned = 0;
                 State.NextSpawnTime = Now;
@@ -221,6 +222,7 @@ void UBBBMonsterDirectorScheduleProcessor::Execute(FMassEntityManager&, FMassExe
             Packet.OwnerId = State.InstanceId;
             Packet.Generation = State.Generation;
             Packet.StageIndex = State.StageIndex;
+            Packet.InitialTargetPlayerId = Spawn.InitialTargetPlayerId;
             Packet.RequestId = Spawn.RequestId;
             Packet.Definition = Stage.SpawnDefinition;
             const uint32 RootSeed = Stage.SpawnDefinition && Stage.SpawnDefinition->Seed != 0

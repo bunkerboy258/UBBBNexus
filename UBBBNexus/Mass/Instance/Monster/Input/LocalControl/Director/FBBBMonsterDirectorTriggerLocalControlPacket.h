@@ -14,10 +14,13 @@ struct FBBBMonsterDirectorTriggerLocalControlPacket final
     /** 明确触发的阶段 */
     int32 StageIndex = INDEX_NONE;
 
+    /** 本次出生可选的初始目标玩家编号 */
+    int32 InitialTargetPlayerId = INDEX_NONE;
+
     /** @return 输入数据是否有效 */
     bool IsValid() const
     {
-        return Generation > 0 && StageIndex >= 0;
+        return Generation > 0 && StageIndex >= 0 && InitialTargetPlayerId >= INDEX_NONE;
     }
 
     /**
@@ -37,6 +40,7 @@ struct FBBBMonsterDirectorTriggerLocalControlPacket final
      */
     void Apply(FBBBMonsterDirectorFragment& State, FBBBMonsterDirectorSpawnFragment& Spawn) const
     {
+        Spawn.InitialTargetPlayerId = InitialTargetPlayerId;
         State.Phase = EBBBMonsterDirectorPhase::Spawning;
         State.NextUpdateTime = 0.0;
         State.Reason = TEXT("阶段已触发");

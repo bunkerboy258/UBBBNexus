@@ -10,6 +10,9 @@ struct ABBB_EVAC_API FBBBMonsterDirectorSpawnFragment final : public FMassFragme
 
     /** 申请身份 取消时递增 */
     uint32 RequestId = 0;
+    /** 手动触发的当前阶段交给每批小怪的初始目标 */
+    int32 InitialTargetPlayerId = INDEX_NONE;
+
     /** 当前预留数量 */
     int32 Reserved = 0;
     /** 查询启动时间 */

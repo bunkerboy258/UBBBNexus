@@ -19,6 +19,9 @@ struct FBBBMonsterSpawnData final
     /** 本次副本运行代号 */
     UPROPERTY()
     uint32 Generation = 0;
+    /** 本次出生可选的初始目标玩家编号 */
+    UPROPERTY()
+    int32 InitialTargetPlayerId = INDEX_NONE;
     /** 所属阶段 */
     UPROPERTY()
     int32 StageIndex = INDEX_NONE;

@@ -25,6 +25,9 @@ struct ABBB_EVAC_API FBBBMonsterTargetFragment final : public FMassFragment
     /** 当前目标由本机前方视觉确认 此值为假时不能启动新攻击 */
     bool bTargetVisible = false;
 
+    /** 出生指定的当前目标 进入追逐前省略第一次警觉停留 */
+    bool bIsInitialTarget = false;
+
     /** 追踪位置或目标身份发生改变时递增 */
     uint32 Revision = 0;
 

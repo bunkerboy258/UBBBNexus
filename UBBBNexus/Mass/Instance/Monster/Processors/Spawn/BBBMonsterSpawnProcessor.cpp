@@ -660,6 +660,7 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
                 Batch.DirectorId = OwnerId;
                 Batch.Generation = Generation;
                 Batch.StageIndex = StageIndex;
+                Batch.InitialTargetPlayerId = Current->InitialTargetPlayerId;
                 Batch.Transforms.Add(Point.Transform);
                 Batch.Seeds.Add(Point.Seed);
             }

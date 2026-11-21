@@ -16,6 +16,9 @@ struct ABBB_EVAC_API FBBBMonsterPerceptionFragment final : public FMassFragment
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "小怪", meta = (DisplayName = "视野范围"))
     float SightRange = 3500.0f;
 
+    /** 出生时交接的玩家编号 首次处理后清空 */
+    int32 InitialTargetPlayerId = INDEX_NONE;
+
     /** 当前玩家视觉结果 仅保留仍有效的玩家 */
     TArray<FBBBMonsterVisualContact> Contacts;
 

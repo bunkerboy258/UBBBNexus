@@ -8,6 +8,7 @@
 
 class UBBBMonsterDirectorDefinition;
 class UBBBMonsterDirectorNetworkComponent;
+class APlayerState;
 class UMassEntityConfigAsset;
 class ABBBMonsterSpawnRegionPresentationActor;
 
@@ -62,9 +63,12 @@ public:
     /** @return 是否成功提交停止输入 */
     UFUNCTION(BlueprintCallable, Category = "副本导演", meta = (DisplayName = "停止导演"))
     bool StopDirector();
-    /** @return 是否成功触发当前等待阶段 */
+    /**
+     * @param InitialTarget	可选的出生目标玩家
+     * @return 是否成功触发当前等待阶段
+     */
     UFUNCTION(BlueprintCallable, Category = "副本导演", meta = (DisplayName = "触发当前阶段"))
-    bool TriggerStage();
+    bool TriggerStage(APlayerState* InitialTarget = nullptr);
 
     /**
      * @param StageIndex	指定阶段

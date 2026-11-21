@@ -22,6 +22,8 @@ struct FBBBMonsterSpawnRequestLocalControlPacket final
     TArray<FBBBMonsterSpawnRegionDefinition> Regions;
     /** 与网络身份无关的非零种子 */
     uint32 Seed = 1;
+    /** 本次出生可选的初始目标玩家编号 */
+    int32 InitialTargetPlayerId = INDEX_NONE;
     /** 本请求最多实际创建的数量 */
     int32 Count = 1;
 
@@ -30,7 +32,7 @@ struct FBBBMonsterSpawnRequestLocalControlPacket final
     {
         FString Error;
         if (!OwnerId.IsValid() || RequestId == 0 || Generation == 0 || StageIndex < 0 || Seed == 0
-            || Count < 1 || Count > 512 || !Definition.IsValid() || !Definition->Validate(Error) || Regions.IsEmpty())
+            || InitialTargetPlayerId < INDEX_NONE || Count < 1 || Count > 512 || !Definition.IsValid() || !Definition->Validate(Error) || Regions.IsEmpty())
         {
             return false;
         }
@@ -68,6 +70,7 @@ struct FBBBMonsterSpawnRequestLocalControlPacket final
         State.Definition = Definition;
         State.Regions = Regions;
         State.Seed = Seed;
+        State.InitialTargetPlayerId = InitialTargetPlayerId;
         State.Requested = Count;
         State.bActive = true;
         State.Reason = TEXT("正在选点");

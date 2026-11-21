@@ -6,6 +6,7 @@
 #include "BBBMonsterSpawnerPresentationActor.generated.h"
 
 class UBBBMonsterSpawnDefinition;
+class APlayerState;
 class UMassEntityConfigAsset;
 
 /** 地图中的统一生成入口 不承担逐帧玩法 */
@@ -41,9 +42,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "生成器", meta = (DisplayName = "种子覆盖"))
     int32 SeedOverride = 0;
 
-    /** @return 已有请求是否已完成且新请求成功投递 */
+    /**
+     * @param InitialTarget	可选的出生目标玩家
+     * @return 已有请求是否已完成且新请求成功投递
+     */
     UFUNCTION(BlueprintCallable, Category = "生成器", meta = (DisplayName = "开始生成"))
-    bool StartSpawning();
+    bool StartSpawning(APlayerState* InitialTarget = nullptr);
 
     /** @return 是否投递暂停请求 */
     UFUNCTION(BlueprintCallable, Category = "生成器", meta = (DisplayName = "暂停生成"))
