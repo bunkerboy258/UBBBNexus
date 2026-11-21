@@ -22,7 +22,12 @@ void FBBBCharacterInteractionVisibilityProcessor::Update(FBBBCharacterInteractio
     const auto &Use = Context.RuntimeData.Interaction.ReadInteractionUseState();
     const bool bHideForRecovery = Use.bBusy && !Use.Fact.bQuickMelee &&
                                   IsValid(Use.Definition) && !Use.Definition->bThrowable;
-    const bool bForced = !Context.RuntimeData.Life.ReadLifeState().bActionsAllowed || bHideForRecovery;
+    const auto &Life = Context.RuntimeData.Life.ReadLifeState();
+    const auto &Rescue = Context.RuntimeData.Life.ReadRescueState();
+    const auto &Physical = Context.RuntimeData.PhysicalPresentation.ReadPhysicalPresentationState();
+    const bool bHideForLifeAction = !Physical.bRagdoll && !Physical.bRagdollRequested
+        && (Life.Phase == EBBBCharacterLifePhase::Downed || Rescue.bHelping || Rescue.bReceiving);
+    const bool bForced = bHideForLifeAction || bHideForRecovery;
     const bool bChanged = bForced != Selection.bVisibilityForced;
     Selection.bVisibilityForced = bForced;
     const bool bShow = Inputs.ShowEquipmentGenerations.Contains(Selection.ActiveGeneration);

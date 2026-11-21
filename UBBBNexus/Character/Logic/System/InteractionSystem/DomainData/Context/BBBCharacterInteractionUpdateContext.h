@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Templates/SubclassOf.h"
 class ABBBCharacter;
 class USkeletalMeshComponent;
 class AActor;
