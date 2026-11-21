@@ -34,24 +34,24 @@ public:
 
 private:
     /** 刷新材质参数并将当前机位写入编辑器预览目标 */
-    UFUNCTION(CallInEditor, Category="整备间", meta=(DisplayName="刷新整备间预览"))
+    UFUNCTION(CallInEditor, Category="Inventory Studio")
     void RefreshEditorPreview();
 
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="地面"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<UStaticMeshComponent> Floor;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="暖主光"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<USpotLightComponent> Key;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="轮廓光"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<USpotLightComponent> Rim;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="补光"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<URectLightComponent> Fill;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="雾体积"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<UStaticMeshComponent> Mist;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="捕获机位"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<USceneCaptureComponent2D> Capture;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="人物站位"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<USceneComponent> CharacterAnchor;
-    UPROPERTY(VisibleAnywhere, Category="整备间", meta=(DisplayName="环绕中心"))
+    UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<USceneComponent> OrbitAnchor;
 
     UPROPERTY(EditInstanceOnly, Category="雾束", meta=(DisplayName="雾束密度", ClampMin="0"))
