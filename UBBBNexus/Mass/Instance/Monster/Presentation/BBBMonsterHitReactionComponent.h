@@ -27,12 +27,13 @@ public:
 
     /**
      * @param Start	连续震撼的本机起始时间
-     * @param Age	当前震撼已经持续的时间
+     * @param PulseAge	从允许局部抽动的时刻起经过的秒数
      * @param Remaining	当前震撼剩余的时间
      * @param bCrawling	是否保持贴地支撑
+     * @param VariationSeed	当前僵尸的出生种子
      * @return 无返回值
      */
-    void ApplyShockPose(float Start, float Age, float Remaining, bool bCrawling);
+    void ApplyShockPose(float Start, float PulseAge, float Remaining, bool bCrawling, uint32 VariationSeed);
 
     /**
      * 清除表现对象上一代实体的全部受力状态

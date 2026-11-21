@@ -6,6 +6,7 @@
 #include "HitReactProfile.h"
 #include "HitReactStatics.h"
 #include "IAnimationBudgetAllocator.h"
+#include "Math/RandomStream.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
@@ -217,8 +218,8 @@ void UBBBMonsterHitReactionComponent::ApplyHitFacts(const FBBBMonsterHitReaction
     }
 }
 
-void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const float Age,
-    const float Remaining, const bool bCrawling)
+void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const float PulseAge,
+    const float Remaining, const bool bCrawling, const uint32 VariationSeed)
 {
     if (Remaining <= 0.0f)
     {
@@ -230,8 +231,9 @@ void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const fl
         ShockPoseStart = Start;
         ShockPosePulse = INDEX_NONE;
     }
-    const float Delay = bCrawling ? 0.0f : 0.5f;
-    const float Time = Age - Delay;
+
+    const FRandomStream PulseRandom(static_cast<int32>(VariationSeed ^ 0xb7e15163u));
+    const float Time = PulseAge - PulseRandom.FRandRange(0.0f, 0.18f);
     if (Time < 0.0f || !CanHitReact() || !PresentationSettings)
     {
         return;
@@ -239,7 +241,7 @@ void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const fl
 
     const int32 Cycle = FMath::FloorToInt(Time / 0.62f);
     const int32 Pulse = Cycle * 2 + (Time - Cycle * 0.62f >= 0.21f ? 1 : 0);
-    if (Pulse == ShockPosePulse)
+    if (Pulse <= ShockPosePulse)
     {
         return;
     }
@@ -247,9 +249,10 @@ void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const fl
 
     EBBBMonsterHitRegion Region = EBBBMonsterHitRegion::Head;
     int32 ProfileIndex = 1;
-    if (!bCrawling && Pulse % 3 != 0)
+    const int32 RegionIndex = (Pulse + PulseRandom.RandRange(0, 2)) % 3;
+    if (!bCrawling && RegionIndex != 0)
     {
-        Region = Pulse % 3 == 1 ? EBBBMonsterHitRegion::LeftArm : EBBBMonsterHitRegion::RightArm;
+        Region = RegionIndex == 1 ? EBBBMonsterHitRegion::LeftArm : EBBBMonsterHitRegion::RightArm;
         ProfileIndex = 2;
     }
     const auto& Rule = PresentationSettings->HitReaction.ReadRegion(Region);

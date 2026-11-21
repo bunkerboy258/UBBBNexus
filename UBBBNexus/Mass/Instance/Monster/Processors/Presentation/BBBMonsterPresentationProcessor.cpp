@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationStateFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationSmoothingFragment.h"
 #include "Engine/World.h"
+#include "Math/RandomStream.h"
 #include "Misc/App.h"
 #include "MassActorSubsystem.h"
 #include "MassExecutionContext.h"
@@ -271,18 +272,35 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 PresentationState.StateEnteredTime,
                 PresentationState.ActionId,
                 PresentationState.ActionProgress);
-            const float StaggerProgress = Mobility.StaggerEndsAt > Mobility.StaggerStartedAt
-                ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
             const bool bShocked = Mobility.IsShocked(Now);
             const float ShockAge = Now - Mobility.ShockStartedAt;
-            Presentation->ApplyStaggerState(Mobility.IsStaggering(Now),
-                bShocked ? FMath::Clamp(ShockAge / 2.3333333f, 0.0f, 1.0f) : StaggerProgress,
+            const uint32 VariationSeed = Variations[Index].Seed;
+            bool bShowStagger = Mobility.IsStaggering(Now);
+            float StaggerProgress = Mobility.StaggerEndsAt > Mobility.StaggerStartedAt
+                ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
+
+            if (bShocked && bShowStagger)
+            {
+                const float RecoilDuration = FMath::Min(FBBBMonsterMobilityFragment::ShockRecoilSeconds,
+                    Mobility.ShockEndsAt - Mobility.ShockStartedAt);
+                const FRandomStream RecoilRandom(static_cast<int32>(VariationSeed ^ 0x243f6a88u));
+                const float MaxRecoilDelay = 0.08f * RecoilDuration / FBBBMonsterMobilityFragment::ShockRecoilSeconds;
+                const float RecoilDelay = RecoilRandom.FRandRange(0.0f, MaxRecoilDelay);
+                bShowStagger = ShockAge >= RecoilDelay;
+
+                // 在剩余起手时间内采样到原来的结束姿势
+                const float SampleAge = (ShockAge - RecoilDelay) * (RecoilDuration / (RecoilDuration - RecoilDelay));
+                StaggerProgress = FMath::Clamp(SampleAge / 2.3333333f, 0.0f, 1.0f);
+            }
+
+            Presentation->ApplyStaggerState(bShowStagger, StaggerProgress,
                 bShocked ? EBBBMonsterHitRegion::Head : Mobility.StaggerRegion);
             Presentation->ApplyHitReaction(HitReactions[Index]);
             if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
             {
-                Reaction->ApplyShockPose(bShocked ? Mobility.ShockStartedAt : 0.0f, ShockAge,
-                    bShocked ? Mobility.ShockEndsAt - Now : 0.0f, Mobility.bCrawling);
+                const float PulseAge = ShockAge - (Mobility.bCrawling ? 0.0f : FBBBMonsterMobilityFragment::ShockRecoilSeconds);
+                Reaction->ApplyShockPose(Mobility.ShockStartedAt, PulseAge,
+                    bShocked ? Mobility.ShockEndsAt - Now : 0.0f, Mobility.bCrawling, VariationSeed);
             }
             if (Definition && PresentationState.State == EBBBMonsterBehavior::Dead && !Presentation->IsCorpseActive())
             {
