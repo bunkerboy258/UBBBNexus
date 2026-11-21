@@ -161,19 +161,26 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         const bool bSelected = (View.IsValid() && View->GetInspectedSlot() == Slot) || IsSelected();
         const bool bHover = IsHovered() || bDropTarget;
         const FVector2D Size = Geometry.GetLocalSize();
-        const float Width = Size.X / 3.0f;
+        static const FSlateColorBrush Solid(FLinearColor::White);
+        const auto PaintRect = [&](int32 DrawLayer, FVector2D Extent, FVector2f Offset, FLinearColor Color)
+        {
+            FSlateDrawElement::MakeBox(Elements, DrawLayer,
+                Geometry.ToPaintGeometry(Extent, FSlateLayoutTransform(Offset)), &Solid, ESlateDrawEffect::None, Color);
+        };
+        PaintRect(Layer++, Size, FVector2f::ZeroVector, FLinearColor(0.28f, 0.30f, 0.33f, bOccupied ? 0.27f : 0.20f));
+
+        const float Width = Size.X * 0.36f;
         const float Left = bOuterRight ? Size.X - Width : 0.0f;
-        const float Strength = bDropTarget || bHover ? 1.0f : bSelected ? 0.89f : bOccupied ? 0.65f : 0.33f;
+        const float Strength = bHover || bSelected ? 0.90f : bOccupied ? 0.54f : 0.23f;
         const auto Position = [this, Width](float Distance)
         {
             return FVector2f(bOuterRight ? Width - Distance : Distance, 0.0f);
         };
         TArray<FSlateGradientStop> Stops;
-        Stops.Emplace(Position(0.0f), FLinearColor(1.0f, 0.42f, 0.045f, Strength));
-        Stops.Emplace(Position(2.5f), FLinearColor(1.0f, 0.25f, 0.035f, Strength));
-        Stops.Emplace(Position(Width * 0.11f), FLinearColor(0.52f, 0.12f, 0.24f, Strength * 0.77f));
-        Stops.Emplace(Position(Width * 0.39f), FLinearColor(0.25f, 0.075f, 0.46f, Strength * 0.56f));
-        Stops.Emplace(Position(Width), FLinearColor(0.17f, 0.05f, 0.34f, 0.0f));
+        Stops.Emplace(Position(0.0f), FLinearColor(0.88f, 0.31f, 0.041f, Strength));
+        Stops.Emplace(Position(Width * 0.16f), FLinearColor(0.43f, 0.11f, 0.24f, Strength * 0.75f));
+        Stops.Emplace(Position(Width * 0.47f), FLinearColor(0.20f, 0.07f, 0.34f, Strength * 0.42f));
+        Stops.Emplace(Position(Width), FLinearColor(0.10f, 0.04f, 0.20f, 0.0f));
         if (bOuterRight)
         {
             Algo::Reverse(Stops);
@@ -181,10 +188,21 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         FSlateDrawElement::MakeGradient(Elements, Layer,
             Geometry.ToPaintGeometry(FVector2D(Width, Size.Y), FSlateLayoutTransform(FVector2f(Left, 0))),
             MoveTemp(Stops), Orient_Vertical);
-        const auto* Strip = BBBItemUI::Brush(TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/Weapon_Customization/T_Scrollbar_Handler.T_Scrollbar_Handler"));
-        FSlateDrawElement::MakeBox(Elements, ++Layer,
-            Geometry.ToPaintGeometry(FVector2D(2.0f, Size.Y), FSlateLayoutTransform(FVector2f(bOuterRight ? Size.X - 2.0f : 0.0f, 0))),
-            Strip, ESlateDrawEffect::None, FLinearColor(1.0f, 0.93f, 0.8f, Strength));
+
+        constexpr float Border = 1.35f;
+        constexpr float Strip = 3.8f;
+        const float InnerHeight = Size.Y - 2.0f * Border;
+        const float StripX = bOuterRight ? Size.X - Border - Strip : Border;
+        PaintRect(++Layer, FVector2D(Strip, InnerHeight), FVector2f(StripX, Border),
+            FLinearColor(1.0f, 0.42f, 0.10f, Strength));
+
+        const FLinearColor Edge = bHover || bSelected ? FLinearColor(0.93f, 0.76f, 0.58f, 0.91f)
+            : FLinearColor(0.67f, 0.68f, 0.69f, 0.57f);
+        ++Layer;
+        PaintRect(Layer, FVector2D(Size.X, Border), FVector2f::ZeroVector, Edge);
+        PaintRect(Layer, FVector2D(Size.X, Border), FVector2f(0.0f, Size.Y - Border), Edge);
+        PaintRect(Layer, FVector2D(Border, InnerHeight), FVector2f(0.0f, Border), Edge);
+        PaintRect(Layer, FVector2D(Border, InnerHeight), FVector2f(Size.X - Border, Border), Edge);
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

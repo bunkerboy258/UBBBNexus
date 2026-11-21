@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "MassEntityTypes.h"
+#include "Mass/EntityHandle.h"
 #include "NavigationData.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterSpawnPoint.h"
 #include "BBBMonsterSpawnPathRequest.generated.h"

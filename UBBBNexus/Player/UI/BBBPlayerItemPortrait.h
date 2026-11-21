@@ -49,8 +49,6 @@ private:
     TObjectPtr<UTextureRenderTarget2D> Texture;
     UPROPERTY(Transient)
     TArray<TObjectPtr<UWidgetComponent>> Panels;
-    UPROPERTY(Transient)
-    TArray<TObjectPtr<UWidgetComponent>> RoomSigns;
     void BuildRoom(USceneComponent& Root);
     UPROPERTY(Transient)
     TArray<TObjectPtr<USkeletalMeshComponent>> Components;

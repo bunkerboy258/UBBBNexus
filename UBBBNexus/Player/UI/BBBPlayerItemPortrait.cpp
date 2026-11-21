@@ -57,7 +57,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     {
         return true;
     }
-    const FSoftObjectPath StandingPath(TEXT("/Game/_Project/Characters/BBBC_UA/Animation/OtherAnimation/Project/AS_Rifle_Idle_GunDown_SG550.AS_Rifle_Idle_GunDown_SG550"));
+    const FSoftObjectPath StandingPath(TEXT("/Game/_Project/Characters/Animation/OtherAnimation/Project/AS_Rifle_Idle_GunDown_SG550.AS_Rifle_Idle_GunDown_SG550"));
     const FSoftObjectPath RiflePath(TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Rifle/SG550/DA_ModernWeapons_Rifle_02.DA_ModernWeapons_Rifle_02"));
     if (!ResourceLoad)
     {
@@ -166,7 +166,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
     Camera->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
     Camera->PostProcessSettings.bOverride_BloomIntensity = true;
-    Camera->PostProcessSettings.BloomIntensity = 0.38f;
+    Camera->PostProcessSettings.BloomIntensity = 0.48f;
     Camera->PostProcessSettings.bOverride_FilmGrainIntensity = true;
     Camera->PostProcessSettings.FilmGrainIntensity = 0.0f;
     Capture->SetActorLocation(Origin + FVector(525.0f, 0.0f, 139.0f));
@@ -285,10 +285,6 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime)
     {
         Panel->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
     }
-    for (UWidgetComponent* Sign : RoomSigns)
-    {
-        Sign->TickComponent(DeltaTime, LEVELTICK_All, nullptr);
-    }
     PreviewScene->GetWorld()->SendAllEndOfFrameUpdates();
     Capture->GetCaptureComponent2D()->CaptureScene();
     bDirty = false;
@@ -315,7 +311,6 @@ void UBBBPlayerItemPortrait::Close()
     Display = nullptr;
     Texture = nullptr;
     Panels.Reset();
-    RoomSigns.Reset();
     PreviewScene.Reset();
     Source.Reset();
     Elapsed = 0.0f;
