@@ -13,8 +13,8 @@ class ABBB_EVAC_API UBBBConsumableDefinition : public UBBBItemDefinition
 {
     GENERATED_BODY()
 public:
-  /** @param Animation 角色动画层默认对象 @return 当前动画层对应的使用动作 */
-  virtual UAnimMontage *GetUseMontage(const UBBBAnimInstance *Animation) const
+  /** @param Animation 角色动画层默认对象 @param EquipmentId 持有的装备标识 @return 当前使用动作 */
+  virtual UAnimMontage *GetUseMontage(const UBBBAnimInstance *Animation, FName EquipmentId) const
   {
       return nullptr;
   }

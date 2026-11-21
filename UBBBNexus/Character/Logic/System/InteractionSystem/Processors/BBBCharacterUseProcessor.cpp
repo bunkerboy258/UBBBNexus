@@ -53,7 +53,8 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
                 LayerClass = Context.Character.GetCharacterConfig().Animation.DefaultAnimationLayerClass;
             }
             const auto *Animation = LayerClass ? Cast<UBBBAnimInstance>(LayerClass.GetDefaultObject()) : nullptr;
-            UAnimMontage *Montage = Use.Definition->GetUseMontage(Animation);
+            const FName EquipmentId = Equipment ? Equipment->GetEquipmentId() : NAME_None;
+            UAnimMontage *Montage = Use.Definition->GetUseMontage(Animation, EquipmentId);
             if (Montage && !Montage->SlotAnimTracks.IsEmpty())
             {
                 if (Montage->SlotAnimTracks[0].SlotName == BBBCharacterMontageSlots::UpperBodyAdditive)

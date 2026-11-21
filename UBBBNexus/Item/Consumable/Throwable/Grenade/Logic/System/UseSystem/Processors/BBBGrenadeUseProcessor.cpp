@@ -24,7 +24,8 @@ void FBBBGrenadeUseProcessor::Update(FBBBGrenadeUseUpdateContext &Context) const
         LayerClass = Context.Character.GetCharacterConfig().Animation.DefaultAnimationLayerClass;
     }
     const auto *Animation = LayerClass ? Cast<UBBBAnimInstance>(LayerClass.GetDefaultObject()) : nullptr;
-    UAnimMontage *Montage = Context.Definition.GetUseMontage(Animation);
+    const FName EquipmentId = Equipment ? Equipment->GetEquipmentId() : NAME_None;
+    UAnimMontage *Montage = Context.Definition.GetUseMontage(Animation, EquipmentId);
     if (!ensureMsgf(Montage && !Montage->SlotAnimTracks.IsEmpty(), TEXT("当前动画层缺少手雷投掷蒙太奇")))
     {
         Inputs.bFinish = true;
