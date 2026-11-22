@@ -52,4 +52,7 @@ struct ABBB_EVAC_API FBBBMonsterGroundFragment final : public FMassFragment
 
     /** 按最近玩家距离维持的远处判定 */
     bool bFarFromPlayers = false;
+
+    /** 静态导航走廊中等待合并执行的地面求解时间 */
+    float DeferredMovementSeconds = 0.0f;
 };

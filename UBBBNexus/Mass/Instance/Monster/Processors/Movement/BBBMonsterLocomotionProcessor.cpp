@@ -26,6 +26,20 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 
+namespace
+{
+    bool HasStaticGround(const FBBBMonsterGroundFragment& Ground, const FVector& Location,
+        const FBBBMonsterMovementFragment& Movement)
+    {
+        const UPrimitiveComponent* Support = Ground.StaticSupport.Get();
+        return Support && Support->IsRegistered() && Support->Mobility == EComponentMobility::Static
+            && Support->IsQueryCollisionEnabled() && Support->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block
+            && Support->GetComponentTransform().Equals(Ground.StaticSupportTransform)
+            && Location.Equals(Ground.StaticSupportCenter) && Ground.StaticSupportRadius == Movement.CapsuleRadius
+            && Ground.StaticSupportHalfHeight == Movement.CapsuleHalfHeight;
+    }
+}
+
 UBBBMonsterLocomotionProcessor::UBBBMonsterLocomotionProcessor()
     : MonsterQuery(*this)
 {
@@ -106,7 +120,8 @@ FQuat UBBBMonsterLocomotionProcessor::TurnTowards(const FQuat& Current, const FV
 
 void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
     FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
-    const FVector& HorizontalDelta, const float DeltaSeconds, const double SupportCheckInterval, const bool bDead)
+    const FVector& HorizontalDelta, const float DeltaSeconds, const double SupportCheckInterval, const bool bDead,
+    const bool bTryStaticShortcut)
 {
     Ground.RequestedDistance = 0.0f;
     Ground.MovedDistance = 0.0f;
@@ -192,20 +207,32 @@ void UBBBMonsterLocomotionProcessor::SolveGroundMotion(UWorld& World, const FBBB
     const bool bCanReuseStationary = bStationary && Velocity.IsNearlyZero() && (bDead || SupportCheckInterval > 0.0)
         && (bDead || (!Ground.bStaticSupportFromMovement && Now < Ground.NextSupportCheckTime));
     const bool bCanReuseMoving = bMoving && Ground.bGrounded && Velocity.Z == 0.0f && Ground.bStaticSupportFromMovement;
-    bool bCanReuseSupport = false;
-    if ((bCanReuseStationary || bCanReuseMoving) && Location.Equals(Ground.StaticSupportCenter)
-        && Ground.StaticSupportRadius == Movement.CapsuleRadius
-        && Ground.StaticSupportHalfHeight == Movement.CapsuleHalfHeight)
-    {
-        const UPrimitiveComponent* Support = Ground.StaticSupport.Get();
-        bCanReuseSupport = Support && Support->IsRegistered() && Support->Mobility == EComponentMobility::Static
-            && Support->IsQueryCollisionEnabled() && Support->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block
-            && Support->GetComponentTransform().Equals(Ground.StaticSupportTransform);
-    }
+    const bool bCanReuseSupport = (bCanReuseStationary || bCanReuseMoving) && HasStaticGround(Ground, Location, Movement);
     if (bDead && bCanReuseSupport)
     {
         Ground.UnsimulatedSeconds = 0.0f;
         return;
+    }
+    if (bTryStaticShortcut && bCanReuseMoving && bCanReuseSupport && Ground.UnsimulatedSeconds <= SMALL_NUMBER
+        && Ground.SupportNormal.Z > 0.99 && HorizontalDelta.SizeSquared2D() <= FMath::Square(Movement.CapsuleRadius))
+    {
+        TRACE_CPUPROFILER_EVENT_SCOPE(BBBMonsterFlatGroundSweep);
+        FVector End = Location + HorizontalDelta;
+        End.Z -= FVector::DotProduct(HorizontalDelta, Ground.SupportNormal) / Ground.SupportNormal.Z;
+        FHitResult Obstacle;
+        UPrimitiveComponent* Landing = nullptr;
+        FVector Normal;
+        if (!Sweep(Location, End, Obstacle) && FindSupport(End, SupportDistance, Normal, &Landing)
+            && Landing == Ground.StaticSupport.Get() && Normal.Z > 0.99 && FMath::Abs(End.Z - Location.Z) <= Skin)
+        {
+            Ground.RequestedDistance = HorizontalDelta.Size2D();
+            Ground.MovedDistance = FVector::Dist2D(End, Location);
+            Ground.SupportNormal = Normal;
+            Velocity = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0) / DeltaSeconds;
+            Location = End;
+            RememberStaticSupport(Landing, true);
+            return;
+        }
     }
 
     // 即使脚下支撑可复用 活体仍检测外物挤入胶囊
@@ -381,6 +408,7 @@ void UBBBMonsterLocomotionProcessor::ConfigureQueries(const TSharedRef<FMassEnti
 
 void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
+    TRACE_CPUPROFILER_EVENT_SCOPE(BBBMonsterLocomotion);
     UWorld* World = Context.GetWorld();
     const float DeltaSeconds = Context.GetDeltaTimeSeconds();
     if (!ensureMsgf(World && FMath::IsFinite(DeltaSeconds) && DeltaSeconds >= 0.0f, TEXT("[UBBBM]Locomotion requires a world and valid time step")))
@@ -410,13 +438,15 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Targets = Chunk.GetFragmentView<FBBBMonsterTargetFragment>();
+        const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
-            const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+            auto& Ground = Grounds[Index];
             if (Traversals[Index].Fact.Kind != 0 || (!Specials.IsEmpty() && Specials[Index].Fact.HoldsMovement()))
             {
-                Grounds[Index].StaticSupport.Reset();
-                Grounds[Index].bFarFromPlayers = false;
+                Ground.StaticSupport.Reset();
+                Ground.bFarFromPlayers = false;
+                Ground.DeferredMovementSeconds = 0.0f;
                 continue;
             }
             FTransform& Transform = Transforms[Index].GetMutableTransform();
@@ -433,6 +463,18 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             const auto& Injury = Mobility[Index];
             const auto* Settings = Network[Index].Definition.Get();
             const auto& Target = Targets[Index];
+            const bool bDead = States[Index].State == EBBBMonsterBehavior::Dead;
+            const bool bPreviouslyGrounded = Ground.bGrounded;
+            if (bDead && Ground.bGrounded && Velocity.IsNearlyZero() && !Injury.bCrawling
+                && HasStaticGround(Ground, Location, Movement))
+            {
+                Ground.UnsimulatedSeconds = 0.0f;
+                Ground.DeferredMovementSeconds = 0.0f;
+                Ground.RequestedDistance = 0.0f;
+                Ground.MovedDistance = 0.0f;
+                continue;
+            }
+
             const float TargetDistance = Target.bHasTarget ? FVector::Distance(Location, Target.TargetLocation) : MAX_flt;
             const bool bCrowdStationary = Velocity.Size2D() < 10.0f
                 && Avoidance[Index].bCrowdConstrained;
@@ -470,6 +512,46 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             FVector HorizontalDelta = FVector::ZeroVector;
             const bool bMayMove = !bChangingPosture && !Injury.IsStaggering(Now) && Now >= Injury.HitStopEndsAt
                 && (bPatrol || bChase) && Path.bHasPath && !Path.bReachedDestination;
+            const bool bQuiet = !Injury.IsStaggering(Now) && !Injury.IsShocked(Now) && Now >= Injury.HitStopEndsAt;
+            const bool bIdle = States[Index].State == EBBBMonsterBehavior::Idle && !Target.bHasTarget
+                && bPreviouslyGrounded && Velocity.IsNearlyZero() && !bChangingPosture && bQuiet;
+            const bool bOrdinaryMove = bMayMove && bQuiet && bPreviouslyGrounded && !Injury.bCrawling
+                && Path.NativePath.IsValid() && Path.NativePath->IsValid() && Path.TraversalPoly == 0
+                && !Path.bPartialPath && Path.RemainingDistance > Movement.CapsuleRadius * 4.0f
+                && Ground.SupportNormal.Z >= 0.98f && Ground.bStaticSupportFromMovement
+                && !Avoidance[Index].bCrowdConstrained && Avoidance[Index].NeighborCount <= 2
+                && (Specials.IsEmpty() || Specials[Index].Fact.Phase == 0);
+            const double NearRadius = Ground.bFarFromPlayers ? 3000.0 : 3500.0;
+            Ground.bFarFromPlayers = (bIdle || bOrdinaryMove) && !PlayerLocations.ContainsByPredicate([&](const FVector& PlayerLocation)
+            {
+                return FVector::DistSquared(Location, PlayerLocation) <= FMath::Square(NearRadius);
+            });
+            if (bIdle && Ground.bFarFromPlayers && !Ground.bStaticSupportFromMovement
+                && Now < Ground.NextSupportCheckTime && HasStaticGround(Ground, Location, Geometry))
+            {
+                Ground.DeferredMovementSeconds = 0.0f;
+                Ground.UnsimulatedSeconds = 0.0f;
+                Ground.RequestedDistance = 0.0f;
+                Ground.MovedDistance = 0.0f;
+                continue;
+            }
+            const bool bBatchGround = bOrdinaryMove && Ground.bFarFromPlayers
+                && HasStaticGround(Ground, Location, Geometry);
+            float MovementSeconds = DeltaSeconds;
+            if (bBatchGround)
+            {
+                MovementSeconds += Ground.DeferredMovementSeconds;
+                const uint32 Slot = GetTypeHash(Chunk.GetEntity(Index).Index) % 8;
+                const float Step = 0.048f + Slot * 0.002f;
+                if (MovementSeconds < Step)
+                {
+                    Ground.DeferredMovementSeconds = MovementSeconds;
+                    Ground.RequestedDistance = 0.0f;
+                    Ground.MovedDistance = 0.0f;
+                    continue;
+                }
+            }
+            Ground.DeferredMovementSeconds = 0.0f;
             if (!bMayMove)
             {
                 Movement.Gait = EBBBMonsterGait::Walk;
@@ -478,10 +560,10 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
             {
                 Movement.Gait = SelectGait(Movement, Path.RemainingDistance, bPatrol);
                 const FVector DesiredFeet = Location - FVector::UpVector * Geometry.CapsuleHalfHeight
-                    + Avoidance[Index].RecommendedVelocity * DeltaSeconds;
+                    + Avoidance[Index].RecommendedVelocity * MovementSeconds;
                 const FVector AllowedFeet = FBBBMonsterNavigation::Constrain(Path, DesiredFeet);
                 HorizontalDelta = FVector(AllowedFeet.X - Location.X, AllowedFeet.Y - Location.Y, 0);
-                const float MaxDelta = Movement.SprintSpeed * DeltaSeconds + 1;
+                const float MaxDelta = Movement.SprintSpeed * MovementSeconds + 1;
                 HorizontalDelta = HorizontalDelta.GetClampedToMaxSize(MaxDelta);
                 // 大角度改向先转身 小角度随朝向连续恢复行进
                 const float Alignment = FMath::Max(0.0f, FVector::DotProduct(
@@ -497,28 +579,18 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                 }
             }
 
-            const bool bPreviouslyGrounded = Grounds[Index].bGrounded;
-            auto& Ground = Grounds[Index];
-            const bool bDead = States[Index].State == EBBBMonsterBehavior::Dead;
-            const bool bIdle = States[Index].State == EBBBMonsterBehavior::Idle && !Target.bHasTarget
-                && bPreviouslyGrounded && Velocity.IsNearlyZero() && !bChangingPosture
-                && !Injury.IsStaggering(Now) && !Injury.IsShocked(Now) && Now >= Injury.HitStopEndsAt;
-            const double NearRadius = Ground.bFarFromPlayers ? 3000.0 : 3500.0;
-            Ground.bFarFromPlayers = bIdle && !PlayerLocations.ContainsByPredicate([&](const FVector& PlayerLocation)
-            {
-                return FVector::DistSquared(Location, PlayerLocation) <= FMath::Square(NearRadius);
-            });
             const auto Entity = Chunk.GetEntity(Index);
-            const double SupportCheckInterval = Ground.bFarFromPlayers
+            const double SupportCheckInterval = bIdle && Ground.bFarFromPlayers
                 ? 0.25 + (GetTypeHash(Entity.Index) % 16) * (0.25 / 15.0) : 0.0;
-            SolveGroundMotion(*World, Geometry, Ground, Location, Velocity, HorizontalDelta, DeltaSeconds,
-                SupportCheckInterval, bDead && !bChangingPosture);
+            SolveGroundMotion(*World, Geometry, Ground, Location, Velocity, HorizontalDelta, MovementSeconds,
+                SupportCheckInterval, bDead && !bChangingPosture, bBatchGround);
             if (!ensureMsgf(!Location.ContainsNaN() && !Velocity.ContainsNaN(), TEXT("[UBBBM]Ground solver produced invalid motion")))
             {
                 continue;
             }
+            const bool bLocationChanged = !Transform.GetLocation().Equals(Location, 0.01);
             Transform.SetLocation(Location);
-            if (Grounds[Index].bGrounded)
+            if (Grounds[Index].bGrounded && (bLocationChanged || !bPreviouslyGrounded))
             {
                 FBBBMonsterNavigation::Feedback(Path, Location - FVector::UpVector * Geometry.CapsuleHalfHeight);
             }
@@ -554,8 +626,8 @@ void UBBBMonsterLocomotionProcessor::Execute(FMassEntityManager& EntityManager, 
                     : Movement.Gait == EBBBMonsterGait::Walk ? Settings->WalkTurnRate : Settings->RunTurnRate;
                 // 连续意图也负责起步前的转身 停止与碰撞修正本身不产生新方向
                 Transform.SetRotation(Movement.bFacingTarget || Velocity.Size2D() <= 10.0f
-                    ? TurnTowards(Transform.GetRotation(), FacingDirection, DeltaSeconds, Rate)
-                    : CalculateFacing(Transform.GetRotation(), FacingDirection, Velocity, DeltaSeconds, Rate));
+                    ? TurnTowards(Transform.GetRotation(), FacingDirection, MovementSeconds, Rate)
+                    : CalculateFacing(Transform.GetRotation(), FacingDirection, Velocity, MovementSeconds, Rate));
             }
         }
     });

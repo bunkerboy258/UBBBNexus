@@ -65,11 +65,13 @@ public:
      * @param DeltaSeconds		完整更新时长
      * @param SupportCheckInterval		静止支撑复查间隔 零表示逐帧查询
      * @param bDead		已死亡的实体落稳后停用逻辑地面查询
+     * @param bTryStaticShortcut		符合静态走廊分级的短位移允许合并扫掠
      * @return 无
      */
     static void SolveGroundMotion(UWorld& World, const FBBBMonsterMovementFragment& Movement,
         FBBBMonsterGroundFragment& Ground, FVector& Location, FVector& Velocity,
-        const FVector& HorizontalDelta, float DeltaSeconds, double SupportCheckInterval = 0.0, bool bDead = false);
+        const FVector& HorizontalDelta, float DeltaSeconds, double SupportCheckInterval = 0.0,
+        bool bDead = false, bool bTryStaticShortcut = false);
 
 protected:
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;

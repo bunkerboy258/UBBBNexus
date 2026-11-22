@@ -11,6 +11,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMovementFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterGroundFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterNavigationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFragment.h"
@@ -41,6 +42,7 @@ void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntit
     MonsterQuery.AddRequirement<FBBBMonsterBehaviorFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNavigationFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMovementFragment>(EMassFragmentAccess::ReadOnly);
+    MonsterQuery.AddRequirement<FBBBMonsterGroundFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterTraversalFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterSpecialFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
@@ -50,6 +52,7 @@ void UBBBMonsterAvoidanceProcessor::ConfigureQueries(const TSharedRef<FMassEntit
 
 void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
+    TRACE_CPUPROFILER_EVENT_SCOPE(BBBMonsterAvoidance);
     const float Now = Context.GetWorld()->GetTimeSeconds();
     const float Dt = Context.GetDeltaTimeSeconds();
     constexpr double CellSize = 250.0;
@@ -67,6 +70,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
         const auto States = Chunk.GetFragmentView<FBBBMonsterBehaviorFragment>();
         const auto Paths = Chunk.GetFragmentView<FBBBMonsterNavigationFragment>();
         const auto Bodies = Chunk.GetFragmentView<FBBBMonsterMovementFragment>();
+        const auto Grounds = Chunk.GetFragmentView<FBBBMonsterGroundFragment>();
         const auto Injuries = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
         const auto Rules = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
@@ -119,7 +123,7 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                     Speed = FMath::Min(Speed, FMath::Sqrt(2 * Body.Deceleration * FMath::Max(0.0f, Paths[I].RemainingDistance - 10)));
                 }
                 float Accelerated = UBBBMonsterLocomotionProcessor::CalculateSpeed(Body, Velocities[I].Value.Size2D(), Speed,
-                    Paths[I].RemainingDistance, Dt);
+                    Paths[I].RemainingDistance, Dt + Grounds[I].DeferredMovementSeconds);
                 if (Now < Injury.SlowRecoveryStartedAt)
                 {
                     Accelerated = FMath::Min(Accelerated, Speed);
@@ -163,7 +167,6 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
             {
                 continue;
             }
-            Sampler->reset();
             const FVector Location = Transforms[I].GetTransform().GetLocation();
             const FMassEntityHandle Self = Chunk.GetEntity(I);
             const float Search = FMath::Clamp(FMath::Max(C.NeighborSearchRadius, C.DesiredVelocity.Size() * 0.7f), 180.0f, 500.0f);
@@ -228,6 +231,86 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                 }
             }
             Closest.Sort(IsCloser);
+            C.NeighborCount = Closest.Num();
+            if (Closest.IsEmpty() && Paths[I].Walls.IsEmpty())
+            {
+                C.RecommendedVelocity = C.DesiredVelocity;
+                continue;
+            }
+
+            // 双侧墙边和同向领队都成立时让行进中的后排顺序跟随
+            const FVector Forward = C.DesiredVelocity.GetSafeNormal2D();
+            const FVector Side(-Forward.Y, Forward.X, 0);
+            const auto& Path = Paths[I];
+            const double Radius = C.CollisionRadius;
+            if (!Closest.IsEmpty() && Path.TraversalPoly == 0 && Path.Walls.Num() >= 4)
+            {
+                double LeftWall = TNumericLimits<double>::Max();
+                double RightWall = TNumericLimits<double>::Max();
+                for (int32 W = 0; W + 1 < Path.Walls.Num() && W < 48; W += 2)
+                {
+                    const auto& A = Path.Walls[W];
+                    const auto& B = Path.Walls[W + 1];
+                    if (FMath::Abs(FVector::DotProduct((B - A).GetSafeNormal2D(), Forward)) < 0.8)
+                    {
+                        continue;
+                    }
+                    const auto WallPoint = FMath::ClosestPointOnSegment2D(FVector2D(Location), FVector2D(A), FVector2D(B));
+                    const FVector Delta(WallPoint.X - Location.X, WallPoint.Y - Location.Y, 0.0);
+                    if (FMath::Abs(FVector::DotProduct(Delta, Forward)) > Radius)
+                    {
+                        continue;
+                    }
+                    const double Offset = FVector::DotProduct(Delta, Side);
+                    if (Offset < 0)
+                    {
+                        LeftWall = FMath::Min(LeftWall, -Offset);
+                    }
+                    else
+                    {
+                        RightWall = FMath::Min(RightWall, Offset);
+                    }
+                }
+                if (LeftWall + RightWall < Radius * 2.6)
+                {
+                    const FNeighbor* Leader = nullptr;
+                    double LeaderGap = TNumericLimits<double>::Max();
+                    bool bCrossTraffic = false;
+                    for (const auto& Entry : Closest)
+                    {
+                        const auto& N = *Entry.Value;
+                        const FVector Offset = N.Get<1>() - Location;
+                        const double Along = FVector::DotProduct(Offset, Forward);
+                        const double Lateral = FMath::Abs(FVector::DotProduct(Offset, Side));
+                        const double Combined = Radius + N.Get<4>();
+                        if (FMath::Abs(Along) < Combined * 2.0 && Lateral < Combined * 1.5
+                            && !N.Get<3>().IsNearlyZero() && FVector::DotProduct(N.Get<3>().GetSafeNormal2D(), Forward) < 0.75)
+                        {
+                            bCrossTraffic = true;
+                        }
+                        if (Along <= 0 || Along > Combined * 3.0 || Lateral > Combined * 0.7)
+                        {
+                            continue;
+                        }
+                        if (Along < LeaderGap)
+                        {
+                            Leader = &N;
+                            LeaderGap = Along;
+                        }
+                    }
+                    if (Leader && !bCrossTraffic && LeaderGap > Radius + Leader->Get<4>() + 1.0)
+                    {
+                        const double Clearance = FMath::Max(0.0, LeaderGap - Radius - Leader->Get<4>() - 5.0);
+                        const double LeaderSpeed = FMath::Max(0.0, FVector::DotProduct(Leader->Get<2>(), Forward));
+                        const double Allowed = FMath::Min(C.DesiredVelocity.Size2D(), LeaderSpeed + Clearance * 3.0);
+                        C.RecommendedVelocity = Forward * Allowed;
+                        C.bCrowdConstrained = Allowed < C.DesiredVelocity.Size2D() * 0.5;
+                        continue;
+                    }
+                }
+            }
+
+            Sampler->reset();
             for (const auto& Entry : Closest)
             {
                 const auto& N = *Entry.Value;
@@ -248,7 +331,6 @@ void UBBBMonsterAvoidanceProcessor::Execute(FMassEntityManager&, FMassExecutionC
                     C.SeparationVelocity += Away.GetSafeNormal2D() * FMath::Min(60.0f, Overlap * 5);
                 }
             }
-            C.NeighborCount = Closest.Num();
             for (int32 W = 0; W + 1 < Paths[I].Walls.Num() && W < 48; W += 2)
             {
                 const auto A = Unreal2RecastPoint(Paths[I].Walls[W]);
