@@ -241,7 +241,7 @@ TArray<FMassEntityHandle> UBBBMassValidationLibrary::SpawnPopulation(UObject* Wo
         FBBBMonsterSpawnData Data;
         Data.DirectorId = FGuid::NewGuid();
         Data.Generation = 1;
-        Data.StageIndex = 0;
+        Data.Source = EBBBMonsterSpawnSource::Spawner;
         for (int32 Index = Group; Index < Count; Index += Configs.Num())
         {
             const FVector Position = Center + FVector((Index / Columns - Columns * 0.5f) * Spacing, (Index % Columns - Columns * 0.5f) * Spacing, 0.0f);
