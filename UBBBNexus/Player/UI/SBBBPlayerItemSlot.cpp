@@ -23,24 +23,56 @@
 namespace
 {
 /** 一次拖动携带起始身份 不保存第二份物品容器 */
-class FBBBPlayerItemDrag final : public FDragDropOperation
+class FBBBPlayerItemDrag final : public FGameDragDropOperation
 {
   public:
-    DRAG_DROP_OPERATOR_TYPE(FBBBPlayerItemDrag, FDragDropOperation)
+    DRAG_DROP_OPERATOR_TYPE(FBBBPlayerItemDrag, FGameDragDropOperation)
     TWeakObjectPtr<UBBBPlayerItemView> View;
     TWeakObjectPtr<APawn> Pawn;
     FGuid InstanceId;
     int32 Source = INDEX_NONE;
-    FText Name;
 
-    static TSharedRef<FBBBPlayerItemDrag> New(UBBBPlayerItemView &Owner, int32 Slot, FGuid Identity, FText Label)
+    static TSharedRef<FBBBPlayerItemDrag> New(UBBBPlayerItemView &Owner, int32 Slot,
+        const FBBBPlayerItemDisplayData &Item, FVector2D CursorPosition)
     {
         TSharedRef<FBBBPlayerItemDrag> Operation = MakeShared<FBBBPlayerItemDrag>();
         Operation->View = &Owner;
         Operation->Pawn = Owner.GetItemController()->GetPawn().Get();
-        Operation->InstanceId = Identity;
+        Operation->InstanceId = Item.InstanceId;
         Operation->Source = Slot;
-        Operation->Name = MoveTemp(Label);
+        Operation->DecoratorPosition = CursorPosition + CursorOffset;
+        Operation->Thumbnail.Reset(Item.Icon);
+        if (Item.Icon)
+        {
+            Operation->ThumbnailBrush.SetResourceObject(Item.Icon);
+            Operation->ThumbnailBrush.DrawAs = ESlateBrushDrawType::Image;
+            Operation->ThumbnailBrush.ImageSize = FVector2D(Item.Icon->GetSizeX(), Item.Icon->GetSizeY());
+            Operation->Decorator = SNew(SBox)
+                .Visibility(EVisibility::HitTestInvisible)
+                .WidthOverride(104.0f)
+                .HeightOverride(104.0f)
+                [
+                    SNew(SScaleBox)
+                    .Stretch(EStretch::ScaleToFit)
+                    [
+                        SNew(SImage)
+                        .Image(&Operation->ThumbnailBrush)
+                    ]
+                ];
+        }
+        else
+        {
+            Operation->Decorator = SNew(SBorder)
+                .Visibility(EVisibility::HitTestInvisible)
+                .BorderImage(BBBItemUI::Slot())
+                .Padding(12.0f)
+                [
+                    SNew(STextBlock)
+                    .Text(Item.Name)
+                    .Font(BBBItemUI::Font(12))
+                    .ColorAndOpacity(FLinearColor::White)
+                ];
+        }
         Operation->bCreateNewWindow = false;
         Operation->Construct();
         return Operation;
@@ -48,10 +80,19 @@ class FBBBPlayerItemDrag final : public FDragDropOperation
 
     virtual TSharedPtr<SWidget> GetDefaultDecorator() const override
     {
-        return SNew(SBorder)
-            .BorderImage(BBBItemUI::Slot())
-            .Padding(12.0f)[SNew(STextBlock).Text(Name).Font(BBBItemUI::Font(12)).ColorAndOpacity(FLinearColor::White)];
+        return Decorator;
     }
+
+    virtual void OnDragged(const FDragDropEvent &Event) override
+    {
+        DecoratorPosition = FVector2D(Event.GetScreenSpacePosition()) + CursorOffset;
+    }
+
+  private:
+    inline static const FVector2D CursorOffset = FVector2D(14.0, 16.0);
+    TStrongObjectPtr<UTexture2D> Thumbnail;
+    FSlateBrush ThumbnailBrush;
+    TSharedPtr<SWidget> Decorator;
 };
 }
 
@@ -310,12 +351,17 @@ FReply SBBBPlayerItemSlot::OnMouseButtonDoubleClick(const FGeometry &Geometry, c
 FReply SBBBPlayerItemSlot::OnDragDetected(const FGeometry &Geometry, const FPointerEvent &Event)
 {
     ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
-    if (!Controller || !View->IsBackpackOpen() || !InstanceId.IsValid() ||
-        Controller->GetItemDisplayData(Slot).InstanceId != InstanceId)
+    if (!Controller || !View->IsBackpackOpen() || !InstanceId.IsValid())
     {
         return FReply::Unhandled();
     }
-    return FReply::Handled().BeginDragDrop(FBBBPlayerItemDrag::New(*View.Get(), Slot, InstanceId, ItemName));
+    const FBBBPlayerItemDisplayData Item = Controller->GetItemDisplayData(Slot);
+    if (Item.InstanceId != InstanceId)
+    {
+        return FReply::Unhandled();
+    }
+    return FReply::Handled().BeginDragDrop(
+        FBBBPlayerItemDrag::New(*View.Get(), Slot, Item, FVector2D(Event.GetScreenSpacePosition())));
 }
 
 FReply SBBBPlayerItemSlot::OnDragOver(const FGeometry &Geometry, const FDragDropEvent &Event)
