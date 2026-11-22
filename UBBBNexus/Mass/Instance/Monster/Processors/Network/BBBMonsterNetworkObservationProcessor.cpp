@@ -13,7 +13,6 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Spawn/BBBMonsterVariationFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassProcessingGroups.h"
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
-#include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
@@ -72,16 +71,6 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
         {
             Transport = World->SpawnActor<ABBBMassNetworkActor>();
         }
-        for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
-        {
-            APlayerController* Controller = It->Get();
-            if (Controller != nullptr && Controller->FindComponentByClass<UBBBMassNetworkComponent>() == nullptr)
-            {
-                UBBBMassNetworkComponent* Component = NewObject<UBBBMassNetworkComponent>(Controller);
-                Controller->AddInstanceComponent(Component);
-                Component->RegisterComponent();
-            }
-        }
     }
     if (Transport == nullptr)
     {
@@ -107,6 +96,8 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
         const auto Variation = Chunk.GetFragmentView<FBBBMonsterVariationFragment>();
         const auto Gore = Chunk.GetFragmentView<FBBBMonsterGoreFragment>();
         const auto Mobility = Chunk.GetFragmentView<FBBBMonsterMobilityFragment>();
+        const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
+        const auto Traversals = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             if (!bHost)
@@ -122,13 +113,12 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
                 continue;
             }
             FBBBMonsterReplicationItem Item;
-            const auto Specials = Chunk.GetFragmentView<FBBBMonsterSpecialFragment>();
             if (!Specials.IsEmpty())
             {
                 Item.Special = Specials[Index].Fact;
             }
             Item.InstanceId = Network[Index].InstanceId;
-            Item.Traversal = Chunk.GetFragmentView<FBBBMonsterTraversalFragment>()[Index].Fact;
+            Item.Traversal = Traversals[Index].Fact;
             Item.BirthSeed = Variation[Index].Seed;
             for (int32 WoundIndex = 0; WoundIndex < 5; ++WoundIndex)
             {
@@ -142,16 +132,9 @@ void UBBBMonsterNetworkObservationProcessor::Execute(FMassEntityManager&, FMassE
             Item.ActionId = Behavior[Index].ActionId;
             Item.StateEnteredTime = Behavior[Index].StateEnteredTime;
             Item.CrawlStartedAt = Mobility[Index].bCrawling ? Mobility[Index].CrawlStartedAt : -1.0f;
-            for (const auto& Value : Damage[Index].Contributions)
-            {
-                Item.Contributions.Add(Value.Value);
-            }
-            Item.Contributions.Sort([](const auto& A, const auto& B)
-            {
-                return A.WriterKey() < B.WriterKey();
-            });
-            Transport->Publish(Item, Chunk.GetEntity(Index), bUpdateAction);
-            Network[Index].bDamageSubmitted = true;
+            Transport->Publish(MoveTemp(Item), Chunk.GetEntity(Index), Damage[Index].Contributions, bUpdateAction);
+            Network[Index].bDamageSubmitted = Behavior[Index].State != EBBBMonsterBehavior::Dead
+                || Transport->CanRetireMonster(Network[Index].InstanceId);
         }
     });
     if (bHost)

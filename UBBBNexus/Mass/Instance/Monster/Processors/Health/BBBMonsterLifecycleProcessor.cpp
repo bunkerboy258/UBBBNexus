@@ -85,7 +85,7 @@ void UBBBMonsterLifecycleProcessor::Execute(FMassEntityManager& EntityManager, F
                 continue;
             }
 
-            if (State.State == EBBBMonsterBehavior::Dead && DeathEvent.DestroyAtTime >= 0.0f
+            if (bHost && State.State == EBBBMonsterBehavior::Dead && DeathEvent.DestroyAtTime >= 0.0f
                 && WorldTime >= DeathEvent.DestroyAtTime && (bStandalone || Network[Index].bDamageSubmitted))
             {
                 // 使用延迟命令安全销毁当前遍历中的实体

@@ -93,13 +93,11 @@ bool FBBBHitRulesTest::RunTest(const FString&)
     const auto Mirror = Create();
     auto& MirrorDamage = Manager.GetFragmentDataChecked<FBBBMonsterDamageFragment>(Mirror);
     FBBBMonsterDamageTotalsRemoteMessagePacket Snapshot;
-    Snapshot.Contributions = {Damage.Contributions[7]};
-    Snapshot.bInitialSnapshot = true;
+    Snapshot.Include(Damage.Contributions[7], true);
     Snapshot.Apply(MirrorDamage);
     Run();
     auto& MirrorHit = Manager.GetFragmentDataChecked<FBBBMonsterHitReactionFragment>(Mirror);
     TestEqual(TEXT("首次镜像只还原状态不重演旧受击"), MirrorHit.Serial, 0u);
-    Snapshot.bInitialSnapshot = false;
     auto& RemoteHit = Snapshot.Contributions[0].LastHitResult;
     ++RemoteHit.Sequence;
     RemoteHit.Velocity = FVector(100, 0, 0);

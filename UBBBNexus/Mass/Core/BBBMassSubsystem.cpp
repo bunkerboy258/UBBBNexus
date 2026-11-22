@@ -62,10 +62,14 @@ namespace
         {
             if (Slot.bActive && Slot.Packet.InstanceId == Packet.InstanceId)
             {
-                Slot.Packet.bInitialSnapshot |= Packet.bInitialSnapshot;
                 for (const auto& Value : Packet.Contributions)
                 {
                     Slot.Packet.Include(Value);
+                }
+                for (const auto& Suppressed : Packet.SuppressedHitSequences)
+                {
+                    auto& Current = Slot.Packet.SuppressedHitSequences.FindOrAdd(Suppressed.Key);
+                    Current = FMath::Max(Current, Suppressed.Value);
                 }
                 return true;
             }

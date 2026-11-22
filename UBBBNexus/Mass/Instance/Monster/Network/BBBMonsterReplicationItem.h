@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Net/Serialization/FastArraySerializer.h"
+#include "Engine/NetSerialization.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehavior.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterDamageTotals.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterTraversalFact.h"
@@ -11,7 +11,7 @@ class UBBBMonsterDefinition;
 
 /** 单个小怪的当前复制结果 */
 USTRUCT()
-struct FBBBMonsterReplicationItem final : public FFastArraySerializerItem
+struct FBBBMonsterReplicationItem final
 {
     GENERATED_BODY()
 

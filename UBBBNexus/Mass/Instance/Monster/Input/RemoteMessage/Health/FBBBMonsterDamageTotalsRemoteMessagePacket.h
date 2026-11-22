@@ -13,8 +13,8 @@ struct FBBBMonsterDamageTotalsRemoteMessagePacket final
 
     FGuid InstanceId;
     TArray<FBBBMonsterDamageTotals> Contributions;
-    /** 首次镜像只还原累计状态 不播放此前的瞬间反应 */
-    bool bInitialSnapshot = false;
+    /** 首次镜像按写入来源标记已过期的命中 不压掉同帧新增响应 */
+    TMap<int64, uint64> SuppressedHitSequences;
 
     bool IsValid() const
     {
@@ -31,7 +31,7 @@ struct FBBBMonsterDamageTotalsRemoteMessagePacket final
     }
 
     /** 整理当前结果包 不保存逐次消息 */
-    void Include(const FBBBMonsterDamageTotals& Value)
+    void Include(const FBBBMonsterDamageTotals& Value, bool bInitial = false)
     {
         auto* Existing = Contributions.FindByPredicate(
             [&Value](const auto& Item)
@@ -46,6 +46,11 @@ struct FBBBMonsterDamageTotalsRemoteMessagePacket final
         {
             Contributions.Add(Value);
         }
+        if (bInitial)
+        {
+            auto& Suppressed = SuppressedHitSequences.FindOrAdd(Value.WriterKey());
+            Suppressed = FMath::Max(Suppressed, Value.LastHitResult.Sequence);
+        }
     }
 
     void Apply(FBBBMonsterDamageFragment& State) const
@@ -54,10 +59,10 @@ struct FBBBMonsterDamageTotalsRemoteMessagePacket final
         {
             auto& Current = State.Contributions.FindOrAdd(Value.WriterKey());
             Current.Merge(Value);
-            if (bInitialSnapshot)
+            if (const auto* Suppressed = SuppressedHitSequences.Find(Value.WriterKey()))
             {
                 auto& Presented = State.PresentedHitSequences.FindOrAdd(Value.WriterKey());
-                Presented = FMath::Max(Presented, Current.LastHitResult.Sequence);
+                Presented = FMath::Max(Presented, *Suppressed);
             }
         }
     }

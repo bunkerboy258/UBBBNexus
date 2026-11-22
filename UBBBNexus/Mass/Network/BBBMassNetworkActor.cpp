@@ -7,11 +7,20 @@
 #include "MassSpawnerSubsystem.h"
 #include "Net/UnrealNetwork.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
-#include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterStreamChannel.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
+#include "Engine/NetConnection.h"
+#include "Engine/NetDriver.h"
+#include "EngineUtils.h"
+#include "ProfilingDebugging/CountersTrace.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/AuthorityFact/Network/FBBBMonsterStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Slime/Input/AuthorityFact/Network/FBBBSlimeStateAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Slime/Presentation/BBBSlimePresentationActor.h"
+
+TRACE_DECLARE_INT_COUNTER(BBBMonsterReliablePayloadBytes, TEXT("BBBMonster/MaxReliablePayloadBytes"));
+TRACE_DECLARE_INT_COUNTER(BBBMonsterMotionPayloadBytes, TEXT("BBBMonster/MaxMotionPayloadBytes"));
+TRACE_DECLARE_INT_COUNTER(BBBMonsterStreamPeers, TEXT("BBBMonster/StreamPeers"));
 
 ABBBMassNetworkActor::ABBBMassNetworkActor()
 {
@@ -21,15 +30,21 @@ ABBBMassNetworkActor::ABBBMassNetworkActor()
     SetNetUpdateFrequency(10.0f);
 }
 
+void ABBBMassNetworkActor::BeginPlay()
+{
+    Super::BeginPlay();
+    ReceiveTickHandle = FWorldDelegates::OnWorldPreActorTick.AddUObject(this, &ABBBMassNetworkActor::TickStreamReceive);
+}
+
 void ABBBMassNetworkActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ABBBMassNetworkActor, Monsters);
     DOREPLIFETIME(ABBBMassNetworkActor, Slimes);
 }
 
 void ABBBMassNetworkActor::EndPlay(const EEndPlayReason::Type Reason)
 {
+    FWorldDelegates::OnWorldPreActorTick.Remove(ReceiveTickHandle);
     // 回放跳转会销毁并重建动态复制载体 镜像实体必须跟随其唯一持有者一起回收
     if (!HasAuthority() && GetWorld() && !GetWorld()->bIsTearingDown)
     {
@@ -118,83 +133,424 @@ void ABBBMassNetworkActor::OnRep_Slimes()
     }
 }
 
+
 void ABBBMassNetworkActor::BeginPublish()
 {
     Observed.Reset();
 }
 
-void ABBBMassNetworkActor::Publish(const FBBBMonsterReplicationItem& State, FMassEntityHandle Entity, bool bUpdateAction)
+void ABBBMassNetworkActor::Publish(FBBBMonsterReplicationItem&& State, FMassEntityHandle Entity,
+    const TMap<int64, FBBBMonsterDamageTotals>& Damage, bool bUpdateAction)
 {
-    Observed.Add(State.InstanceId);
-    LocalEntities.Add(State.InstanceId, Entity);
-    const int32* ExistingIndex = ReplicationIndices.Find(State.InstanceId);
-    FBBBMonsterReplicationItem* Existing = ExistingIndex != nullptr ? &Monsters.Items[*ExistingIndex] : nullptr;
-    if (Existing == nullptr)
+    const FGuid Id = State.InstanceId;
+    Observed.Add(Id);
+    LocalEntities.Add(Id, Entity);
+    const int32* ExistingIndex = ReplicationIndices.Find(Id);
+    if (!ExistingIndex)
     {
-        Existing = &Monsters.Items.AddDefaulted_GetRef();
-        ReplicationIndices.Add(State.InstanceId, Monsters.Items.Num() - 1);
+        ReplicationIndices.Add(Id, Monsters.AddDefaulted());
+        ExistingIndex = ReplicationIndices.Find(Id);
         bUpdateAction = true;
     }
 
-    const bool bTraversalChanged = Existing->Traversal.Serial != State.Traversal.Serial
-        || Existing->Traversal.Kind != State.Traversal.Kind;
-    const bool bSpecialChanged = Existing->Special.Serial != State.Special.Serial || Existing->Special.Phase != State.Special.Phase;
-    bUpdateAction = bUpdateAction || bTraversalChanged || bSpecialChanged;
-    const bool bDamageChanged = Existing->Contributions != State.Contributions;
-    const bool bGoreChanged = FMemory::Memcmp(Existing->DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets)) != 0;
-    const bool bActionChanged = bUpdateAction && (Existing->InstanceId != State.InstanceId
-        || Existing->Definition != State.Definition || !Existing->Location.Equals(State.Location, 0.1f)
-        || !Existing->Rotation.Equals(State.Rotation, 0.1f) || !Existing->Velocity.Equals(State.Velocity, 0.1f)
-        || bTraversalChanged || bSpecialChanged || Existing->Behavior != State.Behavior || Existing->ActionId != State.ActionId
-        || Existing->StateEnteredTime != State.StateEnteredTime || Existing->CrawlStartedAt != State.CrawlStartedAt);
-    if (!bDamageChanged && !bActionChanged && !bGoreChanged)
-    {
-        return;
-    }
-
-    Existing->InstanceId = State.InstanceId;
-    Existing->BirthSeed = State.BirthSeed;
-    FMemory::Memcpy(Existing->DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets));
-    Existing->Definition = State.Definition;
-    if (bUpdateAction)
-    {
-        Existing->Location = State.Location;
-        Existing->Rotation = State.Rotation;
-        Existing->Velocity = State.Velocity;
-        Existing->Behavior = State.Behavior;
-        Existing->ActionId = State.ActionId;
-        Existing->StateEnteredTime = State.StateEnteredTime;
-        Existing->CrawlStartedAt = State.CrawlStartedAt;
-        Existing->Traversal = State.Traversal;
-        Existing->Special = State.Special;
-    }
-    Existing->Contributions = State.Contributions;
-    ++Existing->Revision;
-    Monsters.MarkItemDirty(*Existing);
+    auto& Existing = Monsters[*ExistingIndex];
+    const bool bActionChanged = Existing.InstanceId != Id || Existing.Behavior != State.Behavior
+        || Existing.Traversal.Serial != State.Traversal.Serial || Existing.Traversal.Kind != State.Traversal.Kind
+        || Existing.Special.Serial != State.Special.Serial || Existing.Special.Phase != State.Special.Phase
+        || Existing.ActionId != State.ActionId || Existing.StateEnteredTime != State.StateEnteredTime
+        || Existing.CrawlStartedAt != State.CrawlStartedAt || FMemory::Memcmp(Existing.DismembermentPresets,
+            State.DismembermentPresets, sizeof(State.DismembermentPresets)) != 0
+        || (bUpdateAction && (!Existing.Location.Equals(State.Location, 0.5f)
+            || !Existing.Rotation.Equals(State.Rotation, 0.25f) || !Existing.Velocity.Equals(State.Velocity, 1.0f)));
+    const bool bDamageChanged = Damage.Num() != Existing.Contributions.Num()
+        || Existing.Contributions.ContainsByPredicate([&Damage](const FBBBMonsterDamageTotals& Value)
+        {
+            const auto* Latest = Damage.Find(Value.WriterKey());
+            return !Latest || !(*Latest == Value);
+        });
 
     if (bDamageChanged)
     {
-        // 属性快照提供当前结果 RPC 保证实体很快回收时最终贡献也已经进入可靠通道
-        MulticastDamage(State.InstanceId, State.Contributions);
+        auto& Versions = DamageRevisions.FindOrAdd(Id);
+        TArray<FBBBMonsterDamageTotals> Values;
+        Values.Reserve(Damage.Num());
+        for (const auto& Pair : Damage)
+        {
+            Values.Add(Pair.Value);
+        }
+        Values.Sort([](const auto& L, const auto& R) { return L.WriterKey() < R.WriterKey(); });
+
+        TArray<uint64> NewVersions;
+        NewVersions.Reserve(Values.Num());
+        int32 Old = 0;
+        for (const auto& Value : Values)
+        {
+            while (Existing.Contributions.IsValidIndex(Old) && Existing.Contributions[Old].WriterKey() < Value.WriterKey())
+            {
+                ++Old;
+            }
+            const bool bSame = Existing.Contributions.IsValidIndex(Old) && Existing.Contributions[Old] == Value;
+            NewVersions.Add(bSame && Versions.IsValidIndex(Old) ? Versions[Old] : ++LatestDamageRevision);
+        }
+        Existing.Contributions = MoveTemp(Values);
+        Versions = MoveTemp(NewVersions);
+    }
+
+    if (bActionChanged)
+    {
+        State.Revision = Existing.Revision + 1;
+        State.Contributions = MoveTemp(Existing.Contributions);
+        Existing = MoveTemp(State);
+    }
+}
+
+namespace
+{
+    using ERecord = FBBBMonsterStreamRecord::EKind;
+
+    FBBBMonsterStreamRecord MakeActionRecord(const FBBBMonsterReplicationItem& State, ERecord Kind)
+    {
+        FBBBMonsterStreamRecord Record;
+        Record.Kind = Kind;
+        Record.Action.InstanceId = State.InstanceId;
+        Record.Action.BirthSeed = State.BirthSeed;
+        Record.Action.Revision = State.Revision;
+        Record.Action.Traversal = State.Traversal;
+        Record.Action.Special = State.Special;
+        FMemory::Memcpy(Record.Action.DismembermentPresets, State.DismembermentPresets, sizeof(State.DismembermentPresets));
+        Record.Action.Location = State.Location;
+        Record.Action.Rotation = State.Rotation;
+        Record.Action.Velocity = State.Velocity;
+        Record.Action.Behavior = State.Behavior;
+        Record.Action.ActionId = State.ActionId;
+        Record.Action.StateEnteredTime = State.StateEnteredTime;
+        Record.Action.CrawlStartedAt = State.CrawlStartedAt;
+        if (Kind == ERecord::Birth && State.Definition)
+        {
+            Record.DefinitionPath = State.Definition->GetPathName();
+        }
+        return Record;
+    }
+
+    FBBBMonsterStreamRecord MakeDamageRecord(const FGuid& Id, const FBBBMonsterDamageTotals& Damage, bool bInitial)
+    {
+        FBBBMonsterStreamRecord Record;
+        Record.Kind = bInitial ? ERecord::InitialDamage : ERecord::Damage;
+        Record.Action.InstanceId = Id;
+        Record.Damage = Damage;
+        return Record;
+    }
+
+    ABBBMonsterStreamChannel* SpawnStream(UWorld& World, APlayerController* Controller, bool bReplay)
+    {
+        FActorSpawnParameters Params;
+        Params.Owner = Controller;
+        Params.bDeferConstruction = true;
+        if (auto* Channel = World.SpawnActor<ABBBMonsterStreamChannel>(ABBBMonsterStreamChannel::StaticClass(),
+            FTransform::Identity, Params))
+        {
+            if (bReplay)
+            {
+                Channel->SetNetDriverName(NAME_DemoNetDriver);
+                Channel->bOnlyRelevantToOwner = false;
+                Channel->bAlwaysRelevant = true;
+                Channel->bRelevantForNetworkReplays = true;
+            }
+            Channel->FinishSpawning(FTransform::Identity);
+            return Channel;
+        }
+        return nullptr;
     }
 }
 
 void ABBBMassNetworkActor::EndPublish()
 {
-    for (int32 Index = Monsters.Items.Num() - 1; Index >= 0; --Index)
+    for (int32 Index = Monsters.Num() - 1; Index >= 0; --Index)
     {
-        if (!Observed.Contains(Monsters.Items[Index].InstanceId))
+        const FGuid Id = Monsters[Index].InstanceId;
+        if (!Observed.Contains(Id))
         {
-            LocalEntities.Remove(Monsters.Items[Index].InstanceId);
-            ReplicationIndices.Remove(Monsters.Items[Index].InstanceId);
-            Monsters.Items.RemoveAtSwap(Index);
-            if (Monsters.Items.IsValidIndex(Index))
+            LocalEntities.Remove(Id);
+            ReplicationIndices.Remove(Id);
+            DamageRevisions.Remove(Id);
+            Monsters.RemoveAtSwap(Index, 1, EAllowShrinking::No);
+            if (Monsters.IsValidIndex(Index))
             {
-                ReplicationIndices.Add(Monsters.Items[Index].InstanceId, Index);
+                ReplicationIndices.Add(Monsters[Index].InstanceId, Index);
             }
-            Monsters.MarkArrayDirty();
         }
     }
+
+    UWorld& World = *GetWorld();
+    const float Now = World.GetTimeSeconds();
+    for (auto It = PeerChannels.CreateIterator(); It; ++It)
+    {
+        const auto* Controller = It.Key().Get();
+        if (!Controller || !Controller->GetNetConnection() || Controller->GetNetConnection()->GetConnectionState() != USOCK_Open)
+        {
+            if (auto* Channel = It.Value().Get())
+            {
+                if (auto* Motion = Channel->MotionChannel.Get())
+                {
+                    Motion->Destroy();
+                }
+                Channel->Destroy();
+            }
+            It.RemoveCurrent();
+        }
+    }
+    for (auto It = World.GetPlayerControllerIterator(); It; ++It)
+    {
+        auto* Controller = It->Get();
+        auto* Connection = Controller ? Controller->GetNetConnection() : nullptr;
+        if (!Connection || Connection->GetConnectionState() != USOCK_Open)
+        {
+            continue;
+        }
+        auto& Peer = PeerChannels.FindOrAdd(Controller);
+        if (!Peer.IsValid())
+        {
+            Peer = SpawnStream(World, Controller, false);
+            if (auto* Channel = Peer.Get())
+            {
+                Channel->SetControl();
+                Channel->MotionChannel = SpawnStream(World, Controller, false);
+            }
+        }
+        if (auto* Channel = Peer.Get(); Channel && Now >= Channel->NextSendTime && Connection->IsNetReady())
+        {
+            Channel->NextSendTime = Now + 0.066f;
+            const APawn* Pawn = Controller->GetPawn();
+            const FVector View = Pawn ? Pawn->GetActorLocation() : Controller->GetFocalLocation();
+            SendPeerFrame(*Channel, View, Now);
+        }
+    }
+
+    if (World.IsRecordingReplay() && Now >= NextReplayUpdateAt)
+    {
+        NextReplayUpdateAt = Now + 0.1f;
+        PublishReplay();
+    }
+    if (!World.IsRecordingReplay() && !ReplayPages.IsEmpty())
+    {
+        for (const auto& Page : ReplayPages)
+        {
+            if (auto* Channel = Page.Get())
+            {
+                Channel->Destroy();
+            }
+        }
+        ReplayPages.Reset();
+    }
+    TRACE_COUNTER_SET(BBBMonsterStreamPeers, PeerChannels.Num());
+}
+
+void ABBBMassNetworkActor::SendPeerFrame(ABBBMonsterStreamChannel& Channel, const FVector& View, float Now)
+{
+    TRACE_CPUPROFILER_EVENT_SCOPE(BBBMonsterSendPeerFrame);
+    if (Channel.CanSendReliable())
+    {
+        FBBBMonsterStreamBatch Batch;
+        TArray<FGuid, TInlineAllocator<32>> Forgotten;
+        TArray<FGuid, TInlineAllocator<32>> Changed;
+        TArray<FGuid, TInlineAllocator<32>> Born;
+        for (const auto& Pair : Channel.Subscriptions)
+        {
+            if (!ReplicationIndices.Contains(Pair.Key))
+            {
+                FBBBMonsterStreamRecord Record;
+                Record.Kind = ERecord::Forget;
+                Record.Action.InstanceId = Pair.Key;
+                if (!Batch.TryAdd(MoveTemp(Record), FBBBMonsterStreamBatch::ReliableBytes))
+                {
+                    break;
+                }
+                Forgotten.Add(Pair.Key);
+            }
+        }
+
+        TArray<int32, TInlineAllocator<256>> Work;
+        for (int32 Offset = 0; Offset < Monsters.Num(); ++Offset)
+        {
+            const int32 Index = (Channel.ReliableCursor + Offset) % Monsters.Num();
+            const auto& State = Monsters[Index];
+            const auto* Subscription = Channel.Subscriptions.Find(State.InstanceId);
+            const auto* Versions = DamageRevisions.Find(State.InstanceId);
+            if (!Subscription || (State.Behavior == EBBBMonsterBehavior::Dead && !Subscription->bSentDeathPose)
+                || (Versions && Versions->ContainsByPredicate([Subscription](uint64 Version)
+                { return Version > Subscription->DamageRevision; })))
+            {
+                Work.Add(Index);
+            }
+        }
+        const auto Priority = [&](int32 Index)
+        {
+            const auto& State = Monsters[Index];
+            const auto* Subscription = Channel.Subscriptions.Find(State.InstanceId);
+            if (Subscription && State.Behavior == EBBBMonsterBehavior::Dead)
+            {
+                return 0;
+            }
+            const double Distance = FVector::DistSquared(View, State.Location);
+            if (Distance <= FMath::Square(2500.0))
+            {
+                return 1;
+            }
+            return Distance <= FMath::Square(10000.0) ? 2 : 3;
+        };
+        const bool bPrioritized = (++Channel.ReliableFrames % 4) != 0;
+        if (bPrioritized)
+        {
+            Work.StableSort([&Priority](int32 L, int32 R) { return Priority(L) < Priority(R); });
+        }
+
+        // 轮转起点为各优先档提供确定的遍历顺序
+        int32 Processed = 0;
+        for (const int32 Index : Work)
+        {
+            const auto& State = Monsters[Index];
+            const FGuid Id = State.InstanceId;
+            auto* Subscription = Channel.Subscriptions.Find(Id);
+            if (!Subscription)
+            {
+                if (!Batch.TryAdd(MakeActionRecord(State, ERecord::Birth), FBBBMonsterStreamBatch::ReliableBytes))
+                {
+                    break;
+                }
+                Subscription = &Channel.Subscriptions.Add(Id);
+                Subscription->InitialDamageThrough = LatestDamageRevision;
+                Born.Add(Id);
+            }
+
+            if (const auto* Versions = DamageRevisions.Find(Id))
+            {
+                TArray<int32, TInlineAllocator<16>> Dirty;
+                for (int32 Part = 0; Part < Versions->Num(); ++Part)
+                {
+                    if ((*Versions)[Part] > Subscription->DamageRevision)
+                    {
+                        Dirty.Add(Part);
+                    }
+                }
+                Dirty.Sort([Versions](int32 L, int32 R) { return (*Versions)[L] < (*Versions)[R]; });
+                bool bBatchFull = false;
+                for (const int32 Part : Dirty)
+                {
+                    const uint64 Revision = (*Versions)[Part];
+                    const bool bInitial = Revision <= Subscription->InitialDamageThrough;
+                    if (!Batch.TryAdd(MakeDamageRecord(Id, State.Contributions[Part], bInitial),
+                        FBBBMonsterStreamBatch::ReliableBytes))
+                    {
+                        bBatchFull = true;
+                        break;
+                    }
+                    Subscription->DamageRevision = Revision;
+                    Changed.AddUnique(Id);
+                }
+                if (bBatchFull)
+                {
+                    break;
+                }
+            }
+            if (State.Behavior == EBBBMonsterBehavior::Dead && !Subscription->bSentDeathPose)
+            {
+                if (!Batch.TryAdd(MakeActionRecord(State, ERecord::Motion), FBBBMonsterStreamBatch::ReliableBytes))
+                {
+                    break;
+                }
+                Subscription->bSentDeathPose = true;
+                Changed.AddUnique(Id);
+            }
+            ++Processed;
+        }
+        if (!Monsters.IsEmpty() && Processed > 0)
+        {
+            Channel.ReliableCursor = (Channel.ReliableCursor + Processed) % Monsters.Num();
+        }
+        if (!Batch.Records.IsEmpty())
+        {
+            MaxReliablePayloadBytes = FMath::Max(MaxReliablePayloadBytes, (Batch.PayloadBits + 7) / 8);
+            TRACE_COUNTER_SET(BBBMonsterReliablePayloadBytes, MaxReliablePayloadBytes);
+            const uint32 Sequence = Channel.SendReliable(Batch);
+            for (const auto& Id : Born)
+            {
+                auto& Subscription = Channel.Subscriptions.FindChecked(Id);
+                Subscription.BirthSequence = Sequence;
+                Subscription.DeliverySequence = Sequence;
+            }
+            for (const auto& Id : Changed)
+            {
+                Channel.Subscriptions.FindChecked(Id).DeliverySequence = Sequence;
+            }
+            for (const auto& Id : Forgotten)
+            {
+                Channel.Subscriptions.Remove(Id);
+            }
+        }
+    }
+
+    auto* Motion = Channel.MotionChannel.Get();
+    if (!Motion || Monsters.IsEmpty())
+    {
+        return;
+    }
+    for (int32 Page = 0; Page < 2; ++Page)
+    {
+        FBBBMonsterStreamBatch Batch;
+        for (int32 Count = 0; Count < Monsters.Num(); ++Count)
+        {
+            const int32 Index = Channel.MotionCursor % Monsters.Num();
+            const auto& State = Monsters[Index];
+            auto* Subscription = Channel.Subscriptions.Find(State.InstanceId);
+            if (Subscription && Channel.IsDelivered(Subscription->BirthSequence))
+            {
+                const double Distance = FVector::DistSquared(View, State.Location);
+                const bool bHigh = Distance < FMath::Square(2500.0)
+                    || (Distance < FMath::Square(6000.0) && State.Traversal.Kind != 0);
+                const float Interval = bHigh ? 0.066f : Distance < FMath::Square(8000.0) ? 0.18f : 0.5f;
+                const bool bChanged = State.Revision != Subscription->MotionRevision;
+                if (Now < Subscription->NextMotionAt && (!bChanged || Now - Subscription->LastMotionAt < Interval))
+                {
+                    Channel.MotionCursor = (Index + 1) % Monsters.Num();
+                    continue;
+                }
+                if (!Batch.TryAdd(MakeActionRecord(State, ERecord::Motion), FBBBMonsterStreamBatch::MotionBytes))
+                {
+                    break;
+                }
+                Subscription->LastMotionAt = Now;
+                Subscription->MotionRevision = State.Revision;
+                Subscription->NextMotionAt = Now + (bChanged ? FMath::Max(Interval, 0.20f) : bHigh ? 0.50f : 1.0f);
+            }
+            Channel.MotionCursor = (Index + 1) % Monsters.Num();
+        }
+        if (Batch.Records.IsEmpty())
+        {
+            break;
+        }
+        MaxMotionPayloadBytes = FMath::Max(MaxMotionPayloadBytes, (Batch.PayloadBits + 7) / 8);
+        TRACE_COUNTER_SET(BBBMonsterMotionPayloadBytes, MaxMotionPayloadBytes);
+        Motion->ClientReceiveMotion(Batch);
+    }
+}
+
+bool ABBBMassNetworkActor::CanRetireMonster(const FGuid& Id) const
+{
+    const auto* Versions = DamageRevisions.Find(Id);
+    for (const auto& Pair : PeerChannels)
+    {
+        if (const auto* Channel = Pair.Value.Get())
+        {
+            const auto* Subscription = Channel->Subscriptions.Find(Id);
+            if (Subscription && (!Subscription->bSentDeathPose || !Channel->IsDelivered(Subscription->DeliverySequence)
+                || (Versions && Versions->ContainsByPredicate([Subscription](uint64 Version)
+                    { return Version > Subscription->DamageRevision; }))))
+            {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) const
@@ -206,226 +562,351 @@ FMassEntityHandle ABBBMassNetworkActor::FindEntity(const FGuid& InstanceId) cons
 bool ABBBMassNetworkActor::ReportLocalDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Contribution)
 {
     const auto* Submitted = SubmittedDamage.Find(InstanceId);
-    if ((Contribution.Parts.Sum() <= 0.0 && Contribution.LastHitResult.Sequence == 0) || (Submitted != nullptr
-        && !Contribution.Parts.Exceeds(Submitted->Parts) && !Contribution.Destruction.Exceeds(Submitted->Destruction)
-        && Contribution.LastHitResult.Sequence <= Submitted->LastHitResult.Sequence))
+    if ((Contribution.Parts.Sum() <= 0.0 && Contribution.LastHitResult.Sequence == 0)
+        || (Submitted && !Contribution.Parts.Exceeds(Submitted->Parts)
+            && !Contribution.Destruction.Exceeds(Submitted->Destruction)
+            && Contribution.LastHitResult.Sequence <= Submitted->LastHitResult.Sequence))
     {
         return true;
     }
-    APlayerController* Controller = GetWorld()->GetFirstPlayerController();
-    const APlayerState* Player = Controller != nullptr ? Controller->GetPlayerState<APlayerState>() : nullptr;
-    UBBBMassNetworkComponent* Connection = Controller != nullptr
-        ? Controller->FindComponentByClass<UBBBMassNetworkComponent>() : nullptr;
-    if (Player == nullptr || Player->GetPlayerId() != Contribution.PlayerId || Connection == nullptr || !Contribution.IsValid())
+    if (Contribution.IsValid())
     {
-        return false;
+        PendingDamageReports.Add(InstanceId, Contribution);
     }
-    PendingDamageReports.Add(InstanceId, Contribution);
-    return true;
+    return false;
+}
+
+void ABBBMassNetworkActor::TickStreamReceive(UWorld* World, ELevelTick, float)
+{
+    if (World != GetWorld())
+    {
+        return;
+    }
+    if (World->IsPlayingReplay())
+    {
+        ReceiveReplay();
+        return;
+    }
+    if (HasAuthority())
+    {
+        return;
+    }
+    if (!LocalControl.IsValid())
+    {
+        for (TActorIterator<ABBBMonsterStreamChannel> It(World); It; ++It)
+        {
+            if (It->IsControl() && It->GetOwner() == World->GetFirstPlayerController())
+            {
+                LocalControl = *It;
+                break;
+            }
+        }
+    }
+    if (auto* Channel = LocalControl.Get())
+    {
+        Channel->PumpReceive(*this);
+    }
 }
 
 void ABBBMassNetworkActor::FlushPendingDamageReports()
 {
-    if (PendingDamageReports.IsEmpty())
+    auto* Channel = LocalControl.Get();
+    if (!Channel || !Channel->CanUpload())
     {
         return;
     }
-    APlayerController* Controller = GetWorld()->GetFirstPlayerController();
-    UBBBMassNetworkComponent* Connection = Controller != nullptr
-        ? Controller->FindComponentByClass<UBBBMassNetworkComponent>() : nullptr;
-    if (Connection == nullptr)
+    UWorld& World = *GetWorld();
+    const float Now = World.GetTimeSeconds();
+    if (PendingDamageReports.IsEmpty() || Now < NextUploadAt)
+    {
+        return;
+    }
+    const auto* Driver = World.GetNetDriver();
+    const auto* Connection = Driver ? Driver->ServerConnection.Get() : nullptr;
+    if (Connection && !Connection->IsNetReady())
     {
         return;
     }
 
-    TArray<FGuid> InstanceIds;
-    TArray<FBBBMonsterDamageTotals> Contributions;
-    InstanceIds.Reserve(PendingDamageReports.Num());
-    Contributions.Reserve(PendingDamageReports.Num());
-    for (const auto& Pair : PendingDamageReports)
+    FBBBMonsterStreamBatch Batch;
+    for (auto It = PendingDamageReports.CreateIterator(); It; ++It)
     {
-        InstanceIds.Add(Pair.Key);
-        Contributions.Add(Pair.Value);
-        SubmittedDamage.Add(Pair.Key, Pair.Value);
+        if (!Batch.TryAdd(MakeDamageRecord(It.Key(), It.Value(), false), FBBBMonsterStreamBatch::ReliableBytes))
+        {
+            break;
+        }
+        SubmittedDamage.Add(It.Key(), It.Value());
+        It.RemoveCurrent();
     }
-    PendingDamageReports.Reset();
-    Connection->ServerReportDamageBatch(InstanceIds, Contributions);
+    if (!Batch.Records.IsEmpty())
+    {
+        NextUploadAt = Now + 0.066f;
+        Channel->SendUpload(Batch);
+    }
 }
 
-void ABBBMassNetworkActor::MulticastDamage_Implementation(FGuid InstanceId,
-    const TArray<FBBBMonsterDamageTotals>& Contributions)
+void ABBBMassNetworkActor::ReceivePlayerDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Value)
 {
-    if (!HasAuthority())
+    if (const auto Entity = FindEntity(InstanceId); Entity.IsSet() && Value.IsValid())
     {
-        RouteDamage(InstanceId, Contributions);
+        FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
+        Packet.InstanceId = InstanceId;
+        Packet.Include(Value);
+        GetWorld()->GetSubsystem<UBBBMassSubsystem>()->SubmitInput(Entity, MoveTemp(Packet));
     }
 }
 
-void ABBBMassNetworkActor::RouteDamage(const FGuid& InstanceId,
-    const TArray<FBBBMonsterDamageTotals>& Contributions, bool bInitialSnapshot)
+bool ABBBMassNetworkActor::ReceiveMonsterRecord(const FBBBMonsterStreamRecord& Record)
 {
-    PruneCaches();
-    if (Retired.Contains(InstanceId))
+    const auto& Item = Record.Action;
+    const FGuid Id = Item.InstanceId;
+    if (!Id.IsValid())
     {
-        return;
+        return false;
     }
-    UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
-    FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
-    Packet.InstanceId = InstanceId;
-    Packet.bInitialSnapshot = bInitialSnapshot;
-    const FMassEntityHandle Entity = FindEntity(InstanceId);
+    if (Record.Kind == ERecord::Forget)
+    {
+        ForgetMonster(Id);
+        return true;
+    }
+
+    auto* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
+    if (!Mass)
+    {
+        return false;
+    }
+    FMassEntityHandle Entity = FindEntity(Id);
+    if (Record.Kind == ERecord::Damage || Record.Kind == ERecord::InitialDamage)
+    {
+        if (!Entity.IsSet())
+        {
+            return false;
+        }
+        FBBBMonsterDamageTotalsRemoteMessagePacket Packet;
+        Packet.InstanceId = Id;
+        Packet.Include(Record.Damage, Record.Kind == ERecord::InitialDamage);
+        Mass->SubmitInput(Entity, MoveTemp(Packet));
+        if (const auto* Index = ReplicationIndices.Find(Id))
+        {
+            auto& Values = Monsters[*Index].Contributions;
+            if (auto* Value = Values.FindByPredicate([&Record](const auto& A) { return A.WriterKey() == Record.Damage.WriterKey(); }))
+            {
+                Value->Merge(Record.Damage);
+            }
+            else
+            {
+                Values.Add(Record.Damage);
+            }
+        }
+        return true;
+    }
+
+    const auto* Last = ReceivedRevisions.Find(Id);
+    if (Last && int32(Item.Revision - *Last) <= 0)
+    {
+        return true;
+    }
     if (!Entity.IsSet())
     {
-        /** 完整复制快照仍会还原当前贡献 暂存不能随短命实体无限增长 */
-        if (!PendingDamageSnapshots.Contains(InstanceId) && PendingDamageSnapshots.Num() >= 512)
+        if (Record.Kind != ERecord::Birth)
+        {
+            return true;
+        }
+        const FSoftObjectPath Path(Record.DefinitionPath);
+        const auto* Definition = Cast<UBBBMonsterDefinition>(Path.TryLoad());
+        if (!Definition || !Definition->EntityConfig)
+        {
+            UE_LOG(LogTemp, Error, TEXT("小怪初始快照缺少配置 %s"), *Record.DefinitionPath);
+            return false;
+        }
+        Entity = Mass->CreateEntity(*Definition->EntityConfig);
+        if (!Entity.IsSet())
+        {
+            return false;
+        }
+        LocalEntities.Add(Id, Entity);
+        ReplicationIndices.Add(Id, Monsters.Add(Item));
+        Monsters.Last().Definition = const_cast<UBBBMonsterDefinition*>(Definition);
+    }
+
+    auto& Current = Monsters[ReplicationIndices.FindChecked(Id)];
+    auto* Definition = Current.Definition.Get();
+    const uint32 BirthSeed = Current.BirthSeed;
+    auto Contributions = MoveTemp(Current.Contributions);
+    Current = Item;
+    Current.Definition = Definition;
+    Current.BirthSeed = BirthSeed;
+    Current.Contributions = MoveTemp(Contributions);
+    ReceivedRevisions.Add(Id, Item.Revision);
+
+    FBBBMonsterStateAuthorityFactPacket Packet;
+    Packet.InstanceId = Id;
+    Packet.BirthSeed = BirthSeed;
+    FMemory::Memcpy(Packet.DismembermentPresets, Item.DismembermentPresets, sizeof(Item.DismembermentPresets));
+    Packet.Revision = Item.Revision;
+    Packet.Transform = FTransform(Item.Rotation, Item.Location);
+    Packet.Velocity = Item.Velocity;
+    Packet.Behavior = Item.Behavior;
+    Packet.ActionId = Item.ActionId;
+    const AGameStateBase* GameState = GetWorld()->GetGameState();
+    const double LocalTime = GetWorld()->GetTimeSeconds();
+    const double ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : LocalTime;
+    Packet.StateEnteredTime = LocalTime - FMath::Max(0.0, ServerTime - Item.StateEnteredTime);
+    Packet.bHasCrawlTime = Item.CrawlStartedAt >= 0.0f;
+    Packet.CrawlStartedAt = Packet.bHasCrawlTime ? LocalTime - FMath::Max(0.0, ServerTime - Item.CrawlStartedAt) : -1.0f;
+    Packet.Traversal = Item.Traversal;
+    Packet.Special = Item.Special;
+    Packet.Special.StartedAt = LocalTime - FMath::Max(0.0, ServerTime - Item.Special.StartedAt);
+    if (Packet.Traversal.Kind != 0)
+    {
+        Packet.Traversal.StartedAt = LocalTime - FMath::Max(0.0, ServerTime - Item.Traversal.StartedAt);
+    }
+    Mass->SubmitInput(Entity, MoveTemp(Packet));
+    return true;
+}
+
+void ABBBMassNetworkActor::ForgetMonster(const FGuid& Id)
+{
+    FMassEntityHandle Entity;
+    if (LocalEntities.RemoveAndCopyValue(Id, Entity))
+    {
+        GetWorld()->GetSubsystem<UBBBMassSubsystem>()->DestroyEntity(Entity);
+    }
+    ReceivedRevisions.Remove(Id);
+    SubmittedDamage.Remove(Id);
+    PendingDamageReports.Remove(Id);
+    int32 Index = INDEX_NONE;
+    if (ReplicationIndices.RemoveAndCopyValue(Id, Index))
+    {
+        Monsters.RemoveAtSwap(Index, 1, EAllowShrinking::No);
+        if (Monsters.IsValidIndex(Index))
+        {
+            ReplicationIndices.Add(Monsters[Index].InstanceId, Index);
+        }
+    }
+}
+
+void ABBBMassNetworkActor::PublishReplay()
+{
+    int32 Page = 0;
+    FBBBMonsterStreamBatch Batch;
+    const auto Flush = [&]()
+    {
+        if (Batch.Records.IsEmpty())
         {
             return;
         }
-        auto& Pending = PendingDamageSnapshots.FindOrAdd(InstanceId);
-        Pending.Packet.InstanceId = InstanceId;
-        Pending.UpdatedAt = GetWorld()->GetTimeSeconds();
-        for (const auto& Value : Contributions)
+        if (!ReplayPages.IsValidIndex(Page))
         {
-            Pending.Packet.Include(Value);
+            ReplayPages.Add(SpawnStream(*GetWorld(), nullptr, true));
         }
-        return;
-    }
-    for (const auto& Value : Contributions)
+        if (auto* Channel = ReplayPages[Page].Get())
+        {
+            Batch.Sequence = ++ReplayRevision;
+            Channel->PublishReplay(MoveTemp(Batch));
+        }
+        ++Page;
+        Batch = {};
+    };
+    const auto Add = [&](const FBBBMonsterStreamRecord& Record)
     {
-        Packet.Include(Value);
-    }
-    if (Packet.IsValid())
+        if (!Batch.TryAdd(Record, FBBBMonsterStreamBatch::ReliableBytes))
+        {
+            Flush();
+            const bool bAdded = Batch.TryAdd(Record, FBBBMonsterStreamBatch::ReliableBytes);
+            ensureMsgf(bAdded, TEXT("回放小怪单条记录超出预算"));
+        }
+    };
+    for (const auto& State : Monsters)
     {
-        Mass->SubmitInput(Entity, MoveTemp(Packet));
+        Add(MakeActionRecord(State, ERecord::Birth));
+        for (const auto& Contribution : State.Contributions)
+        {
+            Add(MakeDamageRecord(State.InstanceId, Contribution, false));
+        }
+    }
+    Flush();
+    for (int32 Index = ReplayPages.Num() - 1; Index >= Page; --Index)
+    {
+        if (auto* Channel = ReplayPages[Index].Get())
+        {
+            Channel->Destroy();
+        }
+        ReplayPages.RemoveAt(Index, 1, EAllowShrinking::No);
     }
 }
 
-void ABBBMassNetworkActor::PruneCaches()
+void ABBBMassNetworkActor::ReceiveReplay()
 {
-    const float Now = GetWorld()->GetTimeSeconds();
-    if (Now < NextCachePruneTime)
-    {
-        return;
-    }
-    NextCachePruneTime = Now + 1.0f;
     TSet<FGuid> Present;
-    for (const auto& Item : Monsters.Items)
+    TSet<FGuid> NewBirths;
+    TArray<const FBBBMonsterStreamRecord*, TInlineAllocator<256>> Damage;
+    TSet<TWeakObjectPtr<ABBBMonsterStreamChannel>> ExistingPages;
+    for (TActorIterator<ABBBMonsterStreamChannel> It(GetWorld()); It; ++It)
     {
-        Present.Add(Item.InstanceId);
+        auto* Channel = *It;
+        const auto& Page = Channel->ReadReplay();
+        if (Page.Records.IsEmpty())
+        {
+            continue;
+        }
+        ExistingPages.Add(Channel);
+        const bool bChanged = AppliedReplayPages.FindRef(Channel) != Page.Sequence;
+        AppliedReplayPages.Add(Channel, Page.Sequence);
+        for (const auto& Record : Page.Records)
+        {
+            if (Record.Kind == ERecord::Birth)
+            {
+                Present.Add(Record.Action.InstanceId);
+                if (!FindEntity(Record.Action.InstanceId).IsSet())
+                {
+                    NewBirths.Add(Record.Action.InstanceId);
+                }
+                ReceiveMonsterRecord(Record);
+            }
+            if (bChanged && Record.Kind == ERecord::Damage)
+            {
+                Damage.Add(&Record);
+            }
+        }
     }
-    for (auto It = PendingDamageSnapshots.CreateIterator(); It; ++It)
+    for (auto It = AppliedReplayPages.CreateIterator(); It; ++It)
     {
-        if (!Present.Contains(It.Key()) && Now - It.Value().UpdatedAt >= 30.0f)
+        if (!ExistingPages.Contains(It.Key()))
         {
             It.RemoveCurrent();
         }
     }
-    for (auto It = Retired.CreateIterator(); It; ++It)
+    for (const auto* Record : Damage)
     {
-        if (!Present.Contains(It.Key()) && (Now - It.Value() >= 120.0f || Retired.Num() > 2048))
+        if (NewBirths.Contains(Record->Action.InstanceId))
         {
-            It.RemoveCurrent();
+            FBBBMonsterStreamRecord Initial = *Record;
+            Initial.Kind = ERecord::InitialDamage;
+            ReceiveMonsterRecord(Initial);
         }
-    }
-}
-
-void ABBBMassNetworkActor::OnRep_Monsters()
-{
-    PruneCaches();
-    UBBBMassSubsystem* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>();
-    UMassEntitySubsystem* Entities = GetWorld()->GetSubsystem<UMassEntitySubsystem>();
-    if (!ensureMsgf(Mass != nullptr && Entities != nullptr, TEXT("Mass 网络还原缺少世界依赖")))
-    {
-        return;
-    }
-
-    FMassEntityManager& Manager = Entities->GetMutableEntityManager();
-    TSet<FGuid> Present;
-    ReplicationIndices.Reset();
-    for (int32 ItemIndex = 0; ItemIndex < Monsters.Items.Num(); ++ItemIndex)
-    {
-        const auto& Item = Monsters.Items[ItemIndex];
-        ReplicationIndices.Add(Item.InstanceId, ItemIndex);
-        Present.Add(Item.InstanceId);
-        if (Retired.Contains(Item.InstanceId))
+        else
         {
-            continue;
-        }
-
-        FMassEntityHandle Entity = FindEntity(Item.InstanceId);
-        if (Entity.IsSet() && !Manager.IsEntityValid(Entity))
-        {
-            Retired.Add(Item.InstanceId, GetWorld()->GetTimeSeconds());
-            PendingDamageSnapshots.Remove(Item.InstanceId);
-            continue;
-        }
-
-        const bool bNewEntity = !Entity.IsSet();
-        if (bNewEntity)
-        {
-            if (!ensureMsgf(Item.Definition != nullptr && Item.Definition->EntityConfig != nullptr,
-                TEXT("Mass 远端小怪缺少出生配置")))
-            {
-                continue;
-            }
-
-            Entity = Mass->CreateEntity(*Item.Definition->EntityConfig);
-            if (!Entity.IsSet())
-            {
-                continue;
-            }
-            LocalEntities.Add(Item.InstanceId, Entity);
-        }
-
-        FBBBMonsterStateAuthorityFactPacket Packet;
-        Packet.InstanceId = Item.InstanceId;
-        Packet.BirthSeed = Item.BirthSeed;
-        FMemory::Memcpy(Packet.DismembermentPresets, Item.DismembermentPresets, sizeof(Item.DismembermentPresets));
-        Packet.Revision = Item.Revision;
-        Packet.Transform = FTransform(Item.Rotation, Item.Location);
-        Packet.Velocity = Item.Velocity;
-        Packet.Behavior = Item.Behavior;
-        Packet.ActionId = Item.ActionId;
-        const AGameStateBase* GameState = GetWorld()->GetGameState();
-        const double ServerTime = GameState != nullptr ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
-        Packet.StateEnteredTime = GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.StateEnteredTime);
-        Packet.CrawlStartedAt = Item.CrawlStartedAt >= 0.0f
-            ? GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.CrawlStartedAt) : -1.0f;
-        Packet.bHasCrawlTime = Item.CrawlStartedAt >= 0.0f;
-        Packet.Traversal = Item.Traversal;
-        Packet.Special = Item.Special;
-        Packet.Special.StartedAt = GetWorld()->GetTimeSeconds() - FMath::Max(0.0, ServerTime - Item.Special.StartedAt);
-        if (Packet.Traversal.Kind != 0)
-        {
-            Packet.Traversal.StartedAt = GetWorld()->GetTimeSeconds()
-                - FMath::Max(0.0, ServerTime - Item.Traversal.StartedAt);
-        }
-        Mass->SubmitInput(Entity, MoveTemp(Packet));
-        RouteDamage(Item.InstanceId, Item.Contributions, bNewEntity);
-        if (const auto* Pending = PendingDamageSnapshots.Find(Item.InstanceId))
-        {
-            const auto Contributions = Pending->Packet.Contributions;
-            PendingDamageSnapshots.Remove(Item.InstanceId);
-            RouteDamage(Item.InstanceId, Contributions, bNewEntity);
+            ReceiveMonsterRecord(*Record);
         }
     }
 
-    for (auto It = LocalEntities.CreateIterator(); It; ++It)
+    const double Now = GetWorld()->GetTimeSeconds();
+    TArray<FGuid, TInlineAllocator<32>> Gone;
+    for (const auto& Pair : LocalEntities)
     {
-        if (Present.Contains(It.Key()))
+        if (Present.Contains(Pair.Key))
         {
-            continue;
+            ReplayMissingSince.Remove(Pair.Key);
         }
-
-        Retired.Add(It.Key(), GetWorld()->GetTimeSeconds());
-        SubmittedDamage.Remove(It.Key());
-        PendingDamageSnapshots.Remove(It.Key());
-        if (Manager.IsEntityValid(It.Value()))
+        else if (Now - ReplayMissingSince.FindOrAdd(Pair.Key, Now) > 1.0)
         {
-            TArray<FMassEntityHandle> Removed;
-            Removed.Add(It.Value());
-            GetWorld()->GetSubsystem<UMassSpawnerSubsystem>()->DestroyEntities(Removed);
+            Gone.Add(Pair.Key);
         }
-        It.RemoveCurrent();
+    }
+    for (const auto& Id : Gone)
+    {
+        ReplayMissingSince.Remove(Id);
+        ForgetMonster(Id);
     }
 }

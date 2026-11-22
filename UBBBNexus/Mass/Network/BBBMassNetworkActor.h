@@ -3,11 +3,12 @@
 #include "GameFramework/Actor.h"
 #include "MassEntityTypes.h"
 #include "Mass/EntityHandle.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterReplicationArray.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/RemoteMessage/Health/FBBBMonsterDamageTotalsRemoteMessagePacket.h"
-#include "BBBMassPendingDamageSnapshot.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterReplicationItem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Slime/Fragments/BBBSlimeFact.h"
 #include "BBBMassNetworkActor.generated.h"
+
+class ABBBMonsterStreamChannel;
+struct FBBBMonsterStreamRecord;
 
 /** 世界级 Mass 当前结果传输载体 不执行生命裁决 */
 UCLASS(NotBlueprintable)
@@ -17,15 +18,16 @@ class ABBB_EVAC_API ABBBMassNetworkActor final : public AActor
 
 public:
     ABBBMassNetworkActor();
+    virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     /** @param Reason	载体结束原因 @return 无 仅回收本载体在非权威端创建的镜像实体 */
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
-    /** @return 原生 FastArray 当前小怪快照的只读视图 */
+    /** @return 当前小怪快照的只读视图 */
     TConstArrayView<FBBBMonsterReplicationItem> ReadMonsterFacts() const
     {
-        return Monsters.Items;
+        return Monsters;
     }
 
     /** @return 当前粘液复制快照的只读视图 */
@@ -43,9 +45,13 @@ public:
      * @param bUpdateAction	本轮是否发布行动结果 不影响伤害交接
      * @return 无
      */
-    void Publish(const FBBBMonsterReplicationItem& State, FMassEntityHandle Entity, bool bUpdateAction = true);
+    void Publish(FBBBMonsterReplicationItem&& State, FMassEntityHandle Entity,
+        const TMap<int64, FBBBMonsterDamageTotals>& Damage, bool bUpdateAction);
 
     void EndPublish();
+    bool CanRetireMonster(const FGuid& InstanceId) const;
+    bool ReceiveMonsterRecord(const FBBBMonsterStreamRecord& Record);
+    void ReceivePlayerDamage(const FGuid& InstanceId, const FBBBMonsterDamageTotals& Contribution);
     /** @param States 当前全部粘液结果 @return 仅发布当前快照 */
     void PublishSlimes(const TArray<FBBBSlimeFact>& States);
     FMassEntityHandle FindEntity(const FGuid& InstanceId) const;
@@ -71,33 +77,35 @@ private:
 
     /** 当前快照的本机粘液身份映射 */
     TMap<FGuid, FMassEntityHandle> LocalSlimes;
-    UFUNCTION()
-    void OnRep_Monsters();
+    void SendPeerFrame(ABBBMonsterStreamChannel& Channel, const FVector& View, float Now);
+    void PublishReplay();
+    void ReceiveReplay();
+    void TickStreamReceive(UWorld* World, ELevelTick TickType, float DeltaSeconds);
+    void ForgetMonster(const FGuid& InstanceId);
 
-    /** 当前字典快照的可靠投递 不另设死亡消息或命中事件链路 */
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastDamage(FGuid InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions);
-
-    void RouteDamage(const FGuid& InstanceId, const TArray<FBBBMonsterDamageTotals>& Contributions, bool bInitialSnapshot = false);
-
-    /** 清理已经离开当前复制集合的暂存与退役身份 不撤销现存实体的退役保护 */
-    void PruneCaches();
-
-    UPROPERTY(ReplicatedUsing = OnRep_Monsters)
-    FBBBMonsterReplicationArray Monsters;
+    /** 观察器生成的共享当前状态 */
+    UPROPERTY(Transient)
+    TArray<FBBBMonsterReplicationItem> Monsters;
 
     TMap<FGuid, FMassEntityHandle> LocalEntities;
     TMap<FGuid, int32> ReplicationIndices;
     TSet<FGuid> Observed;
+    TMap<FGuid, uint32> ReceivedRevisions;
+    TMap<FGuid, TArray<uint64>> DamageRevisions;
+    uint64 LatestDamageRevision = 0;
+    TMap<TWeakObjectPtr<APlayerController>, TWeakObjectPtr<ABBBMonsterStreamChannel>> PeerChannels;
+    TWeakObjectPtr<ABBBMonsterStreamChannel> LocalControl;
+    TArray<TWeakObjectPtr<ABBBMonsterStreamChannel>> ReplayPages;
+    TMap<TWeakObjectPtr<ABBBMonsterStreamChannel>, uint32> AppliedReplayPages;
+    TMap<FGuid, double> ReplayMissingSince;
+    uint32 ReplayRevision = 0;
+    float NextReplayUpdateAt = 0.0f;
     TMap<FGuid, FBBBMonsterDamageTotals> SubmittedDamage;
 
     /** 同帧待上报的本地累计贡献 */
     TMap<FGuid, FBBBMonsterDamageTotals> PendingDamageReports;
-
-    /** 可靠字典早于出生属性到达时暂存当前结果 不保存消息历史 */
-    TMap<FGuid, FBBBMassPendingDamageSnapshot> PendingDamageSnapshots;
-    TMap<FGuid, float> Retired;
-
-    /** 有网络活动时至多每秒整理一次缓存 */
-    float NextCachePruneTime = 0.0f;
+    float NextUploadAt = 0.0f;
+    int32 MaxReliablePayloadBytes = 0;
+    int32 MaxMotionPayloadBytes = 0;
+    FDelegateHandle ReceiveTickHandle;
 };

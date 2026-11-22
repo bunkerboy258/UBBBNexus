@@ -56,7 +56,7 @@ bool FBBBThrowableExplosionTest::RunTest(const FString&)
     Published.Definition = Identity.Definition.Get();
     Published.Location = FVector(100.0, 0.0, 100.0);
     Network->BeginPublish();
-    Network->Publish(Published, Entity);
+    Network->Publish(FBBBMonsterReplicationItem(Published), Entity, {}, true);
     Network->EndPublish();
     AActor* Prop = World->SpawnActor<AActor>();
     auto* Sphere = NewObject<USphereComponent>(Prop);
@@ -74,7 +74,7 @@ bool FBBBThrowableExplosionTest::RunTest(const FString&)
     ++GFrameCounter;
     World->Tick(LEVELTICK_All, 1.0f / 60.0f);
     Network->BeginPublish();
-    Network->Publish(Published, Entity);
+    Network->Publish(FBBBMonsterReplicationItem(Published), Entity, {}, true);
     Network->EndPublish();
     auto* Definition = NewObject<UBBBThrowableDefinition>(World);
     Definition->Presentation.Mesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
