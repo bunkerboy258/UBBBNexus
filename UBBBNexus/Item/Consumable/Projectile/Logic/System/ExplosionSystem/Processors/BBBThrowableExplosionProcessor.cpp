@@ -20,13 +20,9 @@
 
 namespace
 {
-    TSharedPtr<FBBBProjectileWorldBurst> SpawnFragments(UBBBMassSubsystem& Mass, ABBBThrowable& Actor,
-        const FBBBThrowableExplosionConfig& Config, const FBBBThrowableExplosionFact& Fact, const FGuid& AttackId)
+    void QueueFragments(UBBBMassSubsystem& Mass, ABBBThrowable& Actor, const FBBBThrowableExplosionConfig& Config,
+        const FBBBThrowableExplosionFact& Fact, const FGuid& AttackId, const TSharedPtr<FBBBProjectileWorldBurst>& Burst)
     {
-        auto Burst = MakeShared<FBBBProjectileWorldBurst>();
-        Burst->PlayerId = Fact.PlayerId;
-        Burst->bDamagePlayers = Config.bDamagePlayers;
-
         FBBBProjectileSpawnLocalControlPacket Packet;
         Packet.LaunchTransform.SetLocation(Fact.Position);
         Packet.Speed = 50000.0f;
@@ -43,36 +39,21 @@ namespace
         Packet.bCanCauseDamage = true;
         Packet.WorldBurst = Burst;
 
-        TArray<FMassEntityHandle> Entities;
-        bool bSubmitted = Mass.AcquireProjectiles(*Config.FragmentEntityConfig, Config.FragmentCount, Entities);
-        if (bSubmitted)
+        // 用均匀球面分布覆盖爆点四周 每次爆炸旋转整组方向。
+        FRandomStream Random(GetTypeHash(AttackId));
+        const double StartAngle = Random.FRand() * UE_TWO_PI;
+        constexpr double GoldenAngle = 2.399963229728653;
+        TArray<FBBBProjectileSpawnLocalControlPacket> Packets;
+        Packets.Reserve(Config.FragmentCount);
+        for (int32 Index = 0; Index < Config.FragmentCount; ++Index)
         {
-            // 用均匀球面分布覆盖爆点四周 每次爆炸旋转整组方向。
-            FRandomStream Random(GetTypeHash(AttackId));
-            const double StartAngle = Random.FRand() * UE_TWO_PI;
-            constexpr double GoldenAngle = 2.399963229728653;
-            for (int32 Index = 0; Index < Entities.Num(); ++Index)
-            {
-                const double Z = 1.0 - 2.0 * (Index + 0.5) / Entities.Num();
-                const double XY = FMath::Sqrt(1.0 - Z * Z);
-                const double Angle = StartAngle + Index * GoldenAngle;
-                Packet.LocalDirection = FVector(XY * FMath::Cos(Angle), XY * FMath::Sin(Angle), Z);
-                if (!Mass.SubmitInput(Entities[Index], Packet))
-                {
-                    bSubmitted = false;
-                    break;
-                }
-            }
+            const double Z = 1.0 - 2.0 * (Index + 0.5) / Config.FragmentCount;
+            const double XY = FMath::Sqrt(1.0 - Z * Z);
+            const double Angle = StartAngle + Index * GoldenAngle;
+            Packet.LocalDirection = FVector(XY * FMath::Cos(Angle), XY * FMath::Sin(Angle), Z);
+            Packets.Add(Packet);
         }
-        if (!ensureMsgf(bSubmitted, TEXT("破片爆炸无法提交完整 Mass 弹丸批次")))
-        {
-            for (const FMassEntityHandle Entity : Entities)
-            {
-                Mass.ReleaseProjectile(Entity);
-            }
-            return nullptr;
-        }
-        return Burst;
+        Mass.QueueProjectileSpawnBatch(*Config.FragmentEntityConfig, MoveTemp(Packets));
     }
 }
 
@@ -112,7 +93,9 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
         TSharedPtr<FBBBProjectileWorldBurst> Burst;
         if (bFragmentation && ensure(Mass && Config.FragmentEntityConfig))
         {
-            Burst = SpawnFragments(*Mass, Actor, Config, Fact, AttackId);
+            Burst = MakeShared<FBBBProjectileWorldBurst>();
+            Burst->PlayerId = Fact.PlayerId;
+            Burst->bDamagePlayers = Config.bDamagePlayers;
         }
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableExplosion), false, &Actor);
         Params.AddIgnoredActor(Actor.GetInstigator());
@@ -233,6 +216,10 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
             {
                 BBBHitReceiver::Submit(Target, Hit);
             }
+        }
+        if (Burst)
+        {
+            QueueFragments(*Mass, Actor, Config, Fact, AttackId, Burst);
         }
         UE_LOG(LogTemp, Log, TEXT("[BBBThrowable] Exploded Authority=1 Player=%d Position=%s"),
             Fact.PlayerId, *Fact.Position.ToString());

@@ -5,6 +5,7 @@
 #include "MassEntitySubsystem.h"
 #include "Engine/World.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassCollisionBody.h"
+#include "BBBWork/UBBBNexus/Mass/Core/BBBMassProjectileSpawnBatch.h"
 #include "BBBMassSubsystem.generated.h"
 
 class UMassEntityConfigAsset;
@@ -39,7 +40,15 @@ class ABBB_EVAC_API UBBBMassSubsystem final : public UWorldSubsystem
     GENERATED_BODY()
 
 public:
+    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+    virtual void Deinitialize() override;
 
+    /**
+     * @param Config	弹丸实体模板
+     * @param Packets	按出生顺序排列的完整批次
+     * @return 无 在世界帧尾统一申请池中实体并递交出生输入
+     */
+    void QueueProjectileSpawnBatch(const UMassEntityConfigAsset& Config, TArray<FBBBProjectileSpawnLocalControlPacket>&& Packets);
 
     /**
      * @param Config	实体模板配置
@@ -157,6 +166,14 @@ public:
     }
 
 private:
+    void FlushProjectileSpawnBatches(UWorld* World, ELevelTick TickType, float DeltaSeconds);
+
+    /** 本世界待创建的弹丸批次 */
+    TArray<FBBBMassProjectileSpawnBatch> PendingProjectileSpawnBatches;
+
+    /** 世界帧尾调度绑定 */
+    FDelegateHandle ProjectileSpawnTickHandle;
+
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnRequestLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnPauseLocalControlPacket& Packet);
     bool RouteInput(FMassEntityHandle Entity, const FBBBMonsterSpawnResumeLocalControlPacket& Packet);

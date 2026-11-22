@@ -185,6 +185,68 @@ bool UBBBMassSubsystem::CreateEntities(const UMassEntityConfigAsset& Config, con
     return Creation.IsValid() && Result.Num() == Count;
 }
 
+void UBBBMassSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+    ProjectileSpawnTickHandle = FWorldDelegates::OnWorldTickEnd.AddUObject(this, &UBBBMassSubsystem::FlushProjectileSpawnBatches);
+}
+
+void UBBBMassSubsystem::Deinitialize()
+{
+    FWorldDelegates::OnWorldTickEnd.Remove(ProjectileSpawnTickHandle);
+    PendingProjectileSpawnBatches.Reset();
+    Super::Deinitialize();
+}
+
+void UBBBMassSubsystem::QueueProjectileSpawnBatch(const UMassEntityConfigAsset& Config,
+    TArray<FBBBProjectileSpawnLocalControlPacket>&& Packets)
+{
+    if (!ensure(IsInGameThread()) || Packets.IsEmpty())
+    {
+        return;
+    }
+    PendingProjectileSpawnBatches.Add({TStrongObjectPtr<const UMassEntityConfigAsset>(&Config), MoveTemp(Packets)});
+}
+
+void UBBBMassSubsystem::FlushProjectileSpawnBatches(UWorld* World, ELevelTick, float)
+{
+    if (World != GetWorld() || PendingProjectileSpawnBatches.IsEmpty())
+    {
+        return;
+    }
+    auto* Spawner = World->GetSubsystem<UMassSpawnerSubsystem>();
+    if (!Spawner || Spawner->GetEntityManagerChecked().IsProcessing())
+    {
+        return;
+    }
+
+    auto Batches = MoveTemp(PendingProjectileSpawnBatches);
+    PendingProjectileSpawnBatches.Reset();
+    TArray<FMassEntityHandle> Entities;
+    for (const auto& Batch : Batches)
+    {
+        bool bSubmitted = AcquireProjectiles(*Batch.Config, Batch.Packets.Num(), Entities);
+        if (bSubmitted)
+        {
+            for (int32 Index = 0; Index < Entities.Num(); ++Index)
+            {
+                if (!SubmitInput(Entities[Index], Batch.Packets[Index]))
+                {
+                    bSubmitted = false;
+                    break;
+                }
+            }
+        }
+        if (!ensureMsgf(bSubmitted, TEXT("无法提交完整 Mass 弹丸出生批次")))
+        {
+            for (const auto Entity : Entities)
+            {
+                ReleaseProjectile(Entity);
+            }
+        }
+    }
+}
+
 bool UBBBMassSubsystem::AcquireProjectiles(const UMassEntityConfigAsset& Config, const int32 Count,
     TArray<FMassEntityHandle>& Result)
 {
