@@ -300,6 +300,12 @@ public:
         return AimRecoilScale;
     }
 
+    /** @return 装备提供的近距离瞄准保护距离 单位厘米 */
+    float GetMinTargetDistance() const
+    {
+        return MinTargetDistance;
+    }
+
     /** @return 下蹲轨迹幅度倍率 */
     UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetCrouchedRecoilScale() const
@@ -329,6 +335,7 @@ public:
     }
 
 private:
+    friend class FBBBEquipmentInitializer;
     friend class FBBBRifleAnimationProcessor;
     friend class FBBBMeleeAnimationProcessor;
     friend class FBBBPistolAnimationProcessor;
@@ -403,4 +410,7 @@ private:
 
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Equipment|Animation", meta = (AllowPrivateAccess = "true"))
     FBBBEquipmentAnimationFacts AnimationFacts;
+
+    /** 装备初始化时发布的近距离瞄准保护距离 */
+    float MinTargetDistance = 120.0f;
 };

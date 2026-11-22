@@ -11,6 +11,7 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
     const auto &Facts = Context.RuntimeData.Animation.ReadAnimationFactState();
     State.PoseOffsetAngles = Context.RuntimeData.Animation.ReadRecoilState().Angles;
     State.AimFollowSpeed = 18.0f;
+    State.MinTargetDistance = 120.0f;
     State.RecoilTime = 1.0f;
     State.BackwardRecoilStrength = 0.0f;
     State.RecoilAnimation.Reset();
@@ -19,6 +20,8 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
     {
         return;
     }
+
+    State.MinTargetDistance = Source->GetMinTargetDistance();
 
     const bool bAiming = Facts.bIsAiming;
     const bool bCrouching = Facts.bIsCrouching;

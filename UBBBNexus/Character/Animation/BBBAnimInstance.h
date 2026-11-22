@@ -349,6 +349,13 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceWeaponAimFollowSpeed;
     }
 
+    /** @return 当前装备的近距离瞄准保护距离 单位厘米 */
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
+    float GetMinTargetDistance() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->SourceMinTargetDistance;
+    }
+
     /** @return 距实际开火的时间 */
     UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetWeaponRecoilTime() const
@@ -379,6 +386,8 @@ private:
     /** 瞄准跟随速度的发布快照 */
     UPROPERTY(Transient)
     float SourceWeaponAimFollowSpeed = 18.0f;
+    /** 已发布的近距离瞄准保护距离 */
+    float SourceMinTargetDistance = 120.0f;
     /** 距实际开火的时间的发布快照 */
     UPROPERTY(Transient)
     float SourceWeaponRecoilTime = 1.0f;

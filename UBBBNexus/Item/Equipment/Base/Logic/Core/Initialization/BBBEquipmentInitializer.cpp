@@ -30,6 +30,12 @@ bool FBBBEquipmentInitializer::Initialize(ABBBEquipment &Equipment) const
         return false;
     }
 
+    const float MinTargetDistance = Equipment.Definition->MinTargetDistance;
+    if (FMath::IsFinite(MinTargetDistance) && MinTargetDistance >= 0.0f)
+    {
+        Equipment.EquipmentAnimationInstance->MinTargetDistance = MinTargetDistance;
+    }
+
     if (!InitializeInstance(Equipment))
     {
         return false;

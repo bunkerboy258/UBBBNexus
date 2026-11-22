@@ -42,6 +42,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "1", DisplayName = "角色动画层类", ToolTip = "装备激活后链接到角色主动画实例的动画层类 不作为武器网格的动画实例"))
     TSubclassOf<UAnimInstance> CharacterAnimationLayerClass;
 
+    /** 角色瞄准 IK 开始近距离保护的距离 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayName = "瞄准最小目标距离", ForceUnits = "cm", ClampMin = "0.0", ToolTip = "目标靠近瞄准源时减弱瞄准修正 数值越大保护越早介入 0 关闭距离保护"))
+    float MinTargetDistance = 120.0f;
+
     /** 当前装备供角色手指层固定采样的双手握姿 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "2", DisplayName = "角色双手握姿", ToolTip = "使用角色骨架的非加法静态序列 左右手指分别混合 未配置时保留当前动作的手指姿势"))
     TObjectPtr<UAnimSequence> CharacterGripPose = nullptr;
