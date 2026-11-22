@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBCombatHudWidget.h"
 #include "Materials/MaterialInterface.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
@@ -35,9 +36,9 @@ UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializ
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> FrameMaterial(
         TEXT("/Game/_Project/UI/Bag/M_SlotFrame.M_SlotFrame"));
     SlotFrameMaterial = FrameMaterial.Object;
-    static ConstructorHelpers::FObjectFinder<UMaterialInterface> HudIconMaterial(
-        TEXT("/Game/_Project/Characters/Items/Shared/M_HudItemSilhouette.M_HudItemSilhouette"));
-    HudItemIconMaterial = HudIconMaterial.Object;
+    static ConstructorHelpers::FClassFinder<UBBBCombatHudWidget> CombatHudBlueprint(
+        TEXT("/Game/_Project/UI/Gameplay/WBP_CombatHUD"));
+    CombatHudClass = CombatHudBlueprint.Class;
     static ConstructorHelpers::FObjectFinder<USoundBase> CompletionSound(
         TEXT("/Game/_Project/UI/Gameplay/Evac.Evac"));
     EvacSound = CompletionSound.Object;
@@ -161,6 +162,10 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
 void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
 {
     Super::NativeTick(Geometry, DeltaTime);
+    if (CombatHud)
+    {
+        CombatHud->UpdatePresentation(GetItemController(), Geometry, DeltaTime);
+    }
     UpdateExplorationPresentation();
     if (!bBackpackOpen)
     {
@@ -284,6 +289,10 @@ const FSlateBrush *UBBBPlayerItemView::GetCharacterBrush() const
 
 void UBBBPlayerItemView::RefreshItems()
 {
+    if (CombatHud)
+    {
+        CombatHud->InvalidateItems();
+    }
     ABBBPlayerController *Controller = GetItemController();
     if (!Controller || !BackpackSlots || !EquipmentSlots)
     {

@@ -1,14 +1,22 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
-#include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBCombatHudWidget.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBExplorationHud.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "Kismet/GameplayStatics.h"
-#include "Materials/MaterialInterface.h"
 #include "Sound/SoundBase.h"
+#include "Widgets/SNullWidget.h"
 
 TSharedRef<SWidget> UBBBPlayerItemView::MakeGameplayHud()
 {
-    return SNew(SBBBCombatHud).View(this).ItemIconMaterial(HudItemIconMaterial.Get());
+    if (!CombatHud && CombatHudClass && GetOwningPlayer())
+    {
+        CombatHud = CreateWidget<UBBBCombatHudWidget>(GetOwningPlayer(), CombatHudClass);
+        if (CombatHud)
+        {
+            CombatHud->SetVisibility(ESlateVisibility::HitTestInvisible);
+        }
+    }
+    return CombatHud ? CombatHud->TakeWidget() : SNullWidget::NullWidget;
 }
 
 TSharedRef<SWidget> UBBBPlayerItemView::MakeExplorationHud()

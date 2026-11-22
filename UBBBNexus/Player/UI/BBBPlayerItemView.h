@@ -10,6 +10,7 @@ class APawn;
 class UFontFace;
 class USoundBase;
 class UMaterialInterface;
+class UBBBCombatHudWidget;
 class UBBBPlayerItemPortrait;
 class SImage;
 class SScrollBox;
@@ -118,9 +119,11 @@ private:
     TObjectPtr<UMaterialInterface> InterfaceArtMaterial;
     UPROPERTY()
     TObjectPtr<UMaterialInterface> SlotFrameMaterial;
-    /** 保留现有图标透明度的战斗 HUD 画刷材质 */
+    /** 战斗 HUD 的控件蓝图与打包依赖 */
     UPROPERTY()
-    TObjectPtr<UMaterialInterface> HudItemIconMaterial;
+    TSubclassOf<UBBBCombatHudWidget> CombatHudClass;
+    UPROPERTY(Transient)
+    TObjectPtr<UBBBCombatHudWidget> CombatHud;
     /** 已提高响度的完成音效 */
     UPROPERTY()
     TObjectPtr<USoundBase> EvacSound;

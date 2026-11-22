@@ -12,7 +12,7 @@ void BBBCombatAmmoRail::Paint(FSlateWindowElementList &Elements, const FGeometry
     Loaded = FMath::Clamp(Loaded, 0, Capacity);
     const FVector2D Size = Geometry.GetLocalSize();
     const FVector2D Center = Size * 0.5;
-    const float Scale = FMath::Clamp(static_cast<float>(Size.Y / 1080.0), 0.55f, 1.6f);
+    const float Scale = FMath::Min(Size.X, Size.Y) / 96.0;
     // 已确认的弹药轨道构图 半径四十 起始二十度 跨度六十度 不随角落弹药数字布局移动
     constexpr float Radius = 40.0f;
     constexpr float From = 20.0f;

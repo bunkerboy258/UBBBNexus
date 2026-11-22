@@ -7,7 +7,7 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
-#include "BBBWork/UBBBNexus/Player/UI/SBBBCombatHud.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBCombatHudWidget.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
@@ -17,10 +17,9 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextBlock.h"
 #include "Input/HittestGrid.h"
 #include "Layout/WidgetPath.h"
-#include "Types/PaintArgs.h"
-#include "Rendering/DrawElements.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/GameViewportClient.h"
@@ -802,39 +801,34 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("界面读取角色处理后的选择"), Controller->GetSelectedItemSlot(), 0);
     TestTrue(TEXT("控制器区分实际装备状态"), Controller->GetItemDisplayData(0).bActive);
-    const TSharedRef<SBBBCombatHud> Hud = SNew(SBBBCombatHud).View(View);
-    const FGeometry HudGeometry = FGeometry::MakeRoot(FVector2f(1920.0f, 1080.0f), FSlateLayoutTransform());
-    FHittestGrid HudHitGrid;
-    const FPaintArgs HudArgs(nullptr, HudHitGrid, FVector2D::ZeroVector, 0.0, 0.0f);
-    TestFalse(TEXT("持枪未瞄准时准星仍隐藏"), Controller->ShouldShowAimHud());
-    FSlateWindowElementList HipFireHud(nullptr);
-    Hud->OnPaint(HudArgs, HudGeometry, FSlateRect(0.0f, 0.0f, 1920.0f, 1080.0f),
-        HipFireHud, 0, FWidgetStyle(), true);
-    const auto ReadAmmoText = [](const FSlateWindowElementList &Draws)
+    UClass *HudClass = LoadClass<UBBBCombatHudWidget>(nullptr,
+        TEXT("/Game/_Project/UI/Gameplay/WBP_CombatHUD.WBP_CombatHUD_C"));
+    if (!TestNotNull(TEXT("游玩 HUD 控件蓝图"), HudClass))
     {
-        TArray<const FSlateTextElement*> Result;
-        for (const auto& Text : Draws.GetUncachedDrawElements().Get<(uint8)EElementType::ET_Text>())
-        {
-            if (Text.GetPosition().X >= 1700 && Text.GetPosition().Y >= 950) Result.Add(&Text);
-        }
-        return Result;
-    };
-    const auto AmmoTexts = ReadAmmoText(HipFireHud);
-    if (TestEqual(TEXT("未瞄准也绘制剩余弹药与容量"), AmmoTexts.Num(), 2))
-    {
-        int32 Loaded = 0;
-        int32 Capacity = 0;
-        bool bContinuous = false;
-        const ABBBEquipment *Held = Cast<ABBBEquipment>(Controller->GetActiveItem());
-        TestTrue(TEXT("弹药绘制读取真实枪械"), Held && Held->ReadAmmoDisplay(Loaded, Capacity, bContinuous));
-        TestEqual(TEXT("右下数字保持真实剩余弹药"), FString(AmmoTexts[0]->GetText()), FString::FromInt(Loaded));
-        TestEqual(TEXT("右下数字保持真实容量"), FString(AmmoTexts[1]->GetText()), FString::Printf(TEXT("/ %d"), Capacity));
-        for (const FSlateTextElement *Text : AmmoTexts)
-        {
-            const FVector2f Position = Text->GetPosition();
-            TestTrue(TEXT("弹药数字固定在右下角"), Position.X > 1600.0f && Position.Y > 950.0f);
-        }
+        return false;
     }
+    auto *Hud = NewObject<UBBBCombatHudWidget>(Controller, HudClass);
+    Hud->SetOwningPlayer(Controller);
+    Hud->Initialize();
+    const FGeometry HudGeometry = FGeometry::MakeRoot(FVector2f(1920.0f, 1080.0f), FSlateLayoutTransform());
+    TestFalse(TEXT("持枪未瞄准时准星仍隐藏"), Controller->ShouldShowAimHud());
+    Hud->UpdatePresentation(Controller, HudGeometry, 1.0f / 60.0f);
+    const UWidget *AmmoGroup = Hud->GetWidgetFromName(TEXT("AmmoGroup"));
+    const auto *LoadedLabel = Cast<UTextBlock>(Hud->GetWidgetFromName(TEXT("LoadedAmmo")));
+    const auto *CapacityLabel = Cast<UTextBlock>(Hud->GetWidgetFromName(TEXT("CapacityAmmo")));
+    if (!TestNotNull(TEXT("右下弹药组"), AmmoGroup)
+        || !TestNotNull(TEXT("剩余弹药数字"), LoadedLabel) || !TestNotNull(TEXT("容量数字"), CapacityLabel))
+    {
+        return false;
+    }
+    TestTrue(TEXT("未瞄准也显示剩余弹药与容量"), AmmoGroup->IsVisible());
+    int32 Loaded = 0;
+    int32 Capacity = 0;
+    bool bContinuous = false;
+    const ABBBEquipment *Held = Cast<ABBBEquipment>(Controller->GetActiveItem());
+    TestTrue(TEXT("弹药显示读取真实枪械"), Held && Held->ReadAmmoDisplay(Loaded, Capacity, bContinuous));
+    TestEqual(TEXT("右下数字保持真实剩余弹药"), LoadedLabel->GetText().ToString(), FString::FromInt(Loaded));
+    TestEqual(TEXT("右下数字保持真实容量"), CapacityLabel->GetText().ToString(), FString::Printf(TEXT("/%d"), Capacity));
     ABBBEquipment *HeldEquipment = Cast<ABBBEquipment>(Controller->GetActiveItem());
     FTransform Muzzle;
     if (!TestTrue(TEXT("真实手持枪械提供枪口"), HeldEquipment && HeldEquipment->TryGetMuzzleTransform(Muzzle)))
@@ -928,11 +922,8 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     Character->Tick(1.0f / 60.0f);
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestNull(TEXT("收起后实际空手"), Controller->GetActiveItem());
-    FSlateWindowElementList UnarmedHud(nullptr);
-    Hud->OnPaint(HudArgs, HudGeometry, FSlateRect(0.0f, 0.0f, 1920.0f, 1080.0f),
-        UnarmedHud, 0, FWidgetStyle(), true);
-    TestEqual(TEXT("空手时不显示旧枪械弹药"),
-        ReadAmmoText(UnarmedHud).Num(), 0);
+    Hud->UpdatePresentation(Controller, HudGeometry, 1.0f / 60.0f);
+    TestFalse(TEXT("空手时不显示旧枪械弹药"), AmmoGroup->IsVisible());
     TestFalse(TEXT("空手时不保留枪口落点"), Controller->GetActualAimWorldPosition(AimImpact));
     TestEqual(TEXT("快捷栏使用前三格"), Controller->GetQuickAccessSlotCount(), 3);
     TestEqual(TEXT("四类背包和身体穿戴共一百一十格"), Controller->GetItemSlotCount(), 110);
