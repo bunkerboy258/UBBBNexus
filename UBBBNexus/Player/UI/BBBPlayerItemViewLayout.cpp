@@ -282,7 +282,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                 [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character)]]
             + SHorizontalBox::Slot().AutoWidth()
                 [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("EXTENSIBLE"), {})]]];
-    constexpr float VitalsTop = 80.0f;
+    constexpr float VitalsTop = 70.0f;
     Place(*Canvas, 676, VitalsTop, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [
             SNew(SHorizontalBox)
