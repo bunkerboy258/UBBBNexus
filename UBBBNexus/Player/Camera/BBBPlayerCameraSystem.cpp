@@ -36,6 +36,9 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
     const auto &Readability = InCharacter.GetCharacterConfig().Appearance;
     if (InController.IsLocalController())
     {
+        // 游玩相机关闭画面四周的暗角
+        Camera->PostProcessSettings.bOverride_VignetteIntensity = true;
+        Camera->PostProcessSettings.VignetteIntensity = 0.0f;
         UMaterialInterface *Parent = InnerOutlineMaterial.LoadSynchronous();
         if (ensureMsgf(Parent, TEXT("本地角色内侧轮廓材质缺失")))
         {

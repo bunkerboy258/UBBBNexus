@@ -89,9 +89,10 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
     const FVector2D Size = Geometry.GetLocalSize();
     const float Scale = FMath::Clamp(float(FMath::Min(Size.Y / 1080.0, Size.X / 900.0)), 0.25f, 2.0f);
     const FVector2D Center = Size * 0.5;
-    const double Left = 32.0 * Scale;
+    const float ItemScale = Scale * 1.40f;
+    const double Left = 40.0 * Scale;
     const double Right = Size.X - Left;
-    const double Bottom = Size.Y - 28.0 * Scale;
+    const double Bottom = Size.Y - 58.0 * Scale;
     const FLinearColor White(1.0f, 1.0f, 1.0f, 0.96f);
     const FLinearColor Gray(0.72f, 0.72f, 0.72f, 0.78f);
     const FLinearColor Shadow(0.0f, 0.0f, 0.0f, 0.76f);
@@ -117,7 +118,7 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
     };
     const auto Number = [&](const FString &Value, FVector2D Anchor, int32 FontSize, bool bRightAligned, const FLinearColor &Color)
     {
-        auto Font = BBBItemUI::Font(FMath::Max(8, FMath::RoundToInt(FontSize * Scale)));
+        auto Font = BBBItemUI::Font(FMath::Max(8, FMath::RoundToInt(FontSize * ItemScale)));
         Font.OutlineSettings.OutlineSize = FMath::Max(1, FMath::RoundToInt(Scale));
         Font.OutlineSettings.OutlineColor = Shadow;
         const FVector2D Extent = FontMeasure->Measure(Value, Font);
@@ -137,11 +138,11 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         auto &Material = IconMaterials.FindOrAdd(Texture);
         if (!Material.IsValid())
         {
-            Material.Reset(UMaterialInstanceDynamic::Create(ItemIconMaterial.Get(), GetTransientPackage()));
+            Material.Reset(UMaterialInstanceDynamic::Create(ItemIconMaterial.Get(), View.Get()));
             Material->SetTextureParameterValue(TEXT("ImageTexture"), Texture);
         }
         const FVector2D Source(Texture->GetSizeX(), Texture->GetSizeY());
-        const FVector2D Extent = Source * (Scale * FMath::Min(Limit.X / Source.X, Limit.Y / Source.Y));
+        const FVector2D Extent = Source * (ItemScale * FMath::Min(Limit.X / Source.X, Limit.Y / Source.Y));
         const FVector2D Position = Anchor - FVector2D(bRightAligned ? Extent.X : 0.0, Extent.Y * 0.5);
         FSlateBrush Brush;
         Brush.SetResourceObject(Material.Get());
@@ -167,16 +168,16 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
             Geometry.ToPaintGeometry(FVector2D(2.0 * Half, Height * Scale),
                 FSlateLayoutTransform(FVector2D(Center.X - Half, Y))), &Solid, ESlateDrawEffect::None, Color);
     };
-    const double HealthY = Bottom - 3.0 * Scale;
-    const double StaminaY = HealthY - 9.0 * Scale;
+    const double HealthY = Size.Y - 78.0 * Scale;
+    const double StaminaY = HealthY - 22.0 * Scale;
     const float Health = Controller->GetHudHealthFraction();
     const float Trail = FMath::Lerp(DamageTrail, Health, FMath::Clamp((DamageAge - 0.15f) / 0.45f, 0.0f, 1.0f));
     const float LowPulse = bLowHealth ? 0.68f + 0.28f * FMath::Abs(FMath::Sin(float(FPlatformTime::Seconds() * 4.0))) : White.A;
-    Meter(StaminaY - Scale, 4.5f, 1.0f, Shadow, 0);
-    Meter(StaminaY, 2.5f, Controller->GetHudStaminaFraction(), Gray, 2);
-    Meter(HealthY - Scale, 7.0f, 1.0f, Shadow, 0);
-    Meter(HealthY, 5.0f, Trail, FLinearColor(0.38f, 0.38f, 0.38f, 0.9f), 1);
-    Meter(HealthY, 5.0f, Health, White.CopyWithNewOpacity(LowPulse), 2);
+    Meter(StaminaY - Scale, 5.0f, 1.0f, Shadow, 0);
+    Meter(StaminaY, 3.0f, Controller->GetHudStaminaFraction(), Gray, 2);
+    Meter(HealthY - Scale, 8.5f, 1.0f, Shadow, 0);
+    Meter(HealthY, 6.5f, Trail, FLinearColor(0.38f, 0.38f, 0.38f, 0.9f), 1);
+    Meter(HealthY, 6.5f, Health, White.CopyWithNewOpacity(LowPulse), 2);
 
     int32 ConsumableStart = 0;
     int32 ConsumableCount = 0;
@@ -186,11 +187,11 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
     if (bHasSelected)
     {
         const auto Item = Controller->GetItemDisplayData(ConsumableStart + Selected);
-        const double Y = Bottom - 14.0 * Scale;
+        const double Y = Bottom - 14.0 * ItemScale;
         Icon(Item.Icon, FVector2D(Left, Y), FVector2D(52.0, 42.0), false, White);
-        Number(FString::FromInt(Item.Quantity), FVector2D(Left + 57.0 * Scale, Y), 28, false, White);
+        Number(FString::FromInt(Item.Quantity), FVector2D(Left + 57.0 * ItemScale, Y), 28, false, White);
     }
-    double ConsumableY = Bottom - (bHasSelected ? 55.0 : 14.0) * Scale;
+    double ConsumableY = Bottom - (bHasSelected ? 55.0 : 14.0) * ItemScale;
     for (int32 Index = 0; Index < ConsumableCount; ++Index)
     {
         const auto Item = Controller->GetItemDisplayData(ConsumableStart + Index);
@@ -199,8 +200,8 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
             continue;
         }
         Icon(Item.Icon, FVector2D(Left, ConsumableY), FVector2D(30.0, 24.0), false, Gray);
-        Number(FString::Printf(TEXT("%02d"), Item.Quantity), FVector2D(Left + 36.0 * Scale, ConsumableY), 16, false, Gray);
-        ConsumableY -= 28.0 * Scale;
+        Number(FString::Printf(TEXT("%02d"), Item.Quantity), FVector2D(Left + 36.0 * ItemScale, ConsumableY), 16, false, Gray);
+        ConsumableY -= 28.0 * ItemScale;
     }
 
     int32 Loaded = 0;
@@ -222,9 +223,9 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
             Arc(FVector2D(RingX, AmmoY), 6.0f, Angle, Angle + 125.0f, White);
         }
     }
-    const double WeaponY = Bottom - (bHasAmmo ? 40.0 : 14.0) * Scale;
+    const double WeaponY = Bottom - (bHasAmmo ? 40.0 : 14.0) * ItemScale;
     const double WeaponWidth = Icon(Controller->GetHudWeaponIcon(), FVector2D(Right, WeaponY), FVector2D(124.0, 38.0), true, White);
-    double SlotY = WeaponY - (WeaponWidth > 0.0 ? 39.0 : 0.0) * Scale;
+    double SlotY = WeaponY - (WeaponWidth > 0.0 ? 39.0 : 0.0) * ItemScale;
     for (int32 Index = 0; Index < Controller->GetQuickAccessSlotCount(); ++Index)
     {
         const auto Item = Controller->GetItemDisplayData(Index);
@@ -233,8 +234,8 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
             continue;
         }
         Icon(Item.Icon, FVector2D(Right, SlotY), FVector2D(58.0, 23.0), true, Gray);
-        Number(FString::Printf(TEXT("%02d"), Item.QuickIndex + 1), FVector2D(Right - 65.0 * Scale, SlotY), 16, true, Gray);
-        SlotY -= 27.0 * Scale;
+        Number(FString::Printf(TEXT("%02d"), Item.QuickIndex + 1), FVector2D(Right - 65.0 * ItemScale, SlotY), 16, true, Gray);
+        SlotY -= 27.0 * ItemScale;
     }
     for (auto It = IconMaterials.CreateIterator(); It; ++It)
     {
@@ -244,7 +245,7 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         }
     }
 
-    const double TelemetryY = 25.0 * Scale;
+    const double TelemetryY = 37.0 * Scale;
     double TelemetryX = Right;
     if (Ping.IsSet())
     {
