@@ -12,6 +12,8 @@
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpecialDefinition.h"
+#include "BBBWork/UBBBNexus/Player/BBBPlayerState.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterMobilityFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Behavior/BBBMonsterBehaviorFragment.h"
 
@@ -21,9 +23,46 @@
 
 namespace
 {
+    /** 本次结算按实际应用顺序识别第一笔越过死亡阈值的有效伤害 */
+    struct FKillCreditContext
+    {
+        FBBBMonsterPartDamage Totals;
+        TOptional<int32> Killer;
+        const UBBBMonsterDefinition& Definition;
+        const float MaxHealth;
+
+        void ApplyDamage(const FBBBMonsterPartDamage& Added, int32 PlayerId)
+        {
+            if (Killer.IsSet() || Added.Sum() <= 0.0)
+            {
+                return;
+            }
+
+            double MainDamage = 0.0;
+            for (uint8 Part = 0; Part <= static_cast<uint8>(EBBBMonsterHitRegion::RightLeg); ++Part)
+            {
+                const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
+                const auto& Rule = Definition.GetBodyPart(Region);
+                Totals.Add(Region, Added.Get(Region));
+                const double Amount = Totals.Get(Region);
+                if (Rule.bFatal && Rule.HasReachedHealthThreshold(Amount, MaxHealth))
+                {
+                    Killer = PlayerId;
+                    return;
+                }
+                MainDamage += Amount * Rule.MainTransfer;
+            }
+            if (MainDamage >= MaxHealth)
+            {
+                Killer = PlayerId;
+            }
+        }
+    };
+
     /** 把本批命中解释为僵尸自身的部位与行动结果 */
     void ResolveHits(UWorld& World, FMassEntityHandle Entity, const UBBBMonsterDefinition& Definition,
-        const TArray<FBBBHitContribution>& Hits, TMap<int64, FBBBMonsterDamageTotals>& Ledger, double Time)
+        const TArray<FBBBHitContribution>& Hits, TMap<int64, FBBBMonsterDamageTotals>& Ledger, double Time,
+        FKillCreditContext* Credit = nullptr)
     {
         TMap<TPair<int64, FGuid>, FBBBMonsterStaggerContribution> Candidates;
         auto* Mass = World.GetSubsystem<UBBBMassSubsystem>();
@@ -84,6 +123,7 @@ namespace
             Result.Velocity += Hit.AddVelocity;
             Value.bHasSourcePosition = Hit.bHasSourcePosition;
             Value.LastSourcePosition = Hit.SourcePosition;
+            FBBBMonsterPartDamage Added;
             for (uint8 Part = 0; Part <= 5; ++Part)
             {
                 if (!Hit.bRadial && Part != Hit.Part)
@@ -95,6 +135,10 @@ namespace
                 const float Share = Hit.bRadial ? Rule.RadialWeight / Weight : 1.0f;
                 const double Amount = Share * Rule.ResolveDamage(Hit.AddDamage, Hit.AddDurableDamage);
                 Value.Parts.Add(Region, Amount);
+                if (Credit && !Credit->Killer.IsSet())
+                {
+                    Added.Add(Region, Amount);
+                }
                 if (Part == 0 && Mass && Hit.AddWound > 0 && Amount > 0)
                 {
                     Mass->QueryMonsterDestruction(Entity, Hit.Position, Hit.Direction, Hit.AddWound, Value.Destruction);
@@ -120,6 +164,10 @@ namespace
                         / FMath::Max(UE_SMALL_NUMBER, Definition.StaggerFullValue - Definition.StaggerStartValue), 0.f, 1.f);
                     Candidate.Duration = Rule.StaggerDuration;
                 }
+            }
+            if (Credit)
+            {
+                Credit->ApplyDamage(Added, Hit.PlayerId);
             }
         }
         double Available = 0;
@@ -248,6 +296,7 @@ void UBBBMonsterDamageProcessor::ConfigureQueries(const TSharedRef<FMassEntityMa
     EntityQuery.AddRequirement<FBBBMonsterDamageFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadWrite, EMassFragmentPresence::Optional);
     EntityQuery.AddRequirement<FBBBMonsterHealthFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddRequirement<FBBBMonsterHealthInputFragment>(EMassFragmentAccess::ReadWrite);
     EntityQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadWrite);
 }
@@ -258,18 +307,58 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
     const float Now = World->GetTimeSeconds();
     const AGameStateBase* GameState = World->GetGameState();
     const double ServerTime = GameState ? GameState->GetServerWorldTimeSeconds() : Now;
-    EntityQuery.ForEachEntityChunk(Context, [Now, ServerTime, World](FMassExecutionContext& Chunk)
+    const bool bHost = World->GetNetMode() != NM_Client;
+    TMap<int32, FBBBPlayerKillCounts> ConfirmedKills;
+    EntityQuery.ForEachEntityChunk(Context, [Now, ServerTime, World, bHost, &ConfirmedKills](FMassExecutionContext& Chunk)
     {
         auto Damage = Chunk.GetMutableFragmentView<FBBBMonsterDamageFragment>();
         auto Health = Chunk.GetMutableFragmentView<FBBBMonsterHealthFragment>();
+        auto HealthInputs = Chunk.GetMutableFragmentView<FBBBMonsterHealthInputFragment>();
         auto Mobility = Chunk.GetMutableFragmentView<FBBBMonsterMobilityFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto& Pending = Damage[Index].PendingHits;
-            if (!Pending.IsEmpty() && Network[Index].Definition.IsValid())
+            auto& Remote = HealthInputs[Index].RemoteDamage;
+            const auto* Settings = Network[Index].Definition.Get();
+            const bool bApplyRemote = Remote.bActive;
+            Remote.bActive = false;
+            TOptional<FKillCreditContext> Credit;
+            if (bHost && Health[Index].CurrentHealth > 0.0f && Settings && (bApplyRemote || !Pending.IsEmpty()))
             {
-                ResolveHits(*World, Chunk.GetEntity(Index), *Network[Index].Definition, Pending, Damage[Index].Contributions, ServerTime);
+                Credit.Emplace(FKillCreditContext{{}, {}, *Settings, Health[Index].MaxHealth});
+                for (const auto& Entry : Damage[Index].Contributions)
+                {
+                    for (uint8 Part = 0; Part <= static_cast<uint8>(EBBBMonsterHitRegion::RightLeg); ++Part)
+                    {
+                        const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
+                        Credit->Totals.Add(Region, Entry.Value.Parts.Get(Region));
+                    }
+                }
+            }
+            if (bApplyRemote)
+            {
+                if (Credit.IsSet())
+                {
+                    for (const auto& Value : Remote.Packet.Contributions)
+                    {
+                        const auto* Previous = Damage[Index].Contributions.Find(Value.WriterKey());
+                        FBBBMonsterPartDamage Added;
+                        for (uint8 Part = 0; Part <= static_cast<uint8>(EBBBMonsterHitRegion::RightLeg); ++Part)
+                        {
+                            const auto Region = static_cast<EBBBMonsterHitRegion>(Part);
+                            const double Known = Previous ? Previous->Parts.Get(Region) : 0.0;
+                            Added.Add(Region, FMath::Max(0.0, Value.Parts.Get(Region) - Known));
+                        }
+                        Credit->ApplyDamage(Added, Value.PlayerId);
+                    }
+                }
+                Remote.Packet.Apply(Damage[Index]);
+            }
+            if (!Pending.IsEmpty() && Settings)
+            {
+                ResolveHits(*World, Chunk.GetEntity(Index), *Settings, Pending, Damage[Index].Contributions, ServerTime,
+                    Credit.IsSet() ? &Credit.GetValue() : nullptr);
                 Pending.Reset();
             }
             auto Reactions = Chunk.GetMutableFragmentView<FBBBMonsterHitReactionFragment>();
@@ -343,7 +432,6 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 }
             }
             auto& Motion = Mobility[Index];
-            const auto* Settings = Network[Index].Definition.Get();
             if (!Settings)
             {
                 continue;
@@ -382,6 +470,18 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             }
             if (Health[Index].CurrentHealth <= 0.0f)
             {
+                if (Credit.IsSet() && Credit->Killer.IsSet() && Credit->Killer.GetValue() >= 0)
+                {
+                    auto& Counts = ConfirmedKills.FindOrAdd(Credit->Killer.GetValue());
+                    if (Settings->Special && Settings->Special->Kind != EBBBMonsterSpecialKind::None)
+                    {
+                        ++Counts.SpecialKills;
+                    }
+                    else
+                    {
+                        ++Counts.CommonKills;
+                    }
+                }
                 Motion.SlowMinimumRatio = 1.0f;
                 Motion.SlowRecoveryStartedAt = Now;
                 Motion.SlowEndsAt = Now;
@@ -468,4 +568,18 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             }
         }
     });
+    if (GameState && !ConfirmedKills.IsEmpty())
+    {
+        for (APlayerState* Player : GameState->PlayerArray)
+        {
+            auto* Killer = Cast<ABBBPlayerState>(Player);
+            if (Killer)
+            {
+                if (const auto* Counts = ConfirmedKills.Find(Killer->GetPlayerId()))
+                {
+                    Killer->AddConfirmedKills(*Counts);
+                }
+            }
+        }
+    }
 }

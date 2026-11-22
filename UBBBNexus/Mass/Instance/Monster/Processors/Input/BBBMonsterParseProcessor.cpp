@@ -7,6 +7,7 @@
 
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Health/BBBMonsterHealthFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/HitReaction/BBBMonsterHitReactionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkInputFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionInputFragment.h"
 #include "Engine/World.h"
@@ -98,14 +99,8 @@ void UBBBMonsterParseProcessor::Execute(FMassEntityManager&, FMassExecutionConte
             }
 
             auto& Remote = HealthInputs[Index].RemoteDamage;
-            if (Remote.bActive)
-            {
-                Remote.bActive = false;
-                if (Remote.Packet.IsValid() && Remote.Packet.CanApply(Network[Index]))
-                {
-                    Remote.Packet.Apply(Damage[Index]);
-                }
-            }
+            // 校验实例后由生命处理器按远端累计量和本地独立命中的顺序结算
+            Remote.bActive = Remote.bActive && Remote.Packet.IsValid() && Remote.Packet.CanApply(Network[Index]);
 
             auto& Local = HealthInputs[Index].Damage;
             if (Local.bActive)
