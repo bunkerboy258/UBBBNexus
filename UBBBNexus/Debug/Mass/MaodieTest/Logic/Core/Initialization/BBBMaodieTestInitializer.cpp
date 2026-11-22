@@ -13,7 +13,7 @@
 void FBBBMaodieTestInitializer::Construct(ABBBMaodieTest &Actor)
 {
     static ConstructorHelpers::FObjectFinder<UBBBItemDefinition> Grenade(TEXT(
-        "/Game/_Project/Characters/BBBC_UA/Items/Consumable/Grenade/破片手雷/DA_Grenade_01.DA_Grenade_01"));
+        "/Game/_Project/Characters/Items/Consumable/Grenade/破片手雷/DA_Grenade_01.DA_Grenade_01"));
     if (Grenade.Succeeded())
     {
         Actor.Config.DropPool.AddUnique(Grenade.Object);

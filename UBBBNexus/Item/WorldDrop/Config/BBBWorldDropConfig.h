@@ -50,11 +50,11 @@ struct FBBBWorldDropConfig final
     float FadeInDuration = 0.2f;
     /** 接受图标纹理参数的共用材质 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "显示", meta = (DisplayName = "图标材质", ToolTip = "透明白色图标材质 使用 IconTexture 纹理参数"))
-    TSoftObjectPtr<UMaterialInterface> IconMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/_Project/Characters/BBBC_UA/Items/WorldDrop/Materials/M_WorldDropIcon.M_WorldDropIcon")));
+    TSoftObjectPtr<UMaterialInterface> IconMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/_Project/Characters/Items/WorldDrop/Materials/M_WorldDropIcon.M_WorldDropIcon")));
     /** 光柱共用材质 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "显示", meta = (DisplayName = "光柱材质", ToolTip = "光柱的半透明自发光材质"))
-    TSoftObjectPtr<UMaterialInterface> BeamMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/_Project/Characters/BBBC_UA/Items/WorldDrop/Materials/M_WorldDropBeam.M_WorldDropBeam")));
+    TSoftObjectPtr<UMaterialInterface> BeamMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/_Project/Characters/Items/WorldDrop/Materials/M_WorldDropBeam.M_WorldDropBeam")));
     /** 仅表达落点的共用柔光材质 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "显示", meta = (DisplayName = "地面微光材质", ToolTip = "具有柔和透明边缘的地面微光材质"))
-    TSoftObjectPtr<UMaterialInterface> GroundGlowMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/_Project/Characters/BBBC_UA/Items/WorldDrop/Materials/M_WorldDropGroundGlow.M_WorldDropGroundGlow")));
+    TSoftObjectPtr<UMaterialInterface> GroundGlowMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/_Project/Characters/Items/WorldDrop/Materials/M_WorldDropGroundGlow.M_WorldDropGroundGlow")));
 };

@@ -2,6 +2,8 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ParseSystem/BBBMeleeParseSystem.h"
 #include "Misc/AutomationTest.h"
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
+#include "Animation/AnimMontage.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Animation/BBBMeleeAnimInstance.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/BBBMeleeEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Config/BBBMeleeDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Melee/Logic/System/ParseSystem/Processors/BBBMeleeParseProcessor.h"
@@ -12,8 +14,11 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/BBBCharacterParseSystem.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/Processors/BBBCharacterInteractionInputProcessor.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/InteractionSystem/DomainData/Context/BBBCharacterInteractionUpdateContext.h"
+#include "BBBWork/UBBBNexus/Notify/Character/Logic/BBBCharacterEquipmentActionLifecycleLogicAnimNotifyState.h"
+#include "BBBWork/UBBBNexus/Notify/Character/Logic/BBBCharacterEquipmentContactWindowLogicAnimNotifyState.h"
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Misc/ScopeExit.h"
@@ -41,16 +46,40 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
         GEngine->DestroyWorldContext(World);
         World->DestroyWorld(false);
     };
-    auto *Character = World->SpawnActor<ABBBCharacter>();
-    const auto *Definition = LoadObject<UBBBMeleeDefinition>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Melee/棒球棍/DA_Bat_01.DA_Bat_01"));
-    UClass *EquipmentClass = LoadClass<ABBBMeleeEquipment>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Melee/棒球棍/BP_Bat_01.BP_Bat_01_C"));
-    if (!TestNotNull(TEXT("首个近战装备配置"), Definition) || !TestNotNull(TEXT("实际近战装备蓝图"), EquipmentClass))
+    UClass *RifleClass = LoadClass<ABBBRifleEquipment>(nullptr,
+        TEXT("/Game/_Project/Characters/Items/Equipment/Rifle/FAL/BP_ModernWeapons_Rifle_01.BP_ModernWeapons_Rifle_01_C"));
+    auto *DefinitionProperty = FindFProperty<FObjectPropertyBase>(ABBBEquipment::StaticClass(), TEXT("Definition"));
+    if (!TestNotNull(TEXT("现有步枪蓝图"), RifleClass)
+        || !TestNotNull(TEXT("装备配置字段"), DefinitionProperty))
     {
         return false;
     }
-    auto *Equipment = World->SpawnActor<ABBBMeleeEquipment>(EquipmentClass);
+
+    auto *Character = World->SpawnActor<ABBBCharacter>();
+    auto *Rifle = World->SpawnActor<ABBBRifleEquipment>(RifleClass);
+    auto *RifleDefinition = DuplicateObject<UBBBRifleDefinition>(Cast<UBBBRifleDefinition>(Rifle->GetDefinition()), GetTransientPackage());
+    if (!TestNotNull(TEXT("步枪独立测试配置"), RifleDefinition) || !TestNotNull(TEXT("测试使用的骨骼网格"), RifleDefinition->EquipmentMesh.Get()))
+    {
+        return false;
+    }
+
+    auto *Equipment = World->SpawnActor<ABBBMeleeEquipment>();
+    auto *Definition = NewObject<UBBBMeleeDefinition>(Equipment);
+    Definition->ItemId = TEXT("MeleeWindowTest");
+    Definition->EquipmentMesh = RifleDefinition->EquipmentMesh;
+    Definition->EquipmentAnimationClass = UBBBMeleeAnimInstance::StaticClass();
+    Definition->TraceStartSocket = Definition->EquipmentMesh->GetRefSkeleton().GetBoneName(0);
+    Definition->TraceEndSocket = RifleDefinition->MuzzleSocketName;
+    UAnimMontage *TestMontage = NewObject<UAnimMontage>(Definition);
+    TestMontage->SlotAnimTracks.SetNum(1);
+    TestMontage->SlotAnimTracks[0].SlotName = TEXT("UpperBody");
+    TestMontage->Notifies.AddDefaulted_GetRef().NotifyStateClass =
+        NewObject<UBBBCharacterEquipmentActionLifecycleLogicAnimNotifyState>(TestMontage);
+    TestMontage->Notifies.AddDefaulted_GetRef().NotifyStateClass =
+        NewObject<UBBBCharacterEquipmentContactWindowLogicAnimNotifyState>(TestMontage);
+    Definition->AttackMontage = TestMontage;
+    DefinitionProperty->SetObjectPropertyValue_InContainer(Equipment, Definition);
+
     auto *Target = World->SpawnActor<AActor>();
     auto *TargetCollision = NewObject<UBoxComponent>(Target);
     TargetCollision->SetBoxExtent(FVector(10.0f));
@@ -64,30 +93,14 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
     Equipment->SetOwner(Character);
     Character->RuntimeData.External.NetworkIdentityState.bIsMirror = false;
     Equipment->DispatchBeginPlay();
-    TestTrue(TEXT("真实资产通过装备初始化"), Equipment->IsInitialized());
+    TestTrue(TEXT("临时配置通过装备初始化"), Equipment->IsInitialized());
     TestTrue(TEXT("近战配置具有明确类型"), Definition->EquipmentType == EBBBEquipmentType::Melee);
     FTransform MuzzleResult(FVector(1.0f, 2.0f, 3.0f));
     TestFalse(TEXT("近战没有枪口是正常获取失败"), Equipment->TryGetMuzzleTransform(MuzzleResult));
     TestTrue(TEXT("枪口获取失败清除旧变换"), MuzzleResult.Equals(FTransform::Identity));
 
-    UClass *RifleClass = LoadClass<ABBBRifleEquipment>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Rifle/FAL/BP_ModernWeapons_Rifle_01.BP_ModernWeapons_Rifle_01_C"));
-    if (!TestNotNull(TEXT("现有步枪蓝图"), RifleClass))
-    {
-        return false;
-    }
-
-    auto *Rifle = World->SpawnActor<ABBBRifleEquipment>(RifleClass);
     Rifle->SetOwner(Character);
     Rifle->DispatchBeginPlay();
-    auto *RifleDefinition = DuplicateObject<UBBBRifleDefinition>(Cast<UBBBRifleDefinition>(Rifle->GetDefinition()), GetTransientPackage());
-    auto *DefinitionProperty = FindFProperty<FObjectPropertyBase>(ABBBEquipment::StaticClass(), TEXT("Definition"));
-    if (!TestNotNull(TEXT("步枪独立测试配置"), RifleDefinition)
-        || !TestNotNull(TEXT("装备配置字段"), DefinitionProperty))
-    {
-        return false;
-    }
-
     DefinitionProperty->SetObjectPropertyValue_InContainer(Rifle, RifleDefinition);
     TestTrue(TEXT("步枪默认枪口可获取"), Rifle->TryGetMuzzleTransform(MuzzleResult));
     RifleDefinition->MuzzleSocketName = Rifle->GetEquipmentSkeletalMesh()->GetBoneName(0);
@@ -99,6 +112,9 @@ bool FBBBMeleeWindowTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("步枪枪口失效不沿用旧变换"), MuzzleResult.Equals(FTransform::Identity));
     TestTrue(TEXT("真实网格具有扫掠起点"), Equipment->GetEquipmentSkeletalMesh()->DoesSocketExist(Definition->TraceStartSocket));
     TestTrue(TEXT("真实网格具有扫掠终点"), Equipment->GetEquipmentSkeletalMesh()->DoesSocketExist(Definition->TraceEndSocket));
+    Target->SetActorLocation(FMath::Lerp(
+        Equipment->GetEquipmentSkeletalMesh()->GetSocketLocation(Definition->TraceStartSocket),
+        Equipment->GetEquipmentSkeletalMesh()->GetSocketLocation(Definition->TraceEndSocket), 0.5f));
     UE_LOG(LogTemp, Log, TEXT("[BBBMelee] Test geometry Base=%s Tip=%s Target=%s"),
         *Equipment->GetEquipmentSkeletalMesh()->GetSocketLocation(Definition->TraceStartSocket).ToString(),
         *Equipment->GetEquipmentSkeletalMesh()->GetSocketLocation(Definition->TraceEndSocket).ToString(),

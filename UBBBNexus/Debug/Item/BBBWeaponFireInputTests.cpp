@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ActionSystem/Processors/BBBPistolActionProcessor.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ParseSystem/DomainData/Context/BBBPistolParseUpdateContext.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Pistol/Logic/System/ParseSystem/Processors/BBBPistolParseProcessor.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Instance/Rifle/Config/BBBRifleDefinition.h"
 #include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
@@ -36,13 +37,16 @@ bool FBBBWeaponClickTest::RunTest(const FString &Parameters)
     };
     auto *Character = World->SpawnActor<ABBBCharacter>();
     auto *Equipment = World->SpawnActor<ABBBPistolEquipment>();
-    const auto *SourceDefinition = LoadObject<UBBBPistolDefinition>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/Pistol/M1911/DA_ModernWeapons_Pistol_01.DA_ModernWeapons_Pistol_01"));
-    if (!TestNotNull(TEXT("正式手枪配置"), SourceDefinition))
+    const auto *SourceDefinition = LoadObject<UBBBRifleDefinition>(nullptr,
+        TEXT("/Game/_Project/Characters/Items/Equipment/Rifle/FAL/DA_ModernWeapons_Rifle_01.DA_ModernWeapons_Rifle_01"));
+    if (!TestNotNull(TEXT("半自动测试使用的网格和子弹配置"), SourceDefinition))
     {
         return false;
     }
-    auto *Definition = DuplicateObject<UBBBPistolDefinition>(SourceDefinition, GetTransientPackage());
+    auto *Definition = NewObject<UBBBPistolDefinition>();
+    Definition->EquipmentMesh = SourceDefinition->EquipmentMesh;
+    Definition->MuzzleSocketName = SourceDefinition->MuzzleSocketName;
+    Definition->ProjectileDefinition = SourceDefinition->ProjectileDefinition;
     Definition->FireInterval = 0.1f;
     Definition->AmmoCapacity = 12;
     Definition->bAutomaticFire = false;

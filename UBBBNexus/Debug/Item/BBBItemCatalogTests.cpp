@@ -36,9 +36,9 @@ bool FBBBItemCatalogTest::RunTest(const FString &)
     };
     auto *Character = World->SpawnActor<ABBBCharacter>();
     auto *EquipmentCatalog = LoadObject<UBBBEquipmentCatalog>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Equipment/DA_EquipmentCatalog.DA_EquipmentCatalog"));
+        TEXT("/Game/_Project/Characters/Items/Equipment/DA_EquipmentCatalog.DA_EquipmentCatalog"));
     auto *ConsumableCatalog = LoadObject<UBBBConsumableCatalog>(nullptr,
-        TEXT("/Game/_Project/Characters/BBBC_UA/Items/Consumable/DA_ConsumableCatalog.DA_ConsumableCatalog"));
+        TEXT("/Game/_Project/Characters/Items/Consumable/DA_ConsumableCatalog.DA_ConsumableCatalog"));
     if (!TestNotNull(TEXT("装备类目录"), EquipmentCatalog)
         || !TestNotNull(TEXT("消耗品类目录"), ConsumableCatalog))
     {
