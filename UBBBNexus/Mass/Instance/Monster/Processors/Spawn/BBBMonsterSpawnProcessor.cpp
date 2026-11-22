@@ -73,14 +73,20 @@ namespace
 
     bool CanCreateNow(UWorld& World, const UBBBMonsterSpawnDefinition& Definition, const UBBBMonsterDefinition& Monster,
         const FTransform& Transform, const TArray<FBBBMonsterSpawnRegionDefinition>& Regions,
+        const TArray<FBBBMonsterSpawnRegionDefinition>& ExcludeRegions,
         const TArray<FVector>& Observers, const TArray<FVector>& Directions, const TArray<FVector>& Occupied)
     {
         const FVector Center = Transform.GetLocation();
         const FVector Feet = Center - FVector::UpVector * (Monster.CapsuleHalfHeight + 2.0f);
-        if (Observers.IsEmpty() || Observers.Num() > Definition.MaxObservers || !Regions.ContainsByPredicate([&Feet](const auto& Region)
-        {
-            return Region.Contains(Feet);
-        }))
+        if (Observers.Num() > Definition.MaxObservers || (Observers.IsEmpty() && !Definition.bAllowWithoutObservers)
+            || !Regions.ContainsByPredicate([&Feet](const auto& Region)
+            {
+                return Region.Contains(Feet);
+            })
+            || ExcludeRegions.ContainsByPredicate([&Feet](const auto& Exclude)
+            {
+                return Exclude.Contains(Feet);
+            }))
         {
             return false;
         }
@@ -105,11 +111,17 @@ namespace
         {
             return false;
         }
+        bool bWithinMaxDistance = Definition.MaxPlayerDistance <= 0.0f || Observers.IsEmpty();
         for (int32 Index = 0; Index < Observers.Num(); ++Index)
         {
-            if (FVector::DistSquared(Feet, Observers[Index]) < FMath::Square(Definition.MinPlayerDistance))
+            const double DistSq = FVector::DistSquared(Feet, Observers[Index]);
+            if (DistSq < FMath::Square(Definition.MinPlayerDistance))
             {
                 return false;
+            }
+            if (Definition.MaxPlayerDistance > 0.0f && DistSq <= FMath::Square(Definition.MaxPlayerDistance))
+            {
+                bWithinMaxDistance = true;
             }
             FHitResult Blocker;
             if (Definition.bAvoidVisible && Directions.IsValidIndex(Index)
@@ -119,7 +131,7 @@ namespace
                 return false;
             }
         }
-        return true;
+        return bWithinMaxDistance;
     }
 }
 
@@ -211,7 +223,9 @@ void UBBBMonsterSpawnProcessor::ConfigureQueries(const TSharedRef<FMassEntityMan
 }
 
 void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefinition& Definition,
-    const TArray<FBBBMonsterSpawnRegionDefinition>& Regions, const TArray<FVector>& Candidates,
+    const TArray<FBBBMonsterSpawnRegionDefinition>& Regions,
+    const TArray<FBBBMonsterSpawnRegionDefinition>& ExcludeRegions,
+    const TArray<FVector>& Candidates,
     const TArray<FVector>& Observers, const TArray<FVector>& Directions, const TArray<FVector>& Occupied,
     const int32 Count, TArray<FVector>& Result, TArray<FVector>& Rejected, TArray<FString>& Reasons, const bool bCheckPath)
 {
@@ -271,15 +285,40 @@ void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefi
                 Reason = TEXT("导航投影越出生成区域");
             }
         }
-        if (Reason.IsEmpty() && (Observers.Num() > Definition.MaxObservers || Observers.IsEmpty()))
+        if (Reason.IsEmpty())
+        {
+            for (const auto& Exclude : ExcludeRegions)
+            {
+                if (Exclude.Contains(Location))
+                {
+                    Reason = TEXT("出生位置位于禁刷区域");
+                    break;
+                }
+            }
+        }
+        if (Reason.IsEmpty() && (Observers.Num() > Definition.MaxObservers || (Observers.IsEmpty() && !Definition.bAllowWithoutObservers)))
         {
             Reason = TEXT("有效玩家数量不在检查预算内");
         }
-        for (const auto& Observer : Observers)
+        if (Reason.IsEmpty() && !Observers.IsEmpty())
         {
-            if (Reason.IsEmpty() && FVector::DistSquared(Location, Observer) < FMath::Square(Definition.MinPlayerDistance))
+            bool bWithinMaxDistance = Definition.MaxPlayerDistance <= 0.0f;
+            for (const auto& Observer : Observers)
             {
-                Reason = TEXT("距离玩家过近");
+                const double DistSq = FVector::DistSquared(Location, Observer);
+                if (DistSq < FMath::Square(Definition.MinPlayerDistance))
+                {
+                    Reason = TEXT("距离玩家过近");
+                    break;
+                }
+                if (Definition.MaxPlayerDistance > 0.0f && DistSq <= FMath::Square(Definition.MaxPlayerDistance))
+                {
+                    bWithinMaxDistance = true;
+                }
+            }
+            if (Reason.IsEmpty() && !bWithinMaxDistance)
+            {
+                Reason = TEXT("距离玩家过远");
             }
         }
         const FVector Center = Location + FVector(0.0, 0.0, Height + 2.0f);
@@ -318,7 +357,7 @@ void UBBBMonsterSpawnProcessor::Filter(UWorld& World, const UBBBMonsterSpawnDefi
                 }
             }
         }
-        if (Reason.IsEmpty() && bCheckPath && Definition.bRequirePath)
+        if (Reason.IsEmpty() && bCheckPath && Definition.bRequirePath && !Observers.IsEmpty())
         {
             bool bReachable = false;
             for (const auto& Observer : Observers)
@@ -410,10 +449,7 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             Consume(Input.Resume);
             Consume(Input.Pause);
             Consume(Input.Stop);
-            if (!Directors.IsEmpty() && Directors[Index].Definition.IsValid()
-                && Directors[Index].Phase != EBBBMonsterDirectorPhase::Inactive
-                && Directors[Index].Phase != EBBBMonsterDirectorPhase::Stopped
-                && Directors[Index].Phase != EBBBMonsterDirectorPhase::Completed)
+            if (!Directors.IsEmpty() && Directors[Index].Definition.IsValid() && Directors[Index].bRunning)
             {
                 WorldLimit = FMath::Min(WorldLimit, Directors[Index].Definition->WorldMaxAlive);
             }
@@ -450,7 +486,7 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
         auto *State = EntityManager.IsEntityValid(Request->Entity)
             ? EntityManager.GetFragmentDataPtr<FBBBMonsterSpawnFragment>(Request->Entity) : nullptr;
         if (!State || !State->bActive || State->OwnerId != Request->OwnerId || State->RequestId != Request->RequestId
-            || State->Generation != Request->Generation || State->StageIndex != Request->StageIndex
+            || State->Generation != Request->Generation
             || State->Definition != Request->Definition
             || !NavData || Request->NavigationData.Get() != NavData)
         {
@@ -536,7 +572,7 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             TArray<FVector> Selected;
             TArray<FVector> Rejected;
             TArray<FString> Reasons;
-            Filter(*World, *Definition, State.Regions, {Location}, Observers, Directions, Occupied, 1, Selected, Rejected, Reasons, false);
+            Filter(*World, *Definition, State.Regions, State.ExcludeRegions, {Location}, Observers, Directions, Occupied, 1, Selected, Rejected, Reasons, false);
             if (Selected.IsEmpty())
             {
                 ++State.Rejections.FindOrAdd(Reasons.IsEmpty() ? TEXT("没有合格候选点") : Reasons[0]);
@@ -556,14 +592,13 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             Point.Transform = FTransform(FRotator(0.0f, Yaw, 0.0f), Selected[0] + FVector(0.0, 0.0, Monster->CapsuleHalfHeight + 2.0f));
             Occupied.Add(Selected[0]);
             --SelectionSlots;
-            if (Definition->bRequirePath && NavData)
+            if (Definition->bRequirePath && NavData && !Observers.IsEmpty())
             {
                 auto *Request = NewObject<UBBBMonsterSpawnPathRequest>(this);
                 Request->Entity = Entity;
                 Request->OwnerId = State.OwnerId;
                 Request->RequestId = State.RequestId;
                 Request->Generation = State.Generation;
-                Request->StageIndex = State.StageIndex;
                 Request->Definition = State.Definition;
                 Request->Point = Point;
                 Request->Location = Selected[0];
@@ -604,9 +639,11 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
         const FGuid OwnerId = State.OwnerId;
         const uint32 RequestId = State.RequestId;
         const uint32 Generation = State.Generation;
-        const int32 StageIndex = State.StageIndex;
+        const EBBBMonsterSpawnSource Source = State.Source;
+        const FName EventId = State.EventId;
+        const bool bAlertOnSpawn = State.bAlertOnSpawn;
         const TWeakObjectPtr<UWorld> WeakWorld = World;
-        Context.Defer().PushCommand<FMassDeferredCreateCommand>([WeakWorld, Entity, OwnerId, RequestId, Generation, StageIndex, Points, WorldLimit](FMassEntityManager& Manager)
+        Context.Defer().PushCommand<FMassDeferredCreateCommand>([WeakWorld, Entity, OwnerId, RequestId, Generation, Source, EventId, bAlertOnSpawn, Points, WorldLimit](FMassEntityManager& Manager)
         {
             UWorld* CurrentWorld = WeakWorld.Get();
             if (!CurrentWorld || !Manager.IsEntityValid(Entity))
@@ -644,7 +681,7 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
             {
                 auto* Monster = Point.Definition.Get();
                 if (!Monster || !Monster->EntityConfig || !CanCreateNow(*CurrentWorld, *SpawnDefinition, *Monster,
-                    Point.Transform, Current->Regions, CurrentObservers, CurrentDirections, CurrentOccupied))
+                    Point.Transform, Current->Regions, Current->ExcludeRegions, CurrentObservers, CurrentDirections, CurrentOccupied))
                 {
                     ++RejectedCount;
                     continue;
@@ -659,8 +696,10 @@ void UBBBMonsterSpawnProcessor::Execute(FMassEntityManager& EntityManager, FMass
                 auto& Batch = Batches.FindOrAdd(Monster);
                 Batch.DirectorId = OwnerId;
                 Batch.Generation = Generation;
-                Batch.StageIndex = StageIndex;
+                Batch.Source = Source;
+                Batch.EventId = EventId;
                 Batch.InitialTargetPlayerId = Current->InitialTargetPlayerId;
+                Batch.bAlertOnSpawn = bAlertOnSpawn;
                 Batch.Transforms.Add(Point.Transform);
                 Batch.Seeds.Add(Point.Seed);
             }

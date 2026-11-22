@@ -13,6 +13,8 @@ bool UBBBMonsterSpawnDefinition::Validate(FString& Error) const
         || WorldMaxAlive < 1 || WorldMaxAlive > 4096
         || !FMath::IsFinite(TimeBudgetMs) || TimeBudgetMs < 0.1f || TimeBudgetMs > 16.0f
         || !FMath::IsFinite(MinPlayerDistance) || MinPlayerDistance < 0.0f
+        || !FMath::IsFinite(MaxPlayerDistance) || MaxPlayerDistance < 0.0f
+        || (MaxPlayerDistance > 0.0f && MaxPlayerDistance < MinPlayerDistance)
         || !FMath::IsFinite(MinSpacing) || MinSpacing <= 0.0f
         || !FMath::IsFinite(GroundTraceDistance) || GroundTraceDistance <= 0.0f || !FMath::IsFinite(FixedYaw))
     {

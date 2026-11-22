@@ -4,40 +4,29 @@
 
 struct FBBBMonsterDirectorInputFragment;
 
-/** 停止新增 保留已出生小怪的现有生命周期 */
+/** 停止导演 清空队列与运行中的预制波次 已生成小怪不受影响 */
 struct FBBBMonsterDirectorStopLocalControlPacket final
 {
     using FInputFragment = FBBBMonsterDirectorInputFragment;
 
-
-    /** @return 输入数据是否有效 */
     bool IsValid() const
     {
         return true;
     }
 
-    /**
-     * @param State	当前导演状态
-     * @param Spawn	当前出生申请
-     * @return 当前输入能否应用
-     */
-    bool CanApply(const FBBBMonsterDirectorFragment& State, const FBBBMonsterDirectorSpawnFragment& Spawn) const
+    bool CanApply(const FBBBMonsterDirectorFragment& State, const FBBBMonsterDirectorSpawnFragment&) const
     {
-        return State.InstanceId.IsValid() && State.Phase != EBBBMonsterDirectorPhase::Stopped;
+        return State.InstanceId.IsValid() && State.bRunning;
     }
 
-    /**
-     * @param State	当前导演状态
-     * @param Spawn	当前出生申请
-     * @return 无返回值
-     */
     void Apply(FBBBMonsterDirectorFragment& State, FBBBMonsterDirectorSpawnFragment& Spawn) const
     {
-        State.Phase = EBBBMonsterDirectorPhase::Stopped;
-        State.Reason = TEXT("已停止 已出生小怪继续当前生命周期");
-        ++State.Revision;
-        ++Spawn.RequestId;
+        State.bRunning = false;
+        State.ActiveEvents.Reset();
+        State.Queue.Reset();
+        State.Reason = TEXT("已停止");
         Spawn.Reserved = 0;
-
+        Spawn.Accounted = 0;
+        ++Spawn.RequestId;
     }
 };

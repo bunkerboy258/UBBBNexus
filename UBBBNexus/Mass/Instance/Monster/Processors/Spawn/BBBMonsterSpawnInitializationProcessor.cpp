@@ -2,6 +2,9 @@
 #include "MassCommonFragments.h"
 #include "MassExecutionContext.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Network/BBBMonsterNetworkFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterPresentationDefinition.h"
@@ -12,6 +15,36 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Perception/BBBMonsterPerceptionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterSpawnOwnershipFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Tags/BBBMonsterTag.h"
+
+namespace
+{
+    int32 FindNearestAlivePlayerId(UWorld* World, const FVector& Location)
+    {
+        if (!World)
+        {
+            return INDEX_NONE;
+        }
+        int32 BestPlayerId = INDEX_NONE;
+        double BestDistSq = TNumericLimits<double>::Max();
+        for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+        {
+            const APlayerController* Controller = It->Get();
+            const APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
+            const APlayerState* PlayerState = Controller ? Controller->GetPlayerState<APlayerState>() : nullptr;
+            if (!Pawn || !Pawn->CanBeDamaged() || !PlayerState || PlayerState->GetPlayerId() < 0)
+            {
+                continue;
+            }
+            const double DistSq = FVector::DistSquared(Location, Pawn->GetActorLocation());
+            if (DistSq < BestDistSq)
+            {
+                BestDistSq = DistSq;
+                BestPlayerId = PlayerState->GetPlayerId();
+            }
+        }
+        return BestPlayerId;
+    }
+}
 
 UBBBMonsterSpawnInitializationProcessor::UBBBMonsterSpawnInitializationProcessor()
     : SpawnQuery(*this)
@@ -33,21 +66,22 @@ void UBBBMonsterSpawnInitializationProcessor::ConfigureQueries(const TSharedRef<
 void UBBBMonsterSpawnInitializationProcessor::Execute(FMassEntityManager&, FMassExecutionContext& Context)
 {
     const auto& Data = Context.GetAuxData().Get<FBBBMonsterSpawnData>();
+    UWorld* World = Context.GetWorld();
     int32 Offset = 0;
-    SpawnQuery.ForEachEntityChunk(Context, [&Data, &Offset](FMassExecutionContext& Chunk)
+    SpawnQuery.ForEachEntityChunk(Context, [World, &Data, &Offset](FMassExecutionContext& Chunk)
     {
         const auto Rules = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
-        if (Chunk.GetWorld()->GetNetMode() != NM_DedicatedServer)
+        if (World && World->GetNetMode() != NM_DedicatedServer)
         {
-            for (const auto &Rule : Rules)
+            for (const auto& Rule : Rules)
             {
                 if (Rule.Definition.IsValid() && Rule.Definition->Presentation)
                 {
-                    auto *Settings = Rule.Definition->Presentation.Get();
-                    Chunk.GetWorld()->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->Prepare(*Settings);
+                    auto* Settings = Rule.Definition->Presentation.Get();
+                    World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->Prepare(*Settings);
                     if (Settings->Blood)
                     {
-                        Chunk.GetWorld()->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>()->Prepare(*Settings->Blood);
+                        World->GetSubsystem<UBBBMonsterBloodPresentationSubsystem>()->Prepare(*Settings->Blood);
                     }
                 }
             }
@@ -62,12 +96,26 @@ void UBBBMonsterSpawnInitializationProcessor::Execute(FMassEntityManager&, FMass
             {
                 return;
             }
+            const FTransform SpawnTransform = Data.Transforms[Offset];
             Variation[Index].Seed = Data.Seeds.IsValidIndex(Offset) ? Data.Seeds[Offset] : 0;
-            Transforms[Index].GetMutableTransform() = Data.Transforms[Offset++];
+            Transforms[Index].GetMutableTransform() = SpawnTransform;
+            ++Offset;
             Owners[Index].DirectorId = Data.DirectorId;
             Owners[Index].Generation = Data.Generation;
-            Owners[Index].StageIndex = Data.StageIndex;
-            Perception[Index].InitialTargetPlayerId = Data.InitialTargetPlayerId;
+            Owners[Index].Source = Data.Source;
+            Owners[Index].EventId = Data.EventId;
+            if (Data.InitialTargetPlayerId >= 0)
+            {
+                Perception[Index].InitialTargetPlayerId = Data.InitialTargetPlayerId;
+            }
+            else if (Data.bAlertOnSpawn)
+            {
+                Perception[Index].InitialTargetPlayerId = FindNearestAlivePlayerId(World, SpawnTransform.GetLocation());
+            }
+            else
+            {
+                Perception[Index].InitialTargetPlayerId = INDEX_NONE;
+            }
         }
     });
 }

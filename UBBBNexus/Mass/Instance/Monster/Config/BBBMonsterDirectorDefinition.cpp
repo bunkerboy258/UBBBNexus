@@ -4,41 +4,83 @@
 #include "Misc/DataValidation.h"
 #endif
 
+const FBBBMonsterDirectorEventWaveDefinition* UBBBMonsterDirectorDefinition::FindEventWave(const FName EventId) const
+{
+    if (EventId.IsNone())
+    {
+        return nullptr;
+    }
+    return EventWaves.FindByPredicate([EventId](const FBBBMonsterDirectorEventWaveDefinition& Wave)
+    {
+        return Wave.EventId == EventId;
+    });
+}
+
 bool UBBBMonsterDirectorDefinition::Validate(FString& Error) const
 {
-    if (Stages.IsEmpty() || WorldMaxAlive < 1
-        || !FMath::IsFinite(AdditionalPlayerScale) || AdditionalPlayerScale < 0.0f || AdditionalPlayerScale > 1.0f
+    if (WorldMaxAlive < 1 || !FMath::IsFinite(AdditionalPlayerScale) || AdditionalPlayerScale < 0.0f || AdditionalPlayerScale > 1.0f
+        || !FMath::IsFinite(DespawnDistance) || DespawnDistance < 0.0f
         || !FMath::IsFinite(RetryInterval) || RetryInterval < 0.1f
         || !FMath::IsFinite(QueryTimeout) || QueryTimeout < 1.0f
-        || !FMath::IsFinite(UpdateInterval) || UpdateInterval < 0.05f)
+        || !FMath::IsFinite(UpdateInterval) || UpdateInterval < 0.05f
+        || !FMath::IsFinite(PopulationActivationRadius) || PopulationActivationRadius < 500.0f)
     {
-        Error = TEXT("导演需要阶段及有效的数量与时间参数");
+        Error = TEXT("导演全局参数或固有激活半径无效");
         return false;
     }
-    TSet<FName> StageIds;
-    for (const auto& Stage : Stages)
+    if (PopulationSpawnDefinition && !PopulationSpawnDefinition->Validate(Error))
     {
-        if (Stage.Id.IsNone() || StageIds.Contains(Stage.Id) || !Stage.SpawnDefinition || !Stage.SpawnDefinition->Validate(Error)
-            || static_cast<uint8>(Stage.Mode) > static_cast<uint8>(EBBBMonsterDirectorSpawnMode::Refill)
-            || static_cast<uint8>(Stage.Activation) > static_cast<uint8>(EBBBMonsterDirectorActivation::External)
-            || Stage.TotalCount < 1 || Stage.BatchCount < 1 || Stage.MaxAlive < 1
-            || Stage.BatchCount > Stage.MaxAlive || Stage.MaxAlive > WorldMaxAlive
-            || !FMath::IsFinite(Stage.Interval) || Stage.Interval < 0.1f || Stage.RegionIds.IsEmpty()
-            || (Stage.Mode == EBBBMonsterDirectorSpawnMode::Once && Stage.TotalCount > Stage.MaxAlive))
+        Error = TEXT("默认固有出生配置无效 ") + Error;
+        return false;
+    }
+    if (bEnableDynamicHorde)
+    {
+        if (!DynamicHordeSpawnDefinition || !DynamicHordeSpawnDefinition->Validate(Error))
         {
-            Error = FString::Printf(TEXT("阶段 %s 的标识 组合 数量 时间或区域无效 %s"), *Stage.Id.ToString(), *Error);
+            Error = TEXT("动态波次出生配置无效 ") + Error;
             return false;
         }
-        StageIds.Add(Stage.Id);
-        TSet<FName> Regions;
-        for (const FName Id : Stage.RegionIds)
+        if (!FMath::IsFinite(DynamicHordeMinInterval) || !FMath::IsFinite(DynamicHordeMaxInterval)
+            || DynamicHordeMinInterval < 5.0f || DynamicHordeMaxInterval < DynamicHordeMinInterval
+            || DynamicHordeBatchCount < 1 || DynamicHordeBatchCount > 128
+            || !FMath::IsFinite(DynamicHordeSampleRadius) || DynamicHordeSampleRadius < 500.0f
+            || !FMath::IsFinite(DynamicHordeSampleHalfHeight) || DynamicHordeSampleHalfHeight < 100.0f)
         {
-            if (Id.IsNone() || Regions.Contains(Id))
+            Error = TEXT("动态波次时间 数量或采样范围参数无效");
+            return false;
+        }
+    }
+    TSet<FName> SeenEvents;
+    for (const auto& Wave : EventWaves)
+    {
+        if (Wave.EventId.IsNone() || SeenEvents.Contains(Wave.EventId))
+        {
+            Error = TEXT("预制波次标识为空或重复");
+            return false;
+        }
+        SeenEvents.Add(Wave.EventId);
+        if (!Wave.SpawnDefinition || !Wave.SpawnDefinition->Validate(Error))
+        {
+            Error = FString::Printf(TEXT("预制波次 %s 出生配置无效 %s"), *Wave.EventId.ToString(), *Error);
+            return false;
+        }
+        if (Wave.BatchCount < 1 || Wave.MaxAlive < 1 || !FMath::IsFinite(Wave.Interval) || Wave.Interval < 0.5f)
+        {
+            Error = FString::Printf(TEXT("预制波次 %s 数量或间隔无效"), *Wave.EventId.ToString());
+            return false;
+        }
+        if (Wave.Mode == EBBBMonsterDirectorEventWaveMode::Burst && Wave.TotalCount < 1)
+        {
+            Error = FString::Printf(TEXT("单波爆发事件 %s 的总生成上限必须大于零"), *Wave.EventId.ToString());
+            return false;
+        }
+        for (const FName RegionId : Wave.RegionIds)
+        {
+            if (RegionId.IsNone())
             {
-                Error = FString::Printf(TEXT("阶段 %s 包含空区域或重复区域"), *Stage.Id.ToString());
+                Error = FString::Printf(TEXT("预制波次 %s 包含空区域标识"), *Wave.EventId.ToString());
                 return false;
             }
-            Regions.Add(Id);
         }
     }
     Error.Reset();

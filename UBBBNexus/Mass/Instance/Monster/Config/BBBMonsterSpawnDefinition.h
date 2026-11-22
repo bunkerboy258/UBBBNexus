@@ -42,6 +42,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "出生检查", meta = (DisplayName = "玩家安全距离", ClampMin = "0", Units = "cm"))
     float MinPlayerDistance = 1500.0f;
 
+    /** 出生点与最近玩家的最大距离 零表示不限制最大距离 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "出生检查", meta = (DisplayName = "玩家最大距离", ClampMin = "0", Units = "cm"))
+    float MaxPlayerDistance = 0.0f;
+
     /** 已有小怪与本批位置都参与间距检查 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "出生检查", meta = (DisplayName = "出生间距", ClampMin = "1", Units = "cm"))
     float MinSpacing = 120.0f;
@@ -57,6 +61,10 @@ public:
     /** 是否拒绝玩家视野内无遮挡位置 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "出生检查", meta = (DisplayName = "避开可见位置"))
     bool bAvoidVisible = true;
+
+    /** 无有效存活玩家时是否允许直接选点 供固有僵尸预刷使用 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "出生检查", meta = (DisplayName = "允许无玩家选点"))
+    bool bAllowWithoutObservers = false;
 
     /** 随机种子为零时由房主为每个入口选择一次 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "随机", meta = (DisplayName = "随机种子"))

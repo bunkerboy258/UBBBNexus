@@ -14,16 +14,22 @@ struct FBBBMonsterSpawnRequestLocalControlPacket final
     uint32 RequestId = 0;
     /** 当前运行代号 */
     uint32 Generation = 1;
-    /** 独立生成入口使用零阶段 */
-    int32 StageIndex = 0;
+    /** 本次请求的调度来源 */
+    EBBBMonsterSpawnSource Source = EBBBMonsterSpawnSource::Spawner;
+    /** 预制波次标识 非预制波次为 None */
+    FName EventId;
     /** 唯一出生规则 */
     TWeakObjectPtr<UBBBMonsterSpawnDefinition> Definition;
-    /** 本请求冻结的世界区域 */
+    /** 本请求冻结的可刷世界区域 */
     TArray<FBBBMonsterSpawnRegionDefinition> Regions;
+    /** 本请求冻结的禁刷世界区域 */
+    TArray<FBBBMonsterSpawnRegionDefinition> ExcludeRegions;
     /** 与网络身份无关的非零种子 */
     uint32 Seed = 1;
     /** 本次出生可选的初始目标玩家编号 */
     int32 InitialTargetPlayerId = INDEX_NONE;
+    /** 出生时是否强制追击玩家 */
+    bool bAlertOnSpawn = false;
     /** 本请求最多实际创建的数量 */
     int32 Count = 1;
 
@@ -31,14 +37,22 @@ struct FBBBMonsterSpawnRequestLocalControlPacket final
     bool IsValid() const
     {
         FString Error;
-        if (!OwnerId.IsValid() || RequestId == 0 || Generation == 0 || StageIndex < 0 || Seed == 0
-            || InitialTargetPlayerId < INDEX_NONE || Count < 1 || Count > 512 || !Definition.IsValid() || !Definition->Validate(Error) || Regions.IsEmpty())
+        if (!OwnerId.IsValid() || RequestId == 0 || Generation == 0 || Seed == 0
+            || InitialTargetPlayerId < INDEX_NONE || Count < 1 || Count > 512
+            || !Definition.IsValid() || !Definition->Validate(Error) || Regions.IsEmpty())
         {
             return false;
         }
         for (const auto& Region : Regions)
         {
             if (!Region.IsValid())
+            {
+                return false;
+            }
+        }
+        for (const auto& Exclude : ExcludeRegions)
+        {
+            if (!Exclude.IsValid())
             {
                 return false;
             }
@@ -66,11 +80,14 @@ struct FBBBMonsterSpawnRequestLocalControlPacket final
         State.OwnerId = OwnerId;
         State.RequestId = RequestId;
         State.Generation = Generation;
-        State.StageIndex = StageIndex;
+        State.Source = Source;
+        State.EventId = EventId;
         State.Definition = Definition;
         State.Regions = Regions;
+        State.ExcludeRegions = ExcludeRegions;
         State.Seed = Seed;
         State.InitialTargetPlayerId = InitialTargetPlayerId;
+        State.bAlertOnSpawn = bAlertOnSpawn;
         State.Requested = Count;
         State.bActive = true;
         State.Reason = TEXT("正在选点");

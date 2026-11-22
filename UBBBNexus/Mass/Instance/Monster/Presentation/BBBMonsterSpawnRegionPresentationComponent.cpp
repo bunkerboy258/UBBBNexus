@@ -1,4 +1,5 @@
 #include "BBBMonsterSpawnRegionPresentationComponent.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnDefinition.h"
 
 UBBBMonsterSpawnRegionPresentationComponent::UBBBMonsterSpawnRegionPresentationComponent()
 {
@@ -13,8 +14,12 @@ FBBBMonsterSpawnRegionDefinition UBBBMonsterSpawnRegionPresentationComponent::Re
 {
     FBBBMonsterSpawnRegionDefinition Result;
     Result.Id = RegionId;
+    Result.Role = Role;
     Result.Transform = GetComponentTransform();
     Result.Extent = GetUnscaledBoxExtent();
     Result.Shape = Shape;
+    Result.PopulationCount = PopulationCount;
+    Result.ActivationRadius = ActivationRadius;
+    Result.SpawnDefinitionOverride = SpawnDefinitionOverride;
     return Result;
 }

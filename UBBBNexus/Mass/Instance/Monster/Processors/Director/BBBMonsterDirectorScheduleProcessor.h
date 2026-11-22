@@ -1,33 +1,30 @@
 #pragma once
 #include "MassEntityQuery.h"
 #include "MassProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorEventWaveDefinition.h"
 #include "BBBMonsterDirectorScheduleProcessor.generated.h"
 
-struct FBBBMonsterDirectorStageDefinition;
-
-/** 主机统计归属并调度有界出生申请 */
+/** 推进式关卡导演调度 维护固有区激活 动态波次 预制波次与远距离回收 */
 UCLASS()
 class ABBB_EVAC_API UBBBMonsterDirectorScheduleProcessor final : public UMassProcessor
 {
     GENERATED_BODY()
 public:
-    /** @return 初始化导演与小怪查询 */
     UBBBMonsterDirectorScheduleProcessor();
 
     /**
-     * @param Stage	阶段静态规则
-     * @param Spawned	当前阶段实际生成数量
-     * @param Alive	当前导演存活数量
-     * @param WorldSlots	世界扣除存活与预留后的余量
-     * @return 本次允许申请的数量
+     * @param Wave	事件波次配置
+     * @param Spawned	本事件已生成数量
+     * @param EventAlive	本事件当前存活数量
+     * @param WorldSlots	世界剩余存活额度
+     * @return 本次允许提交的数量
      */
-    static int32 CalculateRequest(const FBBBMonsterDirectorStageDefinition& Stage, int32 Spawned, int32 Alive, int32 WorldSlots);
+    static int32 CalculateEventRequest(const FBBBMonsterDirectorEventWaveDefinition& Wave,
+        int32 Spawned, int32 EventAlive, int32 WorldSlots);
 protected:
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
     virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
 private:
-    /** 导演规则与预留量 */
     FMassEntityQuery DirectorQuery;
-    /** 当前世界小怪与归属 */
     FMassEntityQuery MonsterQuery;
 };

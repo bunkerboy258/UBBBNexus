@@ -24,8 +24,6 @@ public:
     uint32 RequestId = 0;
     /** 当前导演运行代号 */
     uint32 Generation = 0;
-    /** 当前导演阶段 */
-    int32 StageIndex = 0;
     /** 当前请求使用的配置 */
     TWeakObjectPtr<UBBBMonsterSpawnDefinition> Definition;
     /** 等待可达性确认的单个候选 */

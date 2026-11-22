@@ -4,46 +4,34 @@
 
 struct FBBBMonsterDirectorInputFragment;
 
-/** 开始一次新的副本运行 */
+/** 启动导演 启用固有区激活 动态波次与预制波次 */
 struct FBBBMonsterDirectorStartLocalControlPacket final
 {
     using FInputFragment = FBBBMonsterDirectorInputFragment;
 
-
-    /** @return 输入数据是否有效 */
     bool IsValid() const
     {
         return true;
     }
 
-    /**
-     * @param State	当前导演状态
-     * @param Spawn	当前出生申请
-     * @return 当前输入能否应用
-     */
-    bool CanApply(const FBBBMonsterDirectorFragment& State, const FBBBMonsterDirectorSpawnFragment& Spawn) const
+    bool CanApply(const FBBBMonsterDirectorFragment& State, const FBBBMonsterDirectorSpawnFragment&) const
     {
-        const bool bTerminal = State.Phase == EBBBMonsterDirectorPhase::Inactive || State.Phase == EBBBMonsterDirectorPhase::Stopped
-            || State.Phase == EBBBMonsterDirectorPhase::Completed;
-        return State.InstanceId.IsValid() && State.Definition.IsValid() && bTerminal && State.EntityCount == 0 && Spawn.Reserved == 0;
+        return State.InstanceId.IsValid() && State.Definition.IsValid() && !State.bRunning;
     }
 
-    /**
-     * @param State	当前导演状态
-     * @param Spawn	当前出生申请
-     * @return 无返回值
-     */
     void Apply(FBBBMonsterDirectorFragment& State, FBBBMonsterDirectorSpawnFragment& Spawn) const
     {
-        Spawn.InitialTargetPlayerId = INDEX_NONE;
         ++State.Generation;
-        ++State.Revision;
-        State.StageIndex = 0;
-        State.StageSpawned = 0;
+        State.bRunning = true;
         State.TotalSpawned = 0;
-        State.Phase = EBBBMonsterDirectorPhase::Waiting;
-        State.NextSpawnTime = 0.0;
+        State.ActivatedPopulationRegionIds.Reset();
+        State.ActiveEvents.Reset();
+        State.Queue.Reset();
+        State.NextDynamicHordeTime = 0.0;
         State.NextUpdateTime = 0.0;
-        State.Reason = TEXT("等待阶段条件");
+        State.Reason = TEXT("导演运行中");
+        Spawn.Reserved = 0;
+        Spawn.Accounted = 0;
+        ++Spawn.RequestId;
     }
 };

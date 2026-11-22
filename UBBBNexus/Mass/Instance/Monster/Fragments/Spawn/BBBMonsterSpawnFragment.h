@@ -1,6 +1,7 @@
 #pragma once
 #include "MassEntityTypes.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnRegionDefinition.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnSource.h"
 #include "BBBMonsterSpawnPoint.h"
 #include "BBBMonsterSpawnFragment.generated.h"
 
@@ -17,16 +18,22 @@ struct ABBB_EVAC_API FBBBMonsterSpawnFragment final : public FMassFragment
     uint32 RequestId = 0;
     /** 导演运行代号 独立生成器同样使用递增代号 */
     uint32 Generation = 0;
-    /** 所属导演阶段 独立生成使用零 */
-    int32 StageIndex = 0;
+    /** 本次出生调度来源 */
+    EBBBMonsterSpawnSource Source = EBBBMonsterSpawnSource::Spawner;
+    /** 预制波次标识 非预制波次为 None */
+    FName EventId;
     /** 唯一的出生配置 */
     TWeakObjectPtr<UBBBMonsterSpawnDefinition> Definition;
-    /** 本请求冻结的区域 */
+    /** 本请求冻结的可刷区域 */
     TArray<FBBBMonsterSpawnRegionDefinition> Regions;
+    /** 本请求冻结的禁刷区域 */
+    TArray<FBBBMonsterSpawnRegionDefinition> ExcludeRegions;
     /** 请求级随机种子 */
     uint32 Seed = 1;
     /** 本次出生可选的初始目标玩家编号 */
     int32 InitialTargetPlayerId = INDEX_NONE;
+    /** 出生时是否强制锁定存活玩家追击 */
+    bool bAlertOnSpawn = false;
     /** 请求数量 */
     int32 Requested = 0;
     /** 已实际创建数量 取消也不清零 */

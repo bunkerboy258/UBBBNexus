@@ -134,27 +134,22 @@ bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDi
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorPauseLocalControlPacket& Packet)
-{
-    return WriteInputSlot(*GetWorld(), Entity, Packet);
-}
-
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorResumeLocalControlPacket& Packet)
-{
-    return WriteInputSlot(*GetWorld(), Entity, Packet);
-}
-
 bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStopLocalControlPacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorTriggerLocalControlPacket& Packet)
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorSetDynamicHordePausedLocalControlPacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }
 
-bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStateAuthorityFactPacket& Packet)
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorTriggerEventWaveLocalControlPacket& Packet)
+{
+    return WriteInputSlot(*GetWorld(), Entity, Packet);
+}
+
+bool UBBBMassSubsystem::RouteInput(FMassEntityHandle Entity, const FBBBMonsterDirectorStopEventWaveLocalControlPacket& Packet)
 {
     return WriteInputSlot(*GetWorld(), Entity, Packet);
 }

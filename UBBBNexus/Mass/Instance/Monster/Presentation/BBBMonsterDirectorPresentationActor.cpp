@@ -6,18 +6,13 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Traits/BBBMonsterDirectorTrait.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorInputFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Network/BBBMonsterDirectorNetworkComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Director/BBBMonsterDirectorParseProcessor.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterSpawnDefinition.h"
 
 ABBBMonsterDirectorPresentationActor::ABBBMonsterDirectorPresentationActor()
 {
     PrimaryActorTick.bCanEverTick = false;
-    bReplicates = true;
-    bAlwaysRelevant = true;
-    SetNetUpdateFrequency(5.0f);
+    bReplicates = false;
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DirectorRoot"));
-    DirectorNetwork = CreateDefaultSubobject<UBBBMonsterDirectorNetworkComponent>(TEXT("DirectorNetwork"));
 }
 
 bool ABBBMonsterDirectorPresentationActor::ValidateConfiguration(FString& Error) const
@@ -47,15 +42,21 @@ bool ABBBMonsterDirectorPresentationActor::ValidateConfiguration(FString& Error)
             Error = TEXT("生成区域标识重复或尺寸无效");
             return false;
         }
+        if (Config.Role == EBBBMonsterSpawnRegionRole::Population
+            && !Config.SpawnDefinitionOverride.IsValid() && !Definition->PopulationSpawnDefinition)
+        {
+            Error = FString::Printf(TEXT("固有区域 %s 缺少出生配置且导演未设置默认固有出生配置"), *Config.Id.ToString());
+            return false;
+        }
         Seen.Add(Config.Id);
     }
-    for (const auto& Stage : Definition->Stages)
+    for (const auto& Wave : Definition->EventWaves)
     {
-        for (const FName Id : Stage.RegionIds)
+        for (const FName Id : Wave.RegionIds)
         {
             if (!Seen.Contains(Id))
             {
-                Error = FString::Printf(TEXT("阶段 %s 缺少地图区域 %s"), *Stage.Id.ToString(), *Id.ToString());
+                Error = FString::Printf(TEXT("预制波次 %s 缺少地图区域 %s"), *Wave.EventId.ToString(), *Id.ToString());
                 return false;
             }
         }
@@ -66,7 +67,7 @@ bool ABBBMonsterDirectorPresentationActor::ValidateConfiguration(FString& Error)
 
 bool ABBBMonsterDirectorPresentationActor::EnsureEntity()
 {
-    if (!GetWorld() || !GetWorld()->IsGameWorld() || !EntityConfig)
+    if (!HasAuthority() || !GetWorld() || GetWorld()->GetNetMode() == NM_Client || !GetWorld()->IsGameWorld() || !EntityConfig)
     {
         return false;
     }
@@ -80,40 +81,34 @@ bool ABBBMonsterDirectorPresentationActor::EnsureEntity()
     {
         return false;
     }
-    if (HasAuthority())
+    FString Error;
+    if (!ValidateConfiguration(Error))
     {
-        FString Error;
-        if (!ValidateConfiguration(Error))
-        {
-            UE_LOG(LogTemp, Error, TEXT("[BBBMonsterDirector] %s %s"), *GetName(), *Error);
-            return false;
-        }
+        UE_LOG(LogTemp, Error, TEXT("[BBBMonsterDirector] %s %s"), *GetName(), *Error);
+        return false;
     }
     Entity = Mass->CreateEntity(*EntityConfig);
     if (!Entity.IsSet())
     {
         return false;
     }
-    if (HasAuthority())
+    FBBBMonsterDirectorInitializeLocalControlPacket Packet;
+    Packet.InstanceId = FGuid::NewGuid();
+    Packet.Seed = static_cast<uint32>(FMath::Rand()) | 1u;
+    Packet.Definition = Definition.Get();
+    Packet.Presentation = this;
+    for (const ABBBMonsterSpawnRegionPresentationActor* Region : Regions)
     {
-        FBBBMonsterDirectorInitializeLocalControlPacket Packet;
-        Packet.InstanceId = FGuid::NewGuid();
-        Packet.Seed = static_cast<uint32>(FMath::Rand()) | 1u;
-        Packet.Definition = Definition.Get();
-        Packet.Presentation = this;
-        for (const ABBBMonsterSpawnRegionPresentationActor* Region : Regions)
-        {
-            Packet.Regions.Add(Region->ReadDefinition());
-        }
-        Mass->SubmitInput(Entity, MoveTemp(Packet));
+        Packet.Regions.Add(Region->ReadDefinition());
     }
+    Mass->SubmitInput(Entity, MoveTemp(Packet));
     return true;
 }
 
 void ABBBMonsterDirectorPresentationActor::BeginPlay()
 {
     Super::BeginPlay();
-    if (EnsureEntity() && HasAuthority() && bAutoStart)
+    if (EnsureEntity() && bAutoStart)
     {
         StartDirector();
     }
@@ -121,7 +116,7 @@ void ABBBMonsterDirectorPresentationActor::BeginPlay()
 
 void ABBBMonsterDirectorPresentationActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    if (auto* Mass = GetWorld()->GetSubsystem<UBBBMassSubsystem>())
+    if (auto* Mass = GetWorld() ? GetWorld()->GetSubsystem<UBBBMassSubsystem>() : nullptr)
     {
         Mass->DestroyEntity(Entity);
     }
@@ -129,9 +124,9 @@ void ABBBMonsterDirectorPresentationActor::EndPlay(const EEndPlayReason::Type En
     Super::EndPlay(EndPlayReason);
 }
 
-FBBBMonsterDirectorReplicationState ABBBMonsterDirectorPresentationActor::ReadState() const
+FBBBMonsterDirectorStatus ABBBMonsterDirectorPresentationActor::ReadStatus() const
 {
-    FBBBMonsterDirectorReplicationState Result;
+    FBBBMonsterDirectorStatus Result;
     if (GetWorld())
     {
         UBBBMonsterDirectorParseProcessor::Query(*GetWorld(), Entity, Result);
@@ -148,54 +143,70 @@ bool ABBBMonsterDirectorPresentationActor::StartDirector()
     return HasAuthority() && SubmitInput(FBBBMonsterDirectorStartLocalControlPacket());
 }
 
-bool ABBBMonsterDirectorPresentationActor::PauseDirector()
-{
-    return HasAuthority() && SubmitInput(FBBBMonsterDirectorPauseLocalControlPacket());
-}
-
-bool ABBBMonsterDirectorPresentationActor::ResumeDirector()
-{
-    return HasAuthority() && SubmitInput(FBBBMonsterDirectorResumeLocalControlPacket());
-}
-
 bool ABBBMonsterDirectorPresentationActor::StopDirector()
 {
     return HasAuthority() && SubmitInput(FBBBMonsterDirectorStopLocalControlPacket());
 }
 
-bool ABBBMonsterDirectorPresentationActor::TriggerStage(APlayerState* InitialTarget)
+bool ABBBMonsterDirectorPresentationActor::SetDynamicHordePaused(const bool bPaused)
 {
+    FBBBMonsterDirectorSetDynamicHordePausedLocalControlPacket Packet;
+    Packet.bPaused = bPaused;
+    return HasAuthority() && SubmitInput(MoveTemp(Packet));
+}
+
+bool ABBBMonsterDirectorPresentationActor::TriggerEventWave(const FName EventId, APlayerState* InitialTarget)
+{
+    if (EventId.IsNone())
+    {
+        return false;
+    }
     if (InitialTarget && (!IsValid(InitialTarget) || InitialTarget->GetWorld() != GetWorld() || InitialTarget->GetPlayerId() < 0))
     {
         return false;
     }
-
-    const auto State = ReadState();
-    FBBBMonsterDirectorTriggerLocalControlPacket Packet;
-    Packet.Generation = State.Generation;
-    Packet.StageIndex = State.StageIndex;
+    FBBBMonsterDirectorTriggerEventWaveLocalControlPacket Packet;
+    Packet.EventId = EventId;
     Packet.InitialTargetPlayerId = InitialTarget ? InitialTarget->GetPlayerId() : INDEX_NONE;
     return HasAuthority() && SubmitInput(MoveTemp(Packet));
 }
 
-bool ABBBMonsterDirectorPresentationActor::ReadPlacementRegions(const int32 StageIndex, TArray<FBBBMonsterSpawnRegionDefinition>& Result) const
+bool ABBBMonsterDirectorPresentationActor::StopEventWave(const FName EventId)
+{
+    FBBBMonsterDirectorStopEventWaveLocalControlPacket Packet;
+    Packet.EventId = EventId;
+    return HasAuthority() && SubmitInput(MoveTemp(Packet));
+}
+
+void ABBBMonsterDirectorPresentationActor::ReadExcludeRegions(TArray<FBBBMonsterSpawnRegionDefinition>& Result) const
 {
     Result.Reset();
-    if (!GetWorld() || !Definition || !Definition->Stages.IsValidIndex(StageIndex))
-    {
-        return false;
-    }
     for (const ABBBMonsterSpawnRegionPresentationActor* Region : Regions)
     {
-        if (IsValid(Region) && Definition->Stages[StageIndex].RegionIds.Contains(Region->ReadDefinition().Id))
+        if (IsValid(Region))
         {
-            Result.Add(Region->ReadDefinition());
+            const auto Def = Region->ReadDefinition();
+            if (Def.IsValid() && Def.Role == EBBBMonsterSpawnRegionRole::BlockSpawn)
+            {
+                Result.Add(Def);
+            }
+        }
+    }
+}
+
+bool ABBBMonsterDirectorPresentationActor::ReadRegionsByIds(const TArray<FName>& RegionIds, TArray<FBBBMonsterSpawnRegionDefinition>& Result) const
+{
+    Result.Reset();
+    for (const ABBBMonsterSpawnRegionPresentationActor* Region : Regions)
+    {
+        if (IsValid(Region))
+        {
+            const auto Def = Region->ReadDefinition();
+            if (Def.IsValid() && Def.Role != EBBBMonsterSpawnRegionRole::BlockSpawn && RegionIds.Contains(Def.Id))
+            {
+                Result.Add(Def);
+            }
         }
     }
     return !Result.IsEmpty();
-}
-
-UBBBMonsterDirectorNetworkComponent* ABBBMonsterDirectorPresentationActor::GetDirectorNetwork() const
-{
-    return DirectorNetwork;
 }

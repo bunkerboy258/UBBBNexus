@@ -43,7 +43,8 @@ public:
     /**
      * @param World	检查世界
      * @param Definition	出生规则
-     * @param Regions	区域快照
+     * @param Regions	可刷区域快照
+     * @param ExcludeRegions	禁刷区域快照
      * @param Candidates	候选位置
      * @param Observers	玩家或预览参考位置
      * @param Directions	对应观察方向
@@ -56,7 +57,9 @@ public:
      * @return 无返回值
      */
     static void Filter(UWorld& World, const UBBBMonsterSpawnDefinition& Definition,
-        const TArray<FBBBMonsterSpawnRegionDefinition>& Regions, const TArray<FVector>& Candidates,
+        const TArray<FBBBMonsterSpawnRegionDefinition>& Regions,
+        const TArray<FBBBMonsterSpawnRegionDefinition>& ExcludeRegions,
+        const TArray<FVector>& Candidates,
         const TArray<FVector>& Observers, const TArray<FVector>& Directions, const TArray<FVector>& Occupied,
         int32 Count, TArray<FVector>& Result, TArray<FVector>& Rejected, TArray<FString>& Reasons, bool bCheckPath);
 protected:

@@ -1,31 +1,30 @@
 #pragma once
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Director/BBBMonsterDirectorSpawnFragment.h"
-#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterDirectorDefinition.h"
 
 struct FBBBMonsterDirectorInputFragment;
 
-/** 初始化导演的配置与地图绑定 */
+/** 为新创建的导演实体写入地图绑定与静态规则 */
 struct FBBBMonsterDirectorInitializeLocalControlPacket final
 {
     using FInputFragment = FBBBMonsterDirectorInputFragment;
-
-    /** 本地图的导演身份 */
+    /** 导演实例身份 */
     FGuid InstanceId;
-    /** 与网络身份无关的入口随机种子 */
+    /** 当前入口的随机根种子 */
     uint32 Seed = 1;
-    /** 静态副本规则 */
+    /** 共享静态规则 */
     TWeakObjectPtr<UBBBMonsterDirectorDefinition> Definition;
-    /** 地图桥接对象 */
+    /** 地图桥接入口 */
     TWeakObjectPtr<ABBBMonsterDirectorPresentationActor> Presentation;
-    /** 已检查的区域纯值快照 */
+    /** 冻结的地图区域 包含固有区 事件区与禁刷区 */
     TArray<FBBBMonsterSpawnRegionDefinition> Regions;
 
-    /** @return 输入数据是否有效 */
+    /** @return 初始化数据是否完整有效 */
     bool IsValid() const
     {
         FString Error;
-        if (!InstanceId.IsValid() || !Definition.IsValid() || !Presentation.IsValid() || !Definition->Validate(Error) || Regions.IsEmpty())
+        if (!InstanceId.IsValid() || Seed == 0 || !Definition.IsValid() || !Definition->Validate(Error))
         {
             return false;
         }
@@ -38,42 +37,43 @@ struct FBBBMonsterDirectorInitializeLocalControlPacket final
             }
             Seen.Add(Region.Id);
         }
-        for (const auto& Stage : Definition->Stages)
-        {
-            for (const FName Id : Stage.RegionIds)
-            {
-                if (!Seen.Contains(Id))
-                {
-                    return false;
-                }
-            }
-        }
         return true;
     }
 
     /**
-     * @param State	当前导演状态
-     * @param Spawn	当前出生申请
-     * @return 当前输入能否应用
+     * @param State	当前导演运行状态
+     * @param Spawn	当前导演刷怪申请
+     * @return 实体是否尚未初始化
      */
-    bool CanApply(const FBBBMonsterDirectorFragment& State, const FBBBMonsterDirectorSpawnFragment& Spawn) const
+    bool CanApply(const FBBBMonsterDirectorFragment& State, const FBBBMonsterDirectorSpawnFragment&) const
     {
-        return !State.InstanceId.IsValid() && Spawn.Reserved == 0;
+        return !State.InstanceId.IsValid();
     }
 
     /**
-     * @param State	当前导演状态
-     * @param Spawn	当前出生申请
+     * @param State	当前导演运行状态
+     * @param Spawn	当前导演刷怪申请
      * @return 无返回值
      */
     void Apply(FBBBMonsterDirectorFragment& State, FBBBMonsterDirectorSpawnFragment& Spawn) const
     {
+        State = FBBBMonsterDirectorFragment();
+        Spawn = FBBBMonsterDirectorSpawnFragment();
         State.InstanceId = InstanceId;
         State.Seed = Seed;
         State.Definition = Definition;
         State.Presentation = Presentation;
-        State.Regions = Regions;
-        State.Reason = TEXT("配置完成 等待开始");
-        ++State.Revision;
+        for (const auto& Region : Regions)
+        {
+            if (Region.Role == EBBBMonsterSpawnRegionRole::BlockSpawn)
+            {
+                State.ExcludeRegions.Add(Region);
+            }
+            else
+            {
+                State.Regions.Add(Region);
+            }
+        }
+        State.Reason = TEXT("已初始化 等待开始");
     }
 };
