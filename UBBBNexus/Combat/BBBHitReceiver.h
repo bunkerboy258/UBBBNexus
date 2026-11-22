@@ -38,6 +38,8 @@ namespace BBBHitReceiver
 {
     /** @param Target 受击目标 @param Hit 完整单次命中贡献 @return 无 */
     ABBB_EVAC_API void Submit(AActor* Target, const FBBBHitContribution& Hit);
+    /** @param Target 受击目标 @param Hits 同一次爆炸按顺序产生的独立命中 @return 无 */
+    ABBB_EVAC_API void SubmitBatch(AActor* Target, TArray<FBBBHitContribution> Hits);
     /** @param Target 命中目标 @param Hit 单发直击贡献 @param Shooter 发射者 @return 无 */
     ABBB_EVAC_API void SubmitProjectileHit(AActor* Target, const FBBBHitContribution& Hit, APawn* Shooter);
 }

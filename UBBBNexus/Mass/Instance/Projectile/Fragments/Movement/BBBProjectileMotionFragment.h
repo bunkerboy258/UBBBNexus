@@ -28,4 +28,7 @@ struct ABBB_EVAC_API FBBBProjectileMotionFragment final : public FMassFragment
 
     /** 碰撞后停止运动 引信仍继续计时 */
     bool bResting = false;
+
+    /** 在一次移动中走完本次弹程 供同批破片统一结算 */
+    bool bCompleteInOneStep = false;
 };

@@ -41,7 +41,8 @@ void UBBBProjectileMovementProcessor::Execute(FMassEntityManager&, FMassExecutio
             Motion[Index].PreviousLocation = Transforms[Index].GetTransform().GetLocation();
             if (Motion[Index].bInitialized && !Life[Index].bPendingDestroy && !Motion[Index].bResting)
             {
-                float Step = FMath::Min(Delta, Life[Index].RemainingSeconds);
+                float Step = Motion[Index].bCompleteInOneStep
+                    ? Life[Index].RemainingSeconds : FMath::Min(Delta, Life[Index].RemainingSeconds);
                 if (Life[Index].FuseRemainingSeconds > 0.0f)
                 {
                     Step = FMath::Min(Step, Life[Index].FuseRemainingSeconds);

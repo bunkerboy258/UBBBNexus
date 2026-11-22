@@ -29,6 +29,30 @@ void BBBHitReceiver::SubmitProjectileHit(AActor* Target, const FBBBHitContributi
     }
 }
 
+void BBBHitReceiver::SubmitBatch(AActor* Target, TArray<FBBBHitContribution> Hits)
+{
+    if (!IsValid(Target) || Hits.IsEmpty())
+    {
+        return;
+    }
+    if (auto* Character = Cast<ABBBCharacter>(Target))
+    {
+        Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{MoveTemp(Hits)});
+        return;
+    }
+
+    // 原生受击对象只接收一次作用 以最后命中为接触位置并保留爆炸冲击。
+    FBBBHitContribution Combined = Hits.Pop(EAllowShrinking::No);
+    for (const auto& Hit : Hits)
+    {
+        Combined.AddDamage += Hit.AddDamage;
+        Combined.AddDurableDamage += Hit.AddDurableDamage;
+        Combined.AddImpulse += Hit.AddImpulse;
+        Combined.AddVelocity += Hit.AddVelocity;
+    }
+    Submit(Target, Combined);
+}
+
 void UBBBPhysicsHitReceiver::ReceiveHit(const FBBBHitContribution& Hit)
 {
     if (!Hit.IsValid())

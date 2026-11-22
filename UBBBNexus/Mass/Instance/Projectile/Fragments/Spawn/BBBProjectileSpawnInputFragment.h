@@ -20,3 +20,16 @@ struct ABBB_EVAC_API FBBBProjectileSpawnInputFragment final : public FMassFragme
         return Spawn;
     }
 };
+
+template<>
+struct TStructOpsTypeTraits<FBBBProjectileSpawnInputFragment>
+    : TStructOpsTypeTraitsBase2<FBBBProjectileSpawnInputFragment>
+{
+    enum { WithCopy = true };
+};
+
+template<>
+struct TMassFragmentTraits<FBBBProjectileSpawnInputFragment>
+{
+    enum { AuthorAcceptsItsNotTriviallyCopyable = true };
+};

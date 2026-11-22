@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "MassEntityConfigAsset.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/Explosion/BBBThrowableAreaConfig.h"
 #include "BBBThrowableExplosionConfig.generated.h"
 
@@ -25,8 +26,16 @@ struct FBBBThrowableExplosionConfig final
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "伤害半径", ToolTip = "爆炸最大伤害范围 单位厘米", ClampMin = "1", ForceUnits = "cm"))
     float Radius = 500.0f;
 
-    /** 爆炸中心的普通伤害 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "普通伤害", ToolTip = "爆炸中心的普通伤害", ClampMin = "0"))
+    /** 破片数量 零使用范围伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "破片数量", ClampMin = "0", ClampMax = "64"))
+    int32 FragmentCount = 0;
+
+    /** 破片使用的 Mass 子弹实体模板 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "破片实体模板"))
+    TObjectPtr<UMassEntityConfigAsset> FragmentEntityConfig = nullptr;
+
+    /** 范围爆炸中心或单发破片的普通伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "普通伤害", ToolTip = "范围爆炸中心或单发破片的普通伤害", ClampMin = "0"))
     float Damage = 120.0f;
 
     /** 高耐久部位参与混合的伤害 */

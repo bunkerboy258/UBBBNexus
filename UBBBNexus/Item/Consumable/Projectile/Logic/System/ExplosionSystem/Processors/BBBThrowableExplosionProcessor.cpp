@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBodyPartDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
@@ -16,6 +17,64 @@
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+
+namespace
+{
+    TSharedPtr<FBBBProjectileWorldBurst> SpawnFragments(UBBBMassSubsystem& Mass, ABBBThrowable& Actor,
+        const FBBBThrowableExplosionConfig& Config, const FBBBThrowableExplosionFact& Fact, const FGuid& AttackId)
+    {
+        auto Burst = MakeShared<FBBBProjectileWorldBurst>();
+        Burst->PlayerId = Fact.PlayerId;
+        Burst->bDamagePlayers = Config.bDamagePlayers;
+
+        FBBBProjectileSpawnLocalControlPacket Packet;
+        Packet.LaunchTransform.SetLocation(Fact.Position);
+        Packet.Speed = 50000.0f;
+        Packet.Lifetime = Config.Radius / Packet.Speed;
+        Packet.Damage = Config.Damage;
+        Packet.DurableDamage = Config.DurableDamage;
+        Packet.StaggerValue = Config.Stagger;
+        Packet.Radius = 0.0f;
+        Packet.Source = &Actor;
+        Packet.Pawn = Actor.GetInstigator();
+        Packet.bDamageInstigator = Config.bDamageSelf;
+        Packet.AttackId = AttackId;
+        Packet.AttackTime = Fact.Time;
+        Packet.bCanCauseDamage = true;
+        Packet.WorldBurst = Burst;
+
+        TArray<FMassEntityHandle> Entities;
+        bool bSubmitted = Mass.AcquireProjectiles(*Config.FragmentEntityConfig, Config.FragmentCount, Entities);
+        if (bSubmitted)
+        {
+            // 用均匀球面分布覆盖爆点四周 每次爆炸旋转整组方向。
+            FRandomStream Random(GetTypeHash(AttackId));
+            const double StartAngle = Random.FRand() * UE_TWO_PI;
+            constexpr double GoldenAngle = 2.399963229728653;
+            for (int32 Index = 0; Index < Entities.Num(); ++Index)
+            {
+                const double Z = 1.0 - 2.0 * (Index + 0.5) / Entities.Num();
+                const double XY = FMath::Sqrt(1.0 - Z * Z);
+                const double Angle = StartAngle + Index * GoldenAngle;
+                Packet.LocalDirection = FVector(XY * FMath::Cos(Angle), XY * FMath::Sin(Angle), Z);
+                if (!Mass.SubmitInput(Entities[Index], Packet))
+                {
+                    bSubmitted = false;
+                    break;
+                }
+            }
+        }
+        if (!ensureMsgf(bSubmitted, TEXT("破片爆炸无法提交完整 Mass 弹丸批次")))
+        {
+            for (const FMassEntityHandle Entity : Entities)
+            {
+                Mass.ReleaseProjectile(Entity);
+            }
+            return nullptr;
+        }
+        return Burst;
+    }
+}
 
 void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
 {
@@ -49,6 +108,12 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
             }
         }
         const FGuid AttackId = FGuid::NewGuid();
+        const bool bFragmentation = Config.FragmentCount > 0;
+        TSharedPtr<FBBBProjectileWorldBurst> Burst;
+        if (bFragmentation && ensure(Mass && Config.FragmentEntityConfig))
+        {
+            Burst = SpawnFragments(*Mass, Actor, Config, Fact, AttackId);
+        }
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableExplosion), false, &Actor);
         Params.AddIgnoredActor(Actor.GetInstigator());
         if (Mass)
@@ -60,7 +125,7 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 const FVector Direction = (Body.Center - Fact.Position).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
                 const FVector Surface = Body.Center - Direction * Body.Radius;
                 const float Distance = FVector::Distance(Fact.Position, Surface);
-                const bool bDamage = Distance <= Config.Radius && (!Config.bCheckOcclusion ||
+                const bool bDamage = !bFragmentation && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
                     !World.LineTraceTestByChannel(Fact.Position, Surface, ECC_Visibility, Params));
                 const float Ratio = bDamage ? FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius) : 0.f;
                 FBBBHitContribution Hit{Config.Damage * Ratio, NAME_None, Surface, Direction};
@@ -90,7 +155,14 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 Hit.Normal = -Direction;
                 if (Hit.IsValid())
                 {
-                    Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
+                    if (Burst)
+                    {
+                        Burst->EntityHits.FindOrAdd(Body.Entity).Add(MoveTemp(Hit));
+                    }
+                    else
+                    {
+                        Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
+                    }
                 }
             }
         }
@@ -136,7 +208,7 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
             Hit.bHasSourcePosition = true;
             FCollisionQueryParams Occlusion = DamageParams;
             Occlusion.AddIgnoredActor(Target);
-            if (bAllowDamage && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
+            if (!bFragmentation && bAllowDamage && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
                 !World.LineTraceTestByChannel(Fact.Position, Position, ECC_Visibility, Occlusion)))
             {
                 Hit.AddDamage = Config.Damage * FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius);
@@ -153,7 +225,14 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                     Hit.AddImpulse = Force;
                 }
             }
-            BBBHitReceiver::Submit(Target, Hit);
+            if (Burst && Hit.IsValid())
+            {
+                Burst->ActorHits.FindOrAdd(TWeakObjectPtr<AActor>(Target)).Add(MoveTemp(Hit));
+            }
+            else if (!Burst)
+            {
+                BBBHitReceiver::Submit(Target, Hit);
+            }
         }
         UE_LOG(LogTemp, Log, TEXT("[BBBThrowable] Exploded Authority=1 Player=%d Position=%s"),
             Fact.PlayerId, *Fact.Position.ToString());

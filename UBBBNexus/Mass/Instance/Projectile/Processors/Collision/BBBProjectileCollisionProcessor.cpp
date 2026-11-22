@@ -30,6 +30,23 @@ namespace
     constexpr int32 MidBudget = 12;
     constexpr int32 FarBudget = 4;
 
+    FBBBHitContribution MakeWorldBurstHit(const FBBBProjectileCollisionFragment& Data,
+        const FVector& Source, const FVector& Position, const FVector& Direction, const FVector& Normal)
+    {
+        FBBBHitContribution Hit{Data.Damage, NAME_None, Position, Direction};
+        Hit.AddDurableDamage = Data.DurableDamage;
+        Hit.AddStagger = Data.StaggerValue;
+        Hit.AddWound = Data.WoundStrength;
+        Hit.Normal = Normal;
+        Hit.AttackId = Data.AttackId;
+        Hit.AttackTime = Data.AttackTime;
+        Hit.PlayerId = Data.WorldBurst->PlayerId;
+        Hit.bWorldSource = true;
+        Hit.bHasSourcePosition = true;
+        Hit.SourcePosition = Source;
+        return Hit;
+    }
+
     void SubmitHit(UBBBMassSubsystem& Mass, const FBBBProjectileCollisionFragment& Data, FMassEntityHandle Target,
         uint8 Part, const FVector& Position, const FVector& Direction, const FVector& Normal, bool bRadial)
     {
@@ -89,6 +106,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     UWorld* World = Context.GetWorld();
     UBBBMassSubsystem* Mass = World->GetSubsystem<UBBBMassSubsystem>();
     TArray<FBBBProjectileImpact> Impacts;
+    TSet<FBBBProjectileWorldBurst*> WorldBursts;
     TWeakObjectPtr<UNiagaraDataChannelAsset> ImpactChannel;
     const float Delta = Context.GetDeltaTimeSeconds();
 
@@ -168,7 +186,10 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBMassProjectile), false);
         Params.bReturnPhysicalMaterial = true;
         Params.AddIgnoredActor(Data.DamageCauser.Get());
-        Params.AddIgnoredActor(Data.InstigatorPawn.Get());
+        if (!Data.WorldBurst || !Data.bDamageInstigator)
+        {
+            Params.AddIgnoredActor(Data.InstigatorPawn.Get());
+        }
         Params.AddIgnoredActor(Data.LastHitActor.Get());
         TArray<FMassEntityHandle, TInlineAllocator<33>> IgnoredEntities;
         if (Data.LastHitEntity.IsSet())
@@ -244,7 +265,13 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             }
             if (bUseEntity)
             {
-                if (bApplyDamage)
+                if (bApplyDamage && Data.WorldBurst)
+                {
+                    auto Hit = MakeWorldBurstHit(Data, Motion.SpawnLocation, Impact.Position, Direction, Impact.Normal);
+                    Hit.Part = HitPart;
+                    Data.WorldBurst->EntityHits.FindOrAdd(Target).Add(MoveTemp(Hit));
+                }
+                else if (bApplyDamage)
                 {
                     SubmitHit(*Mass, Data, Target, HitPart, Impact.Position, Direction, Impact.Normal, false);
                 }
@@ -256,7 +283,16 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             if (!bUseEntity)
             {
                 AActor* Actor = WorldHit.GetActor();
-                if (bApplyDamage && Data.bCanCauseDamage && Data.Damage != 0.0f && IsValid(Actor))
+                if (bApplyDamage && Data.WorldBurst && IsValid(Actor))
+                {
+                    if (!Cast<APawn>(Actor) || Data.WorldBurst->bDamagePlayers || Actor == Data.InstigatorPawn.Get())
+                    {
+                        auto Hit = MakeWorldBurstHit(Data, Motion.SpawnLocation, Impact.Position, Direction, Impact.Normal);
+                        Hit.Bone = WorldHit.BoneName;
+                        Data.WorldBurst->ActorHits.FindOrAdd(TWeakObjectPtr<AActor>(Actor)).Add(MoveTemp(Hit));
+                    }
+                }
+                else if (bApplyDamage && Data.bCanCauseDamage && Data.Damage != 0.0f && IsValid(Actor))
                 {
                     FBBBHitContribution Hit{Data.Damage, WorldHit.BoneName, WorldHit.ImpactPoint, Direction};
                     Hit.AddWound = Data.WoundStrength;
@@ -293,7 +329,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
     bool bTierExhausted[3] = {};
 
     EntityQuery.ForEachEntityChunk(Context,
-        [World, Mass, Delta, &Detonate, &TraceSegment, &Impacts, &ImpactChannel, ObserverLocation, bHasObserver,
+        [World, Delta, &Detonate, &TraceSegment, &WorldBursts, ObserverLocation, bHasObserver,
             &TierBudget, &TierSeen, &NextCursor, &bTierExhausted, this](FMassExecutionContext& Chunk)
     {
         auto Transforms = Chunk.GetMutableFragmentView<FTransformFragment>();
@@ -311,6 +347,18 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             }
 
             const FVector End = Transforms[Index].GetTransform().GetLocation();
+
+            if (Data.WorldBurst)
+            {
+                if (World->GetNetMode() != NM_Client)
+                {
+                    WorldBursts.Add(Data.WorldBurst.Get());
+                    TraceSegment(Transforms[Index], Velocity[Index], Motion[Index], Data, Life[Index], Presentation[Index],
+                        Motion[Index].PreviousLocation, End, true);
+                }
+                Life[Index].bPendingDestroy = true;
+                continue;
+            }
 
             if (Data.bCanCauseDamage)
             {
@@ -370,6 +418,18 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             }
         }
     });
+
+    for (auto* Burst : WorldBursts)
+    {
+        for (auto& Entry : Burst->EntityHits)
+        {
+            Mass->SubmitInput(Entry.Key, FBBBMonsterDamageLocalControlPacket{MoveTemp(Entry.Value)});
+        }
+        for (auto& Entry : Burst->ActorHits)
+        {
+            BBBHitReceiver::SubmitBatch(Entry.Key.Get(), MoveTemp(Entry.Value));
+        }
+    }
 
     for (int32 Tier = 0; Tier < 3; ++Tier)
     {

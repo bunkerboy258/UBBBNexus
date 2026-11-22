@@ -67,6 +67,9 @@ struct FBBBProjectileSpawnLocalControlPacket final
     FLinearColor TracerColor = FLinearColor(20.0f, 8.0f, 1.0f, 1.0f);
     bool bCanCauseDamage = false;
 
+    /** 房主的同次爆炸批次 由对应爆炸特效呈现弹道 */
+    TSharedPtr<FBBBProjectileWorldBurst> WorldBurst;
+
     /** @return 出生数据是否有效 */
     bool IsValid() const
     {
@@ -90,7 +93,8 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
             && PenetrationMultiplier >= 0.0f && PenetrationMultiplier <= 1.0f
-            && (Mesh.IsValid() || (Channel.IsValid() && System.IsValid()))
+            && (WorldBurst ? (bCanCauseDamage && ExplosionRadiusCm == 0.0f && Penetrations == 0)
+                : (Mesh.IsValid() || (Channel.IsValid() && System.IsValid())))
             && (Channel.IsValid() == System.IsValid())
             && FMath::IsFinite(TracerLengthCm) && TracerLengthCm > 0.0f
             && FMath::IsFinite(TracerWidthCm) && TracerWidthCm > 0.0f
@@ -130,6 +134,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Motion.PreviousLocation = LaunchTransform.GetLocation();
         Motion.LastCheckLocation = LaunchTransform.GetLocation();
         Motion.bInitialized = true;
+        Motion.bCompleteInOneStep = WorldBurst.IsValid();
         Collision.Damage = Damage;
         Collision.DurableDamage = DurableDamage;
         Collision.AttackId = AttackId;
@@ -149,6 +154,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
         Collision.InstigatorPawn = Pawn;
         Collision.EventInstigator = Controller;
         Collision.bCanCauseDamage = bCanCauseDamage;
+        Collision.WorldBurst = WorldBurst;
         Life.RemainingSeconds = Lifetime;
         Life.FuseRemainingSeconds = FuseSeconds;
         Presentation.Mesh = Mesh;

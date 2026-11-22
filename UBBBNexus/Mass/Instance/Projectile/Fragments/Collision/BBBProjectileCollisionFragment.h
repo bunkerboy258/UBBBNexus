@@ -7,6 +7,7 @@
 #include "GameFramework/Pawn.h"
 #include "MassEntityTypes.h"
 #include "Mass/EntityHandle.h"
+#include "BBBProjectileWorldBurst.h"
 #include "BBBProjectileCollisionFragment.generated.h"
 
 /** 保存单枚实体弹丸运行期间所需的弹道与命中数据 */
@@ -74,6 +75,22 @@ struct ABBB_EVAC_API FBBBProjectileCollisionFragment final : public FMassFragmen
     /** 仅来源在本机控制时允许产生伤害 */
     bool bCanCauseDamage = false;
 
+    /** 房主发射的破片批次 普通枪弹不使用 */
+    TSharedPtr<FBBBProjectileWorldBurst> WorldBurst;
+
     /** 最近穿透的逻辑实体 */
     FMassEntityHandle LastHitEntity;
+};
+
+template<>
+struct TStructOpsTypeTraits<FBBBProjectileCollisionFragment>
+    : TStructOpsTypeTraitsBase2<FBBBProjectileCollisionFragment>
+{
+    enum { WithCopy = true };
+};
+
+template<>
+struct TMassFragmentTraits<FBBBProjectileCollisionFragment>
+{
+    enum { AuthorAcceptsItsNotTriviallyCopyable = true };
 };

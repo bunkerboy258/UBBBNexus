@@ -10,6 +10,9 @@ bool UBBBThrowableDefinition::IsValid() const
         && Explosion.FuseSeconds >= 0.0f && Explosion.FuseSeconds <= Explosion.MaxLifetime
         && (Explosion.bOnImpact || Explosion.FuseSeconds > 0.0f)
         && Explosion.Damage >= 0.0f && Explosion.DurableDamage >= 0.0f
+        && Explosion.FragmentCount >= 0 && Explosion.FragmentCount <= 64
+        && (Explosion.FragmentCount == 0 || (Explosion.FragmentEntityConfig && FMath::IsFinite(Explosion.Radius)
+            && FMath::IsFinite(Explosion.Damage) && FMath::IsFinite(Explosion.DurableDamage)))
         && Explosion.MinimumDamageRatio >= 0.0f && Explosion.MinimumDamageRatio <= 1.0f
         && Explosion.Stagger >= 0.0f && FMath::IsFinite(Explosion.FlashSeconds) && Explosion.FlashSeconds >= 0.0f
         && FMath::IsFinite(Explosion.MonsterShockSeconds) && Explosion.MonsterShockSeconds >= 0.0f
