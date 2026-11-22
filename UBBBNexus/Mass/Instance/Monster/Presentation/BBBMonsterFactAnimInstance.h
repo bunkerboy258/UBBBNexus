@@ -29,7 +29,7 @@ public:
     //~ End UAnimInstance Interface
 
     /**
-     * @param Phase	普通零 蓄力一 冲撞二 收势三 喷吐四
+     * @param Phase	当前技能或移动动画的选择编号
      * @return 当前表现配置的过渡秒数
      */
     UFUNCTION(BlueprintPure, Category = "Special", meta = (BlueprintThreadSafe))
@@ -47,7 +47,7 @@ private:
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
     FBBBMonsterSpecialFact SpecialFact;
 
-    /** 普通姿态零 蓄力一 冲撞二 恢复三 喷吐四 死亡优先清零 */
+    /** 零为基础动作 一至七为技能片段 八至十为左右侧移和后退 */
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Special", meta = (AllowPrivateAccess = "true"))
     int32 SpecialPhaseFact = 0;
 

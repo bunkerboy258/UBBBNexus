@@ -104,6 +104,14 @@ bool FBBBMonsterStreamRecord::Serialize(FArchive& Ar, UPackageMap* PackageMap)
     const bool bTraversal = SerializeTraversal(Ar, Action.Traversal);
     Ar << Action.Special.Serial;
     Ar.SerializeBits(&Action.Special.Phase, 3);
+    if (Action.Special.Phase == 2)
+    {
+        Ar << Action.Special.RushDistanceCm;
+    }
+    else if (Ar.IsLoading())
+    {
+        Action.Special.RushDistanceCm = 0;
+    }
     if (Action.Special.Phase != 0)
     {
         Ar << Action.Special.StartedAt << Action.Special.Duration;

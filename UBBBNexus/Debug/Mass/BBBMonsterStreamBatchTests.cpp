@@ -17,11 +17,14 @@ bool FBBBMonsterStreamBudgetTest::RunTest(const FString&)
     Motion.Action.Traversal.Kind = 2;
     Motion.Action.Traversal.Duration = 1.7f;
     Motion.Action.Traversal.End = FVector(37200.0, -48000.3, 10210.2);
-    Motion.Action.Special.Phase = 6;
+    Motion.Action.Special.Phase = 2;
+    Motion.Action.Special.RushDistanceCm = 1243.75f;
     Motion.Action.Special.Goal = FVector(36001.3, -47351.8, 194.0);
 
     FBBBMonsterStreamRecord Birth = Motion;
     Birth.Kind = EKind::Birth;
+    Birth.Action.Special.Phase = 7;
+    Birth.Action.Special.RushDistanceCm = 0;
     Birth.DefinitionPath = FString::ChrN(512, TEXT('a'));
     FBBBMonsterStreamRecord Damage;
     Damage.Kind = EKind::InitialDamage;
@@ -73,9 +76,11 @@ bool FBBBMonsterStreamBudgetTest::RunTest(const FString&)
         TestEqual(TEXT("Instance identity survives"), Actual.InstanceId, Motion.Action.InstanceId);
         TestTrue(TEXT("Position precision is preserved"), Actual.Location.Equals(Motion.Action.Location, 0.051));
         TestTrue(TEXT("Traversal endpoint survives"), Actual.Traversal.End.Equals(Motion.Action.Traversal.End, 0.051));
+        TestEqual(TEXT("Rush distance survives"), Actual.Special.RushDistanceCm, Motion.Action.Special.RushDistanceCm);
         if (bReliable)
         {
             TestEqual(TEXT("Definition path is lossless"), Incoming.Records[0].DefinitionPath, Birth.DefinitionPath);
+            TestEqual(TEXT("Blocked recovery fits the same phase field"), Incoming.Records[0].Action.Special.Phase, uint8(7));
             TestEqual(TEXT("Part damage is lossless"), Incoming.Records[1].Damage.Parts.Head, 93.5);
             TestTrue(TEXT("Initial damage remains distinct from fresh hits"), Incoming.Records[1].Kind == EKind::InitialDamage);
         }

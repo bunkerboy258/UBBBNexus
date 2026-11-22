@@ -99,6 +99,7 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 Fact.Phase = Phase;
                 Fact.StartedAt = Now;
                 Fact.Duration = Duration;
+                Fact.RushDistanceCm = 0;
                 UE_LOG(LogTemp, Verbose, TEXT("[BBBCharger] Entity=%d Serial=%u Phase=%u"), Chunk.GetEntity(I).Index, Fact.Serial, Phase);
             };
             if (Health[I].CurrentHealth <= 0 || Injury[I].bCrawling || Injury[I].IsStaggering(Now) || Injury[I].IsShocked(Now)
@@ -136,7 +137,6 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 }
                 ++Fact.Serial;
                 Fact.Goal = Location + Direction * Rule->RushDistance;
-                Special.RushTravelled = 0;
                 Special.HitPlayerCount = 0;
                 for (auto& Player : Special.HitPlayers)
                 {
@@ -155,7 +155,7 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             {
                 SetPhase(2, Rule->RushDistance / Rule->RushSpeed);
             }
-            if (Fact.Phase == 3)
+            if (Fact.Phase == 3 || Fact.Phase == 7)
             {
                 if (Now >= Fact.StartedAt + Fact.Duration)
                 {
@@ -168,7 +168,7 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 continue;
             }
             const FVector Direction = Transform.GetRotation().GetForwardVector().GetSafeNormal2D();
-            const float Length = FMath::Min(Rule->RushSpeed * Delta, Rule->RushDistance - Special.RushTravelled);
+            const float Length = FMath::Min(Rule->RushSpeed * Delta, Rule->RushDistance - Fact.RushDistanceCm);
             FVector End = Location + Direction * FMath::Max(Length, 0.0f);
             FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBChargeMove), false);
             if (!Actors.IsEmpty())
@@ -225,7 +225,7 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                     }
                 }
             }
-            Special.RushTravelled += FVector::Dist2D(Location, End);
+            Fact.RushDistanceCm += FVector::Dist2D(Location, End);
             Transform.SetLocation(End);
             Ground[I].RequestedDistance = Length;
             Ground[I].MovedDistance = FVector::Dist2D(Location, End);
@@ -234,9 +234,9 @@ void UBBBMonsterChargeProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 Ground[I].SupportNormal = Floor.ImpactNormal;
             }
             Speeds[I].Value = (End - Location) / FMath::Max(Delta, 0.001f);
-            if (bStopped || Special.RushTravelled >= Rule->RushDistance - 1 || Now >= Fact.StartedAt + Fact.Duration)
+            if (bStopped || Fact.RushDistanceCm >= Rule->RushDistance - 1 || Now >= Fact.StartedAt + Fact.Duration)
             {
-                SetPhase(3, Rule->Recovery);
+                SetPhase(bStopped ? 7 : 3, Rule->Recovery);
                 Special.ReadyAt = Now + Rule->Recovery + Rule->Cooldown;
                 Speeds[I].Value = FVector::ZeroVector;
             }

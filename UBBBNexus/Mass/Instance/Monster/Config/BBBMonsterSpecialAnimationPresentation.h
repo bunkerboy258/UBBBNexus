@@ -27,6 +27,15 @@ struct FBBBMonsterSpecialAnimationPresentation final
     UPROPERTY(EditAnywhere, meta = (DisplayName = "冲撞每循环前进距离", Units = "cm", ClampMin = "10", ClampMax = "1200"))
     float RushStride = 320;
 
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "潜行每循环前进距离", Units = "cm", ClampMin = "10", ClampMax = "1200"))
+    float StalkStride = 140;
+
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "狂攻起势时长", Units = "s", ClampMin = "0.05", ClampMax = "1.0"))
+    float FrenzyEntrySeconds = .35f;
+
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "启用侧移和后退动画"))
+    bool bDirectionalLocomotion = false;
+
     /** @return 时长与步幅是否有限且有界 */
     bool IsValid() const
     {
@@ -37,6 +46,8 @@ struct FBBBMonsterSpecialAnimationPresentation final
                 return false;
             }
         }
-        return FMath::IsFinite(RushStride) && RushStride >= 10 && RushStride <= 1200;
+        return FMath::IsFinite(RushStride) && RushStride >= 10 && RushStride <= 1200
+            && FMath::IsFinite(StalkStride) && StalkStride >= 10 && StalkStride <= 1200
+            && FMath::IsFinite(FrenzyEntrySeconds) && FrenzyEntrySeconds >= .05f && FrenzyEntrySeconds <= 1.0f;
     }
 };

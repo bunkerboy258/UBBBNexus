@@ -86,9 +86,10 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
             }
             const auto& Settings = Definition->Presentation->Animation;
             int32 Style = Variation.LocomotionStyle;
-            if (!Specials.IsEmpty() && States[Index].State == EBBBMonsterBehavior::Chase && Specials[Index].Fact.Phase >= 5)
+            const uint8 SpecialPhase = Specials.IsEmpty() ? 0 : Specials[Index].Fact.Phase;
+            if (States[Index].State == EBBBMonsterBehavior::Chase && SpecialPhase == 6)
             {
-                Style = Specials[Index].Fact.Phase == 5 ? 1 : 2;
+                Style = 2;
             }
             float Duration = static_cast<float>(Settings.IdleCycleSeconds[Style]);
             float ReferenceSpeed = 0.0f;
@@ -142,7 +143,9 @@ void UBBBMonsterPresentationStateProcessor::Execute(FMassEntityManager& EntityMa
             // 循环秒数来自实际动画时长 只允许个体速度带来有限的节奏浮动
             const float MotionRate = bMovingLoop && ReferenceSpeed > 0.0f ? NormalizedSpeed / ReferenceSpeed : 1.0f;
             const float PlaybackRate = FMath::Clamp(Settings.PlaybackRate * (bMovingLoop ? Variation.SpeedScale * MotionRate : 1.0f), 0.8f, 1.2f);
-            const float Frequency = PlaybackRate / FMath::Max(Duration, 0.01f);
+            const float Frequency = SpecialPhase == 5
+                ? Velocities[Index].Value.Size2D() / Definition->Presentation->SpecialAnimation.StalkStride
+                : PlaybackRate / FMath::Max(Duration, 0.01f);
             PresentationState.LoopPhase = FMath::Frac(PresentationState.LoopPhase + DeltaTime * Frequency);
             PresentationState.State = States[Index].State;
             PresentationState.Speed = Velocities[Index].Value.Size2D();

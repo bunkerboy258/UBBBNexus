@@ -55,12 +55,32 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
         SpecialAnimationFact = TraversalConfig->SpecialAnimation;
     }
     SpecialFact = Source->SpecialFact;
-    SpecialPhaseFact = Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling
-        && !Source->bStaggering && Source->TraversalFact.Kind == 0 && SpecialFact.HoldsMovement() ? SpecialFact.Phase : 0;
-    SpecialProgressFact = FMath::Clamp((GetWorld()->GetTimeSeconds() - SpecialFact.StartedAt)
-        / FMath::Max(SpecialFact.Duration, 0.01f), 0.0f, 1.0f);
-    SpecialLoopPhaseFact = FMath::Frac(FMath::Max(0.0f, GetWorld()->GetTimeSeconds() - SpecialFact.StartedAt)
-        * Source->MovementSpeed / FMath::Max(SpecialAnimationFact.RushStride, 10.0f));
+    const float SpecialElapsed = FMath::Max(0.0f, GetWorld()->GetTimeSeconds() - SpecialFact.StartedAt);
+    const bool bChasing = Source->BBBMonsterBehavior == EBBBMonsterBehavior::Chase;
+    const bool bEnteringFrenzy = SpecialFact.Phase == 6 && SpecialElapsed < SpecialAnimationFact.FrenzyEntrySeconds;
+    const bool bSpecialLocomotion = bChasing && ((SpecialFact.Phase == 5 && Source->MovementSpeed > 3.0f) || bEnteringFrenzy);
+    const bool bCanPlaySpecial = Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling
+        && !Source->bStaggering && Source->TraversalFact.Kind == 0;
+    const int32 PreviousSpecialPhase = SpecialPhaseFact;
+    SpecialPhaseFact = bCanPlaySpecial && (SpecialFact.HoldsMovement() || bSpecialLocomotion) ? SpecialFact.Phase : 0;
+    if (bCanPlaySpecial && SpecialPhaseFact == 0 && SpecialAnimationFact.bDirectionalLocomotion
+        && (bChasing || Source->BBBMonsterBehavior == EBBBMonsterBehavior::Patrol) && Source->MovementSpeed > 10.0f)
+    {
+        const FVector Direction = GetOwningActor()->GetActorQuat().UnrotateVector(Source->MovementVelocity.GetSafeNormal2D());
+        const double BackThreshold = PreviousSpecialPhase == 10 ? -.58 : -.78;
+        const double SideThreshold = PreviousSpecialPhase == 8 || PreviousSpecialPhase == 9 ? .58 : .78;
+        if (Direction.X < BackThreshold)
+        {
+            SpecialPhaseFact = 10;
+        }
+        else if (FMath::Abs(Direction.Y) > SideThreshold)
+        {
+            SpecialPhaseFact = Direction.Y < 0 ? 8 : 9;
+        }
+    }
+    const float ClipDuration = bEnteringFrenzy ? SpecialAnimationFact.FrenzyEntrySeconds : SpecialFact.Duration;
+    SpecialProgressFact = FMath::Clamp(SpecialElapsed / FMath::Max(ClipDuration, 0.01f), 0.0f, 1.0f);
+    SpecialLoopPhaseFact = FMath::Frac(Source->DisplayRushDistanceCm / FMath::Max(SpecialAnimationFact.RushStride, 10.0f));
     const auto& Traversal = Source->TraversalFact;
     TraversalActiveFact = TraversalConfig && Traversal.Kind != 0
         && Source->BBBMonsterBehavior != EBBBMonsterBehavior::Dead && !Source->bCrawling;
@@ -118,9 +138,9 @@ void UBBBMonsterFactAnimInstance::NativeUpdateAnimation(const float DeltaSeconds
     MovementSpeedFact = Source->MovementSpeed;
     VariationSeedFact = Source->VariationSeed;
     LocomotionStyleFact = Source->LocomotionStyle;
-    if (BehaviorFact == EBBBMonsterBehavior::Chase && !CrawlingFact && SpecialFact.Phase >= 5)
+    if (bChasing && !CrawlingFact && SpecialFact.Phase == 6)
     {
-        LocomotionStyleFact = SpecialFact.Phase == 5 ? 1 : 2;
+        LocomotionStyleFact = 2;
     }
     AnimationSpeedFact = Source->MovementSpeed / FMath::Max(Source->AnimationSpeedScale, 0.01f);
     LoopPhaseFact = Source->LoopPhase;
@@ -142,9 +162,12 @@ float UBBBMonsterFactAnimInstance::GetSpecialBlendDuration(const int32 Phase) co
         case 2:
             return SpecialAnimationFact.RushBlend;
         case 3:
+        case 7:
             return SpecialAnimationFact.RecoveryBlend;
         case 4:
             return SpecialAnimationFact.SpitBlend;
+        case 6:
+            return SpecialAnimationFact.RushBlend;
         default:
             return SpecialAnimationFact.NormalBlend;
     }

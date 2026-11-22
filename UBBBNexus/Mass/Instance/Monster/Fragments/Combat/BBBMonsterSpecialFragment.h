@@ -18,8 +18,6 @@ struct ABBB_EVAC_API FBBBMonsterSpecialFragment final : public FMassFragment
     float NextStalkCheck = 0;
     /** 分摊候选预算时轮换两侧方向 防止只检查第一组位置 */
     uint8 StalkCandidateOffset = 0;
-    /** 本次冲撞已经推进的长度 */
-    float RushTravelled = 0;
     /** 同次冲撞只影响每个玩家一次 */
     TWeakObjectPtr<AActor> HitPlayers[32];
     /** 本轮接触的有效数量 */

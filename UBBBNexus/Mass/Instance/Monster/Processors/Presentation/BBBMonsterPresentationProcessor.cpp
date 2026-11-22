@@ -241,7 +241,17 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 continue;
             }
 
-            Presentation->ApplySpecialFact(!Specials.IsEmpty() ? Specials[Index].Fact : FBBBMonsterSpecialFact{});
+            const FBBBMonsterSpecialFact CurrentSpecialFact = !Specials.IsEmpty() ? Specials[Index].Fact : FBBBMonsterSpecialFact{};
+            float RushDisplayDistanceCm = 0;
+            if (CurrentSpecialFact.Phase == 2)
+            {
+                // 远端冲撞的步相与已平滑的表现位置同步，始终限制在已确认的路程内。
+                const FVector Forward = MonsterTransform.GetRotation().GetForwardVector().GetSafeNormal2D();
+                const FVector DisplayOffset = Smoothing.DisplayTransform.GetLocation() - MonsterTransform.GetLocation();
+                RushDisplayDistanceCm = FMath::Clamp(CurrentSpecialFact.RushDistanceCm + static_cast<float>(DisplayOffset | Forward),
+                    0.0f, CurrentSpecialFact.RushDistanceCm);
+            }
+            Presentation->ApplySpecialFact(CurrentSpecialFact, Velocities[Index].Value, RushDisplayDistanceCm);
 
             const FBBBMonsterPresentationStateFragment& PresentationState = PresentationStates[Index];
             const auto& Mobility = MobilityStates[Index];

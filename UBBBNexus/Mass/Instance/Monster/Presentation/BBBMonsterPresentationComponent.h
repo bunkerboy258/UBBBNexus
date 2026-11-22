@@ -21,8 +21,13 @@ class ABBB_EVAC_API UBBBMonsterPresentationComponent final : public UActorCompon
     friend class UBBBMonsterFactAnimInstance;
 
 public:
-    /** @param Fact 当前技能结果 @return 仅复制表现事实 无返回值 */
-    void ApplySpecialFact(const FBBBMonsterSpecialFact& Fact) { SpecialFact = Fact; }
+    /** @param Fact 当前技能结果 @param Velocity 当前世界速度 @return 仅复制表现事实 无返回值 */
+    void ApplySpecialFact(const FBBBMonsterSpecialFact& Fact, const FVector& Velocity, float RushDisplayDistanceCm)
+    {
+        SpecialFact = Fact;
+        MovementVelocity = Velocity;
+        DisplayRushDistanceCm = RushDisplayDistanceCm;
+    }
     /**
      * @param Fact	Mass 当前上台结果
      * @param Settings	当前身体的唯一表现配置
@@ -136,6 +141,9 @@ public:
 private:
     /** 当前特感技能的机械显示副本 */
     FBBBMonsterSpecialFact SpecialFact;
+    float DisplayRushDistanceCm = 0;
+    /** 世界空间移动向量 用于选择侧移与后退动画 */
+    FVector MovementVelocity = FVector::ZeroVector;
     /** Mass 当前上台事实的机械显示副本 */
     FBBBMonsterTraversalFact TraversalFact;
 

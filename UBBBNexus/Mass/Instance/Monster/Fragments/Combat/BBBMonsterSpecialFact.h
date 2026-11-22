@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BBBMonsterSpecialFact.generated.h"
 
-/** 当前特感动作的最简结果 阶段零为空 一蓄力 二冲撞 三恢复 四喷吐 五潜行 六狂攻 */
+/** 当前特感动作 阶段零为空 一蓄力 二冲撞 三恢复 四喷吐 五潜行 六狂攻 七冲撞受阻 */
 USTRUCT(BlueprintType)
 struct ABBB_EVAC_API FBBBMonsterSpecialFact final
 {
@@ -29,16 +29,19 @@ struct ABBB_EVAC_API FBBBMonsterSpecialFact final
     UPROPERTY(BlueprintReadOnly)
     FVector Goal = FVector::ZeroVector;
 
+    /** 当前冲撞已完成的实际水平距离 厘米 */
+    float RushDistanceCm = 0;
+
     /** @return 当前阶段是否接管正常移动 */
     bool HoldsMovement() const
     {
-        return Phase >= 1 && Phase <= 4;
+        return (Phase >= 1 && Phase <= 4) || Phase == 7;
     }
 
     /** @return 当前字段是否可用于网络与表现 */
     bool IsValid() const
     {
-        return Phase <= 6 && FMath::IsFinite(StartedAt) && FMath::IsFinite(Duration)
-            && Duration >= 0 && !Goal.ContainsNaN();
+        return Phase <= 7 && FMath::IsFinite(StartedAt) && FMath::IsFinite(Duration)
+            && Duration >= 0 && !Goal.ContainsNaN() && FMath::IsFinite(RushDistanceCm) && RushDistanceCm >= 0;
     }
 };
