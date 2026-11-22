@@ -127,13 +127,7 @@ void UBBBPlayerInputSystem::SubmitItemSlot(const int32 Slot)
     }
     if (ABBBPlayerController *Controller = Cast<ABBBPlayerController>(GetOwner()))
     {
-        int32 Start = 0;
-        int32 Count = 0;
-        if (Controller->IsConsumableBarHeld())
-        {
-            Controller->GetConsumableQuickRange(Start, Count);
-        }
-        Controller->SubmitItemSelect(Start + Slot);
+        Controller->SubmitItemSelect(Slot);
     }
 }
 

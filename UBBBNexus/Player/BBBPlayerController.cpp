@@ -6,6 +6,7 @@
 #include "Camera/PlayerCameraManager.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionFinishLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemQuickUseLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterInteractionPrimaryLocalControlPacket.h"
@@ -67,8 +68,7 @@ void ABBBPlayerController::SetupInputComponent()
     InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ABBBPlayerController::QuickMelee);
 
     InputComponent->BindKey(EKeys::B, IE_Pressed, this, &ABBBPlayerController::ToggleBackpack);
-    InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ABBBPlayerController::BeginQuickBar);
-    InputComponent->BindKey(EKeys::Tab, IE_Released, this, &ABBBPlayerController::EndQuickBar);
+    InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ABBBPlayerController::CycleQuickThrowable);
 
     // 每个运行时控制器独立创建菜单动作 避免构造阶段对象被蓝图默认值覆盖
     //创建不依赖资产文件的鼠标模式切换动作
@@ -177,21 +177,33 @@ void ABBBPlayerController::ToggleMouseCursor()
     SetMouseMenuMode(!bShowMouseCursor);
 }
 
-void ABBBPlayerController::BeginQuickBar()
+void ABBBPlayerController::CycleQuickThrowable()
 {
-    bConsumableBarHeld = !IsPlayerMenuOpen();
-    if (ItemView && !IsPlayerMenuOpen())
+    auto* ItemCharacter = GetItemCharacter();
+    if (!ItemCharacter || IsPlayerMenuOpen() || bShowMouseCursor || !PlayerInputSystem->IsInputEnabled())
     {
-        ItemView->SetQuickBarHeld(true);
+        return;
     }
-}
 
-void ABBBPlayerController::EndQuickBar()
-{
-    bConsumableBarHeld = false;
-    if (ItemView)
+    const auto& Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
+    const auto& Bar = ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState();
+    const int32 Count = Inventory.ConsumableQuickAccessSlotCount;
+    const int32 Start = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount;
+    const int32 Selected = FMath::Clamp(Bar.SelectedThrowableSlot, INDEX_NONE, Count - 1);
+    for (int32 Step = 1; Step <= Count; ++Step)
     {
-        ItemView->SetQuickBarHeld(false);
+        const int32 Slot = Start + (Selected + Step) % Count;
+        if (!Inventory.Slots.IsValidIndex(Slot))
+        {
+            continue;
+        }
+        const auto& Item = Inventory.Slots[Slot];
+        const auto* Definition = Cast<UBBBConsumableDefinition>(Item.Definition);
+        if (Definition && Definition->bThrowable && Item.Quantity > 0)
+        {
+            ItemCharacter->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{Slot}});
+            return;
+        }
     }
 }
 
@@ -207,7 +219,6 @@ bool ABBBPlayerController::IsPlayerMenuOpen() const
 
 void ABBBPlayerController::ToggleBackpack()
 {
-    bConsumableBarHeld = false;
     if (!IsLocalController() || !ItemView)
     {
         return;
@@ -224,7 +235,6 @@ void ABBBPlayerController::ToggleBackpack()
         UE_LOG(LogBBBPlayerController, Warning, TEXT("[BBBItems]当前无法打开背包 Controller=%s"), *GetName());
         return;
     }
-    EndQuickBar();
     bBackpackPreviousCursor = bShowMouseCursor;
     bBackpackPreviousGameplayInput = PlayerInputSystem->IsInputEnabled();
     SetMouseMenuMode(true);
@@ -302,7 +312,6 @@ void ABBBPlayerController::SetFrontendInputCaptured(bool bCaptured)
     {
         ItemView->SetBackpackOpen(false);
     }
-    EndQuickBar();
     SetMouseMenuMode(bCaptured);
 }
 
@@ -383,9 +392,23 @@ int32 ABBBPlayerController::GetSelectedConsumableSlot() const
     return ItemCharacter ? ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().SelectedConsumableSlot : 0;
 }
 
-bool ABBBPlayerController::IsConsumableBarHeld() const
+int32 ABBBPlayerController::GetSelectedThrowableSlot() const
 {
-    return bConsumableBarHeld;
+    const auto* ItemCharacter = GetItemCharacter();
+    if (!ItemCharacter)
+    {
+        return INDEX_NONE;
+    }
+    const auto& Inventory = ItemCharacter->RuntimeData.Item.ReadCharacterItemInventoryState();
+    const int32 Selected = ItemCharacter->RuntimeData.Item.ReadCharacterItemBarState().SelectedThrowableSlot;
+    const int32 Slot = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount + Selected;
+    if (Selected < 0 || Selected >= Inventory.ConsumableQuickAccessSlotCount || !Inventory.Slots.IsValidIndex(Slot))
+    {
+        return INDEX_NONE;
+    }
+    const auto& Item = Inventory.Slots[Slot];
+    const auto* Definition = Cast<UBBBConsumableDefinition>(Item.Definition);
+    return Definition && Definition->bThrowable && Item.Quantity > 0 ? Selected : INDEX_NONE;
 }
 
 void ABBBPlayerController::GetWearSlotRange(int32 &Start, TArray<FName> &Names) const

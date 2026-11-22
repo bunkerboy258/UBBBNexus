@@ -203,7 +203,6 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
     QuickSlotViews.Reset();
     StorageSlotViews.Reset();
     PanelSlotViews.Reset();
-    BuiltQuickStart = INDEX_NONE;
     BuiltStorageStart = INDEX_NONE;
     BuiltPanelStart = INDEX_NONE;
     TSharedRef<SWidget> Result =

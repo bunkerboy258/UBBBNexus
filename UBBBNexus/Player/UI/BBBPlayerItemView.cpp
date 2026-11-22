@@ -115,7 +115,6 @@ void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
         bAwaitingPlacementResult = false;
     }
     bBackpackOpen = bOpen;
-    bQuickBarHeld = false;
     if (!bOpen)
     {
         if (CharacterPreview)
@@ -223,11 +222,6 @@ TOptional<FVector2D> UBBBPlayerItemView::ReadParallaxCursor() const
     return FVector2D(ApplyDeadZone(2.0 * UV.X - 1.0), ApplyDeadZone(1.0 - 2.0 * UV.Y));
 }
 
-void UBBBPlayerItemView::SetQuickBarHeld(bool bHeld)
-{
-    bQuickBarHeld = bHeld;
-    RefreshItems();
-}
 void UBBBPlayerItemView::NotifyQuickSelection()
 {
     QuickSelectionTime = FPlatformTime::Seconds();
@@ -238,10 +232,6 @@ float UBBBPlayerItemView::GetQuickSelectionOpacity() const
     if (!Controller || Controller->IsPlayerMenuOpen())
     {
         return 0.0f;
-    }
-    if (bQuickBarHeld)
-    {
-        return 1.0f;
     }
     return FMath::Clamp(static_cast<float>((1.8 - (FPlatformTime::Seconds() - QuickSelectionTime)) / 0.35), 0.0f, 1.0f);
 }
@@ -315,23 +305,17 @@ void UBBBPlayerItemView::RefreshItems()
     }
     ObservedPawn = Controller->GetPawn().Get();
     ObservedSelectedSlot = Selected;
-    int32 QuickStart = 0;
-    int32 QuickCount = Controller->GetQuickAccessSlotCount();
-    if (bQuickBarHeld)
-    {
-        Controller->GetConsumableQuickRange(QuickStart, QuickCount);
-    }
-    if (BuiltQuickStart != QuickStart || QuickSlotViews.Num() != QuickCount)
+    const int32 QuickCount = Controller->GetQuickAccessSlotCount();
+    if (QuickSlotViews.Num() != QuickCount)
     {
         QuickBar->ClearChildren();
         QuickSlotViews.Reset();
-        BuiltQuickStart = QuickStart;
         for (int32 Index = 0; Index < QuickCount; ++Index)
         {
             TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
             QuickBar->AddSlot().FillWidth(1.0f).Padding(12.0f)
                 [SAssignNew(SlotWidget, SBBBPlayerItemSlot)
-                    .View(this).Slot(QuickStart + Index).Compact(true)
+                    .View(this).Slot(Index).Compact(true)
                     .Width(160.0f).Height(90.0f)];
             QuickSlotViews.Add(SlotWidget);
         }

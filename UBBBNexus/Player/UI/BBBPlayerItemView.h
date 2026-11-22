@@ -65,8 +65,6 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     const ABBBPlayerItemStage* GetItemStage() const;
     /** @return 无 在数字键输入后短暂展示三个快捷格 */
     void NotifyQuickSelection();
-    /** @param bHeld TAB 是否按住 @return 无 */
-    void SetQuickBarHeld(bool bHeld);
     /** @param Slot 点击查看的物品位置 @return 无 */
     void InspectSlot(int32 Slot);
     /** @return 当前查看的物品位置 */
@@ -142,7 +140,6 @@ private:
     TArray<TSharedPtr<SBBBPlayerItemSlot>> QuickSlotViews;
     TArray<TSharedPtr<SBBBPlayerItemSlot>> StorageSlotViews;
     TArray<TSharedPtr<SBBBPlayerItemSlot>> PanelSlotViews;
-    int32 BuiltQuickStart = INDEX_NONE;
     int32 BuiltStorageStart = INDEX_NONE;
     int32 BuiltPanelStart = INDEX_NONE;
     int32 BuiltConsumableStart = INDEX_NONE;
@@ -158,7 +155,6 @@ private:
     EBBBItemType StoragePage = EBBBItemType::Equipment;
     EBBBItemPanelPage PanelPage = EBBBItemPanelPage::Inventory;
     TArray<TSharedPtr<SWidget>> MenuPanels;
-    bool bQuickBarHeld = false;
     TSharedPtr<STextBlock> StatusText;
     /** 上次收到的操作结果版本 */
     int32 ObservedOperationRevision = 0;

@@ -72,7 +72,7 @@ void SBBBCombatHud::Tick(const FGeometry &Geometry, double CurrentTime, float De
     int32 Start = 0;
     int32 Count = 0;
     Controller->GetConsumableQuickRange(Start, Count);
-    const int32 Selected = Controller->GetSelectedConsumableSlot();
+    const int32 Selected = Controller->GetSelectedThrowableSlot();
     const auto Item = Controller->GetItemDisplayData(Selected >= 0 && Selected < Count ? Start + Selected : INDEX_NONE);
     if (bReset || Selected != ConsumableSlot || Item.InstanceId != ConsumableId)
     {
@@ -245,7 +245,7 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
     int32 Start = 0;
     int32 Count = 0;
     Controller->GetConsumableQuickRange(Start, Count);
-    const int32 Selected = Controller->GetSelectedConsumableSlot();
+    const int32 Selected = Controller->GetSelectedThrowableSlot();
     const auto Item = Controller->GetItemDisplayData(Selected >= 0 && Selected < Count ? Start + Selected : INDEX_NONE);
     const FVector2D ItemPosition(Size.X - 330.0f * Scale, Size.Y - 97.0f * Scale);
     FSlateDrawElement::MakeBox(Elements, Layer + 1,
@@ -261,6 +261,7 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         FString::Printf(TEXT("×%d"), Item.bOccupied ? Item.Quantity : 0), 19,
         Item.bOccupied ? White : FLinearColor(1.0f, 1.0f, 1.0f, 0.35f));
     Text(ItemPosition + FVector2D(7.0f * Scale, 43.0f * Scale), TEXT("G"), 12, White);
+    Text(ItemPosition + FVector2D(49.0f * Scale, 43.0f * Scale), TEXT("TAB"), 12, White);
     if (NameAge < 1.6f && Item.bOccupied)
     {
         Text(ItemPosition - FVector2D(0.0f, 28.0f * Scale), Item.Name.ToString(), 16,

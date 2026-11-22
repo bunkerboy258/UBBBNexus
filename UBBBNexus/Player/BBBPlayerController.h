@@ -67,11 +67,6 @@ public:
     /** @return 无 按 B 打开或关闭背包 */
     UFUNCTION(BlueprintCallable, Category = "BBB|物品")
     void ToggleBackpack();
-    /** @return 无 按住 TAB 展开快捷格子 */
-    void BeginQuickBar();
-    /** @return 无 松开 TAB 隐藏快捷格子 */
-    void EndQuickBar();
-
     /** @return 背包面板是否打开 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     bool IsBackpackOpen() const;
@@ -128,8 +123,8 @@ public:
     void GetConsumableQuickRange(int32 &Start, int32 &Count) const;
     /** @return 当前选中的消耗品快捷索引 */
     int32 GetSelectedConsumableSlot() const;
-    /** @return TAB 是否显示消耗品快捷栏 */
-    bool IsConsumableBarHeld() const;
+    /** @return G 键当前使用的投掷物快捷索引 */
+    int32 GetSelectedThrowableSlot() const;
     /** @return 穿戴位置起点与用途名称 */
     void GetWearSlotRange(int32 &Start, TArray<FName> &Names) const;
 
@@ -211,10 +206,10 @@ private:
 
     /** G 按键的输入适配 */
     void QuickUse();
+    /** @return 无 切换到 G 键可使用的下一件投掷物 */
+    void CycleQuickThrowable();
     /** @return 无 请求角色快速近战 */
     void QuickMelee();
-    /** TAB 的输入显示状态 不属于物品玩法事实 */
-    bool bConsumableBarHeld = false;
     /** 本地玩家唯一物品界面 */
     UPROPERTY(Transient)
     TObjectPtr<UBBBPlayerItemView> ItemView;
