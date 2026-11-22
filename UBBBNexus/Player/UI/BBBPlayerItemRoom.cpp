@@ -18,7 +18,7 @@ UWidgetComponent* CreateRoomWidget(AActor& Owner, const TSharedPtr<SWidget>& Wid
     Panel->SetVisibleInSceneCaptureOnly(true);
     Panel->SetTickWhenOffscreen(true);
     Panel->SetBlendMode(EWidgetBlendMode::Transparent);
-    Panel->SetRenderTargetPixelsPerCentimeter(1.0f);
+    Panel->SetRenderTargetPixelsPerCentimeter(1.5f);
     Panel->SetBackgroundColor(FLinearColor::Transparent);
     Panel->SetDrawSize(Size);
     Panel->SetWorldTransform(FTransform(Rotation, Location, FVector(UnitsPerPixel)));
@@ -28,10 +28,11 @@ UWidgetComponent* CreateRoomWidget(AActor& Owner, const TSharedPtr<SWidget>& Wid
 }
 }
 
-void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Content)
+void UBBBPlayerItemPortrait::SetPanels(const TSharedPtr<SWidget>& Storage, const TSharedPtr<SWidget>& Loadout,
+    const TSharedPtr<SWidget>& Navigation)
 {
     const auto* Camera = GetCamera();
-    if (!Camera || !Display || !Panels.IsEmpty() || Content.Num() != 4)
+    if (!Camera || !Display || !Panels.IsEmpty() || !Storage || !Loadout || !Navigation)
     {
         return;
     }
@@ -42,20 +43,18 @@ void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Conten
     const FVector Right = RotationAtRest.GetRightVector();
     const FVector Up = RotationAtRest.GetUpVector();
     const FVector Centre = HomeCamera.GetLocation() + Forward * PanelDepth;
-    const FVector2D Centres[] = {FVector2D(960, 540), FVector2D(385, 574), FVector2D(1535, 574), FVector2D(960, 38)};
-    const FVector2D Sizes[] = {FVector2D(1920, 1080), FVector2D(520, 800), FVector2D(520, 800), FVector2D(880, 46)};
-    const float Lean[] = {0.0f, -18.0f, 18.0f, 0.0f};
-
-    for (int32 Index = 1; Index < Content.Num(); ++Index)
+    const auto AddPanel = [&](const TSharedPtr<SWidget>& Content, FVector2D Size, FVector2D Offset,
+        float Lean, float Scale, const FVector& Adjustment)
     {
-        const FVector2D ScreenOffset = Centres[Index] - FVector2D(960, 540);
-        const bool bNavigation = Index == 3;
-        const FVector Adjustment = bNavigation ? RotationAtRest.RotateVector(Stage->GetNavigationOffset()) : FVector::ZeroVector;
-        const FVector Location = Centre + Units * (Right * ScreenOffset.X - Up * ScreenOffset.Y) + Adjustment;
-        const FVector Normal = (-Forward).RotateAngleAxis(Lean[Index], Up);
+        const FVector Location = Centre + Units * (Right * Offset.X - Up * Offset.Y) + Adjustment;
+        const FVector Normal = (-Forward).RotateAngleAxis(Lean, Up);
         const FRotator Rotation = FRotationMatrix::MakeFromXZ(Normal, Up).Rotator();
-        Panels.Add(CreateRoomWidget(*Display, Content[Index], Sizes[Index], Location, Rotation, Units * (bNavigation ? 1.0f : 1.04f)));
-        const float Tint = bNavigation ? 1.0f : 1.8f;
-        Panels.Last()->SetTintColorAndOpacity(FLinearColor(Tint, Tint, Tint, 1.0f));
-    }
+        Panels.Add(CreateRoomWidget(*Display, Content, Size, Location, Rotation, Units * Scale));
+    };
+
+    const FVector2D SideSize(520.0, 800.0);
+    AddPanel(Storage, SideSize, FVector2D(-575.0, 34.0), -18.0f, 1.04f, FVector::ZeroVector);
+    AddPanel(Loadout, SideSize, FVector2D(575.0, 34.0), 18.0f, 1.04f, FVector::ZeroVector);
+    AddPanel(Navigation, FVector2D(880.0, 54.0), FVector2D(0.0, -502.0), 0.0f, 1.0f,
+        RotationAtRest.RotateVector(Stage->GetNavigationOffset()));
 }

@@ -233,42 +233,49 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
 TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
 {
     using namespace BBBItemUI;
-    TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
+    const auto Canvas = SNew(SConstraintCanvas);
     const auto LeftWing = SNew(SConstraintCanvas);
     const auto RightWing = SNew(SConstraintCanvas);
-    const auto Place = [&Canvas, &LeftWing, &RightWing](float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
+    const auto Place = [](SConstraintCanvas& Panel, float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
     {
-        const bool Left = X < 600 && Y >= 180 && Y < 980;
-        const bool Right = X >= 1300 && Y >= 180 && Y < 980;
-        auto Target = Left ? LeftWing : Right ? RightWing : Canvas;
-        Target->AddSlot().Alignment(FVector2D::ZeroVector)
-            .Offset(FMargin(X - (Left ? 90 : Right ? 1306 : 0), Y - (Left || Right ? 174 : 0), W, H))[Widget];
+        Panel.AddSlot().Alignment(FVector2D::ZeroVector).Offset(FMargin(X, Y, W, H))[Widget];
     };
     const auto Label = [](const FText &Text, int32 Size)
     {
         return SNew(STextBlock).Text(Text).Font(ArtFont(Size)).ColorAndOpacity(FLinearColor::White)
             .ShadowOffset(FVector2D(1, 2)).ShadowColorAndOpacity(FLinearColor(0, 0, 0, 0.8f));
     };
-    static const FSlateRoundedBoxBrush TabFrame(FLinearColor::Transparent, 1.0f,
-        FLinearColor(0.66f, 0.64f, 0.60f, 0.50f), 1.5f);
+    static const FSlateRoundedBoxBrush TabFrame(FLinearColor(0.035f, 0.03f, 0.024f, 0.32f), 1.0f,
+        FLinearColor(0.72f, 0.69f, 0.64f, 0.83f), 2.0f);
     static const FSlateRoundedBoxBrush ActiveTab(FLinearColor(0.41f, 0.18f, 0.012f, 0.94f), 1.0f,
-        FLinearColor(0.90f, 0.48f, 0.05f, 0.85f), 1.5f);
-    const auto Tab = [this](const FText &Text, EBBBItemPanelPage Page)
+        FLinearColor(0.90f, 0.48f, 0.05f, 0.95f), 2.0f);
+    const auto Tab = [this](const FText& Text, TOptional<EBBBItemPanelPage> Page)
     {
-        return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Panel.%d"), static_cast<int>(Page))))
-            .ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Fill).VAlign(VAlign_Fill)
-            .OnClicked_Lambda([this, Page] { return ShowPanel(Page); })
-            [SNew(SOverlay)
-                + SOverlay::Slot()[SNew(SImage)
-                    .Image_Lambda([this, Page]() -> const FSlateBrush* { return PanelPage == Page ? &ActiveTab : &TabFrame; })
-                    .Visibility(EVisibility::HitTestInvisible)]
-                + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)[SNew(STextBlock).Text(Text).Font(ArtFont(26))
-                    .ColorAndOpacity(FLinearColor::White)]];
+        const auto Face = SNew(SBorder).Visibility(EVisibility::HitTestInvisible).Padding(FMargin(0.0f, 3.0f, 0.0f, 0.0f))
+            .HAlign(HAlign_Center).VAlign(VAlign_Center)
+            .BorderImage_Lambda([this, Page]
+            {
+                return Page.IsSet() && PanelPage == Page.GetValue() ? &ActiveTab : &TabFrame;
+            })
+            [SNew(STextBlock).Text(Text).Font(ArtFont(26))
+                .ColorAndOpacity(Page.IsSet() ? FLinearColor::White : MutedText)];
+        if (!Page.IsSet())
+        {
+            return TSharedRef<SWidget>(Face);
+        }
+
+        const EBBBItemPanelPage Target = Page.GetValue();
+        return TSharedRef<SWidget>(SNew(SButton)
+            .Tag(FName(*FString::Printf(TEXT("Backpack.Panel.%d"), static_cast<int32>(Target))))
+            .ButtonStyle(BBBItemUI::Navigation()).ContentPadding(0.0f)
+            .HAlign(HAlign_Fill).VAlign(VAlign_Fill)
+            .OnClicked_Lambda([this, Target] { return ShowPanel(Target); })
+            [Face]);
     };
-    const auto Hairline = [&Place](float X, float Y, float W)
+    const auto Hairline = [&Place](SConstraintCanvas& Panel, float X, float Y, float W)
     {
-        static const FSlateColorBrush Divider(FLinearColor(0.72f, 0.37f, 0.05f, 0.86f));
-        Place(X, Y, W, 2.0f, SNew(SImage).Image(&Divider).Visibility(EVisibility::HitTestInvisible));
+        static const FSlateRoundedBoxBrush Divider(FLinearColor(0.72f, 0.37f, 0.05f, 0.88f), 1.0f);
+        Place(Panel, X, Y, W, 3.0f, SNew(SImage).Image(&Divider).Visibility(EVisibility::HitTestInvisible));
     };
     static const FSlateRoundedBoxBrush Keycap(FLinearColor::Transparent, 1.0f,
         FLinearColor(0.84f, 0.81f, 0.76f, 0.74f), 1.5f);
@@ -281,13 +288,12 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         .Visibility(EVisibility::SelfHitTestInvisible)
         [SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 16, 0)
-                [SNew(SBox).WidthOverride(246)[Tab(INVTEXT("INVENTORY"), EBBBItemPanelPage::Inventory)]]
-            + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 25, 0)
-                [SNew(SBox).WidthOverride(246)[Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character)]]
-            + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
-                [SNew(STextBlock).Text(INVTEXT("EXTENSIBLE")).Font(ArtFont(24))
-                    .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f))]];
-    Place(676, 124, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+                [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("INVENTORY"), EBBBItemPanelPage::Inventory)]]
+            + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 16, 0)
+                [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character)]]
+            + SHorizontalBox::Slot().AutoWidth()
+                [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("EXTENSIBLE"), {})]]];
+    Place(*Canvas, 676, 124, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [
             SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 11, 4)
@@ -310,7 +316,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             FText::AsNumber(FMath::RoundToInt(Maximum)));
                     })]
         ]);
-    Place(676, 169, 568, 25, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+    Place(*Canvas, 676, 169, 568, 25, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [SNew(STextBlock)
             .Font(ArtFont(19))
             .ColorAndOpacity(FLinearColor(0.86f, 0.78f, 0.63f))
@@ -334,8 +340,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                 }
                 return Text;
             })]);
-    Place(105, 184, 475, 68, Label(INVTEXT("BACKPACK"), 44));
-    Hairline(105, 254, 480);
+    Place(*LeftWing, 15, 10, 475, 68, Label(INVTEXT("BACKPACK"), 44));
+    Hairline(*LeftWing, 15, 80, 480);
     const auto Filter = [this](const FText &Text, EBBBItemType Type)
     {
         return SNew(SButton).Tag(FName(*FString::Printf(TEXT("Backpack.Storage.%d"), static_cast<int>(Type))))
@@ -343,26 +349,26 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
             [SNew(STextBlock).Text(Text).Font(ArtFont(18)).ColorAndOpacity_Lambda([this, Type]
             { return Type == StoragePage ? FLinearColor::White : FLinearColor(0.69f, 0.65f, 0.57f); })];
     };
-    Place(108, 275, 476, 42, SNew(SHorizontalBox).Visibility_Lambda([this]
+    Place(*LeftWing, 18, 101, 476, 42, SNew(SHorizontalBox).Visibility_Lambda([this]
         { return PanelPage == EBBBItemPanelPage::Inventory ? EVisibility::Visible : EVisibility::Collapsed; })
         + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 23, 0)[Filter(INVTEXT("WEAPONS"), EBBBItemType::Equipment)]
         + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 23, 0)[Filter(INVTEXT("CONSUMABLES"), EBBBItemType::Consumable)]
         + SHorizontalBox::Slot().AutoWidth()[Filter(INVTEXT("MISC"), EBBBItemType::Misc)]);
-    Place(108, 275, 470, 42, SNew(STextBlock).Text(INVTEXT("WEARABLES")).Font(ArtFont(18))
+    Place(*LeftWing, 18, 101, 470, 42, SNew(STextBlock).Text(INVTEXT("WEARABLES")).Font(ArtFont(18))
         .Visibility_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? EVisibility::HitTestInvisible : EVisibility::Hidden; }));
     static const FScrollBoxStyle StorageScroll = FScrollBoxStyle()
         .SetTopShadowBrush(FSlateNoResource()).SetBottomShadowBrush(FSlateNoResource());
-    Place(101, 330, 491, 612, SNew(SScrollBox).Style(&StorageScroll).ScrollBarVisibility(EVisibility::Collapsed)
+    Place(*LeftWing, 11, 156, 491, 612, SNew(SScrollBox).Style(&StorageScroll).ScrollBarVisibility(EVisibility::Collapsed)
         + SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
-    Place(1324, 184, 490, 68, SNew(SBox).HAlign(HAlign_Right)
+    Place(*RightWing, 18, 10, 490, 68, SNew(SBox).HAlign(HAlign_Right)
         [SNew(STextBlock).Font(ArtFont(44)).Text_Lambda([this]
             { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("GEAR") : INVTEXT("LOADOUT"); })]);
-    Hairline(1324, 254, 490);
-    Place(1324, 275, 490, 40, SNew(SBox).HAlign(HAlign_Right)
+    Hairline(*RightWing, 18, 80, 490);
+    Place(*RightWing, 18, 101, 490, 40, SNew(SBox).HAlign(HAlign_Right)
         [SNew(STextBlock).Font(ArtFont(20)).ColorAndOpacity(MutedText)
             .Text_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("EQUIPPED") : INVTEXT("WEAPONS"); })]);
-    Place(1320, 330, 494, 664, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
-    Place(96, 1030, 160, 42, SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left)
+    Place(*RightWing, 14, 156, 494, 664, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
+    Place(*Canvas, 96, 1030, 160, 42, SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left)
         .OnClicked_Lambda([this] { GetItemController()->ToggleBackpack(); return FReply::Handled(); })
         [SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
@@ -370,9 +376,11 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                     [SNew(SOverlay) + SOverlay::Slot()[SNew(SImage).Image(&Keycap)]
                         + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)[Label(INVTEXT("B"), 16)]]]
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(10, 0)[Label(INVTEXT("CLOSE"), 18)]]);
-    Place(345, 1037, 700, 32, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText));
-    const auto Chrome = Fit(Canvas, 1080);
-    MenuPanels = {Chrome, LeftWing, RightWing, NavigationRow};
+    Place(*Canvas, 345, 1037, 700, 32, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText));
+    BackpackChrome = Fit(Canvas, 1080);
+    StoragePanel = LeftWing;
+    LoadoutPanel = RightWing;
+    NavigationPanel = NavigationRow;
     static const FSlateColorBrush Matte(FLinearColor::Black);
     const auto CaptureImage = SNew(SBBBInventoryRoomImage)
         .Room_Lambda([this] { return CharacterPreview.Get(); })
@@ -381,5 +389,5 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     return SNew(SOverlay)
         + SOverlay::Slot()[SNew(SImage).Image(&Matte).Visibility(EVisibility::HitTestInvisible)]
         + SOverlay::Slot()[Fit(CaptureImage, 1080)]
-        + SOverlay::Slot()[Chrome];
+        + SOverlay::Slot()[BackpackChrome.ToSharedRef()];
 }

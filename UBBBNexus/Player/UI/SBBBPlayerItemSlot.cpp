@@ -4,12 +4,11 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
-#include "Algo/Reverse.h"
 #include "GameFramework/Pawn.h"
 #include "Materials/MaterialInterface.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
-#include "Brushes/SlateColorBrush.h"
+#include "Materials/MaterialInterface.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Images/SImage.h"
@@ -111,28 +110,41 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     Slot = Arguments._Slot;
     bCompact = Arguments._Compact;
     bOuterRight = Arguments._OuterRight;
-    bWearSlot = !Arguments._PositionLabel.IsEmpty();
+    const bool bWearSlot = !Arguments._PositionLabel.IsEmpty();
+    if (const auto* Owner = View.Get())
+    {
+        FrameBrush.SetResourceObject(Owner->GetSlotFrameMaterial());
+        FrameBrush.DrawAs = ESlateBrushDrawType::Image;
+        FrameBrush.Mirroring = bOuterRight ? ESlateBrushMirrorType::Horizontal : ESlateBrushMirrorType::NoMirror;
+    }
     Refresh();
+
+    const bool bConsumable = Arguments._ConsumablePreview;
+    TSharedRef<SWidget> ItemImage = SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
+        .RenderTransformPivot(FVector2D(0.5, 0.5))
+        .RenderTransform_Lambda([this]()
+        {
+            const bool bLift = !bCompact && bOccupied && (IsHovered() || bDropTarget);
+            return FSlateRenderTransform(FVector2f(0.0f, bLift ? -8.0f : 0.0f));
+        })
+        [SNew(SImage).Image(&IconBrush).Visibility_Lambda([this]()
+        {
+            return IconBrush.GetResourceObject() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+        })];
+    if (bConsumable)
+    {
+        ItemImage = SNew(SBox).WidthOverride(94.0f).HeightOverride(92.0f)[ItemImage];
+    }
 
     ChildSlot[SNew(SBox)
                   .WidthOverride(Arguments._Width)
                   .HeightOverride(Arguments._Height)
                       [SNew(SOverlay) +
-                       SOverlay::Slot().Padding(12.0f, 12.0f, 12.0f,
-                                                bCompact || bWearSlot ? 25.0f : 12.0f)[SNew(SScaleBox)
-                                                                                          .Stretch(EStretch::ScaleToFit)
-                                                                                          .RenderTransformPivot(FVector2D(0.5, 0.5))
-                                                                                          .RenderTransform_Lambda([this]()
-                                                                                          {
-                                                                                              const bool bLift = !bCompact && bOccupied && (IsHovered() || bDropTarget);
-                                                                                              return FSlateRenderTransform(FVector2f(0.0f, bLift ? -8.0f : 0.0f));
-                                                                                          })[SNew(SImage)
-                                                     .Image(&IconBrush)
-                                                     .ColorAndOpacity(FLinearColor::White)
-                                                     .Visibility_Lambda([this]()
-                                                     {
-                                                         return IconBrush.GetResourceObject() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
-                                                     })]] +
+                       SOverlay::Slot()
+                           .HAlign(bConsumable ? HAlign_Center : HAlign_Fill)
+                           .VAlign(bConsumable ? VAlign_Center : VAlign_Fill)
+                           .Padding(12.0f, 12.0f, 12.0f, bCompact || bWearSlot ? 25.0f : 12.0f)
+                           [ItemImage] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Center)
                            .VAlign(VAlign_Bottom)
@@ -219,60 +231,23 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         const auto* Stage = View.IsValid() ? View->GetItemStage() : nullptr;
         const float Glow = Stage ? Stage->GetSlotGlowOpacity() : 0.0f;
         const FVector2D Size = Geometry.GetLocalSize();
-        static const FSlateColorBrush Solid(FLinearColor::White);
-        const auto PaintRect = [&](int32 DrawLayer, FVector2D Extent, FVector2f Offset, FLinearColor Color)
-        {
-            FSlateDrawElement::MakeBox(Elements, DrawLayer,
-                Geometry.ToPaintGeometry(Extent, FSlateLayoutTransform(Offset)), &Solid, ESlateDrawEffect::None, Color);
-        };
-        PaintRect(Layer++, Size, FVector2f::ZeroVector, FLinearColor(0.28f, 0.30f, 0.33f, bOccupied ? 0.27f : 0.20f));
-
-        const float Width = Size.X * 0.36f;
-        const float Left = bOuterRight ? Size.X - Width : 0.0f;
-        const float RestStrength = bSelected ? 0.90f : bOccupied ? 0.54f : 0.23f;
-        const float Strength = FMath::Lerp(RestStrength, 0.90f, Highlight);
-        const auto Position = [this, Width](float Distance)
-        {
-            return FVector2f(bOuterRight ? Width - Distance : Distance, 0.0f);
-        };
-        TArray<FSlateGradientStop> Stops;
-        Stops.Emplace(Position(0.0f), FLinearColor(0.88f, 0.31f, 0.041f, Strength));
-        Stops.Emplace(Position(Width * 0.16f), FLinearColor(0.43f, 0.11f, 0.24f, Strength * 0.75f));
-        Stops.Emplace(Position(Width * 0.47f), FLinearColor(0.20f, 0.07f, 0.34f, Strength * 0.42f));
-        Stops.Emplace(Position(Width), FLinearColor(0.10f, 0.04f, 0.20f, 0.0f));
-        if (bOuterRight)
-        {
-            Algo::Reverse(Stops);
-        }
-        FSlateDrawElement::MakeGradient(Elements, Layer,
-            Geometry.ToPaintGeometry(FVector2D(Width, Size.Y), FSlateLayoutTransform(FVector2f(Left, 0))),
-            MoveTemp(Stops), Orient_Vertical);
+        FSlateDrawElement::MakeBox(Elements, Layer++, Geometry.ToPaintGeometry(), &FrameBrush,
+            ESlateDrawEffect::NoPixelSnapping, FLinearColor(1.0f, 1.0f, 1.0f, bOccupied ? 1.0f : 0.55f));
 
         constexpr float Border = 2.0f;
-        constexpr float Strip = 3.8f;
-        const float InnerHeight = Size.Y - 2.0f * Border;
-        const float StripX = bOuterRight ? Size.X - Border - Strip : Border;
-        PaintRect(++Layer, FVector2D(Strip, InnerHeight), FVector2f(StripX, Border),
-            FLinearColor(1.0f, 0.42f, 0.10f, Strength));
-
         if (Glow > 0.0f)
         {
-            for (int32 Ring = 2; Ring >= 1; --Ring)
-            {
-                const float Spread = static_cast<float>(Ring) * 1.5f;
-                const FSlateRoundedBoxBrush Halo(FLinearColor::Transparent, 1.0f + Spread,
-                    FLinearColor(1.0f, 1.0f, 1.0f, Glow / Ring), Border + 2.0f * Spread);
-                FSlateDrawElement::MakeBox(Elements, ++Layer,
-                    Geometry.ToPaintGeometry(Size + FVector2D(Spread * 2.0f), FSlateLayoutTransform(FVector2f(-Spread))),
-                    &Halo, ESlateDrawEffect::None, FLinearColor::Transparent);
-            }
+            const FSlateRoundedBoxBrush Halo(FLinearColor::Transparent, 2.5f,
+                FLinearColor(1.0f, 1.0f, 1.0f, Glow), 4.0f);
+            FSlateDrawElement::MakeBox(Elements, Layer++, Geometry.ToPaintGeometry(Size + FVector2D(3.0f),
+                FSlateLayoutTransform(FVector2f(-1.5f))), &Halo, ESlateDrawEffect::NoPixelSnapping);
         }
         const FLinearColor RestBorder = bSelected ? FLinearColor(0.93f, 0.76f, 0.58f, 0.91f)
             : FLinearColor(0.67f, 0.68f, 0.69f, 0.57f);
         const FSlateRoundedBoxBrush Frame(FLinearColor::Transparent, 1.0f,
             FMath::Lerp(RestBorder, FLinearColor(1.0f, 0.44f, 0.12f, 1.0f), Highlight), Border);
         FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(),
-            &Frame, ESlateDrawEffect::None, FLinearColor::Transparent);
+            &Frame, ESlateDrawEffect::NoPixelSnapping);
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

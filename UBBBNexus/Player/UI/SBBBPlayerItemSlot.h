@@ -13,13 +13,14 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
 {
   public:
     SLATE_BEGIN_ARGS(SBBBPlayerItemSlot)
-        : _View(nullptr), _Slot(INDEX_NONE), _Compact(false), _OuterRight(false), _Width(154.0f), _Height(102.0f)
+        : _View(nullptr), _Slot(INDEX_NONE), _Compact(false), _OuterRight(false), _ConsumablePreview(false), _Width(154.0f), _Height(102.0f)
     {
     }
     SLATE_ARGUMENT(UBBBPlayerItemView *, View)
     SLATE_ARGUMENT(int32, Slot)
     SLATE_ARGUMENT(bool, Compact)
     SLATE_ARGUMENT(bool, OuterRight)
+    SLATE_ARGUMENT(bool, ConsumablePreview)
     SLATE_ARGUMENT(float, Width)
     SLATE_ARGUMENT(float, Height)
     SLATE_ARGUMENT(FText, PositionLabel)
@@ -59,6 +60,7 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     TWeakObjectPtr<UBBBPlayerItemView> View;
     TStrongObjectPtr<UTexture2D> IconTexture;
     FSlateBrush IconBrush;
+    FSlateBrush FrameBrush;
     TStrongObjectPtr<UTexture2D> PropertyTexture;
     FSlateBrush PropertyBrush;
     FGuid InstanceId;
@@ -69,7 +71,6 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     bool bOccupied = false;
     bool bCompact = false;
     bool bOuterRight = false;
-    bool bWearSlot = false;
     bool bDropTarget = false;
     float HoverAmount = 0.0f;
     TWeakPtr<FActiveTimerHandle> HoverTimer;

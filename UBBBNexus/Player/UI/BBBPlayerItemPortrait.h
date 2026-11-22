@@ -41,8 +41,9 @@ public:
     const ABBBPlayerItemStage* GetStage() const { return Stage; }
     /** @return 可交互的空间面板 */
     const TArray<TObjectPtr<UWidgetComponent>>& GetPanels() const { return Panels; }
-    /** @param Content 背包控件树 @return 无 */
-    void SetPanels(const TArray<TSharedPtr<SWidget>>& Content);
+    /** @param Storage 存储面板 @param Loadout 装备面板 @param Navigation 页签面板 @return 无 */
+    void SetPanels(const TSharedPtr<SWidget>& Storage, const TSharedPtr<SWidget>& Loadout,
+        const TSharedPtr<SWidget>& Navigation);
     virtual void BeginDestroy() override;
 
 private:

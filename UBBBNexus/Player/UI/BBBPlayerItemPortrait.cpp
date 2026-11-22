@@ -90,6 +90,13 @@ bool UBBBPlayerItemPortrait::PrepareStage()
             bStageLoadFailed = true;
             return false;
         }
+        const UTextureRenderTarget2D* StudioTarget = Stage->GetCapture()->TextureTarget;
+        if (!StudioTarget || StudioTarget->SizeX <= 0 || StudioTarget->SizeY <= 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("整备间捕获机位缺少有效的预览渲染目标"));
+            bStageLoadFailed = true;
+            return false;
+        }
         Stage->UpdateMist();
     }
     return true;
@@ -164,12 +171,15 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Pose->RefreshBoneTransforms();
     Pose->SetComponentTickEnabled(false);
 
-    Texture = NewObject<UTextureRenderTarget2D>(this);
-    Texture->ClearColor = FLinearColor::Black;
-    Texture->RenderTargetFormat = RTF_RGBA8_SRGB;
-    Texture->Filter = TF_Bilinear;
-    Texture->InitAutoFormat(1920, 1080);
     auto* Camera = Stage->GetCapture();
+    const UTextureRenderTarget2D* StudioTarget = Camera->TextureTarget;
+    Texture = NewObject<UTextureRenderTarget2D>(this);
+    Texture->ClearColor = StudioTarget->ClearColor;
+    Texture->RenderTargetFormat = StudioTarget->RenderTargetFormat;
+    Texture->bForceLinearGamma = StudioTarget->bForceLinearGamma;
+    Texture->TargetGamma = StudioTarget->GetDisplayGamma();
+    Texture->Filter = TF_Bilinear;
+    Texture->InitAutoFormat(StudioTarget->SizeX, StudioTarget->SizeY);
     Camera->TextureTarget = Texture;
     for (AActor* Actor : StageLevel->GetLoadedLevel()->Actors)
     {

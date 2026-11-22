@@ -73,8 +73,12 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     float GetQuickSelectionOpacity() const;
     /** @return 耄耋探索头像及其打包依赖 */
     UTexture2D *GetMaodieAvatar() const;
-    /** @return 独立预览世界中的空间面板控件 */
-    const TArray<TSharedPtr<SWidget>>& GetMenuPanels() const { return MenuPanels; }
+#if WITH_DEV_AUTOMATION_TESTS
+    /** @return 供编辑器诊断遍历的背包根控件 */
+    TArray<TSharedPtr<SWidget>> GetMenuPanels() const;
+#endif
+    /** @return 共用格框材质 */
+    UMaterialInterface* GetSlotFrameMaterial() const { return SlotFrameMaterial; }
 
   protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -120,6 +124,8 @@ private:
     TObjectPtr<UFontFace> InterfaceArtFont;
     UPROPERTY()
     TObjectPtr<UMaterialInterface> InterfaceArtMaterial;
+    UPROPERTY()
+    TObjectPtr<UMaterialInterface> SlotFrameMaterial;
     /** 探索像素头像的显式打包依赖 */
     UPROPERTY()
     TObjectPtr<UTexture2D> MaodieAvatar;
@@ -154,7 +160,10 @@ private:
     FGuid InspectedInstance;
     EBBBItemType StoragePage = EBBBItemType::Equipment;
     EBBBItemPanelPage PanelPage = EBBBItemPanelPage::Inventory;
-    TArray<TSharedPtr<SWidget>> MenuPanels;
+    TSharedPtr<SWidget> BackpackChrome;
+    TSharedPtr<SWidget> StoragePanel;
+    TSharedPtr<SWidget> LoadoutPanel;
+    TSharedPtr<SWidget> NavigationPanel;
     TSharedPtr<STextBlock> StatusText;
     /** 上次收到的操作结果版本 */
     int32 ObservedOperationRevision = 0;

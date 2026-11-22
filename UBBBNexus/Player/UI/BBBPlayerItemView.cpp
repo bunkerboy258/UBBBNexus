@@ -1,5 +1,5 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
-#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemText.h"
@@ -13,7 +13,6 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
-#include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Framework/Application/SlateApplication.h"
@@ -33,6 +32,9 @@ UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializ
         TEXT("/Game/_Project/UI/Bag/Materials/M_BagChineseArt.M_BagChineseArt"));
     InterfaceArtFont = ArtFont.Object;
     InterfaceArtMaterial = ArtMaterial.Object;
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> FrameMaterial(
+        TEXT("/Game/_Project/UI/Bag/M_SlotFrame.M_SlotFrame"));
+    SlotFrameMaterial = FrameMaterial.Object;
     static ConstructorHelpers::FObjectFinder<UTexture2D> Avatar(
         TEXT("/Game/_Project/UI/Gameplay/T_MaodieAvatar.T_MaodieAvatar"));
     static ConstructorHelpers::FObjectFinder<USoundBase> CompletionSound(
@@ -177,7 +179,7 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     auto *Controller = GetItemController();
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
     CharacterPreview->SetActive(bBackpackOpen);
-    CharacterPreview->SetPanels(MenuPanels);
+    CharacterPreview->SetPanels(StoragePanel, LoadoutPanel, NavigationPanel);
     if (CharacterPreview->Update(DeltaTime, ReadParallaxCursor()))
     {
         PlayInventorySound(EInventorySound::Equip);
@@ -281,6 +283,13 @@ FReply UBBBPlayerItemView::ShowPanel(EBBBItemPanelPage Page)
     RefreshItems();
     return FReply::Handled();
 }
+
+#if WITH_DEV_AUTOMATION_TESTS
+TArray<TSharedPtr<SWidget>> UBBBPlayerItemView::GetMenuPanels() const
+{
+    return {BackpackChrome, StoragePanel, LoadoutPanel, NavigationPanel};
+}
+#endif
 
 const FSlateBrush *UBBBPlayerItemView::GetCharacterBrush() const
 {
@@ -387,7 +396,7 @@ void UBBBPlayerItemView::RefreshItems()
         BuiltPanelStart = RightStart;
         BuiltConsumableStart = ConsumableStart;
         BuiltWearNames = MoveTemp(WearNames);
-        auto AddGroup = [this](int32 First, int32 Size, int32 Columns, float Width, float Height, bool bWear)
+        auto AddGroup = [this](int32 First, int32 Size, int32 Columns, float Width, float Height, bool bWear, bool bConsumable)
         {
             auto Grid = SNew(SUniformGridPanel).SlotPadding(FMargin(4.0f));
             for (int32 Index = 0; Index < Size; ++Index)
@@ -396,22 +405,22 @@ void UBBBPlayerItemView::RefreshItems()
                 Grid->AddSlot(Index % Columns, Index / Columns)
                     [SAssignNew(Cell, SBBBPlayerItemSlot).View(this).Slot(First + Index).OuterRight(true)
                         .PositionLabel(bWear ? FText::FromName(BuiltWearNames[Index]) : FText::GetEmpty())
-                        .Width(Width).Height(Height)];
+                        .Width(Width).Height(Height).ConsumablePreview(bConsumable)];
                 PanelSlotViews.Add(Cell);
             }
             EquipmentSlots->AddSlot().AutoHeight()[Grid];
         };
         if (bCharacterPage)
         {
-            AddGroup(RightStart, Total, 3, 148, 145, true);
+            AddGroup(RightStart, Total, 3, 148, 145, true, false);
         }
         else
         {
-            AddGroup(0, WeaponCount, 1, 472, 105, false);
+            AddGroup(0, WeaponCount, 1, 472, 105, false, false);
             EquipmentSlots->AddSlot().AutoHeight().Padding(4, 24, 0, 6)
                 [SNew(STextBlock).Text(INVTEXT("CONSUMABLES")).Font(BBBItemUI::ArtFont(22))
                     .ColorAndOpacity(BBBItemUI::MutedText)];
-            AddGroup(ConsumableStart, ConsumableCount, 3, 148, 145, false);
+            AddGroup(ConsumableStart, ConsumableCount, 3, 148, 145, false, true);
         }
     }
     else
