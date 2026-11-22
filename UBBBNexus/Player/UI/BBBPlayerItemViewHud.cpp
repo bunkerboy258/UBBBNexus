@@ -3,21 +3,17 @@
 #include "BBBWork/UBBBNexus/Player/UI/SBBBExplorationHud.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInterface.h"
 #include "Sound/SoundBase.h"
 
 TSharedRef<SWidget> UBBBPlayerItemView::MakeGameplayHud()
 {
-    return SNew(SBBBCombatHud).View(this);
+    return SNew(SBBBCombatHud).View(this).ItemIconMaterial(HudItemIconMaterial.Get());
 }
 
 TSharedRef<SWidget> UBBBPlayerItemView::MakeExplorationHud()
 {
     return SNew(SBBBExplorationHud).View(this);
-}
-
-UTexture2D *UBBBPlayerItemView::GetMaodieAvatar() const
-{
-    return MaodieAvatar;
 }
 
 void UBBBPlayerItemView::UpdateExplorationPresentation()

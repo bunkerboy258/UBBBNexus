@@ -200,25 +200,12 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
         CharacterPreview = nullptr;
         CharacterBrush.SetResourceObject(nullptr);
     }
-    QuickSlotViews.Reset();
     StorageSlotViews.Reset();
     PanelSlotViews.Reset();
     BuiltStorageStart = INDEX_NONE;
     BuiltPanelStart = INDEX_NONE;
     TSharedRef<SWidget> Result =
         SNew(SOverlay) + SOverlay::Slot()[MakeGameplayHud()] +
-        SOverlay::Slot()
-            .HAlign(HAlign_Center)
-            .VAlign(VAlign_Top)
-            .Padding(0.0f, 80.0f)[SNew(SBorder)
-                                      .Visibility(EVisibility::HitTestInvisible)
-                                      .BorderImage(FCoreStyle::Get().GetBrush("NoBrush"))
-                                      .Padding(0.0f)
-                                      .ColorAndOpacity_Lambda(
-                                          [this]()
-                                          {
-                                              return FLinearColor(1.0f, 1.0f, 1.0f, GetQuickSelectionOpacity());
-                                          })[SNew(SBox).WidthOverride(900.0f)[SAssignNew(QuickBar, SHorizontalBox)]]] +
         SOverlay::Slot()[SNew(SOverlay).Visibility_Lambda(
                              [this]()
                              {

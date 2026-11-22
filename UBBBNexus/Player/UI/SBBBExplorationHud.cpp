@@ -15,20 +15,6 @@ void SBBBExplorationHud::Construct(const FArguments &Arguments)
     ForceVolatile(true);
 }
 
-void SBBBExplorationHud::Tick(const FGeometry &Geometry, double CurrentTime, float DeltaTime)
-{
-    SLeafWidget::Tick(Geometry, CurrentTime, DeltaTime);
-    const auto *Owner = View.Get();
-    const auto *Controller = Owner ? Owner->GetItemController() : nullptr;
-    const int32 Count = Controller ? Controller->GetDiscoveredMaodieCount() : 0;
-    if (Count > PreviousCount)
-    {
-        PulseAge = 0.0f;
-    }
-    PreviousCount = Count;
-    PulseAge = FMath::Min(PulseAge + DeltaTime, 1.0f);
-}
-
 FVector2D SBBBExplorationHud::ComputeDesiredSize(float LayoutScaleMultiplier) const
 {
     return FVector2D::ZeroVector;
@@ -60,31 +46,6 @@ int32 SBBBExplorationHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
             Geometry.ToPaintGeometry(Size, FSlateLayoutTransform(Position)), Value, Font,
             ESlateDrawEffect::None, Color);
     };
-    if (!Owner->IsBackpackOpen() && !Controller->IsPlayerMenuOpen())
-    {
-        const FVector2D Origin = FVector2D(36.0f, 32.0f) * Scale;
-        Box(Origin, FVector2D(296.0f, 72.0f) * Scale, FLinearColor(0.008f, 0.009f, 0.011f, 0.65f), 0);
-        Box(Origin, FVector2D(2.0f, 72.0f) * Scale, BBBItemUI::Accent.CopyWithNewOpacity(0.85f), 1);
-        if (auto *Texture = Owner->GetMaodieAvatar())
-        {
-            FSlateBrush Avatar;
-            Avatar.SetResourceObject(Texture);
-            Avatar.DrawAs = ESlateBrushDrawType::Image;
-            FSlateDrawElement::MakeBox(Elements, Layer + 1,
-                Geometry.ToPaintGeometry(FVector2D(56.0f, 56.0f) * Scale,
-                    FSlateLayoutTransform(Origin + FVector2D(10.0f, 8.0f) * Scale)),
-                &Avatar, ESlateDrawEffect::None, FLinearColor::White);
-        }
-        const FString Count = FString::Printf(TEXT("%d/10"), Controller->GetDiscoveredMaodieCount());
-        const auto LabelFont = BBBItemUI::Font(FMath::RoundToInt(23.0f * Scale));
-        Text(TEXT("找到所有呆耄!"), Origin + FVector2D(78.0f, 8.0f) * Scale,
-            LabelFont, FLinearColor::White, 2);
-        const auto Font = BBBItemUI::Font(FMath::RoundToInt(28.0f * Scale));
-        const FVector2D Position = Origin + FVector2D(78.0f * Scale, 38.0f * Scale);
-        const float Pulse = 1.0f - FMath::Clamp(PulseAge / 0.65f, 0.0f, 1.0f);
-        Text(Count, Position + FVector2D(1.0f, 2.0f) * Scale, Font, FLinearColor(0, 0, 0, 0.9f), 1);
-        Text(Count, Position, Font, FLinearColor::LerpUsingHSV(FLinearColor::White, BBBItemUI::Accent, Pulse), 2);
-    }
     const double CompletedAt = Controller->GetExplorationCompletionTime();
     const double Age = FPlatformTime::Seconds() - CompletedAt;
     if (CompletedAt >= 0.0 && Age >= 0.0 && Age < 3.0)

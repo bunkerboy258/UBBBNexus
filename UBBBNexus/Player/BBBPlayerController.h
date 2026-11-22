@@ -8,6 +8,7 @@
 
 class ABBBCharacter;
 class UBBBItemDefinition;
+class UTexture2D;
 struct FBBBPlayerItemDisplayData;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBBBPlayerItemsChanged);
 //封装InputMappingContext的数据与行为
@@ -80,6 +81,14 @@ public:
 
     /** @param Health 当前生命 @param Maximum 生命上限 @param Phase 生命阶段 @return 是否存在角色 */
     bool ReadHudHealth(float &Health, float &Maximum, uint8 &Phase) const;
+    /** @return 当前角色体力比例 无有效角色时为零 */
+    float GetHudStaminaFraction() const;
+    /** @return 手持装备的现有图标 空手时为空 */
+    UTexture2D *GetHudWeaponIcon() const;
+    /** @param Loaded 当前弹量 @param Capacity 弹匣容量 @param bContinuous 是否使用连续弧 @param bReloading 是否换弹 @return 是否提供弹药显示 */
+    bool ReadHudAmmo(int32 &Loaded, int32 &Capacity, bool &bContinuous, bool &bReloading) const;
+    /** @return 客机往返延迟毫秒数 无测量结果时为空 */
+    TOptional<int32> GetHudPing() const;
     /** @return 正常游玩时是否显示常驻准星 */
     bool ShouldShowCrosshair() const;
 

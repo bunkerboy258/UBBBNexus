@@ -3,19 +3,19 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
-#include "Engine/Texture2D.h"
-#include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
-#include "Rendering/DrawElementTypes.h"
 #include "Brushes/SlateColorBrush.h"
+#include "Engine/Texture2D.h"
+#include "Fonts/FontMeasure.h"
+#include "Framework/Application/SlateApplication.h"
+#include "GameFramework/Pawn.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Rendering/DrawElements.h"
 
 void SBBBCombatHud::Construct(const FArguments &Arguments)
 {
     View = Arguments._View;
-    Crosshair.Reset(LoadObject<UTexture2D>(nullptr, TEXT("/Game/_ThirdParty/UI/CrosshairFreePack/Textures/T_CH001.T_CH001")));
-    Heart.Reset(LoadObject<UTexture2D>(nullptr, TEXT("/Game/_ThirdParty/UI/EditableSurvivalHorrorUI/HUD/T_HUD_03.T_HUD_03")));
+    ItemIconMaterial = Arguments._ItemIconMaterial;
     SetVisibility(EVisibility::HitTestInvisible);
     ForceVolatile(true);
 }
@@ -24,9 +24,22 @@ void SBBBCombatHud::Tick(const FGeometry &Geometry, double CurrentTime, float De
 {
     SLeafWidget::Tick(Geometry, CurrentTime, DeltaTime);
     const ABBBPlayerController *Controller = View.IsValid() ? View->GetItemController() : nullptr;
+    const double Now = FPlatformTime::Seconds();
+    if (SampleStartedAt == 0.0)
+    {
+        SampleStartedAt = Now;
+    }
+    ++SampleFrames;
+    const double SampleDuration = Now - SampleStartedAt;
+    if (SampleDuration >= 0.5)
+    {
+        FrameRate = FMath::RoundToInt(SampleFrames / SampleDuration);
+        Ping = Controller ? Controller->GetHudPing() : TOptional<int32>();
+        SampleStartedAt = Now;
+        SampleFrames = 0;
+    }
+
     DamageAge += DeltaTime;
-    EmptyAge += DeltaTime;
-    NameAge += DeltaTime;
     float Health = 0.0f;
     float Maximum = 0.0f;
     uint8 Phase = 255;
@@ -40,58 +53,23 @@ void SBBBCombatHud::Tick(const FGeometry &Geometry, double CurrentTime, float De
     const float Fraction = Controller->GetHudHealthFraction();
     const bool bReset = ObservedPawn.Get() != Controller->GetPawn() || PreviousPhase != Phase
         || PreviousMaximum != Maximum;
-    if (bReset)
-    {
-        DamageAge = 1.0f;
-        DamageTrail = Fraction;
-        bLowHealth = Phase == 0 && Fraction <= 0.30f;
-    }
-    if (!bReset && Health > PreviousHealth)
+    if (bReset || Health > PreviousHealth)
     {
         DamageAge = 1.0f;
         DamageTrail = Fraction;
     }
     if (!bReset && Phase == 0 && Health < PreviousHealth)
     {
-        DamageTrail = FMath::Lerp(DamageTrail, PreviousHealth / FMath::Max(1.0f, Maximum),
+        const float PreviousFraction = PreviousHealth / FMath::Max(1.0f, Maximum);
+        DamageTrail = FMath::Lerp(DamageTrail, PreviousFraction,
             FMath::Clamp((DamageAge - DeltaTime - 0.15f) / 0.45f, 0.0f, 1.0f));
         DamageAge = 0.0f;
     }
-    if (Phase != 0 || Fraction > 0.35f)
-    {
-        bLowHealth = false;
-    }
-    if (Phase == 0 && Fraction <= 0.30f)
-    {
-        bLowHealth = true;
-    }
+    bLowHealth = Phase == 0 && Fraction <= (bLowHealth && !bReset ? 0.35f : 0.30f);
     ObservedPawn = Controller->GetPawn();
     PreviousHealth = Health;
     PreviousMaximum = Maximum;
     PreviousPhase = Phase;
-    int32 Start = 0;
-    int32 Count = 0;
-    Controller->GetConsumableQuickRange(Start, Count);
-    const int32 Selected = Controller->GetSelectedThrowableSlot();
-    const auto Item = Controller->GetItemDisplayData(Selected >= 0 && Selected < Count ? Start + Selected : INDEX_NONE);
-    if (bReset || Selected != ConsumableSlot || Item.InstanceId != ConsumableId)
-    {
-        NameAge = 0.0f;
-    }
-    ConsumableSlot = Selected;
-    ConsumableId = Item.InstanceId;
-    const auto *Equipment = Cast<ABBBEquipment>(Controller->GetActiveItem());
-    int32 Loaded = 0;
-    int32 Capacity = 0;
-    bool Continuous = false;
-    const bool bEmpty = Equipment && Equipment->ReadAmmoDisplay(Loaded, Capacity, Continuous)
-        && Capacity > 0 && Loaded == 0 && !Equipment->IsReloading();
-    if (bEmpty && (!bWasEmpty || ObservedEquipment.Get() != Equipment))
-    {
-        EmptyAge = 0.0f;
-    }
-    bWasEmpty = bEmpty;
-    ObservedEquipment = const_cast<ABBBEquipment *>(Equipment);
 }
 
 FVector2D SBBBCombatHud::ComputeDesiredSize(float LayoutScaleMultiplier) const
@@ -109,192 +87,211 @@ int32 SBBBCombatHud::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry,
         return Layer;
     }
     const FVector2D Size = Geometry.GetLocalSize();
-    const float Scale = FMath::Clamp(static_cast<float>(Size.Y / 1080.0), 0.55f, 1.6f);
-    const FLinearColor White(1.0f, 1.0f, 1.0f, 0.95f);
-    const auto Line = [&](const TArray<FVector2D> &Points, float Width, FLinearColor Color)
+    const float Scale = FMath::Clamp(float(FMath::Min(Size.Y / 1080.0, Size.X / 900.0)), 0.25f, 2.0f);
+    const FVector2D Center = Size * 0.5;
+    const double Left = 32.0 * Scale;
+    const double Right = Size.X - Left;
+    const double Bottom = Size.Y - 28.0 * Scale;
+    const FLinearColor White(1.0f, 1.0f, 1.0f, 0.96f);
+    const FLinearColor Gray(0.72f, 0.72f, 0.72f, 0.78f);
+    const FLinearColor Shadow(0.0f, 0.0f, 0.0f, 0.76f);
+    const auto FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+
+    const auto Line = [&](const TArray<FVector2D> &Points, float Width, const FLinearColor &Color)
     {
         FSlateDrawElement::MakeLines(Elements, Layer + 1, Geometry.ToPaintGeometry(), Points,
-            ESlateDrawEffect::None, FLinearColor(0.0f, 0.0f, 0.0f, Color.A * 0.55f), true, (Width + 2.0f) * Scale);
+            ESlateDrawEffect::None, Shadow.CopyWithNewOpacity(Color.A * 0.8f), true, (Width + 1.8f) * Scale);
         FSlateDrawElement::MakeLines(Elements, Layer + 2, Geometry.ToPaintGeometry(), Points,
             ESlateDrawEffect::None, Color, true, Width * Scale);
     };
-    const auto Arc = [&](FVector2D Center, float Radius, float From, float To, float Width, FLinearColor Color)
+    const auto Arc = [&](FVector2D Origin, float Radius, float From, float To, const FLinearColor &Color)
     {
-        if (To <= From)
-        {
-            return;
-        }
         TArray<FVector2D> Points;
-        const int32 Steps = FMath::Max(2, FMath::CeilToInt((To - From) / 4.0f));
-        for (int32 Step = 0; Step <= Steps; ++Step)
+        const int32 Steps = FMath::Max(2, FMath::CeilToInt((To - From) / 15.0f));
+        for (int32 Index = 0; Index <= Steps; ++Index)
         {
-            const float Angle = FMath::DegreesToRadians(FMath::Lerp(From, To, static_cast<float>(Step) / Steps));
-            Points.Add(Center + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Radius * Scale);
+            const float Angle = FMath::DegreesToRadians(FMath::Lerp(From, To, float(Index) / Steps));
+            Points.Add(Origin + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Radius * Scale);
         }
-        Line(Points, Width, Color);
+        Line(Points, 1.35f, Color);
+    };
+    const auto Number = [&](const FString &Value, FVector2D Anchor, int32 FontSize, bool bRightAligned, const FLinearColor &Color)
+    {
+        auto Font = BBBItemUI::Font(FMath::Max(8, FMath::RoundToInt(FontSize * Scale)));
+        Font.OutlineSettings.OutlineSize = FMath::Max(1, FMath::RoundToInt(Scale));
+        Font.OutlineSettings.OutlineColor = Shadow;
+        const FVector2D Extent = FontMeasure->Measure(Value, Font);
+        const FVector2D Position = Anchor - FVector2D(bRightAligned ? Extent.X : 0.0, Extent.Y * 0.5);
+        FSlateDrawElement::MakeText(Elements, Layer + 3,
+            Geometry.ToPaintGeometry(Extent, FSlateLayoutTransform(Position)), Value, Font, ESlateDrawEffect::None, Color);
+        return Extent.X;
+    };
+    TArray<UTexture2D *, TInlineAllocator<8>> UsedIcons;
+    const auto Icon = [&](UTexture2D *Texture, FVector2D Anchor, FVector2D Limit, bool bRightAligned, const FLinearColor &Color)
+    {
+        if (!Texture || !ItemIconMaterial.IsValid() || Texture->GetSizeX() <= 0 || Texture->GetSizeY() <= 0)
+        {
+            return 0.0;
+        }
+        UsedIcons.AddUnique(Texture);
+        auto &Material = IconMaterials.FindOrAdd(Texture);
+        if (!Material.IsValid())
+        {
+            Material.Reset(UMaterialInstanceDynamic::Create(ItemIconMaterial.Get(), GetTransientPackage()));
+            Material->SetTextureParameterValue(TEXT("ImageTexture"), Texture);
+        }
+        const FVector2D Source(Texture->GetSizeX(), Texture->GetSizeY());
+        const FVector2D Extent = Source * (Scale * FMath::Min(Limit.X / Source.X, Limit.Y / Source.Y));
+        const FVector2D Position = Anchor - FVector2D(bRightAligned ? Extent.X : 0.0, Extent.Y * 0.5);
+        FSlateBrush Brush;
+        Brush.SetResourceObject(Material.Get());
+        Brush.ImageSize = Source;
+        FSlateDrawElement::MakeBox(Elements, Layer + 1, Geometry.ToPaintGeometry(Extent,
+            FSlateLayoutTransform(Position + FVector2D(1.0, 1.5) * Scale)), &Brush, ESlateDrawEffect::None,
+            Shadow.CopyWithNewOpacity(Color.A * 0.8f));
+        FSlateDrawElement::MakeBox(Elements, Layer + 2, Geometry.ToPaintGeometry(Extent,
+            FSlateLayoutTransform(Position)), &Brush, ESlateDrawEffect::None, Color);
+        return Extent.X;
     };
 
-    const auto Text = [&](FVector2D Position, const FString &Value, int32 FontSize, FLinearColor Color)
+    static const FSlateColorBrush Solid(FLinearColor::White);
+    const double HalfBar = FMath::Min(Size.X * 0.19, 315.0 * Scale);
+    const auto Meter = [&](double Y, float Height, float Fraction, const FLinearColor &Color, int32 Offset)
     {
-        FSlateDrawElement::MakeText(Elements, Layer + 3,
-            Geometry.ToPaintGeometry(FVector2f(300.0f * Scale, 40.0f * Scale), FSlateLayoutTransform(FVector2f(Position))),
-            Value, BBBItemUI::Font(FMath::RoundToInt(FontSize * Scale)), ESlateDrawEffect::None, Color);
-    };
-    const auto Image = [&](UTexture2D *Texture, FVector2D Position, FVector2D Extent, FLinearColor Color)
-    {
-        if (!Texture)
+        if (Fraction <= 0.0f)
         {
             return;
         }
-        FSlateBrush Brush;
-        Brush.SetResourceObject(Texture);
-        FSlateDrawElement::MakeBox(Elements, Layer + 2,
-            Geometry.ToPaintGeometry(FVector2f(Extent), FSlateLayoutTransform(FVector2f(Position))),
-            &Brush, ESlateDrawEffect::None, Color);
+        const double Half = HalfBar * Fraction;
+        FSlateDrawElement::MakeBox(Elements, Layer + Offset,
+            Geometry.ToPaintGeometry(FVector2D(2.0 * Half, Height * Scale),
+                FSlateLayoutTransform(FVector2D(Center.X - Half, Y))), &Solid, ESlateDrawEffect::None, Color);
     };
-    static const FSlateColorBrush Solid(FLinearColor::White);
-    if (DamageAge < 0.35f)
-    {
-        const float Alpha = 0.13f * (1.0f - DamageAge / 0.35f);
-        for (int32 Edge = 0; Edge < 12; ++Edge)
-        {
-            const float Inset = Edge * 3.0f * Scale;
-            const FLinearColor Tint(0.55f, 0.015f, 0.01f, Alpha * (1.0f - Edge / 12.0f));
-            const auto Strip = [&](FVector2D Position, FVector2D Extent)
-            {
-                FSlateDrawElement::MakeBox(Elements, Layer, Geometry.ToPaintGeometry(FVector2f(Extent),
-                    FSlateLayoutTransform(FVector2f(Position))), &Solid, ESlateDrawEffect::None, Tint);
-            };
-            Strip(FVector2D(Inset, Inset), FVector2D(Size.X - Inset * 2.0f, 3.0f * Scale));
-            Strip(FVector2D(Inset, Size.Y - Inset - 3.0f * Scale), FVector2D(Size.X - Inset * 2.0f, 3.0f * Scale));
-            Strip(FVector2D(Inset, Inset), FVector2D(3.0f * Scale, Size.Y - Inset * 2.0f));
-            Strip(FVector2D(Size.X - Inset - 3.0f * Scale, Inset), FVector2D(3.0f * Scale, Size.Y - Inset * 2.0f));
-        }
-    }
+    const double HealthY = Bottom - 3.0 * Scale;
+    const double StaminaY = HealthY - 9.0 * Scale;
     const float Health = Controller->GetHudHealthFraction();
-    const double Half = 180.0 * Scale;
-    const double Y = Size.Y - 38.0 * Scale;
-    Line({FVector2D(Size.X * 0.5 - Half, Y), FVector2D(Size.X * 0.5 + Half, Y)},
-        1.0f, FLinearColor(1.0f, 1.0f, 1.0f, 0.16f));
-    if (DamageAge < 0.60f)
+    const float Trail = FMath::Lerp(DamageTrail, Health, FMath::Clamp((DamageAge - 0.15f) / 0.45f, 0.0f, 1.0f));
+    const float LowPulse = bLowHealth ? 0.68f + 0.28f * FMath::Abs(FMath::Sin(float(FPlatformTime::Seconds() * 4.0))) : White.A;
+    Meter(StaminaY - Scale, 4.5f, 1.0f, Shadow, 0);
+    Meter(StaminaY, 2.5f, Controller->GetHudStaminaFraction(), Gray, 2);
+    Meter(HealthY - Scale, 7.0f, 1.0f, Shadow, 0);
+    Meter(HealthY, 5.0f, Trail, FLinearColor(0.38f, 0.38f, 0.38f, 0.9f), 1);
+    Meter(HealthY, 5.0f, Health, White.CopyWithNewOpacity(LowPulse), 2);
+
+    int32 ConsumableStart = 0;
+    int32 ConsumableCount = 0;
+    Controller->GetConsumableQuickRange(ConsumableStart, ConsumableCount);
+    const int32 Selected = Controller->GetSelectedThrowableSlot();
+    const bool bHasSelected = Selected >= 0 && Selected < ConsumableCount;
+    if (bHasSelected)
     {
-        const float Trail = FMath::Lerp(DamageTrail, Health, FMath::Clamp((DamageAge - 0.15f) / 0.45f, 0.0f, 1.0f));
-        Line({FVector2D(Size.X * 0.5 - Half * Trail, Y), FVector2D(Size.X * 0.5 + Half * Trail, Y)},
-            3.0f, FLinearColor(0.65f, 0.20f, 0.12f, 0.7f));
+        const auto Item = Controller->GetItemDisplayData(ConsumableStart + Selected);
+        const double Y = Bottom - 14.0 * Scale;
+        Icon(Item.Icon, FVector2D(Left, Y), FVector2D(52.0, 42.0), false, White);
+        Number(FString::FromInt(Item.Quantity), FVector2D(Left + 57.0 * Scale, Y), 28, false, White);
     }
-    if (bLowHealth)
+    double ConsumableY = Bottom - (bHasSelected ? 55.0 : 14.0) * Scale;
+    for (int32 Index = 0; Index < ConsumableCount; ++Index)
     {
-        Image(Heart.Get(), FVector2D(Size.X * 0.5 - Half - 30.0f * Scale, Y - 11.0f * Scale),
-            FVector2D(22.0f * Scale), FLinearColor(0.65f, 0.08f, 0.06f));
-    }
-    if (Health > 0.0f)
-    {
-        Line({FVector2D(Size.X * 0.5 - Half * Health, Y), FVector2D(Size.X * 0.5 + Half * Health, Y)},
-            2.0f, bLowHealth ? FLinearColor(0.65f, 0.08f, 0.06f) : White);
+        const auto Item = Controller->GetItemDisplayData(ConsumableStart + Index);
+        if (!Item.bOccupied || Index == Selected)
+        {
+            continue;
+        }
+        Icon(Item.Icon, FVector2D(Left, ConsumableY), FVector2D(30.0, 24.0), false, Gray);
+        Number(FString::Printf(TEXT("%02d"), Item.Quantity), FVector2D(Left + 36.0 * Scale, ConsumableY), 16, false, Gray);
+        ConsumableY -= 28.0 * Scale;
     }
 
-    const ABBBEquipment *Equipment = Cast<ABBBEquipment>(Controller->GetActiveItem());
-    const UBBBEquipmentDefinition *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
-    if (Definition && Definition->Icon)
-    {
-        const UTexture2D *Texture = Definition->Icon;
-        const double Width = 160.0 * Scale;
-        const double Height = Width * Texture->GetSizeY() / FMath::Max(1, Texture->GetSizeX());
-        FSlateBrush Brush;
-        Brush.SetResourceObject(Definition->Icon);
-        Brush.ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
-        const FVector2D Position(Size.X - Width - 42.0 * Scale, Size.Y - Height - 65.0 * Scale);
-        FSlateDrawElement::MakeBox(Elements, Layer + 2,
-            Geometry.ToPaintGeometry(FVector2f(Width, Height), FSlateLayoutTransform(FVector2f(Position))),
-            &Brush, ESlateDrawEffect::None, White);
-    }
     int32 Loaded = 0;
     int32 Capacity = 0;
     bool bContinuous = false;
-    const bool bHasAmmoDisplay = Equipment && Equipment->ReadAmmoDisplay(Loaded, Capacity, bContinuous) && Capacity > 0;
-    FLinearColor AmmoColor = White;
-    if (bHasAmmoDisplay)
+    bool bReloading = false;
+    const bool bHasAmmo = Controller->ReadHudAmmo(Loaded, Capacity, bContinuous, bReloading);
+    const FLinearColor AmmoColor = Loaded > 0 ? White : Gray;
+    const double AmmoY = Bottom - 3.0 * Scale;
+    if (bHasAmmo)
     {
-        Loaded = FMath::Clamp(Loaded, 0, Capacity);
-        const float AmmoLeft = Size.X - 184.0f * Scale;
-        const float AmmoTop = Size.Y - 62.0f * Scale;
-        AmmoColor = Loaded <= FMath::Max(1, Capacity / 4)
-            ? BBBItemUI::Accent : White;
-
-        Line({FVector2D(AmmoLeft - 11.0f * Scale, AmmoTop + 4.0f * Scale),
-            FVector2D(AmmoLeft - 11.0f * Scale, AmmoTop + 30.0f * Scale)}, 2.0f, BBBItemUI::Accent);
-        FSlateDrawElement::MakeText(Elements, Layer + 3,
-            Geometry.ToPaintGeometry(FVector2f(70.0f * Scale, 35.0f * Scale),
-                FSlateLayoutTransform(FVector2f(AmmoLeft, AmmoTop))),
-            FString::FromInt(Loaded), BBBItemUI::Font(FMath::RoundToInt(27.0f * Scale)),
-            ESlateDrawEffect::None, AmmoColor);
-        FSlateDrawElement::MakeText(Elements, Layer + 3,
-            Geometry.ToPaintGeometry(FVector2f(70.0f * Scale, 23.0f * Scale),
-                FSlateLayoutTransform(FVector2f(AmmoLeft + 69.0f * Scale, AmmoTop + 10.0f * Scale))),
-            FString::Printf(TEXT("/ %d"), Capacity), BBBItemUI::Font(FMath::RoundToInt(15.0f * Scale)),
-            ESlateDrawEffect::None, FLinearColor(1.0f, 1.0f, 1.0f, 0.70f));
-    }
-
-    if (bHasAmmoDisplay && (Equipment->IsReloading() || Loaded == 0))
-    {
-        const float Flash = Loaded == 0 && !Equipment->IsReloading() && EmptyAge < 0.3f
-            ? 0.65f + 0.35f * FMath::Abs(FMath::Cos(EmptyAge * PI / 0.3f)) : 1.0f;
-        Text(FVector2D(Size.X - 184.0f * Scale, Size.Y - 26.0f * Scale),
-            Equipment->IsReloading() ? TEXT("换弹中") : TEXT("空弹匣"), 16, BBBItemUI::Accent.CopyWithNewOpacity(Flash));
-    }
-    int32 Start = 0;
-    int32 Count = 0;
-    Controller->GetConsumableQuickRange(Start, Count);
-    const int32 Selected = Controller->GetSelectedThrowableSlot();
-    const auto Item = Controller->GetItemDisplayData(Selected >= 0 && Selected < Count ? Start + Selected : INDEX_NONE);
-    const FVector2D ItemPosition(Size.X - 330.0f * Scale, Size.Y - 97.0f * Scale);
-    FSlateDrawElement::MakeBox(Elements, Layer + 1,
-        Geometry.ToPaintGeometry(FVector2f(94.0f * Scale, 62.0f * Scale), FSlateLayoutTransform(FVector2f(ItemPosition))),
-        &Solid, ESlateDrawEffect::None, FLinearColor(0.015f, 0.015f, 0.015f, 0.35f));
-    if (Item.Icon && Item.bOccupied)
-    {
-        const float Fit = 42.0f * Scale / FMath::Max(1, FMath::Max(Item.Icon->GetSizeX(), Item.Icon->GetSizeY()));
-        const FVector2D Extent(Item.Icon->GetSizeX() * Fit, Item.Icon->GetSizeY() * Fit);
-        Image(Item.Icon, ItemPosition + FVector2D(24.0f * Scale, 25.0f * Scale) - Extent * 0.5, Extent, White);
-    }
-    Text(ItemPosition + FVector2D(49.0f * Scale, 12.0f * Scale),
-        FString::Printf(TEXT("×%d"), Item.bOccupied ? Item.Quantity : 0), 19,
-        Item.bOccupied ? White : FLinearColor(1.0f, 1.0f, 1.0f, 0.35f));
-    Text(ItemPosition + FVector2D(7.0f * Scale, 43.0f * Scale), TEXT("G"), 12, White);
-    Text(ItemPosition + FVector2D(49.0f * Scale, 43.0f * Scale), TEXT("TAB"), 12, White);
-    if (NameAge < 1.6f && Item.bOccupied)
-    {
-        Text(ItemPosition - FVector2D(0.0f, 28.0f * Scale), Item.Name.ToString(), 16,
-            White.CopyWithNewOpacity(FMath::Clamp((1.6f - NameAge) / 0.3f, 0.0f, 1.0f)));
-    }
-    const FVector2D Center = Size * 0.5;
-    if (Controller->ShouldShowCrosshair())
-    {
-        Image(Crosshair.Get(), Center - FVector2D(12.0f * Scale), FVector2D(24.0f * Scale), White);
-    }
-
-    if (!Controller->ShouldShowAimHud())
-    {
-        return Layer + 3;
-    }
-
-    FVector2D Actual;
-    int32 ViewportX = 0;
-    int32 ViewportY = 0;
-    Controller->GetViewportSize(ViewportX, ViewportY);
-    if (ViewportX > 0 && ViewportY > 0 && Controller->GetActualAimScreenPosition(Actual))
-    {
-        Actual *= FVector2D(Size.X / ViewportX, Size.Y / ViewportY);
-        if (Actual.X >= 0 && Actual.Y >= 0 && Actual.X <= Size.X && Actual.Y <= Size.Y)
+        const double CapacityWidth = Number(FString::Printf(TEXT("/%d"), Capacity), FVector2D(Right, AmmoY + 2.0 * Scale), 17, true, Gray);
+        const double LoadedWidth = Number(FString::FromInt(Loaded), FVector2D(Right - CapacityWidth - 3.0 * Scale, AmmoY), 29, true, AmmoColor);
+        if (bReloading)
         {
-            Arc(Actual, 8.0f, 0.0f, 360.0f, 1.0f, White);
+            const double RingX = Right - CapacityWidth - LoadedWidth - 17.0 * Scale;
+            const float Angle = float(FMath::Fmod(FPlatformTime::Seconds() * 360.0, 360.0));
+            Arc(FVector2D(RingX, AmmoY), 6.0f, 0.0f, 360.0f, Gray.CopyWithNewOpacity(0.35f));
+            Arc(FVector2D(RingX, AmmoY), 6.0f, Angle, Angle + 125.0f, White);
+        }
+    }
+    const double WeaponY = Bottom - (bHasAmmo ? 40.0 : 14.0) * Scale;
+    const double WeaponWidth = Icon(Controller->GetHudWeaponIcon(), FVector2D(Right, WeaponY), FVector2D(124.0, 38.0), true, White);
+    double SlotY = WeaponY - (WeaponWidth > 0.0 ? 39.0 : 0.0) * Scale;
+    for (int32 Index = 0; Index < Controller->GetQuickAccessSlotCount(); ++Index)
+    {
+        const auto Item = Controller->GetItemDisplayData(Index);
+        if (!Item.bOccupied || Item.bActive)
+        {
+            continue;
+        }
+        Icon(Item.Icon, FVector2D(Right, SlotY), FVector2D(58.0, 23.0), true, Gray);
+        Number(FString::Printf(TEXT("%02d"), Item.QuickIndex + 1), FVector2D(Right - 65.0 * Scale, SlotY), 16, true, Gray);
+        SlotY -= 27.0 * Scale;
+    }
+    for (auto It = IconMaterials.CreateIterator(); It; ++It)
+    {
+        if (!UsedIcons.Contains(It.Key().Get()))
+        {
+            It.RemoveCurrent();
         }
     }
 
-    // 弹药细轨道独立于角落数字 保持准星右下短弧
-    if (bHasAmmoDisplay)
+    const double TelemetryY = 25.0 * Scale;
+    double TelemetryX = Right;
+    if (Ping.IsSet())
     {
-        BBBCombatAmmoRail::Paint(Elements, Geometry, Layer, Loaded, Capacity, bContinuous, AmmoColor);
+        TelemetryX -= Number(FString::FromInt(Ping.GetValue()), FVector2D(TelemetryX, TelemetryY), 16, true, Gray);
+        const double SignalX = TelemetryX - 8.0 * Scale;
+        for (int32 Bar = 0; Bar < 3; ++Bar)
+        {
+            const double X = SignalX - (2 - Bar) * 3.0 * Scale;
+            Line({FVector2D(X, TelemetryY + 4.0 * Scale), FVector2D(X, TelemetryY + (1.0 - 3.0 * Bar) * Scale)}, 1.5f, Gray);
+        }
+        TelemetryX -= 28.0 * Scale;
+    }
+    if (FrameRate > 0)
+    {
+        TelemetryX -= Number(FString::FromInt(FrameRate), FVector2D(TelemetryX, TelemetryY), 16, true, Gray);
+        const double X = TelemetryX - 14.0 * Scale;
+        Line({FVector2D(X, TelemetryY + 5.0 * Scale), FVector2D(X, TelemetryY - 4.0 * Scale),
+            FVector2D(X + 10.0 * Scale, TelemetryY - 4.0 * Scale), FVector2D(X + 10.0 * Scale, TelemetryY + 5.0 * Scale),
+            FVector2D(X, TelemetryY + 5.0 * Scale)}, 1.0f, Gray);
+    }
+
+    if (Controller->ShouldShowCrosshair())
+    {
+        for (const FVector2D Axis : {FVector2D(0.0, 1.0), FVector2D(0.0, -1.0), FVector2D(1.0, 0.0), FVector2D(-1.0, 0.0)})
+        {
+            Line({Center + Axis * (5.0 * Scale), Center + Axis * (11.0 * Scale)}, 1.0f, White);
+        }
+        Line({Center - FVector2D(0.65 * Scale, 0.0), Center + FVector2D(0.65 * Scale, 0.0)}, 1.2f, White);
+    }
+    if (Controller->ShouldShowAimHud())
+    {
+        FVector2D Actual;
+        int32 ViewportX = 0;
+        int32 ViewportY = 0;
+        Controller->GetViewportSize(ViewportX, ViewportY);
+        if (ViewportX > 0 && ViewportY > 0 && Controller->GetActualAimScreenPosition(Actual))
+        {
+            Actual *= FVector2D(Size.X / ViewportX, Size.Y / ViewportY);
+            if (Actual.X >= 0.0 && Actual.Y >= 0.0 && Actual.X <= Size.X && Actual.Y <= Size.Y)
+            {
+                Arc(Actual, 8.0f, 0.0f, 360.0f, White);
+            }
+        }
+        if (bHasAmmo)
+        {
+            BBBCombatAmmoRail::Paint(Elements, Geometry, Layer, Loaded, Capacity, bContinuous, AmmoColor);
+        }
     }
     return Layer + 3;
 }

@@ -3,9 +3,10 @@
 #include "Widgets/SLeafWidget.h"
 #include "UObject/StrongObjectPtr.h"
 
-class UTexture2D;
 class APawn;
-class AActor;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
+class UTexture2D;
 
 class UBBBPlayerItemView;
 
@@ -13,8 +14,9 @@ class UBBBPlayerItemView;
 class SBBBCombatHud final : public SLeafWidget
 {
 public:
-    SLATE_BEGIN_ARGS(SBBBCombatHud) : _View(nullptr) {}
+    SLATE_BEGIN_ARGS(SBBBCombatHud) : _View(nullptr), _ItemIconMaterial(nullptr) {}
         SLATE_ARGUMENT(UBBBPlayerItemView *, View)
+        SLATE_ARGUMENT(UMaterialInterface *, ItemIconMaterial)
     SLATE_END_ARGS()
 
     /** @param Arguments	所属玩家界面 @return 无 */
@@ -27,19 +29,19 @@ public:
 private:
     /** 所属界面不拥有玩法状态 */
     TWeakObjectPtr<UBBBPlayerItemView> View;
-    TStrongObjectPtr<UTexture2D> Crosshair;
-    TStrongObjectPtr<UTexture2D> Heart;
+    /** 只保留当前可见图标的动态材质 */
+    TWeakObjectPtr<UMaterialInterface> ItemIconMaterial;
+    mutable TMap<TWeakObjectPtr<UTexture2D>, TStrongObjectPtr<UMaterialInstanceDynamic>> IconMaterials;
     TWeakObjectPtr<APawn> ObservedPawn;
-    TWeakObjectPtr<AActor> ObservedEquipment;
-    FGuid ConsumableId;
-    int32 ConsumableSlot = INDEX_NONE;
     float PreviousHealth = 0.0f;
     float PreviousMaximum = 0.0f;
     uint8 PreviousPhase = 255;
     bool bLowHealth = false;
-    bool bWasEmpty = false;
     float DamageAge = 1.0f;
     float DamageTrail = 0.0f;
-    float EmptyAge = 1.0f;
-    float NameAge = 2.0f;
+    /** 本地性能读数 每半秒取样一次 */
+    double SampleStartedAt = 0.0;
+    int32 SampleFrames = 0;
+    int32 FrameRate = 0;
+    TOptional<int32> Ping;
 };

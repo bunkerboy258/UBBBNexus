@@ -9,13 +9,11 @@ class ABBBPlayerItemStage;
 class APawn;
 class UFontFace;
 class USoundBase;
-class UTexture2D;
 class UMaterialInterface;
 class UBBBPlayerItemPortrait;
 class SImage;
 class SScrollBox;
 class SBox;
-class SHorizontalBox;
 class SVerticalBox;
 class STextBlock;
 class SBBBPlayerItemSlot;
@@ -63,16 +61,10 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     ABBBPlayerController *GetItemController() const;
     /** @return 预览关卡内的背包视觉配置 */
     const ABBBPlayerItemStage* GetItemStage() const;
-    /** @return 无 在数字键输入后短暂展示三个快捷格 */
-    void NotifyQuickSelection();
     /** @param Slot 点击查看的物品位置 @return 无 */
     void InspectSlot(int32 Slot);
     /** @return 当前查看的物品位置 */
     int32 GetInspectedSlot() const;
-    /** @return 快捷切换提示当前不透明度 */
-    float GetQuickSelectionOpacity() const;
-    /** @return 耄耋探索头像及其打包依赖 */
-    UTexture2D *GetMaodieAvatar() const;
 #if WITH_DEV_AUTOMATION_TESTS
     /** @return 供编辑器诊断遍历的背包根控件 */
     TArray<TSharedPtr<SWidget>> GetMenuPanels() const;
@@ -126,9 +118,9 @@ private:
     TObjectPtr<UMaterialInterface> InterfaceArtMaterial;
     UPROPERTY()
     TObjectPtr<UMaterialInterface> SlotFrameMaterial;
-    /** 探索像素头像的显式打包依赖 */
+    /** 保留现有图标透明度的战斗 HUD 画刷材质 */
     UPROPERTY()
-    TObjectPtr<UTexture2D> MaodieAvatar;
+    TObjectPtr<UMaterialInterface> HudItemIconMaterial;
     /** 已提高响度的完成音效 */
     UPROPERTY()
     TObjectPtr<USoundBase> EvacSound;
@@ -138,12 +130,9 @@ private:
     double LastEvacCompletionAt = -1.0;
     TWeakObjectPtr<UWorld> EvacPresentationWorld;
 
-    /** 两处格子均只引用同一个背包索引 */
-    TSharedPtr<SHorizontalBox> QuickBar;
     TSharedPtr<SVerticalBox> BackpackSlots;
     TSharedPtr<SVerticalBox> EquipmentSlots;
     /** 布局不变时只更新内容 保留格子和拖拽身份 */
-    TArray<TSharedPtr<SBBBPlayerItemSlot>> QuickSlotViews;
     TArray<TSharedPtr<SBBBPlayerItemSlot>> StorageSlotViews;
     TArray<TSharedPtr<SBBBPlayerItemSlot>> PanelSlotViews;
     int32 BuiltStorageStart = INDEX_NONE;
@@ -168,12 +157,8 @@ private:
     /** 上次收到的操作结果版本 */
     int32 ObservedOperationRevision = 0;
     bool bAwaitingPlacementResult = false;
-    /** 上次实际选中格子 用于显示切换反馈 */
-    int32 ObservedSelectedSlot = INDEX_NONE;
     /** 当前展示的角色 */
     TWeakObjectPtr<APawn> ObservedPawn;
-    /** 最近数字选择的单调时钟时间 */
-    double QuickSelectionTime = -100.0;
     /** 玩家背包打开状态 */
     bool bBackpackOpen = false;
 };

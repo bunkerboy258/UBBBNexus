@@ -9,7 +9,6 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "Engine/FontFace.h"
-#include "Engine/Texture2D.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -36,11 +35,11 @@ UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializ
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> FrameMaterial(
         TEXT("/Game/_Project/UI/Bag/M_SlotFrame.M_SlotFrame"));
     SlotFrameMaterial = FrameMaterial.Object;
-    static ConstructorHelpers::FObjectFinder<UTexture2D> Avatar(
-        TEXT("/Game/_Project/UI/Gameplay/T_MaodieAvatar.T_MaodieAvatar"));
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> HudIconMaterial(
+        TEXT("/Game/_Project/Characters/Items/Shared/M_HudItemSilhouette.M_HudItemSilhouette"));
+    HudItemIconMaterial = HudIconMaterial.Object;
     static ConstructorHelpers::FObjectFinder<USoundBase> CompletionSound(
         TEXT("/Game/_Project/UI/Gameplay/Evac.Evac"));
-    MaodieAvatar = Avatar.Object;
     EvacSound = CompletionSound.Object;
     const TCHAR* Names[] = {TEXT("Open"), TEXT("Close"), TEXT("Tab"), TEXT("Lift"), TEXT("Place"), TEXT("Reject"), TEXT("Equip")};
     for (const TCHAR* Name : Names)
@@ -225,20 +224,6 @@ TOptional<FVector2D> UBBBPlayerItemView::ReadParallaxCursor() const
     return FVector2D(ApplyDeadZone(2.0 * UV.X - 1.0), ApplyDeadZone(1.0 - 2.0 * UV.Y));
 }
 
-void UBBBPlayerItemView::NotifyQuickSelection()
-{
-    QuickSelectionTime = FPlatformTime::Seconds();
-}
-float UBBBPlayerItemView::GetQuickSelectionOpacity() const
-{
-    const ABBBPlayerController *Controller = GetItemController();
-    if (!Controller || Controller->IsPlayerMenuOpen())
-    {
-        return 0.0f;
-    }
-    return FMath::Clamp(static_cast<float>((1.8 - (FPlatformTime::Seconds() - QuickSelectionTime)) / 0.35), 0.0f, 1.0f);
-}
-
 void UBBBPlayerItemView::InspectSlot(int32 SlotIndex)
 {
     ABBBPlayerController *Controller = GetItemController();
@@ -300,43 +285,15 @@ const FSlateBrush *UBBBPlayerItemView::GetCharacterBrush() const
 void UBBBPlayerItemView::RefreshItems()
 {
     ABBBPlayerController *Controller = GetItemController();
-    if (!Controller || !QuickBar || !BackpackSlots || !EquipmentSlots)
+    if (!Controller || !BackpackSlots || !EquipmentSlots)
     {
         return;
-    }
-    const int32 Selected = Controller->GetSelectedItemSlot();
-    if (ObservedPawn.Get() == Controller->GetPawn() && Selected != ObservedSelectedSlot)
-    {
-        NotifyQuickSelection();
     }
     if (ObservedPawn.Get() != Controller->GetPawn())
     {
         bAwaitingPlacementResult = false;
     }
     ObservedPawn = Controller->GetPawn().Get();
-    ObservedSelectedSlot = Selected;
-    const int32 QuickCount = Controller->GetQuickAccessSlotCount();
-    if (QuickSlotViews.Num() != QuickCount)
-    {
-        QuickBar->ClearChildren();
-        QuickSlotViews.Reset();
-        for (int32 Index = 0; Index < QuickCount; ++Index)
-        {
-            TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
-            QuickBar->AddSlot().FillWidth(1.0f).Padding(12.0f)
-                [SAssignNew(SlotWidget, SBBBPlayerItemSlot)
-                    .View(this).Slot(Index).Compact(true)
-                    .Width(160.0f).Height(90.0f)];
-            QuickSlotViews.Add(SlotWidget);
-        }
-    }
-    else
-    {
-        for (const auto &SlotWidget : QuickSlotViews)
-        {
-            SlotWidget->Refresh();
-        }
-    }
     if (!bBackpackOpen)
     {
         return;

@@ -536,13 +536,12 @@ bool ABBBPlayerController::SubmitItemMove(const int32 Source, const int32 Target
 bool ABBBPlayerController::SubmitItemSelect(const int32 Slot)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    const bool bSubmitted = ItemCharacter && Slot >= INDEX_NONE;
-    if (bSubmitted) ItemCharacter->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{Slot}});
-    if (bSubmitted && ItemView)
+    if (!ItemCharacter || Slot < INDEX_NONE)
     {
-        ItemView->NotifyQuickSelection();
+        return false;
     }
-    return bSubmitted;
+    ItemCharacter->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{Slot}});
+    return true;
 }
 
 bool ABBBPlayerController::SubmitAppearancePreset(const FName PresetId)
