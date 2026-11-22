@@ -5,12 +5,28 @@
 #include "Components/InstancedSkinnedMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "Materials/Material.h"
+#include "PrimitiveSceneProxy.h"
 #include "ProfilingDebugging/CountersTrace.h"
+#include "Rendering/SkeletalMeshRenderData.h"
 #include "SkeletalRenderPublic.h"
+#include "SkinningSceneExtensionProxy.h"
 #include "UObject/ConstructorHelpers.h"
 
 TRACE_DECLARE_INT_COUNTER(BBBMonsterCrowdInstances, TEXT("BBBMonster/CrowdInstances"));
 TRACE_DECLARE_INT_COUNTER(BBBMonsterCrowdComponents, TEXT("BBBMonster/CrowdComponents"));
+
+namespace
+{
+    bool HasAnimatedProxy(const UInstancedSkinnedMeshComponent& Component)
+    {
+        const auto* Provider = Component.GetTransformProvider();
+        const auto* RenderProxy = Component.GetSceneProxy();
+        const auto* Skinning = RenderProxy ? RenderProxy->GetSkinningSceneExtensionProxy() : nullptr;
+        return Provider && Provider->IsEnabled() && !Provider->IsCompiling() && Skinning
+            && Skinning->UseInstancing() && Skinning->GetTransformProviderId() == Provider->GetTransformProviderID();
+    }
+}
 
 UBBBMonsterCrowdPresentationSubsystem::UBBBMonsterCrowdPresentationSubsystem()
 {
@@ -51,9 +67,36 @@ UInstancedSkinnedMeshComponent* UBBBMonsterCrowdPresentationSubsystem::GetOrCrea
     {
         return Existing;
     }
-    if (UnsupportedBodies.Contains(&Mesh) || !IsGPUSkinSceneExtensionEnabled() || Mesh.GetLODNum() <= 0)
+    if (UnsupportedBodies.Contains(&Mesh) || !IsGPUSkinSceneExtensionEnabled()
+        || Mesh.IsCompiling() || Mesh.GetLODNum() <= 0)
     {
         return nullptr;
+    }
+
+    const auto* RenderData = Mesh.GetResourceForRendering();
+    if (!RenderData)
+    {
+        return nullptr;
+    }
+    if (!RenderData->HasUnifiedBoneMap())
+    {
+        UnsupportedBodies.Add(&Mesh);
+        return nullptr;
+    }
+
+    // 检查已经保存的材质用法 避免在运行时修改主材质或显示默认灰材质
+    for (const auto& Slot : Mesh.GetMaterials())
+    {
+        const auto* Material = Slot.MaterialInterface ? Slot.MaterialInterface->GetMaterial_Concurrent() : nullptr;
+        if (!Material || !Material->GetUsageByFlag(MATUSAGE_InstancedSkinnedMesh))
+        {
+            UnsupportedBodies.Add(&Mesh);
+            return nullptr;
+        }
+        if (Slot.MaterialInterface->IsCompiling())
+        {
+            return nullptr;
+        }
     }
 
     // 与正式动画资源使用同一骨架的身体才启用远处实例
@@ -77,6 +120,8 @@ UInstancedSkinnedMeshComponent* UBBBMonsterCrowdPresentationSubsystem::GetOrCrea
     Component->SetGenerateOverlapEvents(false);
     Component->SetCastShadow(false);
     Component->SetVisibleInRayTracing(false);
+    // 距离裁剪由 Mass 决定 所有仍可见的僵尸继续采样姿势
+    Component->SetAnimationMinScreenSize(-1.0f);
     Component->SetSkinnedAssetAndUpdate(&Mesh);
     Component->OverrideMinLOD(FMath::Min(2, Mesh.GetLODNum() - 1));
     Component->PrimaryComponentTick.bCanEverTick = false;
@@ -109,7 +154,9 @@ UInstancedSkinnedMeshComponent* UBBBMonsterCrowdPresentationSubsystem::GetOrCrea
 
 bool UBBBMonsterCrowdPresentationSubsystem::HasPresentation(FMassEntityHandle Entity) const
 {
-    return Instances.Contains(Entity);
+    const auto* Instance = Instances.Find(Entity);
+    const auto* Component = Instance ? Instance->Component.Get() : nullptr;
+    return Component && Instance->Id.IsValid() && HasAnimatedProxy(*Component);
 }
 
 bool UBBBMonsterCrowdPresentationSubsystem::Present(FMassEntityHandle Entity, USkeletalMesh& Mesh, const FTransform& Target,
@@ -184,7 +231,8 @@ bool UBBBMonsterCrowdPresentationSubsystem::Present(FMassEntityHandle Entity, US
     }
     Instance.Display = Next;
     Display = Next;
-    return Instance.Id.IsValid();
+    return Instance.Id.IsValid() && HasAnimatedProxy(*Component)
+        && !Component->CheckPSOPrecachingAndBoostPriority();
 }
 
 void UBBBMonsterCrowdPresentationSubsystem::RemoveInstance(const FBBBMonsterCrowdInstance& Instance)
