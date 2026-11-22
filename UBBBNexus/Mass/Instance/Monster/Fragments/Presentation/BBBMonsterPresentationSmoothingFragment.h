@@ -18,4 +18,7 @@ struct ABBB_EVAC_API FBBBMonsterPresentationSmoothingFragment final : public FMa
 
     /** 上次接收显示变换的演员 用于识别首次出现与演员替换 */
     TWeakObjectPtr<AActor> LastActor;
+
+    /** 上一次显示变换由中远距离实例写入 */
+    bool bFromCrowd = false;
 };

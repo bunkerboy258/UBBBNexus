@@ -18,4 +18,7 @@ public:
 protected:
     /** 将小怪标签加入表现查询 */
     virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
+    virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
+
+    FMassEntityQuery CrowdQuery;
 };

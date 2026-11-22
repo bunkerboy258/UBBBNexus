@@ -35,6 +35,10 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterGoreProcessor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
+#include "ProfilingDebugging/CountersTrace.h"
+
+TRACE_DECLARE_INT_COUNTER(BBBMonsterBodyActors, TEXT("BBBMonster/BodyActors"));
+TRACE_DECLARE_INT_COUNTER(BBBMonsterSimulatingCorpses, TEXT("BBBMonster/SimulatingCorpses"));
 
 UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
     : MonsterQuery(*this)
@@ -90,13 +94,15 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     const bool bStandalone = World->GetNetMode() == NM_Standalone;
     const uint32 WorldIdentity = World->GetUniqueID();
     int32 ActiveCorpses = 0;
-    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses](FMassExecutionContext& Chunk)
+    int32 BodyActors = 0;
+    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses, &BodyActors](FMassExecutionContext& Chunk)
     {
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
             auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
+            BodyActors += Actor != nullptr ? 1 : 0;
             auto* Presentation = Actor ? Actor->GetMonsterPresentation() : nullptr;
             const auto* Definition = Network[Index].Definition.Get();
             if (Presentation && Definition && Definition->Presentation && Presentation->IsCorpseSimulating())
@@ -106,6 +112,8 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
         }
     });
+    TRACE_COUNTER_SET(BBBMonsterBodyActors, BodyActors);
+    TRACE_COUNTER_SET(BBBMonsterSimulatingCorpses, ActiveCorpses);
     int32 PreparationBudget = World->GetNetMode() != NM_DedicatedServer && FApp::CanEverRender() ? 2 : 0;
     MonsterQuery.ForEachEntityChunk(Context, [&PreparationBudget](FMassExecutionContext &Chunk)
     {
@@ -178,7 +186,8 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const double DistanceSquared = FVector::DistSquared(Smoothing.DisplayTransform.GetLocation(), MonsterTransform.GetLocation());
             const bool bLargeCorrection = DistanceSquared > FMath::Square(500.0);
 
-            if (!bRemote || bNewActor || bLargeCorrection)
+            const bool bTransferCrowd = Smoothing.bFromCrowd && !bLargeCorrection;
+            if ((!bRemote || bNewActor || bLargeCorrection) && !bTransferCrowd)
             {
                 if (bRemote && !bNewActor && bLargeCorrection)
                 {
@@ -190,7 +199,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
 
             // 只追靠最新已成立结果 不使用速度外推 不回写逻辑位置
-            if (bRemote && !bNewActor && !bLargeCorrection)
+            if ((bRemote && !bNewActor && !bLargeCorrection) || bTransferCrowd)
             {
                 Smoothing.DisplayTransform.SetLocation(FMath::Lerp(
                     Smoothing.DisplayTransform.GetLocation(), MonsterTransform.GetLocation(), Alpha));
@@ -209,6 +218,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
 
             Smoothing.LastActor = MonsterActor;
+            Smoothing.bFromCrowd = false;
 
             // 同步实体位置和朝向到骨骼表现 Actor
             const FTransform& CurrentTransform = MonsterActor->GetActorTransform();
