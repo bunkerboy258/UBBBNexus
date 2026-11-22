@@ -93,7 +93,7 @@ struct FBBBProjectileSpawnLocalControlPacket final
             && Penetrations >= 0 && Penetrations <= 32
             && FMath::IsFinite(PenetrationMultiplier)
             && PenetrationMultiplier >= 0.0f && PenetrationMultiplier <= 1.0f
-            && (WorldBurst ? (bCanCauseDamage && ExplosionRadiusCm == 0.0f && Penetrations == 0)
+            && (WorldBurst ? (bCanCauseDamage && ExplosionRadiusCm == 0.0f)
                 : (Mesh.IsValid() || (Channel.IsValid() && System.IsValid())))
             && (Channel.IsValid() == System.IsValid())
             && FMath::IsFinite(TracerLengthCm) && TracerLengthCm > 0.0f

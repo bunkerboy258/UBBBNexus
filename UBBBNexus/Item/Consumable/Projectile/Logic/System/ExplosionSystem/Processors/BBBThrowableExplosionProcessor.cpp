@@ -21,7 +21,8 @@
 namespace
 {
     void QueueFragments(UBBBMassSubsystem& Mass, ABBBThrowable& Actor, const FBBBThrowableExplosionConfig& Config,
-        const FBBBThrowableExplosionFact& Fact, const FGuid& AttackId, const TSharedPtr<FBBBProjectileWorldBurst>& Burst)
+        const FBBBThrowableExplosionFact& Fact, float BodyRadius, const FGuid& AttackId,
+        const TSharedPtr<FBBBProjectileWorldBurst>& Burst)
     {
         FBBBProjectileSpawnLocalControlPacket Packet;
         Packet.LaunchTransform.SetLocation(Fact.Position);
@@ -31,6 +32,8 @@ namespace
         Packet.DurableDamage = Config.DurableDamage;
         Packet.StaggerValue = Config.Stagger;
         Packet.Radius = 0.0f;
+        Packet.Penetrations = 5;
+        Packet.PenetrationMultiplier = 0.70f;
         Packet.Source = &Actor;
         Packet.Pawn = Actor.GetInstigator();
         Packet.bDamageInstigator = Config.bDamageSelf;
@@ -39,7 +42,18 @@ namespace
         Packet.bCanCauseDamage = true;
         Packet.WorldBurst = Burst;
 
-        // 用均匀球面分布覆盖爆点四周 每次爆炸旋转整组方向。
+        FHitResult Ground;
+        const FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(BBBThrowableFragmentGround), false, &Actor);
+        const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
+        const bool bGrounded = Actor.GetWorld()->LineTraceSingleByObjectType(Ground, Fact.Position,
+            Fact.Position - FVector::UpVector * (BodyRadius * 1.5f + 2.0f), StaticWorld, GroundParams)
+            && Ground.ImpactNormal.Z >= 0.45f;
+        if (bGrounded)
+        {
+            Packet.LaunchTransform.SetRotation(FQuat::FindBetweenNormals(FVector::UpVector, Ground.ImpactNormal));
+        }
+
+        // 空中覆盖完整球面 贴地时将等面积采样限制在支撑面外侧。
         FRandomStream Random(GetTypeHash(AttackId));
         const double StartAngle = Random.FRand() * UE_TWO_PI;
         constexpr double GoldenAngle = 2.399963229728653;
@@ -47,7 +61,8 @@ namespace
         Packets.Reserve(Config.FragmentCount);
         for (int32 Index = 0; Index < Config.FragmentCount; ++Index)
         {
-            const double Z = 1.0 - 2.0 * (Index + 0.5) / Config.FragmentCount;
+            const double HeightFraction = (Index + 0.5) / Config.FragmentCount;
+            const double Z = 1.0 - HeightFraction * (bGrounded ? 1.0 : 2.0);
             const double XY = FMath::Sqrt(1.0 - Z * Z);
             const double Angle = StartAngle + Index * GoldenAngle;
             Packet.LocalDirection = FVector(XY * FMath::Cos(Angle), XY * FMath::Sin(Angle), Z);
@@ -219,7 +234,7 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
         }
         if (Burst)
         {
-            QueueFragments(*Mass, Actor, Config, Fact, AttackId, Burst);
+            QueueFragments(*Mass, Actor, Config, Fact, Definition->Physics.Radius, AttackId, Burst);
         }
         UE_LOG(LogTemp, Log, TEXT("[BBBThrowable] Exploded Authority=1 Player=%d Position=%s"),
             Fact.PlayerId, *Fact.Position.ToString());
