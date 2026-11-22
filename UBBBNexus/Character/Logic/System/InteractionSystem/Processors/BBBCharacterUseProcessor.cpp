@@ -26,24 +26,12 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
         {
             return;
         }
-        const bool bWasActive = Use.Fact.bActive;
         const bool bNewAction = Use.PendingFact.Serial != Use.Fact.Serial;
         Use.Fact = Use.PendingFact;
         Use.UseSerial = Use.Fact.Serial;
         const auto *Catalog = Context.Character.GetCharacterConfig().Item.ConsumableCatalog.Get();
         Use.Definition = !Use.Fact.bQuickMelee && Catalog ? Catalog->FindItem(Use.Fact.ItemId) : nullptr;
         Use.bBusy = Use.Fact.bActive;
-        if (bWasActive && !Use.Fact.bActive)
-        {
-            const auto *Equipment = Context.Character.GetHeldEquipment();
-            UAnimMontage *Return = Equipment && Equipment->GetDefinition()
-                                       ? Equipment->GetDefinition()->UseReturnMontage.Get()
-                                       : Context.Character.GetCharacterConfig().Animation.UseReturnMontage.Get();
-            if (Return)
-            {
-                Context.Character.SubmitInput(FBBBUpperBodyMontageAuthorityFactPacket{Return});
-            }
-        }
         if (Use.bBusy && bNewAction && Use.Definition)
         {
             const auto *Equipment = Context.Character.GetHeldEquipment();

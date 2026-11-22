@@ -21,9 +21,6 @@ struct FBBBCharacterAnimationConfig
     /** 空手快速近战动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "空手快速近战"))
     TObjectPtr<class UAnimMontage> UnarmedQuickMeleeMontage = nullptr;
-    /** 空手使用结束的短收势动作 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "空手使用结束收势"))
-    TObjectPtr<class UAnimMontage> UseReturnMontage = nullptr;
 
     /** 倒地等待期间循环播放的全身动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "倒地保持动作"))

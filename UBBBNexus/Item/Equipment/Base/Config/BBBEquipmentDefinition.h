@@ -26,9 +26,6 @@ public:
   /** 当前装备姿态的角色快速近战动作 */
   UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "7", DisplayName = "快速近战动作"))
   TObjectPtr<UAnimMontage> QuickMeleeMontage = nullptr;
-  /** 一次使用结束后覆盖上半身循环的收势动作 */
-  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "8", DisplayName = "使用结束收势"))
-  TObjectPtr<UAnimMontage> UseReturnMontage = nullptr;
   UBBBEquipmentDefinition()
   {
       ItemType = EBBBItemType::Equipment;
