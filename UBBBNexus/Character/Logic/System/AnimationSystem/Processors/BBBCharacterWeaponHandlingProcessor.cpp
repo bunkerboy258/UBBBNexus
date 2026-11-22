@@ -12,12 +12,13 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
     State.PoseOffsetAngles = Context.RuntimeData.Animation.ReadRecoilState().Angles;
     State.AimFollowSpeed = 18.0f;
     State.MinTargetDistance = 120.0f;
-    State.RecoilTime = 1.0f;
-    State.BackwardRecoilStrength = 0.0f;
     State.RecoilAnimation.Reset();
-    const auto *Source = Context.AnimationInstance.TryGetWeaponAnimInstance();
+    auto *Source = Context.AnimationInstance.TryGetWeaponAnimInstance();
     if (!Source)
     {
+        State.RecoilSource.Reset();
+        State.RecoilFireSequence = 0;
+        State.BackwardRecoilStrength = 0.0f;
         return;
     }
 
@@ -29,14 +30,33 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
     State.AimFollowSpeed = (bAiming ? Source->GetAimFireAimFollowSpeed() : Source->GetHipFireAimFollowSpeed())
         * (bFalling ? Source->GetAirborneAimFollowScale() : 1.0f)
         * (bCrouching ? Source->GetCrouchedAimFollowScale() : 1.0f);
-    if (Source->GetFireSequence() > 0 && !Source->IsReloading())
+    constexpr float RecoilHalfLifeSeconds = 0.065f;
+    const float DeltaSeconds = FMath::Max(Context.WorldState.FrameDeltaSeconds, 0.0f);
+    const int32 FireSequence = Source->GetFireSequence();
+    int32 NewShots = 0;
+    if (State.RecoilSource.Get() != Source || FireSequence < State.RecoilFireSequence)
     {
-        State.BackwardRecoilStrength = FMath::Clamp(
+        State.RecoilSource = Source;
+        State.BackwardRecoilStrength = 0.0f;
+    }
+    else
+    {
+        NewShots = FireSequence - State.RecoilFireSequence;
+    }
+    State.RecoilFireSequence = FireSequence;
+    State.BackwardRecoilStrength *= FMath::Exp2(-DeltaSeconds / RecoilHalfLifeSeconds);
+    if (NewShots > 0)
+    {
+        const float Impulse =
             (bAiming ? Source->GetAimFireBackwardRecoilAlpha() : Source->GetHipFireBackwardRecoilAlpha())
             * (bFalling ? Source->GetAirborneBackwardRecoilScale() : 1.0f)
-            * (bCrouching ? Source->GetCrouchedBackwardRecoilScale() : 1.0f), 0.0f, 2.0f);
+            * (bCrouching ? Source->GetCrouchedBackwardRecoilScale() : 1.0f);
+        State.BackwardRecoilStrength = FMath::Clamp(State.BackwardRecoilStrength + 0.5f * Impulse * NewShots, 0.0f, 1.0f);
     }
-    State.RecoilTime = Source->GetTimeSinceLastFireSeconds();
+    if (State.BackwardRecoilStrength < 0.001f)
+    {
+        State.BackwardRecoilStrength = 0.0f;
+    }
     State.RecoilAnimation = Source->GetRecoilAnimation();
     const FVector2D Amplitude = (bAiming ? Source->GetAimFireSwayAmplitudeDegrees() : Source->GetHipFireSwayAmplitudeDegrees())
         * (bFalling ? Source->GetAirborneSwayAmplitudeScale() : 1.0f)

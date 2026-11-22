@@ -14,7 +14,7 @@ void UBBBShotgunReloadCycleLogicAnimNotifyState::NotifyEnd(USkeletalMeshComponen
         return;
     }
 
-    if (UAnimNotifyLibrary::NotifyStateReachedEnd(EventReference))
+    if (bFinishing || UAnimNotifyLibrary::NotifyStateReachedEnd(EventReference))
     {
         Equipment->SubmitInput(FBBBShotgunReloadCycleEndLocalControlPacket{bFinishing});
         return;

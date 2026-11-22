@@ -356,13 +356,6 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceMinTargetDistance;
     }
 
-    /** @return 距实际开火的时间 */
-    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
-    float GetWeaponRecoilTime() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->SourceWeaponRecoilTime;
-    }
-
     /** @return 后向震动强度 */
     UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetWeaponBackwardRecoilStrength() const
@@ -388,9 +381,6 @@ private:
     float SourceWeaponAimFollowSpeed = 18.0f;
     /** 已发布的近距离瞄准保护距离 */
     float SourceMinTargetDistance = 120.0f;
-    /** 距实际开火的时间的发布快照 */
-    UPROPERTY(Transient)
-    float SourceWeaponRecoilTime = 1.0f;
     /** 后向震动强度的发布快照 */
     UPROPERTY(Transient)
     float SourceWeaponBackwardRecoilStrength = 0.0f;

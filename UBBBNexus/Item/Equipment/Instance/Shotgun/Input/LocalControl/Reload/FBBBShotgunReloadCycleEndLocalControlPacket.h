@@ -3,7 +3,7 @@
 
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/Shotgun/Logic/System/ActionSystem/DomainData/States/BBBShotgunActionInputState.h"
 
-/** 一发装填动作与收手已自然完成 */
+/** 记录单发装填自然结束或收手动作退出 */
 struct FBBBShotgunReloadCycleEndLocalControlPacket final
 {
     /** 本通知来自收手动作 而不是一发装入动作 */
@@ -22,7 +22,7 @@ struct FBBBShotgunReloadCycleEndLocalControlPacket final
     }
 
     /**
-     * 提交自然结束事实 不执行动作
+     * 提交对应阶段的结束事实 不执行动作
      * @param State	动作输入状态
      * @return 无
      */

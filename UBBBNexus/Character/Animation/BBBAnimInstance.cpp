@@ -95,7 +95,6 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceWeaponPoseOffsetAngles = HandlingState.PoseOffsetAngles;
     SourceWeaponAimFollowSpeed = HandlingState.AimFollowSpeed;
     SourceMinTargetDistance = HandlingState.MinTargetDistance;
-    SourceWeaponRecoilTime = HandlingState.RecoilTime;
     SourceWeaponBackwardRecoilStrength = HandlingState.BackwardRecoilStrength;
     SourceWeaponRecoilAnimation = HandlingState.RecoilAnimation.Get();
     SourceMovementMode = FactState.MovementMode;
