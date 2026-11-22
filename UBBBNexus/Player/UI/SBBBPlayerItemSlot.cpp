@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/UI/SBBBPlayerItemSlot.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemView.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStyle.h"
@@ -77,7 +78,7 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
                                                                                               return FSlateRenderTransform(FVector2f(0.0f, bLift ? -8.0f : 0.0f));
                                                                                           })[SNew(SImage)
                                                      .Image(&IconBrush)
-                                                     .ColorAndOpacity(FLinearColor(0.98f, 0.95f, 0.89f))
+                                                     .ColorAndOpacity(FLinearColor::White)
                                                      .Visibility_Lambda([this]()
                                                      {
                                                          return IconBrush.GetResourceObject() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
@@ -133,8 +134,9 @@ void SBBBPlayerItemSlot::Refresh()
     ItemName = Data.Name;
     QuickLabel = Data.bQuick ? FText::AsNumber(Data.QuickIndex + 1) : FText::GetEmpty();
     QuantityLabel = Data.Quantity > 0 && Data.bShowQuantity ? FText::AsNumber(Data.Quantity) : FText::GetEmpty();
-    IconTexture.Reset(!bCompact && Data.DisplayImage ? Data.DisplayImage : Data.Icon);
-    IconBrush.SetResourceObject(!bCompact && Data.DisplayMaterial ? static_cast<UObject *>(Data.DisplayMaterial) : IconTexture.Get());
+    IconTexture.Reset(bOuterRight ? Data.DisplayImage : Data.Icon);
+    IconBrush.SetResourceObject(bOuterRight && Data.DisplayMaterial
+        ? static_cast<UObject *>(Data.DisplayMaterial) : IconTexture.Get());
     IconBrush.ImageSize =
         IconTexture.IsValid() ? FVector2D(IconTexture->GetSizeX(), IconTexture->GetSizeY()) : FVector2D(128.0f, 64.0f);
     IconBrush.DrawAs = ESlateBrushDrawType::Image;
@@ -163,7 +165,9 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
     if (!bCompact)
     {
         const bool bSelected = (View.IsValid() && View->GetInspectedSlot() == Slot) || IsSelected();
-        const bool bHover = IsHovered() || bDropTarget;
+        const float Highlight = bDropTarget ? 1.0f : HoverAmount;
+        const auto* Stage = View.IsValid() ? View->GetItemStage() : nullptr;
+        const float Glow = Stage ? Stage->GetSlotGlowOpacity() : 0.0f;
         const FVector2D Size = Geometry.GetLocalSize();
         static const FSlateColorBrush Solid(FLinearColor::White);
         const auto PaintRect = [&](int32 DrawLayer, FVector2D Extent, FVector2f Offset, FLinearColor Color)
@@ -175,7 +179,8 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
 
         const float Width = Size.X * 0.36f;
         const float Left = bOuterRight ? Size.X - Width : 0.0f;
-        const float Strength = bHover || bSelected ? 0.90f : bOccupied ? 0.54f : 0.23f;
+        const float RestStrength = bSelected ? 0.90f : bOccupied ? 0.54f : 0.23f;
+        const float Strength = FMath::Lerp(RestStrength, 0.90f, Highlight);
         const auto Position = [this, Width](float Distance)
         {
             return FVector2f(bOuterRight ? Width - Distance : Distance, 0.0f);
@@ -200,12 +205,24 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         PaintRect(++Layer, FVector2D(Strip, InnerHeight), FVector2f(StripX, Border),
             FLinearColor(1.0f, 0.42f, 0.10f, Strength));
 
-        static const FSlateRoundedBoxBrush Frame(FLinearColor::Transparent, 1.0f,
-            FLinearColor(0.67f, 0.68f, 0.69f, 0.57f), Border);
-        static const FSlateRoundedBoxBrush HighlightedFrame(FLinearColor::Transparent, 1.0f,
-            FLinearColor(0.93f, 0.76f, 0.58f, 0.91f), Border);
+        if (Glow > 0.0f)
+        {
+            for (int32 Ring = 2; Ring >= 1; --Ring)
+            {
+                const float Spread = static_cast<float>(Ring) * 1.5f;
+                const FSlateRoundedBoxBrush Halo(FLinearColor::Transparent, 1.0f + Spread,
+                    FLinearColor(1.0f, 1.0f, 1.0f, Glow / Ring), Border + 2.0f * Spread);
+                FSlateDrawElement::MakeBox(Elements, ++Layer,
+                    Geometry.ToPaintGeometry(Size + FVector2D(Spread * 2.0f), FSlateLayoutTransform(FVector2f(-Spread))),
+                    &Halo, ESlateDrawEffect::None, FLinearColor::Transparent);
+            }
+        }
+        const FLinearColor RestBorder = bSelected ? FLinearColor(0.93f, 0.76f, 0.58f, 0.91f)
+            : FLinearColor(0.67f, 0.68f, 0.69f, 0.57f);
+        const FSlateRoundedBoxBrush Frame(FLinearColor::Transparent, 1.0f,
+            FMath::Lerp(RestBorder, FLinearColor(1.0f, 0.44f, 0.12f, 1.0f), Highlight), Border);
         FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(),
-            bHover || bSelected ? &HighlightedFrame : &Frame, ESlateDrawEffect::None, FLinearColor::Transparent);
+            &Frame, ESlateDrawEffect::None, FLinearColor::Transparent);
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }
@@ -236,13 +253,38 @@ bool SBBBPlayerItemSlot::IsSelected() const
 void SBBBPlayerItemSlot::OnMouseEnter(const FGeometry& Geometry, const FPointerEvent& Event)
 {
     SCompoundWidget::OnMouseEnter(Geometry, Event);
-    Invalidate(EInvalidateWidgetReason::Paint);
+    BeginHoverTransition();
 }
 
 void SBBBPlayerItemSlot::OnMouseLeave(const FPointerEvent& Event)
 {
     SCompoundWidget::OnMouseLeave(Event);
+    BeginHoverTransition();
+}
+
+void SBBBPlayerItemSlot::BeginHoverTransition()
+{
+    if (!bCompact && !HoverTimer.IsValid())
+    {
+        HoverTimer = RegisterActiveTimer(0.0f,
+            FWidgetActiveTimerDelegate::CreateSP(this, &SBBBPlayerItemSlot::UpdateHover));
+    }
     Invalidate(EInvalidateWidgetReason::Paint);
+}
+
+EActiveTimerReturnType SBBBPlayerItemSlot::UpdateHover(double CurrentTime, float DeltaTime)
+{
+    const float Target = IsHovered() ? 1.0f : 0.0f;
+    const auto* Stage = View.IsValid() ? View->GetItemStage() : nullptr;
+    const float Duration = Stage ? Stage->GetSlotHoverSeconds() : 0.0f;
+    HoverAmount = Duration > 0.0f ? FMath::FInterpConstantTo(HoverAmount, Target, DeltaTime, 1.0f / Duration) : Target;
+    Invalidate(EInvalidateWidgetReason::Paint);
+    if (HoverAmount == Target)
+    {
+        HoverTimer.Reset();
+        return EActiveTimerReturnType::Stop;
+    }
+    return EActiveTimerReturnType::Continue;
 }
 
 FReply SBBBPlayerItemSlot::OnMouseButtonDown(const FGeometry &Geometry, const FPointerEvent &Event)

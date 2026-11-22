@@ -5,6 +5,7 @@
 #include "BBBPlayerItemView.generated.h"
 
 class ABBBPlayerController;
+class ABBBPlayerItemStage;
 class APawn;
 class UFontFace;
 class USoundBase;
@@ -49,7 +50,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
      */
     bool MoveItem(int32 Source, int32 Target, const APawn *SourcePawn, FGuid InstanceId);
     /**
-     * 双击请求穿戴或移入快捷一号位并选中
+     * 双击请求穿戴或移入首个空闲武器快捷格
      * @param Source\t双击来源槽位
      * @param SourcePawn\t双击时的玩家角色
      * @param InstanceId\t双击时的真实物品身份
@@ -58,6 +59,8 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     bool EquipItem(int32 Source, const APawn *SourcePawn, FGuid InstanceId);
     /** @return 当前界面所属玩家控制器 */
     ABBBPlayerController *GetItemController() const;
+    /** @return 预览关卡内的背包视觉配置 */
+    const ABBBPlayerItemStage* GetItemStage() const;
     /** @return 无 在数字键输入后短暂展示三个快捷格 */
     void NotifyQuickSelection();
     /** @param bHeld TAB 是否按住 @return 无 */

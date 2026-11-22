@@ -7,6 +7,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
 #include "GameFramework/Pawn.h"
@@ -47,6 +48,11 @@ ABBBPlayerController *UBBBPlayerItemView::GetItemController() const
 bool UBBBPlayerItemView::IsBackpackOpen() const
 {
     return bBackpackOpen;
+}
+
+const ABBBPlayerItemStage* UBBBPlayerItemView::GetItemStage() const
+{
+    return CharacterPreview ? CharacterPreview->GetStage() : nullptr;
 }
 int32 UBBBPlayerItemView::GetInspectedSlot() const
 {
@@ -432,6 +438,14 @@ bool UBBBPlayerItemView::EquipItem(int32 Source, const APawn *SourcePawn, FGuid 
     {
         return false;
     }
+    if (Data.EquipSlot == FBBBCharacterItemMoveLocalControlPacket::FirstEmptyWeaponQuickSlot)
+    {
+        if (Data.bQuick)
+        {
+            return SelectSlot(Source);
+        }
+        return MoveItem(Source, Data.EquipSlot, SourcePawn, InstanceId);
+    }
     if (Source != Data.EquipSlot && !MoveItem(Source, Data.EquipSlot, SourcePawn, InstanceId))
     {
         return false;
@@ -439,7 +453,7 @@ bool UBBBPlayerItemView::EquipItem(int32 Source, const APawn *SourcePawn, FGuid 
     int32 ConsumableStart = 0;
     int32 ConsumableCount = 0;
     Controller->GetConsumableQuickRange(ConsumableStart, ConsumableCount);
-    if (Data.EquipSlot == 0 || Data.EquipSlot == ConsumableStart)
+    if (Data.EquipSlot == ConsumableStart)
     {
         return SelectSlot(Data.EquipSlot);
     }

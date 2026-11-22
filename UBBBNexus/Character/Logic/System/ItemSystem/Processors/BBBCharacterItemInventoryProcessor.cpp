@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/Context/BBBCharacterItemUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Config/Item/BBBCharacterItemConfig.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 
 void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext &Context) const
@@ -100,7 +101,23 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
             ++Operations.RejectedCount;
             continue;
         }
-        if (Target == INDEX_NONE)
+        if (Target == FBBBCharacterItemMoveLocalControlPacket::FirstEmptyWeaponQuickSlot)
+        {
+            if (Inventory.Slots[Source].Definition->ItemType != EBBBItemType::Equipment)
+            {
+                ++Operations.RejectedCount;
+                continue;
+            }
+            for (int32 Slot = 0; Slot < Inventory.QuickAccessSlotCount; ++Slot)
+            {
+                if (!Inventory.Slots[Slot].Definition)
+                {
+                    Target = Slot;
+                    break;
+                }
+            }
+        }
+        else if (Target == INDEX_NONE)
         {
             for (int32 Slot = 0; Slot < Inventory.BackpackSlotCount; ++Slot)
             {

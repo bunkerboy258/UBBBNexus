@@ -29,6 +29,12 @@ public:
     USpotLightComponent* GetKey() const;
     /** @return 当前的暖雾散射体积 */
     UStaticMeshComponent* GetMist() const { return Mist; }
+    /** @return 左右面板视差的倍率 */
+    float GetPanelParallaxScale() const { return PanelParallaxScale; }
+    /** @return 格框白光最内层的不透明度 */
+    float GetSlotGlowOpacity() const { return SlotGlowOpacity; }
+    /** @return 格子悬停亮起所用时间 */
+    float GetSlotHoverSeconds() const { return SlotHoverSeconds; }
     /** 同步体积雾材质的灯位和散射参数 @return 无 */
     void UpdateMist() const;
 
@@ -58,4 +64,11 @@ private:
     float MistInnerAngle = 0.0f;
     UPROPERTY(EditInstanceOnly, Category="雾束", meta=(DisplayName="雾束外锥角", ClampMin="1", ClampMax="89"))
     float MistOuterAngle = 1.0f;
+
+    UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="面板鼠标视差", ClampMin="0", ClampMax="2"))
+    float PanelParallaxScale = 0.8f;
+    UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="格框白光强度", ClampMin="0", ClampMax="0.25"))
+    float SlotGlowOpacity = 0.065f;
+    UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="格框悬停时长", ClampMin="0.02", ClampMax="0.5"))
+    float SlotHoverSeconds = 0.075f;
 };

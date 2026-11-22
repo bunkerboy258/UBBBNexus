@@ -8,6 +8,9 @@
 /** 本机物品移动交换输入 */
 struct FBBBCharacterItemMoveLocalControlPacket final
 {
+    /** 将武器移入首个空闲武器快捷格 目标在执行时决定 */
+    static constexpr int32 FirstEmptyWeaponQuickSlot = INDEX_NONE - 1;
+
     /** 起始槽位 与目标数组一一对应 */
     TArray<int32> Sources;
 
@@ -25,7 +28,7 @@ struct FBBBCharacterItemMoveLocalControlPacket final
         }
         for (int32 Index = 0; Index < Sources.Num(); ++Index)
         {
-            if (Sources[Index] < 0 || Targets[Index] < INDEX_NONE || !Instances[Index].IsValid())
+            if (Sources[Index] < 0 || Targets[Index] < FirstEmptyWeaponQuickSlot || !Instances[Index].IsValid())
             {
                 return false;
             }

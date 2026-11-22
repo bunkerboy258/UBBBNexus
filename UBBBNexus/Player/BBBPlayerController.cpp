@@ -458,7 +458,7 @@ FBBBPlayerItemDisplayData ABBBPlayerController::GetItemDisplayData(const int32 S
         Data.PropertyIcon = Definition->PropertyIcon;
         if (Definition->ItemType == EBBBItemType::Equipment)
         {
-            Data.EquipSlot = 0;
+            Data.EquipSlot = FBBBCharacterItemMoveLocalControlPacket::FirstEmptyWeaponQuickSlot;
         }
         if (Definition->ItemType == EBBBItemType::Consumable)
         {
@@ -501,7 +501,11 @@ bool ABBBPlayerController::SubmitItemAdd(const FName ItemId, const int32 Quantit
 bool ABBBPlayerController::SubmitItemMove(const int32 Source, const int32 Target, const FGuid InstanceId)
 {
     ABBBCharacter *ItemCharacter = GetItemCharacter();
-    if (!ItemCharacter || Source < 0 || Target < INDEX_NONE || !InstanceId.IsValid()) return false;
+    if (!ItemCharacter || Source < 0 || Target < FBBBCharacterItemMoveLocalControlPacket::FirstEmptyWeaponQuickSlot
+        || !InstanceId.IsValid())
+    {
+        return false;
+    }
     ItemCharacter->SubmitInput(FBBBCharacterItemMoveLocalControlPacket{{Source}, {Target}, {InstanceId}});
     return true;
 }

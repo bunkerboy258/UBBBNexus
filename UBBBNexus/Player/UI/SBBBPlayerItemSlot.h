@@ -46,6 +46,10 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
                           bool bParentEnabled) const override;
 
   private:
+    /** @param CurrentTime Slate 时间 @param DeltaTime 帧时长 @return 是否继续刷新过渡 */
+    EActiveTimerReturnType UpdateHover(double CurrentTime, float DeltaTime);
+    /** @return 无 使用当前指针命中状态刷新高亮 */
+    void BeginHoverTransition();
     /** @return 当前控件是否对应快捷槽位 */
     bool IsQuickSlot() const;
 
@@ -67,4 +71,6 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     bool bOuterRight = false;
     bool bWearSlot = false;
     bool bDropTarget = false;
+    float HoverAmount = 0.0f;
+    TWeakPtr<FActiveTimerHandle> HoverTimer;
 };

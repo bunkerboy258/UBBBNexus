@@ -914,10 +914,11 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestTrue(TEXT("鼠标双击武器事件接受"), WeaponSlot->OnMouseButtonDoubleClick(FGeometry(), DoubleClick).IsEventHandled());
     TestEqual(TEXT("双击仍等待角色消费输入"), Controller->GetItemInstanceId(7), First);
     Character->Tick(1.0f / 60.0f);
-    TestEqual(TEXT("双击武器进入快捷一号位"), Controller->GetItemInstanceId(0), First);
-    TestEqual(TEXT("原一号位武器回到双击来源格"), Controller->GetItemInstanceId(7), Second);
-    TestEqual(TEXT("双击武器选择快捷一号位"), Controller->GetSelectedItemSlot(), 0);
-    TestTrue(TEXT("双击后新武器实际手持"), Controller->GetItemDisplayData(0).bActive);
+    TestEqual(TEXT("双击武器进入第一个空快捷格"), Controller->GetItemInstanceId(1), First);
+    TestEqual(TEXT("原一号位武器留在原地"), Controller->GetItemInstanceId(0), Second);
+    TestFalse(TEXT("压入快捷栏释放原背包格"), Controller->GetItemInstanceId(7).IsValid());
+    TestEqual(TEXT("压入快捷栏保留当前选择"), Controller->GetSelectedItemSlot(), 0);
+    TestTrue(TEXT("压入快捷栏保留当前手持武器"), Controller->GetItemDisplayData(0).bActive);
     View->SetBackpackOpen(false);
     TestEqual(TEXT("关闭后清除玩家世界内的捕获演员"), CaptureCount(), 0);
     TestEqual(TEXT("关闭后世界上下文保持原值"), GEngine->GetWorldContexts().Num(), ContextsBeforeBag);

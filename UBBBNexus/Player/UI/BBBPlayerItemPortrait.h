@@ -37,6 +37,8 @@ public:
     UTextureRenderTarget2D *GetTexture() const { return Texture; }
     /** @return 整备间用于视口投影的相机 */
     const USceneCaptureComponent2D *GetCamera() const;
+    /** @return 预览关卡内的背包视觉配置 */
+    const ABBBPlayerItemStage* GetStage() const { return Stage; }
     /** @return 可交互的空间面板 */
     const TArray<TObjectPtr<UWidgetComponent>>& GetPanels() const { return Panels; }
     /** @param Content 三块面板的控件树 @return 无 */

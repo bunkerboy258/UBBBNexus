@@ -206,6 +206,7 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
 
 void UBBBPlayerItemPortrait::ApplyCameraParallax(FVector2D Offset)
 {
+    Offset *= Stage->GetPanelParallaxScale();
     const FQuat BaseRotation = HomeCamera.GetRotation();
     const FVector BasePosition = HomeCamera.GetLocation();
     const FVector Pivot = Stage->GetOrbitAnchor().GetComponentLocation();

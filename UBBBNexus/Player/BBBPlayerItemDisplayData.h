@@ -19,7 +19,7 @@ struct FBBBPlayerItemDisplayData
     int32 Quantity = 0;
     /** 所属快捷栏内的显示索引 */
     int32 QuickIndex = INDEX_NONE;
-    /** 双击时对应的快捷一号位或穿戴位置 无效值表示不可装备 */
+    /** 双击时的移动目标 可表示首个空闲武器快捷格 */
     int32 EquipSlot = INDEX_NONE;
     bool bOccupied = false;
     bool bQuick = false;
