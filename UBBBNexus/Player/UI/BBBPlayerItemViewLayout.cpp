@@ -282,7 +282,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                 [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character)]]
             + SHorizontalBox::Slot().AutoWidth()
                 [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("EXTENSIBLE"), {})]]];
-    Place(*Canvas, 676, 124, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+    constexpr float VitalsTop = 90.0f;
+    Place(*Canvas, 676, VitalsTop, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [
             SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 11, 4)
@@ -305,7 +306,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                             FText::AsNumber(FMath::RoundToInt(Maximum)));
                     })]
         ]);
-    Place(*Canvas, 676, 169, 568, 25, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+    Place(*Canvas, 676, VitalsTop + 45.0f, 568, 25, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [SNew(STextBlock)
             .Font(ArtFont(19))
             .ColorAndOpacity(FLinearColor(0.86f, 0.78f, 0.63f))

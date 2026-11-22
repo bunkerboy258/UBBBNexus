@@ -8,6 +8,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
+#include "Rendering/DrawElements.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Images/SImage.h"
@@ -109,7 +110,8 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     Slot = Arguments._Slot;
     bCompact = Arguments._Compact;
     bOuterRight = Arguments._OuterRight;
-    const bool bWearSlot = !Arguments._PositionLabel.IsEmpty();
+    bWearSlot = !Arguments._PositionLabel.IsEmpty();
+    bConsumablePreview = Arguments._ConsumablePreview;
     if (const auto* Owner = View.Get())
     {
         FrameBrush.SetResourceObject(Owner->GetSlotFrameMaterial());
@@ -117,32 +119,10 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     }
     Refresh();
 
-    const bool bConsumable = Arguments._ConsumablePreview;
-    TSharedRef<SWidget> ItemImage = SNew(SScaleBox).Stretch(EStretch::ScaleToFit)
-        .RenderTransformPivot(FVector2D(0.5, 0.5))
-        .RenderTransform_Lambda([this]()
-        {
-            const bool bLift = !bCompact && bOccupied && (IsHovered() || bDropTarget);
-            return FSlateRenderTransform(FVector2f(0.0f, bLift ? -8.0f : 0.0f));
-        })
-        [SNew(SImage).Image(&IconBrush).Visibility_Lambda([this]()
-        {
-            return IconBrush.GetResourceObject() ? EVisibility::HitTestInvisible : EVisibility::Hidden;
-        })];
-    if (bConsumable)
-    {
-        ItemImage = SNew(SBox).WidthOverride(94.0f).HeightOverride(92.0f)[ItemImage];
-    }
-
     ChildSlot[SNew(SBox)
                   .WidthOverride(Arguments._Width)
                   .HeightOverride(Arguments._Height)
                       [SNew(SOverlay) +
-                       SOverlay::Slot()
-                           .HAlign(bConsumable ? HAlign_Center : HAlign_Fill)
-                           .VAlign(bConsumable ? VAlign_Center : VAlign_Fill)
-                           .Padding(12.0f, 12.0f, 12.0f, bCompact || bWearSlot ? 25.0f : 12.0f)
-                           [ItemImage] +
                        SOverlay::Slot()
                            .HAlign(HAlign_Center)
                            .VAlign(VAlign_Bottom)
@@ -215,20 +195,20 @@ void SBBBPlayerItemSlot::Refresh()
                                 .Font(BBBItemUI::Font(16))
                                 .ColorAndOpacity(FLinearColor::White)]);
     }
-    Invalidate(EInvalidateWidgetReason::Paint | EInvalidateWidgetReason::Layout);
+    Invalidate(EInvalidateWidgetReason::Paint);
 }
 
 int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geometry, const FSlateRect &CullingRect,
                                   FSlateWindowElementList &Elements, int32 Layer, const FWidgetStyle &Style,
                                   bool bParentEnabled) const
 {
+    const FVector2D Size = Geometry.GetLocalSize();
     if (!bCompact)
     {
         const bool bSelected = (View.IsValid() && View->GetInspectedSlot() == Slot) || IsSelected();
         const float Highlight = bDropTarget ? 1.0f : HoverAmount;
         const auto* Stage = View.IsValid() ? View->GetItemStage() : nullptr;
         const float Glow = Stage ? Stage->GetSlotGlowOpacity() : 0.0f;
-        const FVector2D Size = Geometry.GetLocalSize();
         if (FrameBrush.GetResourceObject())
         {
             FSlateDrawElement::MakeBox(Elements, Layer++, Geometry.ToPaintGeometry(), &FrameBrush,
@@ -249,6 +229,29 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
             FMath::Lerp(RestBorder, FLinearColor(1.0f, 0.44f, 0.12f, 1.0f), Highlight), Border);
         FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(),
             &Frame, ESlateDrawEffect::NoPixelSnapping, Frame.GetTint(Style));
+    }
+    if (IconBrush.GetResourceObject())
+    {
+        const FVector2D ContentOrigin(12.0, 12.0);
+        const FVector2D ContentSize = Size - FVector2D(24.0, bCompact || bWearSlot ? 37.0 : 24.0);
+        const FVector2D FitSize = bConsumablePreview
+            ? FVector2D(FMath::Min(ContentSize.X, 94.0), FMath::Min(ContentSize.Y, 92.0)) : ContentSize;
+        const FVector2D ImageSize = IconBrush.ImageSize;
+        if (FitSize.X > 0.0 && FitSize.Y > 0.0 && ImageSize.X > 0.0 && ImageSize.Y > 0.0)
+        {
+            const double Scale = FMath::Min(FitSize.X / ImageSize.X, FitSize.Y / ImageSize.Y);
+            const FVector2D DrawSize = ImageSize * Scale;
+            const bool bLift = !bCompact && bOccupied && (IsHovered() || bDropTarget);
+            const FVector2D DrawOrigin = ContentOrigin + (ContentSize - DrawSize) * 0.5 - FVector2D(0.0, bLift ? 8.0 : 0.0);
+            const FGeometry ClipGeometry = Geometry.MakeChild(
+                FVector2f(ContentSize), FSlateLayoutTransform(FVector2f(ContentOrigin)));
+            Elements.PushClip(FSlateClippingZone(ClipGeometry));
+            FSlateDrawElement::MakeBox(Elements, ++Layer,
+                Geometry.ToPaintGeometry(DrawSize, FSlateLayoutTransform(FVector2f(DrawOrigin))), &IconBrush,
+                ShouldBeEnabled(bParentEnabled) ? ESlateDrawEffect::None : ESlateDrawEffect::DisabledEffect,
+                Style.GetColorAndOpacityTint());
+            Elements.PopClip();
+        }
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

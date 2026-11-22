@@ -71,6 +71,8 @@ class SBBBPlayerItemSlot final : public SCompoundWidget
     bool bOccupied = false;
     bool bCompact = false;
     bool bOuterRight = false;
+    bool bWearSlot = false;
+    bool bConsumablePreview = false;
     bool bDropTarget = false;
     float HoverAmount = 0.0f;
     TWeakPtr<FActiveTimerHandle> HoverTimer;
