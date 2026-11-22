@@ -1,4 +1,5 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPortrait.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemPanelComponent.h"
 
@@ -30,7 +31,7 @@ UWidgetComponent* CreateRoomWidget(AActor& Owner, const TSharedPtr<SWidget>& Wid
 void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Content)
 {
     const auto* Camera = GetCamera();
-    if (!Camera || !Display || !Panels.IsEmpty() || Content.Num() != 3)
+    if (!Camera || !Display || !Panels.IsEmpty() || Content.Num() != 4)
     {
         return;
     }
@@ -41,17 +42,20 @@ void UBBBPlayerItemPortrait::SetPanels(const TArray<TSharedPtr<SWidget>>& Conten
     const FVector Right = RotationAtRest.GetRightVector();
     const FVector Up = RotationAtRest.GetUpVector();
     const FVector Centre = HomeCamera.GetLocation() + Forward * PanelDepth;
-    const FVector2D Centres[] = {FVector2D(960, 540), FVector2D(385, 574), FVector2D(1535, 574)};
-    const FVector2D Sizes[] = {FVector2D(1920, 1080), FVector2D(520, 800), FVector2D(520, 800)};
-    const float Lean[] = {0.0f, -18.0f, 18.0f};
+    const FVector2D Centres[] = {FVector2D(960, 540), FVector2D(385, 574), FVector2D(1535, 574), FVector2D(960, 38)};
+    const FVector2D Sizes[] = {FVector2D(1920, 1080), FVector2D(520, 800), FVector2D(520, 800), FVector2D(880, 46)};
+    const float Lean[] = {0.0f, -18.0f, 18.0f, 0.0f};
 
     for (int32 Index = 1; Index < Content.Num(); ++Index)
     {
         const FVector2D ScreenOffset = Centres[Index] - FVector2D(960, 540);
-        const FVector Location = Centre + Units * (Right * ScreenOffset.X - Up * ScreenOffset.Y);
+        const bool bNavigation = Index == 3;
+        const FVector Adjustment = bNavigation ? RotationAtRest.RotateVector(Stage->GetNavigationOffset()) : FVector::ZeroVector;
+        const FVector Location = Centre + Units * (Right * ScreenOffset.X - Up * ScreenOffset.Y) + Adjustment;
         const FVector Normal = (-Forward).RotateAngleAxis(Lean[Index], Up);
         const FRotator Rotation = FRotationMatrix::MakeFromXZ(Normal, Up).Rotator();
-        Panels.Add(CreateRoomWidget(*Display, Content[Index], Sizes[Index], Location, Rotation, Units * 1.04f));
-        Panels.Last()->SetTintColorAndOpacity(FLinearColor(1.8f, 1.8f, 1.8f, 1.0f));
+        Panels.Add(CreateRoomWidget(*Display, Content[Index], Sizes[Index], Location, Rotation, Units * (bNavigation ? 1.0f : 1.04f)));
+        const float Tint = bNavigation ? 1.0f : 1.8f;
+        Panels.Last()->SetTintColorAndOpacity(FLinearColor(Tint, Tint, Tint, 1.0f));
     }
 }

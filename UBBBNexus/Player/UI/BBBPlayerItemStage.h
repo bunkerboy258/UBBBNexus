@@ -4,6 +4,7 @@
 #include "BBBPlayerItemStage.generated.h"
 
 class ASpotLight;
+class UAnimSequence;
 class USceneCaptureComponent2D;
 class USpotLightComponent;
 class UStaticMeshComponent;
@@ -29,6 +30,12 @@ public:
     USpotLightComponent* GetKey() const;
     /** @return 当前的暖雾散射体积 */
     UStaticMeshComponent* GetMist() const { return Mist; }
+    /** @return 持枪预览播放的角色动作 */
+    UAnimSequence* GetArmedIdle() const { return ArmedIdle; }
+    /** @return 空手预览播放的站立动作 */
+    UAnimSequence* GetUnarmedIdle() const { return UnarmedIdle; }
+    /** @return 顶栏相对静止镜头的深度与位置微调 */
+    FVector GetNavigationOffset() const { return NavigationOffset; }
     /** @return 左右面板视差的倍率 */
     float GetPanelParallaxScale() const { return PanelParallaxScale; }
     /** @return 格框白光最内层的不透明度 */
@@ -55,6 +62,10 @@ private:
     TObjectPtr<USceneComponent> CharacterAnchor;
     UPROPERTY(VisibleAnywhere, Category="Inventory Studio")
     TObjectPtr<USceneComponent> OrbitAnchor;
+    UPROPERTY(EditInstanceOnly, Category="背包人物", meta=(DisplayName="持枪待机动作"))
+    TObjectPtr<UAnimSequence> ArmedIdle;
+    UPROPERTY(EditInstanceOnly, Category="背包人物", meta=(DisplayName="空手待机动作"))
+    TObjectPtr<UAnimSequence> UnarmedIdle;
 
     UPROPERTY(EditInstanceOnly, Category="雾束", meta=(DisplayName="雾束密度", ClampMin="0"))
     float MistDensity = 0.0f;
@@ -67,6 +78,9 @@ private:
 
     UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="面板鼠标视差", ClampMin="0", ClampMax="2"))
     float PanelParallaxScale = 0.8f;
+    UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="顶部页签偏移",
+        ToolTip="单位厘米 X 沿静止镜头向前 Y 向右 Z 向上"))
+    FVector NavigationOffset = FVector::ZeroVector;
     UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="格框白光强度", ClampMin="0", ClampMax="0.25"))
     float SlotGlowOpacity = 0.065f;
     UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="格框悬停时长", ClampMin="0.02", ClampMax="0.5"))

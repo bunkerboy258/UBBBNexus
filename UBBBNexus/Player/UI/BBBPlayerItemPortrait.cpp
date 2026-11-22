@@ -3,7 +3,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/WidgetComponent.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "PreviewScene.h"
 #include "Components/SceneComponent.h"
 #include "Engine/LevelStreamingDynamic.h"
@@ -13,8 +12,6 @@
 #include "GameFramework/Pawn.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Animation/AnimSequence.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
 
 void UBBBPlayerItemPortrait::SetActive(const bool bInActive)
 {
@@ -119,20 +116,12 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     {
         return true;
     }
-    const FSoftObjectPath StandingPath(TEXT("/Game/_Project/Characters/Animation/OtherAnimation/Project/AS_Rifle_Idle_GunDown_SG550.AS_Rifle_Idle_GunDown_SG550"));
-    const FSoftObjectPath RiflePath(TEXT("/Game/_Project/Characters/Items/Equipment/Rifle/SG550/DA_ModernWeapons_Rifle_02.DA_ModernWeapons_Rifle_02"));
-    if (!ResourceLoad)
-    {
-        ResourceLoad = UAssetManager::GetStreamableManager().RequestAsyncLoad(TArray<FSoftObjectPath>{StandingPath, RiflePath});
-    }
-    if (!PrepareStage() || (ResourceLoad && !ResourceLoad->HasLoadCompleted()))
+    if (!PrepareStage())
     {
         return false;
     }
-    auto *Standing = Cast<UAnimSequence>(StandingPath.ResolveObject());
-    auto *Rifle = Cast<UBBBEquipmentDefinition>(RiflePath.ResolveObject());
     const auto *Character = Cast<ABBBCharacter>(Pawn);
-    if (!Character || !Standing || !Rifle || !Rifle->EquipmentMesh)
+    if (!Character || !ensureMsgf(Stage->GetUnarmedIdle() && Stage->GetArmedIdle(), TEXT("整备间缺少持枪或空手动作")))
     {
         return false;
     }
@@ -163,27 +152,17 @@ bool UBBBPlayerItemPortrait::Prepare(APawn *Pawn)
     Pose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Pose->SetOverlayMaterial(nullptr);
     Pose->SetRenderCustomDepth(false);
+    Pose->SetDisablePostProcessBlueprint(true);
     Pose->RegisterComponent();
+    Pose->SetComponentSpaceTransformsDoubleBuffering(false);
     FTransform StandingTransform = Character->GetMesh()->GetRelativeTransform();
     StandingTransform.AddToTranslation(FVector(0.0f, 0.0f, Pawn->GetSimpleCollisionHalfHeight()));
     Pose->SetWorldTransform(StandingTransform * CharacterTransform);
-    Pose->PlayAnimation(Standing, true);
+    Pose->PlayAnimation(Stage->GetUnarmedIdle(), true);
     Pose->SetPosition(0.0f, false);
     Pose->TickAnimation(1.0f / 30.0f, false);
     Pose->RefreshBoneTransforms();
     Pose->SetComponentTickEnabled(false);
-    const FName Grip = Character->GetCharacterConfig().Interaction.RightHandSocketName;
-    if (ensureMsgf(Pose->DoesSocketExist(Grip), TEXT("整备间 PLA 骨架缺少挂接点 %s"), *Grip.ToString()))
-    {
-        auto* Gun = NewObject<USkeletalMeshComponent>(Display);
-        Display->AddInstanceComponent(Gun);
-        Gun->SetSkeletalMesh(Rifle->EquipmentMesh);
-        Gun->SetupAttachment(Pose, Grip);
-        Gun->SetRelativeTransform(Rifle->SpawnOffset);
-        Gun->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        Gun->SetForcedLOD(1);
-        Gun->RegisterComponent();
-    }
 
     Texture = NewObject<UTextureRenderTarget2D>(this);
     Texture->ClearColor = FLinearColor::Black;
@@ -216,15 +195,16 @@ void UBBBPlayerItemPortrait::ApplyCameraParallax(FVector2D Offset)
     Stage->GetCapture()->SetWorldLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot) + Truck, Rotation);
 }
 
-void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>& Cursor)
+bool UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>& Cursor)
 {
     if (!bActive || !Source.IsValid() || !IsValid(Display) || !IsValid(Stage) || !IsValid(Pose)
         || !PreviewScene.IsValid())
     {
-        return;
+        return false;
     }
     const auto *Character = Cast<ABBBCharacter>(Source.Get());
     const uint64 Revision = Character ? Character->RuntimeData.Appearance.ReadCharacterAppearanceDisplayState().AppliedRevision : 0;
+    const bool bHeldChanged = Character && SyncHeldWeapon(*Character);
     TOptional<FVector2D> TargetOffset = Cursor;
 #if WITH_DEV_AUTOMATION_TESTS
     if (ReviewPoseTime >= 0.0f)
@@ -233,9 +213,9 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     }
 #endif
     const bool bNeedsSync = bDirty || Revision != ObservedAppearanceRevision;
-    if (!bNeedsSync && DeltaTime <= 0.0f)
+    if (!bNeedsSync && !bHeldChanged && DeltaTime <= 0.0f)
     {
-        return;
+        return false;
     }
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -250,6 +230,10 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
         Pose->TickAnimation(DeltaTime, false);
     }
     Pose->RefreshBoneTransforms();
+    if (bHoldingWeapon)
+    {
+        ApplyHeldGrip();
+    }
 
     if (bNeedsSync)
     {
@@ -286,6 +270,7 @@ void UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>&
     ++CaptureRevision;
 #endif
     bDirty = false;
+    return bHeldChanged;
 }
 
 void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character)
@@ -386,16 +371,14 @@ void UBBBPlayerItemPortrait::SyncAppearance(const ABBBCharacter* Character)
 
 void UBBBPlayerItemPortrait::Close()
 {
-    if (ResourceLoad)
-    {
-        ResourceLoad->CancelHandle();
-    }
-    ResourceLoad.Reset();
     if (IsValid(Display))
     {
         Display->Destroy();
     }
     Components.Reset();
+    Weapon = nullptr;
+    HeldEquipment.Reset();
+    FingerGrip.Reset();
     Pose = nullptr;
     Stage = nullptr;
     Display = nullptr;
@@ -409,6 +392,8 @@ void UBBBPlayerItemPortrait::Close()
     bActive = false;
     bDirty = true;
     bStageLoadFailed = false;
+    bHoldingWeapon = false;
+    bHoldInitialized = false;
     ObservedAppearanceRevision = 0;
 }
 void UBBBPlayerItemPortrait::BeginDestroy()

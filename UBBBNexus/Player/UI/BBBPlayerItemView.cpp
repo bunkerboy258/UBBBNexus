@@ -11,6 +11,7 @@
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
 #include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
@@ -38,6 +39,29 @@ UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializ
         TEXT("/Game/_Project/UI/Gameplay/Evac.Evac"));
     MaodieAvatar = Avatar.Object;
     EvacSound = CompletionSound.Object;
+    const TCHAR* Names[] = {TEXT("Open"), TEXT("Close"), TEXT("Tab"), TEXT("Lift"), TEXT("Place"), TEXT("Reject"), TEXT("Equip")};
+    for (const TCHAR* Name : Names)
+    {
+        const FString Path = FString::Printf(TEXT("/Game/_Project/UI/Bag/Audio/SW_Inventory_%s.SW_Inventory_%s"), Name, Name);
+        InventorySounds.Add(LoadObject<USoundBase>(nullptr, *Path));
+    }
+}
+
+void UBBBPlayerItemView::PlayInventorySound(EInventorySound Event)
+{
+    const int32 Index = static_cast<int32>(Event);
+    if (InventorySounds.IsValidIndex(Index) && InventorySounds[Index])
+    {
+        UGameplayStatics::PlaySound2D(this, InventorySounds[Index], Event == EInventorySound::Equip ? 0.22f : 0.36f);
+    }
+}
+
+void UBBBPlayerItemView::NotifyItemDrag(bool bStarted)
+{
+    if (bBackpackOpen)
+    {
+        PlayInventorySound(bStarted ? EInventorySound::Lift : EInventorySound::Reject);
+    }
 }
 
 ABBBPlayerController *UBBBPlayerItemView::GetItemController() const
@@ -85,6 +109,11 @@ void UBBBPlayerItemView::NativeDestruct()
 
 void UBBBPlayerItemView::SetBackpackOpen(bool bOpen)
 {
+    if (bBackpackOpen != bOpen)
+    {
+        PlayInventorySound(bOpen ? EInventorySound::Open : EInventorySound::Close);
+        bAwaitingPlacementResult = false;
+    }
     bBackpackOpen = bOpen;
     bQuickBarHeld = false;
     if (!bOpen)
@@ -150,7 +179,10 @@ void UBBBPlayerItemView::NativeTick(const FGeometry &Geometry, float DeltaTime)
     CharacterPreview->Prepare(Controller ? Controller->GetPawn() : nullptr);
     CharacterPreview->SetActive(bBackpackOpen);
     CharacterPreview->SetPanels(MenuPanels);
-    CharacterPreview->Update(DeltaTime, ReadParallaxCursor());
+    if (CharacterPreview->Update(DeltaTime, ReadParallaxCursor()))
+    {
+        PlayInventorySound(EInventorySound::Equip);
+    }
     if (CharacterBrush.GetResourceObject() != CharacterPreview->GetTexture())
     {
         CharacterBrush.SetResourceObject(CharacterPreview->GetTexture());
@@ -239,14 +271,23 @@ void UBBBPlayerItemView::InspectSlot(int32 SlotIndex)
 
 FReply UBBBPlayerItemView::ShowStorage(EBBBItemType Type)
 {
+    if (StoragePage != Type)
+    {
+        PlayInventorySound(EInventorySound::Tab);
+    }
     StoragePage = Type;
     RefreshItems();
     return FReply::Handled();
 }
 FReply UBBBPlayerItemView::ShowPanel(EBBBItemPanelPage Page)
 {
+    const EBBBItemType Storage = Page == EBBBItemPanelPage::Character ? EBBBItemType::Wearable : EBBBItemType::Equipment;
+    if (PanelPage != Page || StoragePage != Storage)
+    {
+        PlayInventorySound(EInventorySound::Tab);
+    }
     PanelPage = Page;
-    StoragePage = Page == EBBBItemPanelPage::Character ? EBBBItemType::Wearable : EBBBItemType::Equipment;
+    StoragePage = Storage;
     RefreshItems();
     return FReply::Handled();
 }
@@ -267,6 +308,10 @@ void UBBBPlayerItemView::RefreshItems()
     if (ObservedPawn.Get() == Controller->GetPawn() && Selected != ObservedSelectedSlot)
     {
         NotifyQuickSelection();
+    }
+    if (ObservedPawn.Get() != Controller->GetPawn())
+    {
+        bAwaitingPlacementResult = false;
     }
     ObservedPawn = Controller->GetPawn().Get();
     ObservedSelectedSlot = Selected;
@@ -400,6 +445,11 @@ void UBBBPlayerItemView::RefreshItems()
     {
         StatusText->SetText(Rejected ? BBBItemText::PlacementRejected : FText::GetEmpty());
     }
+    if (bAwaitingPlacementResult && Revision != ObservedOperationRevision && (Rejected > 0 || Succeeded > 0))
+    {
+        bAwaitingPlacementResult = false;
+        PlayInventorySound(Rejected > 0 ? EInventorySound::Reject : EInventorySound::Place);
+    }
     ObservedOperationRevision = Revision;
 }
 
@@ -421,9 +471,15 @@ bool UBBBPlayerItemView::SelectSlot(int32 SlotIndex)
 bool UBBBPlayerItemView::MoveItem(int32 Source, int32 Target, const APawn *SourcePawn, FGuid InstanceId)
 {
     ABBBPlayerController *Controller = GetItemController();
-    return bBackpackOpen && Controller && Controller->GetPawn() == SourcePawn && InstanceId.IsValid() &&
+    const bool bAccepted = bBackpackOpen && Controller && Controller->GetPawn() == SourcePawn && InstanceId.IsValid() &&
            Controller->GetItemDisplayData(Source).InstanceId == InstanceId &&
            Controller->SubmitItemMove(Source, Target, InstanceId);
+    bAwaitingPlacementResult |= bAccepted;
+    if (bBackpackOpen && !bAccepted)
+    {
+        PlayInventorySound(EInventorySound::Reject);
+    }
+    return bAccepted;
 }
 
 bool UBBBPlayerItemView::EquipItem(int32 Source, const APawn *SourcePawn, FGuid InstanceId)

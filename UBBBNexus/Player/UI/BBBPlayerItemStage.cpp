@@ -1,12 +1,21 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBPlayerItemStage.h"
+#include "Animation/AnimSequence.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/SceneComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SpotLight.h"
+#include "UObject/ConstructorHelpers.h"
 
 ABBBPlayerItemStage::ABBBPlayerItemStage()
 {
+    static ConstructorHelpers::FObjectFinder<UAnimSequence> Armed(
+        TEXT("/Game/_Project/Characters/Animation/UsedAnimation/Continuous/Idle/MM_Rifle_IdleBreak_Scan_Inventory.MM_Rifle_IdleBreak_Scan_Inventory"));
+    static ConstructorHelpers::FObjectFinder<UAnimSequence> Unarmed(
+        TEXT("/Game/_Project/Characters/Animation/UsedAnimation/Continuous/Idle/M_Neutral_Stand_Idle_Loop.M_Neutral_Stand_Idle_Loop"));
+    ArmedIdle = Armed.Object;
+    UnarmedIdle = Unarmed.Object;
+
     SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("StageRoot")));
     Floor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Floor"));
     Floor->SetupAttachment(GetRootComponent());

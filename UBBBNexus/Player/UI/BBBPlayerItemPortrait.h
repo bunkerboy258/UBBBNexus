@@ -6,6 +6,7 @@
 class FPreviewScene;
 class APawn;
 class ABBBCharacter;
+class ABBBEquipment;
 class AActor;
 class ABBBPlayerItemStage;
 class ULevelStreamingDynamic;
@@ -15,7 +16,6 @@ class UWidgetComponent;
 class USceneComponent;
 class USceneCaptureComponent2D;
 class SWidget;
-struct FStreamableHandle;
 
 /** 在本地独立预览世界捕获背包画面 只复制外观结果 */
 UCLASS()
@@ -29,8 +29,8 @@ public:
     void SetActive(bool bInActive);
     /** @param Pawn 当前拥有角色 @return 预览资源是否仍属于此角色 */
     bool IsForPawn(const APawn* Pawn) const;
-    /** @param DeltaTime 帧时长 @param Cursor 图像内的归一化光标位置 空值保持机位 @return 无 */
-    void Update(float DeltaTime, const TOptional<FVector2D>& Cursor);
+    /** @param DeltaTime 帧时长 @param Cursor 图像内的归一化光标位置 空值保持机位 @return 本帧是否实际切换了持枪状态 */
+    bool Update(float DeltaTime, const TOptional<FVector2D>& Cursor);
     /** @return 无 销毁所属世界内的临时显示演员 */
     void Close();
     /** @return 整备间最终画面 */
@@ -41,7 +41,7 @@ public:
     const ABBBPlayerItemStage* GetStage() const { return Stage; }
     /** @return 可交互的空间面板 */
     const TArray<TObjectPtr<UWidgetComponent>>& GetPanels() const { return Panels; }
-    /** @param Content 三块面板的控件树 @return 无 */
+    /** @param Content 背包控件树 @return 无 */
     void SetPanels(const TArray<TSharedPtr<SWidget>>& Content);
     virtual void BeginDestroy() override;
 
@@ -64,18 +64,25 @@ private:
     bool PrepareStage();
     void ApplyCameraParallax(FVector2D Offset);
     void SyncAppearance(const ABBBCharacter* Character);
+    bool SyncHeldWeapon(const ABBBCharacter& Character);
+    void ApplyHeldGrip();
     UPROPERTY(Transient)
     TObjectPtr<ULevelStreamingDynamic> StageLevel;
     UPROPERTY(Transient)
     TArray<TObjectPtr<USkeletalMeshComponent>> Components;
     UPROPERTY(Transient)
     TObjectPtr<USkeletalMeshComponent> Pose;
+    UPROPERTY(Transient)
+    TObjectPtr<USkeletalMeshComponent> Weapon;
+    TWeakObjectPtr<const ABBBEquipment> HeldEquipment;
+    TMap<int32, FQuat> FingerGrip;
     FTransform HomeCamera = FTransform::Identity;
     FVector2D CameraOffset = FVector2D::ZeroVector;
     FVector2D CameraOffsetVelocity = FVector2D::ZeroVector;
-    TSharedPtr<FStreamableHandle> ResourceLoad;
     uint64 ObservedAppearanceRevision = 0;
     bool bActive = false;
     bool bDirty = true;
     bool bStageLoadFailed = false;
+    bool bHoldingWeapon = false;
+    bool bHoldInitialized = false;
 };

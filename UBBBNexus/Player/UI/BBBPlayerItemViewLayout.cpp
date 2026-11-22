@@ -278,7 +278,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         return SNew(SScaleBox).Stretch(EStretch::ScaleToFit).Visibility(EVisibility::SelfHitTestInvisible)
             [SNew(SBox).WidthOverride(1920).HeightOverride(DesignHeight).Visibility(EVisibility::SelfHitTestInvisible)[Content]];
     };
-    Place(0, 15, 1920, 46, SNew(SBox).HAlign(HAlign_Center).Visibility(EVisibility::SelfHitTestInvisible)
+    const auto NavigationRow = SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+        .Visibility(EVisibility::SelfHitTestInvisible)
         [SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 16, 0)
                 [SNew(SBox).WidthOverride(246)[Tab(INVTEXT("INVENTORY"), EBBBItemPanelPage::Inventory)]]
@@ -286,7 +287,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                 [SNew(SBox).WidthOverride(246)[Tab(INVTEXT("CHARACTER"), EBBBItemPanelPage::Character)]]
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
                 [SNew(STextBlock).Text(INVTEXT("EXTENSIBLE")).Font(ArtFont(24))
-                    .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f))]]);
+                    .ColorAndOpacity(FLinearColor(0.6f, 0.58f, 0.53f, 0.48f))]];
     Place(676, 124, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
         [
             SNew(SHorizontalBox)
@@ -372,7 +373,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(10, 0)[Label(INVTEXT("CLOSE"), 18)]]);
     Place(345, 1037, 700, 32, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText));
     const auto Chrome = Fit(Canvas, 1080);
-    MenuPanels = {Chrome, LeftWing, RightWing};
+    MenuPanels = {Chrome, LeftWing, RightWing, NavigationRow};
     static const FSlateColorBrush Matte(FLinearColor::Black);
     const auto CaptureImage = SNew(SBBBInventoryRoomImage)
         .Room_Lambda([this] { return CharacterPreview.Get(); })

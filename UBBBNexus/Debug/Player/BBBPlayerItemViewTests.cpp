@@ -140,7 +140,7 @@ public:
             bPerfComplete = !TickPerformance(ItemView, Portrait);
             return true;
         }
-        if (!Portrait || !Portrait->Stage || !Portrait->Stage->GetKey() || Portrait->GetPanels().Num() != 2)
+        if (!Portrait || !Portrait->Stage || !Portrait->Stage->GetKey() || Portrait->GetPanels().Num() != 3)
         {
             return FPlatformTime::Seconds() < ReadyDeadline;
         }

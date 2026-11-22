@@ -88,6 +88,15 @@ class FBBBPlayerItemDrag final : public FGameDragDropOperation
         DecoratorPosition = FVector2D(Event.GetScreenSpacePosition()) + CursorOffset;
     }
 
+    virtual void OnDrop(bool bDropWasHandled, const FPointerEvent& MouseEvent) override
+    {
+        if (!bDropWasHandled && View.IsValid())
+        {
+            View->NotifyItemDrag(false);
+        }
+        FGameDragDropOperation::OnDrop(bDropWasHandled, MouseEvent);
+    }
+
   private:
     inline static const FVector2D CursorOffset = FVector2D(14.0, 16.0);
     TStrongObjectPtr<UTexture2D> Thumbnail;
@@ -360,6 +369,7 @@ FReply SBBBPlayerItemSlot::OnDragDetected(const FGeometry &Geometry, const FPoin
     {
         return FReply::Unhandled();
     }
+    View->NotifyItemDrag(true);
     return FReply::Handled().BeginDragDrop(
         FBBBPlayerItemDrag::New(*View.Get(), Slot, Item, FVector2D(Event.GetScreenSpacePosition())));
 }

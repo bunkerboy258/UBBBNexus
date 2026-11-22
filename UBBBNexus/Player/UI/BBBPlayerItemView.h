@@ -57,6 +57,8 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
      * @return 请求是否接受
      */
     bool EquipItem(int32 Source, const APawn *SourcePawn, FGuid InstanceId);
+    /** @param bStarted 开始拖动时为真 无目标放下时为假 @return 无 */
+    void NotifyItemDrag(bool bStarted);
     /** @return 当前界面所属玩家控制器 */
     ABBBPlayerController *GetItemController() const;
     /** @return 预览关卡内的背包视觉配置 */
@@ -106,6 +108,11 @@ private:
     FReply ShowStorage(EBBBItemType Type);
     /** @param Page\t右侧展示页面 @return 已处理 */
     FReply ShowPanel(EBBBItemPanelPage Page);
+    enum class EInventorySound : uint8
+    {
+        Open, Close, Tab, Lift, Place, Reject, Equip
+    };
+    void PlayInventorySound(EInventorySound Event);
 
     /** 字体引用同时承担打包依赖 */
     UPROPERTY()
@@ -121,6 +128,8 @@ private:
     /** 已提高响度的完成音效 */
     UPROPERTY()
     TObjectPtr<USoundBase> EvacSound;
+    UPROPERTY()
+    TArray<TObjectPtr<USoundBase>> InventorySounds;
     /** 当前世界中的完成音效消费位置 只影响表现 */
     double LastEvacCompletionAt = -1.0;
     TWeakObjectPtr<UWorld> EvacPresentationWorld;
@@ -153,6 +162,7 @@ private:
     TSharedPtr<STextBlock> StatusText;
     /** 上次收到的操作结果版本 */
     int32 ObservedOperationRevision = 0;
+    bool bAwaitingPlacementResult = false;
     /** 上次实际选中格子 用于显示切换反馈 */
     int32 ObservedSelectedSlot = INDEX_NONE;
     /** 当前展示的角色 */
