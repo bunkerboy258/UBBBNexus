@@ -77,7 +77,7 @@ class ABBB_EVAC_API UBBBPlayerItemView final : public UUserWidget
     /** @return 供编辑器诊断遍历的背包根控件 */
     TArray<TSharedPtr<SWidget>> GetMenuPanels() const;
 #endif
-    /** @return 共用格框材质 */
+    /** @return 共用格框渐变材质 */
     UMaterialInterface* GetSlotFrameMaterial() const { return SlotFrameMaterial; }
 
   protected:

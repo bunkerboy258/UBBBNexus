@@ -275,7 +275,9 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     const auto Hairline = [&Place](SConstraintCanvas& Panel, float X, float Y, float W)
     {
         static const FSlateRoundedBoxBrush Divider(FLinearColor(0.72f, 0.37f, 0.05f, 0.88f), 1.0f);
-        Place(Panel, X, Y, W, 3.0f, SNew(SImage).Image(&Divider).Visibility(EVisibility::HitTestInvisible));
+        const auto Line = SNew(SImage).Image(&Divider).Visibility(EVisibility::HitTestInvisible);
+        Line->SetPixelSnapping(EWidgetPixelSnapping::Disabled);
+        Place(Panel, X, Y, W, 3.0f, Line);
     };
     static const FSlateRoundedBoxBrush Keycap(FLinearColor::Transparent, 1.0f,
         FLinearColor(0.84f, 0.81f, 0.76f, 0.74f), 1.5f);
@@ -358,7 +360,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
         .Visibility_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? EVisibility::HitTestInvisible : EVisibility::Hidden; }));
     static const FScrollBoxStyle StorageScroll = FScrollBoxStyle()
         .SetTopShadowBrush(FSlateNoResource()).SetBottomShadowBrush(FSlateNoResource());
-    Place(*LeftWing, 11, 156, 491, 612, SNew(SScrollBox).Style(&StorageScroll).ScrollBarVisibility(EVisibility::Collapsed)
+    Place(*LeftWing, 11, 156, 491, InventoryGridHeight, SNew(SScrollBox).Style(&StorageScroll).ScrollBarVisibility(EVisibility::Collapsed)
         + SScrollBox::Slot()[SAssignNew(BackpackSlots, SVerticalBox)]);
     Place(*RightWing, 18, 10, 490, 68, SNew(SBox).HAlign(HAlign_Right)
         [SNew(STextBlock).Font(ArtFont(44)).Text_Lambda([this]
@@ -367,7 +369,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
     Place(*RightWing, 18, 101, 490, 40, SNew(SBox).HAlign(HAlign_Right)
         [SNew(STextBlock).Font(ArtFont(20)).ColorAndOpacity(MutedText)
             .Text_Lambda([this] { return PanelPage == EBBBItemPanelPage::Character ? INVTEXT("EQUIPPED") : INVTEXT("WEAPONS"); })]);
-    Place(*RightWing, 14, 156, 494, 664, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
+    Place(*RightWing, 14, 156, 494, InventoryGridHeight, SAssignNew(EquipmentSlots, SVerticalBox).Tag(TEXT("Backpack.PanelSlots")));
     Place(*Canvas, 96, 1030, 160, 42, SNew(SButton).ButtonStyle(BBBItemUI::Navigation()).HAlign(HAlign_Left)
         .OnClicked_Lambda([this] { GetItemController()->ToggleBackpack(); return FReply::Handled(); })
         [SNew(SHorizontalBox)

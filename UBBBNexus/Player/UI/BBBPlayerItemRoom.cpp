@@ -18,7 +18,6 @@ UWidgetComponent* CreateRoomWidget(AActor& Owner, const TSharedPtr<SWidget>& Wid
     Panel->SetVisibleInSceneCaptureOnly(true);
     Panel->SetTickWhenOffscreen(true);
     Panel->SetBlendMode(EWidgetBlendMode::Transparent);
-    Panel->SetRenderTargetPixelsPerCentimeter(1.5f);
     Panel->SetBackgroundColor(FLinearColor::Transparent);
     Panel->SetDrawSize(Size);
     Panel->SetWorldTransform(FTransform(Rotation, Location, FVector(UnitsPerPixel)));
@@ -42,19 +41,47 @@ void UBBBPlayerItemPortrait::SetPanels(const TSharedPtr<SWidget>& Storage, const
     const FVector Forward = RotationAtRest.GetForwardVector();
     const FVector Right = RotationAtRest.GetRightVector();
     const FVector Up = RotationAtRest.GetUpVector();
-    const FVector Centre = HomeCamera.GetLocation() + Forward * PanelDepth;
+    const FVector ToCharacter = Stage->GetOrbitAnchor().GetComponentLocation() - HomeCamera.GetLocation();
+    const double CharacterDepth = FMath::Max(1.0, FVector::DotProduct(Forward, ToCharacter));
+    const double HorizontalCenter = FVector::DotProduct(Right, ToCharacter) * PanelDepth / CharacterDepth;
+    const FVector Centre = HomeCamera.GetLocation() + Forward * PanelDepth + Right * HorizontalCenter;
     const auto AddPanel = [&](const TSharedPtr<SWidget>& Content, FVector2D Size, FVector2D Offset,
         float Lean, float Scale, const FVector& Adjustment)
     {
         const FVector Location = Centre + Units * (Right * Offset.X - Up * Offset.Y) + Adjustment;
         const FVector Normal = (-Forward).RotateAngleAxis(Lean, Up);
         const FRotator Rotation = FRotationMatrix::MakeFromXZ(Normal, Up).Rotator();
-        Panels.Add(CreateRoomWidget(*Display, Content, Size, Location, Rotation, Units * Scale));
+        UWidgetComponent* Panel = CreateRoomWidget(*Display, Content, Size, Location, Rotation, Units * Scale);
+        Panels.Add(Panel);
+        return Panel;
     };
 
     const FVector2D SideSize(520.0, 800.0);
     AddPanel(Storage, SideSize, FVector2D(-575.0, 34.0), -18.0f, 1.04f, FVector::ZeroVector);
     AddPanel(Loadout, SideSize, FVector2D(575.0, 34.0), 18.0f, 1.04f, FVector::ZeroVector);
-    AddPanel(Navigation, FVector2D(880.0, 54.0), FVector2D(0.0, -502.0), 0.0f, 1.0f,
+    NavigationPlane = AddPanel(Navigation, FVector2D(880.0, 54.0), FVector2D(0.0, -502.0), 0.0f, 1.0f,
         RotationAtRest.RotateVector(Stage->GetNavigationOffset()));
+    AlignNavigation();
+}
+
+void UBBBPlayerItemPortrait::AlignNavigation()
+{
+    const USceneCaptureComponent2D* Camera = GetCamera();
+    if (!Camera || !NavigationPlane)
+    {
+        return;
+    }
+    const FVector Forward = Camera->GetForwardVector();
+    const FVector Right = Camera->GetRightVector();
+    const FVector ToCharacter = Stage->GetOrbitAnchor().GetComponentLocation() - Camera->GetComponentLocation();
+    const FVector ToNavigation = NavigationPlane->GetComponentLocation() - Camera->GetComponentLocation();
+    const double CharacterDepth = FVector::DotProduct(Forward, ToCharacter);
+    if (CharacterDepth <= UE_SMALL_NUMBER)
+    {
+        return;
+    }
+    const double ProjectedCenter = FVector::DotProduct(Right, ToCharacter)
+        * FVector::DotProduct(Forward, ToNavigation) / CharacterDepth;
+    const double Correction = ProjectedCenter - FVector::DotProduct(Right, ToNavigation);
+    NavigationPlane->AddWorldOffset(Right * Correction);
 }

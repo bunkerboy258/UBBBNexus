@@ -62,8 +62,11 @@ private:
     TObjectPtr<UTextureRenderTarget2D> Texture;
     UPROPERTY(Transient)
     TArray<TObjectPtr<UWidgetComponent>> Panels;
+    UPROPERTY(Transient)
+    TObjectPtr<UWidgetComponent> NavigationPlane;
     bool PrepareStage();
     void ApplyCameraParallax(FVector2D Offset);
+    void AlignNavigation();
     void SyncAppearance(const ABBBCharacter* Character);
     bool SyncHeldWeapon(const ABBBCharacter& Character);
     void ApplyHeldGrip();

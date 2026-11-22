@@ -79,7 +79,7 @@ private:
     UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="面板鼠标视差", ClampMin="0", ClampMax="2"))
     float PanelParallaxScale = 0.8f;
     UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="顶部页签偏移",
-        ToolTip="单位厘米 X 沿静止镜头向前 Y 向右 Z 向上"))
+        ToolTip="单位厘米 X 沿静止镜头向前 Z 向上 Y 随人物中心自动对齐"))
     FVector NavigationOffset = FVector::ZeroVector;
     UPROPERTY(EditInstanceOnly, Category="背包界面", meta=(DisplayName="格框白光强度", ClampMin="0", ClampMax="0.25"))
     float SlotGlowOpacity = 0.065f;

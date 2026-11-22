@@ -8,7 +8,6 @@
 #include "Materials/MaterialInterface.h"
 #include "Input/DragAndDrop.h"
 #include "Rendering/DrawElementTypes.h"
-#include "Materials/MaterialInterface.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Images/SImage.h"
@@ -114,7 +113,6 @@ void SBBBPlayerItemSlot::Construct(const FArguments &Arguments)
     if (const auto* Owner = View.Get())
     {
         FrameBrush.SetResourceObject(Owner->GetSlotFrameMaterial());
-        FrameBrush.DrawAs = ESlateBrushDrawType::Image;
         FrameBrush.Mirroring = bOuterRight ? ESlateBrushMirrorType::Horizontal : ESlateBrushMirrorType::NoMirror;
     }
     Refresh();
@@ -231,8 +229,11 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
         const auto* Stage = View.IsValid() ? View->GetItemStage() : nullptr;
         const float Glow = Stage ? Stage->GetSlotGlowOpacity() : 0.0f;
         const FVector2D Size = Geometry.GetLocalSize();
-        FSlateDrawElement::MakeBox(Elements, Layer++, Geometry.ToPaintGeometry(), &FrameBrush,
-            ESlateDrawEffect::NoPixelSnapping, FLinearColor(1.0f, 1.0f, 1.0f, bOccupied ? 1.0f : 0.55f));
+        if (FrameBrush.GetResourceObject())
+        {
+            FSlateDrawElement::MakeBox(Elements, Layer++, Geometry.ToPaintGeometry(), &FrameBrush,
+                ESlateDrawEffect::NoPixelSnapping, FLinearColor(1.0f, 1.0f, 1.0f, bOccupied ? 1.0f : 0.56f));
+        }
 
         constexpr float Border = 2.0f;
         if (Glow > 0.0f)
@@ -240,14 +241,14 @@ int32 SBBBPlayerItemSlot::OnPaint(const FPaintArgs &Args, const FGeometry &Geome
             const FSlateRoundedBoxBrush Halo(FLinearColor::Transparent, 2.5f,
                 FLinearColor(1.0f, 1.0f, 1.0f, Glow), 4.0f);
             FSlateDrawElement::MakeBox(Elements, Layer++, Geometry.ToPaintGeometry(Size + FVector2D(3.0f),
-                FSlateLayoutTransform(FVector2f(-1.5f))), &Halo, ESlateDrawEffect::NoPixelSnapping);
+                FSlateLayoutTransform(FVector2f(-1.5f))), &Halo, ESlateDrawEffect::NoPixelSnapping, Halo.GetTint(Style));
         }
         const FLinearColor RestBorder = bSelected ? FLinearColor(0.93f, 0.76f, 0.58f, 0.91f)
             : FLinearColor(0.67f, 0.68f, 0.69f, 0.57f);
         const FSlateRoundedBoxBrush Frame(FLinearColor::Transparent, 1.0f,
             FMath::Lerp(RestBorder, FLinearColor(1.0f, 0.44f, 0.12f, 1.0f), Highlight), Border);
         FSlateDrawElement::MakeBox(Elements, ++Layer, Geometry.ToPaintGeometry(),
-            &Frame, ESlateDrawEffect::NoPixelSnapping);
+            &Frame, ESlateDrawEffect::NoPixelSnapping, Frame.GetTint(Style));
     }
     return SCompoundWidget::OnPaint(Args, Geometry, CullingRect, Elements, Layer + 1, Style, bParentEnabled);
 }

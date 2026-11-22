@@ -10,6 +10,9 @@
 /** 玩家物品界面的素材包画刷与项目字体 */
 namespace BBBItemUI
 {
+inline constexpr float InventoryGridHeight = 612.0f;
+inline constexpr float StorageCellHeight = InventoryGridHeight / 4.0f - 10.0f;
+
 inline const FLinearColor Accent(0.92f, 0.49f, 0.035f);
 inline const FLinearColor MutedText(1.0f, 1.0f, 1.0f, 0.72f);
 /** @param Path 素材资产路径 @return 保持资源生命周期的画刷 */

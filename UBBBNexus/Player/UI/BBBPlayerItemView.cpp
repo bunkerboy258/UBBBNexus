@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SBoxPanel.h"
@@ -366,7 +367,7 @@ void UBBBPlayerItemView::RefreshItems()
             TSharedPtr<SBBBPlayerItemSlot> SlotWidget;
             Grid->AddSlot(Position % 3, Position / 3)
                 [SAssignNew(SlotWidget, SBBBPlayerItemSlot).View(this).Slot(Start + Position)
-                    .Width(145.0f).Height(142.0f)];
+                    .Width(145.0f).Height(BBBItemUI::StorageCellHeight)];
             StorageSlotViews.Add(SlotWidget);
         }
         BackpackSlots->AddSlot().AutoHeight()[Grid];
@@ -412,15 +413,27 @@ void UBBBPlayerItemView::RefreshItems()
         };
         if (bCharacterPage)
         {
-            AddGroup(RightStart, Total, 3, 148, 145, true, false);
+            constexpr int32 WearColumns = 2;
+            const int32 Rows = FMath::Max(1, FMath::DivideAndRoundUp(Total, WearColumns));
+            const float CellHeight = BBBItemUI::InventoryGridHeight / Rows - 8.0f;
+            AddGroup(RightStart, Total, WearColumns, 233.0f, CellHeight, true, false);
         }
         else
         {
-            AddGroup(0, WeaponCount, 1, 472, 105, false, false);
-            EquipmentSlots->AddSlot().AutoHeight().Padding(4, 24, 0, 6)
-                [SNew(STextBlock).Text(INVTEXT("CONSUMABLES")).Font(BBBItemUI::ArtFont(22))
-                    .ColorAndOpacity(BBBItemUI::MutedText)];
-            AddGroup(ConsumableStart, ConsumableCount, 3, 148, 145, false, true);
+            constexpr int32 ConsumableColumns = 3;
+            constexpr float ConsumableCellHeight = 145.0f;
+            constexpr float HeadingHeight = 52.0f;
+            constexpr float CellPadding = 8.0f;
+            const int32 ConsumableRows = FMath::DivideAndRoundUp(ConsumableCount, ConsumableColumns);
+            const float BottomGroupHeight = HeadingHeight + ConsumableRows * (ConsumableCellHeight + CellPadding);
+            const float WeaponCellHeight = FMath::Max(1.0f,
+                (BBBItemUI::InventoryGridHeight - BottomGroupHeight) / FMath::Max(1, WeaponCount) - CellPadding);
+            AddGroup(0, WeaponCount, 1, 472, WeaponCellHeight, false, false);
+            EquipmentSlots->AddSlot().AutoHeight().Padding(4, 0, 0, 0)
+                [SNew(SBox).HeightOverride(HeadingHeight).VAlign(VAlign_Center)
+                    [SNew(STextBlock).Text(INVTEXT("CONSUMABLES")).Font(BBBItemUI::ArtFont(22))
+                        .ColorAndOpacity(BBBItemUI::MutedText)]];
+            AddGroup(ConsumableStart, ConsumableCount, ConsumableColumns, 148, ConsumableCellHeight, false, true);
         }
     }
     else

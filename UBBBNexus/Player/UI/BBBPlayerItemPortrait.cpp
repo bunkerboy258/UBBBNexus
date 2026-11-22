@@ -203,6 +203,7 @@ void UBBBPlayerItemPortrait::ApplyCameraParallax(FVector2D Offset)
     const FQuat WorldOffset = Rotation * BaseRotation.Inverse();
     const FVector Truck = Rotation.GetRightVector() * (-1.6 * Offset.X) + Rotation.GetUpVector() * (-0.8 * Offset.Y);
     Stage->GetCapture()->SetWorldLocationAndRotation(Pivot + WorldOffset.RotateVector(BasePosition - Pivot) + Truck, Rotation);
+    AlignNavigation();
 }
 
 bool UBBBPlayerItemPortrait::Update(float DeltaTime, const TOptional<FVector2D>& Cursor)
@@ -395,6 +396,7 @@ void UBBBPlayerItemPortrait::Close()
     StageLevel = nullptr;
     Texture = nullptr;
     Panels.Reset();
+    NavigationPlane = nullptr;
     PreviewScene.Reset();
     Source.Reset();
     CameraOffset = FVector2D::ZeroVector;
