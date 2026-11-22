@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerExplorationSystem.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/PlayerCameraManager.h"
+#include "TimerManager.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Interaction/FBBBCharacterQuickMeleeLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/BBBConsumable.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
@@ -245,8 +246,32 @@ void ABBBPlayerController::ToggleBackpack()
     SetInputMode(InputMode);
 }
 
+void ABBBPlayerController::ClientPlayThrowableFlash_Implementation(float Strength, float HoldSeconds, float TotalSeconds)
+{
+    if (!PlayerCameraManager || Strength <= 0.0f || TotalSeconds <= 0.0f)
+    {
+        return;
+    }
+    GetWorldTimerManager().ClearTimer(ThrowableFlashHold);
+    if (HoldSeconds <= 0.0f)
+    {
+        PlayerCameraManager->StartCameraFade(Strength, 0.0f, TotalSeconds, FLinearColor::White, true);
+        return;
+    }
+    PlayerCameraManager->StartCameraFade(Strength, Strength, HoldSeconds, FLinearColor::White, true, true);
+    const auto Fade = FTimerDelegate::CreateWeakLambda(this, [this, Strength, HoldSeconds, TotalSeconds]()
+    {
+        if (PlayerCameraManager)
+        {
+            PlayerCameraManager->StartCameraFade(Strength, 0.0f, TotalSeconds - HoldSeconds, FLinearColor::White, true);
+        }
+    });
+    GetWorldTimerManager().SetTimer(ThrowableFlashHold, Fade, HoldSeconds, false);
+}
+
 void ABBBPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    GetWorldTimerManager().ClearTimer(ThrowableFlashHold);
     if (ItemView)
     {
         ItemView->RemoveFromParent();

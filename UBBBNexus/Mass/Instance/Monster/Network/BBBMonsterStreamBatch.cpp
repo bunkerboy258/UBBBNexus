@@ -52,7 +52,7 @@ namespace
             Ar << Value.LastSourcePosition;
         }
         Ar << Value.Stagger.ActiveAttackId << Value.Stagger.StartedAt << Value.Stagger.EndsAt << Value.Stagger.ActiveRegion;
-        Ar << Value.ShockStartedAt << Value.ShockEndsAt;
+        Ar << Value.ShockStartedAt << Value.ShockEndsAt << Value.BurnEndsAt;
         auto& Hit = Value.LastHitResult;
         Ar << Hit.Sequence;
         if (Hit.Sequence != 0)

@@ -8,6 +8,10 @@
 #include "BBBMonsterSoundPresentationComponent.h"
 #include "Components/AudioComponent.h"
 #include "Engine/World.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
+#include "UObject/ConstructorHelpers.h"
 #include "BBBMonsterBloodPresentationSubsystem.h"
 #include "BBBMonsterGibPresentationSubsystem.h"
 #include "BBBMonsterGorePresentationComponent.h"
@@ -19,6 +23,9 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
 {
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;
+    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BurningAsset(
+        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning.NS_Monster_Burning"));
+    BurningSystem = BurningAsset.Object;
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("MonsterRoot"));
     SetRootComponent(Root);
     MonsterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MonsterMesh"));
@@ -113,6 +120,10 @@ UBBBMonsterGorePresentationComponent* ABBBMonsterPresentationActor::GetMonsterGo
 void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
 {
     Super::SetActorHiddenInGame(bNewHidden);
+    if (bNewHidden)
+    {
+        SetBurningPresentation(false);
+    }
     if (bNewHidden && SoundPresentation)
     {
         SoundPresentation->ResetPresentation();
@@ -129,4 +140,22 @@ void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
     {
         Gore->ResetPresentation();
     }
+}
+
+void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
+{
+    if (!bBurning && BurningEffect)
+    {
+        BurningEffect->DestroyComponent();
+        BurningEffect = nullptr;
+    }
+    if (!bBurning || BurningEffect || !BurningSystem || !MonsterMesh)
+    {
+        return;
+    }
+    const FName Spine(TEXT("spine_03"));
+    const bool bHasSpine = MonsterMesh->DoesSocketExist(Spine);
+    BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
+        bHasSpine ? Spine : NAME_None, bHasSpine ? FVector::ZeroVector : FVector(0.0, 0.0, 75.0),
+        FRotator::ZeroRotator, FVector(0.9), EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::None);
 }

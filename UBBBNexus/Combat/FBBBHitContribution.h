@@ -37,6 +37,10 @@ struct ABBB_EVAC_API FBBBHitContribution final
     UPROPERTY()
     float MonsterShockSeconds = 0.0f;
 
+    /** 房主判定僵尸接触火区时刷新的余燃秒数 */
+    UPROPERTY()
+    float MonsterBurnSeconds = 0.0f;
+
     /** 伤口强度 */
     UPROPERTY()
     float AddWound = 0;
@@ -100,6 +104,8 @@ struct ABBB_EVAC_API FBBBHitContribution final
             && FMath::IsFinite(AddStagger) && AddStagger >= 0 && FMath::IsFinite(AddWound) && AddWound >= 0
             && FMath::IsFinite(MonsterShockSeconds) && MonsterShockSeconds >= 0.0f && MonsterShockSeconds <= 10.0f
             && (MonsterShockSeconds == 0.0f || (bWorldSource && AttackId.IsValid()))
+            && FMath::IsFinite(MonsterBurnSeconds) && MonsterBurnSeconds >= 0.0f && MonsterBurnSeconds <= 10.0f
+            && (MonsterBurnSeconds == 0.0f || (bWorldSource && AttackId.IsValid() && AddDamage > 0.0f))
             && FMath::IsFinite(AddHoldSeconds) && AddHoldSeconds >= 0
             && FMath::IsFinite(AttackTime) && AttackTime >= 0 && !Position.ContainsNaN() && !Direction.ContainsNaN()
             && !SourcePosition.ContainsNaN() && !Normal.ContainsNaN() && !AddImpulse.ContainsNaN() && !AddVelocity.ContainsNaN()

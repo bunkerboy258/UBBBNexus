@@ -41,6 +41,10 @@ public:
     UFUNCTION(Client, Reliable)
     void ClientPrepareV01SpawnView(FVector Location, FRotator Rotation);
 
+    /** @param Strength	白闪初始强度 @param HoldSeconds	满白停留 @param TotalSeconds	总恢复时长 @return 无 */
+    UFUNCTION(Client, Reliable)
+    void ClientPlayThrowableFlash(float Strength, float HoldSeconds, float TotalSeconds);
+
     /** 试玩控制器功能的唯一运行时黑板 */
     FBBBV01PlayerRuntimeData V01RuntimeData;
 
@@ -226,6 +230,9 @@ private:
     /** 背包关闭时恢复打开前的输入状态 */
     bool bBackpackPreviousCursor = false;
     bool bBackpackPreviousGameplayInput = true;
+
+    /** 本机白闪停留结束后开始淡出 */
+    FTimerHandle ThrowableFlashHold;
 
     /** @return 本机控制且已经初始化真实背包的角色 */
     ABBBCharacter *GetItemCharacter() const;

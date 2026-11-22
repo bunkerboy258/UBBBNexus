@@ -28,6 +28,9 @@ struct ABBB_EVAC_API FBBBMonsterHealthFragment final : public FMassFragment
     /** 上次已解析的累计部位伤害总量 用于本轮变化检测 */
     double ResolvedDamage = 0.0;
 
+    /** 由房主持有的燃烧到期事实推导 供本地身体表现读取 */
+    bool bBurning = false;
+
     /** 同一代小怪各端一致的血量上限 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "小怪", meta = (DisplayName = "血量上限"))
     float MaxHealth = 100.0f;

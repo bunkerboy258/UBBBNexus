@@ -85,6 +85,10 @@ namespace
             auto& Value = Ledger.FindOrAdd(Identity.WriterKey());
             Value.PlayerId = Hit.PlayerId;
             Value.bWorldSource = Hit.bWorldSource;
+            if (Hit.MonsterBurnSeconds > 0.0f)
+            {
+                Value.BurnEndsAt = FMath::Max(Value.BurnEndsAt, Hit.AttackTime + Hit.MonsterBurnSeconds);
+            }
             if (Hit.MonsterShockSeconds > 0.0f)
             {
                 const double End = Hit.AttackTime + Hit.MonsterShockSeconds;
@@ -323,6 +327,51 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             const auto* Settings = Network[Index].Definition.Get();
             const bool bApplyRemote = Remote.bActive;
             Remote.bActive = false;
+            if (bHost && Settings && Health[Index].CurrentHealth > 0.0f)
+            {
+                auto& NextBurn = Damage[Index].NextBurnDamageAt;
+                const bool bStillInFire = Pending.ContainsByPredicate([](const FBBBHitContribution& Hit)
+                {
+                    return Hit.MonsterBurnSeconds > 0.0f && Hit.IsValid();
+                });
+                if (bStillInFire)
+                {
+                    NextBurn = ServerTime + 1.0;
+                }
+                else if (NextBurn > 0.0 && ServerTime >= NextBurn + 0.08)
+                {
+                    const FBBBMonsterDamageTotals* Burn = nullptr;
+                    for (const auto& Entry : Damage[Index].Contributions)
+                    {
+                        const auto& Value = Entry.Value;
+                        if (Value.bWorldSource && Value.BurnEndsAt + UE_SMALL_NUMBER >= NextBurn && (!Burn
+                            || Value.BurnEndsAt > Burn->BurnEndsAt
+                            || (Value.BurnEndsAt == Burn->BurnEndsAt && Value.PlayerId < Burn->PlayerId)))
+                        {
+                            Burn = &Value;
+                        }
+                    }
+                    if (Burn)
+                    {
+                        FBBBHitContribution Tick;
+                        Tick.AddDamage = 6.0f;
+                        Tick.AddDurableDamage = 6.0f;
+                        Tick.bWorldSource = true;
+                        Tick.bRadial = true;
+                        Tick.PlayerId = Burn->PlayerId;
+                        Tick.Position = Burn->LastHitResult.Position;
+                        Tick.SourcePosition = Burn->LastSourcePosition;
+                        Tick.bHasSourcePosition = Burn->bHasSourcePosition;
+                        Tick.AttackTime = NextBurn;
+                        Pending.Add(Tick);
+                        NextBurn += 1.0;
+                    }
+                    else
+                    {
+                        NextBurn = 0.0;
+                    }
+                }
+            }
             TOptional<FKillCreditContext> Credit;
             if (bHost && Health[Index].CurrentHealth > 0.0f && Settings && (bApplyRemote || !Pending.IsEmpty()))
             {
@@ -406,8 +455,10 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
             const FBBBMonsterStaggerContribution* ActiveStagger = nullptr;
             double ShockStart = ServerTime;
             double ShockEnd = ServerTime;
+            Health[Index].bBurning = false;
             for (const auto& Value : Damage[Index].Contributions)
             {
+                Health[Index].bBurning |= Value.Value.bWorldSource && Value.Value.BurnEndsAt > ServerTime;
                 if (Value.Value.bWorldSource && Value.Value.ShockEndsAt > ServerTime)
                 {
                     ShockStart = FMath::Min(ShockStart, Value.Value.ShockStartedAt);

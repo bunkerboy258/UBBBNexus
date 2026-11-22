@@ -23,6 +23,9 @@ struct ABBB_EVAC_API FBBBMonsterDamageFragment final : public FMassFragment
 
     /** 已扣血的受伤事实 */
     bool bReceivedDamage = false;
+
+    /** 房主下一次允许结算余燃的服务器时间 零表示无任务 */
+    double NextBurnDamageAt = 0.0;
 };
 
 /** 累计字典需要原生构造 拷贝与析构 明确接受 Mass 非平凡 Fragment */

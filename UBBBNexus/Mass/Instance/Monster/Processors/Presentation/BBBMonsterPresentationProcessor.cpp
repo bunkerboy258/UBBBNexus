@@ -151,6 +151,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
         const auto Variations = ChunkContext.GetFragmentView<FBBBMonsterVariationFragment>();
         const auto Traversals = ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
+        const auto Health = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
@@ -258,8 +259,13 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const auto* Definition = NetworkStates[Index].Definition.Get();
             if (!Definition || !MonsterActor->ConfigurePresentation(Definition->Presentation))
             {
+                MonsterActor->SetBurningPresentation(false);
                 continue;
             }
+            const auto* BodyMesh = MonsterActor->GetMonsterMesh();
+            MonsterActor->SetBurningPresentation(Health[Index].bBurning && Health[Index].CurrentHealth > 0.0f
+                && !MonsterActor->IsHidden() && BodyMesh->WasRecentlyRendered(0.35f)
+                && BodyMesh->GetPredictedLODLevel() <= 2);
             if (Definition && Definition->Presentation->Gore)
             {
                 auto *Mesh = MonsterActor->GetMonsterMesh();

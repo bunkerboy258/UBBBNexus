@@ -55,6 +55,9 @@ private:
     /** 持续区域的本地特效组件 */
     UPROPERTY()
     TObjectPtr<UNiagaraComponent> AreaEffect;
+    /** 起爆时生成的一次性本地特效组件 */
+    UPROPERTY()
+    TObjectPtr<UNiagaraComponent> BurstEffect;
     UPROPERTY()
     TObjectPtr<UBBBThrowableNetworkComponent> Network;
     UPROPERTY(ReplicatedUsing = OnRep_Definition)

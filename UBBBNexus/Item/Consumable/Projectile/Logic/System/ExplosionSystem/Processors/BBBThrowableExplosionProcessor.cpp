@@ -243,14 +243,20 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
     {
         return;
     }
+    const auto* GameState = World.GetGameState();
+    const double Now = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
+    if (Actor.BurstEffect && Now - State.Fact.Time >= 4.0)
+    {
+        Actor.BurstEffect->DestroyComponent();
+        Actor.BurstEffect = nullptr;
+    }
     if (!State.bPresented)
     {
         State.bPresented = true;
         Actor.PhysicsBody->SetSimulatePhysics(false);
         Actor.PhysicsBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Actor.Mesh->SetVisibility(false);
-        const auto* GameState = World.GetGameState();
-        const double Now = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
+        Actor.Trail->Deactivate();
         if (World.GetNetMode() != NM_DedicatedServer && Now - State.Fact.Time < 2.0)
         {
             if (Definition->Presentation.ExplosionEffect)
@@ -263,9 +269,10 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                                                    State.Fact.Position - FVector(0.0, 0.0, 65.0), ECC_WorldStatic,
                                                    SurfaceParams) &&
                     Ground.ImpactNormal.Z > 0.25;
-                auto *Effect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                Actor.BurstEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
                     &World, Definition->Presentation.ExplosionEffect, State.Fact.Position, FRotator::ZeroRotator,
-                    FVector(Definition->Presentation.EffectScale), true, false, ENCPoolMethod::AutoRelease);
+                    FVector(Definition->Presentation.EffectScale), false, false, ENCPoolMethod::None);
+                auto* Effect = Actor.BurstEffect.Get();
                 if (Effect)
                 {
                     Effect->SetVariableFloat(TEXT("User.GroundContact"), bGround ? 1.0f : 0.0f);

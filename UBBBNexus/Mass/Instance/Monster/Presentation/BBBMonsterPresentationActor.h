@@ -11,6 +11,8 @@ class UBBBMonsterSoundPresentationComponent;
 class UAudioComponent;
 class UBBBMonsterGorePresentationComponent;
 class UBBBMonsterPresentationDefinition;
+class UNiagaraComponent;
+class UNiagaraSystem;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
@@ -40,6 +42,8 @@ public:
 
     /** @return 不打断声线的地面接触声道 */
     UAudioComponent* GetMonsterContactAudio() const;
+    /** @param bBurning 当前存活身体是否应显示着火 @return 无 */
+    void SetBurningPresentation(bool bBurning);
 
     /**
      * 隐藏或回收表现演员时停止声音
@@ -49,6 +53,14 @@ public:
     virtual void SetActorHiddenInGame(bool bNewHidden) override;
 
 private:
+    /** 共享的低粒子数火焰表现 */
+    UPROPERTY()
+    TObjectPtr<UNiagaraSystem> BurningSystem;
+
+    /** 当前身体的着火组件 */
+    UPROPERTY(Transient)
+    TObjectPtr<UNiagaraComponent> BurningEffect;
+
     /** 仅在配置或身体关联变化时重新装配资源 */
     UPROPERTY(Transient)
     TObjectPtr<const UBBBMonsterPresentationDefinition> PresentationSettings;

@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 
 namespace
 {
@@ -21,7 +22,7 @@ void PublishFlash(ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Fact)
     UWorld& World = *Actor.GetWorld();
     for (FConstPlayerControllerIterator It = World.GetPlayerControllerIterator(); It; ++It)
     {
-        APlayerController* Controller = It->Get();
+        auto* Controller = Cast<ABBBPlayerController>(It->Get());
         const APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
         if (!Pawn || !Pawn->CanBeDamaged())
         {
@@ -46,9 +47,10 @@ void PublishFlash(ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Fact)
 
         const FVector Direction = (Fact.Position - Eye).GetSafeNormal();
         const float Facing = FMath::Max(0.0, FVector::DotProduct(View.Vector(), Direction));
-        const float Strength = (1.0f - Distance / Config.Radius) * FMath::Lerp(0.18f, 1.0f, Facing);
-        Controller->ClientSetCameraFade(true, FColor::White, FVector2D(Strength, 0.0),
-            Config.FlashSeconds * FMath::Lerp(0.35f, 1.0f, Strength), true, false);
+        const float DistanceFactor = 1.0f - FMath::Square(Distance / Config.Radius);
+        const float Strength = FMath::Clamp(DistanceFactor * FMath::Lerp(0.22f, 1.35f, Facing), 0.0f, 1.0f);
+        const float Duration = Config.FlashSeconds * FMath::Lerp(0.45f, 1.0f, Strength);
+        Controller->ClientPlayThrowableFlash(Strength, Strength >= 0.98f ? Duration * 0.11f : 0.0f, Duration);
     }
 }
 }

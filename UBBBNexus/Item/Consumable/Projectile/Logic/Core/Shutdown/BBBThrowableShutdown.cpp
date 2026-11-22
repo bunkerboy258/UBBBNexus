@@ -6,6 +6,11 @@ void FBBBThrowableShutdown::Shutdown(ABBBThrowable& Actor) const
 {
     Actor.PhysicsBody->OnComponentHit.RemoveAll(&Actor);
     Actor.Trail->DeactivateImmediate();
+    if (Actor.BurstEffect)
+    {
+        Actor.BurstEffect->DestroyComponent();
+        Actor.BurstEffect = nullptr;
+    }
     if (Actor.AreaEffect)
     {
         Actor.AreaEffect->DestroyComponent();

@@ -9,6 +9,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
 #include "NiagaraComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "NiagaraFunctionLibrary.h"
 
 namespace
@@ -89,8 +90,9 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     }
 
     const double FadeTime = Area.bObscuresSight ? 1.8 : 0.7;
-    if (World.GetNetMode() != NM_DedicatedServer && Remaining > FadeTime &&
-        !Actor.AreaEffect && Definition->Presentation.AreaEffect)
+    const bool bCreateEffect = World.GetNetMode() != NM_DedicatedServer && Remaining > FadeTime &&
+        !Actor.AreaEffect && Definition->Presentation.AreaEffect;
+    if (bCreateEffect)
     {
         Actor.AreaEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.AreaEffect,
             Fact.AreaGround, FRotator::ZeroRotator, FVector(Definition->Presentation.AreaEffectScale),
@@ -101,6 +103,13 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         if (Area.bObscuresSight)
         {
             Actor.AreaEffect->SetVariableFloat(TEXT("User.Radius"), CurrentRadius * 0.67f);
+            const auto* Controller = World.GetFirstPlayerController();
+            const auto* Camera = Controller ? Controller->PlayerCameraManager.Get() : nullptr;
+            const FVector Relative = Camera ? Camera->GetCameraLocation() - Fact.AreaGround : FVector::ZeroVector;
+            const bool bInside = Camera && Relative.Z >= 0.0 && Relative.Z <= Area.Height
+                && Relative.SizeSquared2D() <= FMath::Square(CurrentRadius);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.SpawnRate"), bInside ? 28.0f : 45.0f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Size"), bInside ? 0.92f : 1.22f);
         }
         else
         {
@@ -108,7 +117,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             const float SpreadScale = Scale * CurrentRadius / Area.Radius;
             Actor.AreaEffect->SetWorldScale3D(FVector(SpreadScale, SpreadScale, Scale));
         }
-        if (!Actor.AreaEffect->IsActive())
+        if (bCreateEffect)
         {
             Actor.AreaEffect->Activate(true);
         }
@@ -166,6 +175,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             Damaged.Add(Body.Entity);
             Hit.Position = Body.Center;
             Hit.Part = Body.Part;
+            Hit.MonsterBurnSeconds = 3.0f;
             Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
         }
     }

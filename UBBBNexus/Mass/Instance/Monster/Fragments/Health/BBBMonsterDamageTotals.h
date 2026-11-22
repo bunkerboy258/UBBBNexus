@@ -53,6 +53,10 @@ struct FBBBMonsterDamageTotals final
     UPROPERTY()
     double ShockEndsAt = 0.0;
 
+    /** 房主已成立的余燃到期时间 */
+    UPROPERTY()
+    double BurnEndsAt = 0.0;
+
     /** 世界来源由房主独占写入 与同一投掷者的枪伤分别合并 */
     UPROPERTY()
     bool bWorldSource = false;
@@ -73,7 +77,8 @@ struct FBBBMonsterDamageTotals final
             && !LastSourcePosition.ContainsNaN() && Stagger.IsValid() && LastHitResult.IsValid()
             && FMath::IsFinite(ShockStartedAt) && ShockStartedAt >= 0.0
             && FMath::IsFinite(ShockEndsAt) && ShockEndsAt >= ShockStartedAt
-            && (bWorldSource || ShockEndsAt == 0.0);
+            && FMath::IsFinite(BurnEndsAt) && BurnEndsAt >= 0.0
+            && (bWorldSource || (ShockEndsAt == 0.0 && BurnEndsAt == 0.0));
     }
 
     bool operator==(const FBBBMonsterDamageTotals& Other) const
@@ -82,7 +87,8 @@ struct FBBBMonsterDamageTotals final
             && LastHitTime == Other.LastHitTime && LastHitRegion == Other.LastHitRegion
             && LastSourcePosition == Other.LastSourcePosition && bHasSourcePosition == Other.bHasSourcePosition
             && LastHitResult == Other.LastHitResult && Stagger == Other.Stagger && Destruction == Other.Destruction
-            && ShockStartedAt == Other.ShockStartedAt && ShockEndsAt == Other.ShockEndsAt;
+            && ShockStartedAt == Other.ShockStartedAt && ShockEndsAt == Other.ShockEndsAt
+            && BurnEndsAt == Other.BurnEndsAt;
     }
 
     /**
@@ -99,6 +105,7 @@ struct FBBBMonsterDamageTotals final
         const bool bTakeShock = Other.ShockEndsAt > ShockEndsAt;
         const double ShockStart = bTakeShock ? Other.ShockStartedAt : ShockStartedAt;
         const double ShockEnd = FMath::Max(ShockEndsAt, Other.ShockEndsAt);
+        const double BurnEnd = FMath::Max(BurnEndsAt, Other.BurnEndsAt);
         FBBBMonsterDestructionContribution CombinedDestruction = Destruction;
         CombinedDestruction.MergeMax(Other.Destruction);
         if ((PlayerId == INDEX_NONE && !bWorldSource) || Other.LastHitTime > LastHitTime
@@ -112,6 +119,7 @@ struct FBBBMonsterDamageTotals final
         Stagger = CombinedStagger;
         ShockStartedAt = ShockStart;
         ShockEndsAt = ShockEnd;
+        BurnEndsAt = BurnEnd;
         Destruction = CombinedDestruction;
     }
 };
