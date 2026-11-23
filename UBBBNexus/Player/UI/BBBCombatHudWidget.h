@@ -37,7 +37,7 @@ private:
     void UpdateItems(const ABBBPlayerController &Controller);
     void SetIcon(UImage *Image, UTexture2D *Texture);
     void SetCount(UTextBlock *Label, int32 Number, bool bPad = false, bool bDenominator = false);
-    void SetItemRow(const TCHAR *Prefix, int32 Row, UTexture2D *Texture, int32 Number);
+    void SetItemRow(const TCHAR *Prefix, int32 Row, UTexture2D *Texture, int32 Number, bool bPad = false);
 
     UPROPERTY(EditDefaultsOnly, Category = "Appearance", meta = (DisplayName = "物品剪影材质"))
     TObjectPtr<UMaterialInterface> ItemIconMaterial;

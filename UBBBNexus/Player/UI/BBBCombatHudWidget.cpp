@@ -105,9 +105,10 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
     bool bContinuous = false;
     bool bReloading = false;
     const bool bHasAmmo = Controller->ReadHudAmmo(Loaded, Capacity, bContinuous, bReloading);
+    SetShown(GetWidgetFromName(TEXT("AmmoReadout")), bHasAmmo);
     SetShown(GetWidgetFromName(TEXT("AmmoGroup")), bHasAmmo);
     SetShown(AmmoRail, bAiming && bHasAmmo);
-    SetShown(Reload, bHasAmmo && bReloading);
+    SetShown(GetWidgetFromName(TEXT("ReloadBounds")), bHasAmmo && bReloading);
     if (bHasAmmo)
     {
         auto *LoadedLabel = Cast<UTextBlock>(GetWidgetFromName(TEXT("LoadedAmmo")));
@@ -201,7 +202,7 @@ void UBBBCombatHudWidget::UpdateItems(const ABBBPlayerController &Controller)
         const auto Item = Controller.GetItemDisplayData(Start + Index);
         if (Item.bOccupied && Index != Selected)
         {
-            SetItemRow(TEXT("SpareItem"), Row++, Item.Icon, Item.Quantity);
+            SetItemRow(TEXT("SpareItem"), Row++, Item.Icon, Item.Quantity, true);
         }
     }
     for (; Row <= Count; ++Row)
@@ -254,7 +255,13 @@ void UBBBCombatHudWidget::SetIcon(UImage *Image, UTexture2D *Texture)
         if (UMaterialInstanceDynamic *Material = Image->GetDynamicMaterial())
         {
             Material->SetTextureParameterValue(TEXT("ImageTexture"), Texture);
-            Image->SetDesiredSizeOverride(FVector2D(Texture->GetSizeX(), Texture->GetSizeY()));
+            FVector2D DisplaySize(Texture->GetSizeX(), Texture->GetSizeY());
+            const FBox2f UVRegion = Image->GetBrush().GetUVRegion();
+            if (UVRegion.bIsValid)
+            {
+                DisplaySize *= FVector2D(UVRegion.GetSize());
+            }
+            Image->SetDesiredSizeOverride(DisplaySize);
         }
     }
 }
@@ -276,13 +283,13 @@ void UBBBCombatHudWidget::SetCount(UTextBlock *Label, int32 Number, bool bPad, b
     Label->SetText(FText::AsCultureInvariant(Text));
 }
 
-void UBBBCombatHudWidget::SetItemRow(const TCHAR *Prefix, int32 Row, UTexture2D *Texture, int32 Number)
+void UBBBCombatHudWidget::SetItemRow(const TCHAR *Prefix, int32 Row, UTexture2D *Texture, int32 Number, bool bPad)
 {
     const FString Name = FString::Printf(TEXT("%s%d"), Prefix, Row);
     SetShown(GetWidgetFromName(FName(*Name)), Number != INDEX_NONE);
     if (Number != INDEX_NONE)
     {
         SetIcon(Cast<UImage>(GetWidgetFromName(FName(*(Name + TEXT("Icon"))))), Texture);
-        SetCount(Cast<UTextBlock>(GetWidgetFromName(FName(*(Name + TEXT("Count"))))), Number, true);
+        SetCount(Cast<UTextBlock>(GetWidgetFromName(FName(*(Name + TEXT("Count"))))), Number, bPad);
     }
 }
