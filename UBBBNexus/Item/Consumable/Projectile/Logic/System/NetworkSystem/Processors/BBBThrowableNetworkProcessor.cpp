@@ -47,10 +47,13 @@ void PublishFlash(ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Fact)
 
         const FVector Direction = (Fact.Position - Eye).GetSafeNormal();
         const float Facing = FMath::Max(0.0, FVector::DotProduct(View.Vector(), Direction));
-        const float DistanceFactor = 1.0f - FMath::Square(Distance / Config.Radius);
-        const float Strength = FMath::Clamp(DistanceFactor * FMath::Lerp(0.22f, 1.35f, Facing), 0.0f, 1.0f);
-        const float Duration = Config.FlashSeconds * FMath::Lerp(0.45f, 1.0f, Strength);
-        Controller->ClientPlayThrowableFlash(Strength, Strength >= 0.98f ? Duration * 0.11f : 0.0f, Duration);
+        const float DistanceFactor = 1.0f - FMath::Pow(Distance / Config.Radius, 1.5f);
+        const float Strength = FMath::Clamp(DistanceFactor * FMath::Lerp(0.45f, 1.50f, Facing), 0.0f, 1.0f);
+        const float Duration = Config.FlashSeconds * FMath::Lerp(0.55f, 1.0f, Strength);
+        const float HoldSeconds = Strength >= 0.55f
+            ? Duration * FMath::Lerp(0.18f, 0.40f, (Strength - 0.55f) / 0.45f)
+            : 0.0f;
+        Controller->ClientPlayThrowableFlash(Strength, HoldSeconds, Duration);
     }
 }
 }

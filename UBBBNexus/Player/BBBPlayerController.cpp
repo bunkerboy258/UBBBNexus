@@ -255,15 +255,15 @@ void ABBBPlayerController::ClientPlayThrowableFlash_Implementation(float Strengt
     GetWorldTimerManager().ClearTimer(ThrowableFlashHold);
     if (HoldSeconds <= 0.0f)
     {
-        PlayerCameraManager->StartCameraFade(Strength, 0.0f, TotalSeconds, FLinearColor::White, true);
+        PlayerCameraManager->StartCameraFade(Strength, 0.0f, TotalSeconds, FLinearColor::White, false);
         return;
     }
-    PlayerCameraManager->StartCameraFade(Strength, Strength, HoldSeconds, FLinearColor::White, true, true);
+    PlayerCameraManager->StartCameraFade(Strength, Strength, HoldSeconds, FLinearColor::White, false, true);
     const auto Fade = FTimerDelegate::CreateWeakLambda(this, [this, Strength, HoldSeconds, TotalSeconds]()
     {
         if (PlayerCameraManager)
         {
-            PlayerCameraManager->StartCameraFade(Strength, 0.0f, TotalSeconds - HoldSeconds, FLinearColor::White, true);
+            PlayerCameraManager->StartCameraFade(Strength, 0.0f, TotalSeconds - HoldSeconds, FLinearColor::White, false);
         }
     });
     GetWorldTimerManager().SetTimer(ThrowableFlashHold, Fade, HoldSeconds, false);

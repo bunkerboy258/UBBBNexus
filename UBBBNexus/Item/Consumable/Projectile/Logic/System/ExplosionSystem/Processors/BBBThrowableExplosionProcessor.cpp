@@ -206,12 +206,12 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
             FHitResult Ground;
             FCollisionQueryParams Query(SCENE_QUERY_STAT(BBBThrowableAreaGround), false, &Actor);
             const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
-            Fact.bHasArea = World.LineTraceSingleByObjectType(Ground, Fact.Position + FVector(0.0, 0.0, 12.0),
-                Fact.Position - FVector(0.0, 0.0, 180.0), StaticWorld, Query) && Ground.ImpactNormal.Z >= 0.45;
+            Fact.bHasArea = World.LineTraceSingleByObjectType(Ground, Fact.Position + FVector(0.0, 0.0, 20.0),
+                Fact.Position - FVector(0.0, 0.0, 260.0), StaticWorld, Query) && Ground.ImpactNormal.Z >= 0.45;
             if (Fact.bHasArea)
             {
                 Fact.AreaGround = Ground.ImpactPoint;
-                State.NextAreaDamageTime = Fact.Time + Config.Area.DamageInterval;
+                State.NextAreaDamageTime = Fact.Time + FMath::Min(Config.Area.DamageInterval, 0.15f);
             }
         }
         const FGuid AttackId = FGuid::NewGuid();

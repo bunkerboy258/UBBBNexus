@@ -19,7 +19,7 @@ bool IsCovered(const ABBBThrowable& Source, const FVector& Ground, const FBBBThr
     const double Age, const FVector& Position, const AActor* Target)
 {
     const FVector Relative = Position - Ground;
-    if (Relative.Z < 0.0 || Relative.Z > Area.Height || Relative.SizeSquared2D() > FMath::Square(Area.RadiusAtAge(Age)))
+    if (Relative.Z < -45.0 || Relative.Z > Area.Height || Relative.SizeSquared2D() > FMath::Square(Area.RadiusAtAge(Age)))
     {
         return false;
     }
@@ -30,7 +30,7 @@ bool IsCovered(const ABBBThrowable& Source, const FVector& Ground, const FBBBThr
         Query.AddIgnoredActor(Target);
     }
     const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
-    return !Source.GetWorld()->LineTraceTestByObjectType(Ground + FVector(0.0, 0.0, 20.0), Position,
+    return !Source.GetWorld()->LineTraceTestByObjectType(Ground + FVector(0.0, 0.0, 35.0), Position,
         StaticWorld, Query);
 }
 
@@ -89,7 +89,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         return;
     }
 
-    const double FadeTime = Area.bObscuresSight ? 1.8 : 0.7;
+    const double FadeTime = Area.bObscuresSight ? 2.8 : 0.7;
     const bool bCreateEffect = World.GetNetMode() != NM_DedicatedServer && Remaining > FadeTime &&
         !Actor.AreaEffect && Definition->Presentation.AreaEffect;
     if (bCreateEffect)
@@ -97,19 +97,25 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         Actor.AreaEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.AreaEffect,
             Fact.AreaGround, FRotator::ZeroRotator, FVector(Definition->Presentation.AreaEffectScale),
             false, false, ENCPoolMethod::None);
+        if (Actor.AreaEffect && Area.bObscuresSight)
+        {
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Lifetime"), 3.4f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Alpha"), 1.0f);
+            Actor.AreaEffect->SetVariableLinearColor(TEXT("User.ColorTint"), FLinearColor(0.85f, 0.87f, 0.90f, 1.0f));
+        }
     }
     if (Actor.AreaEffect && Remaining > FadeTime)
     {
         if (Area.bObscuresSight)
         {
-            Actor.AreaEffect->SetVariableFloat(TEXT("User.Radius"), CurrentRadius * 0.67f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Radius"), CurrentRadius * 0.72f);
             const auto* Controller = World.GetFirstPlayerController();
             const auto* Camera = Controller ? Controller->PlayerCameraManager.Get() : nullptr;
             const FVector Relative = Camera ? Camera->GetCameraLocation() - Fact.AreaGround : FVector::ZeroVector;
-            const bool bInside = Camera && Relative.Z >= 0.0 && Relative.Z <= Area.Height
+            const bool bInside = Camera && Relative.Z >= -45.0 && Relative.Z <= Area.Height
                 && Relative.SizeSquared2D() <= FMath::Square(CurrentRadius);
-            Actor.AreaEffect->SetVariableFloat(TEXT("User.SpawnRate"), bInside ? 28.0f : 45.0f);
-            Actor.AreaEffect->SetVariableFloat(TEXT("User.Size"), bInside ? 0.92f : 1.22f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.SpawnRate"), bInside ? 10.0f : 14.0f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Size"), bInside ? 1.30f : 1.65f);
         }
         else
         {
@@ -143,11 +149,17 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     Hit.bRadial = true;
     Hit.Direction = FVector::UpVector;
 
+    const auto& Explosion = Definition->Explosion;
     for (FConstPlayerControllerIterator It = World.GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* Controller = It->Get();
         APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
         if (!Pawn || !Pawn->CanBeDamaged())
+        {
+            continue;
+        }
+        const bool bSelf = Pawn == Actor.GetInstigator();
+        if (!(bSelf ? Explosion.bDamageSelf : Explosion.bDamagePlayers))
         {
             continue;
         }
@@ -175,7 +187,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             Damaged.Add(Body.Entity);
             Hit.Position = Body.Center;
             Hit.Part = Body.Part;
-            Hit.MonsterBurnSeconds = 3.0f;
+            Hit.MonsterBurnSeconds = 4.5f;
             Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
         }
     }
