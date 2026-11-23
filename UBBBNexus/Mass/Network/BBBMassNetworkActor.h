@@ -77,7 +77,7 @@ private:
 
     /** 当前快照的本机粘液身份映射 */
     TMap<FGuid, FMassEntityHandle> LocalSlimes;
-    void SendPeerFrame(ABBBMonsterStreamChannel& Channel, const FVector& View, float Now);
+    void SendPeerFrame(ABBBMonsterStreamChannel& Channel, const FVector& View, float Now, int32 MotionBudgetBytes);
     void PublishReplay();
     void ReceiveReplay();
     void TickStreamReceive(UWorld* World, ELevelTick TickType, float DeltaSeconds);

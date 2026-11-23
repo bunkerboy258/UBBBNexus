@@ -48,6 +48,12 @@ namespace
         const auto* ActorData = Manager.GetFragmentDataPtr<FMassActorFragment>(Entity);
         const auto* Actor = ActorData ? Cast<ABBBMonsterPresentationActor>(ActorData->Get()) : nullptr;
         const auto* Mesh = Actor ? Actor->GetMonsterMesh() : nullptr;
+        if (Mesh && Mesh->bUseScreenRenderStateForUpdate
+            && Mesh->GetLastRenderTimeOnScreen() <= World.GetTimeSeconds() - 1.0f)
+        {
+            // 骨骼远处遮挡停止刷新时使用同一套本地逻辑部位形状
+            Mesh = nullptr;
+        }
         if (Health->CurrentHealth <= 0.0f && !Mesh)
         {
             return;

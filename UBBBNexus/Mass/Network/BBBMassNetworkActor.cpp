@@ -322,7 +322,11 @@ void ABBBMassNetworkActor::EndPublish()
             Channel->NextSendTime = Now + 0.066f;
             const APawn* Pawn = Controller->GetPawn();
             const FVector View = Pawn ? Pawn->GetActorLocation() : Controller->GetFocalLocation();
-            SendPeerFrame(*Channel, View, Now);
+            // 连接预算已预留引擎分片包头 继续为远程调用字段头保留空间
+            constexpr int32 MotionRpcEnvelopeBytes = 16;
+            const int32 MotionBudgetBytes = FMath::Min(FBBBMonsterStreamBatch::MotionBytes,
+                Connection->GetMaxSingleBunchSizeBits() / 8 - MotionRpcEnvelopeBytes);
+            SendPeerFrame(*Channel, View, Now, MotionBudgetBytes);
         }
     }
 
@@ -345,7 +349,7 @@ void ABBBMassNetworkActor::EndPublish()
     TRACE_COUNTER_SET(BBBMonsterStreamPeers, PeerChannels.Num());
 }
 
-void ABBBMassNetworkActor::SendPeerFrame(ABBBMonsterStreamChannel& Channel, const FVector& View, float Now)
+void ABBBMassNetworkActor::SendPeerFrame(ABBBMonsterStreamChannel& Channel, const FVector& View, float Now, int32 MotionBudgetBytes)
 {
     TRACE_CPUPROFILER_EVENT_SCOPE(BBBMonsterSendPeerFrame);
     if (Channel.CanSendReliable())
@@ -490,7 +494,7 @@ void ABBBMassNetworkActor::SendPeerFrame(ABBBMonsterStreamChannel& Channel, cons
     }
 
     auto* Motion = Channel.MotionChannel.Get();
-    if (!Motion || Monsters.IsEmpty())
+    if (!Motion || MotionBudgetBytes <= 0 || Monsters.IsEmpty())
     {
         return;
     }
@@ -514,7 +518,7 @@ void ABBBMassNetworkActor::SendPeerFrame(ABBBMonsterStreamChannel& Channel, cons
                     Channel.MotionCursor = (Index + 1) % Monsters.Num();
                     continue;
                 }
-                if (!Batch.TryAdd(MakeActionRecord(State, ERecord::Motion), FBBBMonsterStreamBatch::MotionBytes))
+                if (!Batch.TryAdd(MakeActionRecord(State, ERecord::Motion), MotionBudgetBytes))
                 {
                     break;
                 }

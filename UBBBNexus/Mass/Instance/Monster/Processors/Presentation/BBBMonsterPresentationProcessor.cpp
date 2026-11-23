@@ -9,12 +9,14 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Movement/BBBMonsterAvoidanceFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationStateFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterPresentationSmoothingFragment.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Math/RandomStream.h"
 #include "Misc/App.h"
 #include "MassActorSubsystem.h"
 #include "MassExecutionContext.h"
 #include "MassMovementFragments.h"
+#include "MassLODFragments.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterPresentationComponent.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterPresentationStateProcessor.h"
@@ -56,6 +58,7 @@ UBBBMonsterPresentationProcessor::UBBBMonsterPresentationProcessor()
 void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
     MonsterQuery.AddRequirement<FMassActorFragment>(EMassFragmentAccess::ReadWrite);
+    MonsterQuery.AddRequirement<FMassViewerInfoFragment>(EMassFragmentAccess::ReadOnly, EMassFragmentPresence::Optional);
     MonsterQuery.AddRequirement<FBBBMonsterHitReactionFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterMobilityFragment>(EMassFragmentAccess::ReadOnly);
     MonsterQuery.AddRequirement<FBBBMonsterNetworkFragment>(EMassFragmentAccess::ReadOnly);
@@ -152,6 +155,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
         const auto Traversals = ChunkContext.GetFragmentView<FBBBMonsterTraversalFragment>();
         const auto Grounds = ChunkContext.GetFragmentView<FBBBMonsterGroundFragment>();
         const auto Health = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>();
+        const auto Viewers = ChunkContext.GetFragmentView<FMassViewerInfoFragment>();
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
@@ -262,7 +266,28 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 MonsterActor->SetBurningPresentation(false);
                 continue;
             }
-            const auto* BodyMesh = MonsterActor->GetMonsterMesh();
+            auto* BodyMesh = MonsterActor->GetMonsterMesh();
+            const auto Behavior = PresentationState.State;
+            const bool bOrdinaryMovement = Behavior == EBBBMonsterBehavior::Idle
+                || Behavior == EBBBMonsterBehavior::Patrol || Behavior == EBBBMonsterBehavior::Chase;
+            if (Behavior != EBBBMonsterBehavior::Dead)
+            {
+                const bool bScreenPose = !Viewers.IsEmpty() && Viewers[Index].ClosestViewerDistanceSq > FMath::Square(3500.0f)
+                    && !bNewActor && bOrdinaryMovement && Traversals[Index].Fact.Kind == 0 && !Mobility.bCrawling
+                    && !Mobility.IsStaggering(Now) && !Mobility.IsShocked(Now) && HitReactions[Index].Age > 0.5f
+                    && !Health[Index].bBurning && Health[Index].DestroyedParts == 0 && CurrentSpecialFact.Phase == 0;
+                // 遮挡后的远处身体保留最后一帧姿势 逻辑动画进度仍按 Mass 的当前事实推进
+                BodyMesh->bUseScreenRenderStateForUpdate = bScreenPose;
+                BodyMesh->VisibilityBasedAnimTickOption = bScreenPose
+                    ? EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered
+                    : EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+            }
+            if (Behavior == EBBBMonsterBehavior::Dead && BodyMesh->bUseScreenRenderStateForUpdate)
+            {
+                // 死亡首次采样需要完整骨骼姿态 布娃娃仍由原有生命周期管理
+                BodyMesh->bUseScreenRenderStateForUpdate = false;
+                BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+            }
             MonsterActor->SetBurningPresentation(Health[Index].bBurning && Health[Index].CurrentHealth > 0.0f
                 && !MonsterActor->IsHidden() && BodyMesh->WasRecentlyRendered(0.35f)
                 && BodyMesh->GetPredictedLODLevel() <= 2);
