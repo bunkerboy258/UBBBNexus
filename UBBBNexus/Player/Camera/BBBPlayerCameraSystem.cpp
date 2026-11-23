@@ -67,16 +67,17 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
         && FMath::IsFinite(AimFieldOfView) && AimFieldOfView >= 30.0f && AimFieldOfView < HipFieldOfView
         && FMath::IsFinite(HipShoulderOffset) && HipShoulderOffset >= 0.0f
         && FMath::IsFinite(AimShoulderOffset) && AimShoulderOffset >= 0.0f
-        && FMath::IsFinite(AimBoomInterpSpeed) && AimBoomInterpSpeed > 0.0f,
+        && FMath::IsFinite(HipPivotHeight) && FMath::IsFinite(AimPivotHeight)
+        && FMath::IsFinite(AimCrouchPivotDrop) && AimCrouchPivotDrop >= 0.0f
+        && FMath::IsFinite(AimBlendDuration) && AimBlendDuration > 0.0f
+        && FMath::IsFinite(AimFocusDistance) && AimFocusDistance >= 100.0f
+        && FMath::IsFinite(AimDepthOfFieldFStop) && AimDepthOfFieldFStop >= 1.0f && AimDepthOfFieldFStop <= 32.0f,
         TEXT("[BBBCamera]相机构图配置无效"));
-    Boom->TargetArmLength = HipArmLength;
-    Boom->TargetOffset.Y = 0.0f;
-    Boom->SocketOffset.Y = HipShoulderOffset;
     Boom->bDoCollisionTest = true;
-    FVector CameraRelativeLocation = Camera->GetRelativeLocation();
-    CameraRelativeLocation.Y = 0.0f;
-    Camera->SetRelativeLocation(CameraRelativeLocation);
-    Camera->SetFieldOfView(HipFieldOfView);
+    Camera->SetRelativeLocation(FVector::ZeroVector);
+    AimBlendProgress = 0.0f;
+    ApplyComposition(0.0f, 0.0f);
+
     ensureMsgf(FMath::IsFinite(StanceHeightBlendDuration) && StanceHeightBlendDuration > 0.0f,
         TEXT("[BBBCamera]站蹲高度过渡时间必须为有限正数"));
     SmoothedCapsuleHalfHeight = InCharacter.GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
@@ -84,6 +85,36 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
     CapsuleHeightBlendTarget = SmoothedCapsuleHalfHeight;
     CapsuleHeightBlendElapsed = 0.0f;
     SetActorLocationAndRotation(InCharacter.GetActorLocation(), InController.GetControlRotation());
+}
+
+void ABBBPlayerCameraSystem::ApplyComposition(const float AimAlpha, const float CrouchAlpha)
+{
+    const float AimHeight = AimPivotHeight - AimCrouchPivotDrop * CrouchAlpha;
+    Boom->TargetArmLength = FMath::Lerp(HipArmLength, AimArmLength, AimAlpha);
+    Boom->TargetOffset = FVector(0.0f, 0.0f, FMath::Lerp(HipPivotHeight, AimHeight, AimAlpha));
+    Boom->SocketOffset = FVector(0.0f, FMath::Lerp(HipShoulderOffset, AimShoulderOffset, AimAlpha), 0.0f);
+    Camera->SetFieldOfView(FMath::Lerp(HipFieldOfView, AimFieldOfView, AimAlpha));
+
+    if (!Controller.IsValid() || !Controller->IsLocalController())
+    {
+        return;
+    }
+
+    const bool bApplyAimDepthOfField = AimAlpha > UE_KINDA_SMALL_NUMBER;
+    FPostProcessSettings &PostProcess = Camera->PostProcessSettings;
+    PostProcess.bOverride_DepthOfFieldEnabled = bApplyAimDepthOfField;
+    PostProcess.bOverride_DepthOfFieldFocalDistance = bApplyAimDepthOfField;
+    PostProcess.bOverride_DepthOfFieldFstop = bApplyAimDepthOfField;
+    PostProcess.bOverride_DepthOfFieldDepthBlurRadius = bApplyAimDepthOfField;
+    if (bApplyAimDepthOfField)
+    {
+        // 景深随镜头进度变化 对焦距离独立于准星射线的命中深度
+        constexpr float ClosedFStop = 32.0f;
+        PostProcess.DepthOfFieldEnabled = true;
+        PostProcess.DepthOfFieldFocalDistance = AimFocusDistance;
+        PostProcess.DepthOfFieldFstop = 1.0f / FMath::Lerp(1.0f / ClosedFStop, 1.0f / AimDepthOfFieldFStop, AimAlpha);
+        PostProcess.DepthOfFieldDepthBlurRadius = 0.0f;
+    }
 }
 
 void ABBBPlayerCameraSystem::Submit(const FBBBPlayerCameraInput &Packet)

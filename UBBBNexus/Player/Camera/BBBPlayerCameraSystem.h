@@ -53,6 +53,10 @@ public:
 
 private:
     friend class FBBBPlayerCameraImpulseProcessor;
+
+    /** 根据瞄准和站蹲进度应用构图与本机景深 */
+    void ApplyComposition(float AimAlpha, float CrouchAlpha);
+
     /** 仅本地玩家视图使用的可见内侧轮廓材质 */
     UPROPERTY(EditDefaultsOnly, Category = "相机|角色可读性", meta = (DisplayName = "角色内侧轮廓材质"))
     TSoftObjectPtr<UMaterialInterface> InnerOutlineMaterial;
@@ -65,28 +69,45 @@ private:
     TObjectPtr<UCameraComponent> Camera;
     /** 常态相机臂长度 单位厘米 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "1.0", DisplayName = "常态相机臂长度"))
-    float HipArmLength = 410.0f;
+    float HipArmLength = 365.0f;
     /** 瞄准相机臂长度 单位厘米 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "1.0", DisplayName = "瞄准相机臂长度"))
-    float AimArmLength = 225.0f;
+    float AimArmLength = 155.0f;
     /** 常态镜头水平视角 单位度 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "30.0", ClampMax = "120.0", DisplayName = "常态水平视角"))
-    float HipFieldOfView = 80.0f;
+    float HipFieldOfView = 78.0f;
     /** 瞄准镜头水平视角 单位度 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "30.0", ClampMax = "120.0", DisplayName = "瞄准水平视角"))
-    float AimFieldOfView = 66.0f;
+    float AimFieldOfView = 62.0f;
     /** 常态镜头向右偏移 单位厘米 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.0", DisplayName = "常态肩位偏移"))
-    float HipShoulderOffset = 65.0f;
+    float HipShoulderOffset = 48.0f;
     /** 瞄准镜头向右偏移 单位厘米 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.0", DisplayName = "瞄准肩位偏移"))
-    float AimShoulderOffset = 58.0f;
-    /** 瞄准距离切换速度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机", meta = (ClampMin = "0.1", DisplayName = "瞄准相机臂插值速度"))
-    float AimBoomInterpSpeed = 12.0f;
+    float AimShoulderOffset = 60.0f;
+    /** 常态镜头枢轴相对胶囊中心的高度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (DisplayName = "常态枢轴高度"))
+    float HipPivotHeight = 91.0f;
+    /** 站立瞄准的镜头枢轴相对胶囊中心的高度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (DisplayName = "瞄准枢轴高度"))
+    float AimPivotHeight = 58.0f;
+    /** 蹲伏瞄准在胶囊中心随姿态下降后额外降低的枢轴高度 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (ClampMin = "0.0", DisplayName = "蹲伏瞄准额外降幅"))
+    float AimCrouchPivotDrop = 20.0f;
+    /** 举枪或收枪时相机构图完整过渡的时间 单位秒 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (ClampMin = "0.01", DisplayName = "举枪收枪过渡时间"))
+    float AimBlendDuration = 0.20f;
+    /** 瞄准时从镜头量起的景深对焦距离 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|景深", meta = (ClampMin = "100.0", DisplayName = "瞄准对焦距离"))
+    float AimFocusDistance = 1800.0f;
+    /** 瞄准景深的光圈值 数值越大近景模糊越弱 */
+    UPROPERTY(EditDefaultsOnly, Category = "相机|景深", meta = (ClampMin = "1.0", ClampMax = "32.0", DisplayName = "瞄准景深光圈"))
+    float AimDepthOfFieldFStop = 2.8f;
     /** 胶囊高度变化的镜头过渡时间 单位秒 */
     UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.01", DisplayName = "站蹲高度过渡时间"))
     float StanceHeightBlendDuration = 0.2f;
+    /** 瞄准过渡的线性进度 取值从零到一 */
+    float AimBlendProgress = 0.0f;
     /** 当前平滑后的胶囊参考高度 */
     float SmoothedCapsuleHalfHeight = 0.0f;
     /** 本次高度过渡起点 */

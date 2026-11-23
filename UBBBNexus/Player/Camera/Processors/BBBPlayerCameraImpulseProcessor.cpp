@@ -2,9 +2,7 @@
 
 #include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -101,22 +99,13 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
 
     const bool bAiming = CameraSystem.Character->RuntimeData.Life.ReadLifeState().bActionsAllowed
         && CameraSystem.Character->RuntimeData.Parse.ReadControlState().bAim;
-    CameraSystem.Boom->TargetArmLength = FMath::FInterpTo(
-        CameraSystem.Boom->TargetArmLength,
-        bAiming ? CameraSystem.AimArmLength : CameraSystem.HipArmLength,
-        DeltaSeconds,
-        CameraSystem.AimBoomInterpSpeed);
-    CameraSystem.Boom->SocketOffset.Y = FMath::FInterpTo(
-        CameraSystem.Boom->SocketOffset.Y,
-        bAiming ? CameraSystem.AimShoulderOffset : CameraSystem.HipShoulderOffset,
-        DeltaSeconds,
-        CameraSystem.AimBoomInterpSpeed);
-    CameraSystem.Camera->SetFieldOfView(FMath::FInterpTo(
-        CameraSystem.Camera->FieldOfView,
-        bAiming ? CameraSystem.AimFieldOfView : CameraSystem.HipFieldOfView,
-        DeltaSeconds,
-        CameraSystem.AimBoomInterpSpeed));
-    const float CapsuleHalfHeight = CameraSystem.Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    CameraSystem.AimBlendProgress = FMath::FInterpConstantTo(
+        CameraSystem.AimBlendProgress, bAiming ? 1.0f : 0.0f, FMath::Max(DeltaSeconds, 0.0f),
+        1.0f / FMath::Max(CameraSystem.AimBlendDuration, 0.01f));
+    const float AimAlpha = FMath::SmoothStep(0.0f, 1.0f, CameraSystem.AimBlendProgress);
+
+    const UCapsuleComponent *Capsule = CameraSystem.Character->GetCapsuleComponent();
+    const float CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
     if (CapsuleHalfHeight != CameraSystem.CapsuleHeightBlendTarget)
     {
         CameraSystem.CapsuleHeightBlendStart = CameraSystem.SmoothedCapsuleHalfHeight;
@@ -131,6 +120,15 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         CameraSystem.CapsuleHeightBlendElapsed / BlendDuration);
     CameraSystem.SmoothedCapsuleHalfHeight = FMath::Lerp(
         CameraSystem.CapsuleHeightBlendStart, CameraSystem.CapsuleHeightBlendTarget, HeightAlpha);
+
+    const auto &Locomotion = CameraSystem.Character->GetCharacterConfig().Locomotion;
+    const float ShapeScale = Capsule->GetShapeScale();
+    const float StandingHeight = Locomotion.CapsuleHalfHeight * ShapeScale;
+    const float CrouchedHeight = Locomotion.CrouchedHalfHeight * ShapeScale;
+    const float CrouchAlpha = FMath::Clamp(
+        (StandingHeight - CameraSystem.SmoothedCapsuleHalfHeight) / FMath::Max(StandingHeight - CrouchedHeight, 1.0f),
+        0.0f, 1.0f);
+    CameraSystem.ApplyComposition(AimAlpha, CrouchAlpha);
 
     // 抵消胶囊中心的瞬时高度变化 仅保留姿态高度的平滑过渡
     FVector CameraLocation = CameraSystem.Character->GetActorLocation();
