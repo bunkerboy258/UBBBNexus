@@ -5,7 +5,9 @@
 #include "BBBWork/UBBBNexus/Mass/Network/BBBMassNetworkActor.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterBodyPartDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
@@ -15,15 +17,53 @@
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraDataChannelFunctionLibrary.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 namespace
 {
+    constexpr int32 FragmentPenetrations = 5;
+
+    void BuildFragmentDirections(UWorld& World, const AActor& Actor, const FVector& Origin, float BodyRadius,
+        int32 FragmentCount, uint32 Seed, FQuat& OutRotation, TArray<FVector>& OutLocalDirections)
+    {
+        FHitResult Ground;
+        const FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(BBBThrowableFragmentGround), false, &Actor);
+        const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
+        const bool bGrounded = World.LineTraceSingleByObjectType(Ground, Origin,
+            Origin - FVector::UpVector * (BodyRadius * 1.5f + 2.0f), StaticWorld, GroundParams)
+            && Ground.ImpactNormal.Z >= 0.45f;
+        OutRotation = bGrounded
+            ? FQuat::FindBetweenNormals(FVector::UpVector, Ground.ImpactNormal)
+            : FQuat::Identity;
+
+        // 空中覆盖完整球面 贴地时将等面积采样限制在支撑面外侧。
+        FRandomStream Random(Seed);
+        const double StartAngle = Random.FRand() * UE_TWO_PI;
+        constexpr double GoldenAngle = 2.399963229728653;
+        OutLocalDirections.Reset(FragmentCount);
+        for (int32 Index = 0; Index < FragmentCount; ++Index)
+        {
+            const double HeightFraction = (Index + 0.5) / FragmentCount;
+            const double Z = 1.0 - HeightFraction * (bGrounded ? 1.0 : 2.0);
+            const double XY = FMath::Sqrt(1.0 - Z * Z);
+            const double Angle = StartAngle + Index * GoldenAngle;
+            OutLocalDirections.Emplace(XY * FMath::Cos(Angle), XY * FMath::Sin(Angle), Z);
+        }
+    }
+
     void QueueFragments(UBBBMassSubsystem& Mass, ABBBThrowable& Actor, const FBBBThrowableExplosionConfig& Config,
         const FBBBThrowableExplosionFact& Fact, float BodyRadius, const FGuid& AttackId,
         const TSharedPtr<FBBBProjectileWorldBurst>& Burst)
     {
+        UWorld& World = *Actor.GetWorld();
+        if (World.GetNetMode() != NM_DedicatedServer && Config.FragmentImpactChannel)
+        {
+            UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
+        }
+
         FBBBProjectileSpawnLocalControlPacket Packet;
         Packet.LaunchTransform.SetLocation(Fact.Position);
         Packet.Speed = 50000.0f;
@@ -32,43 +72,114 @@ namespace
         Packet.DurableDamage = Config.DurableDamage;
         Packet.StaggerValue = Config.Stagger;
         Packet.Radius = 0.0f;
-        Packet.Penetrations = 5;
+        Packet.Penetrations = FragmentPenetrations;
         Packet.PenetrationMultiplier = 0.70f;
         Packet.Source = &Actor;
         Packet.Pawn = Actor.GetInstigator();
         Packet.bDamageInstigator = Config.bDamageSelf;
         Packet.AttackId = AttackId;
         Packet.AttackTime = Fact.Time;
+        Packet.ImpactChannel = Config.FragmentImpactChannel.Get();
         Packet.bCanCauseDamage = true;
         Packet.WorldBurst = Burst;
 
-        FHitResult Ground;
-        const FCollisionQueryParams GroundParams(SCENE_QUERY_STAT(BBBThrowableFragmentGround), false, &Actor);
-        const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
-        const bool bGrounded = Actor.GetWorld()->LineTraceSingleByObjectType(Ground, Fact.Position,
-            Fact.Position - FVector::UpVector * (BodyRadius * 1.5f + 2.0f), StaticWorld, GroundParams)
-            && Ground.ImpactNormal.Z >= 0.45f;
-        if (bGrounded)
-        {
-            Packet.LaunchTransform.SetRotation(FQuat::FindBetweenNormals(FVector::UpVector, Ground.ImpactNormal));
-        }
+        FQuat Rotation = FQuat::Identity;
+        TArray<FVector> LocalDirections;
+        BuildFragmentDirections(World, Actor, Fact.Position, BodyRadius, Config.FragmentCount,
+            GetTypeHash(AttackId), Rotation, LocalDirections);
+        Packet.LaunchTransform.SetRotation(Rotation);
 
-        // 空中覆盖完整球面 贴地时将等面积采样限制在支撑面外侧。
-        FRandomStream Random(GetTypeHash(AttackId));
-        const double StartAngle = Random.FRand() * UE_TWO_PI;
-        constexpr double GoldenAngle = 2.399963229728653;
         TArray<FBBBProjectileSpawnLocalControlPacket> Packets;
-        Packets.Reserve(Config.FragmentCount);
-        for (int32 Index = 0; Index < Config.FragmentCount; ++Index)
+        Packets.Reserve(LocalDirections.Num());
+        for (const FVector& LocalDirection : LocalDirections)
         {
-            const double HeightFraction = (Index + 0.5) / Config.FragmentCount;
-            const double Z = 1.0 - HeightFraction * (bGrounded ? 1.0 : 2.0);
-            const double XY = FMath::Sqrt(1.0 - Z * Z);
-            const double Angle = StartAngle + Index * GoldenAngle;
-            Packet.LocalDirection = FVector(XY * FMath::Cos(Angle), XY * FMath::Sin(Angle), Z);
+            Packet.LocalDirection = LocalDirection;
             Packets.Add(Packet);
         }
         Mass.QueueProjectileSpawnBatch(*Config.FragmentEntityConfig, MoveTemp(Packets));
+    }
+
+    void PresentClientFragmentImpacts(UWorld& World, ABBBThrowable& Actor, const UBBBThrowableDefinition& Definition,
+        const FBBBThrowableExplosionFact& Fact)
+    {
+        const auto& Config = Definition.Explosion;
+        const auto& Presentation = Definition.Presentation;
+        if (Config.FragmentCount <= 0 || (!Config.FragmentImpactChannel && !Presentation.FragmentImpactEffect))
+        {
+            return;
+        }
+
+        FQuat Rotation = FQuat::Identity;
+        TArray<FVector> LocalDirections;
+        BuildFragmentDirections(World, Actor, Fact.Position, Definition.Physics.Radius, Config.FragmentCount,
+            GetTypeHash(Fact.Position), Rotation, LocalDirections);
+
+        UBBBMassSubsystem* Mass = World.GetSubsystem<UBBBMassSubsystem>();
+        TArray<FBBBProjectileImpact> Impacts;
+        Impacts.Reserve(LocalDirections.Num());
+
+        for (const FVector& LocalDirection : LocalDirections)
+        {
+            const FVector Direction = Rotation.RotateVector(LocalDirection).GetSafeNormal();
+            FVector Start = Fact.Position;
+            const FVector End = Fact.Position + Direction * Config.Radius;
+            FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableFragmentPresentation), false, &Actor);
+            Params.bReturnPhysicalMaterial = true;
+            if (!Config.bDamageSelf)
+            {
+                Params.AddIgnoredActor(Actor.GetInstigator());
+            }
+
+            TArray<FMassEntityHandle, TInlineAllocator<8>> IgnoredEntities;
+            for (int32 Attempt = 0; Attempt <= FragmentPenetrations && !Start.Equals(End, UE_SMALL_NUMBER); ++Attempt)
+            {
+                FHitResult WorldHit;
+                const bool bWorldHit = World.LineTraceSingleByChannel(WorldHit, Start, End, ECC_Pawn, Params);
+
+                FMassEntityHandle Target;
+                float EntityTime = 1.0f;
+                FBBBProjectileImpact Impact;
+                uint8 HitPart = 0;
+                const bool bEntityHit = Mass && Mass->TraceEntities(Start, End, 0.0f, IgnoredEntities,
+                    Target, EntityTime, Impact.Position, Impact.Normal, Impact.Surface, HitPart);
+                const bool bUseEntity = bEntityHit && (!bWorldHit || EntityTime < WorldHit.Time);
+                if (!bUseEntity && !bWorldHit)
+                {
+                    break;
+                }
+
+                if (!bUseEntity)
+                {
+                    Impact.Position = WorldHit.ImpactPoint;
+                    Impact.Normal = WorldHit.ImpactNormal;
+                    Impact.Surface = UPhysicalMaterial::DetermineSurfaceType(WorldHit.PhysMaterial.Get());
+                    Params.AddIgnoredActor(WorldHit.GetActor());
+                }
+                else
+                {
+                    IgnoredEntities.Add(Target);
+                }
+
+                Impacts.Add(Impact);
+                const bool bPenetrable = bUseEntity || Cast<APawn>(WorldHit.GetActor()) != nullptr;
+                if (!bPenetrable)
+                {
+                    break;
+                }
+                Start = Impact.Position + Direction;
+            }
+        }
+
+        if (Config.FragmentImpactChannel)
+        {
+            UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
+            FBBBProjectilePresentation::PublishImpacts(World, *Config.FragmentImpactChannel, Impacts);
+        }
+        if (Presentation.FragmentImpactEffect)
+        {
+            FBBBProjectilePresentation::SpawnImpactEffects(
+                World, *Presentation.FragmentImpactEffect, Presentation.FragmentImpactScale, Impacts);
+        }
     }
 }
 
@@ -111,6 +222,8 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
             Burst = MakeShared<FBBBProjectileWorldBurst>();
             Burst->PlayerId = Fact.PlayerId;
             Burst->bDamagePlayers = Config.bDamagePlayers;
+            Burst->ImpactEffect = Definition->Presentation.FragmentImpactEffect;
+            Burst->ImpactScale = Definition->Presentation.FragmentImpactScale;
         }
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableExplosion), false, &Actor);
         Params.AddIgnoredActor(Actor.GetInstigator());
@@ -290,6 +403,10 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 UGameplayStatics::PlaySoundAtLocation(&World, Definition->Presentation.ExplosionSound,
                                                       State.Fact.Position, FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f,
                                                       Definition->Presentation.ExplosionAttenuation);
+            }
+            if (World.GetNetMode() == NM_Client)
+            {
+                PresentClientFragmentImpacts(World, Actor, *Definition, State.Fact);
             }
         }
     }

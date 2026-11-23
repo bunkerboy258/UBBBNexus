@@ -4,6 +4,8 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/Explosion/BBBThrowableAreaConfig.h"
 #include "BBBThrowableExplosionConfig.generated.h"
 
+class UNiagaraDataChannelAsset;
+
 /** 投掷物Explosion静态配置 */
 USTRUCT(BlueprintType)
 struct FBBBThrowableExplosionConfig final
@@ -33,6 +35,10 @@ struct FBBBThrowableExplosionConfig final
     /** 破片使用的 Mass 子弹实体模板 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "破片实体模板"))
     TObjectPtr<UMassEntityConfigAsset> FragmentEntityConfig = nullptr;
+
+    /** 破片命中时发布的批量表面反馈通道 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "破片命中数据通道"))
+    TObjectPtr<UNiagaraDataChannelAsset> FragmentImpactChannel = nullptr;
 
     /** 范围爆炸中心或单发破片的普通伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "普通伤害", ToolTip = "范围爆炸中心或单发破片的普通伤害", ClampMin = "0"))

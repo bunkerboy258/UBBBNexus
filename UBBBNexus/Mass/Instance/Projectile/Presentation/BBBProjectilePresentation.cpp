@@ -6,6 +6,8 @@
 #include "NiagaraDataChannel.h"
 #include "NiagaraDataChannelHandler.h"
 #include "NiagaraDataChannelData.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "Misc/App.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
@@ -141,5 +143,23 @@ void FBBBProjectilePresentation::PublishImpacts(UWorld& World, UNiagaraDataChann
             Writer->WriteVector(TEXT("Normal"), Index, Impact.Normal);
             Writer->WriteInt(TEXT("Surface"), Index, static_cast<int32>(Impact.Surface));
         }
+    }
+}
+
+void FBBBProjectilePresentation::SpawnImpactEffects(UWorld& World, UNiagaraSystem& Effect, float Scale,
+    TConstArrayView<FBBBProjectileImpact> Impacts)
+{
+    if (Impacts.IsEmpty() || World.GetNetMode() == NM_DedicatedServer || !FApp::CanEverRender())
+    {
+        return;
+    }
+
+    const FVector EffectScale(Scale);
+    for (const FBBBProjectileImpact& Impact : Impacts)
+    {
+        const FRotator Rotation = Impact.Normal.IsNearlyZero() ? FRotator::ZeroRotator : Impact.Normal.Rotation();
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            &World, &Effect, Impact.Position, Rotation, EffectScale,
+            true, true, ENCPoolMethod::AutoRelease);
     }
 }

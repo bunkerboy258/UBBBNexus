@@ -237,6 +237,10 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 ImpactChannel = Presentation.ImpactChannel;
                 Impacts.Add(Impact);
             }
+            if (Data.WorldBurst && Data.WorldBurst->ImpactEffect.IsValid())
+            {
+                Data.WorldBurst->Impacts.Add(Impact);
+            }
             if (Data.ExplosionRadiusCm > 0.0f)
             {
                 Transform.GetMutableTransform().SetLocation(HitPosition + Impact.Normal * 0.1f);
@@ -428,6 +432,11 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
         for (auto& Entry : Burst->ActorHits)
         {
             BBBHitReceiver::SubmitBatch(Entry.Key.Get(), MoveTemp(Entry.Value));
+        }
+        if (Burst->ImpactEffect.IsValid())
+        {
+            FBBBProjectilePresentation::SpawnImpactEffects(
+                *World, *Burst->ImpactEffect.Get(), Burst->ImpactScale, Burst->Impacts);
         }
     }
 
