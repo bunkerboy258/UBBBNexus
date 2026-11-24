@@ -42,8 +42,10 @@ public:
 
     /** @return 不打断声线的地面接触声道 */
     UAudioComponent* GetMonsterContactAudio() const;
-    /** @param bBurning 当前存活身体是否应显示着火 @return 无 */
+    /** @param bBurning 当前身体是否应显示着火 @return 无 */
     void SetBurningPresentation(bool bBurning);
+    /** @return 当前身体是否已激活着火粒子 */
+    bool HasBurningPresentation() const;
 
     /**
      * 隐藏或回收表现演员时停止声音

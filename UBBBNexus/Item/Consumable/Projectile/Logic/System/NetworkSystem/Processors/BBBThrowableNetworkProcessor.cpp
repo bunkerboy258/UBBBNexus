@@ -33,7 +33,16 @@ void PublishFlash(ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Fact)
         FRotator View;
         Pawn->GetActorEyesViewPoint(Eye, View);
         const float Distance = FVector::Distance(Fact.Position, Eye);
-        if (Distance >= Config.Radius)
+        const float VisualRadius = FMath::Max(Config.Radius * 3.5f, 3500.0f);
+        if (Distance >= VisualRadius)
+        {
+            continue;
+        }
+
+        const FVector Direction = (Fact.Position - Eye).GetSafeNormal();
+        const float Facing = FMath::Max(0.0, FVector::DotProduct(View.Vector(), Direction));
+        constexpr float DirectViewCos = 0.35f;
+        if (Distance >= Config.Radius && Facing <= DirectViewCos)
         {
             continue;
         }
@@ -45,10 +54,22 @@ void PublishFlash(ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Fact)
             continue;
         }
 
-        const FVector Direction = (Fact.Position - Eye).GetSafeNormal();
-        const float Facing = FMath::Max(0.0, FVector::DotProduct(View.Vector(), Direction));
-        const float DistanceFactor = 1.0f - FMath::Pow(Distance / Config.Radius, 1.5f);
-        const float Strength = FMath::Clamp(DistanceFactor * FMath::Lerp(0.45f, 1.50f, Facing), 0.0f, 1.0f);
+        float NearStrength = 0.0f;
+        if (Distance < Config.Radius)
+        {
+            const float NearFactor = 1.0f - FMath::Pow(Distance / Config.Radius, 1.5f);
+            NearStrength = NearFactor * FMath::Lerp(0.45f, 1.50f, Facing);
+        }
+
+        float VisualStrength = 0.0f;
+        if (Facing > DirectViewCos)
+        {
+            const float ViewAlpha = FMath::Clamp((Facing - DirectViewCos) / (1.0f - DirectViewCos), 0.0f, 1.0f);
+            const float FarFactor = FMath::Lerp(1.0f, 0.28f, FMath::Clamp(Distance / VisualRadius, 0.0f, 1.0f));
+            VisualStrength = FarFactor * FMath::Lerp(0.35f, 1.0f, ViewAlpha);
+        }
+
+        const float Strength = FMath::Clamp(FMath::Max(NearStrength, VisualStrength), 0.0f, 1.0f);
         const float Duration = Config.FlashSeconds * FMath::Lerp(0.55f, 1.0f, Strength);
         const float HoldSeconds = Strength >= 0.55f
             ? Duration * FMath::Lerp(0.18f, 0.40f, (Strength - 0.55f) / 0.45f)

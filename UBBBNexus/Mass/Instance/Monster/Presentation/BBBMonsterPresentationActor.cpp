@@ -30,9 +30,9 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     SetRootComponent(Root);
     MonsterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MonsterMesh"));
     MonsterMesh->BodyInstance.SetOverrideIterationCounts(true);
-    MonsterMesh->BodyInstance.SetPositionSolverIterationCount(32);
-    MonsterMesh->BodyInstance.SetVelocitySolverIterationCount(8);
-    MonsterMesh->BodyInstance.SetProjectionSolverIterationCount(8);
+    MonsterMesh->BodyInstance.SetPositionSolverIterationCount(8);
+    MonsterMesh->BodyInstance.SetVelocitySolverIterationCount(2);
+    MonsterMesh->BodyInstance.SetProjectionSolverIterationCount(2);
     MonsterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     MonsterMesh->SetGenerateOverlapEvents(false);
     MonsterMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -142,11 +142,24 @@ void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
     }
 }
 
+bool ABBBMonsterPresentationActor::HasBurningPresentation() const
+{
+    return BurningEffect != nullptr;
+}
+
 void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
 {
     if (!bBurning && BurningEffect)
     {
-        BurningEffect->DestroyComponent();
+        if (BurningEffect->PoolingMethod == ENCPoolMethod::ManualRelease)
+        {
+            BurningEffect->DeactivateImmediate();
+            BurningEffect->ReleaseToPool();
+        }
+        else
+        {
+            BurningEffect->DestroyComponent();
+        }
         BurningEffect = nullptr;
     }
     if (!bBurning || BurningEffect || !BurningSystem || !MonsterMesh)
@@ -157,5 +170,10 @@ void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
     const bool bHasSpine = MonsterMesh->DoesSocketExist(Spine);
     BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
         bHasSpine ? Spine : NAME_None, bHasSpine ? FVector::ZeroVector : FVector(0.0, 0.0, 75.0),
-        FRotator::ZeroRotator, FVector(1.4), EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::None);
+        FRotator::ZeroRotator, FVector(1.4), EAttachLocation::KeepRelativeOffset, false,
+        ENCPoolMethod::ManualRelease);
+    if (BurningEffect && !BurningEffect->IsActive())
+    {
+        BurningEffect->Activate(true);
+    }
 }

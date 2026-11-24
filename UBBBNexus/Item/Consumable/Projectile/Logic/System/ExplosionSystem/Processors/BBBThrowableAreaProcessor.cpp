@@ -60,6 +60,35 @@ bool HasEarlierArea(const ABBBThrowable& Actor, const FBBBThrowableExplosionFact
     }
     return false;
 }
+
+/** 避免过近的多个燃烧区域叠加双倍半透明火海特效 */
+bool HasNearbyFireEffect(const ABBBThrowable& Actor, const FBBBThrowableExplosionFact& Current,
+    const FBBBThrowableAreaConfig& Area, double Now)
+{
+    const double MinDistSq = FMath::Square(Area.Radius * 0.5);
+    for (TActorIterator<ABBBThrowable> It(Actor.GetWorld()); It; ++It)
+    {
+        const ABBBThrowable* Other = *It;
+        const auto* Definition = Other->GetDefinition();
+        if (Other == &Actor || !Definition || Definition->Explosion.Area.bObscuresSight
+            || Definition->Explosion.Area.Damage <= 0.0f)
+        {
+            continue;
+        }
+        const auto& Fact = Other->RuntimeData.Explosion.ReadExplosionState().Fact;
+        if (!Fact.bHasArea || Now >= Fact.Time + Definition->Explosion.Area.Duration
+            || Fact.Time > Current.Time
+            || (Fact.Time == Current.Time && Other->GetUniqueID() > Actor.GetUniqueID()))
+        {
+            continue;
+        }
+        if (FVector::DistSquared2D(Fact.AreaGround, Current.AreaGround) < MinDistSq)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 }
 
 void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
@@ -100,7 +129,8 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     const double FadeTime = Area.bObscuresSight ? 2.8 : 0.7;
     const double SpawnDelay = Definition->Presentation.ExplosionEffect ? 0.03 : 0.0;
     const bool bCreateEffect = World.GetNetMode() != NM_DedicatedServer && Age >= SpawnDelay && Remaining > FadeTime &&
-        !Actor.AreaEffect && Definition->Presentation.AreaEffect;
+        !Actor.AreaEffect && Definition->Presentation.AreaEffect
+        && (Area.bObscuresSight || !HasNearbyFireEffect(Actor, Fact, Area, Now));
     if (bCreateEffect)
     {
         Actor.AreaEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.AreaEffect,

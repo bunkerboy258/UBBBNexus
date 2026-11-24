@@ -97,8 +97,9 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     const bool bStandalone = World->GetNetMode() == NM_Standalone;
     const uint32 WorldIdentity = World->GetUniqueID();
     int32 ActiveCorpses = 0;
+    int32 ActiveBurningVfx = 0;
     int32 BodyActors = 0;
-    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses, &BodyActors](FMassExecutionContext& Chunk)
+    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses, &ActiveBurningVfx, &BodyActors](FMassExecutionContext& Chunk)
     {
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
@@ -106,6 +107,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
         {
             auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
             BodyActors += Actor != nullptr ? 1 : 0;
+            ActiveBurningVfx += (Actor && Actor->HasBurningPresentation()) ? 1 : 0;
             auto* Presentation = Actor ? Actor->GetMonsterPresentation() : nullptr;
             const auto* Definition = Network[Index].Definition.Get();
             if (Presentation && Definition && Definition->Presentation && Presentation->IsCorpseSimulating())
@@ -118,6 +120,8 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     TRACE_COUNTER_SET(BBBMonsterBodyActors, BodyActors);
     TRACE_COUNTER_SET(BBBMonsterSimulatingCorpses, ActiveCorpses);
     int32 PreparationBudget = World->GetNetMode() != NM_DedicatedServer && FApp::CanEverRender() ? 2 : 0;
+    int32 CorpseActivationsRemaining = 4;
+    constexpr int32 MaxActiveBurningVfx = 14;
     MonsterQuery.ForEachEntityChunk(Context, [&PreparationBudget](FMassExecutionContext &Chunk)
     {
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
@@ -136,7 +140,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             }
         }
     });
-    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity, &ActiveCorpses, &PreparationBudget](FMassExecutionContext& ChunkContext)
+    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity, &ActiveCorpses, &ActiveBurningVfx, &PreparationBudget, &CorpseActivationsRemaining](FMassExecutionContext& ChunkContext)
     {
         // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
@@ -288,9 +292,25 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 BodyMesh->bUseScreenRenderStateForUpdate = false;
                 BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
             }
-            MonsterActor->SetBurningPresentation(Health[Index].bBurning
+            const bool bHadBurning = MonsterActor->HasBurningPresentation();
+            const bool bCloseEnoughToBurn = Viewers.IsEmpty() || Viewers[Index].ClosestViewerDistanceSq <= FMath::Square(2400.0f);
+            bool bWantBurning = Health[Index].bBurning
                 && !MonsterActor->IsHidden() && BodyMesh->WasRecentlyRendered(0.35f)
-                && BodyMesh->GetPredictedLODLevel() <= 2);
+                && BodyMesh->GetPredictedLODLevel() <= 2 && bCloseEnoughToBurn;
+            if (bWantBurning && !bHadBurning && ActiveBurningVfx >= MaxActiveBurningVfx)
+            {
+                bWantBurning = false;
+            }
+            MonsterActor->SetBurningPresentation(bWantBurning);
+            const bool bNowBurning = MonsterActor->HasBurningPresentation();
+            if (bNowBurning && !bHadBurning)
+            {
+                ++ActiveBurningVfx;
+            }
+            else if (!bNowBurning && bHadBurning)
+            {
+                ActiveBurningVfx = FMath::Max(0, ActiveBurningVfx - 1);
+            }
             if (Definition && Definition->Presentation->Gore)
             {
                 auto *Mesh = MonsterActor->GetMonsterMesh();
@@ -356,12 +376,17 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             if (Definition && PresentationState.State == EBBBMonsterBehavior::Dead && !Presentation->IsCorpseActive())
             {
                 const float Age = Now - PresentationState.StateEnteredTime;
-                const bool bSimulate = ActiveCorpses < 32 && Age < Definition->Presentation->Animation.DeathAnimationDuration;
+                const bool bSimulate = ActiveCorpses < 20 && CorpseActivationsRemaining > 0
+                    && Age < Definition->Presentation->Animation.DeathAnimationDuration;
                 if ((bSimulate || Age >= Definition->Presentation->Animation.DeathAnimationDuration) &&
                     Presentation->BeginCorpsePresentation(DeathStates[Index].InitialVelocity,
                         HitReactions[Index], Now, bSimulate))
                 {
-                    ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
+                    if (Presentation->IsCorpseSimulating())
+                    {
+                        ++ActiveCorpses;
+                        --CorpseActivationsRemaining;
+                    }
                     const uint8 LostParts = ChunkContext.GetFragmentView<FBBBMonsterHealthFragment>()[Index].DestroyedParts;
                     if (Definition->Presentation->Gore)
                     {

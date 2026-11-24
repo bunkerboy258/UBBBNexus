@@ -24,7 +24,7 @@
 
 namespace
 {
-    constexpr int32 FragmentPenetrations = 5;
+    constexpr int32 MaxVisualFragments = 16;
 
     void BuildFragmentDirections(UWorld& World, const AActor& Actor, const FVector& Origin, float BodyRadius,
         int32 FragmentCount, uint32 Seed, FQuat& OutRotation, TArray<FVector>& OutLocalDirections)
@@ -54,52 +54,8 @@ namespace
         }
     }
 
-    void QueueFragments(UBBBMassSubsystem& Mass, ABBBThrowable& Actor, const FBBBThrowableExplosionConfig& Config,
-        const FBBBThrowableExplosionFact& Fact, float BodyRadius, const FGuid& AttackId,
-        const TSharedPtr<FBBBProjectileWorldBurst>& Burst)
-    {
-        UWorld& World = *Actor.GetWorld();
-        if (World.GetNetMode() != NM_DedicatedServer && Config.FragmentImpactChannel)
-        {
-            UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
-        }
-
-        FBBBProjectileSpawnLocalControlPacket Packet;
-        Packet.LaunchTransform.SetLocation(Fact.Position);
-        Packet.Speed = 50000.0f;
-        Packet.Lifetime = Config.Radius / Packet.Speed;
-        Packet.Damage = Config.Damage;
-        Packet.DurableDamage = Config.DurableDamage;
-        Packet.StaggerValue = Config.Stagger;
-        Packet.Radius = 0.0f;
-        Packet.Penetrations = FragmentPenetrations;
-        Packet.PenetrationMultiplier = 0.70f;
-        Packet.Source = &Actor;
-        Packet.Pawn = Actor.GetInstigator();
-        Packet.bDamageInstigator = Config.bDamageSelf;
-        Packet.AttackId = AttackId;
-        Packet.AttackTime = Fact.Time;
-        Packet.ImpactChannel = Config.FragmentImpactChannel.Get();
-        Packet.bCanCauseDamage = true;
-        Packet.WorldBurst = Burst;
-
-        FQuat Rotation = FQuat::Identity;
-        TArray<FVector> LocalDirections;
-        BuildFragmentDirections(World, Actor, Fact.Position, BodyRadius, Config.FragmentCount,
-            GetTypeHash(AttackId), Rotation, LocalDirections);
-        Packet.LaunchTransform.SetRotation(Rotation);
-
-        TArray<FBBBProjectileSpawnLocalControlPacket> Packets;
-        Packets.Reserve(LocalDirections.Num());
-        for (const FVector& LocalDirection : LocalDirections)
-        {
-            Packet.LocalDirection = LocalDirection;
-            Packets.Add(Packet);
-        }
-        Mass.QueueProjectileSpawnBatch(*Config.FragmentEntityConfig, MoveTemp(Packets));
-    }
-
-    void PresentClientFragmentImpacts(UWorld& World, ABBBThrowable& Actor, const UBBBThrowableDefinition& Definition,
+    /** 仅对静态环境采样有限破片火花 避免尸群爆开时数百次穿透射线与 Mass 实体尖峰 */
+    void PresentFragmentImpacts(UWorld& World, ABBBThrowable& Actor, const UBBBThrowableDefinition& Definition,
         const FBBBThrowableExplosionFact& Fact)
     {
         const auto& Config = Definition.Explosion;
@@ -108,75 +64,39 @@ namespace
             return;
         }
 
+        const int32 SampleCount = FMath::Min(Config.FragmentCount, MaxVisualFragments);
         FQuat Rotation = FQuat::Identity;
         TArray<FVector> LocalDirections;
-        BuildFragmentDirections(World, Actor, Fact.Position, Definition.Physics.Radius, Config.FragmentCount,
+        BuildFragmentDirections(World, Actor, Fact.Position, Definition.Physics.Radius, SampleCount,
             GetTypeHash(Fact.Position), Rotation, LocalDirections);
 
-        UBBBMassSubsystem* Mass = World.GetSubsystem<UBBBMassSubsystem>();
-        TArray<FBBBProjectileImpact> Impacts;
-        Impacts.Reserve(LocalDirections.Num() * 2);
+        const FCollisionObjectQueryParams StaticWorld(ECC_WorldStatic);
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableFragmentPresentation), false, &Actor);
+        Params.bReturnPhysicalMaterial = true;
 
+        TArray<FBBBProjectileImpact> Impacts;
+        Impacts.Reserve(SampleCount);
         for (const FVector& LocalDirection : LocalDirections)
         {
             const FVector Direction = Rotation.RotateVector(LocalDirection).GetSafeNormal();
-            FVector Start = Fact.Position;
-            const FVector End = Fact.Position + Direction * Config.Radius;
-            FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableFragmentPresentation), false, &Actor);
-            Params.bReturnPhysicalMaterial = true;
-            if (!Config.bDamageSelf)
+            FHitResult WorldHit;
+            if (!World.LineTraceSingleByObjectType(WorldHit, Fact.Position, Fact.Position + Direction * Config.Radius,
+                StaticWorld, Params))
             {
-                Params.AddIgnoredActor(Actor.GetInstigator());
+                continue;
             }
-
-            TArray<FMassEntityHandle, TInlineAllocator<8>> IgnoredEntities;
-            for (int32 Attempt = 0; Attempt <= FragmentPenetrations && !Start.Equals(End, UE_SMALL_NUMBER); ++Attempt)
-            {
-                FHitResult WorldHit;
-                const bool bWorldHit = World.LineTraceSingleByChannel(WorldHit, Start, End, ECC_Pawn, Params);
-
-                FMassEntityHandle Target;
-                float EntityTime = 1.0f;
-                FBBBProjectileImpact Impact;
-                uint8 HitPart = 0;
-                const bool bEntityHit = Mass && Mass->TraceEntities(Start, End, 0.0f, IgnoredEntities,
-                    Target, EntityTime, Impact.Position, Impact.Normal, Impact.Surface, HitPart);
-                const bool bUseEntity = bEntityHit && (!bWorldHit || EntityTime < WorldHit.Time);
-                if (!bUseEntity && !bWorldHit)
-                {
-                    break;
-                }
-
-                if (!bUseEntity)
-                {
-                    Impact.Position = WorldHit.ImpactPoint;
-                    Impact.Normal = WorldHit.ImpactNormal;
-                    Impact.Surface = UPhysicalMaterial::DetermineSurfaceType(WorldHit.PhysMaterial.Get());
-                    Params.AddIgnoredActor(WorldHit.GetActor());
-                }
-                else
-                {
-                    IgnoredEntities.Add(Target);
-                }
-
-                Impacts.Add(Impact);
-                if (Impact.Surface != SurfaceType2)
-                {
-                    FBBBProjectileImpact Spark = Impact;
-                    Spark.Surface = SurfaceType1;
-                    Impacts.Add(Spark);
-                }
-                const bool bPenetrable = bUseEntity || Cast<APawn>(WorldHit.GetActor()) != nullptr;
-                if (!bPenetrable)
-                {
-                    break;
-                }
-                Start = Impact.Position + Direction;
-            }
+            FBBBProjectileImpact Impact;
+            Impact.Position = WorldHit.ImpactPoint;
+            Impact.Normal = WorldHit.ImpactNormal;
+            Impact.Surface = SurfaceType1;
+            Impacts.Add(Impact);
         }
 
-        UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
-        FBBBProjectilePresentation::PublishImpacts(World, *Config.FragmentImpactChannel, Impacts);
+        if (!Impacts.IsEmpty())
+        {
+            UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
+            FBBBProjectilePresentation::PublishImpacts(World, *Config.FragmentImpactChannel, Impacts);
+        }
     }
 }
 
@@ -213,31 +133,34 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
         }
         const FGuid AttackId = FGuid::NewGuid();
         const bool bFragmentation = Config.FragmentCount > 0;
-        TSharedPtr<FBBBProjectileWorldBurst> Burst;
-        if (bFragmentation && ensure(Mass && Config.FragmentEntityConfig))
-        {
-            Burst = MakeShared<FBBBProjectileWorldBurst>();
-            Burst->PlayerId = Fact.PlayerId;
-            Burst->bDamagePlayers = Config.bDamagePlayers;
-        }
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableExplosion), false, &Actor);
         Params.AddIgnoredActor(Actor.GetInstigator());
-        const bool bAffectMonsters = Config.ImpulseStrength > 0.0f
-            || (!bFragmentation && (Config.Damage > 0.0f || Config.DurableDamage > 0.0f || Config.Stagger > 0.0f || Config.MonsterShockSeconds > 0.0f));
+        const FCollisionObjectQueryParams StaticOcclusion(ECC_WorldStatic);
+        const bool bAffectMonsters = Config.ImpulseStrength > 0.0f || Config.Damage > 0.0f
+            || Config.DurableDamage > 0.0f || Config.Stagger > 0.0f || Config.MonsterShockSeconds > 0.0f;
         if (Mass && bAffectMonsters)
         {
             TArray<FBBBMassCollisionBody> Bodies;
             Mass->OverlapEntities(Fact.Position, FMath::Max(Config.Radius, Config.ImpulseRadius), Bodies);
+            TSet<FMassEntityHandle> HitEntities;
+            HitEntities.Reserve(Bodies.Num());
             for (const auto& Body : Bodies)
             {
+                if (HitEntities.Contains(Body.Entity))
+                {
+                    continue;
+                }
+                HitEntities.Add(Body.Entity);
                 const FVector Direction = (Body.Center - Fact.Position).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
                 const FVector Surface = Body.Center - Direction * Body.Radius;
                 const float Distance = FVector::Distance(Fact.Position, Surface);
-                const bool bDamage = !bFragmentation && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
-                    !World.LineTraceTestByChannel(Fact.Position, Surface, ECC_Visibility, Params));
-                const float Ratio = bDamage ? FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius) : 0.f;
-                FBBBHitContribution Hit{Config.Damage * Ratio, NAME_None, Surface, Direction};
-                Hit.AddDurableDamage = Config.DurableDamage * Ratio;
+                const bool bDamage = Distance <= Config.Radius && (!Config.bCheckOcclusion ||
+                    !World.LineTraceTestByObjectType(Fact.Position, Surface, StaticOcclusion, Params));
+                const float DistanceAlpha = FMath::Clamp(Distance / FMath::Max(Config.Radius, 1.0f), 0.0f, 1.0f);
+                const float Ratio = bDamage ? FMath::Lerp(1.f, Config.MinimumDamageRatio, DistanceAlpha) : 0.f;
+                const float FragmentMultiplier = bFragmentation ? FMath::Lerp(3.0f, 1.0f, DistanceAlpha) : 1.0f;
+                FBBBHitContribution Hit{Config.Damage * Ratio * FragmentMultiplier, NAME_None, Surface, Direction};
+                Hit.AddDurableDamage = Config.DurableDamage * Ratio * FragmentMultiplier;
                 Hit.AddStagger = bDamage && Config.MonsterShockSeconds == 0.0f ? Config.Stagger : 0.f;
                 Hit.MonsterShockSeconds = bDamage ? Config.MonsterShockSeconds : 0.f;
                 Hit.MonsterBurnSeconds = (bDamage && Config.Damage > 0.0f && Config.Area.Damage > 0.0f) ? 5.5f : 0.0f;
@@ -264,19 +187,11 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 Hit.Normal = -Direction;
                 if (Hit.IsValid())
                 {
-                    if (Burst)
-                    {
-                        Burst->EntityHits.FindOrAdd(Body.Entity).Add(MoveTemp(Hit));
-                    }
-                    else
-                    {
-                        Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
-                    }
+                    Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
                 }
             }
         }
-        const bool bAffectActors = Config.ImpulseStrength > 0.0f
-            || (!bFragmentation && Config.Damage > 0.0f);
+        const bool bAffectActors = Config.ImpulseStrength > 0.0f || Config.Damage > 0.0f;
         if (bAffectActors)
         {
             FCollisionObjectQueryParams DamageObjects;
@@ -327,10 +242,12 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 Hit.bHasSourcePosition = true;
                 FCollisionQueryParams Occlusion = DamageParams;
                 Occlusion.AddIgnoredActor(Target);
-                if (!bFragmentation && bAllowDamage && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
-                    !World.LineTraceTestByChannel(Fact.Position, Position, ECC_Visibility, Occlusion)))
+                if (bAllowDamage && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
+                    !World.LineTraceTestByObjectType(Fact.Position, Position, StaticOcclusion, Occlusion)))
                 {
-                    Hit.AddDamage = Config.Damage * FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius);
+                    const float DistanceAlpha = FMath::Clamp(Distance / FMath::Max(Config.Radius, 1.0f), 0.0f, 1.0f);
+                    const float FragmentMultiplier = bFragmentation ? FMath::Lerp(2.0f, 1.0f, DistanceAlpha) : 1.0f;
+                    Hit.AddDamage = Config.Damage * FMath::Lerp(1.f, Config.MinimumDamageRatio, DistanceAlpha) * FragmentMultiplier;
                 }
                 if (Distance < Config.ImpulseRadius && Config.ImpulseStrength > 0.0f)
                 {
@@ -344,19 +261,11 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                         Hit.AddImpulse = Force;
                     }
                 }
-                if (Burst && Hit.IsValid())
-                {
-                    Burst->ActorHits.FindOrAdd(TWeakObjectPtr<AActor>(Target)).Add(MoveTemp(Hit));
-                }
-                else if (!Burst)
+                if (Hit.IsValid())
                 {
                     BBBHitReceiver::Submit(Target, Hit);
                 }
             }
-        }
-        if (Burst)
-        {
-            QueueFragments(*Mass, Actor, Config, Fact, Definition->Physics.Radius, AttackId, Burst);
         }
         UE_LOG(LogTemp, Log, TEXT("[BBBThrowable] Exploded Authority=1 Player=%d Position=%s"),
             Fact.PlayerId, *Fact.Position.ToString());
@@ -369,7 +278,15 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
     const double Now = GameState ? GameState->GetServerWorldTimeSeconds() : World.GetTimeSeconds();
     if (Actor.BurstEffect && Now - State.Fact.Time >= 4.0)
     {
-        Actor.BurstEffect->DestroyComponent();
+        if (Actor.BurstEffect->PoolingMethod == ENCPoolMethod::ManualRelease)
+        {
+            Actor.BurstEffect->DeactivateImmediate();
+            Actor.BurstEffect->ReleaseToPool();
+        }
+        else
+        {
+            Actor.BurstEffect->DestroyComponent();
+        }
         Actor.BurstEffect = nullptr;
     }
     if (!State.bPresented)
@@ -393,7 +310,7 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                     Ground.ImpactNormal.Z > 0.25;
                 Actor.BurstEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
                     &World, Definition->Presentation.ExplosionEffect, State.Fact.Position, FRotator::ZeroRotator,
-                    FVector(Definition->Presentation.EffectScale), false, false, ENCPoolMethod::None);
+                    FVector(Definition->Presentation.EffectScale), false, false, ENCPoolMethod::ManualRelease);
                 auto* Effect = Actor.BurstEffect.Get();
                 if (Effect)
                 {
@@ -413,10 +330,7 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                                                       State.Fact.Position, FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f,
                                                       Definition->Presentation.ExplosionAttenuation);
             }
-            if (World.GetNetMode() == NM_Client)
-            {
-                PresentClientFragmentImpacts(World, Actor, *Definition, State.Fact);
-            }
+            PresentFragmentImpacts(World, Actor, *Definition, State.Fact);
         }
     }
 }
