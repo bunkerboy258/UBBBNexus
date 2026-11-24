@@ -220,9 +220,10 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
 TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
 {
     using namespace BBBItemUI;
-    const auto Canvas = SNew(SConstraintCanvas);
-    const auto LeftWing = SNew(SConstraintCanvas);
-    const auto RightWing = SNew(SConstraintCanvas);
+    // 顶层铬层只承接真实控件命中 空白处放行给整备间空间面板
+    const auto Canvas = SNew(SConstraintCanvas).Visibility(EVisibility::SelfHitTestInvisible);
+    const auto LeftWing = SNew(SConstraintCanvas).Visibility(EVisibility::SelfHitTestInvisible);
+    const auto RightWing = SNew(SConstraintCanvas).Visibility(EVisibility::SelfHitTestInvisible);
     const auto Place = [](SConstraintCanvas& Panel, float X, float Y, float W, float H, TSharedRef<SWidget> Widget)
     {
         Panel.AddSlot().Alignment(FVector2D::ZeroVector).Offset(FMargin(X, Y, W, H))[Widget];
@@ -284,6 +285,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                 [SNew(SBox).WidthOverride(246).HeightOverride(40)[Tab(INVTEXT("EXTENSIBLE"), {})]]];
     constexpr float VitalsTop = 70.0f;
     Place(*Canvas, 676, VitalsTop, 568, 46, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+        .Visibility(EVisibility::HitTestInvisible)
         [
             SNew(SHorizontalBox)
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 11, 4)
@@ -307,6 +309,7 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                     })]
         ]);
     Place(*Canvas, 676, VitalsTop + 45.0f, 568, 25, SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+        .Visibility(EVisibility::HitTestInvisible)
         [SNew(STextBlock)
             .Font(ArtFont(19))
             .ColorAndOpacity(FLinearColor(0.86f, 0.78f, 0.63f))
@@ -366,7 +369,8 @@ TSharedRef<SWidget> UBBBPlayerItemView::MakeBackpack()
                     [SNew(SOverlay) + SOverlay::Slot()[SNew(SImage).Image(&Keycap)]
                         + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)[Label(INVTEXT("B"), 16)]]]
             + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(10, 0)[Label(INVTEXT("CLOSE"), 18)]]);
-    Place(*Canvas, 345, 1037, 700, 32, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText));
+    Place(*Canvas, 345, 1037, 700, 32, SAssignNew(StatusText, STextBlock).Font(Font(17)).ColorAndOpacity(MutedText)
+        .Visibility(EVisibility::HitTestInvisible));
     BackpackChrome = Fit(Canvas, 1080);
     StoragePanel = LeftWing;
     LoadoutPanel = RightWing;
