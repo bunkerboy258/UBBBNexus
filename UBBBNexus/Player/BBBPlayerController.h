@@ -234,12 +234,11 @@ private:
     UPROPERTY(Transient)
     TObjectPtr<UBBBPlayerItemView> ItemView;
 
-    /** 背包关闭时恢复打开前的输入状态 */
-    bool bBackpackPreviousCursor = false;
-    bool bBackpackPreviousGameplayInput = true;
-
     /** 本机白闪停留结束后开始淡出 */
     FTimerHandle ThrowableFlashHold;
+
+    /** 本帧已关闭背包 用于忽略同键重复切到菜单模式 */
+    uint64 BackpackClosedFrame = 0;
 
     /** @return 本机控制且已经初始化真实背包的角色 */
     ABBBCharacter *GetItemCharacter() const;
