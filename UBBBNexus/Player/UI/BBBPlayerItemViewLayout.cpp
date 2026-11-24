@@ -204,15 +204,17 @@ TSharedRef<SWidget> UBBBPlayerItemView::RebuildWidget()
     PanelSlotViews.Reset();
     BuiltStorageStart = INDEX_NONE;
     BuiltPanelStart = INDEX_NONE;
+    // 根节点不拦截命中 关闭背包后点击才能回到游戏视口并恢复鼠标捕获
     TSharedRef<SWidget> Result =
-        SNew(SOverlay) + SOverlay::Slot()[MakeGameplayHud()] +
-        SOverlay::Slot()[SNew(SOverlay).Visibility_Lambda(
-                             [this]()
-                             {
-                                 return bBackpackOpen ? EVisibility::Visible : EVisibility::Collapsed;
-                             }) +
-                         SOverlay::Slot()[MakeBackpack()]] +
-        SOverlay::Slot()[MakeExplorationHud()];
+        SNew(SOverlay).Visibility(EVisibility::SelfHitTestInvisible)
+        + SOverlay::Slot()[MakeGameplayHud()]
+        + SOverlay::Slot()[SNew(SOverlay).Visibility_Lambda(
+                               [this]
+                               {
+                                   return bBackpackOpen ? EVisibility::Visible : EVisibility::Collapsed;
+                               })
+                           + SOverlay::Slot()[MakeBackpack()]]
+        + SOverlay::Slot()[MakeExplorationHud()];
     RefreshItems();
     return Result;
 }

@@ -233,9 +233,25 @@ void ABBBPlayerController::ToggleBackpack()
     if (IsBackpackOpen())
     {
         ItemView->SetBackpackOpen(false);
-        // 背包是独占模态 关闭后一律回到纯游戏鼠标与角色控制
-        SetMouseMenuMode(false);
         BackpackClosedFrame = GFrameCounter;
+        // 界面事件当帧写入的 SlateOperations 不可靠 下一帧再切回纯游戏鼠标
+        if (UWorld* World = GetWorld())
+        {
+            World->GetTimerManager().SetTimerForNextTick(
+                FTimerDelegate::CreateWeakLambda(this, [this]
+                {
+                    SetMouseMenuMode(false);
+                }));
+            PlayerInputSystem->SetInputEnabled(true);
+            bShowMouseCursor = false;
+            return;
+        }
+        SetMouseMenuMode(false);
+        return;
+    }
+    // 同键已关闭背包时禁止立刻再次打开
+    if (GFrameCounter == BackpackClosedFrame)
+    {
         return;
     }
     if (!HasItemInventory())
@@ -243,18 +259,9 @@ void ABBBPlayerController::ToggleBackpack()
         UE_LOG(LogBBBPlayerController, Warning, TEXT("[BBBItems]当前无法打开背包 Controller=%s"), *GetName());
         return;
     }
-    PlayerInputSystem->SetInputEnabled(false);
     ItemView->SetBackpackOpen(true);
-    bShowMouseCursor = true;
-    FInputModeUIOnly InputMode;
-    InputMode.SetWidgetToFocus(ItemView->TakeWidget());
-    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-    SetInputMode(InputMode);
-    if (auto* Viewport = GetWorld() ? GetWorld()->GetGameViewport() : nullptr)
-    {
-        Viewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
-        Viewport->SetMouseLockMode(EMouseLockMode::DoNotLock);
-    }
+    SetMouseMenuMode(true);
+    ItemView->SetKeyboardFocus();
 }
 
 void ABBBPlayerController::ClientPlayThrowableFlash_Implementation(float Strength, float HoldSeconds, float TotalSeconds)
@@ -321,20 +328,17 @@ void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
         //结束当前设置InputMode流程
         return;
     }
-    // 先释放界面捕获与焦点 避免 UIOnly 关闭当帧仍占用光标
     if (FSlateApplication::IsInitialized())
     {
         FSlateApplication::Get().ReleaseAllPointerCapture();
-        FSlateApplication::Get().ClearAllUserFocus(EFocusCause::SetDirectly);
     }
     bShowMouseCursor = false;
     FInputModeGameOnly InputMode;
-    InputMode.SetConsumeCaptureMouseDown(false);
     SetInputMode(InputMode);
     bShowMouseCursor = false;
     if (auto* Viewport = GetWorld() ? GetWorld()->GetGameViewport() : nullptr)
     {
-        Viewport->SetMouseCaptureMode(EMouseCaptureMode::CapturePermanently_IncludingInitialMouseDown);
+        Viewport->SetMouseCaptureMode(EMouseCaptureMode::CapturePermanently);
         Viewport->SetMouseLockMode(EMouseLockMode::LockOnCapture);
     }
     if (FSlateApplication::IsInitialized())

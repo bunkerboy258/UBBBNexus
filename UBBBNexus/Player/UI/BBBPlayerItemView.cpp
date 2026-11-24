@@ -24,6 +24,7 @@
 UBBBPlayerItemView::UBBBPlayerItemView(const FObjectInitializer &ObjectInitializer) : Super(ObjectInitializer)
 {
     SetIsFocusable(true);
+    SetVisibility(ESlateVisibility::SelfHitTestInvisible);
     static ConstructorHelpers::FObjectFinder<UFontFace> Font(
         TEXT("/Game/_Project/Customization/UI/Fonts/NotoSansCJKsc_Regular.NotoSansCJKsc_Regular"));
     InterfaceFont = Font.Object;
@@ -510,14 +511,6 @@ FReply UBBBPlayerItemView::NativeOnPreviewKeyDown(const FGeometry &Geometry, con
                 return FReply::Handled();
             }
         }
-    }
-    if (bBackpackOpen && (Event.GetKey() == EKeys::B || Event.GetKey() == EKeys::Escape))
-    {
-        if (!Event.IsRepeat())
-        {
-            GetItemController()->ToggleBackpack();
-        }
-        return FReply::Handled();
     }
     return Super::NativeOnPreviewKeyDown(Geometry, Event);
 }
