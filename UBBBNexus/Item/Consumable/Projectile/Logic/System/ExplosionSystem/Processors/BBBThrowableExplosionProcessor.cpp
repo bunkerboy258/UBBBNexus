@@ -103,8 +103,7 @@ namespace
         const FBBBThrowableExplosionFact& Fact)
     {
         const auto& Config = Definition.Explosion;
-        const auto& Presentation = Definition.Presentation;
-        if (Config.FragmentCount <= 0 || (!Config.FragmentImpactChannel && !Presentation.FragmentImpactEffect))
+        if (Config.FragmentCount <= 0 || !Config.FragmentImpactChannel)
         {
             return;
         }
@@ -116,7 +115,7 @@ namespace
 
         UBBBMassSubsystem* Mass = World.GetSubsystem<UBBBMassSubsystem>();
         TArray<FBBBProjectileImpact> Impacts;
-        Impacts.Reserve(LocalDirections.Num());
+        Impacts.Reserve(LocalDirections.Num() * 2);
 
         for (const FVector& LocalDirection : LocalDirections)
         {
@@ -161,6 +160,12 @@ namespace
                 }
 
                 Impacts.Add(Impact);
+                if (Impact.Surface != SurfaceType2)
+                {
+                    FBBBProjectileImpact Spark = Impact;
+                    Spark.Surface = SurfaceType1;
+                    Impacts.Add(Spark);
+                }
                 const bool bPenetrable = bUseEntity || Cast<APawn>(WorldHit.GetActor()) != nullptr;
                 if (!bPenetrable)
                 {
@@ -170,16 +175,8 @@ namespace
             }
         }
 
-        if (Config.FragmentImpactChannel)
-        {
-            UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
-            FBBBProjectilePresentation::PublishImpacts(World, *Config.FragmentImpactChannel, Impacts);
-        }
-        if (Presentation.FragmentImpactEffect)
-        {
-            FBBBProjectilePresentation::SpawnImpactEffects(
-                World, *Presentation.FragmentImpactEffect, Presentation.FragmentImpactScale, Impacts);
-        }
+        UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);
+        FBBBProjectilePresentation::PublishImpacts(World, *Config.FragmentImpactChannel, Impacts);
     }
 }
 
@@ -222,12 +219,12 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
             Burst = MakeShared<FBBBProjectileWorldBurst>();
             Burst->PlayerId = Fact.PlayerId;
             Burst->bDamagePlayers = Config.bDamagePlayers;
-            Burst->ImpactEffect = Definition->Presentation.FragmentImpactEffect;
-            Burst->ImpactScale = Definition->Presentation.FragmentImpactScale;
         }
         FCollisionQueryParams Params(SCENE_QUERY_STAT(BBBThrowableExplosion), false, &Actor);
         Params.AddIgnoredActor(Actor.GetInstigator());
-        if (Mass)
+        const bool bAffectMonsters = Config.ImpulseStrength > 0.0f
+            || (!bFragmentation && (Config.Damage > 0.0f || Config.DurableDamage > 0.0f || Config.Stagger > 0.0f || Config.MonsterShockSeconds > 0.0f));
+        if (Mass && bAffectMonsters)
         {
             TArray<FBBBMassCollisionBody> Bodies;
             Mass->OverlapEntities(Fact.Position, FMath::Max(Config.Radius, Config.ImpulseRadius), Bodies);
@@ -243,7 +240,8 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 Hit.AddDurableDamage = Config.DurableDamage * Ratio;
                 Hit.AddStagger = bDamage && Config.MonsterShockSeconds == 0.0f ? Config.Stagger : 0.f;
                 Hit.MonsterShockSeconds = bDamage ? Config.MonsterShockSeconds : 0.f;
-                if (Distance < Config.ImpulseRadius)
+                Hit.MonsterBurnSeconds = (bDamage && Config.Damage > 0.0f && Config.Area.Damage > 0.0f) ? 5.5f : 0.0f;
+                if (Distance < Config.ImpulseRadius && Config.ImpulseStrength > 0.0f)
                 {
                     const FVector Force = Direction * Config.ImpulseStrength * (1.f - Distance / Config.ImpulseRadius);
                     if (Config.bVelocityChange)
@@ -277,72 +275,83 @@ void FBBBThrowableExplosionProcessor::Update(ABBBThrowable& Actor) const
                 }
             }
         }
-        FCollisionObjectQueryParams DamageObjects;
-        DamageObjects.AddObjectTypesToQuery(ECC_Pawn);
-        DamageObjects.AddObjectTypesToQuery(ECC_PhysicsBody);
-        DamageObjects.AddObjectTypesToQuery(ECC_WorldDynamic);
-        DamageObjects.AddObjectTypesToQuery(ECC_WorldStatic);
-        FCollisionQueryParams DamageParams(SCENE_QUERY_STAT(BBBThrowableActorDamage), false, &Actor);
-        TArray<FOverlapResult> DamageOverlaps;
-        World.OverlapMultiByObjectType(DamageOverlaps, Fact.Position, FQuat::Identity, DamageObjects,
-            FCollisionShape::MakeSphere(FMath::Max(Config.Radius, Config.ImpulseRadius)), DamageParams);
-        TSet<AActor*> Damaged;
-        for (const auto& Overlap : DamageOverlaps)
+        const bool bAffectActors = Config.ImpulseStrength > 0.0f
+            || (!bFragmentation && Config.Damage > 0.0f);
+        if (bAffectActors)
         {
-            AActor* Target = Overlap.GetActor();
-            if (!Target || Target == &Actor || Damaged.Contains(Target))
+            FCollisionObjectQueryParams DamageObjects;
+            DamageObjects.AddObjectTypesToQuery(ECC_Pawn);
+            DamageObjects.AddObjectTypesToQuery(ECC_PhysicsBody);
+            DamageObjects.AddObjectTypesToQuery(ECC_WorldDynamic);
+            FCollisionQueryParams DamageParams(SCENE_QUERY_STAT(BBBThrowableActorDamage), false, &Actor);
+            TArray<FOverlapResult> DamageOverlaps;
+            World.OverlapMultiByObjectType(DamageOverlaps, Fact.Position, FQuat::Identity, DamageObjects,
+                FCollisionShape::MakeSphere(FMath::Max(Config.Radius, Config.ImpulseRadius)), DamageParams);
+            TSet<AActor*> Damaged;
+            for (const auto& Overlap : DamageOverlaps)
             {
-                continue;
-            }
-            Damaged.Add(Target);
-            const bool bSelf = Target == Actor.GetInstigator();
-            const bool bAllowDamage = bSelf ? Config.bDamageSelf : (!Cast<APawn>(Target) || Config.bDamagePlayers);
-            // 角色按胶囊根位置计距 防止附着装备或表现网格的大边界扩大伤害范围
-            FVector Position = Target->GetActorLocation();
-            if (!Cast<APawn>(Target) && Overlap.GetComponent())
-            {
-                FVector Surface;
-                if (Overlap.GetComponent()->GetClosestPointOnCollision(Fact.Position, Surface) >= 0.0f)
+                AActor* Target = Overlap.GetActor();
+                if (!Target || Target == &Actor || Damaged.Contains(Target))
                 {
-                    Position = Surface;
+                    continue;
                 }
-            }
-            const float Distance = FVector::Distance(Fact.Position, Position);
-            const FVector Direction = (Position - Fact.Position).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
-            FBBBHitContribution Hit{0, NAME_None, Position, Direction};
-            Hit.AttackId = AttackId;
-            Hit.AttackTime = Fact.Time;
-            Hit.PlayerId = Fact.PlayerId;
-            Hit.bWorldSource = true;
-            Hit.bRadial = true;
-            Hit.SourcePosition = Fact.Position;
-            Hit.bHasSourcePosition = true;
-            FCollisionQueryParams Occlusion = DamageParams;
-            Occlusion.AddIgnoredActor(Target);
-            if (!bFragmentation && bAllowDamage && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
-                !World.LineTraceTestByChannel(Fact.Position, Position, ECC_Visibility, Occlusion)))
-            {
-                Hit.AddDamage = Config.Damage * FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius);
-            }
-            if (Distance < Config.ImpulseRadius)
-            {
-                const FVector Force = Direction * Config.ImpulseStrength * (1.f - Distance / Config.ImpulseRadius);
-                if (Config.bVelocityChange)
+                Damaged.Add(Target);
+                const bool bPawn = Cast<APawn>(Target) != nullptr;
+                const UPrimitiveComponent* Component = Overlap.GetComponent();
+                if (!bPawn && !Cast<ABBBThrowable>(Target) && !Cast<IBBBHitReceiver>(Target)
+                    && (!Component || !Component->IsSimulatingPhysics()))
                 {
-                    Hit.AddVelocity = Force;
+                    continue;
                 }
-                else
+                const bool bSelf = Target == Actor.GetInstigator();
+                const bool bAllowDamage = bSelf ? Config.bDamageSelf : (!bPawn || Config.bDamagePlayers);
+                // 角色按胶囊根位置计距 防止附着装备或表现网格的大边界扩大伤害范围
+                FVector Position = Target->GetActorLocation();
+                if (!bPawn && Component)
                 {
-                    Hit.AddImpulse = Force;
+                    FVector Surface;
+                    if (Component->GetClosestPointOnCollision(Fact.Position, Surface) >= 0.0f)
+                    {
+                        Position = Surface;
+                    }
                 }
-            }
-            if (Burst && Hit.IsValid())
-            {
-                Burst->ActorHits.FindOrAdd(TWeakObjectPtr<AActor>(Target)).Add(MoveTemp(Hit));
-            }
-            else if (!Burst)
-            {
-                BBBHitReceiver::Submit(Target, Hit);
+                const float Distance = FVector::Distance(Fact.Position, Position);
+                const FVector Direction = (Position - Fact.Position).GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
+                FBBBHitContribution Hit{0, NAME_None, Position, Direction};
+                Hit.AttackId = AttackId;
+                Hit.AttackTime = Fact.Time;
+                Hit.PlayerId = Fact.PlayerId;
+                Hit.bWorldSource = true;
+                Hit.bRadial = true;
+                Hit.SourcePosition = Fact.Position;
+                Hit.bHasSourcePosition = true;
+                FCollisionQueryParams Occlusion = DamageParams;
+                Occlusion.AddIgnoredActor(Target);
+                if (!bFragmentation && bAllowDamage && Distance <= Config.Radius && (!Config.bCheckOcclusion ||
+                    !World.LineTraceTestByChannel(Fact.Position, Position, ECC_Visibility, Occlusion)))
+                {
+                    Hit.AddDamage = Config.Damage * FMath::Lerp(1.f, Config.MinimumDamageRatio, Distance / Config.Radius);
+                }
+                if (Distance < Config.ImpulseRadius && Config.ImpulseStrength > 0.0f)
+                {
+                    const FVector Force = Direction * Config.ImpulseStrength * (1.f - Distance / Config.ImpulseRadius);
+                    if (Config.bVelocityChange)
+                    {
+                        Hit.AddVelocity = Force;
+                    }
+                    else
+                    {
+                        Hit.AddImpulse = Force;
+                    }
+                }
+                if (Burst && Hit.IsValid())
+                {
+                    Burst->ActorHits.FindOrAdd(TWeakObjectPtr<AActor>(Target)).Add(MoveTemp(Hit));
+                }
+                else if (!Burst)
+                {
+                    BBBHitReceiver::Submit(Target, Hit);
+                }
             }
         }
         if (Burst)

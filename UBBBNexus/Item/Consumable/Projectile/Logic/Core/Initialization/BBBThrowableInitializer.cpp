@@ -3,6 +3,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "NiagaraComponent.h"
+#include "NiagaraComponentPool.h"
+#include "NiagaraWorldManager.h"
 void FBBBThrowableInitializer::Initialize(ABBBThrowable& Actor) const
 {
     Actor.PhysicsBody->OnComponentHit.AddUniqueDynamic(&Actor, &ABBBThrowable::OnPhysicsHit);
@@ -26,11 +28,31 @@ void FBBBThrowableInitializer::Initialize(ABBBThrowable& Actor) const
     Actor.PhysicsBody->SetUseCCD(Config.bCCD);
     Actor.Mesh->SetStaticMesh(Actor.Definition->Presentation.Mesh);
     Actor.Mesh->SetRelativeTransform(Actor.Definition->Presentation.MeshTransform);
-    if (Actor.GetNetMode() != NM_DedicatedServer && Actor.Definition->Presentation.TrailEffect &&
-        Actor.Trail->GetAsset() != Actor.Definition->Presentation.TrailEffect)
+    if (Actor.GetNetMode() != NM_DedicatedServer)
     {
-        Actor.Trail->SetAsset(Actor.Definition->Presentation.TrailEffect);
-        Actor.Trail->Activate(true);
+        if (Actor.Definition->Presentation.TrailEffect &&
+            Actor.Trail->GetAsset() != Actor.Definition->Presentation.TrailEffect)
+        {
+            Actor.Trail->SetAsset(Actor.Definition->Presentation.TrailEffect);
+            Actor.Trail->Activate(true);
+        }
+        if (UWorld* World = Actor.GetWorld())
+        {
+            if (FNiagaraWorldManager* Manager = FNiagaraWorldManager::Get(World))
+            {
+                if (UNiagaraComponentPool* Pool = Manager->GetComponentPool())
+                {
+                    if (Actor.Definition->Presentation.ExplosionEffect)
+                    {
+                        Pool->PrimePool(Actor.Definition->Presentation.ExplosionEffect, World);
+                    }
+                    if (Actor.Definition->Presentation.AreaEffect)
+                    {
+                        Pool->PrimePool(Actor.Definition->Presentation.AreaEffect, World);
+                    }
+                }
+            }
+        }
     }
     Actor.PhysicsBody->SetSimulatePhysics(true);
 }

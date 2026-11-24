@@ -13,7 +13,15 @@ void FBBBThrowableShutdown::Shutdown(ABBBThrowable& Actor) const
     }
     if (Actor.AreaEffect)
     {
-        Actor.AreaEffect->DestroyComponent();
+        if (Actor.AreaEffect->PoolingMethod == ENCPoolMethod::ManualRelease)
+        {
+            Actor.AreaEffect->DeactivateImmediate();
+            Actor.AreaEffect->ReleaseToPool();
+        }
+        else
+        {
+            Actor.AreaEffect->DestroyComponent();
+        }
         Actor.AreaEffect = nullptr;
     }
     Actor.RuntimeData.Parse.State = {};

@@ -354,8 +354,8 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                     if (Burn)
                     {
                         FBBBHitContribution Tick;
-                        Tick.AddDamage = 15.0f;
-                        Tick.AddDurableDamage = 15.0f;
+                        Tick.AddDamage = 30.0f;
+                        Tick.AddDurableDamage = 30.0f;
                         Tick.bWorldSource = true;
                         Tick.bRadial = true;
                         Tick.PlayerId = Burn->PlayerId;

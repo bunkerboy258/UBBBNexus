@@ -24,6 +24,5 @@ bool UBBBThrowableDefinition::IsValid() const
             && FMath::IsFinite(Area.ExpansionSeconds) && Area.ExpansionSeconds >= 0.0f && Area.ExpansionSeconds <= Area.Duration
             && FMath::IsFinite(Area.Damage) && Area.Damage >= 0.0f && FMath::IsFinite(Area.DamageInterval)
             && Area.DamageInterval >= 0.2f))
-        && FMath::IsFinite(Presentation.FragmentImpactScale) && Presentation.FragmentImpactScale > 0.0f
         && Explosion.ImpulseRadius >= 0.0f && Explosion.ImpulseStrength >= 0.0f;
 }

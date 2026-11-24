@@ -236,10 +236,13 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
             {
                 ImpactChannel = Presentation.ImpactChannel;
                 Impacts.Add(Impact);
-            }
-            if (Data.WorldBurst && Data.WorldBurst->ImpactEffect.IsValid())
-            {
-                Data.WorldBurst->Impacts.Add(Impact);
+                if (Data.WorldBurst && Impact.Surface != SurfaceType2)
+                {
+                    // 破片命中硬表面时追加一次金属火星批次，零额外组件开销
+                    FBBBProjectileImpact Spark = Impact;
+                    Spark.Surface = SurfaceType1;
+                    Impacts.Add(Spark);
+                }
             }
             if (Data.ExplosionRadiusCm > 0.0f)
             {
@@ -432,11 +435,6 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
         for (auto& Entry : Burst->ActorHits)
         {
             BBBHitReceiver::SubmitBatch(Entry.Key.Get(), MoveTemp(Entry.Value));
-        }
-        if (Burst->ImpactEffect.IsValid())
-        {
-            FBBBProjectilePresentation::SpawnImpactEffects(
-                *World, *Burst->ImpactEffect.Get(), Burst->ImpactScale, Burst->Impacts);
         }
     }
 

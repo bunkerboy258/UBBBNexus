@@ -52,14 +52,6 @@ struct FBBBThrowablePresentationConfig final
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "爆炸特效缩放", ToolTip = "爆炸效果的整体缩放倍率", ClampMin = "0.01"))
     float EffectScale = 1.0f;
 
-    /** 破片命中表面或目标时生成的明显击中特效 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "破片击中特效", ToolTip = "破片命中世界表面或目标时生成的击中特效"))
-    TObjectPtr<UNiagaraSystem> FragmentImpactEffect = nullptr;
-
-    /** 破片击中特效缩放倍率 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "破片击中特效缩放", ClampMin = "0.01"))
-    float FragmentImpactScale = 1.5f;
-
     /** 随持续区域出现和回收的 Niagara 系统 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "投掷物", meta = (DisplayName = "持续区域特效"))
     TObjectPtr<UNiagaraSystem> AreaEffect = nullptr;

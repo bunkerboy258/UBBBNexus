@@ -83,25 +83,34 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     {
         if (Actor.AreaEffect)
         {
-            Actor.AreaEffect->DestroyComponent();
+            if (Actor.AreaEffect->PoolingMethod == ENCPoolMethod::ManualRelease)
+            {
+                Actor.AreaEffect->DeactivateImmediate();
+                Actor.AreaEffect->ReleaseToPool();
+            }
+            else
+            {
+                Actor.AreaEffect->DestroyComponent();
+            }
             Actor.AreaEffect = nullptr;
         }
         return;
     }
 
     const double FadeTime = Area.bObscuresSight ? 2.8 : 0.7;
-    const bool bCreateEffect = World.GetNetMode() != NM_DedicatedServer && Remaining > FadeTime &&
+    const double SpawnDelay = Definition->Presentation.ExplosionEffect ? 0.03 : 0.0;
+    const bool bCreateEffect = World.GetNetMode() != NM_DedicatedServer && Age >= SpawnDelay && Remaining > FadeTime &&
         !Actor.AreaEffect && Definition->Presentation.AreaEffect;
     if (bCreateEffect)
     {
         Actor.AreaEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.AreaEffect,
             Fact.AreaGround, FRotator::ZeroRotator, FVector(Definition->Presentation.AreaEffectScale),
-            false, false, ENCPoolMethod::None);
+            false, false, ENCPoolMethod::ManualRelease);
         if (Actor.AreaEffect && Area.bObscuresSight)
         {
-            Actor.AreaEffect->SetVariableFloat(TEXT("User.Lifetime"), 3.4f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Lifetime"), 3.2f);
             Actor.AreaEffect->SetVariableFloat(TEXT("User.Alpha"), 1.0f);
-            Actor.AreaEffect->SetVariableLinearColor(TEXT("User.ColorTint"), FLinearColor(0.85f, 0.87f, 0.90f, 1.0f));
+            Actor.AreaEffect->SetVariableLinearColor(TEXT("User.ColorTint"), FLinearColor(0.84f, 0.86f, 0.89f, 1.0f));
         }
     }
     if (Actor.AreaEffect && Remaining > FadeTime)
@@ -114,8 +123,8 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             const FVector Relative = Camera ? Camera->GetCameraLocation() - Fact.AreaGround : FVector::ZeroVector;
             const bool bInside = Camera && Relative.Z >= -45.0 && Relative.Z <= Area.Height
                 && Relative.SizeSquared2D() <= FMath::Square(CurrentRadius);
-            Actor.AreaEffect->SetVariableFloat(TEXT("User.SpawnRate"), bInside ? 10.0f : 14.0f);
-            Actor.AreaEffect->SetVariableFloat(TEXT("User.Size"), bInside ? 1.30f : 1.65f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.SpawnRate"), bInside ? 7.0f : 10.0f);
+            Actor.AreaEffect->SetVariableFloat(TEXT("User.Size"), bInside ? 1.45f : 1.85f);
         }
         else
         {
@@ -187,7 +196,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             Damaged.Add(Body.Entity);
             Hit.Position = Body.Center;
             Hit.Part = Body.Part;
-            Hit.MonsterBurnSeconds = 4.5f;
+            Hit.MonsterBurnSeconds = 5.5f;
             Mass->SubmitInput(Body.Entity, FBBBMonsterDamageLocalControlPacket{{Hit}});
         }
     }
