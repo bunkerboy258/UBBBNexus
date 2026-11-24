@@ -45,6 +45,7 @@ void FBBBCharacterInputProcessor::Update(
     Process(InputState.Recovery, Context);
     Process(InputState.UseRemoteMessage, Context);
     Process(InputState.UseAuthorityFact, Context);
+    Process(InputState.ItemRestore, Context);
     Process(InputState.ItemConsume, Context);
     Process(InputState.ItemAdd, Context);
     Process(InputState.ItemMove, Context);

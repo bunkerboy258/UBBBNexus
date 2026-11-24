@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "Test/V01/Gameplay/BBBV01SceneReadinessProcessor.h"
 #include "Test/V01/Gameplay/BBBV01TutorialSubsystem.h"
+#include "Online/BBBOnlineSubsystem.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerExplorationSystem.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/PlayerCameraManager.h"
@@ -708,5 +709,27 @@ void ABBBPlayerController::ClientPrepareV01SpawnView_Implementation(FVector Loca
     {
         SetInitialLocationAndRotation(Location, Rotation);
         SetViewTarget(this);
+    }
+}
+
+void ABBBPlayerController::RequestStoryExtraction()
+{
+    if (UBBBOnlineSubsystem* Online = GetGameInstance() ? GetGameInstance()->GetSubsystem<UBBBOnlineSubsystem>() : nullptr)
+    {
+        Online->FlushLocalInventoryNow();
+        if (HasAuthority())
+        {
+            Online->RequestStoryExtractionSuccess();
+            return;
+        }
+    }
+    ServerRequestStoryExtraction();
+}
+
+void ABBBPlayerController::ServerRequestStoryExtraction_Implementation()
+{
+    if (UBBBOnlineSubsystem* Online = GetGameInstance() ? GetGameInstance()->GetSubsystem<UBBBOnlineSubsystem>() : nullptr)
+    {
+        Online->RequestStoryExtractionSuccess();
     }
 }

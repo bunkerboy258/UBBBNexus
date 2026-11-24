@@ -29,6 +29,17 @@ public:
     UFUNCTION(BlueprintPure, Category = "Combat")
     FBBBPlayerKillCounts GetKillCounts() const { return KillCounts; }
 
+    /** @return 当前玩家阵营标识 PLA 或 UA_BBC */
+    UFUNCTION(BlueprintPure, Category = "Profile")
+    FName GetFactionName() const { return FactionName; }
+
+    /**
+     * 设置玩家阵营标识 仅权威端有效
+     * @param InFactionName	阵营标识
+     * @return 无
+     */
+    void SetFactionName(FName InFactionName);
+
     /**
      * @param ConfirmedKills	本轮新成立的两类击杀数量
      * @return 无
@@ -39,6 +50,11 @@ public:
     virtual void PostNetInit() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     //~ End AActor Interface
+
+protected:
+    //~ Begin APlayerState Interface
+    virtual void CopyProperties(APlayerState* PlayerState) override;
+    //~ End APlayerState Interface
 
 private:
     /** 还原拥有者的最新计数并反馈新击杀 */
@@ -51,6 +67,10 @@ private:
     /** 房主维护并同步给本人的最新计数 */
     UPROPERTY(ReplicatedUsing = OnRep_KillCounts)
     FBBBPlayerKillCounts KillCounts;
+
+    /** 房主维护并同步给全队的玩家阵营标识 */
+    UPROPERTY(Replicated)
+    FName FactionName = TEXT("PLA");
 
     /** 击杀确认使用的单次提示音 */
     UPROPERTY()

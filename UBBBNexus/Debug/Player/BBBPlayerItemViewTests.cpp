@@ -41,7 +41,7 @@
 #include "HAL/IConsoleManager.h"
 #include "DynamicRHI.h"
 #include "RenderTimer.h"
-#include "Test/V01/Frontend/BBBV01FrontendSubsystem.h"
+#include "Frontend/BBBFrontendSubsystem.h"
 #include "Misc/ScopeExit.h"
 #include "Widgets/Input/SButton.h"
 
@@ -144,10 +144,10 @@ public:
             return FPlatformTime::Seconds() < ReadyDeadline;
         }
 
-        if (const auto* Frontend = ItemView.GetWorld()->GetGameInstance()->GetSubsystem<UBBBV01FrontendSubsystem>())
+        if (const auto* Frontend = ItemView.GetWorld()->GetGameInstance()->GetSubsystem<UBBBFrontendSubsystem>())
         {
-            const auto& Presentation = Frontend->RuntimeData.Frontend.ReadBBBV01FrontendState();
-            if (Presentation.bLoading || !Presentation.bSceneReady)
+            const auto& Presentation = Frontend->RuntimeData.Frontend.ReadBBBFrontendState();
+            if (Presentation.bLoading)
             {
                 return FPlatformTime::Seconds() < ReadyDeadline;
             }
@@ -249,8 +249,8 @@ private:
         {
             if (FParse::Param(FCommandLine::Get(), TEXT("ItemMenuPerf")))
             {
-                const auto* Frontend = World->GetGameInstance()->GetSubsystem<UBBBV01FrontendSubsystem>();
-                if (Frontend && Frontend->RuntimeData.Frontend.ReadBBBV01FrontendState().bLoading)
+                const auto* Frontend = World->GetGameInstance()->GetSubsystem<UBBBFrontendSubsystem>();
+                if (Frontend && Frontend->RuntimeData.Frontend.ReadBBBFrontendState().bLoading)
                 {
                     return;
                 }

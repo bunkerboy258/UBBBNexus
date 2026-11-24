@@ -45,6 +45,13 @@ public:
     UFUNCTION(Client, Reliable)
     void ClientPlayThrowableFlash(float Strength, float HoldSeconds, float TotalSeconds);
 
+    /** 玩家在新手剧情撤离点确认撤离 客机转发给房主执行全服结算与换图 */
+    void RequestStoryExtraction();
+
+    /** @return 无 房主权威端执行新手剧情通关结算与换图 */
+    UFUNCTION(Server, Reliable)
+    void ServerRequestStoryExtraction();
+
     /** 试玩控制器功能的唯一运行时黑板 */
     FBBBV01PlayerRuntimeData V01RuntimeData;
 

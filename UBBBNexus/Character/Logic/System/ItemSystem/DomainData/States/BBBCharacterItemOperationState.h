@@ -33,6 +33,20 @@ struct FBBBCharacterItemOperationState final
     TArray<FGuid> PendingFinishedInstances;
     /** 本帧临时使用当前消耗品的请求 */
     bool bQuickUse = false;
+    /** 本帧是否请求按持久快照整体还原背包 */
+    bool bPendingRestore = false;
+    /** 还原目标槽位索引 */
+    TArray<int32> PendingRestoreSlots;
+    /** 还原目标实例身份 */
+    TArray<FGuid> PendingRestoreInstances;
+    /** 还原目标物品型号 */
+    TArray<FName> PendingRestoreItemIds;
+    /** 还原目标堆叠数量 */
+    TArray<int32> PendingRestoreQuantities;
+    /** 还原后选中的装备快捷槽位 */
+    int32 PendingRestoreWeaponSlot = INDEX_NONE;
+    /** 还原后选中的消耗品快捷槽位 */
+    int32 PendingRestoreConsumableSlot = INDEX_NONE;
     /** 操作完成版本 */
     UPROPERTY(BlueprintReadOnly, meta = (DisplayName = "操作版本"))
     int32 Revision = 0;

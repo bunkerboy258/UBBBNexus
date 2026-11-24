@@ -57,6 +57,7 @@
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Locomotion/FBBBAccelerationAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/RemoteMessage/Locomotion/FBBBAccelerationRemoteMessagePacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemRestoreLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Interaction/FBBBCharacterInteractionSelectionAuthorityFactPacket.h"
 #include "BBBWork/UBBBNexus/Character/Input/AuthorityFact/Animation/FBBBFullBodyMontageAuthorityFactPacket.h"
@@ -172,6 +173,8 @@ struct FBBBCharacterInputState final
     TBBBCharacterInputSlot<FBBBAccelerationAuthorityFactPacket> AuthorityAcceleration;
     /** 装备选择输入槽位 */
     TBBBCharacterInputSlot<FBBBCharacterItemAddLocalControlPacket> ItemAdd;
+    /** 持久背包还原输入槽位 */
+    TBBBCharacterInputSlot<FBBBCharacterItemRestoreLocalControlPacket> ItemRestore;
     /** 背包移动输入槽位 */
     TBBBCharacterInputSlot<FBBBCharacterItemMoveLocalControlPacket> ItemMove;
     /** 远端已经成立的装备持有关系 */

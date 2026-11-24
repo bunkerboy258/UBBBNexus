@@ -36,6 +36,26 @@ void ABBBPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME_CONDITION(ABBBPlayerState, KillCounts, COND_OwnerOnly);
+    DOREPLIFETIME(ABBBPlayerState, FactionName);
+}
+
+void ABBBPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+    Super::CopyProperties(PlayerState);
+    if (auto* Target = Cast<ABBBPlayerState>(PlayerState))
+    {
+        Target->FactionName = FactionName;
+    }
+}
+
+void ABBBPlayerState::SetFactionName(const FName InFactionName)
+{
+    if (!HasAuthority() || InFactionName.IsNone())
+    {
+        return;
+    }
+    FactionName = InFactionName;
+    ForceNetUpdate();
 }
 
 void ABBBPlayerState::AddConfirmedKills(const FBBBPlayerKillCounts& ConfirmedKills)

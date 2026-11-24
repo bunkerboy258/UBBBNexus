@@ -2,8 +2,17 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/ItemSystem/DomainData/Context/BBBCharacterItemUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
 #include "BBBWork/UBBBNexus/Character/Config/Item/BBBCharacterItemConfig.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Consumable/Catalog/BBBConsumableCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Misc/Catalog/BBBMiscCatalog.h"
+#include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
+#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 
 void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext &Context) const
 {
@@ -33,7 +42,7 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
     }
     if (!Operations.PendingItemIds.IsEmpty() || !Operations.PendingMoveSources.IsEmpty()
         || !Operations.PendingSelectedSlots.IsEmpty() || !Operations.PendingConsumeInstances.IsEmpty()
-        || !Operations.PendingFinishedInstances.IsEmpty() || Operations.bQuickUse)
+        || !Operations.PendingFinishedInstances.IsEmpty() || Operations.bQuickUse || Operations.bPendingRestore)
     {
         Operations.SucceededCount = 0;
         Operations.RejectedCount = 0;
@@ -68,6 +77,106 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
         return Type == EBBBItemType::Wearable
             && Item.Definition->WearSlot == Inventory.WearSlots[Slot - Inventory.BackpackSlotCount];
     };
+    if (Operations.bPendingRestore)
+    {
+        for (FBBBCharacterItem &Existing : Inventory.Slots)
+        {
+            if (IsValid(Existing.HeldInstance))
+            {
+                Existing.HeldInstance->Destroy();
+            }
+            Existing = FBBBCharacterItem{};
+        }
+        for (int32 Index = 0; Index < Operations.PendingRestoreSlots.Num(); ++Index)
+        {
+            const int32 TargetSlot = Operations.PendingRestoreSlots[Index];
+            const FName Id = Operations.PendingRestoreItemIds[Index];
+            const int32 Quantity = Operations.PendingRestoreQuantities[Index];
+            if (!Inventory.Slots.IsValidIndex(TargetSlot) || Inventory.Slots[TargetSlot].Definition)
+            {
+                ++Operations.RejectedCount;
+                continue;
+            }
+            UBBBItemDefinition *Definition = nullptr;
+            TSubclassOf<AActor> ActorClass;
+            int32 Candidates = 0;
+            const auto Accept = [&Definition, &Candidates](const UBBBItemDefinition *Candidate)
+            {
+                if (Candidate)
+                {
+                    Definition = const_cast<UBBBItemDefinition *>(Candidate);
+                    ++Candidates;
+                }
+            };
+            const auto Equipment = Context.Config.EquipmentCatalog ? Context.Config.EquipmentCatalog->FindItem(Id) : nullptr;
+            const auto *Wearable = Context.Config.WearableCatalog ? Context.Config.WearableCatalog->FindItem(Id) : nullptr;
+            const auto Consumable = Context.Config.ConsumableCatalog ? Context.Config.ConsumableCatalog->FindItem(Id) : nullptr;
+            Accept(Equipment ? Equipment.GetDefaultObject()->GetDefinition() : nullptr);
+            Accept(Wearable ? Wearable->Definition.Get() : nullptr);
+            Accept(Consumable);
+            Accept(Context.Config.MiscCatalog ? Context.Config.MiscCatalog->FindItem(Id) : nullptr);
+            if (Equipment)
+            {
+                ActorClass = Equipment;
+            }
+            FBBBCharacterItem Restored;
+            Restored.InstanceId = Operations.PendingRestoreInstances[Index].IsValid()
+                ? Operations.PendingRestoreInstances[Index] : FGuid::NewGuid();
+            Restored.Definition = Definition;
+            Restored.Quantity = Quantity;
+            if (Candidates != 1 || !Definition || Quantity <= 0 || Quantity > Definition->MaxStack || !Allows(TargetSlot, Restored))
+            {
+                ++Operations.RejectedCount;
+                continue;
+            }
+            if (ActorClass)
+            {
+                UWorld *World = Context.Character.GetWorld();
+                AActor *Actor = World ? World->SpawnActorDeferred<AActor>(ActorClass, FTransform::Identity,
+                    &Context.Character, &Context.Character, ESpawnActorCollisionHandlingMethod::AlwaysSpawn) : nullptr;
+                if (Actor)
+                {
+                    Actor->SetActorHiddenInGame(true);
+                    UGameplayStatics::FinishSpawningActor(Actor, FTransform::Identity);
+                    Actor->SetActorTickEnabled(false);
+                }
+                const auto *EquipmentActor = Cast<ABBBEquipment>(Actor);
+                if (!IsValid(Actor) || !EquipmentActor || !EquipmentActor->IsInitialized())
+                {
+                    if (IsValid(Actor))
+                    {
+                        Actor->Destroy();
+                    }
+                    ++Operations.RejectedCount;
+                    continue;
+                }
+                Restored.HeldInstance = Actor;
+            }
+            Inventory.Slots[TargetSlot] = Restored;
+            ++Operations.SucceededCount;
+        }
+        if (Operations.PendingRestoreWeaponSlot == INDEX_NONE
+            || (Operations.PendingRestoreWeaponSlot >= 0 && Operations.PendingRestoreWeaponSlot < Inventory.QuickAccessSlotCount))
+        {
+            Operations.PendingSelectedSlots.Add(Operations.PendingRestoreWeaponSlot);
+        }
+        const int32 ConsumableStart = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount;
+        if (Operations.PendingRestoreConsumableSlot >= ConsumableStart
+            && Operations.PendingRestoreConsumableSlot < ConsumableStart + Inventory.ConsumableQuickAccessSlotCount)
+        {
+            Context.RuntimeData.Item.ItemBarState.SelectedConsumableSlot = Operations.PendingRestoreConsumableSlot;
+            ++Context.RuntimeData.Item.ItemBarState.Revision;
+        }
+        ++Inventory.Revision;
+        ++Operations.Revision;
+        Operations.bPendingRestore = false;
+        Operations.PendingRestoreSlots.Reset();
+        Operations.PendingRestoreInstances.Reset();
+        Operations.PendingRestoreItemIds.Reset();
+        Operations.PendingRestoreQuantities.Reset();
+        Operations.PendingRestoreWeaponSlot = INDEX_NONE;
+        Operations.PendingRestoreConsumableSlot = INDEX_NONE;
+    }
     for (int32 Index = 0; Index < Operations.PendingConsumeInstances.Num(); ++Index)
     {
         ++Operations.Revision;
