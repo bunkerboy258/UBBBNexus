@@ -3,6 +3,8 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerState.h"
 
@@ -137,4 +139,61 @@ bool ABBBPlayerController::ShouldShowCrosshair() const
     const ABBBCharacter *PawnCharacter = GetItemCharacter();
     return PawnCharacter && PawnCharacter->GetLifePhase() == EBBBCharacterLifePhase::Alive
         && !IsPlayerMenuOpen() && !IsBackpackOpen() && !bShowMouseCursor;
+}
+
+bool ABBBPlayerController::GetHudBackpackAnchorScreenPosition(FVector2D &ScreenPosition, float &DistanceScale) const
+{
+    ScreenPosition = FVector2D::ZeroVector;
+    DistanceScale = 1.0f;
+
+    const ABBBCharacter *PawnCharacter = GetItemCharacter();
+    if (!PawnCharacter)
+    {
+        return false;
+    }
+
+    FVector BaseLocation = PawnCharacter->GetActorLocation();
+    if (const UCapsuleComponent *Capsule = PawnCharacter->GetCapsuleComponent())
+    {
+        BaseLocation.Z += Capsule->GetScaledCapsuleHalfHeight() * 0.42f;
+    }
+
+    if (const USkeletalMeshComponent *Mesh = PawnCharacter->GetMesh())
+    {
+        static const FName SpineMidName(TEXT("spine_02"));
+        static const FName SpineHighName(TEXT("spine_03"));
+        if (Mesh->GetBoneIndex(SpineMidName) != INDEX_NONE)
+        {
+            BaseLocation = Mesh->GetBoneLocation(SpineMidName);
+        }
+        else if (Mesh->GetBoneIndex(SpineHighName) != INDEX_NONE)
+        {
+            BaseLocation = Mesh->GetBoneLocation(SpineHighName);
+        }
+    }
+
+    FVector ViewLocation = FVector::ZeroVector;
+    FRotator ViewRotation = FRotator::ZeroRotator;
+    GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+    const FRotationMatrix ViewMatrix(ViewRotation);
+    const FVector CamForward = ViewMatrix.GetUnitAxis(EAxis::X);
+    const FVector CamRight = ViewMatrix.GetUnitAxis(EAxis::Y);
+    const FVector CamUp = ViewMatrix.GetUnitAxis(EAxis::Z);
+
+    // 锚定在角色中背背包右侧略偏下位置 保留手臂活动呼吸空隙并自然避开中央准星视线
+    const FVector WorldAnchor = BaseLocation + CamRight * 33.0 - CamUp * 4.0 - CamForward * 4.0;
+    if (FVector::DotProduct(WorldAnchor - ViewLocation, CamForward) <= 10.0)
+    {
+        return false;
+    }
+
+    if (!ProjectWorldLocationToScreen(WorldAnchor, ScreenPosition, true))
+    {
+        return false;
+    }
+
+    const double Distance = FVector::Dist(ViewLocation, WorldAnchor);
+    DistanceScale = FMath::Clamp(static_cast<float>(FMath::Pow(375.0 / FMath::Max(140.0, Distance), 0.22)), 0.88f, 1.06f);
+    return true;
 }

@@ -4,35 +4,42 @@
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBCombatHudIndicator.h"
 #include "Blueprint/WidgetTree.h"
-#include "Components/Image.h"
-#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/LocalPlayer.h"
-#include "Engine/Texture2D.h"
 #include "GameFramework/Pawn.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include "UObject/ConstructorHelpers.h"
 
 namespace
 {
 void SetShown(UWidget *Widget, bool bShown)
 {
-    if (Widget)
+    if (!Widget)
     {
-        const ESlateVisibility Visibility = bShown ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
-        if (Widget->GetVisibility() != Visibility)
-        {
-            Widget->SetVisibility(Visibility);
-        }
+        return;
+    }
+
+    const ESlateVisibility Visibility = bShown ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
+    if (Widget->GetVisibility() != Visibility)
+    {
+        Widget->SetVisibility(Visibility);
+    }
+}
+
+void ReadLocalPlayerViewportSize(const ABBBPlayerController &Controller, int32 &OutWidth, int32 &OutHeight)
+{
+    OutWidth = 0;
+    OutHeight = 0;
+    Controller.GetViewportSize(OutWidth, OutHeight);
+    if (const ULocalPlayer *LocalPlayer = Controller.GetLocalPlayer())
+    {
+        OutWidth = FMath::RoundToInt(OutWidth * LocalPlayer->Size.X);
+        OutHeight = FMath::RoundToInt(OutHeight * LocalPlayer->Size.Y);
     }
 }
 }
 
-UBBBCombatHudWidget::UBBBCombatHudWidget(const FObjectInitializer &ObjectInitializer) : Super(ObjectInitializer)
+UBBBCombatHudWidget::UBBBCombatHudWidget(const FObjectInitializer &ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-    static ConstructorHelpers::FObjectFinder<UMaterialInterface> Material(
-        TEXT("/Game/_Project/Characters/Items/Shared/M_HudItemSilhouette.M_HudItemSilhouette"));
-    ItemIconMaterial = Material.Object;
 }
 
 void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Controller, const FGeometry &Geometry, float DeltaTime)
@@ -44,6 +51,7 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
     {
         SampleStartedAt = 0.0;
         SampleFrames = 0;
+        bAnchorInitialized = false;
         return;
     }
 
@@ -55,40 +63,43 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
         bItemsDirty = false;
     }
 
+    // 边缘极静遥测 每半秒刷新一次纯数字 无文字标签
     if (SampleStartedAt == 0.0)
     {
-        SetShown(GetWidgetFromName(TEXT("Telemetry")), false);
+        SetShown(Telemetry, false);
         SampleStartedAt = Now;
     }
+
     ++SampleFrames;
     const double SampleDuration = Now - SampleStartedAt;
     if (SampleDuration >= 0.5)
     {
-        SetCount(Cast<UTextBlock>(GetWidgetFromName(TEXT("FrameRateValue"))), FMath::RoundToInt(SampleFrames / SampleDuration));
-        SetShown(GetWidgetFromName(TEXT("Telemetry")), true);
+        SetCount(FrameRateValue, FMath::RoundToInt(SampleFrames / SampleDuration));
+        SetShown(Telemetry, true);
         const TOptional<int32> Ping = Controller->GetHudPing();
-        SetShown(GetWidgetFromName(TEXT("PingGroup")), Ping.IsSet());
+        SetShown(PingGroup, Ping.IsSet());
         if (Ping.IsSet())
         {
-            SetCount(Cast<UTextBlock>(GetWidgetFromName(TEXT("PingValue"))), Ping.GetValue());
+            SetCount(PingValue, Ping.GetValue());
         }
+
         SampleStartedAt = Now;
         SampleFrames = 0;
     }
 
+    // 中央准星与枪口实弹落点
     SetShown(Crosshair, Controller->ShouldShowCrosshair());
     const bool bAiming = Controller->ShouldShowAimHud();
+    const float AimStep = AimFadeSeconds > 0.0f ? DeltaTime / AimFadeSeconds : 1.0f;
+    AimBlend = FMath::FInterpConstantTo(AimBlend, bAiming ? 1.0f : 0.0f, 1.0f, AimStep);
+    CachedSnapshot.AimBlend = AimBlend;
+
     if (AimPoint)
     {
-        FVector2D Projected;
+        FVector2D Projected = FVector2D::ZeroVector;
         int32 Width = 0;
         int32 Height = 0;
-        Controller->GetViewportSize(Width, Height);
-        if (const ULocalPlayer *LocalPlayer = Controller->GetLocalPlayer())
-        {
-            Width = FMath::RoundToInt(Width * LocalPlayer->Size.X);
-            Height = FMath::RoundToInt(Height * LocalPlayer->Size.Y);
-        }
+        ReadLocalPlayerViewportSize(*Controller, Width, Height);
         const bool bProjected = bAiming && Width > 0 && Height > 0
             && Controller->GetActualAimScreenPosition(Projected)
             && Projected.X >= 0.0 && Projected.Y >= 0.0 && Projected.X <= Width && Projected.Y <= Height;
@@ -97,45 +108,45 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
             const FVector2D Normalized(Projected.X / Width, Projected.Y / Height);
             AimPoint->SetRenderTranslation((Normalized - FVector2D(0.5)) * Geometry.GetLocalSize());
         }
+
         SetShown(AimPoint, bProjected);
     }
 
+    // 弹药与换弹状态 同步给准星短弧与背包悬浮主集群
     int32 Loaded = 0;
     int32 Capacity = 0;
     bool bContinuous = false;
     bool bReloading = false;
     const bool bHasAmmo = Controller->ReadHudAmmo(Loaded, Capacity, bContinuous, bReloading);
-    SetShown(GetWidgetFromName(TEXT("AmmoReadout")), bHasAmmo);
-    SetShown(GetWidgetFromName(TEXT("AmmoGroup")), bHasAmmo);
     SetShown(AmmoRail, bAiming && bHasAmmo);
-    SetShown(GetWidgetFromName(TEXT("ReloadBounds")), bHasAmmo && bReloading);
-    if (bHasAmmo)
+
+    CachedSnapshot.bHasAmmo = bHasAmmo;
+    CachedSnapshot.LoadedAmmo = Loaded;
+    CachedSnapshot.CapacityAmmo = Capacity;
+    CachedSnapshot.bAmmoContinuous = bContinuous;
+    CachedSnapshot.bReloading = bHasAmmo && bReloading;
+    if (bHasAmmo && bReloading)
     {
-        auto *LoadedLabel = Cast<UTextBlock>(GetWidgetFromName(TEXT("LoadedAmmo")));
-        SetCount(LoadedLabel, Loaded);
-        if (LoadedLabel)
-        {
-            LoadedLabel->SetRenderOpacity(Loaded > 0 ? 1.0f : 0.65f);
-        }
-        SetCount(Cast<UTextBlock>(GetWidgetFromName(TEXT("CapacityAmmo"))), Capacity, false, true);
-        if (AmmoRail)
-        {
-            AmmoRail->SetAmmo(Loaded, Capacity, bContinuous);
-        }
-        if (Reload && bReloading)
-        {
-            Reload->SetReloadAngle(FMath::Fmod(Now * 360.0, 360.0));
-        }
+        CachedSnapshot.ReloadAngle = static_cast<float>(FMath::Fmod(Now * 360.0, 360.0));
+    }
+
+    if (bHasAmmo && AmmoRail)
+    {
+        AmmoRail->SetAmmo(Loaded, Capacity, bContinuous);
+    }
+
+    UpdateAnchorMotion(*Controller, Geometry, DeltaTime);
+
+    if (BackpackHud)
+    {
+        BackpackHud->SetSnapshot(CachedSnapshot);
     }
 }
 
 void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, float DeltaTime, double Now)
 {
-    const float Fraction = Controller.GetHudHealthFraction();
-    if (StaminaBar)
-    {
-        StaminaBar->SetPercent(Controller.GetHudStaminaFraction());
-    }
+    const float HealthFraction = Controller.GetHudHealthFraction();
+    const float StaminaFraction = Controller.GetHudStaminaFraction();
 
     DamageAge += DeltaTime;
     float Health = 0.0f;
@@ -146,6 +157,7 @@ void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, f
         ObservedPawn.Reset();
         bLowHealth = false;
         DamageAge = 1.0f;
+        DamageTrail = HealthFraction;
     }
     else
     {
@@ -154,142 +166,158 @@ void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, f
         if (bReset || Health > PreviousHealth)
         {
             DamageAge = 1.0f;
-            DamageTrail = Fraction;
+            DamageTrail = HealthFraction;
         }
+
         if (!bReset && Phase == 0 && Health < PreviousHealth)
         {
             const float PreviousFraction = PreviousHealth / FMath::Max(1.0f, Maximum);
             DamageTrail = FMath::Lerp(DamageTrail, PreviousFraction,
-                FMath::Clamp((DamageAge - DeltaTime - 0.15f) / 0.45f, 0.0f, 1.0f));
+                FMath::Clamp((DamageAge - DeltaTime - 0.14f) / 0.44f, 0.0f, 1.0f));
             DamageAge = 0.0f;
         }
-        bLowHealth = Phase == 0 && Fraction <= (bLowHealth && !bReset ? 0.35f : 0.30f);
+
+        bLowHealth = Phase == 0 && HealthFraction <= (bLowHealth && !bReset ? 0.35f : 0.30f);
         ObservedPawn = Controller.GetPawn();
         PreviousHealth = Health;
         PreviousMaximum = Maximum;
         PreviousPhase = Phase;
     }
 
-    if (DamageTrailBar)
+    // 满体力静默淡出 消耗或恢复时即时显现
+    if (StaminaFraction >= 0.995f)
     {
-        DamageTrailBar->SetPercent(FMath::Lerp(DamageTrail, Fraction, FMath::Clamp((DamageAge - 0.15f) / 0.45f, 0.0f, 1.0f)));
+        StaminaFullSeconds = FMath::Min(StaminaFullSeconds + DeltaTime, 3.0f);
     }
-    if (HealthBar)
+    else
     {
-        HealthBar->SetPercent(Fraction);
-        const float Opacity = bLowHealth ? 0.68f + 0.28f * FMath::Abs(FMath::Sin(Now * 4.0)) : 1.0f;
-        HealthBar->SetRenderOpacity(Opacity);
+        StaminaFullSeconds = 0.0f;
     }
+
+    const float QuietProgress = FMath::Clamp((StaminaFullSeconds - 1.0f) / 0.5f, 0.0f, 1.0f);
+    CachedSnapshot.HealthFraction = HealthFraction;
+    CachedSnapshot.DamageTrailFraction = FMath::Lerp(DamageTrail, HealthFraction,
+        FMath::Clamp((DamageAge - 0.14f) / 0.44f, 0.0f, 1.0f));
+    CachedSnapshot.StaminaFraction = StaminaFraction;
+    CachedSnapshot.StaminaOpacity = FMath::Lerp(0.92f, 0.26f, QuietProgress);
+    CachedSnapshot.bLowHealth = bLowHealth;
+    CachedSnapshot.bDowned = Phase == 1;
+    CachedSnapshot.LowHealthPulse = 0.5f + 0.5f * static_cast<float>(FMath::Sin(Now * 5.2));
 }
 
 void UBBBCombatHudWidget::UpdateItems(const ABBBPlayerController &Controller)
 {
-    int32 Start = 0;
-    int32 Count = 0;
-    Controller.GetConsumableQuickRange(Start, Count);
+    CachedSnapshot.ActiveWeaponIcon = Controller.GetHudWeaponIcon();
+    CachedSnapshot.bHasActiveWeapon = CachedSnapshot.ActiveWeaponIcon != nullptr;
+
+    const int32 WeaponCount = FMath::Min(Controller.GetQuickAccessSlotCount(), FBBBDivisionHudSnapshot::MaxWeaponSlots);
+    for (int32 Index = 0; Index < FBBBDivisionHudSnapshot::MaxWeaponSlots; ++Index)
+    {
+        FBBBDivisionHudSlotSnapshot &SlotData = CachedSnapshot.WeaponSlots[Index];
+        SlotData = FBBBDivisionHudSlotSnapshot{};
+        if (Index < WeaponCount)
+        {
+            const FBBBPlayerItemDisplayData Item = Controller.GetItemDisplayData(Index);
+            SlotData.bOccupied = Item.bOccupied;
+            SlotData.bActive = Item.bActive;
+            SlotData.Icon = Item.bOccupied ? Item.Icon : nullptr;
+            SlotData.Number = Index + 1;
+        }
+    }
+
+    int32 ConsumableStart = 0;
+    int32 ConsumableCount = 0;
+    Controller.GetConsumableQuickRange(ConsumableStart, ConsumableCount);
     const int32 Selected = Controller.GetSelectedThrowableSlot();
-    const bool bHasSelection = Selected >= 0 && Selected < Count;
-    SetShown(GetWidgetFromName(TEXT("SelectedItem")), bHasSelection);
-    if (bHasSelection)
+
+    CachedSnapshot.SelectedThrowable = FBBBDivisionHudSlotSnapshot{};
+    if (Selected >= 0 && Selected < ConsumableCount)
     {
-        const auto Item = Controller.GetItemDisplayData(Start + Selected);
-        SetIcon(Cast<UImage>(GetWidgetFromName(TEXT("SelectedItemIcon"))), Item.Icon);
-        SetCount(Cast<UTextBlock>(GetWidgetFromName(TEXT("SelectedItemCount"))), Item.Quantity);
-    }
-    int32 Row = 1;
-    for (int32 Index = 0; Index < Count; ++Index)
-    {
-        const auto Item = Controller.GetItemDisplayData(Start + Index);
-        if (Item.bOccupied && Index != Selected)
-        {
-            SetItemRow(TEXT("SpareItem"), Row++, Item.Icon, Item.Quantity, true);
-        }
-    }
-    for (; Row <= Count; ++Row)
-    {
-        SetItemRow(TEXT("SpareItem"), Row, nullptr, INDEX_NONE);
+        const FBBBPlayerItemDisplayData Item = Controller.GetItemDisplayData(ConsumableStart + Selected);
+        CachedSnapshot.SelectedThrowable.bOccupied = Item.bOccupied;
+        CachedSnapshot.SelectedThrowable.bActive = true;
+        CachedSnapshot.SelectedThrowable.Icon = Item.Icon;
+        CachedSnapshot.SelectedThrowable.Number = Item.Quantity;
     }
 
-    UTexture2D *WeaponIcon = Controller.GetHudWeaponIcon();
-    SetShown(GetWidgetFromName(TEXT("CurrentWeapon")), WeaponIcon != nullptr);
-    SetIcon(Cast<UImage>(GetWidgetFromName(TEXT("CurrentWeaponIcon"))), WeaponIcon);
-    Row = 1;
-    Count = Controller.GetQuickAccessSlotCount();
-    for (int32 Index = 0; Index < Count; ++Index)
+    for (int32 SpareIdx = 0; SpareIdx < FBBBDivisionHudSnapshot::MaxSpareThrowables; ++SpareIdx)
     {
-        const auto Item = Controller.GetItemDisplayData(Index);
-        if (Item.bOccupied && !Item.bActive)
-        {
-            SetItemRow(TEXT("SpareWeapon"), Row++, Item.Icon, Item.QuickIndex + 1);
-        }
+        CachedSnapshot.SpareThrowables[SpareIdx] = FBBBDivisionHudSlotSnapshot{};
     }
-    for (; Row <= Count; ++Row)
+
+    int32 SpareSlot = 0;
+    for (int32 Index = 0; Index < ConsumableCount && SpareSlot < FBBBDivisionHudSnapshot::MaxSpareThrowables; ++Index)
     {
-        SetItemRow(TEXT("SpareWeapon"), Row, nullptr, INDEX_NONE);
+        if (Index == Selected)
+        {
+            continue;
+        }
+
+        const FBBBPlayerItemDisplayData Item = Controller.GetItemDisplayData(ConsumableStart + Index);
+        if (Item.bOccupied)
+        {
+            FBBBDivisionHudSlotSnapshot &Target = CachedSnapshot.SpareThrowables[SpareSlot++];
+            Target.bOccupied = true;
+            Target.Icon = Item.Icon;
+            Target.Number = Item.Quantity;
+        }
     }
 }
 
-void UBBBCombatHudWidget::SetIcon(UImage *Image, UTexture2D *Texture)
+void UBBBCombatHudWidget::UpdateAnchorMotion(const ABBBPlayerController &Controller, const FGeometry &Geometry, float DeltaTime)
 {
-    if (!Image)
+    const FVector2D LocalSize = Geometry.GetLocalSize();
+    CachedSnapshot.ViewportSize = LocalSize;
+
+    int32 Width = 0;
+    int32 Height = 0;
+    ReadLocalPlayerViewportSize(Controller, Width, Height);
+
+    FVector2D Projected = FVector2D::ZeroVector;
+    float TargetDistanceScale = 1.0f;
+    const bool bProjected = Width > 0 && Height > 0 && LocalSize.X > 0.0 && LocalSize.Y > 0.0
+        && Controller.GetHudBackpackAnchorScreenPosition(Projected, TargetDistanceScale);
+
+    if (!bProjected)
     {
+        CachedSnapshot.bHasAnchor = bAnchorInitialized;
         return;
     }
-    SetShown(Image, Texture != nullptr);
-    if (IconTextures.FindRef(Image) == Texture)
+
+    const FVector2D TargetLocal(Projected.X / Width * LocalSize.X, Projected.Y / Height * LocalSize.Y);
+    if (!bAnchorInitialized || DeltaTime <= 0.0f || DeltaTime > 0.25f)
     {
-        return;
+        SmoothedAnchor = TargetLocal;
+        AnchorVelocity = FVector2D::ZeroVector;
+        SmoothedDistanceScale = TargetDistanceScale;
+        bAnchorInitialized = true;
     }
-    if (!Texture)
+    else
     {
-        IconTextures.Remove(Image);
-        return;
+        // 临界阻尼弹簧平滑 过滤跑步微抖并保留镜头转动的轻盈全息跟随感
+        FMath::SpringDamperSmoothing(SmoothedAnchor, AnchorVelocity, TargetLocal, FVector2D::ZeroVector,
+            DeltaTime, AnchorSmoothSeconds, 1.0f);
+        SmoothedDistanceScale = FMath::FInterpTo(SmoothedDistanceScale, TargetDistanceScale, DeltaTime, 10.0f);
     }
-    IconTextures.Add(Image, Texture);
-    if (ItemIconMaterial)
-    {
-        if (!Image->GetDynamicMaterial())
-        {
-            Image->SetBrushFromMaterial(ItemIconMaterial);
-        }
-        if (UMaterialInstanceDynamic *Material = Image->GetDynamicMaterial())
-        {
-            Material->SetTextureParameterValue(TEXT("ImageTexture"), Texture);
-            FVector2D DisplaySize(Texture->GetSizeX(), Texture->GetSizeY());
-            const FBox2f UVRegion = Image->GetBrush().GetUVRegion();
-            if (UVRegion.bIsValid)
-            {
-                DisplaySize *= FVector2D(UVRegion.GetSize());
-            }
-            Image->SetDesiredSizeOverride(DisplaySize);
-        }
-    }
+
+    CachedSnapshot.bHasAnchor = true;
+    CachedSnapshot.AnchorPosition = SmoothedAnchor;
+    CachedSnapshot.DistanceScale = SmoothedDistanceScale;
 }
 
-void UBBBCombatHudWidget::SetCount(UTextBlock *Label, int32 Number, bool bPad, bool bDenominator)
+void UBBBCombatHudWidget::SetCount(UTextBlock *Label, int32 Number)
 {
     if (!Label)
     {
         return;
     }
+
     const int32 *Displayed = DisplayedNumbers.Find(Label->GetFName());
     if (Displayed && *Displayed == Number)
     {
         return;
     }
-    DisplayedNumbers.Add(Label->GetFName(), Number);
-    const FString Text = bDenominator ? FString::Printf(TEXT("/%d"), Number)
-        : (bPad ? FString::Printf(TEXT("%02d"), Number) : FString::FromInt(Number));
-    Label->SetText(FText::AsCultureInvariant(Text));
-}
 
-void UBBBCombatHudWidget::SetItemRow(const TCHAR *Prefix, int32 Row, UTexture2D *Texture, int32 Number, bool bPad)
-{
-    const FString Name = FString::Printf(TEXT("%s%d"), Prefix, Row);
-    SetShown(GetWidgetFromName(FName(*Name)), Number != INDEX_NONE);
-    if (Number != INDEX_NONE)
-    {
-        SetIcon(Cast<UImage>(GetWidgetFromName(FName(*(Name + TEXT("Icon"))))), Texture);
-        SetCount(Cast<UTextBlock>(GetWidgetFromName(FName(*(Name + TEXT("Count"))))), Number, bPad);
-    }
+    DisplayedNumbers.Add(Label->GetFName(), Number);
+    Label->SetText(FText::AsCultureInvariant(FString::FromInt(Number)));
 }

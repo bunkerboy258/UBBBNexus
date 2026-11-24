@@ -61,26 +61,30 @@ public:
         case EBBBCombatHudGlyph::Crosshair:
             for (const FVector2D Axis : {FVector2D(1.0, 0.0), FVector2D(-1.0, 0.0), FVector2D(0.0, 1.0), FVector2D(0.0, -1.0)})
             {
-                Line({Origin + Axis * 5.0, Origin + Axis * 11.0}, 1.0f, Tint);
+                Line({Origin + Axis * 5.2, Origin + Axis * 10.2}, 1.05f, Tint);
             }
-            Line({Origin - FVector2D(0.65, 0.0), Origin + FVector2D(0.65, 0.0)}, 1.2f, Tint);
+            Line({Origin - FVector2D(0.75, 0.0), Origin + FVector2D(0.75, 0.0)}, 1.35f, Tint);
             break;
         case EBBBCombatHudGlyph::AimPoint:
-            Arc(8.0f, 0.0f, 360.0f, Tint);
+            Arc(6.8f, 0.0f, 360.0f, Tint);
+            for (const FVector2D Axis : {FVector2D(1.0, 0.0), FVector2D(-1.0, 0.0), FVector2D(0.0, 1.0), FVector2D(0.0, -1.0)})
+            {
+                Line({Origin + Axis * 6.8, Origin + Axis * 9.2}, 0.9f, Tint.CopyWithNewOpacity(Tint.A * 0.72f));
+            }
             break;
         case EBBBCombatHudGlyph::Reload:
             Arc(8.0f, 0.0f, 360.0f, Tint.CopyWithNewOpacity(Tint.A * 0.35f));
             Arc(8.0f, ReloadAngle, 125.0f, Tint);
             break;
         case EBBBCombatHudGlyph::FrameRate:
-            Line({{3.0, 3.0}, {21.0, 3.0}, {21.0, 16.0}, {3.0, 16.0}, {3.0, 3.0}}, 1.25f, Tint);
-            Line({{7.0, 21.0}, {17.0, 21.0}}, 1.25f, Tint);
+            Line({{3.0, 4.0}, {21.0, 4.0}, {21.0, 16.0}, {3.0, 16.0}, {3.0, 4.0}}, 1.15f, Tint);
+            Line({{8.0, 20.0}, {16.0, 20.0}}, 1.15f, Tint);
             break;
         case EBBBCombatHudGlyph::Ping:
             for (int32 Bar = 0; Bar < 3; ++Bar)
             {
                 const double X = 5.0 + Bar * 7.0;
-                Line({{X, 20.0}, {X, 15.0 - Bar * 6.0}}, 2.0f, Tint);
+                Line({{X, 20.0}, {X, 15.0 - Bar * 5.5}}, 1.75f, Tint);
             }
             break;
         default:

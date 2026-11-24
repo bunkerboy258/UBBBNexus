@@ -813,22 +813,19 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     const FGeometry HudGeometry = FGeometry::MakeRoot(FVector2f(1920.0f, 1080.0f), FSlateLayoutTransform());
     TestFalse(TEXT("持枪未瞄准时准星仍隐藏"), Controller->ShouldShowAimHud());
     Hud->UpdatePresentation(Controller, HudGeometry, 1.0f / 60.0f);
-    const UWidget *AmmoGroup = Hud->GetWidgetFromName(TEXT("AmmoGroup"));
-    const auto *LoadedLabel = Cast<UTextBlock>(Hud->GetWidgetFromName(TEXT("LoadedAmmo")));
-    const auto *CapacityLabel = Cast<UTextBlock>(Hud->GetWidgetFromName(TEXT("CapacityAmmo")));
-    if (!TestNotNull(TEXT("右下弹药组"), AmmoGroup)
-        || !TestNotNull(TEXT("剩余弹药数字"), LoadedLabel) || !TestNotNull(TEXT("容量数字"), CapacityLabel))
+    const UBBBDivisionBackpackHud *BackpackHud = Hud->GetBackpackHud();
+    if (!TestNotNull(TEXT("背包侧边悬浮战斗集群"), BackpackHud))
     {
         return false;
     }
-    TestTrue(TEXT("未瞄准也显示剩余弹药与容量"), AmmoGroup->IsVisible());
+    TestTrue(TEXT("未瞄准也显示剩余弹药与容量"), BackpackHud->IsAmmoShown());
     int32 Loaded = 0;
     int32 Capacity = 0;
     bool bContinuous = false;
     const ABBBEquipment *Held = Cast<ABBBEquipment>(Controller->GetActiveItem());
     TestTrue(TEXT("弹药显示读取真实枪械"), Held && Held->ReadAmmoDisplay(Loaded, Capacity, bContinuous));
-    TestEqual(TEXT("右下数字保持真实剩余弹药"), LoadedLabel->GetText().ToString(), FString::FromInt(Loaded));
-    TestEqual(TEXT("右下数字保持真实容量"), CapacityLabel->GetText().ToString(), FString::Printf(TEXT("/%d"), Capacity));
+    TestEqual(TEXT("主集群保持真实剩余弹药"), BackpackHud->GetDisplayedLoadedAmmo(), Loaded);
+    TestEqual(TEXT("主集群保持真实容量"), BackpackHud->GetDisplayedCapacityAmmo(), Capacity);
     ABBBEquipment *HeldEquipment = Cast<ABBBEquipment>(Controller->GetActiveItem());
     FTransform Muzzle;
     if (!TestTrue(TEXT("真实手持枪械提供枪口"), HeldEquipment && HeldEquipment->TryGetMuzzleTransform(Muzzle)))
@@ -923,7 +920,7 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("收起后未选择槽位"), Controller->GetSelectedItemSlot(), INDEX_NONE);
     TestNull(TEXT("收起后实际空手"), Controller->GetActiveItem());
     Hud->UpdatePresentation(Controller, HudGeometry, 1.0f / 60.0f);
-    TestFalse(TEXT("空手时不显示旧枪械弹药"), AmmoGroup->IsVisible());
+    TestFalse(TEXT("空手时不显示旧枪械弹药"), BackpackHud->IsAmmoShown());
     TestFalse(TEXT("空手时不保留枪口落点"), Controller->GetActualAimWorldPosition(AimImpact));
     TestEqual(TEXT("快捷栏使用前三格"), Controller->GetQuickAccessSlotCount(), 3);
     TestEqual(TEXT("四类背包和身体穿戴共一百一十格"), Controller->GetItemSlotCount(), 110);

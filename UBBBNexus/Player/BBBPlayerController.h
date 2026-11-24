@@ -115,6 +115,14 @@ public:
     UFUNCTION(BlueprintPure, Category = "BBB|界面")
     bool GetActualAimScreenPosition(FVector2D &ScreenPosition) const;
 
+    /**
+     * 计算角色背包右侧悬浮 HUD 的屏幕投影锚点与距离缩放
+     * @param ScreenPosition	玩家视口相对像素位置
+     * @param DistanceScale	依据镜头距离输出的柔和缩放系数
+     * @return 是否成功投影到镜头前方有效位置
+     */
+    bool GetHudBackpackAnchorScreenPosition(FVector2D &ScreenPosition, float &DistanceScale) const;
+
     /** @return 当前实际手持的物品 挂接失败或空手时返回空引用 */
     UFUNCTION(BlueprintPure, Category = "BBB|物品")
     AActor *GetActiveItem() const;

@@ -1,18 +1,16 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
+#include "BBBWork/UBBBNexus/Player/UI/BBBDivisionBackpackHud.h"
 #include "BBBCombatHudWidget.generated.h"
 
 class ABBBPlayerController;
 class APawn;
 class UBBBCombatHudIndicator;
-class UImage;
-class UMaterialInterface;
-class UProgressBar;
 class UTextBlock;
-class UTexture2D;
+class UWidget;
 
-/** 将所属玩家的只读展示数据更新到 UMG 控件 */
+/** 驱动本地玩家全境封锁 2 风格背包侧边战斗 HUD 与中央瞄准层 */
 UCLASS(Abstract, Blueprintable)
 class ABBB_EVAC_API UBBBCombatHudWidget : public UUserWidget
 {
@@ -29,46 +27,75 @@ public:
      * @return 无
      */
     void UpdatePresentation(const ABBBPlayerController *Controller, const FGeometry &Geometry, float DeltaTime);
+
     /** @return 无 标记物品展示将在下一次可见更新时读取 */
-    void InvalidateItems() { bItemsDirty = true; }
+    void InvalidateItems()
+    {
+        bItemsDirty = true;
+    }
+
+    /** @return 背包侧边悬浮战术集群控件 */
+    const UBBBDivisionBackpackHud *GetBackpackHud() const
+    {
+        return BackpackHud;
+    }
 
 private:
     void UpdateVitals(const ABBBPlayerController &Controller, float DeltaTime, double Now);
     void UpdateItems(const ABBBPlayerController &Controller);
-    void SetIcon(UImage *Image, UTexture2D *Texture);
-    void SetCount(UTextBlock *Label, int32 Number, bool bPad = false, bool bDenominator = false);
-    void SetItemRow(const TCHAR *Prefix, int32 Row, UTexture2D *Texture, int32 Number, bool bPad = false);
+    void UpdateAnchorMotion(const ABBBPlayerController &Controller, const FGeometry &Geometry, float DeltaTime);
+    void SetCount(UTextBlock *Label, int32 Number);
 
-    UPROPERTY(EditDefaultsOnly, Category = "Appearance", meta = (DisplayName = "物品剪影材质"))
-    TObjectPtr<UMaterialInterface> ItemIconMaterial;
+    /** 背包侧边悬浮战术主集群 */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UBBBDivisionBackpackHud> BackpackHud;
 
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UProgressBar> HealthBar;
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UProgressBar> DamageTrailBar;
-    UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UProgressBar> StaminaBar;
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UBBBCombatHudIndicator> Crosshair;
+
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UBBBCombatHudIndicator> AimPoint;
+
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UBBBCombatHudIndicator> AmmoRail;
+
     UPROPERTY(meta = (BindWidgetOptional))
-    TObjectPtr<UBBBCombatHudIndicator> Reload;
+    TObjectPtr<UWidget> Telemetry;
 
-    UPROPERTY(Transient)
-    TMap<TObjectPtr<UImage>, TObjectPtr<UTexture2D>> IconTextures;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> FrameRateValue;
 
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UWidget> PingGroup;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> PingValue;
+
+    /** 背包投影锚点弹簧平滑时间 单位秒 */
+    UPROPERTY(EditDefaultsOnly, Category = "空间", meta = (DisplayName = "锚点平滑时长", ClampMin = "0.01", ClampMax = "0.3"))
+    float AnchorSmoothSeconds = 0.065f;
+
+    /** 瞄准状态过渡时长 单位秒 */
+    UPROPERTY(EditDefaultsOnly, Category = "空间", meta = (DisplayName = "瞄准淡化时长", ClampMin = "0.02", ClampMax = "0.5"))
+    float AimFadeSeconds = 0.16f;
+
+    FBBBDivisionHudSnapshot CachedSnapshot;
     TMap<FName, int32> DisplayedNumbers;
-    bool bItemsDirty = true;
     TWeakObjectPtr<APawn> ObservedPawn;
+
+    FVector2D SmoothedAnchor = FVector2D::ZeroVector;
+    FVector2D AnchorVelocity = FVector2D::ZeroVector;
+    float SmoothedDistanceScale = 1.0f;
     float PreviousHealth = 0.0f;
     float PreviousMaximum = 0.0f;
-    uint8 PreviousPhase = MAX_uint8;
-    bool bLowHealth = false;
     float DamageAge = 1.0f;
-    float DamageTrail = 0.0f;
+    float DamageTrail = 1.0f;
+    float StaminaFullSeconds = 2.0f;
+    float AimBlend = 0.0f;
     double SampleStartedAt = 0.0;
     int32 SampleFrames = 0;
+    uint8 PreviousPhase = MAX_uint8;
+    bool bItemsDirty = true;
+    bool bLowHealth = false;
+    bool bAnchorInitialized = false;
 };
