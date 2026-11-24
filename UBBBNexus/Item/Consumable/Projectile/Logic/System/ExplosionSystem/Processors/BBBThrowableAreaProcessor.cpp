@@ -160,7 +160,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         {
             const float Scale = Definition->Presentation.AreaEffectScale;
             const float SpreadScale = Scale * CurrentRadius / Area.Radius;
-            Actor.AreaEffect->SetWorldScale3D(FVector(SpreadScale, SpreadScale, Scale));
+            Actor.AreaEffect->SetWorldScale3D(FVector(SpreadScale, SpreadScale, Scale * 0.55f));
         }
         if (bCreateEffect && !Actor.AreaEffect->IsActive())
         {
