@@ -11,7 +11,7 @@ struct FBBBSMGHandlingSettings
 
     /** 枪口追随目标的响应速度 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "目标跟随", meta = (DisplayPriority = "1", ClampMin = "0.01", DisplayName = "目标跟随速率 (1/秒)", ToolTip = "指数跟随系数 越大枪口追随目标越快 不是度/秒 不控制后坐力回零"))
-    float AimFollowSpeed = 11.0f;
+    float AimFollowSpeed = 21.0f;
 
     /** 当前姿态对基础轨迹的幅度倍率 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "后坐力轨迹", meta = (ClampMin = "0.0", DisplayName = "轨迹幅度倍率", ToolTip = "无单位 1 使用基础轨迹 0 无方向后坐力 越大姿态偏移越大 不改变镜头"))
