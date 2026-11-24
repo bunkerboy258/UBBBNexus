@@ -105,7 +105,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
     {
         Actor.AreaEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&World, Definition->Presentation.AreaEffect,
             Fact.AreaGround, FRotator::ZeroRotator, FVector(Definition->Presentation.AreaEffectScale),
-            false, false, ENCPoolMethod::ManualRelease);
+            false, true, ENCPoolMethod::ManualRelease);
         if (Actor.AreaEffect && Area.bObscuresSight)
         {
             Actor.AreaEffect->SetVariableFloat(TEXT("User.Lifetime"), 3.2f);
@@ -132,7 +132,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             const float SpreadScale = Scale * CurrentRadius / Area.Radius;
             Actor.AreaEffect->SetWorldScale3D(FVector(SpreadScale, SpreadScale, Scale));
         }
-        if (bCreateEffect)
+        if (bCreateEffect && !Actor.AreaEffect->IsActive())
         {
             Actor.AreaEffect->Activate(true);
         }

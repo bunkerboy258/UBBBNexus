@@ -288,7 +288,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 BodyMesh->bUseScreenRenderStateForUpdate = false;
                 BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
             }
-            MonsterActor->SetBurningPresentation(Health[Index].bBurning && Health[Index].CurrentHealth > 0.0f
+            MonsterActor->SetBurningPresentation(Health[Index].bBurning
                 && !MonsterActor->IsHidden() && BodyMesh->WasRecentlyRendered(0.35f)
                 && BodyMesh->GetPredictedLODLevel() <= 2);
             if (Definition && Definition->Presentation->Gore)

@@ -24,7 +24,7 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BurningAsset(
-        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning.NS_Monster_Burning"));
+        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Clean.NS_Monster_Burning_Clean"));
     BurningSystem = BurningAsset.Object;
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("MonsterRoot"));
     SetRootComponent(Root);
@@ -157,5 +157,5 @@ void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
     const bool bHasSpine = MonsterMesh->DoesSocketExist(Spine);
     BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
         bHasSpine ? Spine : NAME_None, bHasSpine ? FVector::ZeroVector : FVector(0.0, 0.0, 75.0),
-        FRotator::ZeroRotator, FVector(0.9), EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::None);
+        FRotator::ZeroRotator, FVector(1.4), EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::None);
 }
