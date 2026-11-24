@@ -112,8 +112,6 @@ void ABBBPlayerController::SetupInputComponent()
 
     //把输入动作绑定到对应的控制器回调
     EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Started, this, &ABBBPlayerController::ToggleMouseCursor);
-    EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Completed, this, &ABBBPlayerController::OnToggleMouseReleased);
-    EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Canceled, this, &ABBBPlayerController::OnToggleMouseReleased);
 }
 
 //进入游戏时建立运行依赖
@@ -172,14 +170,15 @@ void ABBBPlayerController::ToggleMouseCursor()
         //结束当前切换鼠标指针与游戏输入模式流程
         return;
     }
-    // Esc 仍按住时输入模式刚切回游戏会再次 Started 必须忽略到抬起
-    if (bIgnoreMouseToggleUntilEscapeReleased)
+    if (const UWorld* World = GetWorld())
     {
-        return;
+        if (World->GetTimeSeconds() < GameplayMouseLockUntil)
+        {
+            return;
+        }
     }
     if (IsBackpackOpen())
     {
-        bIgnoreMouseToggleUntilEscapeReleased = true;
         ToggleBackpack();
         return;
     }
@@ -189,15 +188,6 @@ void ABBBPlayerController::ToggleMouseCursor()
     }
     //切换鼠标菜单输入模式
     SetMouseMenuMode(!bShowMouseCursor);
-}
-
-void ABBBPlayerController::OnToggleMouseReleased()
-{
-    // 切回 GameOnly 时可能误发 Canceled 只有 Esc 确实抬起才解除抑制
-    if (!IsInputKeyDown(EKeys::Escape))
-    {
-        bIgnoreMouseToggleUntilEscapeReleased = false;
-    }
 }
 
 void ABBBPlayerController::CycleQuickThrowable()
@@ -250,6 +240,10 @@ void ABBBPlayerController::ToggleBackpack()
     {
         ItemView->SetBackpackOpen(false);
         BackpackClosedFrame = GFrameCounter;
+        if (const UWorld* World = GetWorld())
+        {
+            GameplayMouseLockUntil = World->GetTimeSeconds() + 0.75;
+        }
         SetMouseMenuMode(false);
         return;
     }
@@ -346,7 +340,8 @@ void ABBBPlayerController::SetMouseMenuMode(bool bEnabled)
     }
     if (FSlateApplication::IsInitialized())
     {
-        FSlateApplication::Get().SetAllUserFocusToGameViewport();
+        // PIE 中只有鼠标原因的焦点才会重新捕获光标
+        FSlateApplication::Get().SetAllUserFocusToGameViewport(EFocusCause::Mouse);
     }
 }
 
@@ -623,6 +618,13 @@ void ABBBPlayerController::PlayerTick(const float DeltaTime)
     if (!IsLocalController())
     {
         return;
+    }
+    if (!IsBackpackOpen() && GetWorld() && GetWorld()->GetTimeSeconds() < GameplayMouseLockUntil)
+    {
+        if (bShowMouseCursor || !PlayerInputSystem->IsInputEnabled())
+        {
+            SetMouseMenuMode(false);
+        }
     }
     if (auto *LocalPlayer = GetLocalPlayer())
     {

@@ -240,11 +240,8 @@ private:
     /** 本帧已关闭背包 用于忽略同键重复打开 */
     uint64 BackpackClosedFrame = 0;
 
-    /** Esc 关背包后在按键抬起前禁止再次切到菜单鼠标 */
-    bool bIgnoreMouseToggleUntilEscapeReleased = false;
-
-    /** @return 无 Esc 抬起后允许再次切换菜单鼠标 */
-    void OnToggleMouseReleased();
+    /** 关闭背包后在此时间前保持游戏鼠标 */
+    double GameplayMouseLockUntil = -1.0;
 
     /** @return 本机控制且已经初始化真实背包的角色 */
     ABBBCharacter *GetItemCharacter() const;
