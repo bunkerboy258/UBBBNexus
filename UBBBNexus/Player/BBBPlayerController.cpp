@@ -112,6 +112,8 @@ void ABBBPlayerController::SetupInputComponent()
 
     //把输入动作绑定到对应的控制器回调
     EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Started, this, &ABBBPlayerController::ToggleMouseCursor);
+    EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Completed, this, &ABBBPlayerController::OnToggleMouseReleased);
+    EnhancedInput->BindAction(ToggleMouseAction, ETriggerEvent::Canceled, this, &ABBBPlayerController::OnToggleMouseReleased);
 }
 
 //进入游戏时建立运行依赖
@@ -170,18 +172,32 @@ void ABBBPlayerController::ToggleMouseCursor()
         //结束当前切换鼠标指针与游戏输入模式流程
         return;
     }
+    // Esc 仍按住时输入模式刚切回游戏会再次 Started 必须忽略到抬起
+    if (bIgnoreMouseToggleUntilEscapeReleased)
+    {
+        return;
+    }
     if (IsBackpackOpen())
     {
+        bIgnoreMouseToggleUntilEscapeReleased = true;
         ToggleBackpack();
         return;
     }
-    // 同一按键已由背包界面关闭时不再反转菜单模式
     if (GFrameCounter == BackpackClosedFrame)
     {
         return;
     }
     //切换鼠标菜单输入模式
     SetMouseMenuMode(!bShowMouseCursor);
+}
+
+void ABBBPlayerController::OnToggleMouseReleased()
+{
+    // 切回 GameOnly 时可能误发 Canceled 只有 Esc 确实抬起才解除抑制
+    if (!IsInputKeyDown(EKeys::Escape))
+    {
+        bIgnoreMouseToggleUntilEscapeReleased = false;
+    }
 }
 
 void ABBBPlayerController::CycleQuickThrowable()
@@ -234,22 +250,9 @@ void ABBBPlayerController::ToggleBackpack()
     {
         ItemView->SetBackpackOpen(false);
         BackpackClosedFrame = GFrameCounter;
-        // 界面事件当帧写入的 SlateOperations 不可靠 下一帧再切回纯游戏鼠标
-        if (UWorld* World = GetWorld())
-        {
-            World->GetTimerManager().SetTimerForNextTick(
-                FTimerDelegate::CreateWeakLambda(this, [this]
-                {
-                    SetMouseMenuMode(false);
-                }));
-            PlayerInputSystem->SetInputEnabled(true);
-            bShowMouseCursor = false;
-            return;
-        }
         SetMouseMenuMode(false);
         return;
     }
-    // 同键已关闭背包时禁止立刻再次打开
     if (GFrameCounter == BackpackClosedFrame)
     {
         return;

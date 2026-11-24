@@ -237,8 +237,14 @@ private:
     /** 本机白闪停留结束后开始淡出 */
     FTimerHandle ThrowableFlashHold;
 
-    /** 本帧已关闭背包 用于忽略同键重复切到菜单模式 */
+    /** 本帧已关闭背包 用于忽略同键重复打开 */
     uint64 BackpackClosedFrame = 0;
+
+    /** Esc 关背包后在按键抬起前禁止再次切到菜单鼠标 */
+    bool bIgnoreMouseToggleUntilEscapeReleased = false;
+
+    /** @return 无 Esc 抬起后允许再次切换菜单鼠标 */
+    void OnToggleMouseReleased();
 
     /** @return 本机控制且已经初始化真实背包的角色 */
     ABBBCharacter *GetItemCharacter() const;
