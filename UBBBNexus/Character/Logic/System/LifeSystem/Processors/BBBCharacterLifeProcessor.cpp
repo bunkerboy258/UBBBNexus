@@ -86,7 +86,8 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         Hit.Position = Value.Position;
         Hit.Direction = Value.Direction.GetSafeNormal();
         Hit.Time = World.WorldTimeSeconds;
-        if (Value.AddHoldSeconds > 0 || !Value.AddImpulse.IsNearlyZero() || !Value.AddVelocity.IsNearlyZero())
+        const bool bHadExplicitImpact = Value.AddHoldSeconds > 0 || !Value.AddImpulse.IsNearlyZero() || !Value.AddVelocity.IsNearlyZero();
+        if (bHadExplicitImpact)
         {
             if (bFirstImpact)
             {
@@ -104,15 +105,46 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         {
             continue;
         }
-        if (State.Phase == EBBBCharacterLifePhase::Alive)
+        const bool bTransitionToDowned = State.Phase == EBBBCharacterLifePhase::Alive;
+        if (bTransitionToDowned)
         {
             State.Phase = EBBBCharacterLifePhase::Downed;
             State.Health = Context.Config.DownedHealth;
             State.DownedRevision = State.Revision;
             State.bRecoveryCrouched = false;
-            continue;
         }
-        State.Phase = EBBBCharacterLifePhase::Dead;
+        else
+        {
+            State.Phase = EBBBCharacterLifePhase::Dead;
+        }
+
+        // 致死或首次击倒时补足最低水平推力与抬升 避免原地软倒
+        const FVector KnockDir2D = Hit.Direction.GetSafeNormal2D();
+        if (!KnockDir2D.IsNearlyZero() && (Context.Config.LethalKnockbackSpeed > 0.0f || Context.Config.LethalKnockbackLift > 0.0f))
+        {
+            if (bFirstImpact)
+            {
+                Hit.ImpactVelocity = FVector::ZeroVector;
+                Hit.ImpactImpulse = FVector::ZeroVector;
+                Hit.ImpactHoldSeconds = 0;
+                bFirstImpact = false;
+            }
+            const float CurrentForwardSpeed = FVector::DotProduct(Hit.ImpactVelocity, KnockDir2D);
+            if (CurrentForwardSpeed < Context.Config.LethalKnockbackSpeed)
+            {
+                Hit.ImpactVelocity += KnockDir2D * (Context.Config.LethalKnockbackSpeed - CurrentForwardSpeed);
+            }
+            Hit.ImpactVelocity.Z = FMath::Max(Hit.ImpactVelocity.Z, Context.Config.LethalKnockbackLift);
+            if (bTransitionToDowned && Context.Config.DownedImpactHoldSeconds > 0.0f)
+            {
+                Hit.ImpactHoldSeconds = FMath::Max(Hit.ImpactHoldSeconds,
+                    FMath::Min(Context.Config.DownedImpactHoldSeconds, Context.Config.MaximumImpactHoldSeconds));
+            }
+            if (!bHadExplicitImpact)
+            {
+                ++Hit.ImpactSerial;
+            }
+        }
     }
 
     auto &Rescue = Domain.RescueState;

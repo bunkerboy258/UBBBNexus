@@ -92,6 +92,22 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "倒地生命", ClampMin = "1"))
     float DownedHealth = 300.0f;
 
+    /** 致死或击倒一击的最低水平后推速度 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|击倒", meta = (DisplayName = "致死最低后推速度", ClampMin = "0", ForceUnits = "cm/s"))
+    float LethalKnockbackSpeed = 500.0f;
+
+    /** 致死或击倒一击的最低向上抬升速度 单位厘米每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|击倒", meta = (DisplayName = "致死最低抬升速度", ClampMin = "0", ForceUnits = "cm/s"))
+    float LethalKnockbackLift = 180.0f;
+
+    /** 进入倒地状态时触发物理砸地的最短保持秒数 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|击倒", meta = (DisplayName = "倒地物理保持时长", ClampMin = "0", ForceUnits = "s"))
+    float DownedImpactHoldSeconds = 0.7f;
+
+    /** 致死或击倒布娃娃时上半身额外仰翻速度比例 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|击倒", meta = (DisplayName = "布娃娃上半身仰翻比例", ClampMin = "0", ClampMax = "2"))
+    float LethalUpperBodyImpulseScale = 0.45f;
+
     /** 救援开始与维持的最大距离 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|救援", meta = (DisplayName = "救援距离", ClampMin = "1", ToolTip = "双方固定脚底基准的最大距离"))
     float RescueDistance = 100.0f;

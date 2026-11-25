@@ -2,7 +2,10 @@
 
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Context/BBBCharacterPhysicalPresentationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Config/BBBCharacterConfig.h"
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "PhysicsEngine/BodyInstance.h"
 
 void FBBBCharacterKnockdownProcessor::Update(FBBBCharacterPhysicalPresentationUpdateContext &Context) const
 {
@@ -32,6 +35,19 @@ void FBBBCharacterKnockdownProcessor::Update(FBBBCharacterPhysicalPresentationUp
             if (State.bRagdoll)
             {
                 Context.Mesh.SetAllPhysicsLinearVelocity(Velocity, true);
+                const float UpperScale = Context.Character.GetCharacterConfig().LethalUpperBodyImpulseScale;
+                const FVector HorizontalDir = Velocity.GetSafeNormal2D();
+                if (UpperScale > 0.0f && !HorizontalDir.IsNearlyZero())
+                {
+                    const FVector UpperImpulse = HorizontalDir * (Velocity.Size2D() * UpperScale) + FVector::UpVector * 60.0f;
+                    for (const FName BoneName : {TEXT("spine_02"), TEXT("spine_03"), TEXT("head")})
+                    {
+                        if (const FBodyInstance *Body = Context.Mesh.GetBodyInstance(BoneName); Body && Body->IsInstanceSimulatingPhysics())
+                        {
+                            Context.Mesh.AddImpulse(UpperImpulse, BoneName, true);
+                        }
+                    }
+                }
                 Context.Mesh.WakeAllRigidBodies();
             }
             if (!State.bRagdoll)

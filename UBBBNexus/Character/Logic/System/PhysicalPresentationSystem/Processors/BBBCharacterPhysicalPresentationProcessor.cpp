@@ -2,6 +2,7 @@
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Context/BBBCharacterPhysicalPresentationUpdateContext.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/Processors/BBBCharacterHitReactionComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/RuntimeData/BBBCharacterRuntimeData.h"
+#include "BBBWork/UBBBNexus/Character/Config/BBBCharacterConfig.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
@@ -73,6 +74,29 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
         // 局部受击资产关闭了重力 全身布娃娃必须逐刚体重新开启
         Context.Mesh.SetEnableGravityOnAllBodiesBelow(true, NAME_None);
         Context.Mesh.SetAllPhysicsLinearVelocity(Velocity);
+        if (!bRestored)
+        {
+            const float UpperScale = Context.Character.GetCharacterConfig().LethalUpperBodyImpulseScale;
+            const FVector HorizontalDir = Velocity.GetSafeNormal2D();
+            if (UpperScale > 0.0f && !HorizontalDir.IsNearlyZero())
+            {
+                // 对上半身与左臂施加额外速度脉冲 形成后仰翻倒张力 右臂排除以保留持枪侧稳定
+                const FVector UpperImpulse = HorizontalDir * (Velocity.Size2D() * UpperScale) + FVector::UpVector * 60.0f;
+                for (const FName BoneName : {TEXT("spine_02"), TEXT("spine_03"), TEXT("head")})
+                {
+                    if (const FBodyInstance *Body = Context.Mesh.GetBodyInstance(BoneName); Body && Body->IsInstanceSimulatingPhysics())
+                    {
+                        Context.Mesh.AddImpulse(UpperImpulse, BoneName, true);
+                    }
+                }
+                const FVector ArmImpulse = UpperImpulse * 0.5f;
+                if (const FBodyInstance *ArmBody = Context.Mesh.GetBodyInstance(TEXT("upperarm_l"));
+                    ArmBody && ArmBody->IsInstanceSimulatingPhysics())
+                {
+                    Context.Mesh.AddImpulse(ArmImpulse, TEXT("upperarm_l"), true);
+                }
+            }
+        }
         Context.Mesh.WakeAllRigidBodies();
         State.bRagdoll = true;
         State.bRagdollRequested = false;
