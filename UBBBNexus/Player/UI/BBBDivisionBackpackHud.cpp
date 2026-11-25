@@ -141,7 +141,7 @@ public:
         // 常驻生命与装备栏固定锚定 武器弹药区固定预留于其上方 切枪与空手时下方常驻栏零位移
         const float ClusterWidth = 268.0f * Scale;
         const float WeaponBandHeight = 40.0f * Scale;
-        const float WeaponGap = 7.0f * Scale;
+        const float WeaponGap = 9.0f * Scale;
         const float TopReservedHeight = WeaponBandHeight + WeaponGap;
         const float HealthBarHeight = 9.5f * Scale;
         const float StaminaGap = 4.5f * Scale;
@@ -160,14 +160,21 @@ public:
 
         const double SafeEdgeX = 28.0 * ViewportScale;
         const double SafeEdgeY = 28.0 * ViewportScale;
-        const double ReticleAvoidLeft = LocalSize.X * 0.5 + 52.0 * ViewportScale;
-        const double ReticleAvoidTop = LocalSize.Y * 0.5 - 56.0 * ViewportScale;
-        const double ReticleAvoidBottom = LocalSize.Y * 0.5 + 56.0 * ViewportScale;
+        const double ReticleCenterY = LocalSize.Y * 0.5;
+        const double ReticleAvoidLeft = LocalSize.X * 0.5 + 48.0 * ViewportScale;
+        const double ReticleHalfH = 56.0 * ViewportScale;
+        const double BlendMarginY = 96.0 * ViewportScale;
 
         FVector2D Origin(Anchor.X, Anchor.Y - TopReservedHeight);
-        if (Origin.Y < ReticleAvoidBottom && (Origin.Y + FullClusterHeight) > ReticleAvoidTop && Origin.X < ReticleAvoidLeft)
+        // 平滑避让中央准星区域 防止瞄准蹲伏穿过边界时单帧跳变与闪烁
+        const double TopClearance = (ReticleCenterY + ReticleHalfH) - Origin.Y;
+        const double BottomClearance = (Origin.Y + FullClusterHeight) - (ReticleCenterY - ReticleHalfH);
+        const double VerticalOverlap = FMath::Min(TopClearance, BottomClearance);
+        const double AvoidAlpha = FMath::SmoothStep(0.0, 1.0,
+            FMath::Clamp((VerticalOverlap + BlendMarginY) / (BlendMarginY * 1.5), 0.0, 1.0));
+        if (Origin.X < ReticleAvoidLeft && AvoidAlpha > 0.0)
         {
-            Origin.X = FMath::Max(Origin.X, ReticleAvoidLeft);
+            Origin.X = FMath::Lerp(Origin.X, ReticleAvoidLeft, AvoidAlpha);
         }
 
         Origin.X = FMath::Clamp(Origin.X, SafeEdgeX, FMath::Max(SafeEdgeX, LocalSize.X - ClusterWidth - SafeEdgeX));
@@ -359,7 +366,7 @@ public:
         {
             if (Snapshot.bHasAmmo)
             {
-                const int32 LoadedFontSize = FMath::Max(14, FMath::RoundToInt(38.0f * Scale));
+                const int32 LoadedFontSize = FMath::Max(14, FMath::RoundToInt(35.0f * Scale));
                 const int32 CapFontSize = FMath::Max(10, FMath::RoundToInt(16.0f * Scale));
                 const FSlateFontInfo LoadedFont(BoldComposite, LoadedFontSize);
                 const FSlateFontInfo CapFont(LightComposite, CapFontSize);
@@ -371,7 +378,8 @@ public:
 
                 const FVector2D LoadedExtent = FontMeasure->Measure(LoadedText, LoadedFont);
                 const FVector2D CapExtent = FontMeasure->Measure(CapacityText, CapFont);
-                const float LoadedTop = -5.0f * Scale;
+                // 抵消字体顶部内置留白 使主弹药数字与主脊线顶端平齐并在下方留出呼吸空隙不遮挡血条
+                const float LoadedTop = -14.0f * Scale;
                 DrawTextCrisp(LoadedText, FVector2D(ContentLeft, LoadedTop), LoadedFont,
                     AlphaTint(PrimaryTint, LoadedAlpha), 3);
 
@@ -392,7 +400,7 @@ public:
                 }
 
                 const float CapX = ContentLeft + LoadedExtent.X + 4.0f * Scale;
-                const float CapY = LoadedTop + LoadedExtent.Y - CapExtent.Y - 6.0f * Scale;
+                const float CapY = LoadedTop + LoadedExtent.Y * 0.80f - CapExtent.Y * 0.80f;
                 DrawTextCrisp(CapacityText, FVector2D(CapX, CapY), CapFont,
                     AlphaTint(SecondaryTint, 0.96f), 3);
 
