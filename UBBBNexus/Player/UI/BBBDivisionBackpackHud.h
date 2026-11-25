@@ -130,10 +130,6 @@ private:
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "对比阴影强度", ClampMin = "0.0", ClampMax = "1.0"))
     float ContrastShadowStrength = 0.78f;
 
-    /** 纯白全息微自发光强度 */
-    UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "微自发光强度", ClampMin = "0.0", ClampMax = "2.0"))
-    float EmissiveGlowStrength = 1.0f;
-
     /** 生命条分段数量 */
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "血条分段数", ClampMin = "1", ClampMax = "8"))
     int32 HealthSegments = 5;
@@ -141,14 +137,6 @@ private:
     /** 整体缩放倍率 */
     UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "整体缩放", ClampMin = "0.5", ClampMax = "2.5"))
     float HudScale = 1.3f;
-
-    /** 3D 水平透视偏航角 正值表示左侧在内右侧在外 且水平中线保持平直 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "水平透视偏航角", ClampMin = "-50.0", ClampMax = "50.0"))
-    float PerspectiveYawDegrees = 32.0f;
-
-    /** 3D 透视虚拟焦距 越小透视近大远小越强烈 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视焦距", ClampMin = "280.0", ClampMax = "2000.0"))
-    float PerspectiveFocalDistance = 560.0f;
 
     /** 背包侧边相对屏幕微调偏移 */
     UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "锚点屏幕微调"))

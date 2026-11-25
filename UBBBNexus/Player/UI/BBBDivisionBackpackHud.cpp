@@ -1,5 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBDivisionBackpackHud.h"
 
+#include "Brushes/SlateColorBrush.h"
 #include "Engine/FontFace.h"
 #include "Engine/Texture2D.h"
 #include "Fonts/CompositeFont.h"
@@ -8,10 +9,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Rendering/DrawElements.h"
-#include "Rendering/SlateRenderer.h"
-#include "Textures/SlateShaderResource.h"
 #include "UObject/ConstructorHelpers.h"
-#include "UObject/StrongObjectPtr.h"
 #include "Widgets/SLeafWidget.h"
 
 namespace
@@ -57,7 +55,7 @@ void FitAspectBox(const FVector2D &BoxOrigin, const FVector2D &BoxSize, const FV
 }
 }
 
-/** 全境封锁 2 风格开放悬空极简白色微自发光背包侧边战术集群绘制器 */
+/** 全境封锁 2 风格开放悬空极简白色无倾斜无发光背包侧边战术集群绘制器 */
 class SBBBDivisionBackpackHud final : public SLeafWidget
 {
 public:
@@ -67,15 +65,6 @@ public:
     void Construct(const FArguments &Arguments)
     {
         SetVisibility(EVisibility::HitTestInvisible);
-
-        if (UTexture2D *WhiteTexture = LoadObject<UTexture2D>(nullptr,
-            TEXT("/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture")))
-        {
-            SolidWhiteTexture.Reset(WhiteTexture);
-            SolidWhiteBrush.SetResourceObject(WhiteTexture);
-            SolidWhiteBrush.DrawAs = ESlateBrushDrawType::Image;
-            SolidWhiteBrush.ImageSize = FVector2D(4.0, 4.0);
-        }
     }
 
     virtual FVector2D ComputeDesiredSize(float) const override
@@ -150,7 +139,7 @@ public:
             || Snapshot.SpareThrowables[1].bOccupied;
 
         // 常驻生命与装备栏固定锚定 武器弹药区固定预留于其上方 切枪与空手时下方常驻栏零位移
-        const float ClusterWidth = 285.0f * Scale;
+        const float ClusterWidth = 268.0f * Scale;
         const float WeaponBandHeight = 40.0f * Scale;
         const float WeaponGap = 7.0f * Scale;
         const float TopReservedHeight = WeaponBandHeight + WeaponGap;
@@ -163,38 +152,6 @@ public:
         const float PersistentHeight = VitalsHeight + LoadoutGap + LoadoutHeight;
         const float FullClusterHeight = TopReservedHeight + PersistentHeight;
 
-        // 真 3D 水平透视参数 水平中线严格平直 左侧推入屏幕深处 右侧拉向镜头前景
-        const float MidY = TopReservedHeight + HealthBarHeight * 0.5f;
-        const float HalfW = ClusterWidth * 0.5f;
-        const float YawRad = FMath::DegreesToRadians(FMath::Clamp(PerspectiveYawDegrees, -50.0f, 50.0f));
-        const float CosYaw = FMath::Cos(YawRad);
-        const float SinYaw = FMath::Sin(YawRad);
-        const float FocalDist = FMath::Max(ClusterWidth * 1.35f, PerspectiveFocalDistance * Scale);
-
-        const auto ComputePerspectiveScale = [&](double LocalX) -> double
-        {
-            const double U = LocalX - HalfW;
-            const double Denom = FMath::Max(FocalDist * 0.35, FocalDist - U * SinYaw);
-            return FocalDist / Denom;
-        };
-
-        const double LeftScale = ComputePerspectiveScale(0.0);
-        const double RightScale = ComputePerspectiveScale(ClusterWidth);
-        const double LeftProjRaw = (-HalfW) * CosYaw * LeftScale;
-        const double RightProjRaw = HalfW * CosYaw * RightScale;
-        const double ProjectedWidth = FMath::Max(1.0, RightProjRaw - LeftProjRaw);
-        const double MaxPerspScale = FMath::Max(LeftScale, RightScale);
-
-        const auto ProjectPoint = [&](const FVector2D &LocalPos) -> FVector2D
-        {
-            const double U = LocalPos.X - HalfW;
-            const double V = LocalPos.Y - MidY;
-            const double Persp = ComputePerspectiveScale(LocalPos.X);
-            const double ProjX = (U * CosYaw * Persp) - LeftProjRaw;
-            const double ProjY = MidY + V * Persp;
-            return FVector2D(ProjX, ProjY);
-        };
-
         // 屏幕空间锚点锁定在常驻体征栏基准线 瞄准与空手均不减弱显示也不挤压常驻栏
         FVector2D Anchor = Snapshot.bHasAnchor
             ? Snapshot.AnchorPosition
@@ -202,8 +159,7 @@ public:
         Anchor += AnchorPixelOffset * BaseScale;
 
         const double SafeEdgeX = 28.0 * ViewportScale;
-        const double SafeEdgeTop = 28.0 * ViewportScale + FMath::Max(0.0, (MaxPerspScale - 1.0) * MidY);
-        const double SafeEdgeBottom = 28.0 * ViewportScale + FMath::Max(0.0, (MaxPerspScale - 1.0) * (FullClusterHeight - MidY));
+        const double SafeEdgeY = 28.0 * ViewportScale;
         const double ReticleAvoidLeft = LocalSize.X * 0.5 + 52.0 * ViewportScale;
         const double ReticleAvoidTop = LocalSize.Y * 0.5 - 56.0 * ViewportScale;
         const double ReticleAvoidBottom = LocalSize.Y * 0.5 + 56.0 * ViewportScale;
@@ -214,113 +170,44 @@ public:
             Origin.X = FMath::Max(Origin.X, ReticleAvoidLeft);
         }
 
-        Origin.X = FMath::Clamp(Origin.X, SafeEdgeX, FMath::Max(SafeEdgeX, LocalSize.X - ProjectedWidth - SafeEdgeX));
-        Origin.Y = FMath::Clamp(Origin.Y, SafeEdgeTop, FMath::Max(SafeEdgeTop, LocalSize.Y - FullClusterHeight - SafeEdgeBottom));
+        Origin.X = FMath::Clamp(Origin.X, SafeEdgeX, FMath::Max(SafeEdgeX, LocalSize.X - ClusterWidth - SafeEdgeX));
+        Origin.Y = FMath::Clamp(Origin.Y, SafeEdgeY, FMath::Max(SafeEdgeY, LocalSize.Y - FullClusterHeight - SafeEdgeY));
 
         const FGeometry ClusterGeometry = Geometry.MakeChild(
-            FVector2f(static_cast<float>(ProjectedWidth), FullClusterHeight),
+            FVector2f(ClusterWidth, FullClusterHeight),
             FSlateLayoutTransform(FVector2f(Origin)));
-        const FSlateRenderTransform ClusterRenderTransform = ClusterGeometry.GetAccumulatedRenderTransform();
 
-        FSlateRenderer *Renderer = FSlateApplication::Get().GetRenderer();
-        const FSlateResourceHandle WhiteHandle = (Renderer && SolidWhiteBrush.GetResourceObject())
-            ? Renderer->GetResourceHandle(SolidWhiteBrush)
-            : FSlateResourceHandle();
-        const FSlateShaderResourceProxy *WhiteProxy = WhiteHandle.GetResourceProxy();
-        const FVector2f WhiteCenterUV = WhiteProxy
-            ? (WhiteProxy->StartUV + WhiteProxy->SizeUV * 0.5f)
-            : FVector2f(0.5f, 0.5f);
-
+        static const FSlateColorBrush SolidBrush(FLinearColor::White);
         const float ShadowAlphaScale = FMath::Clamp(ContrastShadowStrength, 0.0f, 1.0f);
-        const float GlowScale = FMath::Clamp(EmissiveGlowStrength, 0.0f, 2.0f);
-        const FLinearColor GlowColor(0.93f, 0.97f, 1.0f, 1.0f);
 
         const auto AlphaTint = [](const FLinearColor &Base, float ExtraAlpha = 1.0f)
         {
             return Base.CopyWithNewOpacity(Base.A * ExtraAlpha);
         };
 
-        // 真 3D 透视四边形填充 零离屏缓冲开销
         const auto DrawRect = [&](const FVector2D &Pos, const FVector2D &Extent, const FLinearColor &Color, int32 LayerOffset)
         {
-            if (Extent.X <= 0.0 || Extent.Y <= 0.0 || Color.A <= 0.002f || !WhiteHandle.IsValid())
+            if (Extent.X <= 0.0 || Extent.Y <= 0.0 || Color.A <= 0.002f)
             {
                 return;
             }
 
-            const FColor VertexColor = Color.ToFColor(true);
-            const FVector2D TL = ProjectPoint(Pos);
-            const FVector2D TR = ProjectPoint(FVector2D(Pos.X + Extent.X, Pos.Y));
-            const FVector2D BR = ProjectPoint(Pos + Extent);
-            const FVector2D BL = ProjectPoint(FVector2D(Pos.X, Pos.Y + Extent.Y));
-
-            TArray<FSlateVertex> Verts;
-            Verts.Reserve(4);
-            Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
-                ClusterRenderTransform, FVector2f(TL), FVector4f(WhiteCenterUV.X, WhiteCenterUV.Y, 1.0f, 1.0f), FVector2f(0.0f, 0.0f), VertexColor));
-            Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
-                ClusterRenderTransform, FVector2f(TR), FVector4f(WhiteCenterUV.X, WhiteCenterUV.Y, 1.0f, 1.0f), FVector2f(1.0f, 0.0f), VertexColor));
-            Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
-                ClusterRenderTransform, FVector2f(BR), FVector4f(WhiteCenterUV.X, WhiteCenterUV.Y, 1.0f, 1.0f), FVector2f(1.0f, 1.0f), VertexColor));
-            Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
-                ClusterRenderTransform, FVector2f(BL), FVector4f(WhiteCenterUV.X, WhiteCenterUV.Y, 1.0f, 1.0f), FVector2f(0.0f, 1.0f), VertexColor));
-
-            static const TArray<SlateIndex> QuadIndices = {0, 1, 2, 0, 2, 3};
-            FSlateDrawElement::MakeCustomVerts(
+            FSlateDrawElement::MakeBox(
                 Elements,
                 Layer + LayerOffset,
-                WhiteHandle,
-                Verts,
-                QuadIndices,
-                nullptr,
-                0,
-                0,
-                ESlateDrawEffect::NoPixelSnapping);
-        };
-
-        // 轻量纯白微自发光光晕 三层指数柔扩 零离屏模糊开销
-        const auto DrawRectGlow = [&](const FVector2D &Pos, const FVector2D &Extent, float Intensity, int32 LayerOffset)
-        {
-            if (GlowScale <= 0.01f || Intensity <= 0.01f || Extent.X <= 0.0 || Extent.Y <= 0.0)
-            {
-                return;
-            }
-
-            const float OuterExpand = 6.5f * Scale;
-            const float MidExpand = 3.2f * Scale;
-            const float InnerExpand = 1.3f * Scale;
-            DrawRect(Pos - FVector2D(OuterExpand, OuterExpand),
-                Extent + FVector2D(OuterExpand * 2.0f, OuterExpand * 2.0f),
-                GlowColor.CopyWithNewOpacity(FMath::Clamp(0.055f * Intensity * GlowScale, 0.0f, 0.18f)),
-                LayerOffset);
-            DrawRect(Pos - FVector2D(MidExpand, MidExpand),
-                Extent + FVector2D(MidExpand * 2.0f, MidExpand * 2.0f),
-                GlowColor.CopyWithNewOpacity(FMath::Clamp(0.12f * Intensity * GlowScale, 0.0f, 0.30f)),
-                LayerOffset);
-            DrawRect(Pos - FVector2D(InnerExpand, InnerExpand),
-                Extent + FVector2D(InnerExpand * 2.0f, InnerExpand * 2.0f),
-                GlowColor.CopyWithNewOpacity(FMath::Clamp(0.22f * Intensity * GlowScale, 0.0f, 0.44f)),
-                LayerOffset);
+                ClusterGeometry.ToPaintGeometry(Extent, FSlateLayoutTransform(FVector2f(Pos))),
+                &SolidBrush,
+                ESlateDrawEffect::NoPixelSnapping,
+                Color);
         };
 
         const auto DrawLine = [&](const TArray<FVector2D> &Points, float Thickness, const FLinearColor &Color,
-            int32 LayerOffset, bool bShadow = true, float GlowIntensity = 0.0f)
+            int32 LayerOffset, bool bShadow = true)
         {
             if (Points.Num() < 2 || Color.A <= 0.002f)
             {
                 return;
             }
-
-            TArray<FVector2D> ProjectedPoints;
-            ProjectedPoints.Reserve(Points.Num());
-            double AvgX = 0.0;
-            for (const FVector2D &Pt : Points)
-            {
-                AvgX += Pt.X;
-                ProjectedPoints.Add(ProjectPoint(Pt));
-            }
-            const float LinePersp = static_cast<float>(ComputePerspectiveScale(AvgX / Points.Num()));
-            const float PerspThickness = Thickness * LinePersp;
 
             if (bShadow && ShadowAlphaScale > 0.01f)
             {
@@ -328,73 +215,32 @@ public:
                     Elements,
                     Layer + LayerOffset,
                     ClusterGeometry.ToPaintGeometry(),
-                    ProjectedPoints,
+                    Points,
                     ESlateDrawEffect::NoPixelSnapping,
                     FLinearColor(0.0f, 0.0f, 0.0f, Color.A * 0.65f * ShadowAlphaScale),
                     true,
-                    PerspThickness + 1.8f * Scale * LinePersp);
-            }
-
-            if (GlowScale > 0.01f && GlowIntensity > 0.01f)
-            {
-                FSlateDrawElement::MakeLines(
-                    Elements,
-                    Layer + LayerOffset + 1,
-                    ClusterGeometry.ToPaintGeometry(),
-                    ProjectedPoints,
-                    ESlateDrawEffect::NoPixelSnapping,
-                    GlowColor.CopyWithNewOpacity(FMath::Clamp(0.10f * GlowIntensity * GlowScale * Color.A, 0.0f, 0.28f)),
-                    true,
-                    PerspThickness + 5.5f * Scale * LinePersp);
-                FSlateDrawElement::MakeLines(
-                    Elements,
-                    Layer + LayerOffset + 1,
-                    ClusterGeometry.ToPaintGeometry(),
-                    ProjectedPoints,
-                    ESlateDrawEffect::NoPixelSnapping,
-                    GlowColor.CopyWithNewOpacity(FMath::Clamp(0.18f * GlowIntensity * GlowScale * Color.A, 0.0f, 0.40f)),
-                    true,
-                    PerspThickness + 2.6f * Scale * LinePersp);
+                    Thickness + 1.8f * Scale);
             }
 
             FSlateDrawElement::MakeLines(
                 Elements,
-                Layer + LayerOffset + 2,
+                Layer + LayerOffset + 1,
                 ClusterGeometry.ToPaintGeometry(),
-                ProjectedPoints,
+                Points,
                 ESlateDrawEffect::NoPixelSnapping,
                 Color,
                 true,
-                PerspThickness);
+                Thickness);
         };
 
-        const TSharedRef<FSlateFontMeasure> FontMeasure = Renderer->GetFontMeasureService();
-
-        // 暗影保底 + 外扩微自发光光晕 + 局部 3D 雅可比透视矩阵 绘制纯白立体数字
-        const auto DrawTextLuminous = [&](const FString &Text, const FVector2D &Pos, const FSlateFontInfo &Font,
-            const FLinearColor &Color, float GlowIntensity, int32 LayerOffset)
+        // 暗影保底 + 锐利纯白前景 绘制无自发光数字
+        const auto DrawTextCrisp = [&](const FString &Text, const FVector2D &Pos, const FSlateFontInfo &Font,
+            const FLinearColor &Color, int32 LayerOffset)
         {
             if (Text.IsEmpty() || Color.A <= 0.002f)
             {
                 return;
             }
-
-            const FVector2D TextExtent = FontMeasure->Measure(Text, Font);
-            const FVector2D LocalCenter = Pos + TextExtent * 0.5;
-            const FVector2D ProjCenter = ProjectPoint(LocalCenter);
-            const float TextPersp = static_cast<float>(ComputePerspectiveScale(LocalCenter.X));
-            const float RelY = static_cast<float>(LocalCenter.Y - MidY);
-            const float PerspSq = TextPersp * TextPersp;
-            const FMatrix2x2 LocalJacobian(
-                CosYaw * PerspSq,
-                RelY * (SinYaw / FocalDist) * PerspSq,
-                0.0f,
-                TextPersp);
-            const FGeometry TextGeometry = ClusterGeometry.MakeChild(
-                FVector2f(TextExtent),
-                FSlateLayoutTransform(FVector2f(ProjCenter - TextExtent * 0.5)),
-                FSlateRenderTransform(LocalJacobian),
-                FVector2f(0.5f, 0.5f));
 
             if (ShadowAlphaScale > 0.01f)
             {
@@ -402,7 +248,8 @@ public:
                 FSlateDrawElement::MakeText(
                     Elements,
                     Layer + LayerOffset,
-                    TextGeometry.ToPaintGeometry(TextExtent, FSlateLayoutTransform(FVector2f(0.0f, 1.5f * Scale))),
+                    ClusterGeometry.ToPaintGeometry(FVector2D(ClusterWidth, FullClusterHeight),
+                        FSlateLayoutTransform(FVector2f(Pos + FVector2D(0.0, 1.4 * Scale)))),
                     Text,
                     Font,
                     ESlateDrawEffect::None,
@@ -411,149 +258,29 @@ public:
                 FSlateDrawElement::MakeText(
                     Elements,
                     Layer + LayerOffset,
-                    TextGeometry.ToPaintGeometry(TextExtent, FSlateLayoutTransform(FVector2f(1.3f * Scale, 1.0f * Scale))),
+                    ClusterGeometry.ToPaintGeometry(FVector2D(ClusterWidth, FullClusterHeight),
+                        FSlateLayoutTransform(FVector2f(Pos + FVector2D(1.2 * Scale, 0.9 * Scale)))),
                     Text,
                     Font,
                     ESlateDrawEffect::None,
                     FLinearColor(0.0f, 0.0f, 0.0f, SAlpha * 0.55f));
             }
 
-            if (GlowScale > 0.01f && GlowIntensity > 0.01f)
-            {
-                const float InnerOff = 1.1f * Scale;
-                const FLinearColor InnerHalo = GlowColor.CopyWithNewOpacity(
-                    FMath::Clamp(0.18f * GlowIntensity * GlowScale * Color.A, 0.0f, 0.42f));
-                const FVector2D InnerOffsets[4] = {
-                    FVector2D(-InnerOff, 0.0), FVector2D(InnerOff, 0.0),
-                    FVector2D(0.0, -InnerOff), FVector2D(0.0, InnerOff)};
-                for (const FVector2D &Off : InnerOffsets)
-                {
-                    FSlateDrawElement::MakeText(
-                        Elements,
-                        Layer + LayerOffset + 1,
-                        TextGeometry.ToPaintGeometry(TextExtent, FSlateLayoutTransform(FVector2f(Off))),
-                        Text,
-                        Font,
-                        ESlateDrawEffect::None,
-                        InnerHalo);
-                }
-
-                if (GlowIntensity >= 0.45f)
-                {
-                    const float OuterOff = 2.2f * Scale;
-                    const FLinearColor OuterHalo = GlowColor.CopyWithNewOpacity(
-                        FMath::Clamp(0.10f * GlowIntensity * GlowScale * Color.A, 0.0f, 0.24f));
-                    const FVector2D OuterOffsets[4] = {
-                        FVector2D(-OuterOff, -OuterOff), FVector2D(OuterOff, -OuterOff),
-                        FVector2D(-OuterOff, OuterOff), FVector2D(OuterOff, OuterOff)};
-                    for (const FVector2D &Off : OuterOffsets)
-                    {
-                        FSlateDrawElement::MakeText(
-                            Elements,
-                            Layer + LayerOffset + 1,
-                            TextGeometry.ToPaintGeometry(TextExtent, FSlateLayoutTransform(FVector2f(Off))),
-                            Text,
-                            Font,
-                            ESlateDrawEffect::None,
-                            OuterHalo);
-                    }
-                }
-            }
-
             FSlateDrawElement::MakeText(
                 Elements,
-                Layer + LayerOffset + 2,
-                TextGeometry.ToPaintGeometry(TextExtent, FSlateLayoutTransform()),
+                Layer + LayerOffset + 1,
+                ClusterGeometry.ToPaintGeometry(FVector2D(ClusterWidth, FullClusterHeight),
+                    FSlateLayoutTransform(FVector2f(Pos))),
                 Text,
                 Font,
                 ESlateDrawEffect::None,
                 Color);
         };
 
-        // 四条带细分透视网格绘制白色剪影 消除单四边形斜线纹理畸变且无需裁剪压栈
-        const auto DrawTexturedPerspectiveQuad = [&](const FSlateResourceHandle &Handle, const FVector2D &QuadPos,
-            const FVector2D &QuadExtent, const FVector2D &ClipMin, const FVector2D &ClipMax,
-            const FLinearColor &Color, int32 LayerOffset)
-        {
-            if (!Handle.IsValid() || QuadExtent.X <= 0.5 || QuadExtent.Y <= 0.5 || Color.A <= 0.002f)
-            {
-                return;
-            }
-
-            const double X0 = FMath::Max(QuadPos.X, ClipMin.X);
-            const double Y0 = FMath::Max(QuadPos.Y, ClipMin.Y);
-            const double X1 = FMath::Min(QuadPos.X + QuadExtent.X, ClipMax.X);
-            const double Y1 = FMath::Min(QuadPos.Y + QuadExtent.Y, ClipMax.Y);
-            if (X1 <= X0 + 0.25 || Y1 <= Y0 + 0.25)
-            {
-                return;
-            }
-
-            const float U0 = static_cast<float>((X0 - QuadPos.X) / QuadExtent.X);
-            const float U1 = static_cast<float>((X1 - QuadPos.X) / QuadExtent.X);
-            const float V0 = static_cast<float>((Y0 - QuadPos.Y) / QuadExtent.Y);
-            const float V1 = static_cast<float>((Y1 - QuadPos.Y) / QuadExtent.Y);
-
-            const FSlateShaderResourceProxy *Proxy = Handle.GetResourceProxy();
-            const FVector2f StartUV = Proxy ? Proxy->StartUV : FVector2f(0.0f, 0.0f);
-            const FVector2f SizeUV = Proxy ? Proxy->SizeUV : FVector2f(1.0f, 1.0f);
-            const FColor VertexColor = Color.ToFColor(true);
-
-            constexpr int32 Strips = 4;
-            TArray<FSlateVertex> Verts;
-            TArray<SlateIndex> Indices;
-            Verts.Reserve((Strips + 1) * 2);
-            Indices.Reserve(Strips * 6);
-
-            for (int32 Step = 0; Step <= Strips; ++Step)
-            {
-                const double Alpha = static_cast<double>(Step) / Strips;
-                const double CurX = FMath::Lerp(X0, X1, Alpha);
-                const float CurU = FMath::Lerp(U0, U1, static_cast<float>(Alpha));
-                const FVector2f AtlasTop = StartUV + FVector2f(CurU, V0) * SizeUV;
-                const FVector2f AtlasBot = StartUV + FVector2f(CurU, V1) * SizeUV;
-
-                Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
-                    ClusterRenderTransform,
-                    FVector2f(ProjectPoint(FVector2D(CurX, Y0))),
-                    FVector4f(AtlasTop.X, AtlasTop.Y, 1.0f, 1.0f),
-                    FVector2f(CurU, V0),
-                    VertexColor));
-                Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(
-                    ClusterRenderTransform,
-                    FVector2f(ProjectPoint(FVector2D(CurX, Y1))),
-                    FVector4f(AtlasBot.X, AtlasBot.Y, 1.0f, 1.0f),
-                    FVector2f(CurU, V1),
-                    VertexColor));
-
-                if (Step > 0)
-                {
-                    const SlateIndex Base = static_cast<SlateIndex>((Step - 1) * 2);
-                    Indices.Add(Base + 0);
-                    Indices.Add(Base + 2);
-                    Indices.Add(Base + 3);
-                    Indices.Add(Base + 0);
-                    Indices.Add(Base + 3);
-                    Indices.Add(Base + 1);
-                }
-            }
-
-            FSlateDrawElement::MakeCustomVerts(
-                Elements,
-                Layer + LayerOffset,
-                Handle,
-                Verts,
-                Indices,
-                nullptr,
-                0,
-                0,
-                ESlateDrawEffect::NoPixelSnapping);
-        };
-
         const auto DrawSilhouette = [&](const FSlateBrush *Brush, const FVector2D &BoxPos, const FVector2D &BoxExtent,
-            float Opacity, bool bSquareWeaponTrim, float GlowIntensity, int32 LayerOffset)
+            float Opacity, bool bSquareWeaponTrim, int32 LayerOffset)
         {
-            if (!Brush || !Brush->GetResourceObject() || Opacity <= 0.01f || !Renderer)
+            if (!Brush || !Brush->GetResourceObject() || Opacity <= 0.01f)
             {
                 return;
             }
@@ -566,46 +293,36 @@ public:
                 return;
             }
 
-            const FSlateResourceHandle BrushHandle = Renderer->GetResourceHandle(*Brush);
-            if (!BrushHandle.IsValid())
-            {
-                return;
-            }
-
             const float ClipPad = 6.0f * Scale;
-            const FVector2D ClipMin = BoxPos - FVector2D(ClipPad, ClipPad);
-            const FVector2D ClipMax = BoxPos + BoxExtent + FVector2D(ClipPad, ClipPad);
+            const FGeometry ClipGeom = ClusterGeometry.MakeChild(
+                FVector2f(BoxExtent + FVector2D(ClipPad * 2.0f, ClipPad * 2.0f)),
+                FSlateLayoutTransform(FVector2f(BoxPos - FVector2D(ClipPad, ClipPad))));
+            Elements.PushClip(FSlateClippingZone(ClipGeom));
 
             if (ShadowAlphaScale > 0.01f)
             {
                 const FVector2D ShadowShift(1.3 * Scale, 1.6 * Scale);
-                DrawTexturedPerspectiveQuad(BrushHandle, FitPos + ShadowShift, FitExtent, ClipMin, ClipMax,
-                    FLinearColor(0.0f, 0.0f, 0.0f, Opacity * 0.62f * ShadowAlphaScale), LayerOffset);
+                FSlateDrawElement::MakeBox(
+                    Elements,
+                    Layer + LayerOffset,
+                    ClusterGeometry.ToPaintGeometry(FitExtent, FSlateLayoutTransform(FVector2f(FitPos + ShadowShift))),
+                    Brush,
+                    ESlateDrawEffect::NoPixelSnapping,
+                    FLinearColor(0.0f, 0.0f, 0.0f, Opacity * 0.62f * ShadowAlphaScale));
             }
 
-            if (GlowScale > 0.01f && GlowIntensity > 0.01f)
-            {
-                const float OuterExpand = 3.2f * Scale;
-                const float InnerExpand = 1.4f * Scale;
-                DrawTexturedPerspectiveQuad(BrushHandle,
-                    FitPos - FVector2D(OuterExpand, OuterExpand),
-                    FitExtent + FVector2D(OuterExpand * 2.0f, OuterExpand * 2.0f),
-                    ClipMin, ClipMax,
-                    GlowColor.CopyWithNewOpacity(FMath::Clamp(0.13f * GlowIntensity * GlowScale * Opacity, 0.0f, 0.28f)),
-                    LayerOffset + 1);
-                DrawTexturedPerspectiveQuad(BrushHandle,
-                    FitPos - FVector2D(InnerExpand, InnerExpand),
-                    FitExtent + FVector2D(InnerExpand * 2.0f, InnerExpand * 2.0f),
-                    ClipMin, ClipMax,
-                    GlowColor.CopyWithNewOpacity(FMath::Clamp(0.22f * GlowIntensity * GlowScale * Opacity, 0.0f, 0.42f)),
-                    LayerOffset + 1);
-            }
+            FSlateDrawElement::MakeBox(
+                Elements,
+                Layer + LayerOffset + 1,
+                ClusterGeometry.ToPaintGeometry(FitExtent, FSlateLayoutTransform(FVector2f(FitPos))),
+                Brush,
+                ESlateDrawEffect::NoPixelSnapping,
+                AlphaTint(PrimaryTint, Opacity));
 
-            DrawTexturedPerspectiveQuad(BrushHandle, FitPos, FitExtent, ClipMin, ClipMax,
-                AlphaTint(PrimaryTint, Opacity), LayerOffset + 2);
+            Elements.PopClip();
         };
 
-        // 1. 开放悬空式 SHD 左侧微发光脊线与细导引线 (仅去除左侧小点)
+        // 1. 开放悬空式 SHD 左侧纯白脊线与细导引线 (无左侧小点)
         const float VitalsStartY = TopReservedHeight;
         const float TopSpineStart = bShowWeaponBand ? 0.0f : VitalsStartY;
         const float TopSpineEnd = VitalsStartY + VitalsHeight;
@@ -615,29 +332,29 @@ public:
         // 背包侧向细导引线 锁定在常驻生命条中线 切枪零位移
         const double TetherY = VitalsStartY + HealthBarHeight * 0.5;
         DrawLine({FVector2D(-13.0 * Scale, TetherY + 2.0 * Scale), FVector2D(-3.5 * Scale, TetherY), FVector2D(0.0, TetherY)},
-            1.15f * Scale, AlphaTint(PrimaryTint, 0.56f), 0, true, 0.70f);
+            1.15f * Scale, AlphaTint(PrimaryTint, 0.56f), 0, true);
 
         // 上半部主脊线 (持武器时向上延伸包裹武器区 空手时仅包裹常驻体征区)
         DrawRect(FVector2D(-0.8 * Scale, TopSpineStart - 0.8 * Scale),
             FVector2D(3.8 * Scale, (TopSpineEnd - TopSpineStart) + 1.6 * Scale),
             FLinearColor(0.0f, 0.0f, 0.0f, 0.48f * ShadowAlphaScale), 0);
-        DrawRectGlow(FVector2D(0.0, TopSpineStart), FVector2D(2.2 * Scale, TopSpineEnd - TopSpineStart), SpineAlpha * 0.95f, 1);
         DrawRect(FVector2D(0.0, TopSpineStart), FVector2D(2.2 * Scale, TopSpineEnd - TopSpineStart),
-            AlphaTint(PrimaryTint, SpineAlpha), 2);
+            AlphaTint(PrimaryTint, SpineAlpha), 1);
 
         // 下半部常驻轻脊线 (武器槽与投掷物区)
         DrawRect(FVector2D(-0.5 * Scale, BottomSpineStart - 0.5 * Scale),
             FVector2D(2.5 * Scale, FullClusterHeight - BottomSpineStart + 1.0 * Scale),
             FLinearColor(0.0f, 0.0f, 0.0f, 0.36f * ShadowAlphaScale), 0);
-        DrawRectGlow(FVector2D(0.0, BottomSpineStart), FVector2D(1.5 * Scale, FullClusterHeight - BottomSpineStart), 0.50f, 1);
         DrawRect(FVector2D(0.0, BottomSpineStart), FVector2D(1.5 * Scale, FullClusterHeight - BottomSpineStart),
-            AlphaTint(PrimaryTint, 0.64f), 2);
+            AlphaTint(PrimaryTint, 0.64f), 1);
 
         const float ContentLeft = 10.0f * Scale;
         const float ContentRight = ClusterWidth;
         const float ContentWidth = ContentRight - ContentLeft;
 
-        // 2. 上方武器弹药区 (仅持武器时在常驻栏上方显现 已消除子弹条)
+        const TSharedRef<FSlateFontMeasure> FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+
+        // 2. 上方武器弹药区 (仅持武器时在常驻栏上方显现 无子弹条)
         if (bShowWeaponBand)
         {
             if (Snapshot.bHasAmmo)
@@ -655,10 +372,10 @@ public:
                 const FVector2D LoadedExtent = FontMeasure->Measure(LoadedText, LoadedFont);
                 const FVector2D CapExtent = FontMeasure->Measure(CapacityText, CapFont);
                 const float LoadedTop = -5.0f * Scale;
-                DrawTextLuminous(LoadedText, FVector2D(ContentLeft, LoadedTop), LoadedFont,
-                    AlphaTint(PrimaryTint, LoadedAlpha), bEmptyMag ? 0.25f : 1.0f, 4);
+                DrawTextCrisp(LoadedText, FVector2D(ContentLeft, LoadedTop), LoadedFont,
+                    AlphaTint(PrimaryTint, LoadedAlpha), 3);
 
-                // 空弹匣极简微发光断框警示
+                // 空弹匣极简断框警示
                 if (bEmptyMag)
                 {
                     const float BoxW = FMath::Max(LoadedExtent.X + 8.0f * Scale, 30.0f * Scale);
@@ -667,24 +384,24 @@ public:
                     DrawLine({FVector2D(ContentLeft - 3.0f * Scale, 9.0f * Scale),
                         FVector2D(ContentLeft - 3.0f * Scale, 0.0f),
                         FVector2D(ContentLeft + 7.0f * Scale, 0.0f)},
-                        1.2f * Scale, EmptyFrameTint, 3, true, 0.65f);
+                        1.2f * Scale, EmptyFrameTint, 2, true);
                     DrawLine({FVector2D(ContentLeft - 3.0f * Scale + BoxW - 8.0f * Scale, BoxH),
                         FVector2D(ContentLeft - 3.0f * Scale + BoxW, BoxH),
                         FVector2D(ContentLeft - 3.0f * Scale + BoxW, BoxH - 8.0f * Scale)},
-                        1.2f * Scale, EmptyFrameTint, 3, true, 0.65f);
+                        1.2f * Scale, EmptyFrameTint, 2, true);
                 }
 
                 const float CapX = ContentLeft + LoadedExtent.X + 4.0f * Scale;
                 const float CapY = LoadedTop + LoadedExtent.Y - CapExtent.Y - 6.0f * Scale;
-                DrawTextLuminous(CapacityText, FVector2D(CapX, CapY), CapFont,
-                    AlphaTint(SecondaryTint, 0.96f), 0.50f, 4);
+                DrawTextCrisp(CapacityText, FVector2D(CapX, CapY), CapFont,
+                    AlphaTint(SecondaryTint, 0.96f), 3);
 
-                // 换弹时原位旋转微发光双弧 弹药数字零位移
+                // 换弹时原位旋转双弧 弹药数字零位移
                 if (Snapshot.bReloading)
                 {
                     const FVector2D RingCenter(CapX + CapExtent.X + 14.0f * Scale, CapY + CapExtent.Y * 0.52f);
                     const float RingRadius = 7.0f * Scale;
-                    const auto DrawArc = [&](float StartDeg, float SweepDeg, float Thick, const FLinearColor &ArcColor, float ArcGlow)
+                    const auto DrawArc = [&](float StartDeg, float SweepDeg, float Thick, const FLinearColor &ArcColor)
                     {
                         TArray<FVector2D> ArcPts;
                         const int32 Steps = FMath::Max(6, FMath::CeilToInt(SweepDeg / 18.0f));
@@ -694,15 +411,15 @@ public:
                             const float Rad = FMath::DegreesToRadians(StartDeg + SweepDeg * Step / Steps);
                             ArcPts.Add(RingCenter + FVector2D(FMath::Cos(Rad), FMath::Sin(Rad)) * RingRadius);
                         }
-                        DrawLine(ArcPts, Thick, ArcColor, 4, true, ArcGlow);
+                        DrawLine(ArcPts, Thick, ArcColor, 3, true);
                     };
 
-                    DrawArc(0.0f, 360.0f, 1.2f * Scale, AlphaTint(PrimaryTint, 0.28f), 0.2f);
-                    DrawArc(Snapshot.ReloadAngle, 135.0f, 2.0f * Scale, AlphaTint(PrimaryTint, 0.98f), 1.0f);
+                    DrawArc(0.0f, 360.0f, 1.2f * Scale, AlphaTint(PrimaryTint, 0.28f));
+                    DrawArc(Snapshot.ReloadAngle, 135.0f, 2.0f * Scale, AlphaTint(PrimaryTint, 0.98f));
                 }
             }
 
-            // 右侧饱满微发光主武器纯白剪影
+            // 右侧饱满主武器纯白剪影
             const float WeaponBoxWidth = 114.0f * Scale;
             const float WeaponBoxHeight = 38.0f * Scale;
             const float WeaponBoxLeft = ContentRight - WeaponBoxWidth;
@@ -710,11 +427,11 @@ public:
             if (ActiveWeaponBrush)
             {
                 DrawSilhouette(ActiveWeaponBrush, FVector2D(WeaponBoxLeft, WeaponBoxTop),
-                    FVector2D(WeaponBoxWidth, WeaponBoxHeight), 0.98f, true, 0.90f, 4);
+                    FVector2D(WeaponBoxWidth, WeaponBoxHeight), 0.98f, true, 3);
             }
         }
 
-        // 3. 常驻体征层 全境封锁 2 标志性微发光分段瓷白生命条 + 极细自适应体力轨
+        // 3. 常驻体征层 分段瓷白生命条 + 极细自适应体力轨
         float CursorY = VitalsStartY;
         const int32 Segments = FMath::Clamp(HealthSegments, 1, 8);
         const float SegmentGap = 3.5f * Scale;
@@ -734,47 +451,41 @@ public:
                 FVector2D(SegmentWidth + 2.2f * Scale, HealthBarHeight + 2.2f * Scale),
                 FLinearColor(0.0f, 0.0f, 0.0f, 0.56f * ShadowAlphaScale), 0);
 
-            const float HealthFill = FMath::Clamp((Snapshot.HealthFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
-            if (HealthFill > 0.001f)
-            {
-                DrawRectGlow(FVector2D(SegX, CursorY), FVector2D(SegmentWidth * HealthFill, HealthBarHeight),
-                    HealthPulseAlpha * 0.90f, 1);
-            }
-
             // 空槽霜白底轨
             DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth, HealthBarHeight),
-                AlphaTint(PrimaryTint, 0.20f), 2);
+                AlphaTint(PrimaryTint, 0.20f), 1);
 
             // 受击延迟白色残影
             const float TrailFill = FMath::Clamp((Snapshot.DamageTrailFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
             if (TrailFill > 0.001f)
             {
                 DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth * TrailFill, HealthBarHeight),
-                    AlphaTint(PrimaryTint, 0.50f), 3);
+                    AlphaTint(PrimaryTint, 0.50f), 2);
             }
 
             // 当前生命实心填充 倒地态切换为空心脉冲细框
+            const float HealthFill = FMath::Clamp((Snapshot.HealthFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
             if (HealthFill > 0.001f)
             {
                 const float FillW = SegmentWidth * HealthFill;
                 if (Snapshot.bDowned)
                 {
                     DrawRect(FVector2D(SegX, CursorY), FVector2D(FillW, HealthBarHeight),
-                        AlphaTint(PrimaryTint, 0.28f * HealthPulseAlpha), 4);
+                        AlphaTint(PrimaryTint, 0.28f * HealthPulseAlpha), 3);
                     DrawLine({FVector2D(SegX, CursorY), FVector2D(SegX + FillW, CursorY),
                         FVector2D(SegX + FillW, CursorY + HealthBarHeight), FVector2D(SegX, CursorY + HealthBarHeight),
                         FVector2D(SegX, CursorY)},
-                        1.3f * Scale, AlphaTint(PrimaryTint, HealthPulseAlpha), 4, false, 0.7f);
+                        1.3f * Scale, AlphaTint(PrimaryTint, HealthPulseAlpha), 3, false);
                 }
                 else
                 {
                     DrawRect(FVector2D(SegX, CursorY), FVector2D(FillW, HealthBarHeight),
-                        AlphaTint(PrimaryTint, HealthPulseAlpha), 4);
+                        AlphaTint(PrimaryTint, HealthPulseAlpha), 3);
                 }
             }
         }
 
-        // 低血量左端微发光几何警示菱形
+        // 低血量左端几何警示菱形
         if (Snapshot.bLowHealth)
         {
             const float DiamondR = 3.8f * Scale;
@@ -785,29 +496,25 @@ public:
                 DiamondC + FVector2D(0.0, DiamondR),
                 DiamondC + FVector2D(-DiamondR, 0.0),
                 DiamondC + FVector2D(0.0, -DiamondR)},
-                1.4f * Scale, AlphaTint(PrimaryTint, HealthPulseAlpha), 5, true, 1.1f);
+                1.4f * Scale, AlphaTint(PrimaryTint, HealthPulseAlpha), 4, true);
         }
 
-        // 紧贴血条下方的极细微发光体力轨道
+        // 紧贴血条下方的极细体力轨道
         const float StaminaY = CursorY + HealthBarHeight + StaminaGap;
         const float StaminaVis = FMath::Clamp(Snapshot.StaminaOpacity, 0.22f, 1.0f);
         const float StaminaFillW = ContentWidth * FMath::Clamp(Snapshot.StaminaFraction, 0.0f, 1.0f);
         DrawRect(FVector2D(ContentLeft - 0.8f * Scale, StaminaY - 0.8f * Scale),
             FVector2D(ContentWidth + 1.6f * Scale, StaminaHeight + 1.6f * Scale),
             FLinearColor(0.0f, 0.0f, 0.0f, 0.42f * StaminaVis * ShadowAlphaScale), 0);
-        if (StaminaFillW > 0.5f)
-        {
-            DrawRectGlow(FVector2D(ContentLeft, StaminaY), FVector2D(StaminaFillW, StaminaHeight), StaminaVis * 0.65f, 1);
-        }
         DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(ContentWidth, StaminaHeight),
-            AlphaTint(SecondaryTint, 0.24f * StaminaVis), 2);
+            AlphaTint(SecondaryTint, 0.24f * StaminaVis), 1);
         DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(StaminaFillW, StaminaHeight),
-            AlphaTint(PrimaryTint, 0.94f * StaminaVis), 3);
+            AlphaTint(PrimaryTint, 0.94f * StaminaVis), 2);
 
         CursorY += VitalsHeight + LoadoutGap;
 
         // 4. 常驻下层 武器槽 (1/2/3) 与投掷物微区
-        const float WeaponZoneWidth = bHasThrowables ? 160.0f * Scale : ContentWidth;
+        const float WeaponZoneWidth = bHasThrowables ? 150.0f * Scale : ContentWidth;
         const float SlotGap = 5.0f * Scale;
         const float SlotWidth = (WeaponZoneWidth - SlotGap * (FBBBDivisionHudSnapshot::MaxWeaponSlots - 1)) / FBBBDivisionHudSnapshot::MaxWeaponSlots;
         const int32 SlotNumSize = FMath::Max(8, FMath::RoundToInt(10.0f * Scale));
@@ -825,19 +532,13 @@ public:
             DrawRect(FVector2D(SlotX - 0.5f * Scale, CursorY + LoadoutHeight - BottomBarH - 0.5f * Scale),
                 FVector2D(SlotWidth + 1.0f * Scale, BottomBarH + 1.0f * Scale),
                 FLinearColor(0.0f, 0.0f, 0.0f, 0.42f * BottomBarAlpha * ShadowAlphaScale), 0);
-            if (Slot.bActive)
-            {
-                DrawRectGlow(FVector2D(SlotX, CursorY + LoadoutHeight - BottomBarH),
-                    FVector2D(SlotWidth, BottomBarH), 0.95f, 1);
-            }
             DrawRect(FVector2D(SlotX, CursorY + LoadoutHeight - BottomBarH), FVector2D(SlotWidth, BottomBarH),
-                AlphaTint(PrimaryTint, BottomBarAlpha), 2);
+                AlphaTint(PrimaryTint, BottomBarAlpha), 1);
 
             // 左侧中线对齐的极小槽号 1 / 2 / 3
             const FString KeyDigit = FString::FromInt(SlotIndex + 1);
-            DrawTextLuminous(KeyDigit, FVector2D(SlotX + 1.0f * Scale, CursorY + 6.0f * Scale),
-                SlotNumFont, AlphaTint(PrimaryTint, Slot.bActive ? 0.98f : (Slot.bOccupied ? 0.68f : 0.30f)),
-                Slot.bActive ? 0.65f : 0.15f, 4);
+            DrawTextCrisp(KeyDigit, FVector2D(SlotX + 1.0f * Scale, CursorY + 6.0f * Scale),
+                SlotNumFont, AlphaTint(PrimaryTint, Slot.bActive ? 0.98f : (Slot.bOccupied ? 0.68f : 0.30f)), 3);
 
             // 饱满迷你武器剪影
             if (Slot.bOccupied && WeaponSlotBrushes[SlotIndex])
@@ -845,7 +546,7 @@ public:
                 DrawSilhouette(WeaponSlotBrushes[SlotIndex],
                     FVector2D(SlotX + 11.5f * Scale, CursorY + 2.0f * Scale),
                     FVector2D(SlotWidth - 12.5f * Scale, LoadoutHeight - 6.0f * Scale),
-                    SlotAlpha, true, Slot.bActive ? 0.70f : 0.15f, 4);
+                    SlotAlpha, true, 3);
             }
         }
 
@@ -854,7 +555,7 @@ public:
         {
             const float DividerX = ContentLeft + WeaponZoneWidth + 6.0f * Scale;
             DrawRect(FVector2D(DividerX, CursorY + 3.0f * Scale), FVector2D(1.0f * Scale, LoadoutHeight - 6.0f * Scale),
-                AlphaTint(PrimaryTint, 0.36f), 3);
+                AlphaTint(PrimaryTint, 0.36f), 2);
 
             float ThrowX = DividerX + 7.0f * Scale;
             const int32 ThrowNumSize = FMath::Max(10, FMath::RoundToInt(14.0f * Scale));
@@ -868,25 +569,23 @@ public:
                 DrawRect(FVector2D(ThrowX - 0.5f * Scale, CursorY + LoadoutHeight - 2.5f * Scale),
                     FVector2D(SelectedW + 1.0f * Scale, 3.0f * Scale),
                     FLinearColor(0.0f, 0.0f, 0.0f, 0.42f * ShadowAlphaScale), 0);
-                DrawRectGlow(FVector2D(ThrowX, CursorY + LoadoutHeight - 2.0f * Scale),
-                    FVector2D(SelectedW, 2.0f * Scale), 0.75f, 1);
                 DrawRect(FVector2D(ThrowX, CursorY + LoadoutHeight - 2.0f * Scale), FVector2D(SelectedW, 2.0f * Scale),
-                    AlphaTint(PrimaryTint, 0.92f), 2);
+                    AlphaTint(PrimaryTint, 0.92f), 1);
 
                 if (SelectedThrowableBrush)
                 {
                     DrawSilhouette(SelectedThrowableBrush,
                         FVector2D(ThrowX + 1.0f * Scale, CursorY + 1.0f * Scale),
                         FVector2D(20.0f * Scale, LoadoutHeight - 6.0f * Scale),
-                        0.96f, false, 0.70f, 4);
+                        0.96f, false, 3);
                 }
 
                 if (!SelectedThrowableText.IsEmpty())
                 {
                     const FVector2D NumExtent = FontMeasure->Measure(SelectedThrowableText, ThrowNumFont);
-                    DrawTextLuminous(SelectedThrowableText,
+                    DrawTextCrisp(SelectedThrowableText,
                         FVector2D(ThrowX + 24.0f * Scale, CursorY + (LoadoutHeight - NumExtent.Y) * 0.42f),
-                        ThrowNumFont, AlphaTint(PrimaryTint, 0.98f), 0.65f, 5);
+                        ThrowNumFont, AlphaTint(PrimaryTint, 0.98f), 4);
                 }
 
                 ThrowX += SelectedW + 6.0f * Scale;
@@ -913,30 +612,27 @@ public:
                     DrawSilhouette(SpareThrowableBrushes[SpareIdx],
                         FVector2D(CellX, CursorY + 3.0f * Scale),
                         FVector2D(13.0f * Scale, LoadoutHeight - 9.0f * Scale),
-                        0.54f, false, 0.15f, 4);
+                        0.54f, false, 3);
                 }
 
                 if (!SpareThrowableTexts[SpareIdx].IsEmpty())
                 {
                     const FVector2D TinyExtent = FontMeasure->Measure(SpareThrowableTexts[SpareIdx], SpareNumFont);
-                    DrawTextLuminous(SpareThrowableTexts[SpareIdx],
+                    DrawTextCrisp(SpareThrowableTexts[SpareIdx],
                         FVector2D(CellX + 14.0f * Scale, CursorY + LoadoutHeight - TinyExtent.Y - 3.0f * Scale),
-                        SpareNumFont, AlphaTint(SecondaryTint, 0.84f), 0.15f, 5);
+                        SpareNumFont, AlphaTint(SecondaryTint, 0.84f), 4);
                 }
             }
         }
 
-        return Layer + 8;
+        return Layer + 6;
     }
 
     FBBBDivisionHudSnapshot Snapshot;
     FLinearColor PrimaryTint = FLinearColor(1.0f, 1.0f, 1.0f, 0.98f);
     FLinearColor SecondaryTint = FLinearColor(0.92f, 0.95f, 0.99f, 0.84f);
     float ContrastShadowStrength = 0.78f;
-    float EmissiveGlowStrength = 1.0f;
     float HudScale = 1.3f;
-    float PerspectiveYawDegrees = 32.0f;
-    float PerspectiveFocalDistance = 560.0f;
     FVector2D AnchorPixelOffset = FVector2D(27.0, 26.0);
     int32 HealthSegments = 5;
 
@@ -946,9 +642,6 @@ public:
     const FSlateBrush *SpareThrowableBrushes[FBBBDivisionHudSnapshot::MaxSpareThrowables] = {};
 
 private:
-    TStrongObjectPtr<UTexture2D> SolidWhiteTexture;
-    FSlateBrush SolidWhiteBrush;
-
     TWeakObjectPtr<UFontFace> CachedBoldFace;
     TWeakObjectPtr<UFontFace> CachedLightFace;
     TSharedPtr<const FCompositeFont> BoldComposite;
@@ -1001,11 +694,8 @@ void UBBBDivisionBackpackHud::SynchronizeProperties()
     SlateWidget->PrimaryTint = PrimaryTint;
     SlateWidget->SecondaryTint = SecondaryTint;
     SlateWidget->ContrastShadowStrength = ContrastShadowStrength;
-    SlateWidget->EmissiveGlowStrength = EmissiveGlowStrength;
     SlateWidget->HealthSegments = HealthSegments;
     SlateWidget->HudScale = HudScale;
-    SlateWidget->PerspectiveYawDegrees = PerspectiveYawDegrees;
-    SlateWidget->PerspectiveFocalDistance = PerspectiveFocalDistance;
     SlateWidget->AnchorPixelOffset = AnchorPixelOffset;
     SlateWidget->ApplyFonts(BoldNumberFont, LightNumberFont);
     SlateWidget->Invalidate(EInvalidateWidgetReason::Paint);
