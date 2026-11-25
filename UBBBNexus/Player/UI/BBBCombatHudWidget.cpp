@@ -87,12 +87,9 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
         SampleFrames = 0;
     }
 
-    // 中央准星与枪口实弹落点
+    // 中央准星与枪口实弹落点 瞄准时不减弱背包侧边 HUD 显示
     SetShown(Crosshair, Controller->ShouldShowCrosshair());
     const bool bAiming = Controller->ShouldShowAimHud();
-    const float AimStep = AimFadeSeconds > 0.0f ? DeltaTime / AimFadeSeconds : 1.0f;
-    AimBlend = FMath::FInterpConstantTo(AimBlend, bAiming ? 1.0f : 0.0f, 1.0f, AimStep);
-    CachedSnapshot.AimBlend = AimBlend;
 
     if (AimPoint)
     {
@@ -123,7 +120,6 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
     CachedSnapshot.bHasAmmo = bHasAmmo;
     CachedSnapshot.LoadedAmmo = Loaded;
     CachedSnapshot.CapacityAmmo = Capacity;
-    CachedSnapshot.bAmmoContinuous = bContinuous;
     CachedSnapshot.bReloading = bHasAmmo && bReloading;
     if (bHasAmmo && bReloading)
     {

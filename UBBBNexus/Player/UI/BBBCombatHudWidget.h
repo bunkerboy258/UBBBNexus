@@ -75,10 +75,6 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "空间", meta = (DisplayName = "锚点平滑时长", ClampMin = "0.01", ClampMax = "0.3"))
     float AnchorSmoothSeconds = 0.065f;
 
-    /** 瞄准状态过渡时长 单位秒 */
-    UPROPERTY(EditDefaultsOnly, Category = "空间", meta = (DisplayName = "瞄准淡化时长", ClampMin = "0.02", ClampMax = "0.5"))
-    float AimFadeSeconds = 0.16f;
-
     FBBBDivisionHudSnapshot CachedSnapshot;
     TMap<FName, int32> DisplayedNumbers;
     TWeakObjectPtr<APawn> ObservedPawn;
@@ -91,7 +87,6 @@ private:
     float DamageAge = 1.0f;
     float DamageTrail = 1.0f;
     float StaminaFullSeconds = 2.0f;
-    float AimBlend = 0.0f;
     double SampleStartedAt = 0.0;
     int32 SampleFrames = 0;
     uint8 PreviousPhase = MAX_uint8;

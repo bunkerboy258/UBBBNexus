@@ -42,7 +42,6 @@ struct FBBBDivisionHudSnapshot
     float StaminaFraction = 1.0f;
     float StaminaOpacity = 0.28f;
     float LowHealthPulse = 0.0f;
-    float AimBlend = 0.0f;
     float ReloadAngle = 0.0f;
     float DistanceScale = 1.0f;
 
@@ -59,7 +58,6 @@ struct FBBBDivisionHudSnapshot
 
     bool bHasAnchor = false;
     bool bHasAmmo = false;
-    bool bAmmoContinuous = true;
     bool bReloading = false;
     bool bLowHealth = false;
     bool bDowned = false;
@@ -122,35 +120,35 @@ private:
 
     /** 纯白主前景颜色 */
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "主白颜色"))
-    FLinearColor PrimaryTint = FLinearColor(0.97f, 0.98f, 1.0f, 0.96f);
+    FLinearColor PrimaryTint = FLinearColor(1.0f, 1.0f, 1.0f, 0.98f);
 
     /** 次级霜白颜色 */
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "次白颜色"))
-    FLinearColor SecondaryTint = FLinearColor(0.90f, 0.93f, 0.97f, 0.82f);
+    FLinearColor SecondaryTint = FLinearColor(0.92f, 0.95f, 0.99f, 0.84f);
 
     /** 背后极克制暗色对比阴影强度 */
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "对比阴影强度", ClampMin = "0.0", ClampMax = "1.0"))
-    float ContrastShadowStrength = 0.80f;
+    float ContrastShadowStrength = 0.78f;
+
+    /** 纯白全息微自发光强度 */
+    UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "微自发光强度", ClampMin = "0.0", ClampMax = "2.0"))
+    float EmissiveGlowStrength = 1.0f;
 
     /** 生命条分段数量 */
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "血条分段数", ClampMin = "1", ClampMax = "8"))
     int32 HealthSegments = 5;
 
     /** 2.5D 透视纵向微倾斜率 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视纵倾斜率", ClampMin = "-0.15", ClampMax = "0.15"))
-    float PerspectiveSlopeY = -0.014f;
+    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视纵倾斜率", ClampMin = "-0.25", ClampMax = "0.25"))
+    float PerspectiveSlopeY = -0.115f;
 
     /** 2.5D 透视横向微斜切 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视横斜切", ClampMin = "-0.15", ClampMax = "0.15"))
-    float PerspectiveShearX = -0.012f;
+    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视横斜切", ClampMin = "-0.25", ClampMax = "0.25"))
+    float PerspectiveShearX = -0.055f;
 
     /** 背包侧边相对屏幕微调偏移 */
     UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "锚点屏幕微调"))
-    FVector2D AnchorPixelOffset = FVector2D(18.0, 22.0);
-
-    /** 瞄准时主集群的淡化不透明度 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "瞄准淡化不透明度", ClampMin = "0.15", ClampMax = "1.0"))
-    float AimDimOpacity = 0.42f;
+    FVector2D AnchorPixelOffset = FVector2D(18.0, 26.0);
 
     static constexpr int32 SilhouettePoolCount = 1 + FBBBDivisionHudSnapshot::MaxWeaponSlots + 1 + FBBBDivisionHudSnapshot::MaxSpareThrowables;
 
