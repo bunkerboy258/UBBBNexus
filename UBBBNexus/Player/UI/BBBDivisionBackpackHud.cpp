@@ -9,9 +9,9 @@
 #include "Materials/MaterialInterface.h"
 #include "Rendering/DrawElements.h"
 #include "Rendering/SlateRenderer.h"
-#include "Styling/CoreStyle.h"
 #include "Textures/SlateShaderResource.h"
 #include "UObject/ConstructorHelpers.h"
+#include "UObject/StrongObjectPtr.h"
 #include "Widgets/SLeafWidget.h"
 
 namespace
@@ -67,6 +67,15 @@ public:
     void Construct(const FArguments &Arguments)
     {
         SetVisibility(EVisibility::HitTestInvisible);
+
+        if (UTexture2D *WhiteTexture = LoadObject<UTexture2D>(nullptr,
+            TEXT("/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture")))
+        {
+            SolidWhiteTexture.Reset(WhiteTexture);
+            SolidWhiteBrush.SetResourceObject(WhiteTexture);
+            SolidWhiteBrush.DrawAs = ESlateBrushDrawType::Image;
+            SolidWhiteBrush.ImageSize = FVector2D(4.0, 4.0);
+        }
     }
 
     virtual FVector2D ComputeDesiredSize(float) const override
@@ -214,8 +223,9 @@ public:
         const FSlateRenderTransform ClusterRenderTransform = ClusterGeometry.GetAccumulatedRenderTransform();
 
         FSlateRenderer *Renderer = FSlateApplication::Get().GetRenderer();
-        const FSlateBrush *WhiteBrush = FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"));
-        const FSlateResourceHandle WhiteHandle = (Renderer && WhiteBrush) ? Renderer->GetResourceHandle(*WhiteBrush) : FSlateResourceHandle();
+        const FSlateResourceHandle WhiteHandle = (Renderer && SolidWhiteBrush.GetResourceObject())
+            ? Renderer->GetResourceHandle(SolidWhiteBrush)
+            : FSlateResourceHandle();
         const FSlateShaderResourceProxy *WhiteProxy = WhiteHandle.GetResourceProxy();
         const FVector2f WhiteCenterUV = WhiteProxy
             ? (WhiteProxy->StartUV + WhiteProxy->SizeUV * 0.5f)
@@ -595,12 +605,17 @@ public:
                 AlphaTint(PrimaryTint, Opacity), LayerOffset + 2);
         };
 
-        // 1. 开放悬空式 SHD 左侧微发光脊线 (已去除左侧导引小点)
+        // 1. 开放悬空式 SHD 左侧微发光脊线与细导引线 (仅去除左侧小点)
         const float VitalsStartY = TopReservedHeight;
         const float TopSpineStart = bShowWeaponBand ? 0.0f : VitalsStartY;
         const float TopSpineEnd = VitalsStartY + VitalsHeight;
         const float BottomSpineStart = TopSpineEnd + LoadoutGap * 0.55f;
         const float SpineAlpha = Snapshot.bLowHealth ? FMath::Lerp(0.48f, 1.0f, Snapshot.LowHealthPulse) : 0.96f;
+
+        // 背包侧向细导引线 锁定在常驻生命条中线 切枪零位移
+        const double TetherY = VitalsStartY + HealthBarHeight * 0.5;
+        DrawLine({FVector2D(-13.0 * Scale, TetherY + 2.0 * Scale), FVector2D(-3.5 * Scale, TetherY), FVector2D(0.0, TetherY)},
+            1.15f * Scale, AlphaTint(PrimaryTint, 0.56f), 0, true, 0.70f);
 
         // 上半部主脊线 (持武器时向上延伸包裹武器区 空手时仅包裹常驻体征区)
         DrawRect(FVector2D(-0.8 * Scale, TopSpineStart - 0.8 * Scale),
@@ -931,6 +946,9 @@ public:
     const FSlateBrush *SpareThrowableBrushes[FBBBDivisionHudSnapshot::MaxSpareThrowables] = {};
 
 private:
+    TStrongObjectPtr<UTexture2D> SolidWhiteTexture;
+    FSlateBrush SolidWhiteBrush;
+
     TWeakObjectPtr<UFontFace> CachedBoldFace;
     TWeakObjectPtr<UFontFace> CachedLightFace;
     TSharedPtr<const FCompositeFont> BoldComposite;
