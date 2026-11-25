@@ -144,6 +144,15 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
     {
         Bone = TEXT("spine_02");
     }
+    // 双臂已禁用程序化模拟 命中臂链时改打躯干 避免受击被吞
+    {
+        const FString BoneString = Bone.ToString();
+        if (BoneString.StartsWith(TEXT("clavicle_")) || BoneString.StartsWith(TEXT("upperarm_"))
+            || BoneString.StartsWith(TEXT("lowerarm_")) || BoneString.StartsWith(TEXT("hand_")))
+        {
+            Bone = TEXT("spine_02");
+        }
+    }
     if (!ensureMsgf(Asset->FindBodyIndex(Bone) != INDEX_NONE && !Context.HitReaction.AvailableProfiles.IsEmpty(),
                     TEXT("角色受击缺少刚体或 Profile %s"), *Context.Character.GetName()))
     {
@@ -152,9 +161,9 @@ void FBBBCharacterPhysicalPresentationProcessor::Update(FBBBCharacterPhysicalPre
 
     FHitReactImpulseParams Impulse;
     Impulse.LinearImpulse.bApplyImpulse = true;
-    Impulse.LinearImpulse.Impulse = Life.Phase == EBBBCharacterLifePhase::Downed ? 350.0f : 700.0f;
+    Impulse.LinearImpulse.Impulse = Life.Phase == EBBBCharacterLifePhase::Downed ? 700.0f : 1400.0f;
     Impulse.AngularImpulse.bApplyImpulse = true;
-    Impulse.AngularImpulse.Impulse = Life.Phase == EBBBCharacterLifePhase::Downed ? 800.0f : 1600.0f;
+    Impulse.AngularImpulse.Impulse = Life.Phase == EBBBCharacterLifePhase::Downed ? 1600.0f : 3200.0f;
     FHitReactImpulse_WorldParams World;
     World.LinearDirection = Hit.Direction;
     World.AngularDirection = FVector::CrossProduct(FVector::UpVector, Hit.Direction).GetSafeNormal();
