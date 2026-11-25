@@ -65,7 +65,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
 
     const FVector Previous = CameraSystem.RecoilOffset;
     const FVector Limit = CameraSystem.ActiveRecoilSettings.LimitDegrees;
-    const float RecoverySpeed = CameraSystem.ActiveRecoilSettings.RecoverySpeed;
+    const float RecoverySpeed = CameraSystem.CameraConfig.RecoverySpeed;
     const float PitchRetention = CameraSystem.ActiveRecoilSettings.PitchRetention;
     if (!ensureMsgf(
         FMath::IsFinite(RecoverySpeed) && RecoverySpeed > 0.0f
@@ -101,7 +101,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         && CameraSystem.Character->RuntimeData.Parse.ReadControlState().bAim;
     CameraSystem.AimBlendProgress = FMath::FInterpConstantTo(
         CameraSystem.AimBlendProgress, bAiming ? 1.0f : 0.0f, FMath::Max(DeltaSeconds, 0.0f),
-        1.0f / FMath::Max(CameraSystem.AimBlendDuration, 0.01f));
+        1.0f / FMath::Max(CameraSystem.CameraConfig.AimBlendDuration, 0.01f));
     const float AimAlpha = FMath::SmoothStep(0.0f, 1.0f, CameraSystem.AimBlendProgress);
 
     const UCapsuleComponent *Capsule = CameraSystem.Character->GetCapsuleComponent();
@@ -113,7 +113,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         CameraSystem.CapsuleHeightBlendElapsed = 0.0f;
     }
 
-    const float BlendDuration = FMath::Max(CameraSystem.StanceHeightBlendDuration, 0.01f);
+    const float BlendDuration = FMath::Max(CameraSystem.CameraConfig.StanceHeightBlendDuration, 0.01f);
     CameraSystem.CapsuleHeightBlendElapsed = FMath::Min(
         CameraSystem.CapsuleHeightBlendElapsed + FMath::Max(DeltaSeconds, 0.0f), BlendDuration);
     const float HeightAlpha = FMath::SmoothStep(0.0f, 1.0f,

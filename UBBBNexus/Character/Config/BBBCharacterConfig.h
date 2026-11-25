@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "BBBWork/UBBBNexus/Character/Config/Aim/BBBAimConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Animation/BBBCharacterAnimationConfig.h"
+#include "BBBWork/UBBBNexus/Character/Config/Camera/BBBCharacterCameraConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Interaction/BBBCharacterInteractionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Locomotion/BBBLocomotionConfig.h"
 #include "BBBWork/UBBBNexus/Character/Config/Network/BBBNetworkConfig.h"
@@ -128,6 +129,10 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     /** 角色瞄准动画配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "瞄准动画"))
     FBBBAimAnimationConfig AimAnimation;
+
+    /** 角色相机构图与回正配置 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "相机"))
+    FBBBCharacterCameraConfig Camera;
 
     /** 角色动画事实识别配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "动画"))

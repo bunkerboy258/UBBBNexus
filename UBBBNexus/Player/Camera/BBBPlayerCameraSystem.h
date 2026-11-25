@@ -3,6 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "BBBWork/UBBBNexus/Player/Camera/Input/BBBPlayerCameraInput.h"
 #include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
+#include "BBBWork/UBBBNexus/Character/Config/Camera/BBBCharacterCameraConfig.h"
 #include "BBBPlayerCameraSystem.generated.h"
 class ABBBCharacter;
 class APlayerController;
@@ -14,7 +15,7 @@ class FBBBPlayerCameraImpulseProcessor;
 class UBBBAnimInstance;
 class UAnimInstance;
 
-/** 独立玩家相机只持有角色弱引用 */
+/** 独立玩家相机只持有角色弱引用 构图与回正读取角色 Camera 配置 */
 UCLASS(Blueprintable)
 class ABBB_EVAC_API ABBBPlayerCameraSystem : public AActor
 {
@@ -67,45 +68,8 @@ private:
     TObjectPtr<USpringArmComponent> Boom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BBB|相机", meta = (AllowPrivateAccess = "true", DisplayName = "相机"))
     TObjectPtr<UCameraComponent> Camera;
-    /** 常态相机臂长度 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "1.0", DisplayName = "常态相机臂长度"))
-    float HipArmLength = 365.0f;
-    /** 瞄准相机臂长度 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "1.0", DisplayName = "瞄准相机臂长度"))
-    float AimArmLength = 155.0f;
-    /** 常态镜头水平视角 单位度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "30.0", ClampMax = "120.0", DisplayName = "常态水平视角"))
-    float HipFieldOfView = 78.0f;
-    /** 瞄准镜头水平视角 单位度 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "30.0", ClampMax = "120.0", DisplayName = "瞄准水平视角"))
-    float AimFieldOfView = 62.0f;
-    /** 常态镜头向右偏移 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.0", DisplayName = "常态肩位偏移"))
-    float HipShoulderOffset = 48.0f;
-    /** 瞄准镜头向右偏移 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.0", DisplayName = "瞄准肩位偏移"))
-    float AimShoulderOffset = 60.0f;
-    /** 常态镜头枢轴相对胶囊中心的高度 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (DisplayName = "常态枢轴高度"))
-    float HipPivotHeight = 91.0f;
-    /** 站立瞄准的镜头枢轴相对胶囊中心的高度 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (DisplayName = "瞄准枢轴高度"))
-    float AimPivotHeight = 58.0f;
-    /** 蹲伏瞄准在胶囊中心随姿态下降后额外降低的枢轴高度 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (ClampMin = "0.0", DisplayName = "蹲伏瞄准额外降幅"))
-    float AimCrouchPivotDrop = 20.0f;
-    /** 举枪或收枪时相机构图完整过渡的时间 单位秒 */
-    UPROPERTY(EditDefaultsOnly, Category = "相机|构图", meta = (ClampMin = "0.01", DisplayName = "举枪收枪过渡时间"))
-    float AimBlendDuration = 0.20f;
-    /** 瞄准时从镜头量起的景深对焦距离 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, Category = "相机|景深", meta = (ClampMin = "100.0", DisplayName = "瞄准对焦距离"))
-    float AimFocusDistance = 1800.0f;
-    /** 瞄准景深的光圈值 数值越大近景模糊越弱 */
-    UPROPERTY(EditDefaultsOnly, Category = "相机|景深", meta = (ClampMin = "1.0", ClampMax = "32.0", DisplayName = "瞄准景深光圈"))
-    float AimDepthOfFieldFStop = 2.8f;
-    /** 胶囊高度变化的镜头过渡时间 单位秒 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|构图", meta = (ClampMin = "0.01", DisplayName = "站蹲高度过渡时间"))
-    float StanceHeightBlendDuration = 0.2f;
+    /** 绑定角色后缓存的构图与回正 */
+    FBBBCharacterCameraConfig CameraConfig;
     /** 瞄准过渡的线性进度 取值从零到一 */
     float AimBlendProgress = 0.0f;
     /** 当前平滑后的胶囊参考高度 */
@@ -124,11 +88,11 @@ private:
     /** 当前相机三轴冲击偏移 */
     FVector RecoilOffset = FVector::ZeroVector;
 
-    /** 未读取到武器贡献时采用的相机基础参数 */
-    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|冲量", meta = (DisplayName = "默认相机后坐力", ToolTip = "无外部配置时使用的镜头冲击与恢复设置"))
+    /** 未读取到武器贡献时采用的相机冲击参数 */
+    UPROPERTY(EditDefaultsOnly, Category = "BBB|相机|冲量", meta = (DisplayName = "默认相机冲击", ToolTip = "无武器贡献时使用的镜头冲击参数 回正速度始终取自角色相机配置"))
     FBBBPlayerCameraRecoilSettings DefaultRecoilSettings;
 
-    /** 最近有效贡献使用的恢复参数 */
+    /** 最近有效贡献使用的冲击参数 */
     UPROPERTY(Transient)
     FBBBPlayerCameraRecoilSettings ActiveRecoilSettings;
 

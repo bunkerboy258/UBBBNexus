@@ -32,8 +32,4 @@ struct FBBBRevolverCrouchedModifiers
     /** 下蹲镜头冲击倍率 无单位 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "镜头后坐力", meta = (DisplayPriority = "7", ClampMin = "0.00", DisplayName = "镜头冲击倍率", ToolTip = "无单位 1 不变 越大每枪镜头冲击及随机幅度越大 0 无镜头冲击"))
     float CameraImpulseScale = 1.0f;
-
-    /** 下蹲镜头回零速度倍率 无单位 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "镜头后坐力", meta = (DisplayPriority = "8", ClampMin = "0.01", DisplayName = "镜头回零速度倍率", ToolTip = "无单位 1 不变 越大镜头回零越快 小于 1 回零更慢"))
-    float CameraRecoveryScale = 1.0f;
 };
