@@ -138,17 +138,21 @@ private:
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "血条分段数", ClampMin = "1", ClampMax = "8"))
     int32 HealthSegments = 5;
 
-    /** 2.5D 透视纵向微倾斜率 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视纵倾斜率", ClampMin = "-0.25", ClampMax = "0.25"))
-    float PerspectiveSlopeY = -0.115f;
+    /** 整体缩放倍率 */
+    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "整体缩放", ClampMin = "0.5", ClampMax = "2.5"))
+    float HudScale = 1.3f;
 
-    /** 2.5D 透视横向微斜切 */
-    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视横斜切", ClampMin = "-0.25", ClampMax = "0.25"))
-    float PerspectiveShearX = -0.055f;
+    /** 3D 水平透视偏航角 正值表示左侧在内右侧在外 且水平中线保持平直 */
+    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "水平透视偏航角", ClampMin = "-50.0", ClampMax = "50.0"))
+    float PerspectiveYawDegrees = 32.0f;
+
+    /** 3D 透视虚拟焦距 越小透视近大远小越强烈 */
+    UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "透视焦距", ClampMin = "280.0", ClampMax = "2000.0"))
+    float PerspectiveFocalDistance = 560.0f;
 
     /** 背包侧边相对屏幕微调偏移 */
     UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "锚点屏幕微调"))
-    FVector2D AnchorPixelOffset = FVector2D(18.0, 26.0);
+    FVector2D AnchorPixelOffset = FVector2D(27.0, 26.0);
 
     static constexpr int32 SilhouettePoolCount = 1 + FBBBDivisionHudSnapshot::MaxWeaponSlots + 1 + FBBBDivisionHudSnapshot::MaxSpareThrowables;
 

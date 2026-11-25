@@ -181,8 +181,8 @@ bool ABBBPlayerController::GetHudBackpackAnchorScreenPosition(FVector2D &ScreenP
     const FVector CamRight = ViewMatrix.GetUnitAxis(EAxis::Y);
     const FVector CamUp = ViewMatrix.GetUnitAxis(EAxis::Z);
 
-    // 锚定在角色中背背包右侧略偏下位置 保留手臂活动呼吸空隙并自然避开中央准星视线
-    const FVector WorldAnchor = BaseLocation + CamRight * 33.0 - CamUp * 4.0 - CamForward * 4.0;
+    // 锚定在角色中背背包右侧略偏下位置 保留 1.5 倍横向呼吸空隙并自然避开中央准星视线
+    const FVector WorldAnchor = BaseLocation + CamRight * 49.5 - CamUp * 4.0 - CamForward * 4.0;
     if (FVector::DotProduct(WorldAnchor - ViewLocation, CamForward) <= 10.0)
     {
         return false;
