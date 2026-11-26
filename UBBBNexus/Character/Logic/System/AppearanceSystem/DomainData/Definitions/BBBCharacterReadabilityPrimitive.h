@@ -12,9 +12,6 @@ struct FBBBCharacterReadabilityPrimitive
     /** 被标记的角色部件 */
     UPROPERTY()
     TWeakObjectPtr<USkeletalMeshComponent> Component;
-    /** 原始直接照明通道 */
-    UPROPERTY()
-    FLightingChannels Channels;
     /** 原始自定义深度开关 */
     UPROPERTY()
     bool bCustomDepth = false;

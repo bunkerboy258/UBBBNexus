@@ -50,7 +50,7 @@ private:
     UPROPERTY()
     FBBBCharacterAppearanceLoadState LoadState;
     friend class FBBBCharacterReadabilityProcessor;
-    /** 本地机械补光与模板属性 */
+    /** 本地轮廓模板属性 */
     UPROPERTY()
     FBBBCharacterReadabilityState ReadabilityState;
     friend class FBBBCharacterParseSystem;

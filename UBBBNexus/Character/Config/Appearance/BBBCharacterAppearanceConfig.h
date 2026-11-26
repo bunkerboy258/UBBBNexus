@@ -27,18 +27,6 @@ struct FBBBCharacterAppearanceConfig
     /** 显示部位与蓝图机械组件名称的对应关系 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "显示组件名称"))
     TMap<FName, FName> ComponentNames;
-    /** 仅本机控制角色启用可读性照明 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "启用本地角色补光"))
-    bool bReadabilityLighting = true;
-    /** 柔和补光强度 单位坎德拉 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "补光强度", ClampMin = "0"))
-    float FillIntensity = 24.0f;
-    /** 肩背轮廓灯强度 单位坎德拉 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "轮廓光强度", ClampMin = "0"))
-    float RimIntensity = 18.0f;
-    /** 补光颜色 保持接近中性 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "角色补光颜色"))
-    FLinearColor ReadabilityLightColor = FLinearColor(1.0f, 0.97f, 0.93f);
     /** 本地角色独占的模板缓冲标记 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "角色轮廓模板值", ClampMin = "1", ClampMax = "255"))
     int32 ReadabilityStencil = 251;
