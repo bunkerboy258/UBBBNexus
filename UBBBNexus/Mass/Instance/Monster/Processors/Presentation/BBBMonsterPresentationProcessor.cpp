@@ -36,6 +36,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Config/BBBMonsterGoreDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Fragments/Presentation/BBBMonsterGoreFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Presentation/BBBMonsterGoreProcessor.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Monster/Processors/Core/BBBMonsterFrameSnapshotSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Presentation/BBBMonsterGibPresentationSubsystem.h"
 #include "ProfilingDebugging/CountersTrace.h"
 
@@ -81,6 +82,7 @@ void UBBBMonsterPresentationProcessor::ConfigureQueries(const TSharedRef<FMassEn
 void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
     const UWorld* World = Context.GetWorld();
+    FBBBMonsterProfileScope ProfileScope(const_cast<UWorld*>(World), EBBBMonsterProfileSlot::Presentation);
     const float DeltaTime = Context.GetDeltaTimeSeconds();
 
     if (!ensureMsgf(World != nullptr && FMath::IsFinite(DeltaTime) && DeltaTime >= 0.0f,
@@ -91,6 +93,10 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
 
     const bool bRemote = World->GetNetMode() == NM_Client;
     const float Alpha = 1.0f - FMath::Exp(-DeltaTime / 0.1f);
+    // 本机与主机也应用轻量阻尼滤除 RVO/墙体滑移/NavMesh-Chaos 高度差引起的高频视觉抖动
+    const float LocalAlphaXY = 1.0f - FMath::Exp(-DeltaTime / 0.032f);
+    const float LocalAlphaZ = 1.0f - FMath::Exp(-DeltaTime / 0.06f);
+    const float LocalAlphaRot = 1.0f - FMath::Exp(-DeltaTime / 0.055f);
 
     const float Now = World->GetTimeSeconds();
     World->GetSubsystem<UBBBMonsterGibPresentationSubsystem>()->AdvancePresentation(Now);
@@ -99,48 +105,48 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
     int32 ActiveCorpses = 0;
     int32 ActiveBurningVfx = 0;
     int32 BodyActors = 0;
-    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses, &ActiveBurningVfx, &BodyActors](FMassExecutionContext& Chunk)
+    int32 PreparationBudget = World->GetNetMode() != NM_DedicatedServer && FApp::CanEverRender() ? 2 : 0;
+    int32 CorpseActivationsRemaining = 2;
+    constexpr int32 MaxActiveBurningVfx = 14;
+    // 合并尸体推进、计数统计与高优先伤口预热为一趟遍历
+    MonsterQuery.ForEachEntityChunk(Context, [Now, &ActiveCorpses, &ActiveBurningVfx, &BodyActors, &PreparationBudget](FMassExecutionContext& Chunk)
     {
         const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
         const auto Network = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
+        const auto Facts = Chunk.GetFragmentView<FBBBMonsterGoreFragment>();
         for (int32 Index = 0; Index < Chunk.GetNumEntities(); ++Index)
         {
-            auto* Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
-            BodyActors += Actor != nullptr ? 1 : 0;
-            ActiveBurningVfx += (Actor && Actor->HasBurningPresentation()) ? 1 : 0;
-            auto* Presentation = Actor ? Actor->GetMonsterPresentation() : nullptr;
+            const AActor* RawActor = Actors[Index].Get();
+            if (!RawActor)
+            {
+                continue;
+            }
+            auto* Actor = Cast<ABBBMonsterPresentationActor>(const_cast<AActor*>(RawActor));
+            if (!Actor)
+            {
+                continue;
+            }
+            ++BodyActors;
+            ActiveBurningVfx += Actor->HasBurningPresentation() ? 1 : 0;
+            auto* Presentation = Actor->GetMonsterPresentation();
             const auto* Definition = Network[Index].Definition.Get();
             if (Presentation && Definition && Definition->Presentation && Presentation->IsCorpseSimulating())
             {
                 Presentation->UpdateCorpsePresentation(Now, Definition->Presentation->Animation.CorpseSimulationDuration);
                 ActiveCorpses += Presentation->IsCorpseSimulating() ? 1 : 0;
             }
-        }
-    });
-    TRACE_COUNTER_SET(BBBMonsterBodyActors, BodyActors);
-    TRACE_COUNTER_SET(BBBMonsterSimulatingCorpses, ActiveCorpses);
-    int32 PreparationBudget = World->GetNetMode() != NM_DedicatedServer && FApp::CanEverRender() ? 2 : 0;
-    int32 CorpseActivationsRemaining = 4;
-    constexpr int32 MaxActiveBurningVfx = 14;
-    MonsterQuery.ForEachEntityChunk(Context, [&PreparationBudget](FMassExecutionContext &Chunk)
-    {
-        const auto Actors = Chunk.GetFragmentView<FMassActorFragment>();
-        const auto Rules = Chunk.GetFragmentView<FBBBMonsterNetworkFragment>();
-        const auto Facts = Chunk.GetFragmentView<FBBBMonsterGoreFragment>();
-        for (int32 Index = 0; Index < Chunk.GetNumEntities() && PreparationBudget > 0; ++Index)
-        {
-            auto *Actor = Cast<ABBBMonsterPresentationActor>(Actors[Index].Get());
-            const auto *Rule = Rules[Index].Definition.Get();
-            if (Actor && Rule && Rule->Presentation && Rule->Presentation->Gore
+            if (PreparationBudget > 0 && Definition && Definition->Presentation && Definition->Presentation->Gore
                 && Actor->GetMonsterMesh()->WasRecentlyRendered(0.2f)
                 && Actor->GetMonsterMesh()->GetPredictedLODLevel() <= 2
-                && Actor->GetMonsterGore()->PrepareNext(*Rule->Presentation->Gore, Facts[Index], true))
+                && Actor->GetMonsterGore()->PrepareNext(*Definition->Presentation->Gore, Facts[Index], true))
             {
                 --PreparationBudget;
             }
         }
     });
-    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, Now, bStandalone, WorldIdentity, &ActiveCorpses, &ActiveBurningVfx, &PreparationBudget, &CorpseActivationsRemaining](FMassExecutionContext& ChunkContext)
+    TRACE_COUNTER_SET(BBBMonsterBodyActors, BodyActors);
+    TRACE_COUNTER_SET(BBBMonsterSimulatingCorpses, ActiveCorpses);
+    MonsterQuery.ForEachEntityChunk(Context, [bRemote, Alpha, LocalAlphaXY, LocalAlphaZ, LocalAlphaRot, Now, bStandalone, WorldIdentity, &ActiveCorpses, &ActiveBurningVfx, &PreparationBudget, &CorpseActivationsRemaining](FMassExecutionContext& ChunkContext)
     {
         // 表现层只读取逻辑结果 不参与决策
         TArrayView<FMassActorFragment> Actors = ChunkContext.GetMutableFragmentView<FMassActorFragment>();
@@ -163,9 +169,15 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
 
         for (int32 Index = 0; Index < ChunkContext.GetNumEntities(); ++Index)
         {
-            // 取得实体对应的表现演员
-            ABBBMonsterPresentationActor* MonsterActor = Cast<ABBBMonsterPresentationActor>(Actors[Index].GetMutable());
+            AActor* RawActor = Actors[Index].GetMutable();
             FBBBMonsterPresentationSmoothingFragment& Smoothing = SmoothingStates[Index];
+            if (!RawActor)
+            {
+                Smoothing.LastActor.Reset();
+                continue;
+            }
+            // 取得实体对应的表现演员
+            ABBBMonsterPresentationActor* MonsterActor = Cast<ABBBMonsterPresentationActor>(RawActor);
 
             if (!IsValid(MonsterActor))
             {
@@ -187,7 +199,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 MonsterActor->GetMonsterPresentation()->ResetCorpsePresentation();
                 MonsterActor->GetMonsterGore()->ResetPresentation();
                 MonsterActor->SetActorEnableCollision(true);
-                if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
+                if (auto* Reaction = MonsterActor->GetMonsterHitReaction())
                 {
                     Reaction->ResetPresentation();
                 }
@@ -196,7 +208,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const bool bLargeCorrection = DistanceSquared > FMath::Square(500.0);
 
             const bool bTransferCrowd = Smoothing.bFromCrowd && !bLargeCorrection;
-            if ((!bRemote || bNewActor || bLargeCorrection) && !bTransferCrowd)
+            if ((bNewActor || bLargeCorrection) && !bTransferCrowd)
             {
                 if (bRemote && !bNewActor && bLargeCorrection)
                 {
@@ -206,33 +218,50 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
 
                 Smoothing.DisplayTransform = MonsterTransform;
             }
-
-            // 只追靠最新已成立结果 不使用速度外推 不回写逻辑位置
-            if ((bRemote && !bNewActor && !bLargeCorrection) || bTransferCrowd)
+            else if (bRemote || bTransferCrowd)
             {
+                // 客机与 Crowd 切换时追靠最新已成立结果 不使用速度外推 不回写逻辑位置
                 Smoothing.DisplayTransform.SetLocation(FMath::Lerp(
                     Smoothing.DisplayTransform.GetLocation(), MonsterTransform.GetLocation(), Alpha));
                 Smoothing.DisplayTransform.SetRotation(FQuat::Slerp(
                     Smoothing.DisplayTransform.GetRotation(), MonsterTransform.GetRotation(), Alpha).GetNormalized());
+            }
+            else
+            {
+                // 单机与主机端应用紧跟随抗抖滤波：XY 极低延迟滤除微抖，小幅 Z 落差平滑吸收体素/Chaos 高度差，自由落体直接跟随
+                const FVector CurLoc = Smoothing.DisplayTransform.GetLocation();
+                const FVector DstLoc = MonsterTransform.GetLocation();
+                const double DeltaZ = FMath::Abs(DstLoc.Z - CurLoc.Z);
+                const bool bAirborne = !Grounds[Index].bGrounded;
+                const double NextZ = (bAirborne || DeltaZ > 35.0)
+                    ? DstLoc.Z
+                    : FMath::Lerp(CurLoc.Z, DstLoc.Z, static_cast<double>(LocalAlphaZ));
+                Smoothing.DisplayTransform.SetLocation(FVector(
+                    FMath::Lerp(CurLoc.X, DstLoc.X, static_cast<double>(LocalAlphaXY)),
+                    FMath::Lerp(CurLoc.Y, DstLoc.Y, static_cast<double>(LocalAlphaXY)),
+                    NextZ));
+                Smoothing.DisplayTransform.SetRotation(FQuat::Slerp(
+                    Smoothing.DisplayTransform.GetRotation(), MonsterTransform.GetRotation(), LocalAlphaRot).GetNormalized());
+            }
 
-                if (Smoothing.DisplayTransform.GetLocation().Equals(MonsterTransform.GetLocation(), 0.01))
-                {
-                    Smoothing.DisplayTransform.SetLocation(MonsterTransform.GetLocation());
-                }
+            if (Smoothing.DisplayTransform.GetLocation().Equals(MonsterTransform.GetLocation(), 0.01))
+            {
+                Smoothing.DisplayTransform.SetLocation(MonsterTransform.GetLocation());
+            }
 
-                if (Smoothing.DisplayTransform.GetRotation().Equals(MonsterTransform.GetRotation(), 0.0001))
-                {
-                    Smoothing.DisplayTransform.SetRotation(MonsterTransform.GetRotation());
-                }
+            if (Smoothing.DisplayTransform.GetRotation().Equals(MonsterTransform.GetRotation(), 0.0001))
+            {
+                Smoothing.DisplayTransform.SetRotation(MonsterTransform.GetRotation());
             }
 
             Smoothing.LastActor = MonsterActor;
             Smoothing.bFromCrowd = false;
 
-            // 同步实体位置和朝向到骨骼表现 Actor
+            // 同步实体位置和朝向到骨骼表现 Actor（过滤 0.15cm / 0.001 级微小抖动，减少冗余物理瞬移开销）
             const FTransform& CurrentTransform = MonsterActor->GetActorTransform();
-            const bool bTransformChanged = !CurrentTransform.GetLocation().Equals(Smoothing.DisplayTransform.GetLocation(), UE_KINDA_SMALL_NUMBER)
-                || !CurrentTransform.GetRotation().Equals(Smoothing.DisplayTransform.GetRotation(), UE_KINDA_SMALL_NUMBER);
+            const bool bTransformChanged = bNewActor
+                || !CurrentTransform.GetLocation().Equals(Smoothing.DisplayTransform.GetLocation(), 0.15)
+                || !CurrentTransform.GetRotation().Equals(Smoothing.DisplayTransform.GetRotation(), 0.001);
             if (!MonsterActor->GetMonsterPresentation()->IsCorpseActive() && bTransformChanged)
             {
                 MonsterActor->SetActorLocationAndRotation(
@@ -267,6 +296,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             const auto* Definition = NetworkStates[Index].Definition.Get();
             if (!Definition || !MonsterActor->ConfigurePresentation(Definition->Presentation))
             {
+                MonsterActor->SetBurningOverlay(false);
                 MonsterActor->SetBurningPresentation(false);
                 continue;
             }
@@ -276,11 +306,19 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 || Behavior == EBBBMonsterBehavior::Patrol || Behavior == EBBBMonsterBehavior::Chase;
             if (Behavior != EBBBMonsterBehavior::Dead)
             {
-                const bool bScreenPose = !Viewers.IsEmpty() && Viewers[Index].ClosestViewerDistanceSq > FMath::Square(3500.0f)
+                const float ViewerDistSq = !Viewers.IsEmpty() ? Viewers[Index].ClosestViewerDistanceSq : 0.0f;
+                // 超过 16m 的僵尸关闭动态 CSM 投影，带 15m/19m 滞回避免边界反复触发 MarkRenderStateDirty 重建代理
+                const float ShadowThresholdSq = BodyMesh->CastShadow ? FMath::Square(1900.0f) : FMath::Square(1500.0f);
+                const bool bWantShadow = Viewers.IsEmpty() || ViewerDistSq <= ShadowThresholdSq;
+                if (BodyMesh->CastShadow != bWantShadow)
+                {
+                    BodyMesh->SetCastShadow(bWantShadow);
+                }
+                const bool bScreenPose = !Viewers.IsEmpty() && ViewerDistSq > FMath::Square(1000.0f)
                     && !bNewActor && bOrdinaryMovement && Traversals[Index].Fact.Kind == 0 && !Mobility.bCrawling
                     && !Mobility.IsStaggering(Now) && !Mobility.IsShocked(Now) && HitReactions[Index].Age > 0.5f
                     && !Health[Index].bBurning && Health[Index].DestroyedParts == 0 && CurrentSpecialFact.Phase == 0;
-                // 遮挡后的远处身体保留最后一帧姿势 逻辑动画进度仍按 Mass 的当前事实推进
+                // 遮挡或镜头后的中远距离身体保留最后一帧姿势 逻辑动画进度仍按 Mass 的当前事实推进
                 BodyMesh->bUseScreenRenderStateForUpdate = bScreenPose;
                 BodyMesh->VisibilityBasedAnimTickOption = bScreenPose
                     ? EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered
@@ -292,6 +330,7 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
                 BodyMesh->bUseScreenRenderStateForUpdate = false;
                 BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
             }
+            MonsterActor->SetBurningOverlay(Health[Index].bBurning && !MonsterActor->IsHidden());
             const bool bHadBurning = MonsterActor->HasBurningPresentation();
             const bool bCloseEnoughToBurn = Viewers.IsEmpty() || Viewers[Index].ClosestViewerDistanceSq <= FMath::Square(2400.0f);
             bool bWantBurning = Health[Index].bBurning
@@ -367,11 +406,14 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             Presentation->ApplyStaggerState(bShowStagger, StaggerProgress,
                 bShocked ? EBBBMonsterHitRegion::Head : Mobility.StaggerRegion);
             Presentation->ApplyHitReaction(HitReactions[Index]);
-            if (auto* Reaction = MonsterActor->FindComponentByClass<UBBBMonsterHitReactionComponent>())
+            if (bShocked || Mobility.ShockStartedAt > 0.0f)
             {
-                const float PulseAge = ShockAge - (Mobility.bCrawling ? 0.0f : FBBBMonsterMobilityFragment::ShockRecoilSeconds);
-                Reaction->ApplyShockPose(Mobility.ShockStartedAt, PulseAge,
-                    bShocked ? Mobility.ShockEndsAt - Now : 0.0f, Mobility.bCrawling, VariationSeed);
+                if (auto* Reaction = MonsterActor->GetMonsterHitReaction())
+                {
+                    const float PulseAge = ShockAge - (Mobility.bCrawling ? 0.0f : FBBBMonsterMobilityFragment::ShockRecoilSeconds);
+                    Reaction->ApplyShockPose(Mobility.ShockStartedAt, PulseAge,
+                        bShocked ? Mobility.ShockEndsAt - Now : 0.0f, Mobility.bCrawling, VariationSeed);
+                }
             }
             if (Definition && PresentationState.State == EBBBMonsterBehavior::Dead && !Presentation->IsCorpseActive())
             {

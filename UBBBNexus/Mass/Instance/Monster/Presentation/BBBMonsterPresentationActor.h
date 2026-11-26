@@ -13,6 +13,7 @@ class UBBBMonsterGorePresentationComponent;
 class UBBBMonsterPresentationDefinition;
 class UNiagaraComponent;
 class UNiagaraSystem;
+class UMaterialInterface;
 
 /** 仅承载小怪模型和动画的临时表现对象 */
 UCLASS(BlueprintType)
@@ -25,6 +26,9 @@ public:
     bool ConfigurePresentation(const UBBBMonsterPresentationDefinition* Settings);
     /** @return 只还原 Mass 部位损毁的表现组件 */
     UBBBMonsterGorePresentationComponent* GetMonsterGore() const;
+
+    /** @return 局部物理回弹组件 */
+    UBBBMonsterHitReactionComponent* GetMonsterHitReaction() const { return HitReaction; }
 
     /** 创建不参与玩法碰撞的表现对象 */
     ABBBMonsterPresentationActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
@@ -42,8 +46,10 @@ public:
 
     /** @return 不打断声线的地面接触声道 */
     UAudioComponent* GetMonsterContactAudio() const;
-    /** @param bBurning 当前身体是否应显示着火 @return 无 */
+    /** @param bBurning 当前身体是否应显示着火粒子 @return 无 */
     void SetBurningPresentation(bool bBurning);
+    /** @param bBurning 当前身体是否应显示全身燃烧覆盖材质 @return 无 */
+    void SetBurningOverlay(bool bBurning);
     /** @return 当前身体是否已激活着火粒子 */
     bool HasBurningPresentation() const;
 
@@ -59,9 +65,18 @@ private:
     UPROPERTY()
     TObjectPtr<UNiagaraSystem> BurningSystem;
 
-    /** 当前身体的着火组件 */
+    /** 全身滚动火纹覆盖材质 */
+    UPROPERTY()
+    TObjectPtr<UMaterialInterface> BurningOverlayMaterial;
+
+    /** 当前身体的着火组件（上身与下身） */
     UPROPERTY(Transient)
     TObjectPtr<UNiagaraComponent> BurningEffect;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UNiagaraComponent> BurningLowerEffect;
+
+    bool bBurningOverlayActive = false;
 
     /** 仅在配置或身体关联变化时重新装配资源 */
     UPROPERTY(Transient)

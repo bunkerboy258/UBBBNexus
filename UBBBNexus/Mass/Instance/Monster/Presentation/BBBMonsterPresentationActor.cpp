@@ -11,6 +11,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 #include "BBBMonsterBloodPresentationSubsystem.h"
 #include "BBBMonsterGibPresentationSubsystem.h"
@@ -26,6 +27,9 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BurningAsset(
         TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Clean.NS_Monster_Burning_Clean"));
     BurningSystem = BurningAsset.Object;
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> BurningOverlayAsset(
+        TEXT("/Game/_Project/Mass/Monster/Effects/M_Monster_Burning_Overlay.M_Monster_Burning_Overlay"));
+    BurningOverlayMaterial = BurningOverlayAsset.Object;
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("MonsterRoot"));
     SetRootComponent(Root);
     MonsterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MonsterMesh"));
@@ -34,8 +38,16 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     MonsterMesh->BodyInstance.SetVelocitySolverIterationCount(2);
     MonsterMesh->BodyInstance.SetProjectionSolverIterationCount(2);
     MonsterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    MonsterMesh->SetCanEverAffectNavigation(false);
     MonsterMesh->SetGenerateOverlapEvents(false);
     MonsterMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+    // 关闭动态光追 BLAS 重建与 MeshSDF 间接光照，避免几十只高模僵尸拖垮渲染线程与 GPU
+    MonsterMesh->SetVisibleInRayTracing(false);
+    MonsterMesh->bAffectDistanceFieldLighting = false;
+    MonsterMesh->bAffectDynamicIndirectLighting = false;
+    MonsterMesh->bEnableUpdateRateOptimizations = true;
+    MonsterMesh->bSkipKinematicUpdateWhenInterpolating = true;
+    MonsterMesh->bSkipBoundsUpdateWhenInterpolating = true;
     MonsterMesh->SetupAttachment(Root);
     MonsterMesh->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
     MonsterPresentation = CreateDefaultSubobject<UBBBMonsterPresentationComponent>(TEXT("MonsterPresentation"));
@@ -122,6 +134,7 @@ void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
     Super::SetActorHiddenInGame(bNewHidden);
     if (bNewHidden)
     {
+        SetBurningOverlay(false);
         SetBurningPresentation(false);
     }
     if (bNewHidden && SoundPresentation)
@@ -147,33 +160,64 @@ bool ABBBMonsterPresentationActor::HasBurningPresentation() const
     return BurningEffect != nullptr;
 }
 
-void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
+void ABBBMonsterPresentationActor::SetBurningOverlay(bool bBurning)
 {
-    if (!bBurning && BurningEffect)
-    {
-        if (BurningEffect->PoolingMethod == ENCPoolMethod::ManualRelease)
-        {
-            BurningEffect->DeactivateImmediate();
-            BurningEffect->ReleaseToPool();
-        }
-        else
-        {
-            BurningEffect->DestroyComponent();
-        }
-        BurningEffect = nullptr;
-    }
-    if (!bBurning || BurningEffect || !BurningSystem || !MonsterMesh)
+    if (bBurningOverlayActive == bBurning || !MonsterMesh)
     {
         return;
     }
-    const FName Spine(TEXT("spine_03"));
+    bBurningOverlayActive = bBurning;
+    MonsterMesh->SetOverlayMaterial(bBurning ? BurningOverlayMaterial.Get() : nullptr);
+}
+
+void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
+{
+    auto ReleaseEffect = [](TObjectPtr<UNiagaraComponent>& Comp)
+    {
+        if (!Comp)
+        {
+            return;
+        }
+        if (Comp->PoolingMethod == ENCPoolMethod::ManualRelease)
+        {
+            Comp->DeactivateImmediate();
+            Comp->ReleaseToPool();
+        }
+        else
+        {
+            Comp->DestroyComponent();
+        }
+        Comp = nullptr;
+    };
+    if (!bBurning)
+    {
+        ReleaseEffect(BurningEffect);
+        ReleaseEffect(BurningLowerEffect);
+        return;
+    }
+    if (BurningEffect || !BurningSystem || !MonsterMesh)
+    {
+        return;
+    }
+    const FName Spine(TEXT("spine_02"));
     const bool bHasSpine = MonsterMesh->DoesSocketExist(Spine);
     BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
-        bHasSpine ? Spine : NAME_None, bHasSpine ? FVector::ZeroVector : FVector(0.0, 0.0, 75.0),
-        FRotator::ZeroRotator, FVector(1.4), EAttachLocation::KeepRelativeOffset, false,
+        bHasSpine ? Spine : NAME_None, bHasSpine ? FVector::ZeroVector : FVector(0.0, 0.0, 95.0),
+        FRotator::ZeroRotator, FVector(0.55), EAttachLocation::KeepRelativeOffset, false,
         ENCPoolMethod::ManualRelease);
     if (BurningEffect && !BurningEffect->IsActive())
     {
         BurningEffect->Activate(true);
+    }
+    const FName Pelvis(TEXT("pelvis"));
+    if (MonsterMesh->DoesSocketExist(Pelvis))
+    {
+        BurningLowerEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
+            Pelvis, FVector::ZeroVector, FRotator::ZeroRotator, FVector(0.45),
+            EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::ManualRelease);
+        if (BurningLowerEffect && !BurningLowerEffect->IsActive())
+        {
+            BurningLowerEffect->Activate(true);
+        }
     }
 }
