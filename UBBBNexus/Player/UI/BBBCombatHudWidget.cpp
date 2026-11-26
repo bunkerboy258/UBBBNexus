@@ -212,7 +212,7 @@ void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, f
         PreviousPhase = Phase;
     }
 
-    // 满体力维持 0.8s 后彻底隐身 仅在冲刺/滑铲/近战消耗与回复期浮现 与血量条零混淆
+    // 体力条常驻显示 满体力静默柔和 消耗与回复期间提亮
     if (StaminaFraction >= 0.995f)
     {
         StaminaFullSeconds = FMath::Min(StaminaFullSeconds + DeltaTime, 3.0f);
@@ -231,7 +231,7 @@ void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, f
     CachedSnapshot.DamageTrailFraction = FMath::Lerp(DamageTrail, HealthFraction,
         FMath::Clamp((DamageAge - 0.14f) / 0.44f, 0.0f, 1.0f));
     CachedSnapshot.StaminaFraction = StaminaFraction;
-    CachedSnapshot.StaminaOpacity = FMath::Lerp(0.78f, 0.0f, QuietProgress);
+    CachedSnapshot.StaminaOpacity = FMath::Lerp(0.92f, 0.58f, QuietProgress);
     CachedSnapshot.bLowHealth = bLowHealth;
     CachedSnapshot.bDowned = Phase == 1;
     CachedSnapshot.LowHealthPulse = 0.5f + 0.5f * static_cast<float>(FMath::Sin(Now * 5.2));

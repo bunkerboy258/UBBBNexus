@@ -27,9 +27,10 @@ TSharedPtr<const FCompositeFont> BuildNumericCompositeFont(UFontFace *Face)
     return Composite;
 }
 
-/** 计算等比居中适应盒后的绘制区域 支持对正方形枪械剪影去除上下留白缩放 */
+/** 计算等比适应盒后的绘制区域 支持对正方形枪械剪影去除上下留白缩放及右缘贴齐 */
 void FitAspectBox(const FVector2D &BoxOrigin, const FVector2D &BoxSize, const FVector2D &ImageSize,
-    bool bSquareWeaponTrim, FVector2D &OutOrigin, FVector2D &OutSize)
+    bool bSquareWeaponTrim, FVector2D &OutOrigin, FVector2D &OutSize,
+    double SquareContentHeightFraction = 0.42, bool bAlignRight = false)
 {
     if (BoxSize.X <= 0.0 || BoxSize.Y <= 0.0 || ImageSize.X <= 0.0 || ImageSize.Y <= 0.0)
     {
@@ -41,17 +42,23 @@ void FitAspectBox(const FVector2D &BoxOrigin, const FVector2D &BoxSize, const FV
     const double Aspect = ImageSize.X / ImageSize.Y;
     if (bSquareWeaponTrim && FMath::Abs(Aspect - 1.0) < 0.18)
     {
-        // 项目枪械剪影为正方形且实心轮廓位于中部约 42% 高度区域 按有效实心高度缩放可饱满呈现枪形
-        constexpr double ContentHeightFraction = 0.42;
-        const double TargetEdge = FMath::Min(BoxSize.X, BoxSize.Y / ContentHeightFraction);
+        // 项目枪械剪影为正方形 按有效实心高度占比缩放以饱满填充
+        const double SafeFraction = FMath::Clamp(SquareContentHeightFraction, 0.20, 1.0);
+        const double TargetEdge = FMath::Min(BoxSize.X, BoxSize.Y / SafeFraction);
         OutSize = FVector2D(TargetEdge, TargetEdge);
-        OutOrigin = BoxOrigin + (BoxSize - OutSize) * 0.5;
+        const double OriginX = bAlignRight
+            ? (BoxOrigin.X + BoxSize.X - OutSize.X)
+            : (BoxOrigin.X + (BoxSize.X - OutSize.X) * 0.5);
+        OutOrigin = FVector2D(OriginX, BoxOrigin.Y + (BoxSize.Y - OutSize.Y) * 0.5);
         return;
     }
 
     const double Ratio = FMath::Min(BoxSize.X / ImageSize.X, BoxSize.Y / ImageSize.Y);
     OutSize = ImageSize * Ratio;
-    OutOrigin = BoxOrigin + (BoxSize - OutSize) * 0.5;
+    const double OriginX = bAlignRight
+        ? (BoxOrigin.X + BoxSize.X - OutSize.X)
+        : (BoxOrigin.X + (BoxSize.X - OutSize.X) * 0.5);
+    OutOrigin = FVector2D(OriginX, BoxOrigin.Y + (BoxSize.Y - OutSize.Y) * 0.5);
 }
 }
 
@@ -238,18 +245,19 @@ public:
             || Snapshot.SpareThrowables[0].bOccupied
             || Snapshot.SpareThrowables[1].bOccupied;
 
-        // 常驻护甲/血量/装备栏固定锚定 武器弹药区固定预留于其上方 切枪与空手时下方常驻栏零位移
+        // 常驻护甲/血量/体力/装备栏固定锚定 武器弹药区固定预留于其上方 切枪与空手时下方常驻栏零位移
         const float ClusterWidth = 268.0f * Scale;
         const float WeaponBandHeight = 40.0f * Scale;
         const float WeaponGap = 9.0f * Scale;
         const float TopReservedHeight = WeaponBandHeight + WeaponGap;
         const float ArmorBarHeight = Snapshot.bHasArmorPool ? 9.0f * Scale : 0.0f;
-        const float HealthGap = Snapshot.bHasArmorPool ? 2.8f * Scale : 0.0f;
+        const float VitalBarGap = 2.8f * Scale;
+        const float HealthGap = Snapshot.bHasArmorPool ? VitalBarGap : 0.0f;
         const float HealthBarHeight = 4.8f * Scale;
-        const float StaminaGap = 6.5f * Scale;
-        const float StaminaHeight = 2.0f * Scale;
+        const float StaminaGap = VitalBarGap;
+        const float StaminaHeight = 2.4f * Scale;
         const float VitalsHeight = ArmorBarHeight + HealthGap + HealthBarHeight + StaminaGap + StaminaHeight;
-        const float LoadoutGap = 9.5f * Scale;
+        const float LoadoutGap = 10.5f * Scale;
         const float LoadoutHeight = 28.0f * Scale;
         const float PersistentHeight = VitalsHeight + LoadoutGap + LoadoutHeight;
         const float FullClusterHeight = TopReservedHeight + PersistentHeight;
@@ -379,7 +387,8 @@ public:
         };
 
         const auto DrawSilhouette = [&](const FSlateBrush *Brush, const FVector2D &BoxPos, const FVector2D &BoxExtent,
-            float Opacity, bool bSquareWeaponTrim, int32 LayerOffset)
+            float Opacity, bool bSquareWeaponTrim, int32 LayerOffset,
+            double SquareContentHeightFraction = 0.42, bool bAlignRight = false)
         {
             if (!Brush || !Brush->GetResourceObject() || Opacity <= 0.01f)
             {
@@ -388,7 +397,8 @@ public:
 
             FVector2D FitPos;
             FVector2D FitExtent;
-            FitAspectBox(BoxPos, BoxExtent, Brush->ImageSize, bSquareWeaponTrim, FitPos, FitExtent);
+            FitAspectBox(BoxPos, BoxExtent, Brush->ImageSize, bSquareWeaponTrim, FitPos, FitExtent,
+                SquareContentHeightFraction, bAlignRight);
             if (FitExtent.X <= 0.5 || FitExtent.Y <= 0.5)
             {
                 return;
@@ -423,34 +433,20 @@ public:
             Elements.PopClip();
         };
 
-        // 1. 开放悬空式 SHD 左侧纯白脊线与细导引线 (倒地时主脊线转战术红)
+        // 1. 闭合贯通式 SHD 左侧纯白竖向主脊线 (已去除左侧撇出细线 倒地时转战术红)
         const float VitalsStartY = TopReservedHeight;
-        const float TopSpineStart = bShowWeaponBand ? 0.0f : VitalsStartY;
-        const float TopSpineEnd = VitalsStartY + ArmorBarHeight + HealthGap + HealthBarHeight;
-        const float BottomSpineStart = VitalsStartY + VitalsHeight + LoadoutGap * 0.55f;
+        const float SpineStart = bShowWeaponBand ? 0.0f : VitalsStartY;
+        const float SpineHeight = FullClusterHeight - SpineStart;
         const float SpineAlpha = (Snapshot.bLowHealth || Snapshot.bDowned)
             ? FMath::Lerp(0.55f, 1.0f, Snapshot.LowHealthPulse)
             : 0.96f;
-        const FLinearColor TopSpineTint = Snapshot.bDowned ? DownedHealthTint : PrimaryTint;
+        const FLinearColor SpineTint = Snapshot.bDowned ? DownedHealthTint : PrimaryTint;
 
-        // 背包侧向细导引线 锁定在常驻体征区中心 切枪零位移
-        const double TetherY = VitalsStartY + (ArmorBarHeight > 0.0f ? ArmorBarHeight * 0.5 : HealthBarHeight * 0.5);
-        DrawLine({FVector2D(-13.0 * Scale, TetherY + 2.0 * Scale), FVector2D(-3.5 * Scale, TetherY), FVector2D(0.0, TetherY)},
-            1.15f * Scale, AlphaTint(TopSpineTint, 0.56f), 0, true);
-
-        // 上半部主脊线 (持武器时向上延伸包裹武器区 空手时仅包裹常驻护甲与血量区)
-        DrawRect(FVector2D(-0.8 * Scale, TopSpineStart - 0.8 * Scale),
-            FVector2D(3.8 * Scale, (TopSpineEnd - TopSpineStart) + 1.6 * Scale),
+        DrawRect(FVector2D(-0.8 * Scale, SpineStart - 0.8 * Scale),
+            FVector2D(3.8 * Scale, SpineHeight + 1.6 * Scale),
             FLinearColor(0.0f, 0.0f, 0.0f, 0.48f * ShadowAlphaScale), 0);
-        DrawRect(FVector2D(0.0, TopSpineStart), FVector2D(2.2 * Scale, TopSpineEnd - TopSpineStart),
-            AlphaTint(TopSpineTint, SpineAlpha), 1);
-
-        // 下半部常驻轻脊线 (武器槽与投掷物区)
-        DrawRect(FVector2D(-0.5 * Scale, BottomSpineStart - 0.5 * Scale),
-            FVector2D(2.5 * Scale, FullClusterHeight - BottomSpineStart + 1.0 * Scale),
-            FLinearColor(0.0f, 0.0f, 0.0f, 0.36f * ShadowAlphaScale), 0);
-        DrawRect(FVector2D(0.0, BottomSpineStart), FVector2D(1.5 * Scale, FullClusterHeight - BottomSpineStart),
-            AlphaTint(PrimaryTint, 0.64f), 1);
+        DrawRect(FVector2D(0.0, SpineStart), FVector2D(2.2 * Scale, SpineHeight),
+            AlphaTint(SpineTint, SpineAlpha), 1);
 
         const float ContentLeft = 10.0f * Scale;
         const float ContentRight = ClusterWidth;
@@ -524,15 +520,15 @@ public:
                 }
             }
 
-            // 右侧饱满主武器纯白剪影
-            const float WeaponBoxWidth = 114.0f * Scale;
-            const float WeaponBoxHeight = 38.0f * Scale;
+            // 右侧主武器纯白剪影 在基线上饱满拉大 右缘贴齐护甲右界且不突出外围不遮挡下方
+            const float WeaponBoxWidth = 132.0f * Scale;
+            const float WeaponBoxHeight = 40.0f * Scale;
             const float WeaponBoxLeft = ContentRight - WeaponBoxWidth;
-            const float WeaponBoxTop = 1.0f * Scale;
+            const float WeaponBoxTop = -2.0f * Scale;
             if (ActiveWeaponBrush)
             {
                 DrawSilhouette(ActiveWeaponBrush, FVector2D(WeaponBoxLeft, WeaponBoxTop),
-                    FVector2D(WeaponBoxWidth, WeaponBoxHeight), 0.98f, true, 3);
+                    FVector2D(WeaponBoxWidth, WeaponBoxHeight), 0.98f, true, 3, 0.31, true);
             }
         }
 
@@ -627,20 +623,17 @@ public:
                 1.4f * Scale, AlphaTint(DownedHealthTint, HealthPulseAlpha), 4, true);
         }
 
-        // 与血量拉开明显间距的按需体力细轨 满体力时完全隐身零干扰
+        // 常驻体力细轨 与血量间距同护甲血量间距完全一致
         const float StaminaY = CursorY + HealthBarHeight + StaminaGap;
-        const float StaminaVis = FMath::Clamp(Snapshot.StaminaOpacity, 0.0f, 1.0f);
-        if (StaminaVis > 0.005f)
-        {
-            const float StaminaFillW = ContentWidth * FMath::Clamp(Snapshot.StaminaFraction, 0.0f, 1.0f);
-            DrawRect(FVector2D(ContentLeft - 0.7f * Scale, StaminaY - 0.7f * Scale),
-                FVector2D(ContentWidth + 1.4f * Scale, StaminaHeight + 1.4f * Scale),
-                FLinearColor(0.0f, 0.0f, 0.0f, 0.42f * StaminaVis * ShadowAlphaScale), 0);
-            DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(ContentWidth, StaminaHeight),
-                AlphaTint(SecondaryTint, 0.22f * StaminaVis), 1);
-            DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(StaminaFillW, StaminaHeight),
-                AlphaTint(SecondaryTint, 0.92f * StaminaVis), 2);
-        }
+        const float StaminaVis = FMath::Clamp(Snapshot.StaminaOpacity, 0.52f, 1.0f);
+        const float StaminaFillW = ContentWidth * FMath::Clamp(Snapshot.StaminaFraction, 0.0f, 1.0f);
+        DrawRect(FVector2D(ContentLeft - 0.8f * Scale, StaminaY - 0.8f * Scale),
+            FVector2D(ContentWidth + 1.6f * Scale, StaminaHeight + 1.6f * Scale),
+            FLinearColor(0.0f, 0.0f, 0.0f, 0.46f * StaminaVis * ShadowAlphaScale), 0);
+        DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(ContentWidth, StaminaHeight),
+            AlphaTint(SecondaryTint, 0.22f * StaminaVis), 1);
+        DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(StaminaFillW, StaminaHeight),
+            AlphaTint(SecondaryTint, 0.92f * StaminaVis), 2);
 
         CursorY = VitalsStartY + VitalsHeight + LoadoutGap;
 
