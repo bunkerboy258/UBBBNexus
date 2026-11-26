@@ -21,7 +21,7 @@ struct FBBBPlayerCameraRecoilSettings
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "镜头恢复", meta = (ClampMin = "0.0", ClampMax = "1.0", DisplayName = "俯仰保留比例", ToolTip = "无单位 0 全部自动回零 1 全部留在控制视角中需手动压回 越大保留越多 只作用于 X 重武器可设较小值做连续上抬"))
     float PitchRetention = 0.0f;
 
-    /** 三轴累计冲击允许的最大绝对角度 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "镜头限制", meta = (DisplayName = "可回零偏移上限 (度)", ToolTip = "X 上下 Y 左右 Z 倾斜 各轴最大绝对累计偏移 必须大于 0 越大允许偏移越大 不限制已保留的俯仰角"))
+    /** 连发期间可回零偏移的堆积上限 由枪械注入 停火回正后仍受此钳制 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "镜头限制", meta = (DisplayName = "可回零偏移上限 (度)", ToolTip = "X 上下 Y 左右 Z 倾斜 连发暂停回正时冲击在此上限内堆积 必须大于 0 越大连发顶得越高 不限制 PitchRetention 已写入控制角的俯仰"))
     FVector LimitDegrees = FVector(5.0f, 3.0f, 2.0f);
 };

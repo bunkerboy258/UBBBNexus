@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 
@@ -24,6 +25,7 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
     UAnimInstance *Source = nullptr;
     int32 FireSequence = 0;
     float RetainedPitch = 0.0f;
+    bool bSustainedFire = false;
     FBBBPlayerCameraRecoilSettings Settings = CameraSystem.DefaultRecoilSettings;
     UBBBAnimInstance *CharacterAnimation = Cast<UBBBAnimInstance>(CameraSystem.Character->GetMesh()->GetAnimInstance());
     const bool bHasSource = CameraSystem.ReadRecoilSource(CharacterAnimation, Source, FireSequence, Settings);
@@ -49,6 +51,18 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
             if (!Shot.Impulse.ContainsNaN())
             {
                 RetainedPitch += Shot.Impulse.X * Settings.PitchRetention;
+            }
+        }
+
+        if (FireSequence > 0)
+        {
+            if (const UBBBEquipmentAnimInstance *Equipment = Cast<UBBBEquipmentAnimInstance>(Source))
+            {
+                const float FireInterval = Equipment->GetRecoilFireInterval();
+                const float SinceLastFire = Equipment->GetTimeSinceLastFireSeconds();
+                bSustainedFire = FMath::IsFinite(FireInterval) && FireInterval > 0.0f
+                    && FMath::IsFinite(SinceLastFire) && SinceLastFire >= 0.0f
+                    && SinceLastFire <= FireInterval;
             }
         }
     }
@@ -77,7 +91,11 @@ void FBBBPlayerCameraImpulseProcessor::Update(ABBBPlayerCameraSystem &CameraSyst
         return;
     }
 
-    CameraSystem.RecoilOffset *= FMath::Exp(-RecoverySpeed * FMath::Max(DeltaSeconds, 0.0f));
+    // 连发窗口内暂停可回零衰减 冲击继续叠加 由枪械 LimitDegrees 封顶 停火超过开火间隔后再回正
+    if (!bSustainedFire)
+    {
+        CameraSystem.RecoilOffset *= FMath::Exp(-RecoverySpeed * FMath::Max(DeltaSeconds, 0.0f));
+    }
     if (CameraSystem.Pending.IsSet())
     {
         CameraSystem.RecoilOffset += CameraSystem.Pending->Impulse;

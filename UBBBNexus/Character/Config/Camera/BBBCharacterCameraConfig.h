@@ -61,7 +61,7 @@ struct FBBBCharacterCameraConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "构图", meta = (ClampMin = "0.01", DisplayName = "站蹲高度过渡时间", ForceUnits = "s"))
     float StanceHeightBlendDuration = 0.2f;
 
-    /** 相机可回零偏移的指数回正速度 角色统一 不随武器改变 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "镜头回正", meta = (ClampMin = "0.01", DisplayName = "镜头回正速度 (1/秒)", ToolTip = "指数衰减系数 越大可回零的镜头偏移恢复越快 不恢复已保留的俯仰角 不随武器改变"))
+    /** 停火后可回零偏移的指数回正速度 角色统一 连发窗口内不衰减 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "镜头回正", meta = (ClampMin = "0.01", DisplayName = "镜头回正速度 (1/秒)", ToolTip = "指数衰减系数 仅在距上次开火超过武器开火间隔后生效 越大可回零偏移恢复越快 不恢复已保留的俯仰角 不随武器改变"))
     float RecoverySpeed = 10.0f;
 };
