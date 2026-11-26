@@ -307,7 +307,7 @@ public:
         return AimRecoilScale;
     }
 
-    /** @return 装备提供的近距离瞄准保护距离 单位厘米 */
+    /** @return 装备提供的瞄准最小求解距离 单位厘米 */
     float GetMinTargetDistance() const
     {
         return MinTargetDistance;
@@ -418,6 +418,6 @@ private:
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Equipment|Animation", meta = (AllowPrivateAccess = "true"))
     FBBBEquipmentAnimationFacts AnimationFacts;
 
-    /** 装备初始化时发布的近距离瞄准保护距离 */
+    /** 装备初始化时发布的瞄准最小求解距离 */
     float MinTargetDistance = 120.0f;
 };

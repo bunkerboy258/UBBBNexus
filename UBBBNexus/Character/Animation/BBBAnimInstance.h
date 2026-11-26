@@ -359,7 +359,7 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->SourceWeaponAimFollowSpeed;
     }
 
-    /** @return 当前装备的近距离瞄准保护距离 单位厘米 */
+    /** @return 当前装备的瞄准最小求解距离 单位厘米 */
     UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
     float GetMinTargetDistance() const
     {
@@ -389,7 +389,7 @@ private:
     /** 瞄准跟随速度的发布快照 */
     UPROPERTY(Transient)
     float SourceWeaponAimFollowSpeed = 18.0f;
-    /** 已发布的近距离瞄准保护距离 */
+    /** 已发布的瞄准最小求解距离 */
     float SourceMinTargetDistance = 120.0f;
     /** 后向震动强度的发布快照 */
     UPROPERTY(Transient)

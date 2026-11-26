@@ -12,7 +12,7 @@ struct FBBBCharacterWeaponHandlingState final
     FVector2D PoseOffsetAngles = FVector2D::ZeroVector;
     /** 当前姿态的瞄准跟随速度 */
     float AimFollowSpeed = 18.0f;
-    /** 当前装备的近距离瞄准保护距离 单位厘米 */
+    /** 当前装备的瞄准最小求解距离 单位厘米 */
     float MinTargetDistance = 120.0f;
     /** 本次后震所属装备动画实例 */
     TWeakObjectPtr<UBBBEquipmentAnimInstance> RecoilSource;

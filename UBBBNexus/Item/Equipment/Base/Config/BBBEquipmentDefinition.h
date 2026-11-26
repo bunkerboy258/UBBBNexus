@@ -12,8 +12,21 @@ class UTexture2D;
 class UAnimMontage;
 class UAnimSequence;
 
+/** 装备处于角色主手时使用的普通移动倍率 */
+USTRUCT(BlueprintType)
+struct FBBBEquipmentMovementScale
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "持握移动", meta = (DisplayName = "速度上限倍率", ClampMin = "0.01"))
+    float MaxSpeedScale = 1.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "持握移动", meta = (DisplayName = "最大加速度倍率", ClampMin = "0.01"))
+    float MaxAccelerationScale = 1.0f;
+};
+
 /** 所有装备实例共享的静态资源配置 */
-UCLASS(BlueprintType, PrioritizeCategories = ("物品资料", "装配与握持", "角色动画", "武器动画", "开火与装填", "持枪表现", "镜头后坐力", "专属机制"))
+UCLASS(BlueprintType, PrioritizeCategories = ("物品资料", "装配与握持", "持握移动", "角色动画", "武器动画", "开火与装填", "持枪表现", "镜头后坐力", "专属机制"))
 class ABBB_EVAC_API UBBBEquipmentDefinition : public UBBBItemDefinition
 {
     GENERATED_BODY()
@@ -35,12 +48,15 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "装配与握持", meta = (DisplayPriority = "1", DisplayName = "装备类型", ToolTip = "供角色动画选择通用持枪类别 具体武器玩法由对应 Actor 实现 不靠此枚举切换"))
     EBBBEquipmentType EquipmentType = EBBBEquipmentType::None;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "持握移动", meta = (DisplayName = "持握移动倍率"))
+    FBBBEquipmentMovementScale MovementScale;
+
     /** 角色装备后链接的动画层类型 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayPriority = "1", DisplayName = "角色动画层类", ToolTip = "装备激活后链接到角色主动画实例的动画层类 不作为武器网格的动画实例"))
     TSubclassOf<UAnimInstance> CharacterAnimationLayerClass;
 
-    /** 角色瞄准 IK 开始近距离保护的距离 单位厘米 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayName = "瞄准最小目标距离", ForceUnits = "cm", ClampMin = "0.0", ToolTip = "目标靠近瞄准源时减弱瞄准修正 数值越大保护越早介入 0 关闭距离保护"))
+    /** 角色瞄准 IK 最小求解距离 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "角色动画", meta = (DisplayName = "瞄准最小目标距离", ForceUnits = "cm", ClampMin = "0.0", ToolTip = "目标距瞄准源近于此值时沿原方向外推到该距离 不改变瞄准方向 0 关闭外推"))
     float MinTargetDistance = 120.0f;
 
     /** 当前装备供角色手指层固定采样的双手握姿 */
