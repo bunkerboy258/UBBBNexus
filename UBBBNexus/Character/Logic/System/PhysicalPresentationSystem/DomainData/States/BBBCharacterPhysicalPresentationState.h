@@ -43,6 +43,10 @@ struct FBBBCharacterPhysicalPresentationState final
     bool bGetUpRequested = false;
     /** 已校验的当前起身空间与速度条件 */
     bool bCanGetUp = false;
+    /** 当前候选起身是否使用蹲伏胶囊 */
+    bool bGetUpCrouched = false;
+    /** 高处失重坠落挣扎物理驱动是否已激活 */
+    bool bFallFlailActive = false;
     /** 当前候选起身胶囊变换 */
     FTransform GetUpTransform;
     /** 自然结束通知已通过轮次校验 */

@@ -30,4 +30,7 @@ struct FBBBCharacterGetUpAnimationState final
     uint8 PreviousRootMotionMode = 0;
     /** 是否已接管起身根运动设置 */
     bool bRootMotionOverride = false;
+    /** 当前正在播放的高处失重挣扎蒙太奇 */
+    UPROPERTY(Transient)
+    TObjectPtr<class UAnimMontage> ActiveFallFlailMontage = nullptr;
 };

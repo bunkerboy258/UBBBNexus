@@ -183,12 +183,18 @@ public:
     UPROPERTY(BlueprintReadOnly, Transient, Category = "Animation|Facts")
     bool bSourceCrouching = false;
 
+protected:
+    /** 工作线程更新躯干倾斜平滑量 */
+    virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
+
+public:
+
     /** @return 角色是否处于站立步行档位 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
     bool IsWalking() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return !Main->bSourceRunning && !Main->bSourceCrouching;
+        return !Main->bSourceRunning && !Main->bSourceSprinting && !Main->bSourceCrouching;
     }
 
     /** @return 角色是否处于站立跑步档位 */
@@ -196,8 +202,54 @@ public:
     bool IsRunning() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return Main->bSourceRunning && !Main->bSourceCrouching;
+        return Main->bSourceRunning && !Main->bSourceSprinting && !Main->bSourceCrouching;
     }
+
+    /** @return 角色是否处于站立冲刺档位 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    bool IsSprinting() const
+    {
+        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+        return Main->bSourceSprinting && !Main->bSourceCrouching;
+    }
+
+    /** @return 角色是否处于站立跑步或冲刺档位 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    bool IsRunningOrSprinting() const
+    {
+        return IsRunning() || IsSprinting();
+    }
+
+    /** @return 归一化前后加减速倾斜量 [-1, 1] 正为前倾负为后仰 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    float GetLeanForward() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->LeanAmount.X;
+    }
+
+    /** @return 归一化左右转向倾斜量 [-1, 1] 正为右倾负为左倾 */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    float GetLeanRight() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->LeanAmount.Y;
+    }
+
+    /** @return 当前躯干倾斜叠加权重 [0, 1] */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    float GetLeanAlpha() const
+    {
+        return GetBBBMainAnimInstanceThreadSafe()->LeanAlpha;
+    }
+
+    /**
+     * 判断本帧高处前向落地是否满足自动翻滚卸力条件
+     * @param bJustLanded 本帧是否刚落地
+     * @param LandingVelocity 落地前一刻的世界速度
+     * @param MinFallSpeed 触发翻滚的最低下落速度阈值 单位厘米每秒
+     * @return 是否触发前向落地翻滚
+     */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    bool ShouldTriggerLandRoll(bool bJustLanded, FVector LandingVelocity, float MinFallSpeed = 680.0f) const;
 
     /** @return 角色是否正在滑铲 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
@@ -472,6 +524,24 @@ private:
 
     UPROPERTY(Transient)
     bool bSourceRunning = false;
+
+    UPROPERTY(Transient)
+    bool bSourceSprinting = false;
+
+    /** 平滑后的二维躯干倾斜 X 前后加减速 Y 左右转向 范围 [-1, 1] */
+    FVector2D LeanAmount = FVector2D::ZeroVector;
+
+    /** 平滑后的躯干倾斜叠加权重 */
+    float LeanAlpha = 0.0f;
+
+    /** 上一帧水平速度 用于计算帧间加速度 */
+    FVector PreviousPlanarVelocity = FVector::ZeroVector;
+
+    /** 上一帧朝向偏航 用于计算转向角速度 */
+    float PreviousActorYaw = 0.0f;
+
+    /** 是否已初始化倾斜采样基准 */
+    bool bLeanInitialized = false;
 
     UPROPERTY(Transient)
     bool bSourceSliding = false;

@@ -175,6 +175,7 @@ void FBBBCharacterAnimationFactProcessor::Update(
     const auto &LocomotionState = RuntimeData.Locomotion.ReadLocomotionState();
     const auto &ControlState = RuntimeData.Parse.ReadControlState();
     FactState.bIsRunning = LocomotionState.bRun;
+    FactState.bIsSprinting = LocomotionState.bSprint;
     FactState.bIsSliding = LocomotionState.bSlide;
     FactState.bCrouchRequested = ControlState.bCrouch;
     FactState.bRunRequested = ControlState.bRun;

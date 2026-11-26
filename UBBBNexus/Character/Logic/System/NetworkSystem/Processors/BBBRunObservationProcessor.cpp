@@ -9,26 +9,32 @@
 void FBBBRunObservationProcessor::Update(
     FBBBCharacterNetworkUpdateContext &Context) const
 {
-    // 跑步状态变化才需要同步 重复状态由上次观察值拦截
+    // 跑步或冲刺状态变化才需要同步 重复状态由上次观察值拦截
     if (Context.RunObservationState.LastObservedRun.IsSet()
-        && Context.RunObservationState.LastObservedRun.GetValue()
-        == Context.LocomotionState.bRun)
+        && Context.RunObservationState.LastObservedSprint.IsSet()
+        && Context.RunObservationState.LastObservedRun.GetValue() == Context.LocomotionState.bRun
+        && Context.RunObservationState.LastObservedSprint.GetValue() == Context.LocomotionState.bSprint)
     {
         return;
     }
 
     // 变更一经观察便更新基准 避免后续帧重复提交同一值
     Context.RunObservationState.LastObservedRun = Context.LocomotionState.bRun;
+    Context.RunObservationState.LastObservedSprint = Context.LocomotionState.bSprint;
 
     // 权威端更新复制属性 本机控制的非权威端向服务器提交状态
     if (Context.NetworkIdentityState.bHasAuthority)
     {
-        Context.NetworkComponent.ReplicateRunState(Context.LocomotionState.bRun);
+        Context.NetworkComponent.ReplicateRunState(
+            Context.LocomotionState.bRun,
+            Context.LocomotionState.bSprint);
     }
 
     if (!Context.NetworkIdentityState.bHasAuthority
         && Context.NetworkIdentityState.bLocallyControlled)
     {
-        Context.NetworkComponent.ServerSubmitRunState(Context.LocomotionState.bRun);
+        Context.NetworkComponent.ServerSubmitRunState(
+            Context.LocomotionState.bRun,
+            Context.LocomotionState.bSprint);
     }
 }

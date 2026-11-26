@@ -66,9 +66,9 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
     /** 体力上限与出生体力 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "最大体力", ClampMin = "0"))
     float MaximumStamina = 150.0f;
-    /** 站立奔跑每秒消耗 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "奔跑每秒消耗", ClampMin = "0"))
-    float RunDrainPerSecond = 5.0f;
+    /** 站立冲刺每秒消耗 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "冲刺每秒消耗", ClampMin = "0"))
+    float SprintDrainPerSecond = 12.0f;
     /** 滑铲每秒消耗 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "滑铲每秒消耗", ClampMin = "0"))
     float SlideDrainPerSecond = 10.0f;
@@ -84,13 +84,13 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 
     /** 从本次最高点下降到此距离时在空中进入布娃娃 单位厘米 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落布娃娃距离", ClampMin = "1"))
-    float FallRagdollDistance = 500.0f;
+    float FallRagdollDistance = 700.0f;
     /** 首次撞地向下速度不超过此值时不受伤 单位厘米每秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落无伤速度", ClampMin = "0"))
-    float FallSafeSpeed = 800.0f;
+    float FallSafeSpeed = 950.0f;
     /** 首次撞地向下速度达到此值时使用满额伤害 单位厘米每秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落满额伤害速度", ClampMin = "1"))
-    float FallFullDamageSpeed = 1600.0f;
+    float FallFullDamageSpeed = 1800.0f;
     /** 首次身体撞地可造成的最大伤害 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|跌落", meta = (DisplayName = "跌落满额伤害", ClampMin = "0"))
     float FallMaximumDamage = 500.0f;

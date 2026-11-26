@@ -37,6 +37,7 @@ void FBBBCharacterLifeMovementProcessor::Update(FBBBCharacterLocomotionUpdateCon
         Movement.CurrentRootMotion.Clear();
         Movement.RootMotionParams.Clear();
         State.bRun = false;
+        State.bSprint = false;
         State.bSlide = false;
         State.SlideElapsed = 0.0f;
         UCapsuleComponent *Capsule = Character.GetCapsuleComponent();

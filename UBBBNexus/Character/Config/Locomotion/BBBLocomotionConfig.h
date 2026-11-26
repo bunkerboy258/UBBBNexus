@@ -20,6 +20,14 @@ struct FBBBCharacterLocomotionConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (DisplayName = "奔跑速度"))
     FVector RunSpeeds = FVector(500.0f, 350.0f, 300.0f);
 
+    /** 前进 侧移 后退方向的冲刺速度 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (DisplayName = "冲刺速度"))
+    FVector SprintSpeeds = FVector(650.0f, 450.0f, 350.0f);
+
+    /** 体力耗尽后再次允许冲刺所需的最低体力 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (ClampMin = "0.0", DisplayName = "冲刺恢复体力阈值"))
+    float SprintResumeStamina = 15.0f;
+
     /** 前进 侧移 后退方向的蹲伏速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (DisplayName = "蹲伏速度"))
     FVector CrouchSpeeds = FVector(225.0f, 200.0f, 180.0f);
@@ -59,15 +67,19 @@ struct FBBBCharacterLocomotionConfig
 
     /** 垂直起跳速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "跳跃垂直速度"))
-    float JumpZVelocity = 500.0f;
+    float JumpZVelocity = 640.0f;
 
     /** 空中控制能力 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "空中控制系数"))
-    float AirControl = 0.25f;
+    float AirControl = 0.5f;
 
     /** 重力缩放 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "重力倍率"))
-    float GravityScale = 1.0f;
+    float GravityScale = 1.7f;
+
+    /** 空中水平转向速率 单位度每秒 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "空中转向速率"))
+    float AirRotationRateYaw = 660.0f;
 
     /** 最小模拟摇杆移动速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|角色移动组件", meta = (ClampMin = "0.0", DisplayName = "最小模拟输入行走速度"))

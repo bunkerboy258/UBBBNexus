@@ -83,7 +83,7 @@ void FBBBCharacterPhysicalPhaseProcessor::Update(FBBBCharacterPhysicalPresentati
         {
             Result.Phase = EBBBCharacterPhysicalPhase::Recovering;
             Result.RecoveryTransform = State.GetUpTransform;
-            Result.bRecoveryCrouched = false;
+            Result.bRecoveryCrouched = State.bGetUpCrouched;
             Result.GetUpMontage = Animation.SelectedMontage;
             Result.GetUpPosition = Animation.SelectedTime;
             State.bGetUpRequested = false;
@@ -120,6 +120,7 @@ void FBBBCharacterPhysicalPhaseProcessor::Update(FBBBCharacterPhysicalPresentati
         Context.Mesh.bPauseAnims = false;
         State.bRagdoll = false;
         State.bRagdollRequested = false;
+        State.bFallFlailActive = false;
     }
     if (bMirror && !State.bRagdoll && Result.Phase == EBBBCharacterPhysicalPhase::Recovering
         && Context.Data.Locomotion.ReadLocomotionState().AppliedPhysicalTransition != Result.Transition)
@@ -129,7 +130,32 @@ void FBBBCharacterPhysicalPhaseProcessor::Update(FBBBCharacterPhysicalPresentati
     }
     if (State.bRagdoll)
     {
-        // 救援的业务完成必须让蒙太奇通知正常推进 物理仍完整覆盖骨骼输出
-        Context.Mesh.bPauseAnims = !Context.Data.Life.ReadRescueState().bReceiving;
+        const bool bReceivingRescue = Context.Data.Life.ReadRescueState().bReceiving;
+        const bool bFallFlail = State.bFallRagdoll && !State.bFallLanded && !bReceivingRescue;
+        // 救援与高处失重挣扎期间保持动画求值 撞地后立刻恢复自由布娃娃
+        Context.Mesh.bPauseAnims = !bReceivingRescue && !bFallFlail;
+        if (bFallFlail && !State.bFallFlailActive)
+        {
+            FPhysicalAnimationData FlailDrive;
+            FlailDrive.bIsLocalSimulation = true;
+            FlailDrive.OrientationStrength = 120.0f;
+            FlailDrive.AngularVelocityStrength = 18.0f;
+            FlailDrive.PositionStrength = 0.0f;
+            FlailDrive.VelocityStrength = 0.0f;
+            FlailDrive.MaxLinearForce = 0.0f;
+            FlailDrive.MaxAngularForce = 0.0f;
+            Context.PhysicalAnimation.SetSkeletalMeshComponent(&Context.Mesh);
+            Context.PhysicalAnimation.ApplyPhysicalAnimationSettingsBelow(TEXT("pelvis"), FlailDrive, false);
+            Context.PhysicalAnimation.SetStrengthMultiplyer(1.0f);
+            Context.PhysicalAnimation.SetComponentTickEnabled(true);
+            State.bFallFlailActive = true;
+        }
+        else if (!bFallFlail && State.bFallFlailActive)
+        {
+            Context.PhysicalAnimation.SetStrengthMultiplyer(0.0f);
+            Context.PhysicalAnimation.SetComponentTickEnabled(false);
+            Context.PhysicalAnimation.SetSkeletalMeshComponent(nullptr);
+            State.bFallFlailActive = false;
+        }
     }
 }

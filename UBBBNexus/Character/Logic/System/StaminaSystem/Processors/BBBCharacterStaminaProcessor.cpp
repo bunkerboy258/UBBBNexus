@@ -44,9 +44,9 @@ void FBBBCharacterStaminaProcessor::Update(FBBBCharacterStaminaUpdateContext &Co
     {
         Drain += FMath::Max(Config.SlideDrainPerSecond, 0.0f) * DeltaSeconds;
     }
-    else if (Locomotion.bRun)
+    else if (Locomotion.bSprint && !Locomotion.MovementInput.IsNearlyZero())
     {
-        Drain += FMath::Max(Config.RunDrainPerSecond, 0.0f) * DeltaSeconds;
+        Drain += FMath::Max(Config.SprintDrainPerSecond, 0.0f) * DeltaSeconds;
     }
 
     if (Use.Fact.bQuickMelee && Use.Fact.bActive && Use.UseSerial != State.LastQuickMeleeSerial)

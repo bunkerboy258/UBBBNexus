@@ -11,9 +11,16 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/LifeSystem/DomainData/States/BBBCharacterLifeState.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/BBBEquipment.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Config/BBBEquipmentDefinition.h"
 
 namespace
 {
+float ResolveMovementScale(const float Scale)
+{
+    return FMath::IsFinite(Scale) && Scale > 0.0f ? Scale : 1.0f;
+}
+
 // 将二维移动意图转换为控制器朝向下的世界方向
 FVector ResolveWorldMoveDirection(
     const ACharacter &Character,
@@ -26,10 +33,9 @@ FVector ResolveWorldMoveDirection(
 bool CanRun(
     const ACharacter &Character,
     const FBBBCharacterControlState &ControlData,
-    const FBBBCharacterLocomotionConfig &Config,
-    const float StaminaCurrent)
+    const FBBBCharacterLocomotionConfig &Config)
 {
-    if (!ControlData.bRun || StaminaCurrent <= 0.0f)
+    if (!ControlData.bRun)
     {
         return false;
     }
@@ -54,12 +60,11 @@ bool ResolveRun(
     const FBBBCharacterControlState &ControlData,
     const FBBBCharacterLocomotionConfig &Config,
     const bool bWasRunning,
-    const FVector &CurrentVelocity,
-    const float StaminaCurrent)
+    const FVector &CurrentVelocity)
 {
     const bool bFullMovementInput = ControlData.MoveWorld.Size() >= Config.AnalogRunThreshold;
 
-    if (ControlData.bAim || ControlData.bCrouch || StaminaCurrent <= 0.0f)
+    if (ControlData.bAim || ControlData.bCrouch)
     {
         return false;
     }
@@ -71,7 +76,45 @@ bool ResolveRun(
         return true;
     }
 
-    return bFullMovementInput && CanRun(Character, ControlData, Config, StaminaCurrent);
+    return bFullMovementInput && CanRun(Character, ControlData, Config);
+}
+
+// 按体力与恢复滞回裁决站立冲刺状态 体力耗尽时自动回落普通奔跑
+bool ResolveSprint(
+    const bool bRun,
+    const FBBBCharacterControlState &ControlData,
+    const FBBBCharacterLocomotionConfig &Config,
+    const bool bWasSprinting,
+    const FVector &CurrentVelocity,
+    const float StaminaCurrent,
+    bool &bInOutSprintExhausted)
+{
+    if (StaminaCurrent <= 0.0f)
+    {
+        bInOutSprintExhausted = true;
+        return false;
+    }
+
+    if (bInOutSprintExhausted)
+    {
+        if (StaminaCurrent < FMath::Max(Config.SprintResumeStamina, 0.0f))
+        {
+            return false;
+        }
+        bInOutSprintExhausted = false;
+    }
+
+    if (!bRun)
+    {
+        return false;
+    }
+
+    if (ControlData.MoveWorld.IsNearlyZero())
+    {
+        return bWasSprinting && CurrentVelocity.SizeSquared2D() > FMath::Square(1.0f);
+    }
+
+    return true;
 }
 
 // 根据局部速度和方向曲线得到方向映射值
@@ -98,12 +141,18 @@ float ResolveDirectionalSpeed(const FVector &Speeds, const float DirectionMap)
     return FMath::Lerp(Speeds.Y, Speeds.Z, DirectionMap - 1.0f);
 }
 
-// 根据当前跑步状态选择方向速度
+// 根据当前冲刺与跑步状态选择方向速度
 float ResolveMaxSpeed(
     const FBBBCharacterLocomotionConfig &Config,
     const bool bRun,
+    const bool bSprint,
     const float DirectionMap)
 {
+    if (bSprint)
+    {
+        return ResolveDirectionalSpeed(Config.SprintSpeeds, DirectionMap);
+    }
+
     if (bRun)
     {
         return ResolveDirectionalSpeed(Config.RunSpeeds, DirectionMap);
@@ -304,6 +353,7 @@ void FBBBCharacterLocomotionProcessor::Update(
         Movement.NetworkSmoothingMode = ENetworkSmoothingMode::Disabled;
         Character.GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         RuntimeData.bRun = false;
+        RuntimeData.bSprint = false;
         RuntimeData.bSlide = false;
         RuntimeData.SlideElapsed = 0.0f;
         return;
@@ -325,7 +375,9 @@ void FBBBCharacterLocomotionProcessor::Update(
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
     // 镜像使用 CMC 已接收的控制朝向还原旋转 地面保持即时到达 空中保留追向速率
     Movement.bUseControllerDesiredRotation = Context.Execution.bIsMirror;
-    Movement.RotationRate.Yaw = 360.0f;
+    Movement.RotationRate.Yaw = Movement.IsMovingOnGround()
+        ? 360.0f
+        : FMath::Max(Config.AirRotationRateYaw, 0.0f);
     if (Context.Execution.bIsMirror && Movement.IsMovingOnGround())
     {
         Movement.RotationRate.Yaw = -1.0f;
@@ -337,10 +389,11 @@ void FBBBCharacterLocomotionProcessor::Update(
         // 使用蹲伏与普通步态限速生效之前的水平速度裁决滑铲
         UpdateSlideState(
             RuntimeData, Movement, bCrouchPressed, Config, Context.DeltaSeconds, StaminaCurrent);
-        // 滑铲期间本机暂停生成站立跑步状态
+        // 滑铲期间本机暂停生成站立跑步与冲刺状态
         if (RuntimeData.bSlide)
         {
             RuntimeData.bRun = false;
+            RuntimeData.bSprint = false;
         }
     }
 
@@ -383,14 +436,21 @@ void FBBBCharacterLocomotionProcessor::Update(
             Yaw = FMath::FixedTurn(Character.GetActorRotation().Yaw, Yaw, YawStep);
         }
         Character.SetActorRotation(FRotator(0.0f, Yaw, 0.0f));
-        // 跑步只表示站立移动档位 蹲伏由 CMC 独立维护和复制
+        // 跑步与冲刺只表示站立移动档位 蹲伏由 CMC 独立维护和复制
         RuntimeData.bRun = ResolveRun(
             Character,
             ControlData,
             Config,
             RuntimeData.bRun,
+            Movement.Velocity);
+        RuntimeData.bSprint = ResolveSprint(
+            RuntimeData.bRun,
+            ControlData,
+            Config,
+            RuntimeData.bSprint,
             Movement.Velocity,
-            StaminaCurrent);
+            StaminaCurrent,
+            RuntimeData.bSprintExhausted);
     }
 
     // 计算并提交当前方向速度映射
@@ -399,18 +459,23 @@ void FBBBCharacterLocomotionProcessor::Update(
         Movement,
         StrafeSpeedMapCurve);
 
+    const auto *Equipment = Cast<ABBBEquipment>(Context.MainHandItem);
+    const auto *Definition = IsValid(Equipment) ? Equipment->GetDefinition() : nullptr;
+    const FBBBEquipmentMovementScale EquipmentScale = IsValid(Definition)
+        ? Definition->MovementScale
+        : FBBBEquipmentMovementScale{};
+    const float SpeedScale = Context.Life.MovementSpeedScale
+        * ResolveMovementScale(EquipmentScale.MaxSpeedScale);
+
     Movement.MaxWalkSpeed = FMath::Max(
-        ResolveMaxSpeed(Config, RuntimeData.bRun, DirectionMap),
-        1.0f);
+        ResolveMaxSpeed(Config, RuntimeData.bRun, RuntimeData.bSprint, DirectionMap),
+        1.0f) * SpeedScale;
     Movement.MaxWalkSpeedCrouched = FMath::Max(
         ResolveDirectionalSpeed(Config.CrouchSpeeds, DirectionMap),
-        1.0f);
+        1.0f) * SpeedScale;
 
-    // 每帧从基础速度应用当前结果 避免持续相乘累积减速
-    Movement.MaxWalkSpeed *= Context.Life.MovementSpeedScale;
-    Movement.MaxWalkSpeedCrouched *= Context.Life.MovementSpeedScale;
-
-    Movement.MaxAcceleration = FMath::Max(Config.MaxAcceleration, 0.0f);
+    Movement.MaxAcceleration = FMath::Max(Config.MaxAcceleration, 0.0f)
+        * ResolveMovementScale(EquipmentScale.MaxAccelerationScale);
     Movement.BrakingDecelerationWalking = FMath::Max(Config.BrakingDeceleration, 0.0f);
     Movement.GroundFriction = FMath::Max(Config.GroundFriction, 0.0f);
     Movement.BrakingFriction = FMath::Max(Config.BrakingFriction, 0.0f);

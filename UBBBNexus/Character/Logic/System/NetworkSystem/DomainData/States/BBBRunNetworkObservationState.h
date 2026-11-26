@@ -11,4 +11,7 @@ struct FBBBRunNetworkObservationState final
 
     /** 最近一次已经上传的跑步状态 */
     TOptional<bool> LastObservedRun;
+
+    /** 最近一次已经上传的冲刺状态 */
+    TOptional<bool> LastObservedSprint;
 };

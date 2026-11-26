@@ -15,9 +15,24 @@ struct FBBBCharacterAnimationConfig
     /** 布娃娃静止站立起身候选库 只索引允许进入起身的前段 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "站立起身搜索库"))
     TObjectPtr<class UPoseSearchDatabase> GetUpStandDatabase = nullptr;
+    /** 布娃娃蹲伏起身候选库 低顶或按住蹲伏时使用 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "蹲伏起身搜索库"))
+    TObjectPtr<class UPoseSearchDatabase> GetUpCrouchDatabase = nullptr;
+    /** 布娃娃步行起身候选库 存在移动输入时使用 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "步行起身搜索库"))
+    TObjectPtr<class UPoseSearchDatabase> GetUpWalkDatabase = nullptr;
+    /** 布娃娃奔跑起身候选库 存在奔跑移动输入时使用 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "奔跑起身搜索库"))
+    TObjectPtr<class UPoseSearchDatabase> GetUpRunDatabase = nullptr;
+    /** 布娃娃翻滚起身候选库 高处坠落或跳跃输入起身时使用 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "翻滚起身搜索库"))
+    TObjectPtr<class UPoseSearchDatabase> GetUpRollDatabase = nullptr;
     /** 搜索命中的序列到固定全身槽蒙太奇的映射 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "起身序列动作映射"))
     TMap<TObjectPtr<class UAnimSequence>, TObjectPtr<class UAnimMontage>> GetUpMontages;
+    /** 高处失重坠落期间循环播放的挣扎全身动作 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "起身", meta = (DisplayName = "坠落失重挣扎动作"))
+    TArray<TObjectPtr<class UAnimMontage>> FallFlailMontages;
     /** 空手快速近战动作 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "空手快速近战"))
     TObjectPtr<class UAnimMontage> UnarmedQuickMeleeMontage = nullptr;

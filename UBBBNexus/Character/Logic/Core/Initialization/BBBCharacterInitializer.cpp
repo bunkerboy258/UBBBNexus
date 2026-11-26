@@ -37,7 +37,8 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
         return;
     }
     if (!ensureMsgf(FMath::IsFinite(Config.MaximumStamina) && Config.MaximumStamina >= 0.0f
-        && FMath::IsFinite(Config.RunDrainPerSecond) && Config.RunDrainPerSecond >= 0.0f
+        && FMath::IsFinite(Config.SprintDrainPerSecond) && Config.SprintDrainPerSecond >= 0.0f
+        && FMath::IsFinite(Config.Locomotion.SprintResumeStamina) && Config.Locomotion.SprintResumeStamina >= 0.0f
         && FMath::IsFinite(Config.SlideDrainPerSecond) && Config.SlideDrainPerSecond >= 0.0f
         && FMath::IsFinite(Config.MeleeAttackCost) && Config.MeleeAttackCost >= 0.0f
         && FMath::IsFinite(Config.RegenPerSecond) && Config.RegenPerSecond >= 0.0f

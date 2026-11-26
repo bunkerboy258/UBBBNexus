@@ -58,6 +58,89 @@ bool UBBBAnimInstance::ShouldContinueMatchedTransition(
     return Match.SelectedTime < BlockTime;
 }
 
+void UBBBAnimInstance::NativeThreadSafeUpdateAnimation(const float DeltaSeconds)
+{
+    Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+
+    if (GetBBBMainAnimInstanceThreadSafe() != this)
+    {
+        return;
+    }
+
+    const FVector PlanarVelocity(SourceVelocity.X, SourceVelocity.Y, 0.0f);
+    const float ActorYaw = SourceActorRotation.Yaw;
+    if (!bLeanInitialized || DeltaSeconds <= UE_KINDA_SMALL_NUMBER)
+    {
+        PreviousPlanarVelocity = PlanarVelocity;
+        PreviousActorYaw = ActorYaw;
+        bLeanInitialized = true;
+        return;
+    }
+
+    const FVector VelocityDelta = (PlanarVelocity - PreviousPlanarVelocity) / DeltaSeconds;
+    const float YawRate = FMath::FindDeltaAngleDegrees(PreviousActorYaw, ActorYaw) / DeltaSeconds;
+    PreviousPlanarVelocity = PlanarVelocity;
+    PreviousActorYaw = ActorYaw;
+
+    const FRotator YawRotator(0.0f, ActorYaw, 0.0f);
+    const FVector LocalAccel = YawRotator.UnrotateVector(VelocityDelta);
+    const float PlanarSpeed = PlanarVelocity.Size();
+    const float SpeedAlpha = FMath::GetMappedRangeValueClamped(
+        FVector2D(80.0f, 520.0f),
+        FVector2D(0.0f, 1.0f),
+        PlanarSpeed);
+
+    // 纵向前倾/后仰由局部前向加速度驱动 横向倾斜结合转向角速度与侧向加速度
+    const float TargetForward = FMath::Clamp(LocalAccel.X / 1600.0f, -1.0f, 1.0f) * SpeedAlpha;
+    const float TargetRight = FMath::Clamp(
+        (YawRate / 260.0f) * SpeedAlpha + (LocalAccel.Y / 1800.0f) * SpeedAlpha,
+        -1.0f,
+        1.0f);
+
+    const bool bCanLean = bSourceMovingOnGround
+        && !bSourceSliding
+        && !bSourceCrouching
+        && SourceLifePhase == EBBBCharacterLifePhase::Alive
+        && SourcePhysicalPhase == EBBBCharacterPhysicalPhase::Animated;
+    const float TargetAlpha = bCanLean
+        ? (bSourceAiming ? 0.25f * SpeedAlpha : 0.75f * SpeedAlpha)
+        : 0.0f;
+
+    LeanAmount.X = FMath::FInterpTo(LeanAmount.X, TargetForward, DeltaSeconds, 8.0f);
+    LeanAmount.Y = FMath::FInterpTo(LeanAmount.Y, TargetRight, DeltaSeconds, 10.0f);
+    LeanAlpha = FMath::FInterpTo(LeanAlpha, TargetAlpha, DeltaSeconds, 10.0f);
+}
+
+bool UBBBAnimInstance::ShouldTriggerLandRoll(
+    const bool bJustLanded,
+    const FVector LandingVelocity,
+    const float MinFallSpeed) const
+{
+    const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
+    if (!bJustLanded || Main->bSourceCrouching || Main->bSourceSliding || Main->bSourceAiming)
+    {
+        return false;
+    }
+
+    if (-LandingVelocity.Z < FMath::Max(MinFallSpeed, 0.0f))
+    {
+        return false;
+    }
+
+    const FVector Forward = FRotator(0.0f, Main->SourceActorRotation.Yaw, 0.0f).Vector();
+    const FVector PlanarVelocity(LandingVelocity.X, LandingVelocity.Y, 0.0f);
+    const FVector PlanarInput(Main->SourceMovementInput.X, Main->SourceMovementInput.Y, 0.0f);
+    if (PlanarVelocity.SizeSquared() >= FMath::Square(140.0f))
+    {
+        return FVector::DotProduct(Forward, PlanarVelocity.GetSafeNormal()) >= 0.45f;
+    }
+    if (PlanarInput.SizeSquared() >= FMath::Square(0.35f))
+    {
+        return FVector::DotProduct(Forward, PlanarInput.GetSafeNormal()) >= 0.45f;
+    }
+    return false;
+}
+
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 {
     // 优先取得骨骼网格上的主动画实例保证链接层读取统一状态
@@ -99,6 +182,7 @@ void UBBBAnimInstance::PublishAnimationFacts(
     SourceWeaponRecoilAnimation = HandlingState.RecoilAnimation.Get();
     SourceMovementMode = FactState.MovementMode;
     bSourceRunning = FactState.bIsRunning;
+    bSourceSprinting = FactState.bIsSprinting;
     bSourceSliding = FactState.bIsSliding;
     bSourceCrouchRequested = FactState.bCrouchRequested;
     bSourceRunRequested = FactState.bRunRequested;

@@ -38,6 +38,26 @@ void FBBBCharacterGetUpAnimationProcessor::Update(FBBBCharacterAnimationUpdateCo
     const auto &Result = Physical.RagdollSnapshot;
     auto &Anim = Context.AnimationInstance;
     auto &Mesh = Context.CharacterMesh;
+    const bool bShouldFlail = Physical.bRagdoll && Physical.bFallRagdoll && !Physical.bFallLanded
+        && !Context.RuntimeData.Life.ReadRescueState().bReceiving;
+    if (bShouldFlail)
+    {
+        const auto &Flails = Context.AnimationConfig.FallFlailMontages;
+        if (!State.ActiveFallFlailMontage && !Flails.IsEmpty())
+        {
+            UAnimMontage *FlailMontage = Flails[static_cast<int32>(Result.Episode % Flails.Num())].Get();
+            if (FlailMontage && Anim.RegisterMontageContribution(BBBCharacterMontageSlots::FullBody, FlailMontage))
+            {
+                State.ActiveFallFlailMontage = FlailMontage;
+            }
+        }
+    }
+    else if (State.ActiveFallFlailMontage)
+    {
+        Anim.Montage_Stop(0.1f, State.ActiveFallFlailMontage);
+        State.ActiveFallFlailMontage = nullptr;
+    }
+
     if (Physical.bRagdoll)
     {
         // 保留真实物理姿态 选片不读取停留在进入布娃娃之前的运动历史
@@ -49,7 +69,33 @@ void FBBBCharacterGetUpAnimationProcessor::Update(FBBBCharacterAnimationUpdateCo
         if (Physical.bGetUpRequested && Physical.bCanGetUp
             && State.SelectedEpisode != Result.Episode)
         {
-            UPoseSearchDatabase *Database = Context.AnimationConfig.GetUpStandDatabase.Get();
+            const auto &Control = Context.RuntimeData.Parse.ReadControlState();
+            const bool bHasMoveInput = !Control.MoveWorld.IsNearlyZero();
+            UPoseSearchDatabase *Database = nullptr;
+            if (Physical.bGetUpCrouched)
+            {
+                Database = Context.AnimationConfig.GetUpCrouchDatabase.Get();
+            }
+            else if (bHasMoveInput && (Control.bJump || (Physical.bFallRagdoll && Control.bRun)))
+            {
+                Database = Context.AnimationConfig.GetUpRollDatabase.Get();
+                if (!Database)
+                {
+                    Database = Context.AnimationConfig.GetUpRunDatabase.Get();
+                }
+            }
+            else if (bHasMoveInput && Control.bRun)
+            {
+                Database = Context.AnimationConfig.GetUpRunDatabase.Get();
+            }
+            else if (bHasMoveInput)
+            {
+                Database = Context.AnimationConfig.GetUpWalkDatabase.Get();
+            }
+            if (!Database)
+            {
+                Database = Context.AnimationConfig.GetUpStandDatabase.Get();
+            }
             if (!ensureMsgf(Database, TEXT("起身搜索库尚未配置")))
             {
                 return;

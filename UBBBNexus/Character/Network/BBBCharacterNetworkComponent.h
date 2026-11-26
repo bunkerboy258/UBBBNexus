@@ -303,11 +303,12 @@ private:
     void ReplicateAimState(const FBBBReplicatedAimState &AimState);
 
     /**
-     * 将权威跑步状态复制给模拟代理
+     * 将权威跑步与冲刺状态复制给模拟代理
      * @param bRun 已经成立的跑步状态
+     * @param bSprint 已经成立的冲刺状态
      * @return 无
      */
-    void ReplicateRunState(bool bRun);
+    void ReplicateRunState(bool bRun, bool bSprint);
 
     /**
      * 将接收的瞄准状态投递为领域输入
@@ -317,11 +318,12 @@ private:
     void SubmitAimStateInput(const FBBBReplicatedAimState &AimState);
 
     /**
-     * 将接收的跑步状态投递为领域输入
+     * 将接收的跑步与冲刺状态投递为领域输入
      * @param bRun 已经成立的跑步状态
+     * @param bSprint 已经成立的冲刺状态
      * @return 无
      */
-    void SubmitRunStateInput(bool bRun);
+    void SubmitRunStateInput(bool bRun, bool bSprint);
 
     /**
      * 接收本机控制客户端最新瞄准状态
@@ -332,12 +334,13 @@ private:
     void ServerSubmitAimState(FBBBReplicatedAimState AimState);
 
     /**
-     * 接收本机控制客户端最新跑步状态
+     * 接收本机控制客户端最新跑步与冲刺状态
      * @param bRun 客户端最新跑步状态
+     * @param bSprint 客户端最新冲刺状态
      * @return 无
      */
     UFUNCTION(Server, Unreliable)
-    void ServerSubmitRunState(bool bRun);
+    void ServerSubmitRunState(bool bRun, bool bSprint);
 
     /** 模拟代理收到瞄准状态时投递领域输入 */
     UFUNCTION()
@@ -384,6 +387,10 @@ private:
     /** 只复制给模拟代理的当前跑步状态 */
     UPROPERTY(ReplicatedUsing = OnRep_ReplicatedRunState)
     bool bReplicatedRun = false;
+
+    /** 只复制给模拟代理的当前冲刺状态 */
+    UPROPERTY(ReplicatedUsing = OnRep_ReplicatedRunState)
+    bool bReplicatedSprint = false;
 
     /** 生命周期由角色持有 初始化后始终指向组件所属角色 */
     ABBBCharacter *Character = nullptr;

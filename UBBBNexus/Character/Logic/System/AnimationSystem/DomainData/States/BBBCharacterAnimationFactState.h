@@ -104,6 +104,10 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsRunning = false;
 
+    /** 角色当前是否冲刺 */
+    UPROPERTY(Transient)
+    bool bIsSprinting = false;
+
     /** 角色当前是否滑铲 */
     UPROPERTY(Transient)
     bool bIsSliding = false;

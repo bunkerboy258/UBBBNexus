@@ -73,7 +73,16 @@ void FBBBCharacterGetUpCandidateProcessor::Update(FBBBCharacterPhysicalPresentat
             Context.Character.GetActorScale3D());
         return true;
     };
-    if (!Fits(Config.CapsuleHalfHeight))
+    const bool bWantsCrouch = Context.Data.Parse.ReadControlState().bCrouch;
+    if (!bWantsCrouch && Fits(Config.CapsuleHalfHeight))
+    {
+        State.bGetUpCrouched = false;
+    }
+    else if (Fits(Config.CrouchedHalfHeight))
+    {
+        State.bGetUpCrouched = true;
+    }
+    else
     {
         return;
     }

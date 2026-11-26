@@ -12,6 +12,9 @@ struct FBBBRunStateAuthorityFactPacket final
     /** 是否正在跑步 */
     bool bRun = false;
 
+    /** 是否正在冲刺 */
+    bool bSprint = false;
+
     /** @return 包内容是否合法 */
     bool IsValid() const
     {
@@ -28,5 +31,6 @@ struct FBBBRunStateAuthorityFactPacket final
     void Apply(FBBBCharacterInputContext &Context) const
     {
         Context.Locomotion.bRun = bRun;
+        Context.Locomotion.bSprint = bSprint;
     }
 };

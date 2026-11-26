@@ -148,6 +148,10 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
         COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(
         UBBBCharacterNetworkComponent,
+        bReplicatedSprint,
+        COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(
+        UBBBCharacterNetworkComponent,
         bReplicatedSlide,
         COND_SimulatedOnly);
 }
@@ -168,14 +172,14 @@ void UBBBCharacterNetworkComponent::ServerSubmitAimState_Implementation(
     SubmitAimStateInput(AimState);
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitRunState_Implementation(const bool bRun)
+void UBBBCharacterNetworkComponent::ServerSubmitRunState_Implementation(const bool bRun, const bool bSprint)
 {
     if (!ensureMsgf(Character && IsOwnerAuthority(), TEXT("跑步状态网络投递被拒绝")))
     {
         return;
     }
 
-    SubmitRunStateInput(bRun);
+    SubmitRunStateInput(bRun, bSprint);
 }
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
@@ -185,7 +189,7 @@ void UBBBCharacterNetworkComponent::OnRep_ReplicatedAimState()
 
 void UBBBCharacterNetworkComponent::OnRep_ReplicatedRunState()
 {
-    SubmitRunStateInput(bReplicatedRun);
+    SubmitRunStateInput(bReplicatedRun, bReplicatedSprint);
 }
 
 void UBBBCharacterNetworkComponent::ReplicateAcceleration(
@@ -243,7 +247,7 @@ void UBBBCharacterNetworkComponent::ReplicateAimState(
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateRunState(const bool bRun)
+void UBBBCharacterNetworkComponent::ReplicateRunState(const bool bRun, const bool bSprint)
 {
     if (!IsOwnerAuthority())
     {
@@ -251,6 +255,7 @@ void UBBBCharacterNetworkComponent::ReplicateRunState(const bool bRun)
     }
 
     bReplicatedRun = bRun;
+    bReplicatedSprint = bSprint;
     GetOwner()->ForceNetUpdate();
 }
 
@@ -269,11 +274,11 @@ void UBBBCharacterNetworkComponent::SubmitAimStateInput(
     Character->SubmitInput(MoveTemp(Packet));
 }
 
-void UBBBCharacterNetworkComponent::SubmitRunStateInput(const bool bRun)
+void UBBBCharacterNetworkComponent::SubmitRunStateInput(const bool bRun, const bool bSprint)
 {
     if (Character)
     {
-        Character->SubmitInput(FBBBRunStateAuthorityFactPacket{bRun});
+        Character->SubmitInput(FBBBRunStateAuthorityFactPacket{bRun, bSprint});
     }
 }
 
