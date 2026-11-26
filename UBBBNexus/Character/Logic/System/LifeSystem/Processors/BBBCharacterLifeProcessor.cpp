@@ -11,6 +11,8 @@ void FBBBCharacterLifeProcessor::Initialize(FBBBCharacterLifeUpdateContext &Cont
     if (!Context.Data.External.ReadNetworkIdentityState().bIsMirror)
     {
         State.Health = Context.Config.MaximumHealth;
+        State.Armor = FMath::Max(0.0f, Context.Config.MaximumArmor);
+        State.SecondsSinceDamage = FMath::Max(0.0f, Context.Config.ArmorRegenDelaySeconds);
         State.bInitialized = true;
         State.Revision = 1;
     }
@@ -32,6 +34,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         const bool bFirstResult = !State.bInitialized;
         State.Phase = Input.ResultPhase;
         State.Health = Input.ResultHealth;
+        State.Armor = Input.ResultPhase == EBBBCharacterLifePhase::Alive ? FMath::Max(0.0f, Input.ResultArmor) : 0.0f;
         State.MovementSpeedScale = Input.ResultMovementSpeedScale;
         State.Revision = Input.ResultRevision;
         State.DownedRevision = Input.ResultDownedRevision;
@@ -67,6 +70,7 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
     }
     Input.Recoveries.Reset();
     bool bFirstImpact = true;
+    bool bTookDamage = false;
     for (const auto& Value : Input.Hits)
     {
         if (bMirror)
@@ -79,7 +83,23 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
             continue;
         }
 
-        State.Health = FMath::Max(0.0f, State.Health - Value.AddDamage);
+        if (Value.AddDamage > 0.0f)
+        {
+            bTookDamage = true;
+            State.SecondsSinceDamage = 0.0f;
+            if (State.Phase == EBBBCharacterLifePhase::Alive)
+            {
+                const float Absorbed = FMath::Min(State.Armor, Value.AddDamage);
+                State.Armor = FMath::Max(0.0f, State.Armor - Absorbed);
+                const float HealthDamage = FMath::Max(0.0f, Value.AddDamage - Absorbed);
+                State.Health = FMath::Max(0.0f, State.Health - HealthDamage);
+            }
+            else
+            {
+                State.Armor = 0.0f;
+                State.Health = FMath::Max(0.0f, State.Health - Value.AddDamage);
+            }
+        }
         ++State.Revision;
         ++Hit.Serial;
         Hit.Bone = Value.Bone;
@@ -110,12 +130,14 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         {
             State.Phase = EBBBCharacterLifePhase::Downed;
             State.Health = Context.Config.DownedHealth;
+            State.Armor = 0.0f;
             State.DownedRevision = State.Revision;
             State.bRecoveryCrouched = false;
         }
         else
         {
             State.Phase = EBBBCharacterLifePhase::Dead;
+            State.Armor = 0.0f;
         }
 
         // 致死或首次击倒时补足最低水平推力与抬升 避免原地软倒
@@ -157,6 +179,8 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         {
             State.Phase = EBBBCharacterLifePhase::Alive;
             State.Health = FMath::Clamp(Context.Config.RescueHealth, 1.0f, Context.Config.MaximumHealth);
+            State.Armor = 0.0f;
+            State.SecondsSinceDamage = 0.0f;
             State.bRecoveryCrouched = Domain.ReadRescueCandidateState().bRecoverCrouched;
             ++State.Revision;
             Reason = TEXT("Completed");
@@ -179,6 +203,32 @@ void FBBBCharacterLifeProcessor::Update(FBBBCharacterLifeUpdateContext &Context)
         Rescue.Progress = 0.0f;
         Rescue.EndReason = Reason;
         ++Rescue.Revision;
+    }
+
+    // 脱战超过延迟后缓慢自然回复护甲
+    if (!bMirror && State.Phase == EBBBCharacterLifePhase::Alive)
+    {
+        const float MaxArmor = FMath::Max(0.0f, Context.Config.MaximumArmor);
+        if (State.Armor > MaxArmor)
+        {
+            State.Armor = MaxArmor;
+            ++State.Revision;
+        }
+        if (!bTookDamage && MaxArmor > 0.0f && State.Armor < MaxArmor)
+        {
+            const float DeltaSeconds = FMath::Max(World.FrameDeltaSeconds, 0.0f);
+            State.SecondsSinceDamage += DeltaSeconds;
+            if (State.SecondsSinceDamage >= FMath::Max(0.0f, Context.Config.ArmorRegenDelaySeconds))
+            {
+                const float RegenRate = FMath::Max(0.0f, Context.Config.ArmorRegenPerSecond);
+                const float NextArmor = FMath::Min(MaxArmor, State.Armor + RegenRate * DeltaSeconds);
+                if (!FMath::IsNearlyEqual(NextArmor, State.Armor))
+                {
+                    State.Armor = NextArmor;
+                    ++State.Revision;
+                }
+            }
+        }
     }
     const auto &Physical = Context.Data.PhysicalPresentation.ReadPhysicalPresentationState();
     State.bActionsAllowed = State.Phase == EBBBCharacterLifePhase::Alive && !Rescue.bHelping && !Rescue.bReceiving

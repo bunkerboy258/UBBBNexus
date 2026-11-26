@@ -31,16 +31,43 @@ struct FBBBDivisionHudSlotSnapshot
     }
 };
 
+/** 其他玩家头顶体征条的单条目只读快照 */
+struct FBBBDivisionOverheadEntry
+{
+    FVector2D ScreenPosition = FVector2D::ZeroVector;
+    float DistanceScale = 1.0f;
+    float ArmorFraction = 1.0f;
+    float HealthFraction = 1.0f;
+    float Alpha = 1.0f;
+    bool bHasArmorPool = true;
+    bool bLowHealth = false;
+    bool bDowned = false;
+
+    bool NearlyEquals(const FBBBDivisionOverheadEntry &Other) const
+    {
+        return ScreenPosition.Equals(Other.ScreenPosition, 0.35)
+            && FMath::IsNearlyEqual(DistanceScale, Other.DistanceScale, 0.004f)
+            && FMath::IsNearlyEqual(ArmorFraction, Other.ArmorFraction, 0.002f)
+            && FMath::IsNearlyEqual(HealthFraction, Other.HealthFraction, 0.002f)
+            && FMath::IsNearlyEqual(Alpha, Other.Alpha, 0.006f)
+            && bHasArmorPool == Other.bHasArmorPool
+            && bLowHealth == Other.bLowHealth
+            && bDowned == Other.bDowned;
+    }
+};
+
 /** 背包侧边悬浮战斗集群的每帧只读展示快照 */
 struct FBBBDivisionHudSnapshot
 {
     static constexpr int32 MaxWeaponSlots = 3;
     static constexpr int32 MaxSpareThrowables = 2;
 
+    float ArmorFraction = 1.0f;
+    float ArmorDamageTrailFraction = 1.0f;
     float HealthFraction = 1.0f;
     float DamageTrailFraction = 1.0f;
     float StaminaFraction = 1.0f;
-    float StaminaOpacity = 0.28f;
+    float StaminaOpacity = 0.0f;
     float LowHealthPulse = 0.0f;
     float ReloadAngle = 0.0f;
     float DistanceScale = 1.0f;
@@ -55,8 +82,10 @@ struct FBBBDivisionHudSnapshot
     FBBBDivisionHudSlotSnapshot WeaponSlots[MaxWeaponSlots];
     FBBBDivisionHudSlotSnapshot SelectedThrowable;
     FBBBDivisionHudSlotSnapshot SpareThrowables[MaxSpareThrowables];
+    TArray<FBBBDivisionOverheadEntry> TeammateOverheads;
 
     bool bHasAnchor = false;
+    bool bHasArmorPool = true;
     bool bHasAmmo = false;
     bool bReloading = false;
     bool bLowHealth = false;
@@ -130,9 +159,13 @@ private:
     UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "对比阴影强度", ClampMin = "0.0", ClampMax = "1.0"))
     float ContrastShadowStrength = 0.78f;
 
-    /** 生命条分段数量 */
-    UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "血条分段数", ClampMin = "1", ClampMax = "8"))
-    int32 HealthSegments = 5;
+    /** 倒地状态红色生命条颜色 */
+    UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "倒地生命红"))
+    FLinearColor DownedHealthTint = FLinearColor(0.92f, 0.20f, 0.20f, 0.98f);
+
+    /** 护甲条分段数量 */
+    UPROPERTY(EditAnywhere, Category = "外观", meta = (DisplayName = "护甲分段数", ClampMin = "1", ClampMax = "8"))
+    int32 ArmorSegments = 5;
 
     /** 整体缩放倍率 */
     UPROPERTY(EditAnywhere, Category = "空间", meta = (DisplayName = "整体缩放", ClampMin = "0.5", ClampMax = "2.5"))

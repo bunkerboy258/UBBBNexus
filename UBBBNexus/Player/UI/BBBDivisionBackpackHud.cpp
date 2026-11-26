@@ -133,21 +133,123 @@ public:
         const float BaseScale = ViewportScale * Snapshot.DistanceScale;
         const float Scale = BaseScale * FMath::Clamp(HudScale, 0.5f, 2.5f);
 
+        static const FSlateColorBrush SolidBrush(FLinearColor::White);
+        const float ShadowAlphaScale = FMath::Clamp(ContrastShadowStrength, 0.0f, 1.0f);
+        const auto AlphaTint = [](const FLinearColor &Base, float ExtraAlpha = 1.0f)
+        {
+            return Base.CopyWithNewOpacity(Base.A * ExtraAlpha);
+        };
+
+        // 0. 底层批量绘制其他玩家头顶同款缩小护甲+血量条 (严格低于本机背包 HUD 层级 零 RT 低开销)
+        const int32 Segments = FMath::Clamp(ArmorSegments, 1, 8);
+        for (const FBBBDivisionOverheadEntry &Entry : Snapshot.TeammateOverheads)
+        {
+            if (Entry.Alpha <= 0.01f)
+            {
+                continue;
+            }
+
+            const float MiniScale = ViewportScale * Entry.DistanceScale;
+            const float MiniWidth = 92.0f * MiniScale;
+            const float MiniArmorH = Entry.bHasArmorPool ? 5.0f * MiniScale : 0.0f;
+            const float MiniGap = Entry.bHasArmorPool ? 2.0f * MiniScale : 0.0f;
+            const float MiniHealthH = 3.0f * MiniScale;
+            const float MiniTotalH = MiniArmorH + MiniGap + MiniHealthH;
+            const FVector2D MiniOrigin(Entry.ScreenPosition.X - MiniWidth * 0.5, Entry.ScreenPosition.Y - MiniTotalH);
+            const float EAlpha = Entry.Alpha;
+
+            const auto DrawMiniRect = [&](const FVector2D &Pos, const FVector2D &Extent, const FLinearColor &Color, int32 LayerOffset)
+            {
+                if (Extent.X <= 0.0 || Extent.Y <= 0.0 || Color.A <= 0.002f)
+                {
+                    return;
+                }
+
+                FSlateDrawElement::MakeBox(
+                    Elements,
+                    Layer + LayerOffset,
+                    Geometry.ToPaintGeometry(Extent, FSlateLayoutTransform(FVector2f(MiniOrigin + Pos))),
+                    &SolidBrush,
+                    ESlateDrawEffect::NoPixelSnapping,
+                    Color);
+            };
+
+            const FLinearColor MiniAccentTint = Entry.bDowned ? DownedHealthTint : PrimaryTint;
+            // 极细左侧 SHD 脊线微标
+            DrawMiniRect(FVector2D(-4.0f * MiniScale, 0.0), FVector2D(1.4f * MiniScale, MiniTotalH),
+                AlphaTint(MiniAccentTint, 0.88f * EAlpha), 1);
+
+            float MiniY = 0.0f;
+            if (Entry.bHasArmorPool)
+            {
+                const float MiniSegGap = 2.0f * MiniScale;
+                const float MiniSegW = (MiniWidth - MiniSegGap * (Segments - 1)) / Segments;
+                const float MiniArmorDim = Entry.bDowned ? 0.35f : 1.0f;
+                for (int32 SegIndex = 0; SegIndex < Segments; ++SegIndex)
+                {
+                    const float SegStart = static_cast<float>(SegIndex) / Segments;
+                    const float SegEnd = static_cast<float>(SegIndex + 1) / Segments;
+                    const float SegX = SegIndex * (MiniSegW + MiniSegGap);
+
+                    DrawMiniRect(FVector2D(SegX - 0.8f * MiniScale, MiniY - 0.8f * MiniScale),
+                        FVector2D(MiniSegW + 1.6f * MiniScale, MiniArmorH + 1.6f * MiniScale),
+                        FLinearColor(0.0f, 0.0f, 0.0f, 0.54f * ShadowAlphaScale * EAlpha * MiniArmorDim), 0);
+                    DrawMiniRect(FVector2D(SegX, MiniY), FVector2D(MiniSegW, MiniArmorH),
+                        AlphaTint(PrimaryTint, 0.18f * EAlpha * MiniArmorDim), 1);
+
+                    const float ArmorFill = FMath::Clamp((Entry.ArmorFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
+                    if (ArmorFill > 0.001f)
+                    {
+                        DrawMiniRect(FVector2D(SegX, MiniY), FVector2D(MiniSegW * ArmorFill, MiniArmorH),
+                            AlphaTint(PrimaryTint, 0.96f * EAlpha), 2);
+                    }
+                }
+                MiniY += MiniArmorH + MiniGap;
+            }
+
+            // 紧贴护甲下方的连续血量条 倒地态切换为战术红
+            const FLinearColor MiniHealthBase = Entry.bDowned
+                ? DownedHealthTint
+                : (Entry.bLowHealth
+                    ? FMath::Lerp(FLinearColor(0.98f, 0.42f, 0.38f, 0.96f), DownedHealthTint, Snapshot.LowHealthPulse)
+                    : FLinearColor(0.94f, 0.96f, 0.98f, 0.94f));
+            const float MiniHealthPulse = Entry.bDowned ? FMath::Lerp(0.76f, 1.0f, Snapshot.LowHealthPulse) : 1.0f;
+            const FLinearColor MiniHealthTrack = Entry.bDowned
+                ? FLinearColor(0.42f, 0.08f, 0.08f, 0.48f * EAlpha)
+                : AlphaTint(PrimaryTint, 0.18f * EAlpha);
+
+            DrawMiniRect(FVector2D(-0.8f * MiniScale, MiniY - 0.8f * MiniScale),
+                FVector2D(MiniWidth + 1.6f * MiniScale, MiniHealthH + 1.6f * MiniScale),
+                FLinearColor(0.0f, 0.0f, 0.0f, 0.58f * ShadowAlphaScale * EAlpha), 0);
+            DrawMiniRect(FVector2D(0.0, MiniY), FVector2D(MiniWidth, MiniHealthH), MiniHealthTrack, 1);
+
+            const float MiniHealthFillW = MiniWidth * FMath::Clamp(Entry.HealthFraction, 0.0f, 1.0f);
+            if (MiniHealthFillW > 0.25f)
+            {
+                DrawMiniRect(FVector2D(0.0, MiniY), FVector2D(MiniHealthFillW, MiniHealthH),
+                    AlphaTint(MiniHealthBase, MiniHealthPulse * EAlpha), 2);
+            }
+        }
+
+        const int32 LocalBaseLayer = Layer + 5;
+
         const bool bShowWeaponBand = Snapshot.bHasAmmo || Snapshot.bHasActiveWeapon;
         const bool bHasThrowables = Snapshot.SelectedThrowable.bOccupied
             || Snapshot.SpareThrowables[0].bOccupied
             || Snapshot.SpareThrowables[1].bOccupied;
 
-        // 常驻生命与装备栏固定锚定 武器弹药区固定预留于其上方 切枪与空手时下方常驻栏零位移
+        // 常驻护甲/血量/装备栏固定锚定 武器弹药区固定预留于其上方 切枪与空手时下方常驻栏零位移
         const float ClusterWidth = 268.0f * Scale;
         const float WeaponBandHeight = 40.0f * Scale;
         const float WeaponGap = 9.0f * Scale;
         const float TopReservedHeight = WeaponBandHeight + WeaponGap;
-        const float HealthBarHeight = 9.5f * Scale;
-        const float StaminaGap = 4.5f * Scale;
-        const float StaminaHeight = 2.8f * Scale;
-        const float VitalsHeight = HealthBarHeight + StaminaGap + StaminaHeight;
-        const float LoadoutGap = 11.0f * Scale;
+        const float ArmorBarHeight = Snapshot.bHasArmorPool ? 9.0f * Scale : 0.0f;
+        const float HealthGap = Snapshot.bHasArmorPool ? 2.8f * Scale : 0.0f;
+        const float HealthBarHeight = 4.8f * Scale;
+        const float StaminaGap = 6.5f * Scale;
+        const float StaminaHeight = 2.0f * Scale;
+        const float VitalsHeight = ArmorBarHeight + HealthGap + HealthBarHeight + StaminaGap + StaminaHeight;
+        const float LoadoutGap = 9.5f * Scale;
         const float LoadoutHeight = 28.0f * Scale;
         const float PersistentHeight = VitalsHeight + LoadoutGap + LoadoutHeight;
         const float FullClusterHeight = TopReservedHeight + PersistentHeight;
@@ -184,14 +286,6 @@ public:
             FVector2f(ClusterWidth, FullClusterHeight),
             FSlateLayoutTransform(FVector2f(Origin)));
 
-        static const FSlateColorBrush SolidBrush(FLinearColor::White);
-        const float ShadowAlphaScale = FMath::Clamp(ContrastShadowStrength, 0.0f, 1.0f);
-
-        const auto AlphaTint = [](const FLinearColor &Base, float ExtraAlpha = 1.0f)
-        {
-            return Base.CopyWithNewOpacity(Base.A * ExtraAlpha);
-        };
-
         const auto DrawRect = [&](const FVector2D &Pos, const FVector2D &Extent, const FLinearColor &Color, int32 LayerOffset)
         {
             if (Extent.X <= 0.0 || Extent.Y <= 0.0 || Color.A <= 0.002f)
@@ -201,7 +295,7 @@ public:
 
             FSlateDrawElement::MakeBox(
                 Elements,
-                Layer + LayerOffset,
+                LocalBaseLayer + LayerOffset,
                 ClusterGeometry.ToPaintGeometry(Extent, FSlateLayoutTransform(FVector2f(Pos))),
                 &SolidBrush,
                 ESlateDrawEffect::NoPixelSnapping,
@@ -220,7 +314,7 @@ public:
             {
                 FSlateDrawElement::MakeLines(
                     Elements,
-                    Layer + LayerOffset,
+                    LocalBaseLayer + LayerOffset,
                     ClusterGeometry.ToPaintGeometry(),
                     Points,
                     ESlateDrawEffect::NoPixelSnapping,
@@ -231,7 +325,7 @@ public:
 
             FSlateDrawElement::MakeLines(
                 Elements,
-                Layer + LayerOffset + 1,
+                LocalBaseLayer + LayerOffset + 1,
                 ClusterGeometry.ToPaintGeometry(),
                 Points,
                 ESlateDrawEffect::NoPixelSnapping,
@@ -254,7 +348,7 @@ public:
                 const float SAlpha = FMath::Max(Color.A, 0.78f) * ShadowAlphaScale;
                 FSlateDrawElement::MakeText(
                     Elements,
-                    Layer + LayerOffset,
+                    LocalBaseLayer + LayerOffset,
                     ClusterGeometry.ToPaintGeometry(FVector2D(ClusterWidth, FullClusterHeight),
                         FSlateLayoutTransform(FVector2f(Pos + FVector2D(0.0, 1.4 * Scale)))),
                     Text,
@@ -264,7 +358,7 @@ public:
 
                 FSlateDrawElement::MakeText(
                     Elements,
-                    Layer + LayerOffset,
+                    LocalBaseLayer + LayerOffset,
                     ClusterGeometry.ToPaintGeometry(FVector2D(ClusterWidth, FullClusterHeight),
                         FSlateLayoutTransform(FVector2f(Pos + FVector2D(1.2 * Scale, 0.9 * Scale)))),
                     Text,
@@ -275,7 +369,7 @@ public:
 
             FSlateDrawElement::MakeText(
                 Elements,
-                Layer + LayerOffset + 1,
+                LocalBaseLayer + LayerOffset + 1,
                 ClusterGeometry.ToPaintGeometry(FVector2D(ClusterWidth, FullClusterHeight),
                     FSlateLayoutTransform(FVector2f(Pos))),
                 Text,
@@ -311,7 +405,7 @@ public:
                 const FVector2D ShadowShift(1.3 * Scale, 1.6 * Scale);
                 FSlateDrawElement::MakeBox(
                     Elements,
-                    Layer + LayerOffset,
+                    LocalBaseLayer + LayerOffset,
                     ClusterGeometry.ToPaintGeometry(FitExtent, FSlateLayoutTransform(FVector2f(FitPos + ShadowShift))),
                     Brush,
                     ESlateDrawEffect::NoPixelSnapping,
@@ -320,7 +414,7 @@ public:
 
             FSlateDrawElement::MakeBox(
                 Elements,
-                Layer + LayerOffset + 1,
+                LocalBaseLayer + LayerOffset + 1,
                 ClusterGeometry.ToPaintGeometry(FitExtent, FSlateLayoutTransform(FVector2f(FitPos))),
                 Brush,
                 ESlateDrawEffect::NoPixelSnapping,
@@ -329,24 +423,27 @@ public:
             Elements.PopClip();
         };
 
-        // 1. 开放悬空式 SHD 左侧纯白脊线与细导引线 (无左侧小点)
+        // 1. 开放悬空式 SHD 左侧纯白脊线与细导引线 (倒地时主脊线转战术红)
         const float VitalsStartY = TopReservedHeight;
         const float TopSpineStart = bShowWeaponBand ? 0.0f : VitalsStartY;
-        const float TopSpineEnd = VitalsStartY + VitalsHeight;
-        const float BottomSpineStart = TopSpineEnd + LoadoutGap * 0.55f;
-        const float SpineAlpha = Snapshot.bLowHealth ? FMath::Lerp(0.48f, 1.0f, Snapshot.LowHealthPulse) : 0.96f;
+        const float TopSpineEnd = VitalsStartY + ArmorBarHeight + HealthGap + HealthBarHeight;
+        const float BottomSpineStart = VitalsStartY + VitalsHeight + LoadoutGap * 0.55f;
+        const float SpineAlpha = (Snapshot.bLowHealth || Snapshot.bDowned)
+            ? FMath::Lerp(0.55f, 1.0f, Snapshot.LowHealthPulse)
+            : 0.96f;
+        const FLinearColor TopSpineTint = Snapshot.bDowned ? DownedHealthTint : PrimaryTint;
 
-        // 背包侧向细导引线 锁定在常驻生命条中线 切枪零位移
-        const double TetherY = VitalsStartY + HealthBarHeight * 0.5;
+        // 背包侧向细导引线 锁定在常驻体征区中心 切枪零位移
+        const double TetherY = VitalsStartY + (ArmorBarHeight > 0.0f ? ArmorBarHeight * 0.5 : HealthBarHeight * 0.5);
         DrawLine({FVector2D(-13.0 * Scale, TetherY + 2.0 * Scale), FVector2D(-3.5 * Scale, TetherY), FVector2D(0.0, TetherY)},
-            1.15f * Scale, AlphaTint(PrimaryTint, 0.56f), 0, true);
+            1.15f * Scale, AlphaTint(TopSpineTint, 0.56f), 0, true);
 
-        // 上半部主脊线 (持武器时向上延伸包裹武器区 空手时仅包裹常驻体征区)
+        // 上半部主脊线 (持武器时向上延伸包裹武器区 空手时仅包裹常驻护甲与血量区)
         DrawRect(FVector2D(-0.8 * Scale, TopSpineStart - 0.8 * Scale),
             FVector2D(3.8 * Scale, (TopSpineEnd - TopSpineStart) + 1.6 * Scale),
             FLinearColor(0.0f, 0.0f, 0.0f, 0.48f * ShadowAlphaScale), 0);
         DrawRect(FVector2D(0.0, TopSpineStart), FVector2D(2.2 * Scale, TopSpineEnd - TopSpineStart),
-            AlphaTint(PrimaryTint, SpineAlpha), 1);
+            AlphaTint(TopSpineTint, SpineAlpha), 1);
 
         // 下半部常驻轻脊线 (武器槽与投掷物区)
         DrawRect(FVector2D(-0.5 * Scale, BottomSpineStart - 0.5 * Scale),
@@ -439,64 +536,87 @@ public:
             }
         }
 
-        // 3. 常驻体征层 分段瓷白生命条 + 极细自适应体力轨
+        // 3. 常驻体征层 上方 5 段纯白护甲 + 紧贴下方连续生命条 (倒地战术红) + 间距分离的按需体力细轨
         float CursorY = VitalsStartY;
-        const int32 Segments = FMath::Clamp(HealthSegments, 1, 8);
-        const float SegmentGap = 3.5f * Scale;
-        const float SegmentWidth = (ContentWidth - SegmentGap * (Segments - 1)) / Segments;
-        const float HealthPulseAlpha = Snapshot.bLowHealth
-            ? FMath::Lerp(0.58f, 1.0f, Snapshot.LowHealthPulse)
-            : 0.98f;
-
-        for (int32 SegIndex = 0; SegIndex < Segments; ++SegIndex)
+        if (Snapshot.bHasArmorPool)
         {
-            const float SegStart = static_cast<float>(SegIndex) / Segments;
-            const float SegEnd = static_cast<float>(SegIndex + 1) / Segments;
-            const float SegX = ContentLeft + SegIndex * (SegmentWidth + SegmentGap);
+            const float SegmentGap = 3.5f * Scale;
+            const float SegmentWidth = (ContentWidth - SegmentGap * (Segments - 1)) / Segments;
+            const float ArmorDim = Snapshot.bDowned ? 0.36f : 1.0f;
 
-            // 锐利暗色凹槽衬底 让纯白分段在亮场景下依然立体清晰
-            DrawRect(FVector2D(SegX - 1.1f * Scale, CursorY - 1.1f * Scale),
-                FVector2D(SegmentWidth + 2.2f * Scale, HealthBarHeight + 2.2f * Scale),
-                FLinearColor(0.0f, 0.0f, 0.0f, 0.56f * ShadowAlphaScale), 0);
-
-            // 空槽霜白底轨
-            DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth, HealthBarHeight),
-                AlphaTint(PrimaryTint, 0.20f), 1);
-
-            // 受击延迟白色残影
-            const float TrailFill = FMath::Clamp((Snapshot.DamageTrailFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
-            if (TrailFill > 0.001f)
+            for (int32 SegIndex = 0; SegIndex < Segments; ++SegIndex)
             {
-                DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth * TrailFill, HealthBarHeight),
-                    AlphaTint(PrimaryTint, 0.50f), 2);
-            }
+                const float SegStart = static_cast<float>(SegIndex) / Segments;
+                const float SegEnd = static_cast<float>(SegIndex + 1) / Segments;
+                const float SegX = ContentLeft + SegIndex * (SegmentWidth + SegmentGap);
 
-            // 当前生命实心填充 倒地态切换为空心脉冲细框
-            const float HealthFill = FMath::Clamp((Snapshot.HealthFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
-            if (HealthFill > 0.001f)
-            {
-                const float FillW = SegmentWidth * HealthFill;
-                if (Snapshot.bDowned)
+                // 锐利暗色凹槽衬底 让纯白护甲分段在亮场景下依然立体清晰
+                DrawRect(FVector2D(SegX - 1.1f * Scale, CursorY - 1.1f * Scale),
+                    FVector2D(SegmentWidth + 2.2f * Scale, ArmorBarHeight + 2.2f * Scale),
+                    FLinearColor(0.0f, 0.0f, 0.0f, 0.56f * ShadowAlphaScale * ArmorDim), 0);
+
+                // 空槽霜白底轨
+                DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth, ArmorBarHeight),
+                    AlphaTint(PrimaryTint, 0.18f * ArmorDim), 1);
+
+                // 护甲受击延迟白色残影
+                const float ArmorTrailFill = FMath::Clamp((Snapshot.ArmorDamageTrailFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
+                if (ArmorTrailFill > 0.001f)
                 {
-                    DrawRect(FVector2D(SegX, CursorY), FVector2D(FillW, HealthBarHeight),
-                        AlphaTint(PrimaryTint, 0.28f * HealthPulseAlpha), 3);
-                    DrawLine({FVector2D(SegX, CursorY), FVector2D(SegX + FillW, CursorY),
-                        FVector2D(SegX + FillW, CursorY + HealthBarHeight), FVector2D(SegX, CursorY + HealthBarHeight),
-                        FVector2D(SegX, CursorY)},
-                        1.3f * Scale, AlphaTint(PrimaryTint, HealthPulseAlpha), 3, false);
+                    DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth * ArmorTrailFill, ArmorBarHeight),
+                        AlphaTint(PrimaryTint, 0.48f), 2);
                 }
-                else
+
+                // 当前护甲纯白实心填充
+                const float ArmorFill = FMath::Clamp((Snapshot.ArmorFraction - SegStart) / (SegEnd - SegStart), 0.0f, 1.0f);
+                if (ArmorFill > 0.001f)
                 {
-                    DrawRect(FVector2D(SegX, CursorY), FVector2D(FillW, HealthBarHeight),
-                        AlphaTint(PrimaryTint, HealthPulseAlpha), 3);
+                    DrawRect(FVector2D(SegX, CursorY), FVector2D(SegmentWidth * ArmorFill, ArmorBarHeight),
+                        AlphaTint(PrimaryTint, 0.98f), 3);
                 }
             }
+
+            CursorY += ArmorBarHeight + HealthGap;
         }
 
-        // 低血量左端几何警示菱形
-        if (Snapshot.bLowHealth)
+        // 紧贴护甲下方的连续实心血量条 (形态上与上方分段护甲一眼区分 倒地态切换为战术红)
+        const FLinearColor HealthFillBase = Snapshot.bDowned
+            ? DownedHealthTint
+            : (Snapshot.bLowHealth
+                ? FMath::Lerp(FLinearColor(0.98f, 0.42f, 0.38f, 0.96f), DownedHealthTint, Snapshot.LowHealthPulse)
+                : FLinearColor(0.94f, 0.96f, 0.98f, 0.94f));
+        const float HealthPulseAlpha = Snapshot.bDowned
+            ? FMath::Lerp(0.76f, 1.0f, Snapshot.LowHealthPulse)
+            : (Snapshot.bLowHealth ? FMath::Lerp(0.72f, 1.0f, Snapshot.LowHealthPulse) : 1.0f);
+        const FLinearColor HealthTrackTint = Snapshot.bDowned
+            ? FLinearColor(0.42f, 0.08f, 0.08f, 0.50f)
+            : AlphaTint(PrimaryTint, 0.18f);
+        const FLinearColor HealthTrailTint = Snapshot.bDowned
+            ? FLinearColor(1.0f, 0.45f, 0.42f, 0.62f)
+            : AlphaTint(PrimaryTint, 0.50f);
+
+        DrawRect(FVector2D(ContentLeft - 1.0f * Scale, CursorY - 1.0f * Scale),
+            FVector2D(ContentWidth + 2.0f * Scale, HealthBarHeight + 2.0f * Scale),
+            FLinearColor(0.0f, 0.0f, 0.0f, 0.60f * ShadowAlphaScale), 0);
+        DrawRect(FVector2D(ContentLeft, CursorY), FVector2D(ContentWidth, HealthBarHeight), HealthTrackTint, 1);
+
+        const float HealthTrailW = ContentWidth * FMath::Clamp(Snapshot.DamageTrailFraction, 0.0f, 1.0f);
+        if (HealthTrailW > 0.5f)
         {
-            const float DiamondR = 3.8f * Scale;
+            DrawRect(FVector2D(ContentLeft, CursorY), FVector2D(HealthTrailW, HealthBarHeight), HealthTrailTint, 2);
+        }
+
+        const float HealthFillW = ContentWidth * FMath::Clamp(Snapshot.HealthFraction, 0.0f, 1.0f);
+        if (HealthFillW > 0.5f)
+        {
+            DrawRect(FVector2D(ContentLeft, CursorY), FVector2D(HealthFillW, HealthBarHeight),
+                AlphaTint(HealthFillBase, HealthPulseAlpha), 3);
+        }
+
+        // 低血量或倒地左端警示菱形
+        if (Snapshot.bLowHealth || Snapshot.bDowned)
+        {
+            const float DiamondR = 3.6f * Scale;
             const FVector2D DiamondC(1.1f * Scale, CursorY + HealthBarHeight * 0.5f);
             DrawLine({
                 DiamondC + FVector2D(0.0, -DiamondR),
@@ -504,22 +624,25 @@ public:
                 DiamondC + FVector2D(0.0, DiamondR),
                 DiamondC + FVector2D(-DiamondR, 0.0),
                 DiamondC + FVector2D(0.0, -DiamondR)},
-                1.4f * Scale, AlphaTint(PrimaryTint, HealthPulseAlpha), 4, true);
+                1.4f * Scale, AlphaTint(DownedHealthTint, HealthPulseAlpha), 4, true);
         }
 
-        // 紧贴血条下方的极细体力轨道
+        // 与血量拉开明显间距的按需体力细轨 满体力时完全隐身零干扰
         const float StaminaY = CursorY + HealthBarHeight + StaminaGap;
-        const float StaminaVis = FMath::Clamp(Snapshot.StaminaOpacity, 0.22f, 1.0f);
-        const float StaminaFillW = ContentWidth * FMath::Clamp(Snapshot.StaminaFraction, 0.0f, 1.0f);
-        DrawRect(FVector2D(ContentLeft - 0.8f * Scale, StaminaY - 0.8f * Scale),
-            FVector2D(ContentWidth + 1.6f * Scale, StaminaHeight + 1.6f * Scale),
-            FLinearColor(0.0f, 0.0f, 0.0f, 0.42f * StaminaVis * ShadowAlphaScale), 0);
-        DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(ContentWidth, StaminaHeight),
-            AlphaTint(SecondaryTint, 0.24f * StaminaVis), 1);
-        DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(StaminaFillW, StaminaHeight),
-            AlphaTint(PrimaryTint, 0.94f * StaminaVis), 2);
+        const float StaminaVis = FMath::Clamp(Snapshot.StaminaOpacity, 0.0f, 1.0f);
+        if (StaminaVis > 0.005f)
+        {
+            const float StaminaFillW = ContentWidth * FMath::Clamp(Snapshot.StaminaFraction, 0.0f, 1.0f);
+            DrawRect(FVector2D(ContentLeft - 0.7f * Scale, StaminaY - 0.7f * Scale),
+                FVector2D(ContentWidth + 1.4f * Scale, StaminaHeight + 1.4f * Scale),
+                FLinearColor(0.0f, 0.0f, 0.0f, 0.42f * StaminaVis * ShadowAlphaScale), 0);
+            DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(ContentWidth, StaminaHeight),
+                AlphaTint(SecondaryTint, 0.22f * StaminaVis), 1);
+            DrawRect(FVector2D(ContentLeft, StaminaY), FVector2D(StaminaFillW, StaminaHeight),
+                AlphaTint(SecondaryTint, 0.92f * StaminaVis), 2);
+        }
 
-        CursorY += VitalsHeight + LoadoutGap;
+        CursorY = VitalsStartY + VitalsHeight + LoadoutGap;
 
         // 4. 常驻下层 武器槽 (1/2/3) 与投掷物微区
         const float WeaponZoneWidth = bHasThrowables ? 150.0f * Scale : ContentWidth;
@@ -633,16 +756,17 @@ public:
             }
         }
 
-        return Layer + 6;
+        return LocalBaseLayer + 6;
     }
 
     FBBBDivisionHudSnapshot Snapshot;
     FLinearColor PrimaryTint = FLinearColor(1.0f, 1.0f, 1.0f, 0.98f);
     FLinearColor SecondaryTint = FLinearColor(0.92f, 0.95f, 0.99f, 0.84f);
+    FLinearColor DownedHealthTint = FLinearColor(0.92f, 0.20f, 0.20f, 0.98f);
     float ContrastShadowStrength = 0.78f;
     float HudScale = 1.3f;
     FVector2D AnchorPixelOffset = FVector2D(27.0, 26.0);
-    int32 HealthSegments = 5;
+    int32 ArmorSegments = 5;
 
     const FSlateBrush *ActiveWeaponBrush = nullptr;
     const FSlateBrush *WeaponSlotBrushes[FBBBDivisionHudSnapshot::MaxWeaponSlots] = {};
@@ -701,8 +825,9 @@ void UBBBDivisionBackpackHud::SynchronizeProperties()
 
     SlateWidget->PrimaryTint = PrimaryTint;
     SlateWidget->SecondaryTint = SecondaryTint;
+    SlateWidget->DownedHealthTint = DownedHealthTint;
     SlateWidget->ContrastShadowStrength = ContrastShadowStrength;
-    SlateWidget->HealthSegments = HealthSegments;
+    SlateWidget->ArmorSegments = ArmorSegments;
     SlateWidget->HudScale = HudScale;
     SlateWidget->AnchorPixelOffset = AnchorPixelOffset;
     SlateWidget->ApplyFonts(BoldNumberFont, LightNumberFont);
@@ -796,6 +921,7 @@ void UBBBDivisionBackpackHud::SetSnapshot(const FBBBDivisionHudSnapshot &InSnaps
 {
     bool bChanged = !bHasSnapshot
         || LastSnapshot.bHasAnchor != InSnapshot.bHasAnchor
+        || LastSnapshot.bHasArmorPool != InSnapshot.bHasArmorPool
         || LastSnapshot.bHasAmmo != InSnapshot.bHasAmmo
         || LastSnapshot.bReloading != InSnapshot.bReloading
         || LastSnapshot.bLowHealth != InSnapshot.bLowHealth
@@ -805,6 +931,9 @@ void UBBBDivisionBackpackHud::SetSnapshot(const FBBBDivisionHudSnapshot &InSnaps
         || LastSnapshot.CapacityAmmo != InSnapshot.CapacityAmmo
         || LastSnapshot.ActiveWeaponIcon != InSnapshot.ActiveWeaponIcon
         || LastSnapshot.SelectedThrowable != InSnapshot.SelectedThrowable
+        || LastSnapshot.TeammateOverheads.Num() != InSnapshot.TeammateOverheads.Num()
+        || !FMath::IsNearlyEqual(LastSnapshot.ArmorFraction, InSnapshot.ArmorFraction, 0.001f)
+        || !FMath::IsNearlyEqual(LastSnapshot.ArmorDamageTrailFraction, InSnapshot.ArmorDamageTrailFraction, 0.001f)
         || !FMath::IsNearlyEqual(LastSnapshot.HealthFraction, InSnapshot.HealthFraction, 0.001f)
         || !FMath::IsNearlyEqual(LastSnapshot.DamageTrailFraction, InSnapshot.DamageTrailFraction, 0.001f)
         || !FMath::IsNearlyEqual(LastSnapshot.StaminaFraction, InSnapshot.StaminaFraction, 0.001f)
@@ -814,6 +943,18 @@ void UBBBDivisionBackpackHud::SetSnapshot(const FBBBDivisionHudSnapshot &InSnaps
         || (InSnapshot.bReloading && !FMath::IsNearlyEqual(LastSnapshot.ReloadAngle, InSnapshot.ReloadAngle, 1.0f))
         || !LastSnapshot.AnchorPosition.Equals(InSnapshot.AnchorPosition, 0.25)
         || !LastSnapshot.ViewportSize.Equals(InSnapshot.ViewportSize, 0.5);
+
+    if (!bChanged)
+    {
+        for (int32 Index = 0; Index < InSnapshot.TeammateOverheads.Num(); ++Index)
+        {
+            if (!LastSnapshot.TeammateOverheads[Index].NearlyEquals(InSnapshot.TeammateOverheads[Index]))
+            {
+                bChanged = true;
+                break;
+            }
+        }
+    }
 
     if (!bChanged)
     {

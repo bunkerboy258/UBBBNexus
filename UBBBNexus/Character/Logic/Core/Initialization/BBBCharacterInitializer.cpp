@@ -28,8 +28,11 @@ void FBBBCharacterInitializer::Initialize(ABBBCharacter &Character)
 
     const UBBBCharacterConfig &Config = *Character.CharacterConfigAsset;
     if (!ensureMsgf(FMath::IsFinite(Config.MaximumHealth) && Config.MaximumHealth > 0.0f
-        && FMath::IsFinite(Config.DownedHealth) && Config.DownedHealth > 0.0f,
-        TEXT("角色生命配置必须为有限正数 %s"), *Character.GetName()))
+        && FMath::IsFinite(Config.DownedHealth) && Config.DownedHealth > 0.0f
+        && FMath::IsFinite(Config.MaximumArmor) && Config.MaximumArmor >= 0.0f
+        && FMath::IsFinite(Config.ArmorRegenDelaySeconds) && Config.ArmorRegenDelaySeconds >= 0.0f
+        && FMath::IsFinite(Config.ArmorRegenPerSecond) && Config.ArmorRegenPerSecond >= 0.0f,
+        TEXT("角色生命与护甲配置必须有效 %s"), *Character.GetName()))
     {
         return;
     }

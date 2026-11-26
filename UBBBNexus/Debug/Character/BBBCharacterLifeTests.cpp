@@ -84,7 +84,11 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
         Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{FBBBHitContribution{Amount, TEXT("spine_03"), Character->GetActorLocation(), FVector::ForwardVector}}});
     };
     Step();
-    TestEqual(TEXT("初始最大生命"), Character->GetHealth(), 500.0f);
+    const float MaxHealth = Character->GetCharacterConfig().MaximumHealth;
+    const float MaxArmor = Character->GetCharacterConfig().MaximumArmor;
+    const float DownedHealth = Character->GetCharacterConfig().DownedHealth;
+    TestEqual(TEXT("初始最大生命"), Character->GetHealth(), MaxHealth);
+    TestEqual(TEXT("初始最大护甲"), Character->GetArmor(), MaxArmor);
     TestTrue(TEXT("出生为正常状态"), Character->GetLifePhase() == EBBBCharacterLifePhase::Alive);
 
     Character->SubmitInput(FBBBCharacterItemAddLocalControlPacket{{TEXT("ModernWeapons_Rifle_01")}, {1}});
@@ -103,7 +107,8 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     FPointDamageEvent FriendlyHit(25.0f, Hit, FVector::ForwardVector, nullptr);
     Character->TakeDamage(25.0f, FriendlyHit, TeammateController, Teammate);
     Step();
-    TestEqual(TEXT("队友引擎命中适配器正常扣血"), Character->GetHealth(), 475.0f);
+    TestEqual(TEXT("护甲优先吸收伤害"), Character->GetArmor(), FMath::Max(0.0f, MaxArmor - 25.0f));
+    TestEqual(TEXT("护甲未破时不扣生命"), Character->GetHealth(), MaxHealth);
 
     Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
     Character->Crouch();
@@ -117,11 +122,12 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     Overhead->RegisterComponent();
     Ceiling->SetActorLocation(FVector(0.0f, 0.0f, 140.0f));
 
-    Damage(600.0f);
+    Damage(MaxArmor + MaxHealth + 100.0f);
     Damage(50.0f);
     Step();
     TestTrue(TEXT("致倒地命中不溢出"), Character->GetLifePhase() == EBBBCharacterLifePhase::Downed);
-    TestEqual(TEXT("同帧后续独立命中仍扣倒地生命"), Character->GetHealth(), 250.0f);
+    TestEqual(TEXT("倒地清空护甲"), Character->GetArmor(), 0.0f);
+    TestEqual(TEXT("同帧后续独立命中仍扣倒地生命"), Character->GetHealth(), DownedHealth - 50.0f);
     TestFalse(TEXT("倒地收起装备"), Character->IsItemUsable());
     TestTrue(TEXT("倒地保留原装备实例和绑定"), Character->GetHeldEquipment() == SelectedEquipment);
     Character->SubmitInput(FBBBCharacterItemSelectLocalControlPacket{{INDEX_NONE}});
@@ -134,7 +140,7 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     Character->SubmitInput(FBBBRunLocalControlPacket{true});
     Character->SubmitInput(FBBBCrouchLocalControlPacket{true});
     Step();
-    TestEqual(TEXT("没有自动回血或自动流血"), Character->GetHealth(), 250.0f);
+    TestEqual(TEXT("没有自动回血或自动流血"), Character->GetHealth(), DownedHealth - 50.0f);
     TestTrue(TEXT("倒地等待救援时不产生水平移动"), Character->GetVelocity().Size2D() <= 0.1f);
     TestTrue(TEXT("倒地观察输入不旋转身体"),
              FMath::IsNearlyZero(FMath::FindDeltaAngleDegrees(Yaw, Character->GetActorRotation().Yaw), 0.1f));
@@ -153,25 +159,28 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
         return false;
     }
     Mirror->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{{EBBBCharacterLifePhase::Downed},
-                                                             {200.0f},
+                                                             {150.0f},
+                                                             {0.0f},
                                                              {10},
                                                              {5},
                                                              {TEXT("spine_02")},
                                                              {Mirror->GetActorLocation()},
                                                              {FVector::ForwardVector}, {10}, {false}, {1}});
     Step();
-    TestEqual(TEXT("首份当前快照还原倒地生命"), Mirror->GetHealth(), 200.0f);
+    TestEqual(TEXT("首份当前快照还原倒地生命"), Mirror->GetHealth(), 150.0f);
+    TestEqual(TEXT("首份当前快照还原倒地护甲为零"), Mirror->GetArmor(), 0.0f);
     TestTrue(TEXT("首份当前快照不重演旧受击"),
              Mirror->RuntimeData.Life.ReadHitState().Time < World->GetTimeSeconds() - 0.25);
     Mirror->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{{EBBBCharacterLifePhase::Alive},
-                                                             {500.0f},
+                                                             {MaxHealth},
+                                                             {MaxArmor},
                                                              {9},
                                                              {4},
                                                              {TEXT("spine_02")},
                                                              {Mirror->GetActorLocation()},
                                                              {FVector::ForwardVector}, {9}, {false}, {1}});
     Step();
-    TestEqual(TEXT("迟到结果不能覆盖较新生命"), Mirror->GetHealth(), 200.0f);
+    TestEqual(TEXT("迟到结果不能覆盖较新生命"), Mirror->GetHealth(), 150.0f);
 
     FBBBHitContribution Left;
     Left.AddVelocity = FVector(100, 0, 0);
@@ -183,10 +192,10 @@ bool FBBBCharacterLifeTest::RunTest(const FString &Parameters)
     Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{Right}});
     Step();
     const auto& Impact = Character->RuntimeData.Life.ReadHitState();
-    TestEqual(TEXT("同帧零伤击飞不扣血"), Character->GetHealth(), 250.f);
+    TestEqual(TEXT("同帧零伤击飞不扣血"), Character->GetHealth(), DownedHealth - 50.0f);
     TestTrue(TEXT("两次速度贡献相加"), Impact.ImpactVelocity.Equals(FVector(100, 200, 0)));
     TestEqual(TEXT("保持时间取最大值"), Impact.ImpactHoldSeconds, 0.3f);
-    Damage(250.0f);
+    Damage(DownedHealth - 50.0f);
     Step();
     TestTrue(TEXT("倒地生命清零后死亡"), Character->GetLifePhase() == EBBBCharacterLifePhase::Dead);
     TestEqual(TEXT("死亡生命为零"), Character->GetHealth(), 0.0f);

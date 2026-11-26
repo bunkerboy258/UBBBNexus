@@ -110,6 +110,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedAccelerationRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifePhase, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHealth, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedArmor, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMovementSpeedScale, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedLifeRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitSerial, COND_SimulatedOnly);
@@ -350,11 +351,12 @@ void UBBBCharacterNetworkComponent::OnRep_Interaction()
     }
 }
 
-void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, float Health,
+void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, float Health, float Armor,
     uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale)
 {
     ReplicatedLifePhase = Phase;
     ReplicatedHealth = Health;
+    ReplicatedArmor = Armor;
     ReplicatedMovementSpeedScale = MovementSpeedScale;
     ReplicatedLifeRevision = Revision;
     ReplicatedDownedRevision = DownedRevision;
@@ -406,13 +408,13 @@ void UBBBCharacterNetworkComponent::SubmitStaminaInput(
     }
 }
 
-void UBBBCharacterNetworkComponent::ServerSubmitLife_Implementation(EBBBCharacterLifePhase Phase, float Health,
+void UBBBCharacterNetworkComponent::ServerSubmitLife_Implementation(EBBBCharacterLifePhase Phase, float Health, float Armor,
     uint64 Revision, uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale)
 {
     if (Character)
     {
         Character->SubmitInput(FBBBCharacterLifeRemoteMessagePacket{
-            {Phase}, {Health}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}, {DownedRevision}, {bRecoveryCrouched}, {MovementSpeedScale}});
+            {Phase}, {Health}, {Armor}, {Revision}, {HitSerial}, {Bone}, {Position}, {Direction}, {DownedRevision}, {bRecoveryCrouched}, {MovementSpeedScale}});
     }
 }
 
@@ -422,7 +424,7 @@ void UBBBCharacterNetworkComponent::OnRep_Life()
     if (Character && ReplicatedLifeRevision > 0)
     {
         Character->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{
-            {ReplicatedLifePhase}, {ReplicatedHealth}, {ReplicatedLifeRevision},
+            {ReplicatedLifePhase}, {ReplicatedHealth}, {ReplicatedArmor}, {ReplicatedLifeRevision},
             {ReplicatedHitSerial}, {ReplicatedHitBone}, {ReplicatedHitPosition}, {ReplicatedHitDirection}, {ReplicatedDownedRevision}, {bReplicatedRecoveryCrouched}, {ReplicatedMovementSpeedScale}});
     }
 }

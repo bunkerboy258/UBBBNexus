@@ -14,7 +14,13 @@ struct FBBBCharacterLifeState final
     EBBBCharacterLifePhase Phase = EBBBCharacterLifePhase::Alive;
 
     /** 当前阶段剩余生命 */
-    float Health = 500.0f;
+    float Health = 150.0f;
+
+    /** 当前剩余护甲 优先承受伤害并脱战自然回复 */
+    float Armor = 250.0f;
+
+    /** 距上次受到伤害已经经过的秒数 仅本机控制端用于护甲自然回复 */
+    float SecondsSinceDamage = 0.0f;
     /** 控制端成立并分发的环境移动倍率 */
     float MovementSpeedScale = 1;
 

@@ -147,13 +147,13 @@ private:
     friend class FBBBCharacterLifeObservationProcessor;
     friend class FBBBCharacterDamageObservationProcessor;
 
-    /** 复制已经成立的生命结果 */
-    void ReplicateLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
+    /** 复制已经成立的生命与护甲结果 */
+    void ReplicateLife(EBBBCharacterLifePhase Phase, float Health, float Armor, uint64 Revision,
         uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale);
 
-    /** 控制者上报自己的既成生命结果 */
+    /** 控制者上报自己的既成生命与护甲结果 */
     UFUNCTION(Server, Reliable)
-    void ServerSubmitLife(EBBBCharacterLifePhase Phase, float Health, uint64 Revision,
+    void ServerSubmitLife(EBBBCharacterLifePhase Phase, float Health, float Armor, uint64 Revision,
         uint64 HitSerial, FName Bone, FVector Position, FVector Direction, uint64 DownedRevision, bool bRecoveryCrouched, float MovementSpeedScale);
 
     /** 通过发送者拥有的连接投送命中 */
@@ -173,7 +173,10 @@ private:
     EBBBCharacterLifePhase ReplicatedLifePhase = EBBBCharacterLifePhase::Alive;
     /** 当前生命 */
     UPROPERTY(Replicated)
-    float ReplicatedHealth = 500.0f;
+    float ReplicatedHealth = 150.0f;
+    /** 当前护甲 */
+    UPROPERTY(Replicated)
+    float ReplicatedArmor = 250.0f;
     /** 控制端成立的环境移动倍率 */
     UPROPERTY(Replicated)
     float ReplicatedMovementSpeedScale = 1;

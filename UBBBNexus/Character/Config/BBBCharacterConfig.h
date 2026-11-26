@@ -51,7 +51,17 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
   public:
     /** 正常生命上限与出生生命 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "最大生命", ClampMin = "1"))
-    float MaximumHealth = 500.0f;
+    float MaximumHealth = 150.0f;
+
+    /** 护甲上限与出生护甲 优先承受伤害 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|护甲", meta = (DisplayName = "最大护甲", ClampMin = "0"))
+    float MaximumArmor = 250.0f;
+    /** 受到伤害后开始自然回复护甲前的等待秒数 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|护甲", meta = (DisplayName = "护甲回复延迟", ClampMin = "0", ForceUnits = "s"))
+    float ArmorRegenDelaySeconds = 3.0f;
+    /** 脱战后每秒自然回复护甲 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|护甲", meta = (DisplayName = "护甲每秒回复", ClampMin = "0"))
+    float ArmorRegenPerSecond = 35.0f;
 
     /** 体力上限与出生体力 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "体力", meta = (DisplayName = "最大体力", ClampMin = "0"))
@@ -91,7 +101,7 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 
     /** 每次进入倒地状态的独立生命 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命", meta = (DisplayName = "倒地生命", ClampMin = "1"))
-    float DownedHealth = 300.0f;
+    float DownedHealth = 200.0f;
 
     /** 致死或击倒一击的最低水平后推速度 单位厘米每秒 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|击倒", meta = (DisplayName = "致死最低后推速度", ClampMin = "0", ForceUnits = "cm/s"))
@@ -119,7 +129,7 @@ class ABBB_EVAC_API UBBBCharacterConfig final : public UPrimaryDataAsset
 
     /** 救援成功后恢复的正常生命 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "生命|救援", meta = (DisplayName = "救援恢复生命", ClampMin = "1", ToolTip = "不超过角色最大生命"))
-    float RescueHealth = 100.0f;
+    float RescueHealth = 75.0f;
 
     /** 角色移动参数与碰撞配置 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "移动配置"))

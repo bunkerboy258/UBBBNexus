@@ -34,6 +34,9 @@ struct FBBBCharacterLifeInputState final
     /** 待还原的生命数值 */
     float ResultHealth = 0.0f;
 
+    /** 待还原的护甲数值 */
+    float ResultArmor = 0.0f;
+
     /** 待还原结果标识 */
     uint64 ResultRevision = 0;
 

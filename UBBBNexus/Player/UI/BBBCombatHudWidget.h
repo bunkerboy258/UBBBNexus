@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBDivisionBackpackHud.h"
 #include "BBBCombatHudWidget.generated.h"
 
+class ABBBCharacter;
 class ABBBPlayerController;
 class APawn;
 class UBBBCombatHudIndicator;
@@ -41,9 +42,21 @@ public:
     }
 
 private:
+    struct FTeammateOverheadCache
+    {
+        double LastLosCheckAt = -10.0;
+        FVector CachedOverheadWorld = FVector::ZeroVector;
+        float VisibleAlpha = 0.0f;
+        float SmoothedArmor = 1.0f;
+        float SmoothedHealth = 1.0f;
+        bool bHasLineOfSight = false;
+        bool bInitialized = false;
+    };
+
     void UpdateVitals(const ABBBPlayerController &Controller, float DeltaTime, double Now);
     void UpdateItems(const ABBBPlayerController &Controller);
     void UpdateAnchorMotion(const ABBBPlayerController &Controller, const FGeometry &Geometry, float DeltaTime);
+    void UpdateTeammates(const ABBBPlayerController &Controller, const FGeometry &Geometry, float DeltaTime, double Now);
     void SetCount(UTextBlock *Label, int32 Number);
 
     /** 背包侧边悬浮战术主集群 */
@@ -75,13 +88,22 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "空间", meta = (DisplayName = "锚点平滑时长", ClampMin = "0.01", ClampMax = "0.3"))
     float AnchorSmoothSeconds = 0.065f;
 
+    /** 队友头顶界面最大可见距离 单位厘米 */
+    UPROPERTY(EditDefaultsOnly, Category = "空间", meta = (DisplayName = "队友头顶可视距离", ClampMin = "500.0", ClampMax = "15000.0"))
+    float TeammateMaxDistance = 4500.0f;
+
     FBBBDivisionHudSnapshot CachedSnapshot;
     TMap<FName, int32> DisplayedNumbers;
+    TMap<TWeakObjectPtr<ABBBCharacter>, FTeammateOverheadCache> TeammateCaches;
     TWeakObjectPtr<APawn> ObservedPawn;
 
     FVector2D SmoothedAnchor = FVector2D::ZeroVector;
     FVector2D AnchorVelocity = FVector2D::ZeroVector;
     float SmoothedDistanceScale = 1.0f;
+    float PreviousArmor = 0.0f;
+    float PreviousMaximumArmor = 0.0f;
+    float ArmorDamageAge = 1.0f;
+    float ArmorDamageTrail = 1.0f;
     float PreviousHealth = 0.0f;
     float PreviousMaximum = 0.0f;
     float DamageAge = 1.0f;

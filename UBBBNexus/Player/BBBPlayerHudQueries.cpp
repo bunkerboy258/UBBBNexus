@@ -134,6 +134,107 @@ bool ABBBPlayerController::ReadHudHealth(float &Health, float &Maximum, uint8 &P
     return true;
 }
 
+float ABBBPlayerController::GetHudArmorFraction() const
+{
+    float Armor = 0.0f;
+    float Maximum = 0.0f;
+    if (!ReadHudArmor(Armor, Maximum) || Maximum <= 0.0f)
+    {
+        return 0.0f;
+    }
+    return FMath::Clamp(Armor / Maximum, 0.0f, 1.0f);
+}
+
+bool ABBBPlayerController::ReadHudArmor(float &Armor, float &Maximum) const
+{
+    Armor = 0.0f;
+    Maximum = 0.0f;
+    const ABBBCharacter *PawnCharacter = GetItemCharacter();
+    if (!PawnCharacter)
+    {
+        return false;
+    }
+    Maximum = FMath::Max(0.0f, PawnCharacter->GetCharacterConfig().MaximumArmor);
+    Armor = PawnCharacter->GetLifePhase() == EBBBCharacterLifePhase::Alive
+        ? FMath::Clamp(PawnCharacter->GetArmor(), 0.0f, Maximum)
+        : 0.0f;
+    return true;
+}
+
+bool ABBBPlayerController::CheckHudCharacterLineOfSight(const ABBBCharacter *Target, FVector &OutOverheadWorldPosition) const
+{
+    OutOverheadWorldPosition = FVector::ZeroVector;
+    if (!IsValid(Target) || !GetWorld())
+    {
+        return false;
+    }
+
+    FVector HeadLocation = Target->GetActorLocation();
+    float FallbackTopZ = HeadLocation.Z + 88.0f;
+    if (const UCapsuleComponent *Capsule = Target->GetCapsuleComponent())
+    {
+        const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+        HeadLocation.Z = Target->GetActorLocation().Z + HalfHeight * 0.78f;
+        FallbackTopZ = Target->GetActorLocation().Z + HalfHeight + 20.0f;
+    }
+
+    bool bHasHeadBone = false;
+    if (const USkeletalMeshComponent *Mesh = Target->GetMesh())
+    {
+        static const FName HeadBoneName(TEXT("head"));
+        if (Mesh->GetBoneIndex(HeadBoneName) != INDEX_NONE)
+        {
+            HeadLocation = Mesh->GetBoneLocation(HeadBoneName);
+            bHasHeadBone = true;
+        }
+    }
+
+    OutOverheadWorldPosition = bHasHeadBone
+        ? (HeadLocation + FVector(0.0, 0.0, 28.0))
+        : FVector(HeadLocation.X, HeadLocation.Y, FallbackTopZ);
+
+    FVector ViewLocation = FVector::ZeroVector;
+    FRotator ViewRotation = FRotator::ZeroRotator;
+    GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(BBBHudTeammateLos), false, GetPawn());
+    Query.AddIgnoredActor(Target);
+    if (const ABBBCharacter *LocalCharacter = GetItemCharacter())
+    {
+        Query.AddIgnoredActor(LocalCharacter);
+        if (const AActor *LocalHeld = LocalCharacter->GetHeldItem())
+        {
+            Query.AddIgnoredActor(LocalHeld);
+        }
+    }
+    if (const AActor *TargetHeld = Target->GetHeldItem())
+    {
+        Query.AddIgnoredActor(TargetHeld);
+    }
+
+    FHitResult Hit;
+    return !GetWorld()->LineTraceSingleByChannel(Hit, ViewLocation, HeadLocation, ECC_Visibility, Query);
+}
+
+bool ABBBPlayerController::ProjectHudWorldPoint(const FVector &WorldPosition, FVector2D &OutScreenPosition, float &OutDistance) const
+{
+    OutScreenPosition = FVector2D::ZeroVector;
+    OutDistance = 0.0f;
+
+    FVector ViewLocation = FVector::ZeroVector;
+    FRotator ViewRotation = FRotator::ZeroRotator;
+    GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+    const FVector CamForward = FRotationMatrix(ViewRotation).GetUnitAxis(EAxis::X);
+    if (FVector::DotProduct(WorldPosition - ViewLocation, CamForward) <= 10.0)
+    {
+        return false;
+    }
+
+    OutDistance = static_cast<float>(FVector::Dist(ViewLocation, WorldPosition));
+    return ProjectWorldLocationToScreen(WorldPosition, OutScreenPosition, true);
+}
+
 bool ABBBPlayerController::ShouldShowCrosshair() const
 {
     const ABBBCharacter *PawnCharacter = GetItemCharacter();

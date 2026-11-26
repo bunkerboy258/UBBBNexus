@@ -92,6 +92,30 @@ public:
 
     /** @param Health 当前生命 @param Maximum 生命上限 @param Phase 生命阶段 @return 是否存在角色 */
     bool ReadHudHealth(float &Health, float &Maximum, uint8 &Phase) const;
+
+    /** @return 当前角色护甲比例 无有效角色或非存活时为零 */
+    UFUNCTION(BlueprintPure, Category = "BBB|界面")
+    float GetHudArmorFraction() const;
+
+    /** @param Armor 当前护甲 @param Maximum 护甲上限 @return 是否存在角色 */
+    bool ReadHudArmor(float &Armor, float &Maximum) const;
+
+    /**
+     * 检查目标角色头部视线是否被场景遮挡并输出头顶锚点世界坐标
+     * @param Target	待检测的其他玩家角色
+     * @param OutOverheadWorldPosition	有效时写入头顶界面锚点世界位置
+     * @return 未被墙壁或场景遮挡时返回 true
+     */
+    bool CheckHudCharacterLineOfSight(const ABBBCharacter *Target, FVector &OutOverheadWorldPosition) const;
+
+    /**
+     * 将世界坐标投影到本地视口并计算距镜头距离
+     * @param WorldPosition	待投影世界坐标
+     * @param OutScreenPosition	本地视口像素坐标
+     * @param OutDistance	镜头到目标点的世界距离 单位厘米
+     * @return 位于镜头前方且投影成功时返回 true
+     */
+    bool ProjectHudWorldPoint(const FVector &WorldPosition, FVector2D &OutScreenPosition, float &OutDistance) const;
     /** @return 当前角色体力比例 无有效角色时为零 */
     float GetHudStaminaFraction() const;
     /** @return 手持装备的现有图标 空手时为空 */

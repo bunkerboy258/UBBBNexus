@@ -161,7 +161,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
     Controller->SubmitItemSelect(Start + 1);
     Step();
     TestNull(TEXT("满血不能开始血药使用"), Character->GetActiveConsumable());
-    UGameplayStatics::ApplyDamage(Character, 200.0f, Controller, nullptr, nullptr);
+    UGameplayStatics::ApplyDamage(Character, Character->GetCharacterConfig().MaximumArmor + 60.0f, Controller, nullptr, nullptr);
     Step();
     const float BeforeRecovery = Character->GetHealth();
     Controller->SubmitItemSelect(Start + 1);

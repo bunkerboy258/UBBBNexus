@@ -79,6 +79,13 @@ public:
         return RuntimeData.Life.ReadLifeState().Health;
     }
 
+    /** @return 当前剩余护甲 */
+    UFUNCTION(BlueprintPure, Category = "BBB|生命", meta = (DisplayName = "当前护甲"))
+    float GetArmor() const
+    {
+        return RuntimeData.Life.ReadLifeState().Armor;
+    }
+
     /** @return 当前剩余体力 */
     UFUNCTION(BlueprintPure, Category = "BBB|体力", meta = (DisplayName = "当前体力"))
     float GetStamina() const

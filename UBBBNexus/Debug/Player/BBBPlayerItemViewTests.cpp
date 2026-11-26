@@ -926,10 +926,13 @@ bool FBBBPlayerItemViewTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("四类背包和身体穿戴共一百一十格"), Controller->GetItemSlotCount(), 110);
     TestEqual(TEXT("满生命显示完整白线"), Controller->GetHudHealthFraction(), 1.0f);
     TestFalse(TEXT("空手不显示瞄准界面"), Controller->ShouldShowAimHud());
+    const float MaximumArmor = Character->GetCharacterConfig().MaximumArmor;
     const float MaximumHealth = Character->GetCharacterConfig().MaximumHealth;
-    Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{FBBBHitContribution{MaximumHealth * 0.25f, NAME_None, Character->GetActorLocation(), FVector::ZeroVector}}});
+    TestEqual(TEXT("满护甲显示完整护甲条"), Controller->GetHudArmorFraction(), 1.0f);
+    Character->SubmitInput(FBBBCharacterDamageLocalControlPacket{{FBBBHitContribution{MaximumArmor + MaximumHealth * 0.25f, NAME_None, Character->GetActorLocation(), FVector::ZeroVector}}});
     Character->Tick(1.0f / 60.0f);
-    TestEqual(TEXT("白线读取真实生命损失"), Controller->GetHudHealthFraction(), 0.75f);
+    TestEqual(TEXT("破甲后护甲归零"), Controller->GetHudArmorFraction(), 0.0f);
+    TestEqual(TEXT("溢出伤害读取真实生命损失"), Controller->GetHudHealthFraction(), 0.75f);
     Controller->UnPossess();
     TestFalse(TEXT("失去角色后身份无效"), Controller->GetItemInstanceId(0).IsValid());
     TestEqual(TEXT("失去角色后生命接口归零"), Controller->GetHudHealthFraction(), 0.0f);

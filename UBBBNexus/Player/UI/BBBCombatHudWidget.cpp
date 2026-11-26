@@ -1,11 +1,14 @@
 #include "BBBWork/UBBBNexus/Player/UI/BBBCombatHudWidget.h"
 
+#include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerController.h"
 #include "BBBWork/UBBBNexus/Player/BBBPlayerItemDisplayData.h"
 #include "BBBWork/UBBBNexus/Player/UI/BBBCombatHudIndicator.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 
 namespace
@@ -52,6 +55,8 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
         SampleStartedAt = 0.0;
         SampleFrames = 0;
         bAnchorInitialized = false;
+        TeammateCaches.Reset();
+        CachedSnapshot.TeammateOverheads.Reset();
         return;
     }
 
@@ -132,6 +137,7 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
     }
 
     UpdateAnchorMotion(*Controller, Geometry, DeltaTime);
+    UpdateTeammates(*Controller, Geometry, DeltaTime, Now);
 
     if (BackpackHud)
     {
@@ -142,18 +148,27 @@ void UBBBCombatHudWidget::UpdatePresentation(const ABBBPlayerController *Control
 void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, float DeltaTime, double Now)
 {
     const float HealthFraction = Controller.GetHudHealthFraction();
+    const float ArmorFraction = Controller.GetHudArmorFraction();
     const float StaminaFraction = Controller.GetHudStaminaFraction();
 
     DamageAge += DeltaTime;
+    ArmorDamageAge += DeltaTime;
+
     float Health = 0.0f;
     float Maximum = 0.0f;
     uint8 Phase = MAX_uint8;
+    float Armor = 0.0f;
+    float MaximumArmor = 0.0f;
+    Controller.ReadHudArmor(Armor, MaximumArmor);
+
     if (!Controller.ReadHudHealth(Health, Maximum, Phase))
     {
         ObservedPawn.Reset();
         bLowHealth = false;
         DamageAge = 1.0f;
         DamageTrail = HealthFraction;
+        ArmorDamageAge = 1.0f;
+        ArmorDamageTrail = ArmorFraction;
     }
     else
     {
@@ -173,14 +188,31 @@ void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, f
             DamageAge = 0.0f;
         }
 
+        const bool bArmorReset = bReset || PreviousMaximumArmor != MaximumArmor;
+        if (bArmorReset || Armor > PreviousArmor)
+        {
+            ArmorDamageAge = 1.0f;
+            ArmorDamageTrail = ArmorFraction;
+        }
+
+        if (!bArmorReset && Phase == 0 && Armor < PreviousArmor && MaximumArmor > 0.0f)
+        {
+            const float PrevArmorFraction = PreviousArmor / MaximumArmor;
+            ArmorDamageTrail = FMath::Lerp(ArmorDamageTrail, PrevArmorFraction,
+                FMath::Clamp((ArmorDamageAge - DeltaTime - 0.14f) / 0.44f, 0.0f, 1.0f));
+            ArmorDamageAge = 0.0f;
+        }
+
         bLowHealth = Phase == 0 && HealthFraction <= (bLowHealth && !bReset ? 0.35f : 0.30f);
         ObservedPawn = Controller.GetPawn();
         PreviousHealth = Health;
         PreviousMaximum = Maximum;
+        PreviousArmor = Armor;
+        PreviousMaximumArmor = MaximumArmor;
         PreviousPhase = Phase;
     }
 
-    // 满体力静默淡出 消耗或恢复时即时显现
+    // 满体力维持 0.8s 后彻底隐身 仅在冲刺/滑铲/近战消耗与回复期浮现 与血量条零混淆
     if (StaminaFraction >= 0.995f)
     {
         StaminaFullSeconds = FMath::Min(StaminaFullSeconds + DeltaTime, 3.0f);
@@ -190,12 +222,16 @@ void UBBBCombatHudWidget::UpdateVitals(const ABBBPlayerController &Controller, f
         StaminaFullSeconds = 0.0f;
     }
 
-    const float QuietProgress = FMath::Clamp((StaminaFullSeconds - 1.0f) / 0.5f, 0.0f, 1.0f);
+    const float QuietProgress = FMath::Clamp((StaminaFullSeconds - 0.8f) / 0.45f, 0.0f, 1.0f);
+    CachedSnapshot.bHasArmorPool = MaximumArmor > 0.0f;
+    CachedSnapshot.ArmorFraction = ArmorFraction;
+    CachedSnapshot.ArmorDamageTrailFraction = FMath::Lerp(ArmorDamageTrail, ArmorFraction,
+        FMath::Clamp((ArmorDamageAge - 0.14f) / 0.44f, 0.0f, 1.0f));
     CachedSnapshot.HealthFraction = HealthFraction;
     CachedSnapshot.DamageTrailFraction = FMath::Lerp(DamageTrail, HealthFraction,
         FMath::Clamp((DamageAge - 0.14f) / 0.44f, 0.0f, 1.0f));
     CachedSnapshot.StaminaFraction = StaminaFraction;
-    CachedSnapshot.StaminaOpacity = FMath::Lerp(0.92f, 0.26f, QuietProgress);
+    CachedSnapshot.StaminaOpacity = FMath::Lerp(0.78f, 0.0f, QuietProgress);
     CachedSnapshot.bLowHealth = bLowHealth;
     CachedSnapshot.bDowned = Phase == 1;
     CachedSnapshot.LowHealthPulse = 0.5f + 0.5f * static_cast<float>(FMath::Sin(Now * 5.2));
@@ -299,6 +335,144 @@ void UBBBCombatHudWidget::UpdateAnchorMotion(const ABBBPlayerController &Control
     CachedSnapshot.bHasAnchor = true;
     CachedSnapshot.AnchorPosition = SmoothedAnchor;
     CachedSnapshot.DistanceScale = SmoothedDistanceScale;
+}
+
+void UBBBCombatHudWidget::UpdateTeammates(const ABBBPlayerController &Controller, const FGeometry &Geometry, float DeltaTime, double Now)
+{
+    CachedSnapshot.TeammateOverheads.Reset();
+
+    const UWorld *World = Controller.GetWorld();
+    const FVector2D LocalSize = Geometry.GetLocalSize();
+    int32 Width = 0;
+    int32 Height = 0;
+    ReadLocalPlayerViewportSize(Controller, Width, Height);
+    if (!World || Width <= 0 || Height <= 0 || LocalSize.X <= 1.0 || LocalSize.Y <= 1.0)
+    {
+        return;
+    }
+
+    const APawn *LocalPawn = Controller.GetPawn();
+    const float MaxDist = FMath::Max(500.0f, TeammateMaxDistance);
+    const float FadeStartDist = MaxDist * 0.82f;
+    const float SafeDelta = FMath::Clamp(DeltaTime, 0.0f, 0.1f);
+
+    TSet<TWeakObjectPtr<ABBBCharacter>> SeenTeammates;
+    for (TActorIterator<ABBBCharacter> It(World); It; ++It)
+    {
+        ABBBCharacter *Other = *It;
+        if (!IsValid(Other) || Other == LocalPawn)
+        {
+            continue;
+        }
+
+        const EBBBCharacterLifePhase Phase = Other->GetLifePhase();
+        if (Phase == EBBBCharacterLifePhase::Dead)
+        {
+            continue;
+        }
+
+        TWeakObjectPtr<ABBBCharacter> Key(Other);
+        SeenTeammates.Add(Key);
+        FTeammateOverheadCache &Cache = TeammateCaches.FindOrAdd(Key);
+
+        // 每 12Hz 刷新一次头部可见性射线 严防穿墙且保持极低物理查询开销
+        if (!Cache.bInitialized || (Now - Cache.LastLosCheckAt) >= 0.083)
+        {
+            FVector OverheadWorld = FVector::ZeroVector;
+            Cache.bHasLineOfSight = Controller.CheckHudCharacterLineOfSight(Other, OverheadWorld);
+            if (!OverheadWorld.IsZero())
+            {
+                Cache.CachedOverheadWorld = OverheadWorld;
+            }
+            Cache.LastLosCheckAt = Now;
+        }
+        else
+        {
+            // 非射线帧仅实时更新头顶世界坐标 以确保移动跟手零拖影
+            FVector HeadPos = Other->GetActorLocation();
+            if (const USkeletalMeshComponent *Mesh = Other->GetMesh())
+            {
+                static const FName HeadBoneName(TEXT("head"));
+                if (Mesh->GetBoneIndex(HeadBoneName) != INDEX_NONE)
+                {
+                    Cache.CachedOverheadWorld = Mesh->GetBoneLocation(HeadBoneName) + FVector(0.0, 0.0, 28.0);
+                }
+                else
+                {
+                    Cache.CachedOverheadWorld = HeadPos + FVector(0.0, 0.0, 108.0);
+                }
+            }
+            else
+            {
+                Cache.CachedOverheadWorld = HeadPos + FVector(0.0, 0.0, 108.0);
+            }
+        }
+
+        FVector2D Projected = FVector2D::ZeroVector;
+        float Distance = 0.0f;
+        const bool bOnFront = Controller.ProjectHudWorldPoint(Cache.CachedOverheadWorld, Projected, Distance);
+        const FVector2D LocalPos(Projected.X / Width * LocalSize.X, Projected.Y / Height * LocalSize.Y);
+        const bool bInBounds = bOnFront && Distance <= MaxDist
+            && LocalPos.X >= -96.0 && LocalPos.X <= LocalSize.X + 96.0
+            && LocalPos.Y >= -64.0 && LocalPos.Y <= LocalSize.Y + 64.0;
+
+        const float DistFade = Distance <= FadeStartDist
+            ? 1.0f
+            : FMath::Clamp(1.0f - (Distance - FadeStartDist) / FMath::Max(1.0f, MaxDist - FadeStartDist), 0.0f, 1.0f);
+        const float TargetAlpha = (bInBounds && Cache.bHasLineOfSight) ? DistFade : 0.0f;
+        const float InterpSpeed = TargetAlpha > Cache.VisibleAlpha ? 14.0f : 24.0f;
+        Cache.VisibleAlpha = Cache.bInitialized
+            ? FMath::FInterpTo(Cache.VisibleAlpha, TargetAlpha, SafeDelta, InterpSpeed)
+            : TargetAlpha;
+
+        const UBBBCharacterConfig &Config = Other->GetCharacterConfig();
+        const bool bDowned = Phase == EBBBCharacterLifePhase::Downed;
+        const float MaxHealth = FMath::Max(1.0f, bDowned ? Config.DownedHealth : Config.MaximumHealth);
+        const float TargetHealth = FMath::Clamp(Other->GetHealth() / MaxHealth, 0.0f, 1.0f);
+        const float MaxArmor = FMath::Max(0.0f, Config.MaximumArmor);
+        const float TargetArmor = (!bDowned && MaxArmor > 0.0f) ? FMath::Clamp(Other->GetArmor() / MaxArmor, 0.0f, 1.0f) : 0.0f;
+
+        if (!Cache.bInitialized)
+        {
+            Cache.SmoothedArmor = TargetArmor;
+            Cache.SmoothedHealth = TargetHealth;
+            Cache.bInitialized = true;
+        }
+        else
+        {
+            // 受击下降即时响应 自然回复上升柔和插值 消除远端 0.15s 节流阶梯感
+            Cache.SmoothedArmor = TargetArmor < Cache.SmoothedArmor
+                ? TargetArmor
+                : FMath::FInterpTo(Cache.SmoothedArmor, TargetArmor, SafeDelta, 12.0f);
+            Cache.SmoothedHealth = TargetHealth < Cache.SmoothedHealth
+                ? TargetHealth
+                : FMath::FInterpTo(Cache.SmoothedHealth, TargetHealth, SafeDelta, 12.0f);
+        }
+
+        if (Cache.VisibleAlpha <= 0.01f || !bInBounds)
+        {
+            continue;
+        }
+
+        FBBBDivisionOverheadEntry Entry;
+        Entry.ScreenPosition = LocalPos;
+        Entry.DistanceScale = FMath::Clamp(static_cast<float>(FMath::Pow(750.0 / FMath::Max(160.0f, Distance), 0.48)), 0.50f, 1.0f);
+        Entry.ArmorFraction = Cache.SmoothedArmor;
+        Entry.HealthFraction = Cache.SmoothedHealth;
+        Entry.Alpha = Cache.VisibleAlpha;
+        Entry.bHasArmorPool = MaxArmor > 0.0f;
+        Entry.bDowned = bDowned;
+        Entry.bLowHealth = !bDowned && Cache.SmoothedHealth <= 0.30f;
+        CachedSnapshot.TeammateOverheads.Add(Entry);
+    }
+
+    for (auto It = TeammateCaches.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid() || !SeenTeammates.Contains(It.Key()))
+        {
+            It.RemoveCurrent();
+        }
+    }
 }
 
 void UBBBCombatHudWidget::SetCount(UTextBlock *Label, int32 Number)

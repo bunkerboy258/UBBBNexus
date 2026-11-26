@@ -125,10 +125,14 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Step();
     ABBBEquipment *Equipment = Helper->GetHeldEquipment();
     TestNotNull(TEXT("救援者原装备"), Equipment);
-    Damage(Target, 500);
+    const float MaxArmor = Target->GetCharacterConfig().MaximumArmor;
+    const float MaxHealth = Target->GetCharacterConfig().MaximumHealth;
+    const float DownedHealth = Target->GetCharacterConfig().DownedHealth;
+    const float RescueHealth = Target->GetCharacterConfig().RescueHealth;
+    Damage(Target, MaxArmor + MaxHealth);
     Step();
     Step();
-    TestEqual(TEXT("倒地独立生命"), Target->GetHealth(), 300.0f);
+    TestEqual(TEXT("倒地独立生命"), Target->GetHealth(), DownedHealth);
     if (!TestTrue(TEXT("最近目标来自角色领域"), Helper->GetRescueTarget() == Target))
     {
         const auto &Candidate = Helper->RuntimeData.Life.ReadRescueCandidateState();
@@ -213,7 +217,8 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Target->SubmitInput(FBBBCharacterRescueCompleteLocalControlPacket{OldOperation, OldRound});
     Step();
     TestEqual(TEXT("重复完成输入不重复复活"), Target->RuntimeData.Life.ReadLifeState().Revision, CompletedRevision);
-    TestEqual(TEXT("救援恢复生命"), Target->GetHealth(), 100.0f);
+    TestEqual(TEXT("救援恢复生命"), Target->GetHealth(), RescueHealth);
+    TestEqual(TEXT("救援起身无初始护甲"), Target->GetArmor(), 0.0f);
     TestFalse(TEXT("成功释放双方"), Helper->IsRescueHelping() || Target->IsRescueReceiving());
     TestTrue(TEXT("成功立即开放操作"), Target->RuntimeData.Life.ReadLifeState().bActionsAllowed);
     TestEqual(TEXT("恢复站立胶囊体"), Target->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), 86.0f);
@@ -221,8 +226,8 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("恢复模拟最小速度"), Target->GetCharacterMovement()->MinAnalogWalkSpeed, 150.0f);
     Target->SubmitInput(FBBBCharacterRescueEndLocalControlPacket{{Helper}, {OldOperation}, {OldRound}});
     Step();
-    TestEqual(TEXT("晚到取消不撤销完成"), Target->GetHealth(), 100.0f);
-    Damage(Target, 100);
+    TestEqual(TEXT("晚到取消不撤销完成"), Target->GetHealth(), RescueHealth);
+    Damage(Target, RescueHealth);
     Step();
     Step();
     TestTrue(TEXT("重新倒地使用新轮次"), Target->GetDownedRevision() > OldRound);
@@ -268,7 +273,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     }
     TestTrue(TEXT("低顶恢复存活与蹲伏"), Target->GetLifePhase() == EBBBCharacterLifePhase::Alive && Target->bIsCrouched);
     TestEqual(TEXT("低顶使用蹲伏胶囊体"), Target->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), 60.0f);
-    Damage(Target, 100);
+    Damage(Target, MaxArmor + RescueHealth);
     Step();
     Step();
     Obstacle->SetActorLocation(FVector(0, 0, 110));
@@ -284,7 +289,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     TestEqual(TEXT("空间取消清空进度"), Target->GetRescueProgress(), 0.0f);
     Obstacle->Destroy();
     Begin();
-    Damage(Target, 300);
+    Damage(Target, DownedHealth);
     Step(3.1f);
     TestTrue(TEXT("同帧致命伤害优先于完成"), Target->GetLifePhase() == EBBBCharacterLifePhase::Dead);
     TestEqual(TEXT("死亡不能被救援恢复"), Target->GetHealth(), 0.0f);
@@ -301,7 +306,7 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
     Mirror->SetActorTickEnabled(false);
     Mirror->GetCharacterMovement()->SetComponentTickEnabled(false);
     Characters.Add(Mirror);
-    Mirror->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{{EBBBCharacterLifePhase::Downed}, {300}, {20},
+    Mirror->SubmitInput(FBBBCharacterLifeAuthorityFactPacket{{EBBBCharacterLifePhase::Downed}, {200}, {0}, {20},
         {0}, {NAME_None}, {FVector::ZeroVector}, {FVector::ZeroVector}, {20}, {false}, {1}});
     Step();
     Step();
@@ -315,10 +320,10 @@ bool FBBBCharacterRescueTest::RunTest(const FString &Parameters)
         {false}, {false}, {false}, {0}, {3.0f}, {TEXT("Cancelled")}});
     Step();
     TestTrue(TEXT("旧镜像结果不能覆盖新状态"), Mirror->IsRescueReceiving());
-    TestEqual(TEXT("镜像计时不产生治疗"), Mirror->GetHealth(), 300.0f);
+    TestEqual(TEXT("镜像计时不产生治疗"), Mirror->GetHealth(), 200.0f);
     Mirror->SubmitInput(FBBBCharacterRescueCompleteLocalControlPacket{1, 20});
     Step();
-    TestEqual(TEXT("镜像完成通知不能生成治疗事实"), Mirror->GetHealth(), 300.0f);
+    TestEqual(TEXT("镜像完成通知不能生成治疗事实"), Mirror->GetHealth(), 200.0f);
     Mirror->SubmitInput(FBBBCharacterRescueSnapshotAuthorityFactPacket{{Helper}, {2}, {20}, {11},
         {true}, {false}, {false}, {2.0f}, {3.0f}, {NAME_None}});
     Step();

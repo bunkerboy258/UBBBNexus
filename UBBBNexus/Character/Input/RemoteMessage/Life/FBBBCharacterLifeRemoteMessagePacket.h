@@ -10,6 +10,8 @@ struct FBBBCharacterLifeRemoteMessagePacket final
     TArray<EBBBCharacterLifePhase> Phases;
     /** 对应阶段的生命值 */
     TArray<float> Healths;
+    /** 对应阶段的护甲值 */
+    TArray<float> Armors;
     /** 结果版本 */
     TArray<uint64> Revisions;
     /** 已成立的最新命中序号 */
@@ -31,7 +33,7 @@ struct FBBBCharacterLifeRemoteMessagePacket final
     /** @return 输入数据是否完整有效 */
     bool IsValid() const
     {
-        if (Phases.IsEmpty() || Healths.Num() != Phases.Num() || Revisions.Num() != Phases.Num() ||
+        if (Phases.IsEmpty() || Healths.Num() != Phases.Num() || Armors.Num() != Phases.Num() || Revisions.Num() != Phases.Num() ||
             HitSerials.Num() != Phases.Num() || Bones.Num() != Phases.Num() || Positions.Num() != Phases.Num() ||
             Directions.Num() != Phases.Num() || DownedRevisions.Num() != Phases.Num() ||
             RecoveryCrouched.Num() != Phases.Num() || MovementSpeedScales.Num() != Phases.Num())
@@ -41,7 +43,8 @@ struct FBBBCharacterLifeRemoteMessagePacket final
         for (int32 Index = 0; Index < Phases.Num(); ++Index)
         {
             if (Phases[Index] > EBBBCharacterLifePhase::Dead || Revisions[Index] == 0 ||
-                !FMath::IsFinite(Healths[Index]) || Healths[Index] < 0.0f || Positions[Index].ContainsNaN() ||
+                !FMath::IsFinite(Healths[Index]) || Healths[Index] < 0.0f ||
+                !FMath::IsFinite(Armors[Index]) || Armors[Index] < 0.0f || Positions[Index].ContainsNaN() ||
                 Directions[Index].ContainsNaN() || !FMath::IsFinite(MovementSpeedScales[Index])
                 || MovementSpeedScales[Index] < .1f || MovementSpeedScales[Index] > 1 ||
                 ((Phases[Index] == EBBBCharacterLifePhase::Dead) != (Healths[Index] == 0.0f)))
@@ -78,6 +81,7 @@ struct FBBBCharacterLifeRemoteMessagePacket final
             Input.bHasResult = true;
             Input.ResultPhase = Phases[Index];
             Input.ResultHealth = Healths[Index];
+            Input.ResultArmor = Armors[Index];
             Input.ResultMovementSpeedScale = MovementSpeedScales[Index];
             Input.ResultRevision = Revisions[Index];
             Input.ResultDownedRevision = DownedRevisions[Index];
