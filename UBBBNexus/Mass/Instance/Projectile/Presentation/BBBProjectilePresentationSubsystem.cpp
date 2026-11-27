@@ -249,7 +249,7 @@ void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBB
         {
             Decal = NewObject<UDecalComponent>(World);
             Decal->SetDecalMaterial(BulletHoleMaterial);
-            Decal->DecalSize = FVector(6.0, 6.5, 6.5);
+            Decal->DecalSize = FVector(6.0, 3.8, 3.8);
             Decal->FadeScreenSize = 0.008f;
             Decal->SortOrder = 1;
             Decal->PrimaryComponentTick.bCanEverTick = false;

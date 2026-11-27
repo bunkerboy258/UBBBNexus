@@ -25,7 +25,7 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BurningAsset(
-        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Wisps_V2.NS_Monster_Burning_Wisps_V2"));
+        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Embers.NS_Monster_Burning_Embers"));
     BurningSystem = BurningAsset.Object;
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> BurningOverlayAsset(
         TEXT("/Game/_Project/Mass/Monster/Effects/M_Monster_Burning_Overlay.M_Monster_Burning_Overlay"));
@@ -193,17 +193,12 @@ void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
     {
         return;
     }
-    // 使用全身立式细碎小火舌 + 上升余烬包络（无块状篝火贴片感）
+    // 纯正暖橙细火苗 + 上升火星全身包络（无紫色、无块状大贴片）
     BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
-        NAME_None, FVector(0.0, 0.0, 82.0), FRotator::ZeroRotator, FVector(0.55),
+        NAME_None, FVector(0.0, 0.0, 75.0), FRotator::ZeroRotator, FVector(0.50),
         EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::ManualRelease);
-    if (BurningEffect)
+    if (BurningEffect && !BurningEffect->IsActive())
     {
-        BurningEffect->SetVariableVec3(TEXT("User.Size Of Campfire"), FVector(65.0, 65.0, 190.0));
-        BurningEffect->SetVariableLinearColor(TEXT("User.Linear Color"), FLinearColor(2.4f, 0.42f, 0.04f, 1.0f));
-        if (!BurningEffect->IsActive())
-        {
-            BurningEffect->Activate(true);
-        }
+        BurningEffect->Activate(true);
     }
 }

@@ -165,11 +165,9 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         }
         else
         {
-            // CS2 风格贴地徐徐扩散：用 User.Size Of Campfire 动态铺开平地多簇火苗 + 地面焦黑余烬底盘
-            const float Diameter = CurrentRadius * 1.75f;
-            Actor.AreaEffect->SetWorldScale3D(FVector(1.25f, 1.25f, 1.0f));
-            Actor.AreaEffect->SetVariableVec3(TEXT("User.Size Of Campfire"), FVector(Diameter, Diameter, 0.0));
-            Actor.AreaEffect->SetVariableLinearColor(TEXT("User.Linear Color"), FLinearColor(4.5f, 0.72f, 0.06f, 1.0f));
+            // CS2 风格贴地徐徐扩散：内部已按 8 米真实直径分布原尺寸火苗 仅按 CurrentRadius/Area.Radius 做 XY 扩散
+            const float Spread = FMath::Clamp(CurrentRadius / FMath::Max(Area.Radius, 1.0f), 0.35f, 1.0f);
+            Actor.AreaEffect->SetWorldScale3D(FVector(Spread, Spread, 1.0f));
             if (!Actor.AreaDecal)
             {
                 if (auto* ScorchMat = LoadObject<UMaterialInterface>(nullptr,
