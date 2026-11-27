@@ -15,6 +15,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -53,7 +54,23 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
         return;
     }
     ABBBCharacter *Character = TargetCharacter;
-    if (!Character)
+    if (!Character && ReviewCharacterClass)
+    {
+        double Nearest = TNumericLimits<double>::Max();
+        for (TActorIterator<ABBBCharacter> It(GetWorld(), ReviewCharacterClass); It; ++It)
+        {
+            if (It->GetClass() == ReviewCharacterClass && It->IsLocallyControlled())
+            {
+                const double Distance = FVector::DistSquared(GetActorLocation(), It->GetActorLocation());
+                if (Distance < Nearest)
+                {
+                    Character = *It;
+                    Nearest = Distance;
+                }
+            }
+        }
+    }
+    else if (!Character)
     {
         APlayerController *Controller = UGameplayStatics::GetPlayerController(this, PlayerIndex);
         Character = Controller && Controller->IsLocalController() ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;

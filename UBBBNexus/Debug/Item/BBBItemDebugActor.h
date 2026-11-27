@@ -37,6 +37,10 @@ protected:
     UPROPERTY(EditInstanceOnly, Category = "BBB|物品调试", meta = (DisplayName = "审核配装"))
     TArray<FName> ReviewWearables;
 
+    /** 审核关卡也可以选用距离调试器最近且类型完全相同的角色 */
+    UPROPERTY(EditInstanceOnly, Category = "BBB|物品调试", meta = (DisplayName = "审核角色类型"))
+    TSubclassOf<ABBBCharacter> ReviewCharacterClass;
+
     /** 显式目标角色 留空时使用本地玩家角色 */
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "BBB|物品调试", meta = (DisplayName = "目标角色"))
     TObjectPtr<ABBBCharacter> TargetCharacter;
