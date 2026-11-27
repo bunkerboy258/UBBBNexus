@@ -90,12 +90,11 @@ void UBBBAnimInstance::NativeThreadSafeUpdateAnimation(const float DeltaSeconds)
         FVector2D(0.0f, 1.0f),
         PlanarSpeed);
 
-    // 纵向前倾/后仰由局部前向加速度驱动 横向倾斜结合转向角速度与侧向加速度
-    const float TargetForward = FMath::Clamp(LocalAccel.X / 1600.0f, -1.0f, 1.0f) * SpeedAlpha;
-    const float TargetRight = FMath::Clamp(
-        (YawRate / 260.0f) * SpeedAlpha + (LocalAccel.Y / 1800.0f) * SpeedAlpha,
-        -1.0f,
-        1.0f);
+    // 横向压弯倾斜角结合转向角速度与侧向加速度 映射至 [-20, 20] 匹配 Lyra BS_MM_Rifle_Jog_Leans
+    const float TargetLeanAngle = FMath::Clamp(
+        (YawRate / 360.0f) * 20.0f * SpeedAlpha + (LocalAccel.Y / 2200.0f) * 12.0f * SpeedAlpha,
+        -20.0f,
+        20.0f);
 
     const bool bCanLean = bSourceMovingOnGround
         && !bSourceSliding
@@ -103,11 +102,10 @@ void UBBBAnimInstance::NativeThreadSafeUpdateAnimation(const float DeltaSeconds)
         && SourceLifePhase == EBBBCharacterLifePhase::Alive
         && SourcePhysicalPhase == EBBBCharacterPhysicalPhase::Animated;
     const float TargetAlpha = bCanLean
-        ? (bSourceAiming ? 0.25f * SpeedAlpha : 0.75f * SpeedAlpha)
+        ? (bSourceAiming ? 0.30f * SpeedAlpha : 0.85f * SpeedAlpha)
         : 0.0f;
 
-    LeanAmount.X = FMath::FInterpTo(LeanAmount.X, TargetForward, DeltaSeconds, 8.0f);
-    LeanAmount.Y = FMath::FInterpTo(LeanAmount.Y, TargetRight, DeltaSeconds, 10.0f);
+    LeanAngle = FMath::FInterpTo(LeanAngle, TargetLeanAngle, DeltaSeconds, 8.0f);
     LeanAlpha = FMath::FInterpTo(LeanAlpha, TargetAlpha, DeltaSeconds, 10.0f);
 }
 

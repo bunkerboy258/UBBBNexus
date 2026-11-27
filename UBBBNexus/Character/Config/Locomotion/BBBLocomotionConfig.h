@@ -22,7 +22,7 @@ struct FBBBCharacterLocomotionConfig
 
     /** 前进 侧移 后退方向的冲刺速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (DisplayName = "冲刺速度"))
-    FVector SprintSpeeds = FVector(650.0f, 450.0f, 350.0f);
+    FVector SprintSpeeds = FVector(700.0f, 500.0f, 400.0f);
 
     /** 体力耗尽后再次允许冲刺所需的最低体力 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (ClampMin = "0.0", DisplayName = "冲刺恢复体力阈值"))

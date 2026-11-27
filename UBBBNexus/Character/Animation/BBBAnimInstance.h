@@ -214,7 +214,7 @@ public:
     bool IsSprinting() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return Main->bSourceSprinting && !Main->bSourceCrouching && Main->SourceMaxSpeed >= 520.0f;
+        return Main->bSourceSprinting && !Main->bSourceCrouching && Main->SourceMaxSpeed >= 580.0f;
     }
 
     /** @return 角色是否处于站立跑步或冲刺档位 */
@@ -224,18 +224,11 @@ public:
         return IsRunning() || IsSprinting();
     }
 
-    /** @return 归一化前后加减速倾斜量 [-1, 1] 正为前倾负为后仰 */
+    /** @return 平滑后的横向压弯倾斜角 范围 [-20, 20] 匹配 BS_MM_Rifle_Jog_Leans */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
-    float GetLeanForward() const
+    float GetLeanAngle() const
     {
-        return GetBBBMainAnimInstanceThreadSafe()->LeanAmount.X;
-    }
-
-    /** @return 归一化左右转向倾斜量 [-1, 1] 正为右倾负为左倾 */
-    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
-    float GetLeanRight() const
-    {
-        return GetBBBMainAnimInstanceThreadSafe()->LeanAmount.Y;
+        return GetBBBMainAnimInstanceThreadSafe()->LeanAngle;
     }
 
     /** @return 当前躯干倾斜叠加权重 [0, 1] */
@@ -522,8 +515,8 @@ private:
     UPROPERTY(Transient)
     bool bSourceSprinting = false;
 
-    /** 平滑后的二维躯干倾斜 X 前后加减速 Y 左右转向 范围 [-1, 1] */
-    FVector2D LeanAmount = FVector2D::ZeroVector;
+    /** 平滑后的横向压弯倾斜角 单位度 范围 [-20, 20] */
+    float LeanAngle = 0.0f;
 
     /** 平滑后的躯干倾斜叠加权重 */
     float LeanAlpha = 0.0f;
