@@ -285,16 +285,6 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->bSourceAiming;
     }
 
-    /** @return 地面静止且无移动输入 用于原地后坐力抑制 */
-    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
-    bool IsStationaryForRecoil() const
-    {
-        const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return Main->bSourceMovingOnGround
-            && Main->SourceVelocity.SizeSquared() <= UE_KINDA_SMALL_NUMBER
-            && Main->SourceMovementInput.SizeSquared() <= UE_KINDA_SMALL_NUMBER;
-    }
-
     /** @return 组件空间的瞄准目标点 */
     UFUNCTION(BlueprintPure, Category = "Aiming", meta = (BlueprintThreadSafe))
     FVector GetAimTargetComponentSpace() const

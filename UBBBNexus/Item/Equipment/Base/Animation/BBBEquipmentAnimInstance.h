@@ -198,6 +198,13 @@ public:
         return 1.0f;
     }
 
+    /** @return 当前装备空中镜头回零倍率 */
+    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
+    virtual float GetAirborneCameraRecoveryScale() const
+    {
+        return 1.0f;
+    }
+
     /** @return 下蹲目标跟随倍率 无贡献时为 1 */
     UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
     virtual float GetCrouchedAimFollowScale() const
@@ -233,23 +240,9 @@ public:
         return 1.0f;
     }
 
-    /** @return 原地轨迹幅度倍率 无贡献时为 1 */
+    /** @return 下蹲镜头回零速度倍率 无贡献时为 1 */
     UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
-    virtual float GetStationaryRecoilScale() const
-    {
-        return 1.0f;
-    }
-
-    /** @return 原地后向震动倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
-    virtual float GetStationaryBackwardRecoilScale() const
-    {
-        return 1.0f;
-    }
-
-    /** @return 原地镜头冲击倍率 无贡献时为 1 */
-    UFUNCTION(BlueprintPure, Category = "Equipment|Animation", meta = (BlueprintThreadSafe))
-    virtual float GetStationaryCameraImpulseScale() const
+    virtual float GetCrouchedCameraRecoveryScale() const
     {
         return 1.0f;
     }

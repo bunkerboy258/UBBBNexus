@@ -34,12 +34,11 @@ void UBBBLMGAnimInstance::PublishLMGSnapshot(
     HipFireCameraSettings = Definition.HipFireCameraSettings;
     AimFireCameraSettings = Definition.AimFireCameraSettings;
     AirborneCameraImpulseScale = Definition.AirborneCameraImpulseScale;
+    AirborneCameraRecoveryScale = Definition.AirborneCameraRecoveryScale;
     CrouchedAimFollowScale = Definition.CrouchedModifiers.AimFollowScale;
     CrouchedBackwardRecoilScale = Definition.CrouchedModifiers.BackwardRecoilScale;
     CrouchedSwayAmplitudeScale = Definition.CrouchedModifiers.SwayAmplitudeScale;
     CrouchedSwayFrequencyScale = Definition.CrouchedModifiers.SwayFrequencyScale;
     CrouchedCameraImpulseScale = Definition.CrouchedModifiers.CameraImpulseScale;
-    StationaryRecoilScale = Definition.StationaryModifiers.RecoilScale;
-    StationaryBackwardRecoilScale = Definition.StationaryModifiers.BackwardRecoilScale;
-    StationaryCameraImpulseScale = Definition.StationaryModifiers.CameraImpulseScale;
+    CrouchedCameraRecoveryScale = Definition.CrouchedModifiers.CameraRecoveryScale;
 }

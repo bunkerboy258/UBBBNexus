@@ -27,9 +27,6 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
     const bool bAiming = Facts.bIsAiming;
     const bool bCrouching = Facts.bIsCrouching;
     const bool bFalling = Facts.MovementMode == MOVE_Falling;
-    const bool bStationary = Facts.bIsMovingOnGround
-        && Facts.Velocity.SizeSquared() <= UE_KINDA_SMALL_NUMBER
-        && Facts.MovementInput.SizeSquared() <= UE_KINDA_SMALL_NUMBER;
     State.AimFollowSpeed = (bAiming ? Source->GetAimFireAimFollowSpeed() : Source->GetHipFireAimFollowSpeed())
         * (bFalling ? Source->GetAirborneAimFollowScale() : 1.0f)
         * (bCrouching ? Source->GetCrouchedAimFollowScale() : 1.0f);
@@ -53,8 +50,7 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
         const float Impulse =
             (bAiming ? Source->GetAimFireBackwardRecoilAlpha() : Source->GetHipFireBackwardRecoilAlpha())
             * (bFalling ? Source->GetAirborneBackwardRecoilScale() : 1.0f)
-            * (bCrouching ? Source->GetCrouchedBackwardRecoilScale() : 1.0f)
-            * (bStationary ? Source->GetStationaryBackwardRecoilScale() : 1.0f);
+            * (bCrouching ? Source->GetCrouchedBackwardRecoilScale() : 1.0f);
         State.BackwardRecoilStrength = FMath::Clamp(State.BackwardRecoilStrength + 0.5f * Impulse * NewShots, 0.0f, 1.0f);
     }
     if (State.BackwardRecoilStrength < 0.001f)

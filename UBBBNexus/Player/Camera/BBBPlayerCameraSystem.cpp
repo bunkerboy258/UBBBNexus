@@ -1,7 +1,6 @@
 #include "BBBWork/UBBBNexus/Player/Camera/BBBPlayerCameraSystem.h"
 #include "BBBWork/UBBBNexus/Player/Camera/Processors/BBBPlayerCameraImpulseProcessor.h"
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
-#include "BBBWork/UBBBNexus/Character/Logic/Core/Update/BBBCharacterUpdatePipeline.h"
 #include "Camera/CameraComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Components/CapsuleComponent.h"
@@ -35,7 +34,6 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
         InnerOutlineInstance = nullptr;
     }
     const auto &Readability = InCharacter.GetCharacterConfig().Appearance;
-    CameraConfig = InCharacter.GetCharacterConfig().Camera;
     if (InController.IsLocalController())
     {
         // 游玩相机关闭画面四周的暗角
@@ -63,29 +61,24 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
             && Boom->PrimaryComponentTick.TickGroup == TG_PostPhysics
             && Boom->PrimaryComponentTick.EndTickGroup == TG_PostPhysics,
         TEXT("[BBBCamera]相机与臂端必须在 PostPhysics 完成更新 否则相机缓存将落后一帧"));
-    ensureMsgf(FMath::IsFinite(CameraConfig.HipArmLength) && CameraConfig.HipArmLength > 0.0f
-        && FMath::IsFinite(CameraConfig.AimArmLength) && CameraConfig.AimArmLength > 0.0f
-        && CameraConfig.AimArmLength < CameraConfig.HipArmLength
-        && FMath::IsFinite(CameraConfig.HipFieldOfView) && CameraConfig.HipFieldOfView >= 30.0f
-        && CameraConfig.HipFieldOfView <= 120.0f
-        && FMath::IsFinite(CameraConfig.AimFieldOfView) && CameraConfig.AimFieldOfView >= 30.0f
-        && CameraConfig.AimFieldOfView < CameraConfig.HipFieldOfView
-        && FMath::IsFinite(CameraConfig.HipShoulderOffset) && CameraConfig.HipShoulderOffset >= 0.0f
-        && FMath::IsFinite(CameraConfig.AimShoulderOffset) && CameraConfig.AimShoulderOffset >= 0.0f
-        && FMath::IsFinite(CameraConfig.HipPivotHeight) && FMath::IsFinite(CameraConfig.AimPivotHeight)
-        && FMath::IsFinite(CameraConfig.AimCrouchPivotDrop) && CameraConfig.AimCrouchPivotDrop >= 0.0f
-        && FMath::IsFinite(CameraConfig.AimBlendDuration) && CameraConfig.AimBlendDuration > 0.0f
-        && FMath::IsFinite(CameraConfig.AimFocusDistance) && CameraConfig.AimFocusDistance >= 100.0f
-        && FMath::IsFinite(CameraConfig.AimDepthOfFieldFStop)
-        && CameraConfig.AimDepthOfFieldFStop >= 1.0f && CameraConfig.AimDepthOfFieldFStop <= 32.0f
-        && FMath::IsFinite(CameraConfig.RecoverySpeed) && CameraConfig.RecoverySpeed > 0.0f,
-        TEXT("[BBBCamera]角色相机配置无效"));
+    ensureMsgf(FMath::IsFinite(HipArmLength) && HipArmLength > 0.0f
+        && FMath::IsFinite(AimArmLength) && AimArmLength > 0.0f && AimArmLength < HipArmLength
+        && FMath::IsFinite(HipFieldOfView) && HipFieldOfView >= 30.0f && HipFieldOfView <= 120.0f
+        && FMath::IsFinite(AimFieldOfView) && AimFieldOfView >= 30.0f && AimFieldOfView < HipFieldOfView
+        && FMath::IsFinite(HipShoulderOffset) && HipShoulderOffset >= 0.0f
+        && FMath::IsFinite(AimShoulderOffset) && AimShoulderOffset >= 0.0f
+        && FMath::IsFinite(HipPivotHeight) && FMath::IsFinite(AimPivotHeight)
+        && FMath::IsFinite(AimCrouchPivotDrop) && AimCrouchPivotDrop >= 0.0f
+        && FMath::IsFinite(AimBlendDuration) && AimBlendDuration > 0.0f
+        && FMath::IsFinite(AimFocusDistance) && AimFocusDistance >= 100.0f
+        && FMath::IsFinite(AimDepthOfFieldFStop) && AimDepthOfFieldFStop >= 1.0f && AimDepthOfFieldFStop <= 32.0f,
+        TEXT("[BBBCamera]相机构图配置无效"));
     Boom->bDoCollisionTest = true;
     Camera->SetRelativeLocation(FVector::ZeroVector);
     AimBlendProgress = 0.0f;
     ApplyComposition(0.0f, 0.0f);
 
-    ensureMsgf(FMath::IsFinite(CameraConfig.StanceHeightBlendDuration) && CameraConfig.StanceHeightBlendDuration > 0.0f,
+    ensureMsgf(FMath::IsFinite(StanceHeightBlendDuration) && StanceHeightBlendDuration > 0.0f,
         TEXT("[BBBCamera]站蹲高度过渡时间必须为有限正数"));
     SmoothedCapsuleHalfHeight = InCharacter.GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
     CapsuleHeightBlendStart = SmoothedCapsuleHalfHeight;
@@ -96,11 +89,11 @@ void ABBBPlayerCameraSystem::Initialize(ABBBCharacter &InCharacter, APlayerContr
 
 void ABBBPlayerCameraSystem::ApplyComposition(const float AimAlpha, const float CrouchAlpha)
 {
-    const float AimHeight = CameraConfig.AimPivotHeight - CameraConfig.AimCrouchPivotDrop * CrouchAlpha;
-    Boom->TargetArmLength = FMath::Lerp(CameraConfig.HipArmLength, CameraConfig.AimArmLength, AimAlpha);
-    Boom->TargetOffset = FVector(0.0f, 0.0f, FMath::Lerp(CameraConfig.HipPivotHeight, AimHeight, AimAlpha));
-    Boom->SocketOffset = FVector(0.0f, FMath::Lerp(CameraConfig.HipShoulderOffset, CameraConfig.AimShoulderOffset, AimAlpha), 0.0f);
-    Camera->SetFieldOfView(FMath::Lerp(CameraConfig.HipFieldOfView, CameraConfig.AimFieldOfView, AimAlpha));
+    const float AimHeight = AimPivotHeight - AimCrouchPivotDrop * CrouchAlpha;
+    Boom->TargetArmLength = FMath::Lerp(HipArmLength, AimArmLength, AimAlpha);
+    Boom->TargetOffset = FVector(0.0f, 0.0f, FMath::Lerp(HipPivotHeight, AimHeight, AimAlpha));
+    Boom->SocketOffset = FVector(0.0f, FMath::Lerp(HipShoulderOffset, AimShoulderOffset, AimAlpha), 0.0f);
+    Camera->SetFieldOfView(FMath::Lerp(HipFieldOfView, AimFieldOfView, AimAlpha));
 
     if (!Controller.IsValid() || !Controller->IsLocalController())
     {
@@ -118,8 +111,8 @@ void ABBBPlayerCameraSystem::ApplyComposition(const float AimAlpha, const float 
         // 景深随镜头进度变化 对焦距离独立于准星射线的命中深度
         constexpr float ClosedFStop = 32.0f;
         PostProcess.DepthOfFieldEnabled = true;
-        PostProcess.DepthOfFieldFocalDistance = CameraConfig.AimFocusDistance;
-        PostProcess.DepthOfFieldFstop = 1.0f / FMath::Lerp(1.0f / ClosedFStop, 1.0f / CameraConfig.AimDepthOfFieldFStop, AimAlpha);
+        PostProcess.DepthOfFieldFocalDistance = AimFocusDistance;
+        PostProcess.DepthOfFieldFstop = 1.0f / FMath::Lerp(1.0f / ClosedFStop, 1.0f / AimDepthOfFieldFStop, AimAlpha);
         PostProcess.DepthOfFieldDepthBlurRadius = 0.0f;
     }
 }

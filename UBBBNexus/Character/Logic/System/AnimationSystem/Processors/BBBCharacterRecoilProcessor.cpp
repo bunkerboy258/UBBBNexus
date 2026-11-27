@@ -42,13 +42,6 @@ void FBBBCharacterRecoilProcessor::Update(FBBBCharacterAnimationUpdateContext &C
     {
         Scale *= Source->GetAirborneRecoilScale();
     }
-    const bool bStationary = Facts.bIsMovingOnGround
-        && Facts.Velocity.SizeSquared() <= UE_KINDA_SMALL_NUMBER
-        && Facts.MovementInput.SizeSquared() <= UE_KINDA_SMALL_NUMBER;
-    if (bStationary)
-    {
-        Scale *= Source->GetStationaryRecoilScale();
-    }
     const float Speed = Source->GetRecoilReturnSpeed();
     const float FireInterval = Source->GetRecoilFireInterval();
     const float SinceLastFire = Source->GetTimeSinceLastFireSeconds();

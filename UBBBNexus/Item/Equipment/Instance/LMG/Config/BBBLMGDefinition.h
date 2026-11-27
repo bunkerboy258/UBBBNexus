@@ -7,7 +7,6 @@
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/Handling/BBBLMGAirborneModifiers.h"
 #include "BBBWork/UBBBNexus/Player/Camera/Config/BBBPlayerCameraRecoilSettings.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/Handling/BBBLMGCrouchedModifiers.h"
-#include "BBBWork/UBBBNexus/Item/Equipment/Instance/LMG/Config/Handling/BBBLMGStationaryModifiers.h"
 #include "BBBLMGDefinition.generated.h"
 
 class UAnimMontage;
@@ -107,12 +106,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "持枪表现|姿态倍率", meta = (DisplayPriority = "4", DisplayName = "下蹲倍率组", ToolTip = "角色实际蹲下时叠加 全部为 1 时不变 不修改角色或镜头的角度上限"))
     FBBBLMGCrouchedModifiers CrouchedModifiers;
 
-    /** 原地不动时对当前腰射或瞄准持枪与镜头配置的倍率 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "持枪表现|姿态倍率", meta = (DisplayPriority = "5", DisplayName = "原地倍率组", ToolTip = "地面静止且无移动输入时叠加 可与下蹲倍率相乘 全部为 1 时不变 不修改角色或镜头的角度上限"))
-    FBBBLMGStationaryModifiers StationaryModifiers;
-
     /** 腰射时贡献给相机的独立配置 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "镜头后坐力|基础姿态", meta = (DisplayPriority = "1", DisplayName = "腰射镜头组", ToolTip = "相机蓝图按角色瞄准意图选择 只影响镜头冲击及纵向保留 不替代枪口方向冲击"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "镜头后坐力|基础姿态", meta = (DisplayPriority = "1", DisplayName = "腰射镜头组", ToolTip = "相机蓝图按角色瞄准意图选择 只影响镜头冲击 回零及纵向保留 不替代枪口方向冲击"))
     FBBBPlayerCameraRecoilSettings HipFireCameraSettings;
 
     /** 瞄准射击时贡献给相机的独立配置 */
@@ -122,4 +117,8 @@ public:
     /** 空中相机冲击倍率 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "镜头后坐力|空中倍率", meta = (DisplayPriority = "3", ClampMin = "0.0", DisplayName = "镜头冲击倍率", ToolTip = "无单位 1 不变 越大空中每枪镜头冲击及随机幅度越大 0 无镜头冲击 不缩放角度上限"))
     float AirborneCameraImpulseScale = 1.25f;
+
+    /** 空中相机回零速度倍率 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "镜头后坐力|空中倍率", meta = (DisplayPriority = "4", ClampMin = "0.01", DisplayName = "镜头回零速度倍率", ToolTip = "无单位 1 不变 越大空中镜头回零越快 小于 1 更慢 不改变纵向保留比例"))
+    float AirborneCameraRecoveryScale = 0.8f;
 };

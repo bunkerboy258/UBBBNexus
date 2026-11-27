@@ -50,6 +50,12 @@ public:
         return AirborneCameraImpulseScale;
     }
 
+    /** @return 空中相机回零速度倍率快照 */
+    float GetAirborneCameraRecoveryScale() const override
+    {
+        return AirborneCameraRecoveryScale;
+    }
+
     /** @return 冲锋枪是否正在换弹 */
     bool IsReloading() const override
     {
@@ -164,22 +170,10 @@ public:
         return CrouchedCameraImpulseScale;
     }
 
-    /** @return 原地轨迹幅度倍率的只读快照 */
-    float GetStationaryRecoilScale() const override
+    /** @return 下蹲镜头回零速度倍率的只读快照 */
+    float GetCrouchedCameraRecoveryScale() const override
     {
-        return StationaryRecoilScale;
-    }
-
-    /** @return 原地后向震动倍率的只读快照 */
-    float GetStationaryBackwardRecoilScale() const override
-    {
-        return StationaryBackwardRecoilScale;
-    }
-
-    /** @return 原地镜头冲击倍率的只读快照 */
-    float GetStationaryCameraImpulseScale() const override
-    {
-        return StationaryCameraImpulseScale;
+        return CrouchedCameraRecoveryScale;
     }
 
 protected:
@@ -290,6 +284,9 @@ private:
     /** 空中镜头冲量倍率 */
     float AirborneCameraImpulseScale = 1.0f;
 
+    /** 空中镜头回零倍率 */
+    float AirborneCameraRecoveryScale = 1.0f;
+
     /** 下蹲目标跟随倍率 由动画系统发布 */
     float CrouchedAimFollowScale = 1.0f;
 
@@ -304,13 +301,7 @@ private:
 
     /** 下蹲镜头冲击倍率 由动画系统发布 */
     float CrouchedCameraImpulseScale = 1.0f;
-    /** 原地轨迹幅度倍率 由动画系统发布 */
-    float StationaryRecoilScale = 1.0f;
 
-    /** 原地后向震动倍率 由动画系统发布 */
-    float StationaryBackwardRecoilScale = 1.0f;
-
-    /** 原地镜头冲击倍率 由动画系统发布 */
-    float StationaryCameraImpulseScale = 1.0f;
+    /** 下蹲镜头回零速度倍率 由动画系统发布 */
+    float CrouchedCameraRecoveryScale = 1.0f;
 };
-
