@@ -8,11 +8,6 @@
 #include "BBBMonsterSoundPresentationComponent.h"
 #include "Components/AudioComponent.h"
 #include "Engine/World.h"
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
-#include "NiagaraSystem.h"
-#include "Materials/MaterialInterface.h"
-#include "UObject/ConstructorHelpers.h"
 #include "BBBMonsterBloodPresentationSubsystem.h"
 #include "BBBMonsterGibPresentationSubsystem.h"
 #include "BBBMonsterGorePresentationComponent.h"
@@ -24,12 +19,6 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
 {
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;
-    static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BurningAsset(
-        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Clean.NS_Monster_Burning_Clean"));
-    BurningSystem = BurningAsset.Object;
-    static ConstructorHelpers::FObjectFinder<UMaterialInterface> BurningOverlayAsset(
-        TEXT("/Game/_Project/Mass/Monster/Effects/M_Monster_Burning_Overlay_V3.M_Monster_Burning_Overlay_V3"));
-    BurningOverlayMaterial = BurningOverlayAsset.Object;
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("MonsterRoot"));
     SetRootComponent(Root);
     MonsterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MonsterMesh"));
@@ -132,11 +121,6 @@ UBBBMonsterGorePresentationComponent* ABBBMonsterPresentationActor::GetMonsterGo
 void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
 {
     Super::SetActorHiddenInGame(bNewHidden);
-    if (bNewHidden)
-    {
-        SetBurningOverlay(false);
-        SetBurningPresentation(false);
-    }
     if (bNewHidden && SoundPresentation)
     {
         SoundPresentation->ResetPresentation();
@@ -152,53 +136,5 @@ void ABBBMonsterPresentationActor::SetActorHiddenInGame(const bool bNewHidden)
     if (bNewHidden && Gore)
     {
         Gore->ResetPresentation();
-    }
-}
-
-bool ABBBMonsterPresentationActor::HasBurningPresentation() const
-{
-    return BurningEffect != nullptr;
-}
-
-void ABBBMonsterPresentationActor::SetBurningOverlay(bool bBurning)
-{
-    if (bBurningOverlayActive == bBurning || !MonsterMesh)
-    {
-        return;
-    }
-    bBurningOverlayActive = bBurning;
-    MonsterMesh->SetOverlayMaterial(bBurning ? BurningOverlayMaterial.Get() : nullptr);
-}
-
-void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
-{
-    if (!bBurning)
-    {
-        if (BurningEffect)
-        {
-            if (BurningEffect->PoolingMethod == ENCPoolMethod::ManualRelease)
-            {
-                BurningEffect->DeactivateImmediate();
-                BurningEffect->ReleaseToPool();
-            }
-            else
-            {
-                BurningEffect->DestroyComponent();
-            }
-            BurningEffect = nullptr;
-        }
-        return;
-    }
-    if (BurningEffect || !BurningSystem || !MonsterMesh)
-    {
-        return;
-    }
-    // 纯正暖橙零散小火苗 + 上升火星全身分布（无紫色、无大块火团、无光源、无烟雾）
-    BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
-        NAME_None, FVector(0.0, 0.0, 82.0), FRotator::ZeroRotator, FVector(0.65),
-        EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::ManualRelease);
-    if (BurningEffect && !BurningEffect->IsActive())
-    {
-        BurningEffect->Activate(true);
     }
 }
