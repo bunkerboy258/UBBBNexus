@@ -14,4 +14,7 @@ struct FBBBProjectileImpact final
 
     /** UE 物理表面类型 表现资产决定具体反馈 */
     EPhysicalSurface Surface = SurfaceType_Default;
+
+    /** 是否命中静态场景表面（仅静态表面生成弹孔） */
+    bool bStaticSurface = false;
 };

@@ -69,12 +69,9 @@ private:
     UPROPERTY()
     TObjectPtr<UMaterialInterface> BurningOverlayMaterial;
 
-    /** 当前身体的着火组件（上身与下身） */
+    /** 当前身体的全身细火苗组件 */
     UPROPERTY(Transient)
     TObjectPtr<UNiagaraComponent> BurningEffect;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UNiagaraComponent> BurningLowerEffect;
 
     bool bBurningOverlayActive = false;
 

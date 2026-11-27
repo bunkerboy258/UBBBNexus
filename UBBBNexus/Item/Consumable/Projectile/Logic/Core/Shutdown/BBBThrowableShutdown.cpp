@@ -1,6 +1,7 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Logic/Core/Shutdown/BBBThrowableShutdown.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/BBBThrowable.h"
 #include "Components/SphereComponent.h"
+#include "Components/DecalComponent.h"
 #include "NiagaraComponent.h"
 void FBBBThrowableShutdown::Shutdown(ABBBThrowable& Actor) const
 {
@@ -23,6 +24,11 @@ void FBBBThrowableShutdown::Shutdown(ABBBThrowable& Actor) const
             Actor.AreaEffect->DestroyComponent();
         }
         Actor.AreaEffect = nullptr;
+    }
+    if (Actor.AreaDecal)
+    {
+        Actor.AreaDecal->DestroyComponent();
+        Actor.AreaDecal = nullptr;
     }
     Actor.RuntimeData.Parse.State = {};
     Actor.RuntimeData.Lifetime.State = {};

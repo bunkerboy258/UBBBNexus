@@ -9,6 +9,8 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
 #include "NiagaraComponent.h"
+#include "Components/DecalComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Camera/PlayerCameraManager.h"
 #include "NiagaraFunctionLibrary.h"
 
@@ -123,6 +125,11 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             }
             Actor.AreaEffect = nullptr;
         }
+        if (Actor.AreaDecal)
+        {
+            Actor.AreaDecal->DestroyComponent();
+            Actor.AreaDecal = nullptr;
+        }
         return;
     }
 
@@ -158,9 +165,30 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         }
         else
         {
-            const float Scale = Definition->Presentation.AreaEffectScale;
-            const float SpreadScale = Scale * CurrentRadius / Area.Radius;
-            Actor.AreaEffect->SetWorldScale3D(FVector(SpreadScale, SpreadScale, Scale * 0.55f));
+            // CS2 风格贴地徐徐扩散：用 User.Size Of Campfire 动态铺开平地多簇火苗 + 地面焦黑余烬底盘
+            const float Diameter = CurrentRadius * 1.75f;
+            Actor.AreaEffect->SetWorldScale3D(FVector(1.25f, 1.25f, 1.0f));
+            Actor.AreaEffect->SetVariableVec3(TEXT("User.Size Of Campfire"), FVector(Diameter, Diameter, 0.0));
+            Actor.AreaEffect->SetVariableLinearColor(TEXT("User.Linear Color"), FLinearColor(4.5f, 0.72f, 0.06f, 1.0f));
+            if (!Actor.AreaDecal)
+            {
+                if (auto* ScorchMat = LoadObject<UMaterialInterface>(nullptr,
+                    TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal.M_Grenade_Incendiary_ScorchDecal")))
+                {
+                    Actor.AreaDecal = NewObject<UDecalComponent>(&Actor);
+                    Actor.AreaDecal->SetDecalMaterial(ScorchMat);
+                    Actor.AreaDecal->DecalSize = FVector(50.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
+                    Actor.AreaDecal->FadeScreenSize = 0.002f;
+                    Actor.AreaDecal->PrimaryComponentTick.bCanEverTick = false;
+                    Actor.AreaDecal->SetWorldLocationAndRotation(Fact.AreaGround, FRotator(-90.0f, FMath::FRandRange(0.0f, 360.0f), 0.0f));
+                    Actor.AreaDecal->RegisterComponentWithWorld(&World);
+                }
+            }
+            if (Actor.AreaDecal)
+            {
+                Actor.AreaDecal->DecalSize = FVector(50.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
+                Actor.AreaDecal->MarkRenderStateDirty();
+            }
         }
         if (bCreateEffect && !Actor.AreaEffect->IsActive())
         {

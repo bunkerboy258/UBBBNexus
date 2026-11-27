@@ -8,6 +8,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Input/LocalControl/Spawn/FBBBProjectileSpawnLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentation.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
@@ -24,7 +25,7 @@
 
 namespace
 {
-    constexpr int32 MaxVisualFragments = 16;
+    constexpr int32 MaxVisualFragments = 24;
 
     void BuildFragmentDirections(UWorld& World, const AActor& Actor, const FVector& Origin, float BodyRadius,
         int32 FragmentCount, uint32 Seed, FQuat& OutRotation, TArray<FVector>& OutLocalDirections)
@@ -54,7 +55,7 @@ namespace
         }
     }
 
-    /** 仅对静态环境采样有限破片火花 避免尸群爆开时数百次穿透射线与 Mass 实体尖峰 */
+    /** 采样有限静态环境命中以生成破片弹孔、火星与瞬时白色破片划出线 */
     void PresentFragmentImpacts(UWorld& World, ABBBThrowable& Actor, const UBBBThrowableDefinition& Definition,
         const FBBBThrowableExplosionFact& Fact)
     {
@@ -76,22 +77,34 @@ namespace
 
         TArray<FBBBProjectileImpact> Impacts;
         Impacts.Reserve(SampleCount);
+        TArray<FVector> StreakEndpoints;
+        StreakEndpoints.Reserve(SampleCount);
+
         for (const FVector& LocalDirection : LocalDirections)
         {
             const FVector Direction = Rotation.RotateVector(LocalDirection).GetSafeNormal();
+            const FVector End = Fact.Position + Direction * Config.Radius;
             FHitResult WorldHit;
-            if (!World.LineTraceSingleByObjectType(WorldHit, Fact.Position, Fact.Position + Direction * Config.Radius,
-                StaticWorld, Params))
+            if (World.LineTraceSingleByObjectType(WorldHit, Fact.Position, End, StaticWorld, Params))
             {
-                continue;
+                FBBBProjectileImpact Impact;
+                Impact.Position = WorldHit.ImpactPoint;
+                Impact.Normal = WorldHit.ImpactNormal;
+                Impact.Surface = SurfaceType1;
+                Impact.bStaticSurface = true;
+                Impacts.Add(Impact);
+                StreakEndpoints.Add(WorldHit.ImpactPoint);
             }
-            FBBBProjectileImpact Impact;
-            Impact.Position = WorldHit.ImpactPoint;
-            Impact.Normal = WorldHit.ImpactNormal;
-            Impact.Surface = SurfaceType1;
-            Impacts.Add(Impact);
+            else
+            {
+                StreakEndpoints.Add(Fact.Position + Direction * (Config.Radius * 0.72f));
+            }
         }
 
+        if (auto* Display = World.GetSubsystem<UBBBProjectilePresentationSubsystem>())
+        {
+            Display->SpawnFragStreaks(Fact.Position, StreakEndpoints);
+        }
         if (!Impacts.IsEmpty())
         {
             UNiagaraDataChannelLibrary::GetNiagaraDataChannel(&World, Config.FragmentImpactChannel);

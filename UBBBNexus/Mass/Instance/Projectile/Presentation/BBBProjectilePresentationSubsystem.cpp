@@ -12,7 +12,10 @@
 #include "Engine/World.h"
 #include "Subsystems/SubsystemCollection.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Components/DecalComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 
 void UBBBProjectilePresentationSubsystem::Initialize(FSubsystemCollectionBase &Collection)
 {
@@ -36,7 +39,7 @@ bool UBBBProjectilePresentationSubsystem::IsReady(const UNiagaraDataChannelAsset
 
 bool UBBBProjectilePresentationSubsystem::IsTickable() const
 {
-    return IsInitialized() && (!Pending.IsEmpty() || !PendingMeshes.IsEmpty() || (ActiveSystem && !IsValid(Tracer)));
+    return IsInitialized() && (!Pending.IsEmpty() || !PendingMeshes.IsEmpty() || !FragStreaks.IsEmpty() || (ActiveSystem && !IsValid(Tracer)));
 }
 
 TStatId UBBBProjectilePresentationSubsystem::GetStatId() const
@@ -59,8 +62,9 @@ void UBBBProjectilePresentationSubsystem::PrepareTracer(UNiagaraDataChannelAsset
     ActiveSystem = System;
 }
 
-void UBBBProjectilePresentationSubsystem::Tick(float)
+void UBBBProjectilePresentationSubsystem::Tick(float DeltaTime)
 {
+    UpdateFragStreaks(DeltaTime);
     auto *World = GetWorld();
     auto *Spawner = World->GetSubsystem<UMassSpawnerSubsystem>();
     if (!Spawner || Spawner->GetEntityManagerChecked().IsProcessing())
@@ -194,8 +198,206 @@ void UBBBProjectilePresentationSubsystem::UpdateMeshes(const TMap<UStaticMesh *,
     }
 }
 
+void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBBBProjectileImpact> Impacts)
+{
+    UWorld *World = GetWorld();
+    if (!World || Impacts.IsEmpty() || World->GetNetMode() == NM_DedicatedServer || !FApp::CanEverRender())
+    {
+        return;
+    }
+    if (!BulletHoleMaterial)
+    {
+        BulletHoleMaterial = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileBulletHole.M_BBBProjectileBulletHole"));
+        if (!BulletHoleMaterial)
+        {
+            return;
+        }
+    }
+
+    constexpr int32 MaxBulletHoles = 64;
+    constexpr int32 MaxPerFrame = 16;
+    constexpr double MinSpacingSq = 16.0;
+    int32 Placed = 0;
+
+    for (const FBBBProjectileImpact &Impact : Impacts)
+    {
+        if (Placed >= MaxPerFrame)
+        {
+            break;
+        }
+        if (!Impact.bStaticSurface || Impact.Surface == SurfaceType2)
+        {
+            continue;
+        }
+        bool bTooClose = false;
+        for (const FVector &Existing : BulletHolePositions)
+        {
+            if (FVector::DistSquared(Existing, Impact.Position) < MinSpacingSq)
+            {
+                bTooClose = true;
+                break;
+            }
+        }
+        if (bTooClose)
+        {
+            continue;
+        }
+
+        UDecalComponent *Decal = nullptr;
+        if (BulletHolePool.Num() < MaxBulletHoles)
+        {
+            Decal = NewObject<UDecalComponent>(World);
+            Decal->SetDecalMaterial(BulletHoleMaterial);
+            Decal->DecalSize = FVector(6.0, 6.5, 6.5);
+            Decal->FadeScreenSize = 0.008f;
+            Decal->SortOrder = 1;
+            Decal->PrimaryComponentTick.bCanEverTick = false;
+            Decal->RegisterComponentWithWorld(World);
+            BulletHolePool.Add(Decal);
+            BulletHolePositions.Add(Impact.Position);
+        }
+        else
+        {
+            const int32 Slot = NextBulletHoleSlot % MaxBulletHoles;
+            NextBulletHoleSlot = (Slot + 1) % MaxBulletHoles;
+            Decal = BulletHolePool[Slot].Get();
+            BulletHolePositions[Slot] = Impact.Position;
+        }
+
+        if (IsValid(Decal))
+        {
+            const FVector Normal = Impact.Normal.GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
+            const FQuat BaseRot = (-Normal).ToOrientationQuat();
+            const FQuat RandomRoll(Normal, FMath::FRandRange(0.0f, UE_TWO_PI));
+            const float SizeScale = FMath::FRandRange(0.82f, 1.22f);
+            Decal->SetWorldLocationAndRotation(Impact.Position, RandomRoll * BaseRot);
+            Decal->SetWorldScale3D(FVector(1.0f, SizeScale, SizeScale));
+        }
+        ++Placed;
+    }
+}
+
+void UBBBProjectilePresentationSubsystem::SpawnFragStreaks(const FVector &Origin, TConstArrayView<FVector> Endpoints)
+{
+    UWorld *World = GetWorld();
+    if (!World || Endpoints.IsEmpty() || World->GetNetMode() == NM_DedicatedServer || !FApp::CanEverRender())
+    {
+        return;
+    }
+    if (!IsValid(FragStreakMesh))
+    {
+        UStaticMesh *Cylinder = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+        UMaterialInterface *Mat = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Mass/Projectile/M_Grenade_FragStreak.M_Grenade_FragStreak"));
+        if (!Cylinder || !Mat)
+        {
+            return;
+        }
+        FragStreakMesh = NewObject<UInstancedStaticMeshComponent>(World);
+        FragStreakMesh->SetStaticMesh(Cylinder);
+        FragStreakMesh->SetMaterial(0, Mat);
+        FragStreakMesh->SetMobility(EComponentMobility::Movable);
+        FragStreakMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        FragStreakMesh->SetGenerateOverlapEvents(false);
+        FragStreakMesh->SetCanEverAffectNavigation(false);
+        FragStreakMesh->SetCastShadow(false);
+        FragStreakMesh->PrimaryComponentTick.bCanEverTick = false;
+        FragStreakMesh->RegisterComponentWithWorld(World);
+    }
+
+    constexpr int32 MaxActiveStreaks = 64;
+    for (const FVector &End : Endpoints)
+    {
+        if (FragStreaks.Num() >= MaxActiveStreaks)
+        {
+            FragStreaks.RemoveAt(0);
+        }
+        if (FVector::DistSquared(Origin, End) < 400.0)
+        {
+            continue;
+        }
+        FFragStreak Streak;
+        Streak.Origin = Origin;
+        Streak.Endpoint = End;
+        Streak.Age = 0.0f;
+        Streak.Duration = FMath::FRandRange(0.075f, 0.125f);
+        FragStreaks.Add(Streak);
+    }
+    UpdateFragStreaks(0.0f);
+}
+
+void UBBBProjectilePresentationSubsystem::UpdateFragStreaks(const float DeltaTime)
+{
+    if (!IsValid(FragStreakMesh))
+    {
+        FragStreaks.Reset();
+        return;
+    }
+    if (FragStreaks.IsEmpty())
+    {
+        if (FragStreakMesh->GetInstanceCount() > 0)
+        {
+            FragStreakMesh->ClearInstances();
+        }
+        return;
+    }
+
+    TArray<FTransform> Transforms;
+    Transforms.Reserve(FragStreaks.Num());
+    for (int32 Index = FragStreaks.Num() - 1; Index >= 0; --Index)
+    {
+        FFragStreak &S = FragStreaks[Index];
+        S.Age += DeltaTime;
+        if (S.Age >= S.Duration)
+        {
+            FragStreaks.RemoveAtSwap(Index);
+            continue;
+        }
+        const float Alpha = S.Age / S.Duration;
+        // 头部迅速冲向落点 尾部稍慢跟进 形成高速白色破片划痕感
+        const float HeadT = FMath::Clamp(Alpha * 2.2f, 0.08f, 1.0f);
+        const float TailT = FMath::Clamp((Alpha - 0.15f) * 1.25f, 0.0f, HeadT - 0.04f);
+        const FVector A = FMath::Lerp(S.Origin, S.Endpoint, TailT);
+        const FVector B = FMath::Lerp(S.Origin, S.Endpoint, HeadT);
+        const FVector Delta = B - A;
+        const double Length = Delta.Size();
+        if (Length < 4.0)
+        {
+            continue;
+        }
+        const FVector Dir = Delta / Length;
+        const FQuat Rot = FQuat::FindBetweenNormals(FVector::UpVector, Dir);
+        const double RadiusScale = FMath::Lerp(0.018, 0.004, Alpha);
+        Transforms.Emplace(Rot, (A + B) * 0.5, FVector(RadiusScale, RadiusScale, Length / 100.0));
+    }
+
+    FragStreakMesh->ClearInstances();
+    if (!Transforms.IsEmpty())
+    {
+        FragStreakMesh->AddInstances(Transforms, false, true, false);
+    }
+}
+
 void UBBBProjectilePresentationSubsystem::Deinitialize()
 {
+    for (const auto &Decal : BulletHolePool)
+    {
+        if (IsValid(Decal))
+        {
+            Decal->DestroyComponent();
+        }
+    }
+    BulletHolePool.Reset();
+    BulletHolePositions.Reset();
+    BulletHoleMaterial = nullptr;
+    NextBulletHoleSlot = 0;
+    if (IsValid(FragStreakMesh))
+    {
+        FragStreakMesh->DestroyComponent();
+    }
+    FragStreakMesh = nullptr;
+    FragStreaks.Reset();
     if (IsValid(Tracer))
     {
         Tracer->DestroyComponent();

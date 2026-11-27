@@ -229,6 +229,7 @@ void UBBBProjectileCollisionProcessor::Execute(FMassEntityManager&, FMassExecuti
                 Impact.Position = WorldHit.ImpactPoint;
                 Impact.Normal = WorldHit.ImpactNormal;
                 Impact.Surface = UPhysicalMaterial::DetermineSurfaceType(WorldHit.PhysMaterial.Get());
+                Impact.bStaticSurface = Cast<APawn>(WorldHit.GetActor()) == nullptr;
             }
             if (Presentation.ImpactChannel.IsValid()
                 && ensureMsgf(!ImpactChannel.IsValid() || ImpactChannel == Presentation.ImpactChannel,

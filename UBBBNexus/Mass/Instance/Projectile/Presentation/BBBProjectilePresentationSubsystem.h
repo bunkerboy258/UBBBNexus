@@ -11,6 +11,9 @@ class UNiagaraDataChannelAsset;
 class UNiagaraSystem;
 class UStaticMesh;
 class UInstancedStaticMeshComponent;
+class UDecalComponent;
+class UMaterialInterface;
+struct FBBBProjectileImpact;
 
 /** 当前世界的弹丸模板准备与共享曳光生命周期 不生成发射事实 */
 UCLASS()
@@ -26,14 +29,26 @@ public:
     void PrepareTracer(UNiagaraDataChannelAsset *Channel, UNiagaraSystem *System);
     /** @param Batches 当前活动弹体的模型变换 @return 无 只更新已有显示对象 */
     void UpdateMeshes(const TMap<UStaticMesh *, TArray<FTransform>> &Batches);
+    /** @param Impacts 本帧命中批次 @return 无 仅在静态表面复用 64 槽环形池更新弹孔 */
+    void PublishBulletHoles(TConstArrayView<FBBBProjectileImpact> Impacts);
+    /** @param Origin 爆炸中心 @param Endpoints 破片划出终点列表 @return 无 渲染瞬时白色破片划出线 */
+    void SpawnFragStreaks(const FVector &Origin, TConstArrayView<FVector> Endpoints);
     virtual void Initialize(FSubsystemCollectionBase &Collection) override;
     virtual void Tick(float DeltaTime) override;
     virtual bool IsTickable() const override;
     virtual TStatId GetStatId() const override;
     virtual void Deinitialize() override;
 private:
+    struct FFragStreak
+    {
+        FVector Origin = FVector::ZeroVector;
+        FVector Endpoint = FVector::ZeroVector;
+        float Age = 0.0f;
+        float Duration = 0.095f;
+    };
     /** @return 无 每帧最多准备一个弹体组件 */
     void PrepareNextMesh();
+    void UpdateFragStreaks(float DeltaTime);
     UPROPERTY(Transient)
     TArray<TObjectPtr<UStaticMesh>> PendingMeshes;
     UPROPERTY(Transient)
@@ -48,4 +63,15 @@ private:
     TObjectPtr<UNiagaraDataChannelAsset> ActiveChannel;
     UPROPERTY(Transient)
     TObjectPtr<UNiagaraSystem> ActiveSystem;
+    /** 固定容量 64 槽弹孔贴花环形池 */
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInterface> BulletHoleMaterial;
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UDecalComponent>> BulletHolePool;
+    TArray<FVector> BulletHolePositions;
+    int32 NextBulletHoleSlot = 0;
+    /** 单 DrawCall 破片白色划出线实例组件 */
+    UPROPERTY(Transient)
+    TObjectPtr<UInstancedStaticMeshComponent> FragStreakMesh;
+    TArray<FFragStreak> FragStreaks;
 };

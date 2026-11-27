@@ -6,6 +6,7 @@
 class USphereComponent;
 class UStaticMeshComponent;
 class UNiagaraComponent;
+class UDecalComponent;
 class UBBBThrowableNetworkComponent;
 class FBBBThrowableInitializer;
 class FBBBThrowableUpdatePipeline;
@@ -55,6 +56,9 @@ private:
     /** 持续区域的本地特效组件 */
     UPROPERTY()
     TObjectPtr<UNiagaraComponent> AreaEffect;
+    /** 持续区域的地面焦黑贴花 */
+    UPROPERTY()
+    TObjectPtr<UDecalComponent> AreaDecal;
     /** 起爆时生成的一次性本地特效组件 */
     UPROPERTY()
     TObjectPtr<UNiagaraComponent> BurstEffect;

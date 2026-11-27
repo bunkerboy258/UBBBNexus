@@ -10,6 +10,7 @@
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Collision/BBBProjectileImpact.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Movement/BBBProjectileMotionFragment.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Fragments/Presentation/BBBProjectilePresentationFragment.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
 
 void FBBBProjectilePresentation::Publish(UWorld& World, TConstArrayView<FTransformFragment> Transforms,
     TConstArrayView<FBBBProjectileMotionFragment> Motion, TConstArrayView<FBBBProjectilePresentationFragment> Presentation)
@@ -141,5 +142,10 @@ void FBBBProjectilePresentation::PublishImpacts(UWorld& World, UNiagaraDataChann
             Writer->WriteVector(TEXT("Normal"), Index, Impact.Normal);
             Writer->WriteInt(TEXT("Surface"), Index, static_cast<int32>(Impact.Surface));
         }
+    }
+
+    if (auto* Display = World.GetSubsystem<UBBBProjectilePresentationSubsystem>())
+    {
+        Display->PublishBulletHoles(Impacts);
     }
 }
