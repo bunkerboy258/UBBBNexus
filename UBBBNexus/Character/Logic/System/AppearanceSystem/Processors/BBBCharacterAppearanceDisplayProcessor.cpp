@@ -287,9 +287,9 @@ bool FBBBWaistAttachmentPhysicsTest::RunTest(const FString &Parameters)
     Attachment->RegisterComponent();
     const TCHAR *Assets[] =
     {
-        TEXT("/Game/_Project/Characters/Items/Wearable/Attachments/侧挂手套/Meshes/SK_UA_HangingGloves.SK_UA_HangingGloves"),
-        TEXT("/Game/_Project/Characters/Items/Wearable/Attachments/侧挂杂物包/Meshes/SK_UA_DropBag.SK_UA_DropBag"),
-        TEXT("/Game/_Project/Characters/Items/Wearable/Attachments/背部卷毯/Meshes/SK_UA_RolledMat.SK_UA_RolledMat")
+        TEXT("/Game/_Project/Characters/Items/Wearable/Attachments/HangingGloves/Meshes/SK_UA_HangingGloves.SK_UA_HangingGloves"),
+        TEXT("/Game/_Project/Characters/Items/Wearable/Attachments/DropBag/Meshes/SK_UA_DropBag.SK_UA_DropBag"),
+        TEXT("/Game/_Project/Characters/Items/Wearable/Attachments/RolledMat/Meshes/SK_UA_RolledMat.SK_UA_RolledMat")
     };
     for (const TCHAR *Path : Assets)
     {

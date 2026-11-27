@@ -14,7 +14,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBBBGrenadePresentationTest, "BBB.Item.Throwabl
 bool FBBBGrenadePresentationTest::RunTest(const FString&)
 {
     auto* Definition = LoadObject<UBBBThrowableDefinition>(nullptr,
-        TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/破片手雷/DA_Throwable_Grenade_01.DA_Throwable_Grenade_01"));
+        TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Frag_Grenade/DA_Throwable_Grenade_01.DA_Throwable_Grenade_01"));
     if (!TestTrue(TEXT("正式手雷配置有效"), Definition && Definition->IsValid()))
     {
         return false;

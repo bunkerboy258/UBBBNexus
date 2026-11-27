@@ -11,7 +11,7 @@
 ABBBPlayerCameraSystem::ABBBPlayerCameraSystem()
 {
     InnerOutlineMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(
-        TEXT("/Game/_Project/Characters/BBBC_UA/Appearance/Materials/M_LocalCharacterInnerOutline.M_LocalCharacterInnerOutline")));
+        TEXT("/Game/_Project/Camera/Materials/M_LocalCharacterInnerOutline.M_LocalCharacterInnerOutline")));
     PrimaryActorTick.bCanEverTick = true;
     // 步枪在 PostUpdateWork 发布快照 相机在该组全部完成后读取
     // NOTE: 相机缓存早于 PostUpdateWork 跟随必须在 PostPhysics 完成 武器贡献读取最近已发布快照
