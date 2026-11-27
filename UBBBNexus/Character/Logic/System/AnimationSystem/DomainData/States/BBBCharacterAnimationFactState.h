@@ -166,6 +166,13 @@ struct FBBBCharacterAnimationFactState final
     UPROPERTY(Transient)
     bool bIsCrouching = false;
 
+    /** 已绑定武器动画实例 */
+    bool bWeaponAnimationBound = false;
+    /** 绑定武器的开火序号 */
+    int32 WeaponFireSequence = 0;
+    /** 绑定武器距最近一次开火的秒数 */
+    float WeaponSecondsSinceFire = 0.0f;
+
     /** 当前是否具有瞄准意图 */
     UPROPERTY(Transient)
     bool bIsAiming = false;

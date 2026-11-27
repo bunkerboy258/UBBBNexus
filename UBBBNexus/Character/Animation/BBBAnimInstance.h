@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/PoseSnapshot.h"
+#include "Animation/TrajectoryTypes.h"
 #include "PoseSearch/MotionMatchingAnimNodeLibrary.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/PhysicalPresentationSystem/DomainData/Definitions/BBBCharacterPhysicalPhase.h"
 #include "BBBWork/UBBBNexus/Character/Logic/System/AnimationSystem/DomainData/States/BBBCharacterAnimationFactState.h"
@@ -45,6 +46,56 @@ class ABBB_EVAC_API UBBBAnimInstance : public UAnimInstance
     friend class FBBBCharacterGetUpAnimationProcessor;
 
 public:
+    /** @return 本次快照是否为地面静止瞄准 */
+    UFUNCTION(BlueprintPure, Category = "MotionMatching", meta = (BlueprintThreadSafe))
+    bool IsStationaryAim() const;
+
+    /**
+     * @param Trajectory     本次轨迹生成与碰撞处理后的样本
+     * @param BodyRoot       本次查询使用的身体根变换
+     * @return 无
+     */
+    UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "MotionMatching", meta = (BlueprintThreadSafe))
+    void ConstrainPredictedFacing(UPARAM(ref) FTransformTrajectory& Trajectory, const FTransform& BodyRoot) const;
+
+    /**
+     * @param Node           当前运动匹配节点
+     * @param BodyRoot       本次查询使用的身体根变换
+     * @return 正在续播的非循环片段能否确认转向不足或方向相反
+     */
+    UFUNCTION(BlueprintPure, Category = "MotionMatching", meta = (BlueprintThreadSafe))
+    bool IsMatchedTurnInsufficient(const FMotionMatchingAnimNodeReference& Node, const FTransform& BodyRoot) const;
+
+    /**
+     * @param Current        刷新后的速度
+     * @param Previous       刷新前缓存的速度
+     * @param DeltaTime      本次动画更新时间
+     * @return 按本次采样间隔换算的世界加速度
+     */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    static FVector CalculateVelocityAcceleration(FVector Current, FVector Previous, double DeltaTime);
+
+    /**
+     * @param Landing        落地前缓存的速度
+     * @param Threshold      重落地垂直速度阈值
+     * @param bHeavy         选择重落地或轻落地
+     * @return 落地速度是否属于指定区间
+     */
+    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
+    static bool MatchesLandingSpeed(FVector Landing, double Threshold, bool bHeavy);
+
+    /** @return 本帧是否已绑定武器动画实例 */
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
+    bool HasBoundWeaponAnimation() const { return GetBBBMainAnimInstanceThreadSafe()->bWeaponAnimationBound; }
+
+    /** @return 本帧绑定武器的开火序号 */
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
+    int32 GetPublishedFireSequence() const { return GetBBBMainAnimInstanceThreadSafe()->PublishedFireSequence; }
+
+    /** @return 本帧武器距最近一次开火的秒数 */
+    UFUNCTION(BlueprintPure, Category = "WeaponHandling", meta = (BlueprintThreadSafe))
+    float GetPublishedSecondsSinceFire() const { return GetBBBMainAnimInstanceThreadSafe()->PublishedSecondsSinceFire; }
+
     /** 当前全身物理控制阶段 */
     UPROPERTY(BlueprintReadOnly, Transient, Category = "Animation|Facts")
     EBBBCharacterPhysicalPhase SourcePhysicalPhase = EBBBCharacterPhysicalPhase::Animated;
@@ -464,6 +515,13 @@ private:
      * @return 无
      */
     void BindWeaponAnimInstance(UBBBEquipmentAnimInstance *InWeaponAnimInstance);
+
+    /** 最近一次动画事实发布时绑定武器的开火序号 */
+    int32 PublishedFireSequence = 0;
+    /** 最近一次动画事实发布时距开火的秒数 */
+    float PublishedSecondsSinceFire = 0.0f;
+    /** 最近一次动画事实发布时是否已绑定武器 */
+    bool bWeaponAnimationBound = false;
 
     /**
      * 提交移动完成后的角色事实快照

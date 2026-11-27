@@ -32,7 +32,7 @@ void FBBBCharacterWeaponHandlingProcessor::Update(FBBBCharacterAnimationUpdateCo
         * (bCrouching ? Source->GetCrouchedAimFollowScale() : 1.0f);
     constexpr float RecoilHalfLifeSeconds = 0.065f;
     const float DeltaSeconds = FMath::Max(Context.WorldState.FrameDeltaSeconds, 0.0f);
-    const int32 FireSequence = Source->GetFireSequence();
+    const int32 FireSequence = Facts.WeaponFireSequence;
     int32 NewShots = 0;
     if (State.RecoilSource.Get() != Source || FireSequence < State.RecoilFireSequence)
     {

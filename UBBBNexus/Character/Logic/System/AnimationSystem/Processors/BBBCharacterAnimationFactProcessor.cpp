@@ -14,6 +14,7 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Chooser.h"
+#include "BBBWork/UBBBNexus/Item/Equipment/Base/Animation/BBBEquipmentAnimInstance.h"
 
 namespace
 {
@@ -29,6 +30,11 @@ void FBBBCharacterAnimationFactProcessor::Update(
     ABBBCharacter &Character = Context.Character;
     FBBBCharacterRuntimeData &RuntimeData = Context.RuntimeData;
     FBBBCharacterAnimationFactState &FactState = Context.AnimationFactState;
+
+    const UBBBEquipmentAnimInstance* WeaponAnimation = Context.AnimationInstance.TryGetWeaponAnimInstance();
+    FactState.bWeaponAnimationBound = WeaponAnimation != nullptr;
+    FactState.WeaponFireSequence = WeaponAnimation ? WeaponAnimation->GetFireSequence() : 0;
+    FactState.WeaponSecondsSinceFire = WeaponAnimation ? WeaponAnimation->GetTimeSinceLastFireSeconds() : 0.0f;
 
     // 采集动画事实前确认角色组件和世界对象有效
     UCharacterMovementComponent *Movement = Character.GetCharacterMovement();

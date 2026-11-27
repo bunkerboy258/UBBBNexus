@@ -12,6 +12,69 @@
 #include "PoseSearch/PoseSearchSchema.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Chooser.h"
+#include "Core/BBBMotionMatchingLibrary.h"
+
+bool UBBBAnimInstance::IsStationaryAim() const
+{
+    const UBBBAnimInstance* Main = GetBBBMainAnimInstanceThreadSafe();
+    return Main->bSourceAiming && Main->bSourceMovingOnGround
+        && Main->SourceVelocity.SizeSquared() == 0.0 && Main->SourceMovementInput.SizeSquared() == 0.0;
+}
+
+void UBBBAnimInstance::ConstrainPredictedFacing(FTransformTrajectory& Trajectory, const FTransform& BodyRoot) const
+{
+    if (!IsStationaryAim())
+    {
+        return;
+    }
+    const UBBBAnimInstance* Main = GetBBBMainAnimInstanceThreadSafe();
+    const FRotator MeshRotation = Main->SourceMeshWorldTransform.Rotator();
+    const FQuat MeshFacing = MeshRotation.Quaternion();
+    const float TargetYaw = FRotator::NormalizeAxis(Main->SourceFacingWorld.Yaw - BodyRoot.Rotator().Yaw);
+    for (FTransformTrajectorySample& Sample : Trajectory.Samples)
+    {
+        if (Sample.TimeInSeconds > 0.0f)
+        {
+            const float SampleYaw = FRotator::NormalizeAxis(Sample.Facing.Rotator().Yaw - MeshRotation.Yaw);
+            if (FMath::Abs(static_cast<double>(TargetYaw) + SampleYaw) > 180.0)
+            {
+                Sample.Facing = MeshFacing;
+            }
+        }
+    }
+}
+
+bool UBBBAnimInstance::IsMatchedTurnInsufficient(const FMotionMatchingAnimNodeReference& Node, const FTransform& BodyRoot) const
+{
+    FPoseSearchBlueprintResult Match;
+    bool bValid = false;
+    UMotionMatchingAnimNodeLibrary::GetMotionMatchingSearchResult(Node, Match, bValid);
+    if (!bValid || !Match.bIsContinuingPoseSearch || Match.bLoop || Match.bIsMirrored)
+    {
+        return false;
+    }
+
+    const float TargetYaw = FRotator::NormalizeAxis(GetBBBMainAnimInstanceThreadSafe()->SourceFacingWorld.Yaw - BodyRoot.Rotator().Yaw);
+    if (FMath::Abs(TargetYaw) <= 20.0f)
+    {
+        return false;
+    }
+    float ClipYaw = 0.0f;
+    return UBBBMotionMatchingLibrary::TryGetAnimationRootYawDelta(Match.SelectedAnim, Match.SelectedTime, Match.WantedPlayRate * 0.2f, ClipYaw)
+        && (static_cast<double>(TargetYaw) * ClipYaw <= 0.0 || FMath::Abs(ClipYaw) < 2.0f);
+}
+
+FVector UBBBAnimInstance::CalculateVelocityAcceleration(FVector Current, FVector Previous, double DeltaTime)
+{
+    return (Current - Previous) / FMath::Max(DeltaTime, 0.001);
+}
+
+bool UBBBAnimInstance::MatchesLandingSpeed(FVector Landing, double Threshold, bool bHeavy)
+{
+    const double Speed = FMath::Abs(Landing.Z);
+    const double Limit = FMath::Abs(Threshold);
+    return bHeavy ? Speed >= Limit : Speed < Limit;
+}
 
 bool UBBBAnimInstance::ShouldContinueMatchedTransition(
     const FMotionMatchingAnimNodeReference &Node,
@@ -157,6 +220,9 @@ void UBBBAnimInstance::PublishAnimationFacts(
     const FBBBCharacterAnimationFactState &FactState,
     const FBBBCharacterRecoilState &RecoilState, const FBBBCharacterWeaponHandlingState &HandlingState)
 {
+    bWeaponAnimationBound = FactState.bWeaponAnimationBound;
+    PublishedFireSequence = FactState.WeaponFireSequence;
+    PublishedSecondsSinceFire = FactState.WeaponSecondsSinceFire;
     SourceLifePhase = FactState.LifePhase;
     SourceLocomotionDatabaseChooser = FactState.LocomotionDatabaseChooser;
     // 将角色运行事实复制到动画实例供动画图安全读取

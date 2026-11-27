@@ -22,7 +22,7 @@ void FBBBCharacterRecoilProcessor::Update(FBBBCharacterAnimationUpdateContext &C
         return;
     }
 
-    const int32 Sequence = Source->GetFireSequence();
+    const int32 Sequence = Facts.WeaponFireSequence;
     if (State.Source.Get() != Source)
     {
         State.Source = Source;
@@ -44,7 +44,7 @@ void FBBBCharacterRecoilProcessor::Update(FBBBCharacterAnimationUpdateContext &C
     }
     const float Speed = Source->GetRecoilReturnSpeed();
     const float FireInterval = Source->GetRecoilFireInterval();
-    const float SinceLastFire = Source->GetTimeSinceLastFireSeconds();
+    const float SinceLastFire = Facts.WeaponSecondsSinceFire;
     if (!ensureMsgf(FMath::IsFinite(Scale) && Scale >= 0.0f && FMath::IsFinite(Speed) && Speed > 0.0f
         && FMath::IsFinite(FireInterval) && FireInterval > 0.0f
         && FMath::IsFinite(SinceLastFire) && SinceLastFire >= 0.0f,
