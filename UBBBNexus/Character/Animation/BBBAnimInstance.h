@@ -189,28 +189,32 @@ protected:
 
 public:
 
-    /** @return 角色是否处于站立步行档位 */
+    /** @return 角色动画层是否处于站立步行档位 受实际速度上限降档约束 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
     bool IsWalking() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return !Main->bSourceRunning && !Main->bSourceSprinting && !Main->bSourceCrouching;
+        return !Main->bSourceCrouching && !IsRunning() && !IsSprinting();
     }
 
-    /** @return 角色是否处于站立跑步档位 */
+    /** @return 角色动画层是否处于站立跑步档位 低移速倍率武器冲刺时自动降档至跑步 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
     bool IsRunning() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return Main->bSourceRunning && !Main->bSourceSprinting && !Main->bSourceCrouching;
+        if (Main->bSourceCrouching || (!Main->bSourceRunning && !Main->bSourceSprinting))
+        {
+            return false;
+        }
+        return !IsSprinting() && Main->SourceMaxSpeed >= 320.0f;
     }
 
-    /** @return 角色是否处于站立冲刺档位 */
+    /** @return 角色动画层是否处于站立冲刺档位 仅实际速度上限满足冲刺步幅时进入 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
     bool IsSprinting() const
     {
         const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-        return Main->bSourceSprinting && !Main->bSourceCrouching;
+        return Main->bSourceSprinting && !Main->bSourceCrouching && Main->SourceMaxSpeed >= 520.0f;
     }
 
     /** @return 角色是否处于站立跑步或冲刺档位 */

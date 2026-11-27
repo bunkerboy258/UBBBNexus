@@ -375,9 +375,7 @@ void FBBBCharacterLocomotionProcessor::Update(
     const UCurveFloat &StrafeSpeedMapCurve = Context.StrafeSpeedMapCurve;
     // 镜像使用 CMC 已接收的控制朝向还原旋转 地面保持即时到达 空中保留追向速率
     Movement.bUseControllerDesiredRotation = Context.Execution.bIsMirror;
-    Movement.RotationRate.Yaw = Movement.IsMovingOnGround()
-        ? 360.0f
-        : FMath::Max(Config.AirRotationRateYaw, 0.0f);
+    Movement.RotationRate.Yaw = 360.0f;
     if (Context.Execution.bIsMirror && Movement.IsMovingOnGround())
     {
         Movement.RotationRate.Yaw = -1.0f;
