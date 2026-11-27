@@ -7,7 +7,6 @@
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
-#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemAddLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
 #include "BBBWork/UBBBNexus/Item/Wearable/Catalog/BBBWearableCatalog.h"
 #include "BBBWork/UBBBNexus/Item/Consumable/Catalog/BBBConsumableCatalog.h"
@@ -64,7 +63,7 @@ void ABBBItemDebugActor::BeginPlay()
 void ABBBItemDebugActor::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    if (GetGameTimeSinceCreation() >= WaitTimeout)
+    if (NextBatchIndex == 0 && GetGameTimeSinceCreation() >= WaitTimeout)
     {
         UE_LOG(LogBBBItemDebug, Error, TEXT("%s 等待物品注入目标就绪超时 %.2f 秒"), *GetPathName(), WaitTimeout);
         SetActorTickEnabled(false);
@@ -74,11 +73,15 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     if (!Character)
     {
         APlayerController *Controller = UGameplayStatics::GetPlayerController(this, PlayerIndex);
-        if (!Controller || !Controller->IsLocalController())
-        {
-            return;
-        }
-        Character = Cast<ABBBCharacter>(Controller->GetPawn());
+        Character = Controller && Controller->IsLocalController() ? Cast<ABBBCharacter>(Controller->GetPawn()) : nullptr;
+    }
+    if (NextBatchIndex > 0 && (!IsValid(Character) || BatchTarget.Get() != Character))
+    {
+        UE_LOG(LogBBBItemDebug, Warning, TEXT("%s 发放目标已变化 停止提交剩余 %d 批物品"),
+            *GetPathName(), ItemBatches.Num() - NextBatchIndex);
+        ItemBatches.Reset();
+        SetActorTickEnabled(false);
+        return;
     }
     if (!IsValid(Character) || !Character->HasActorBegunPlay()
         || Character->RuntimeData.External.ReadWorldState().FrameDeltaSeconds <= 0.0f)
@@ -88,6 +91,7 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     if (Character->RuntimeData.External.ReadNetworkIdentityState().bIsMirror)
     {
         UE_LOG(LogBBBItemDebug, Warning, TEXT("%s 拒绝向镜像角色 %s 注入物品"), *GetPathName(), *Character->GetPathName());
+        ItemBatches.Reset();
         SetActorTickEnabled(false);
         return;
     }
@@ -97,15 +101,30 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
     {
         return;
     }
-    const auto &Config = Character->GetCharacterConfig().Item;
-    if (ItemDefinitions.IsEmpty())
+    if (NextBatchIndex == 0)
     {
-        UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品目录或待注入物品列表无效 不提交入包输入"), *GetPathName());
-        SetActorTickEnabled(false);
-        return;
+        if (!PrepareItemBatches(*Character))
+        {
+            ItemBatches.Reset();
+            SetActorTickEnabled(false);
+            return;
+        }
+        BatchTarget = Character;
     }
-    FBBBCharacterItemAddLocalControlPacket Packet;
-    Packet.ItemIds.Reserve(ItemDefinitions.Num());
+    Character->SubmitInput(MoveTemp(ItemBatches[NextBatchIndex]));
+    ++NextBatchIndex;
+    if (NextBatchIndex == ItemBatches.Num())
+    {
+        UE_LOG(LogBBBItemDebug, Display, TEXT("%s 已向角色 %s 提交全部 %d 批入包输入"),
+            *GetPathName(), *Character->GetPathName(), NextBatchIndex);
+        ItemBatches.Reset();
+        SetActorTickEnabled(false);
+    }
+}
+
+bool ABBBItemDebugActor::PrepareItemBatches(const ABBBCharacter &Character)
+{
+    const auto &Config = Character.GetCharacterConfig().Item;
     for (const UBBBItemDefinition *Definition : ItemDefinitions)
     {
         int32 Registered = 0;
@@ -137,24 +156,28 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
         if (Registered != 1 || RegisteredDefinition != Definition)
         {
             UE_LOG(LogBBBItemDebug, Error, TEXT("物品必须唯一登记 %s"), *Definition->ItemId.ToString());
-            SetActorTickEnabled(false);
-            return;
+            return false;
         }
+        if (ItemBatches.IsEmpty() || ItemBatches.Last().ItemIds.Num() == ItemsPerFrame)
+        {
+            ItemBatches.AddDefaulted();
+        }
+        auto &Packet = ItemBatches.Last();
         Packet.ItemIds.Add(Definition->ItemId);
         Packet.Quantities.Add(Definition->ItemType == EBBBItemType::Consumable ? Definition->MaxStack : 1);
     }
-    if (Packet.ItemIds.IsEmpty())
+    if (ItemBatches.IsEmpty())
     {
-        UE_LOG(LogBBBItemDebug, Warning, TEXT("%s 未配置适用于角色 %s 的调试物品"), *GetPathName(), *Character->GetPathName());
-        SetActorTickEnabled(false);
-        return;
+        UE_LOG(LogBBBItemDebug, Warning, TEXT("%s 未配置适用于角色 %s 的调试物品"), *GetPathName(), *Character.GetPathName());
+        return false;
     }
-    const FString ItemNames = FString::JoinBy(Packet.ItemIds, TEXT(" "), [](const FName Id)
+    for (const auto &Packet : ItemBatches)
     {
-        return Id.ToString();
-    });
-    Character->SubmitInput(MoveTemp(Packet));
-    SetActorTickEnabled(false);
-
-    UE_LOG(LogBBBItemDebug, Display, TEXT("%s 已向角色 %s 提交物品 %s 的入包输入"), *GetPathName(), *Character->GetPathName(), *ItemNames);
+        if (!Packet.IsValid())
+        {
+            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品发放清单有无效输入 请检查所配置物品的数量"), *GetPathName());
+            return false;
+        }
+    }
+    return true;
 }
