@@ -25,7 +25,7 @@
 
 namespace
 {
-    constexpr int32 MaxVisualFragments = 24;
+    constexpr int32 MaxVisualFragments = 36;
 
     void BuildFragmentDirections(UWorld& World, const AActor& Actor, const FVector& Origin, float BodyRadius,
         int32 FragmentCount, uint32 Seed, FQuat& OutRotation, TArray<FVector>& OutLocalDirections)
@@ -90,8 +90,10 @@ namespace
                 FBBBProjectileImpact Impact;
                 Impact.Position = WorldHit.ImpactPoint;
                 Impact.Normal = WorldHit.ImpactNormal;
+                Impact.Direction = Direction;
                 Impact.Surface = SurfaceType1;
                 Impact.bStaticSurface = true;
+                Impact.bFragment = true;
                 Impacts.Add(Impact);
                 StreakEndpoints.Add(WorldHit.ImpactPoint);
             }

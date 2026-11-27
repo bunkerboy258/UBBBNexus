@@ -233,14 +233,16 @@ void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const fl
     }
 
     const FRandomStream PulseRandom(static_cast<int32>(VariationSeed ^ 0xb7e15163u));
-    const float Time = PulseAge - PulseRandom.FRandRange(0.0f, 0.18f);
+    const float PhaseDelay = PulseRandom.FRandRange(0.0f, 0.65f);
+    const float CycleSeconds = PulseRandom.FRandRange(0.95f, 1.45f);
+    const float Time = PulseAge - PhaseDelay;
     if (Time < 0.0f || !CanHitReact() || !PresentationSettings)
     {
         return;
     }
 
-    const int32 Cycle = FMath::FloorToInt(Time / 0.62f);
-    const int32 Pulse = Cycle * 2 + (Time - Cycle * 0.62f >= 0.21f ? 1 : 0);
+    const int32 Cycle = FMath::FloorToInt(Time / CycleSeconds);
+    const int32 Pulse = Cycle * 2 + (Time - Cycle * CycleSeconds >= CycleSeconds * 0.42f ? 1 : 0);
     if (Pulse <= ShockPosePulse)
     {
         return;
@@ -249,11 +251,12 @@ void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const fl
 
     EBBBMonsterHitRegion Region = EBBBMonsterHitRegion::Head;
     int32 ProfileIndex = 1;
-    const int32 RegionIndex = (Pulse + PulseRandom.RandRange(0, 2)) % 3;
+    const int32 RegionIndex = (Pulse + PulseRandom.RandRange(0, 3)) % 4;
     if (!bCrawling && RegionIndex != 0)
     {
-        Region = RegionIndex == 1 ? EBBBMonsterHitRegion::LeftArm : EBBBMonsterHitRegion::RightArm;
-        ProfileIndex = 2;
+        if (RegionIndex == 1) { Region = EBBBMonsterHitRegion::LeftArm; ProfileIndex = 2; }
+        else if (RegionIndex == 2) { Region = EBBBMonsterHitRegion::RightArm; ProfileIndex = 2; }
+        else { Region = EBBBMonsterHitRegion::Torso; ProfileIndex = 0; }
     }
     const auto& Rule = PresentationSettings->HitReaction.ReadRegion(Region);
     const auto* PhysicsAsset = Mesh->GetPhysicsAsset();
@@ -264,10 +267,10 @@ void UBBBMonsterHitReactionComponent::ApplyShockPose(const float Start, const fl
         return;
     }
 
-    const float Strength = FMath::Clamp(Remaining / 2.5f, 0.15f, 1.0f);
+    const float Strength = FMath::Clamp(Remaining / 3.0f, 0.25f, 1.0f);
     FHitReactImpulseParams Impulse;
     Impulse.AngularImpulse.bApplyImpulse = true;
-    Impulse.AngularImpulse.Impulse = Rule.AngularImpulse * (bCrawling ? 0.38f : 0.55f) * Strength;
+    Impulse.AngularImpulse.Impulse = Rule.AngularImpulse * (bCrawling ? 0.50f : 0.85f) * Strength;
     FHitReactImpulse_WorldParams Axes;
     Axes.AngularDirection = Mesh->GetForwardVector() * (Pulse % 2 == 0 ? 1.0f : -1.0f);
     const FHitReactInputParams Params(AvailableProfiles[ProfileIndex], Rule.Bone, true);

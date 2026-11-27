@@ -33,6 +33,8 @@ public:
     void PublishBulletHoles(TConstArrayView<FBBBProjectileImpact> Impacts);
     /** @param Origin 爆炸中心 @param Endpoints 破片划出终点列表 @return 无 渲染瞬时白色破片划出线 */
     void SpawnFragStreaks(const FVector &Origin, TConstArrayView<FVector> Endpoints);
+    /** @return 已预加载与预热的燃烧弹地面焦黑贴花材质 */
+    UMaterialInterface *GetScorchDecalMaterial();
     virtual void Initialize(FSubsystemCollectionBase &Collection) override;
     virtual void Tick(float DeltaTime) override;
     virtual bool IsTickable() const override;
@@ -63,9 +65,13 @@ private:
     TObjectPtr<UNiagaraDataChannelAsset> ActiveChannel;
     UPROPERTY(Transient)
     TObjectPtr<UNiagaraSystem> ActiveSystem;
-    /** 固定容量 64 槽弹孔贴花环形池 */
+    /** 固定容量 64 槽弹孔/破片撕裂贴花环形池 */
     UPROPERTY(Transient)
     TObjectPtr<UMaterialInterface> BulletHoleMaterial;
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInterface> FragTearMaterial;
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInterface> ScorchDecalMaterial;
     UPROPERTY(Transient)
     TArray<TObjectPtr<UDecalComponent>> BulletHolePool;
     TArray<FVector> BulletHolePositions;

@@ -58,7 +58,7 @@ struct ABBB_EVAC_API FBBBMonsterMobilityFragment final : public FMassFragment
     {
         if (IsShocked(Now))
         {
-            return !bCrawling && Now - ShockStartedAt < ShockRecoilSeconds;
+            return !bCrawling;
         }
         return !bCrawling && StaggerEndsAt > StaggerStartedAt && Now >= StaggerStartedAt && Now < StaggerEndsAt;
     }

@@ -22,6 +22,37 @@ void UBBBProjectilePresentationSubsystem::Initialize(FSubsystemCollectionBase &C
     Collection.InitializeDependency<UMassSpawnerSubsystem>();
     Collection.InitializeDependency<UMassSimulationSubsystem>();
     Super::Initialize(Collection);
+    if (UWorld *World = GetWorld(); World && World->GetNetMode() != NM_DedicatedServer && FApp::CanEverRender())
+    {
+        BulletHoleMaterial = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileBulletHole_V2.M_BBBProjectileBulletHole_V2"));
+        FragTearMaterial = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileFragTear.M_BBBProjectileFragTear"));
+        ScorchDecalMaterial = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal_V2.M_Grenade_Incendiary_ScorchDecal_V2"));
+        // 预热三套贴花材质 PSO 彻底避免首次引爆/开火瞬间出现引擎默认绿色方形贴花
+        for (UMaterialInterface *Mat : {BulletHoleMaterial.Get(), FragTearMaterial.Get(), ScorchDecalMaterial.Get()})
+        {
+            if (Mat)
+            {
+                Mat->EnsureIsComplete();
+            }
+        }
+    }
+}
+
+UMaterialInterface *UBBBProjectilePresentationSubsystem::GetScorchDecalMaterial()
+{
+    if (!ScorchDecalMaterial)
+    {
+        ScorchDecalMaterial = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal_V2.M_Grenade_Incendiary_ScorchDecal_V2"));
+        if (ScorchDecalMaterial)
+        {
+            ScorchDecalMaterial->EnsureIsComplete();
+        }
+    }
+    return ScorchDecalMaterial;
 }
 
 void UBBBProjectilePresentationSubsystem::Prepare(UBBBProjectileDefinition &Definition)
@@ -209,15 +240,20 @@ void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBB
     {
         BulletHoleMaterial = LoadObject<UMaterialInterface>(nullptr,
             TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileBulletHole_V2.M_BBBProjectileBulletHole_V2"));
-        if (!BulletHoleMaterial)
-        {
-            return;
-        }
+    }
+    if (!FragTearMaterial)
+    {
+        FragTearMaterial = LoadObject<UMaterialInterface>(nullptr,
+            TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileFragTear.M_BBBProjectileFragTear"));
+    }
+    if (!BulletHoleMaterial && !FragTearMaterial)
+    {
+        return;
     }
 
     constexpr int32 MaxBulletHoles = 64;
-    constexpr int32 MaxPerFrame = 16;
-    constexpr double MinSpacingSq = 16.0;
+    constexpr int32 MaxPerFrame = 24;
+    constexpr double MinSpacingSq = 9.0;
     int32 Placed = 0;
 
     for (const FBBBProjectileImpact &Impact : Impacts)
@@ -244,13 +280,19 @@ void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBB
             continue;
         }
 
+        UMaterialInterface *TargetMat = (Impact.bFragment && FragTearMaterial) ? FragTearMaterial.Get() : BulletHoleMaterial.Get();
+        if (!TargetMat)
+        {
+            continue;
+        }
+
         UDecalComponent *Decal = nullptr;
         if (BulletHolePool.Num() < MaxBulletHoles)
         {
             Decal = NewObject<UDecalComponent>(World);
-            Decal->SetDecalMaterial(BulletHoleMaterial);
-            Decal->DecalSize = FVector(8.0, 4.2, 4.2);
-            Decal->FadeScreenSize = 0.006f;
+            Decal->SetDecalMaterial(TargetMat);
+            Decal->DecalSize = FVector(4.5, 1.45, 1.45);
+            Decal->FadeScreenSize = 0.004f;
             Decal->SortOrder = 1;
             Decal->PrimaryComponentTick.bCanEverTick = false;
             Decal->RegisterComponentWithWorld(World);
@@ -267,12 +309,42 @@ void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBB
 
         if (IsValid(Decal))
         {
+            if (Decal->GetDecalMaterial() != TargetMat)
+            {
+                Decal->SetDecalMaterial(TargetMat);
+            }
             const FVector Normal = Impact.Normal.GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
-            const FQuat BaseRot = (-Normal).ToOrientationQuat();
-            const FQuat RandomRoll(Normal, FMath::FRandRange(0.0f, UE_TWO_PI));
-            const float SizeScale = FMath::FRandRange(0.82f, 1.22f);
-            Decal->SetWorldLocationAndRotation(Impact.Position, RandomRoll * BaseRot);
-            Decal->SetWorldScale3D(FVector(1.0f, SizeScale, SizeScale));
+            const FVector ProjectDir = -Normal;
+            if (Impact.bFragment && FragTearMaterial)
+            {
+                // 破片留下横向狭长撕裂状弹孔（水平为主并带自然小幅倾角）
+                FVector UpRef = FMath::Abs(Normal.Z) > 0.92 ? FVector::ForwardVector : FVector::UpVector;
+                FVector HorizontalAxis = FVector::CrossProduct(UpRef, ProjectDir).GetSafeNormal();
+                if (!Impact.Direction.IsNearlyZero())
+                {
+                    const FVector Tangent = FVector::VectorPlaneProject(Impact.Direction, Normal);
+                    if (Tangent.SizeSquared() > 0.04)
+                    {
+                        HorizontalAxis = FMath::Lerp(HorizontalAxis, Tangent.GetSafeNormal(), 0.35).GetSafeNormal();
+                    }
+                }
+                const FVector LocalZ = FVector::CrossProduct(ProjectDir, HorizontalAxis).GetSafeNormal();
+                const FQuat BaseRot = FRotationMatrix::MakeFromXZ(ProjectDir, LocalZ).ToQuat();
+                const FQuat Tilt(Normal, FMath::DegreesToRadians(FMath::FRandRange(-18.0f, 18.0f)));
+                const float LengthScale = FMath::FRandRange(2.85f, 4.10f);
+                const float WidthScale = FMath::FRandRange(1.05f, 1.45f);
+                Decal->SetWorldLocationAndRotation(Impact.Position, Tilt * BaseRot);
+                Decal->SetWorldScale3D(FVector(1.1f, LengthScale, WidthScale));
+            }
+            else
+            {
+                // 普通枪弹：合理尺寸的黑色圆形凹陷弹孔（约 2.5~3.4 cm 直径）
+                const FQuat BaseRot = ProjectDir.ToOrientationQuat();
+                const FQuat RandomRoll(Normal, FMath::FRandRange(0.0f, UE_TWO_PI));
+                const float SizeScale = FMath::FRandRange(0.85f, 1.18f);
+                Decal->SetWorldLocationAndRotation(Impact.Position, RandomRoll * BaseRot);
+                Decal->SetWorldScale3D(FVector(1.0f, SizeScale, SizeScale));
+            }
         }
         ++Placed;
     }
@@ -306,7 +378,7 @@ void UBBBProjectilePresentationSubsystem::SpawnFragStreaks(const FVector &Origin
         FragStreakMesh->RegisterComponentWithWorld(World);
     }
 
-    constexpr int32 MaxActiveStreaks = 64;
+    constexpr int32 MaxActiveStreaks = 80;
     for (const FVector &End : Endpoints)
     {
         if (FragStreaks.Num() >= MaxActiveStreaks)
@@ -321,7 +393,7 @@ void UBBBProjectilePresentationSubsystem::SpawnFragStreaks(const FVector &Origin
         Streak.Origin = Origin;
         Streak.Endpoint = End;
         Streak.Age = 0.0f;
-        Streak.Duration = FMath::FRandRange(0.075f, 0.125f);
+        Streak.Duration = FMath::FRandRange(0.105f, 0.165f);
         FragStreaks.Add(Streak);
     }
     UpdateFragStreaks(0.0f);
@@ -368,7 +440,7 @@ void UBBBProjectilePresentationSubsystem::UpdateFragStreaks(const float DeltaTim
         }
         const FVector Dir = Delta / Length;
         const FQuat Rot = FQuat::FindBetweenNormals(FVector::UpVector, Dir);
-        const double RadiusScale = FMath::Lerp(0.018, 0.004, Alpha);
+        const double RadiusScale = FMath::Lerp(0.025, 0.005, Alpha);
         Transforms.Emplace(Rot, (A + B) * 0.5, FVector(RadiusScale, RadiusScale, Length / 100.0));
     }
 
@@ -391,6 +463,8 @@ void UBBBProjectilePresentationSubsystem::Deinitialize()
     BulletHolePool.Reset();
     BulletHolePositions.Reset();
     BulletHoleMaterial = nullptr;
+    FragTearMaterial = nullptr;
+    ScorchDecalMaterial = nullptr;
     NextBulletHoleSlot = 0;
     if (IsValid(FragStreakMesh))
     {

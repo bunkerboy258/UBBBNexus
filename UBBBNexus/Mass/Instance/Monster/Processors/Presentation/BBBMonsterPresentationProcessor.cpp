@@ -389,22 +389,36 @@ void UBBBMonsterPresentationProcessor::Execute(FMassEntityManager& EntityManager
             float StaggerProgress = Mobility.StaggerEndsAt > Mobility.StaggerStartedAt
                 ? FMath::Clamp((Now - Mobility.StaggerStartedAt) / (Mobility.StaggerEndsAt - Mobility.StaggerStartedAt), 0.0f, 1.0f) : 0.0f;
 
+            EBBBMonsterHitRegion StaggerRegion = Mobility.StaggerRegion;
             if (bShocked && bShowStagger)
             {
-                const float RecoilDuration = FMath::Min(FBBBMonsterMobilityFragment::ShockRecoilSeconds,
-                    Mobility.ShockEndsAt - Mobility.ShockStartedAt);
+                // 低速错峰周期踉跄：按个体种子错开起手相位、独立慢速周期并轮换失衡部位，杜绝群体齐步抽搐
                 const FRandomStream RecoilRandom(static_cast<int32>(VariationSeed ^ 0x243f6a88u));
-                const float MaxRecoilDelay = 0.08f * RecoilDuration / FBBBMonsterMobilityFragment::ShockRecoilSeconds;
-                const float RecoilDelay = RecoilRandom.FRandRange(0.0f, MaxRecoilDelay);
-                bShowStagger = ShockAge >= RecoilDelay;
-
-                // 在剩余起手时间内采样到原来的结束姿势
-                const float SampleAge = (ShockAge - RecoilDelay) * (RecoilDuration / (RecoilDuration - RecoilDelay));
-                StaggerProgress = FMath::Clamp(SampleAge / 2.3333333f, 0.0f, 1.0f);
+                const float StartDelay = RecoilRandom.FRandRange(0.0f, 0.75f);
+                const float CycleDuration = RecoilRandom.FRandRange(2.35f, 3.40f);
+                if (ShockAge < StartDelay)
+                {
+                    bShowStagger = false;
+                }
+                else
+                {
+                    const float ActiveAge = ShockAge - StartDelay;
+                    const int32 CycleIndex = FMath::FloorToInt(ActiveAge / CycleDuration);
+                    const float CyclePhase = FMath::Fmod(ActiveAge, CycleDuration) / CycleDuration;
+                    // 慢速平缓进退采样（0.08 -> 0.80 -> 0.08），消除周期首尾跳变
+                    const float Wave = 0.5f - 0.5f * FMath::Cos(CyclePhase * UE_TWO_PI);
+                    StaggerProgress = FMath::Lerp(0.08f, 0.82f, Wave);
+                    static constexpr EBBBMonsterHitRegion ShockRegions[4] = {
+                        EBBBMonsterHitRegion::Head,
+                        EBBBMonsterHitRegion::LeftArm,
+                        EBBBMonsterHitRegion::RightArm,
+                        EBBBMonsterHitRegion::Torso
+                    };
+                    StaggerRegion = ShockRegions[(CycleIndex + RecoilRandom.RandRange(0, 3)) & 3];
+                }
             }
 
-            Presentation->ApplyStaggerState(bShowStagger, StaggerProgress,
-                bShocked ? EBBBMonsterHitRegion::Head : Mobility.StaggerRegion);
+            Presentation->ApplyStaggerState(bShowStagger, StaggerProgress, StaggerRegion);
             Presentation->ApplyHitReaction(HitReactions[Index]);
             if (bShocked || Mobility.ShockStartedAt > 0.0f)
             {

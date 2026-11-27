@@ -564,6 +564,10 @@ void UBBBMonsterDamageProcessor::Execute(FMassEntityManager&, FMassExecutionCont
                 }
                 Motion.ShockEndsAt = Now + static_cast<float>(ShockEnd - ServerTime);
                 Motion.HitStopEndsAt = FMath::Max(Motion.HitStopEndsAt, Motion.ShockEndsAt);
+                // 震撼结束后附加 2.5 秒低速恢复期 强化控制感
+                Motion.SlowMinimumRatio = FMath::Min(Motion.SlowMinimumRatio, 0.25f);
+                Motion.SlowRecoveryStartedAt = Motion.ShockEndsAt;
+                Motion.SlowEndsAt = FMath::Max(Motion.SlowEndsAt, Motion.ShockEndsAt + 2.5f);
             }
             if (!Motion.IsShocked(Now) && !Motion.bCrawling && ActiveStagger != nullptr
                 && ActiveStagger->ActiveAttackId != Motion.StaggerAttackId)

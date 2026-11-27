@@ -17,4 +17,10 @@ struct FBBBProjectileImpact final
 
     /** 是否命中静态场景表面（仅静态表面生成弹孔） */
     bool bStaticSurface = false;
+
+    /** 是否为破片手雷破片命中（生成横向撕裂状弹孔） */
+    bool bFragment = false;
+
+    /** 世界空间入射方向（用于破片撕裂贴花定向） */
+    FVector Direction = FVector::ZeroVector;
 };

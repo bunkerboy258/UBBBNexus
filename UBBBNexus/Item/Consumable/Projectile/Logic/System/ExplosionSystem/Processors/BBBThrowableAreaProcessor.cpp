@@ -4,6 +4,7 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Projectile/Config/BBBThrowableDefinition.h"
 #include "BBBWork/UBBBNexus/Mass/Core/BBBMassSubsystem.h"
 #include "BBBWork/UBBBNexus/Mass/Instance/Monster/Input/LocalControl/Health/FBBBMonsterDamageLocalControlPacket.h"
+#include "BBBWork/UBBBNexus/Mass/Instance/Projectile/Presentation/BBBProjectilePresentationSubsystem.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
@@ -166,26 +167,36 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         else
         {
             // CS2 风格贴地徐徐扩散：内部已按 12.8 米真实直径分布原尺寸火苗 仅按 CurrentRadius/Area.Radius 做 XY 扩散
-            const float Spread = FMath::Clamp(CurrentRadius / FMath::Max(Area.Radius, 1.0f), 0.35f, 1.0f);
+            const float Spread = FMath::Clamp(CurrentRadius / FMath::Max(Area.Radius, 1.0f), 0.28f, 1.0f);
             Actor.AreaEffect->SetWorldScale3D(FVector(Spread, Spread, 1.0f));
             if (!Actor.AreaDecal)
             {
-                if (auto* ScorchMat = LoadObject<UMaterialInterface>(nullptr,
-                    TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal_V2.M_Grenade_Incendiary_ScorchDecal_V2")))
+                UMaterialInterface* ScorchMat = nullptr;
+                if (auto* Display = World.GetSubsystem<UBBBProjectilePresentationSubsystem>())
+                {
+                    ScorchMat = Display->GetScorchDecalMaterial();
+                }
+                if (!ScorchMat)
+                {
+                    ScorchMat = LoadObject<UMaterialInterface>(nullptr,
+                        TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal_V2.M_Grenade_Incendiary_ScorchDecal_V2"));
+                }
+                if (ScorchMat)
                 {
                     Actor.AreaDecal = NewObject<UDecalComponent>(&Actor);
                     Actor.AreaDecal->SetDecalMaterial(ScorchMat);
-                    Actor.AreaDecal->DecalSize = FVector(45.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
+                    Actor.AreaDecal->DecalSize = FVector(45.0, Area.Radius * 1.02f, Area.Radius * 1.02f);
                     Actor.AreaDecal->FadeScreenSize = 0.002f;
                     Actor.AreaDecal->PrimaryComponentTick.bCanEverTick = false;
                     Actor.AreaDecal->SetWorldLocationAndRotation(Fact.AreaGround, FRotator(-90.0f, FMath::FRandRange(0.0f, 360.0f), 0.0f));
+                    Actor.AreaDecal->SetWorldScale3D(FVector(1.0f, Spread, Spread));
                     Actor.AreaDecal->RegisterComponentWithWorld(&World);
                 }
             }
             if (Actor.AreaDecal)
             {
-                Actor.AreaDecal->DecalSize = FVector(45.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
-                Actor.AreaDecal->MarkRenderStateDirty();
+                // 只更新缩放矩阵 不改 DecalSize 也不每帧 MarkRenderStateDirty 避免代理反复重建与首帧绿色占位闪屏
+                Actor.AreaDecal->SetWorldScale3D(FVector(1.0f, Spread, Spread));
             }
         }
         if (bCreateEffect && !Actor.AreaEffect->IsActive())
