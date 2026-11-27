@@ -24,10 +24,6 @@ struct FBBBCharacterLocomotionConfig
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (DisplayName = "冲刺速度"))
     FVector SprintSpeeds = FVector(700.0f, 500.0f, 400.0f);
 
-    /** 体力耗尽后再次允许冲刺所需的最低体力 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (ClampMin = "0.0", DisplayName = "冲刺恢复体力阈值"))
-    float SprintResumeStamina = 15.0f;
-
     /** 前进 侧移 后退方向的蹲伏速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|步态", meta = (DisplayName = "蹲伏速度"))
     FVector CrouchSpeeds = FVector(225.0f, 200.0f, 180.0f);

@@ -121,6 +121,7 @@ void UBBBCharacterNetworkComponent::GetLifetimeReplicatedProps(
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedHitDirection, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedStamina, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedMaximumStamina, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, bReplicatedStaminaLockedUntilFull, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedStaminaRevision, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionId, COND_SimulatedOnly);
     DOREPLIFETIME_CONDITION(UBBBCharacterNetworkComponent, ReplicatedInteractionGeneration, COND_SimulatedOnly);
@@ -373,7 +374,8 @@ void UBBBCharacterNetworkComponent::ReplicateLife(EBBBCharacterLifePhase Phase, 
     GetOwner()->ForceNetUpdate();
 }
 
-void UBBBCharacterNetworkComponent::ReplicateStamina(const float Current, const float Maximum, const uint64 Revision)
+void UBBBCharacterNetworkComponent::ReplicateStamina(
+    const float Current, const float Maximum, const uint64 Revision, const bool bLockedUntilFull)
 {
     if (!IsOwnerAuthority() || Revision <= ReplicatedStaminaRevision)
     {
@@ -381,17 +383,18 @@ void UBBBCharacterNetworkComponent::ReplicateStamina(const float Current, const 
     }
     ReplicatedStamina = Current;
     ReplicatedMaximumStamina = Maximum;
+    bReplicatedStaminaLockedUntilFull = bLockedUntilFull;
     ReplicatedStaminaRevision = Revision;
     GetOwner()->ForceNetUpdate();
 }
 
 void UBBBCharacterNetworkComponent::ServerSubmitStamina_Implementation(
-    const float Current, const float Maximum, const uint64 Revision)
+    const float Current, const float Maximum, const uint64 Revision, const bool bLockedUntilFull)
 {
-    SubmitStaminaInput(Current, Maximum, Revision);
+    SubmitStaminaInput(Current, Maximum, Revision, bLockedUntilFull);
     if (IsOwnerAuthority())
     {
-        ReplicateStamina(Current, Maximum, Revision);
+        ReplicateStamina(Current, Maximum, Revision, bLockedUntilFull);
     }
 }
 
@@ -401,15 +404,16 @@ void UBBBCharacterNetworkComponent::OnRep_Stamina()
     {
         Character = Cast<ABBBCharacter>(GetOwner());
     }
-    SubmitStaminaInput(ReplicatedStamina, ReplicatedMaximumStamina, ReplicatedStaminaRevision);
+    SubmitStaminaInput(
+        ReplicatedStamina, ReplicatedMaximumStamina, ReplicatedStaminaRevision, bReplicatedStaminaLockedUntilFull);
 }
 
 void UBBBCharacterNetworkComponent::SubmitStaminaInput(
-    const float Current, const float Maximum, const uint64 Revision)
+    const float Current, const float Maximum, const uint64 Revision, const bool bLockedUntilFull)
 {
     if (Character && Revision > 0)
     {
-        Character->SubmitInput(FBBBStaminaAuthorityFactPacket{Current, Maximum, Revision});
+        Character->SubmitInput(FBBBStaminaAuthorityFactPacket{Current, Maximum, Revision, bLockedUntilFull});
     }
 }
 

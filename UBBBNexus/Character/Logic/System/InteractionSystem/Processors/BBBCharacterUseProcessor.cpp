@@ -67,7 +67,7 @@ void FBBBCharacterUseProcessor::Update(FBBBCharacterInteractionUpdateContext &Co
         return;
     }
     if (Inputs.bQuickMelee && !Use.bBusy && Use.bSwitchAllowed && Context.Character.IsItemUsable()
-        && Context.Character.GetStamina() > 0.0f)
+        && Context.Character.CanSpendStamina())
     {
         auto *Equipment = Context.Character.GetHeldEquipment();
         const auto *Definition = Equipment ? Equipment->GetDefinition() : nullptr;

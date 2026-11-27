@@ -23,6 +23,7 @@ void FBBBCharacterStaminaProcessor::Update(FBBBCharacterStaminaUpdateContext &Co
         State.Maximum = Maximum;
         State.Current = Maximum;
         State.SecondsSinceDrain = Config.RegenDelaySeconds;
+        State.bLockedUntilFull = false;
         State.bInitialized = true;
         ++State.Revision;
     }
@@ -95,7 +96,16 @@ void FBBBCharacterStaminaProcessor::Update(FBBBCharacterStaminaUpdateContext &Co
         }
     }
 
-    if (bChanged)
+    const bool bWasLocked = State.bLockedUntilFull;
+    if (State.Current <= 0.0f)
+    {
+        State.bLockedUntilFull = true;
+    }
+    else if (State.Current >= State.Maximum)
+    {
+        State.bLockedUntilFull = false;
+    }
+    if (bChanged || bWasLocked != State.bLockedUntilFull)
     {
         ++State.Revision;
     }

@@ -29,4 +29,7 @@ struct FBBBCharacterStaminaState final
 
     /** 当前体力结果是否已经建立 */
     bool bInitialized = false;
+
+    /** 体力耗尽后锁定全部耗体力操作 直到回满解除 */
+    bool bLockedUntilFull = false;
 };

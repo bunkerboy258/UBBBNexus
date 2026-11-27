@@ -79,29 +79,17 @@ bool ResolveRun(
     return bFullMovementInput && CanRun(Character, ControlData, Config);
 }
 
-// 按体力与恢复滞回裁决站立冲刺状态 体力耗尽时自动回落普通奔跑
+// 按体力耗尽锁裁决站立冲刺状态 锁定或空体力时回落普通奔跑
 bool ResolveSprint(
     const bool bRun,
     const FBBBCharacterControlState &ControlData,
-    const FBBBCharacterLocomotionConfig &Config,
     const bool bWasSprinting,
     const FVector &CurrentVelocity,
-    const float StaminaCurrent,
-    bool &bInOutSprintExhausted)
+    const bool bCanSpendStamina)
 {
-    if (StaminaCurrent <= 0.0f)
+    if (!bCanSpendStamina)
     {
-        bInOutSprintExhausted = true;
         return false;
-    }
-
-    if (bInOutSprintExhausted)
-    {
-        if (StaminaCurrent < FMath::Max(Config.SprintResumeStamina, 0.0f))
-        {
-            return false;
-        }
-        bInOutSprintExhausted = false;
     }
 
     if (!bRun)
@@ -225,7 +213,7 @@ void UpdateSlideState(
     const bool bCrouchPressed,
     const FBBBCharacterLocomotionConfig &Config,
     const float DeltaSeconds,
-    const float StaminaCurrent)
+    const bool bCanSpendStamina)
 {
     const float Speed = Movement.Velocity.Size2D();
     const bool bOnGround = Movement.IsMovingOnGround();
@@ -246,7 +234,7 @@ void UpdateSlideState(
         return;
     }
 
-    if (bOnGround && bCrouchPressed && Speed >= Config.SlideEnterSpeed && StaminaCurrent > 0.0f)
+    if (bOnGround && bCrouchPressed && Speed >= Config.SlideEnterSpeed && bCanSpendStamina)
     {
         RuntimeData.bSlide = true;
         RuntimeData.bSlideBelowExitSpeed = false;
@@ -381,12 +369,14 @@ void FBBBCharacterLocomotionProcessor::Update(
         Movement.RotationRate.Yaw = -1.0f;
     }
 
-    const float StaminaCurrent = Context.Data.Stamina.ReadStaminaState().Current;
+    const auto &Stamina = Context.Data.Stamina.ReadStaminaState();
+    const bool bCanSpendStamina =
+        Stamina.bInitialized && !Stamina.bLockedUntilFull && Stamina.Current > 0.0f;
     if (bIsLocal)
     {
         // 使用蹲伏与普通步态限速生效之前的水平速度裁决滑铲
         UpdateSlideState(
-            RuntimeData, Movement, bCrouchPressed, Config, Context.DeltaSeconds, StaminaCurrent);
+            RuntimeData, Movement, bCrouchPressed, Config, Context.DeltaSeconds, bCanSpendStamina);
         // 滑铲期间本机暂停生成站立跑步与冲刺状态
         if (RuntimeData.bSlide)
         {
@@ -444,11 +434,9 @@ void FBBBCharacterLocomotionProcessor::Update(
         RuntimeData.bSprint = ResolveSprint(
             RuntimeData.bRun,
             ControlData,
-            Config,
             RuntimeData.bSprint,
             Movement.Velocity,
-            StaminaCurrent,
-            RuntimeData.bSprintExhausted);
+            bCanSpendStamina);
     }
 
     // 计算并提交当前方向速度映射

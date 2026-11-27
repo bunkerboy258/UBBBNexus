@@ -242,18 +242,18 @@ private:
     friend class FBBBAccelerationObservationProcessor;
 
     /** 复制已经成立的体力结果 */
-    void ReplicateStamina(float Current, float Maximum, uint64 Revision);
+    void ReplicateStamina(float Current, float Maximum, uint64 Revision, bool bLockedUntilFull);
 
     /** 控制者上报自己的既成体力结果 */
     UFUNCTION(Server, Unreliable)
-    void ServerSubmitStamina(float Current, float Maximum, uint64 Revision);
+    void ServerSubmitStamina(float Current, float Maximum, uint64 Revision, bool bLockedUntilFull);
 
     /** 当前体力结果到达时提交还原输入 */
     UFUNCTION()
     void OnRep_Stamina();
 
     /** 将接收的体力结果投递为领域输入 */
-    void SubmitStaminaInput(float Current, float Maximum, uint64 Revision);
+    void SubmitStaminaInput(float Current, float Maximum, uint64 Revision, bool bLockedUntilFull);
 
     /** 当前体力 */
     UPROPERTY(Replicated)
@@ -262,6 +262,10 @@ private:
     /** 当前体力上限 */
     UPROPERTY(Replicated)
     float ReplicatedMaximumStamina = 0.0f;
+
+    /** 耗尽锁直至回满 */
+    UPROPERTY(Replicated)
+    bool bReplicatedStaminaLockedUntilFull = false;
 
     /** 当前体力结果版本 */
     UPROPERTY(ReplicatedUsing = OnRep_Stamina)

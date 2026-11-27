@@ -100,6 +100,14 @@ public:
         return RuntimeData.Stamina.ReadStaminaState().Maximum;
     }
 
+    /** @return 当前是否允许发起消耗体力的操作 */
+    UFUNCTION(BlueprintPure, Category = "BBB|体力", meta = (DisplayName = "可消耗体力"))
+    bool CanSpendStamina() const
+    {
+        const auto &Stamina = RuntimeData.Stamina.ReadStaminaState();
+        return Stamina.bInitialized && !Stamina.bLockedUntilFull && Stamina.Current > 0.0f;
+    }
+
     /** @return 本轮倒地标识 */
     uint64 GetDownedRevision() const
     {

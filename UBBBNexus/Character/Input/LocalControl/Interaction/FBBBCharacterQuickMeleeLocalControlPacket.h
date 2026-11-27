@@ -17,7 +17,8 @@ struct FBBBCharacterQuickMeleeLocalControlPacket final
     {
         return !Context.bIsMirror && Context.Life.bActionsAllowed &&
                !Context.InteractionUse.bBusy && Context.InteractionUse.bSwitchAllowed &&
-               !Context.ItemOperations.bQuickUse;
+               !Context.ItemOperations.bQuickUse && Context.Stamina.bInitialized &&
+               !Context.Stamina.bLockedUntilFull && Context.Stamina.Current > 0.0f;
     }
     /** @param Context 输入状态 @return 无 */
     void Apply(FBBBCharacterInputContext &Context) const

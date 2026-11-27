@@ -16,9 +16,6 @@ struct FBBBCharacterLocomotionState final
     /** 当前本地计算或网络恢复后的冲刺状态 */
     bool bSprint = false;
 
-    /** 体力耗尽后等待恢复至冲刺阈值前禁止再次冲刺 */
-    bool bSprintExhausted = false;
-
     /** 当前本地计算或网络恢复后的滑铲状态 */
     bool bSlide = false;
     /** 上一次移动更新是否收到持续蹲伏意图 用于识别按下的瞬间 */

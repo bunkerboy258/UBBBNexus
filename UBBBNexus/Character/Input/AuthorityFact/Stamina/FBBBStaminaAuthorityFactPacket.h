@@ -1,5 +1,4 @@
 #pragma once
-
 #include "BBBWork/UBBBNexus/Character/Logic/System/ParseSystem/DomainData/Context/BBBCharacterInputContext.h"
 #include "CoreMinimal.h"
 
@@ -14,6 +13,9 @@ struct FBBBStaminaAuthorityFactPacket final
 
     /** 结果版本 */
     uint64 Revision = 0;
+
+    /** 耗尽后锁定全部耗体力操作直至回满 */
+    bool bLockedUntilFull = false;
 
     /** @return 包内容是否合法 */
     bool IsValid() const
@@ -34,6 +36,7 @@ struct FBBBStaminaAuthorityFactPacket final
         Context.Stamina.Current = Current;
         Context.Stamina.Maximum = Maximum;
         Context.Stamina.Revision = Revision;
+        Context.Stamina.bLockedUntilFull = bLockedUntilFull;
         Context.Stamina.bInitialized = true;
     }
 };

@@ -14,12 +14,14 @@ void FBBBStaminaObservationProcessor::Update(FBBBCharacterNetworkUpdateContext &
     }
     if (Context.NetworkIdentityState.bHasAuthority)
     {
-        Context.NetworkComponent.ReplicateStamina(Stamina.Current, Stamina.Maximum, Stamina.Revision);
+        Context.NetworkComponent.ReplicateStamina(
+            Stamina.Current, Stamina.Maximum, Stamina.Revision, Stamina.bLockedUntilFull);
         Observation.Revision = Stamina.Revision;
     }
     if (!Context.NetworkIdentityState.bHasAuthority && Context.NetworkIdentityState.bLocallyControlled)
     {
-        Context.NetworkComponent.ServerSubmitStamina(Stamina.Current, Stamina.Maximum, Stamina.Revision);
+        Context.NetworkComponent.ServerSubmitStamina(
+            Stamina.Current, Stamina.Maximum, Stamina.Revision, Stamina.bLockedUntilFull);
         Observation.Revision = Stamina.Revision;
     }
 }
