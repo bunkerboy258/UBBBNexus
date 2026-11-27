@@ -25,10 +25,10 @@ ABBBMonsterPresentationActor::ABBBMonsterPresentationActor(const FObjectInitiali
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = false;
     static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BurningAsset(
-        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Embers.NS_Monster_Burning_Embers"));
+        TEXT("/Game/_Project/Mass/Monster/Effects/NS_Monster_Burning_Clean.NS_Monster_Burning_Clean"));
     BurningSystem = BurningAsset.Object;
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> BurningOverlayAsset(
-        TEXT("/Game/_Project/Mass/Monster/Effects/M_Monster_Burning_Overlay.M_Monster_Burning_Overlay"));
+        TEXT("/Game/_Project/Mass/Monster/Effects/M_Monster_Burning_Overlay_V2.M_Monster_Burning_Overlay_V2"));
     BurningOverlayMaterial = BurningOverlayAsset.Object;
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("MonsterRoot"));
     SetRootComponent(Root);
@@ -193,9 +193,9 @@ void ABBBMonsterPresentationActor::SetBurningPresentation(bool bBurning)
     {
         return;
     }
-    // 纯正暖橙细火苗 + 上升火星全身包络（无紫色、无块状大贴片）
+    // 纯正暖橙火苗 + 上升火星贴身包络（无紫色、无光源、无烟雾）
     BurningEffect = UNiagaraFunctionLibrary::SpawnSystemAttached(BurningSystem, MonsterMesh,
-        NAME_None, FVector(0.0, 0.0, 75.0), FRotator::ZeroRotator, FVector(0.50),
+        NAME_None, FVector(0.0, 0.0, 72.0), FRotator::ZeroRotator, FVector(0.58),
         EAttachLocation::KeepRelativeOffset, false, ENCPoolMethod::ManualRelease);
     if (BurningEffect && !BurningEffect->IsActive())
     {

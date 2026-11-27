@@ -165,17 +165,17 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
         }
         else
         {
-            // CS2 风格贴地徐徐扩散：内部已按 8 米真实直径分布原尺寸火苗 仅按 CurrentRadius/Area.Radius 做 XY 扩散
+            // CS2 风格贴地徐徐扩散：内部已按 12.8 米真实直径分布原尺寸火苗 仅按 CurrentRadius/Area.Radius 做 XY 扩散
             const float Spread = FMath::Clamp(CurrentRadius / FMath::Max(Area.Radius, 1.0f), 0.35f, 1.0f);
             Actor.AreaEffect->SetWorldScale3D(FVector(Spread, Spread, 1.0f));
             if (!Actor.AreaDecal)
             {
                 if (auto* ScorchMat = LoadObject<UMaterialInterface>(nullptr,
-                    TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal.M_Grenade_Incendiary_ScorchDecal")))
+                    TEXT("/Game/_Project/Characters/Items/Consumable/Grenade/Incendiary_Grenade/Effects/M_Grenade_Incendiary_ScorchDecal_V2.M_Grenade_Incendiary_ScorchDecal_V2")))
                 {
                     Actor.AreaDecal = NewObject<UDecalComponent>(&Actor);
                     Actor.AreaDecal->SetDecalMaterial(ScorchMat);
-                    Actor.AreaDecal->DecalSize = FVector(50.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
+                    Actor.AreaDecal->DecalSize = FVector(45.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
                     Actor.AreaDecal->FadeScreenSize = 0.002f;
                     Actor.AreaDecal->PrimaryComponentTick.bCanEverTick = false;
                     Actor.AreaDecal->SetWorldLocationAndRotation(Fact.AreaGround, FRotator(-90.0f, FMath::FRandRange(0.0f, 360.0f), 0.0f));
@@ -184,7 +184,7 @@ void FBBBThrowableAreaProcessor::Update(ABBBThrowable& Actor) const
             }
             if (Actor.AreaDecal)
             {
-                Actor.AreaDecal->DecalSize = FVector(50.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
+                Actor.AreaDecal->DecalSize = FVector(45.0, CurrentRadius * 1.02f, CurrentRadius * 1.02f);
                 Actor.AreaDecal->MarkRenderStateDirty();
             }
         }

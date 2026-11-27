@@ -208,7 +208,7 @@ void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBB
     if (!BulletHoleMaterial)
     {
         BulletHoleMaterial = LoadObject<UMaterialInterface>(nullptr,
-            TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileBulletHole.M_BBBProjectileBulletHole"));
+            TEXT("/Game/_Project/Mass/Projectile/M_BBBProjectileBulletHole_V2.M_BBBProjectileBulletHole_V2"));
         if (!BulletHoleMaterial)
         {
             return;
@@ -249,8 +249,8 @@ void UBBBProjectilePresentationSubsystem::PublishBulletHoles(TConstArrayView<FBB
         {
             Decal = NewObject<UDecalComponent>(World);
             Decal->SetDecalMaterial(BulletHoleMaterial);
-            Decal->DecalSize = FVector(6.0, 3.8, 3.8);
-            Decal->FadeScreenSize = 0.008f;
+            Decal->DecalSize = FVector(8.0, 4.2, 4.2);
+            Decal->FadeScreenSize = 0.006f;
             Decal->SortOrder = 1;
             Decal->PrimaryComponentTick.bCanEverTick = false;
             Decal->RegisterComponentWithWorld(World);
