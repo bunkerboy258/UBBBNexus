@@ -5,6 +5,7 @@
 #include "BBBWork/UBBBNexus/Item/Consumable/Base/Config/BBBConsumableDefinition.h"
 
 #include "BBBWork/UBBBNexus/Character/BBBCharacter.h"
+#include "BBBWork/UBBBNexus/Character/Input/LocalControl/Item/FBBBCharacterItemMoveLocalControlPacket.h"
 #include "BBBWork/UBBBNexus/Character/Animation/BBBAnimInstance.h"
 #include "BBBWork/UBBBNexus/Item/BBBItemDefinition.h"
 #include "BBBWork/UBBBNexus/Item/Equipment/Catalog/BBBEquipmentCatalog.h"
@@ -35,28 +36,10 @@ void ABBBItemDebugActor::BeginPlay()
         SetActorTickEnabled(false);
         return;
     }
-    if (ItemDefinitions.IsEmpty() || PlayerIndex < 0 || !FMath::IsFinite(WaitTimeout) || WaitTimeout <= 0.0f)
+    if (PlayerIndex < 0 || WearablePage < 0 || !FMath::IsFinite(WaitTimeout) || WaitTimeout <= 0.0f)
     {
-        UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品调试配置无效 请检查物品列表 玩家索引和等待时限"), *GetPathName());
+        UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品调试配置无效 请检查玩家索引 配装页和等待时限"), *GetPathName());
         SetActorTickEnabled(false);
-        return;
-    }
-    TSet<FName> ItemIds;
-    for (const UBBBItemDefinition *Definition : ItemDefinitions)
-    {
-        if (!IsValid(Definition) || Definition->ItemId.IsNone())
-        {
-            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品列表包含无效定义或物品 ID 不提交入包输入"), *GetPathName());
-            SetActorTickEnabled(false);
-            return;
-        }
-        if (ItemIds.Contains(Definition->ItemId))
-        {
-            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 物品列表重复配置 %s"), *GetPathName(), *Definition->ItemId.ToString());
-            SetActorTickEnabled(false);
-            return;
-        }
-        ItemIds.Add(Definition->ItemId);
     }
 }
 
@@ -111,53 +94,95 @@ void ABBBItemDebugActor::Tick(float DeltaSeconds)
         }
         BatchTarget = Character;
     }
+    if (NextBatchIndex == ItemBatches.Num())
+    {
+        ApplyReviewWearables(*Character);
+        SetActorTickEnabled(false);
+        return;
+    }
     Character->SubmitInput(MoveTemp(ItemBatches[NextBatchIndex]));
     ++NextBatchIndex;
     if (NextBatchIndex == ItemBatches.Num())
     {
         UE_LOG(LogBBBItemDebug, Display, TEXT("%s 已向角色 %s 提交全部 %d 批入包输入"),
             *GetPathName(), *Character->GetPathName(), NextBatchIndex);
-        ItemBatches.Reset();
-        SetActorTickEnabled(false);
+        if (ReviewWearables.IsEmpty())
+        {
+            ItemBatches.Reset();
+            SetActorTickEnabled(false);
+        }
     }
 }
 
 bool ABBBItemDebugActor::PrepareItemBatches(const ABBBCharacter &Character)
 {
     const auto &Config = Character.GetCharacterConfig().Item;
-    for (const UBBBItemDefinition *Definition : ItemDefinitions)
+    TArray<const UBBBItemDefinition *> Definitions;
+    if (!ReviewWearables.IsEmpty())
     {
-        int32 Registered = 0;
-        const UBBBItemDefinition *RegisteredDefinition = nullptr;
-        if (const auto Entry = Config.EquipmentCatalog ? Config.EquipmentCatalog->FindItem(Definition->ItemId) : nullptr)
+        for (const FName Id : ReviewWearables)
         {
-            ++Registered;
-            RegisteredDefinition = Entry.GetDefaultObject()->GetDefinition();
+            const auto *Entry = Config.WearableCatalog ? Config.WearableCatalog->FindItem(Id) : nullptr;
+            Definitions.Add(Entry ? Entry->Definition.Get() : nullptr);
         }
-        if (const auto *Entry = Config.WearableCatalog ? Config.WearableCatalog->FindItem(Definition->ItemId) : nullptr)
+    }
+    else
+    {
+        if (const auto *Catalog = Config.EquipmentCatalog.Get())
         {
-            ++Registered;
-            RegisteredDefinition = Entry->Definition;
+            for (const auto &Class : Catalog->Items)
+            {
+                const auto *Equipment = Class.GetDefaultObject();
+                Definitions.Add(Equipment ? Equipment->GetDefinition() : nullptr);
+            }
         }
-        if (const auto Entry = Config.ConsumableCatalog ? Config.ConsumableCatalog->FindItem(Definition->ItemId) : nullptr)
+        if (const auto *Catalog = Config.ConsumableCatalog.Get())
         {
-            ++Registered;
-            RegisteredDefinition = Entry;
+            for (const UBBBConsumableDefinition *Definition : Catalog->Items)
+            {
+                Definitions.Add(Definition);
+            }
         }
-        if (const auto *Entry = Config.MiscCatalog ? Config.MiscCatalog->FindItem(Definition->ItemId) : nullptr)
+        if (const auto *Catalog = Config.MiscCatalog.Get())
         {
-            ++Registered;
-            RegisteredDefinition = Entry;
+            for (const UBBBItemDefinition *Definition : Catalog->Items)
+            {
+                Definitions.Add(Definition);
+            }
         }
-        if (Registered == 0)
+        if (const auto *Catalog = Config.WearableCatalog.Get())
         {
-            continue;
+            const int32 PageSize = Character.RuntimeData.Item.ReadCharacterItemInventoryState().WearableSlotCount;
+            const int64 First = static_cast<int64>(WearablePage) * PageSize;
+            const int32 Total = Catalog->Items.Num();
+            if (Total && (PageSize <= 0 || First >= Total))
+            {
+                UE_LOG(LogBBBItemDebug, Error, TEXT("%s 配装页 %d 超出 %d 件配装与 %d 格背包的范围"),
+                    *GetPathName(), WearablePage, Total, PageSize);
+                return false;
+            }
+            const int64 Last = FMath::Min(First + PageSize, static_cast<int64>(Total));
+            for (int32 Index = static_cast<int32>(First); Index < Last; ++Index)
+            {
+                Definitions.Add(Catalog->Items[Index].Definition);
+            }
+            if (PageSize > 0)
+            {
+                UE_LOG(LogBBBItemDebug, Display, TEXT("%s 配装第 %d/%d 页 本页 %lld 件 目录共 %d 件"),
+                    *GetPathName(), WearablePage + 1, FMath::DivideAndRoundUp(Total, PageSize), Last - First, Total);
+            }
         }
-        if (Registered != 1 || RegisteredDefinition != Definition)
+    }
+    TSet<FName> ItemIds;
+    for (const UBBBItemDefinition *Definition : Definitions)
+    {
+        if (!IsValid(Definition) || Definition->ItemId.IsNone() || ItemIds.Contains(Definition->ItemId))
         {
-            UE_LOG(LogBBBItemDebug, Error, TEXT("物品必须唯一登记 %s"), *Definition->ItemId.ToString());
+            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 调试目录包含空物品或重复物品 %s"),
+                *GetPathName(), *GetNameSafe(Definition));
             return false;
         }
+        ItemIds.Add(Definition->ItemId);
         if (ItemBatches.IsEmpty() || ItemBatches.Last().ItemIds.Num() == ItemsPerFrame)
         {
             ItemBatches.AddDefaulted();
@@ -180,4 +205,40 @@ bool ABBBItemDebugActor::PrepareItemBatches(const ABBBCharacter &Character)
         }
     }
     return true;
+}
+
+void ABBBItemDebugActor::ApplyReviewWearables(ABBBCharacter &Character) const
+{
+    const auto &Inventory = Character.RuntimeData.Item.ReadCharacterItemInventoryState();
+    FBBBCharacterItemMoveLocalControlPacket Packet;
+    for (const FName Id : ReviewWearables)
+    {
+        const int32 Source = Inventory.Slots.IndexOfByPredicate([Id](const FBBBCharacterItem &Item)
+        {
+            return Item.Definition && Item.Definition->ItemId == Id;
+        });
+        if (Source == INDEX_NONE)
+        {
+            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 缺少审核物品 %s"), *GetPathName(), *Id.ToString());
+            return;
+        }
+        const auto &Item = Inventory.Slots[Source];
+        const int32 WearIndex = Inventory.WearSlots.Find(Item.Definition->WearSlot);
+        if (WearIndex == INDEX_NONE || Packet.Targets.Contains(Inventory.BackpackSlotCount + WearIndex))
+        {
+            UE_LOG(LogBBBItemDebug, Error, TEXT("%s 审核配装的穿戴位置不合法 %s"), *GetPathName(), *Id.ToString());
+            return;
+        }
+        const int32 Target = Inventory.BackpackSlotCount + WearIndex;
+        if (Source != Target)
+        {
+            Packet.Sources.Add(Source);
+            Packet.Targets.Add(Target);
+            Packet.Instances.Add(Item.InstanceId);
+        }
+    }
+    if (Packet.IsValid())
+    {
+        Character.SubmitInput(MoveTemp(Packet));
+    }
 }

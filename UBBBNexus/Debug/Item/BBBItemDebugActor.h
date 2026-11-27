@@ -5,9 +5,8 @@
 #include "BBBItemDebugActor.generated.h"
 
 class ABBBCharacter;
-class UBBBItemDefinition;
 
-/** 通过角色输入入口分帧向背包添加指定物品的调试演员 */
+/** 通过角色输入入口分帧向背包添加目标角色目录中的物品的调试演员 */
 UCLASS(Blueprintable, meta = (DisplayName = "物品调试器"))
 class ABBB_EVAC_API ABBBItemDebugActor : public AActor
 {
@@ -18,7 +17,7 @@ public:
     ABBBItemDebugActor();
 
     //~ Begin AActor Interface
-    /** @return 校验物品列表并开始等待 */
+    /** @return 校验调试参数并开始等待 */
     virtual void BeginPlay() override;
 
     /**
@@ -30,9 +29,13 @@ public:
     //~ End AActor Interface
 
 protected:
-    /** 指定武器和穿戴品等物品 必须登记在目标角色的统一物品目录中 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|物品调试", meta = (DisplayName = "物品列表"))
-    TArray<TObjectPtr<UBBBItemDefinition>> ItemDefinitions;
+    /** 穿戴物超过背包容量时 按目录顺序选择发放页 从零开始 */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BBB|物品调试", meta = (ClampMin = "0", DisplayName = "配装页"))
+    int32 WearablePage = 0;
+
+    /** 指定审核配装时只发放并穿上这些穿戴物 */
+    UPROPERTY(EditInstanceOnly, Category = "BBB|物品调试", meta = (DisplayName = "审核配装"))
+    TArray<FName> ReviewWearables;
 
     /** 显式目标角色 留空时使用本地玩家角色 */
     UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "BBB|物品调试", meta = (DisplayName = "目标角色"))
@@ -53,6 +56,9 @@ private:
      * @return 是否有可提交的有效输入包
      */
     bool PrepareItemBatches(const ABBBCharacter &Character);
+
+    /** 发放完成后 通过常规移动输入应用审核配装 */
+    void ApplyReviewWearables(ABBBCharacter &Character) const;
 
     /** 每帧的调试器发放预算 包含本帧可能创建的装备实例 */
     static constexpr int32 ItemsPerFrame = 16;
