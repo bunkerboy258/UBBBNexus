@@ -289,16 +289,6 @@ public:
         return GetBBBMainAnimInstanceThreadSafe()->LeanAlpha;
     }
 
-    /**
-     * 判断本帧高处前向落地是否满足自动翻滚卸力条件
-     * @param bJustLanded 本帧是否刚落地
-     * @param LandingVelocity 落地前一刻的世界速度
-     * @param MinFallSpeed 触发翻滚的最低下落速度阈值 单位厘米每秒
-     * @return 是否触发前向落地翻滚
-     */
-    UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
-    bool ShouldTriggerLandRoll(bool bJustLanded, FVector LandingVelocity, float MinFallSpeed = 680.0f) const;
-
     /** @return 角色是否正在滑铲 */
     UFUNCTION(BlueprintPure, Category = "Locomotion", meta = (BlueprintThreadSafe))
     bool IsSliding() const

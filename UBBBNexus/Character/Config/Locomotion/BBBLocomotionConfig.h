@@ -63,15 +63,15 @@ struct FBBBCharacterLocomotionConfig
 
     /** 垂直起跳速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "跳跃垂直速度"))
-    float JumpZVelocity = 500.0f;
+    float JumpZVelocity = 540.0f;
 
     /** 空中控制能力 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "空中控制系数"))
-    float AirControl = 0.25f;
+    float AirControl = 0.35f;
 
     /** 重力缩放 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|空中", meta = (ClampMin = "0.0", DisplayName = "重力倍率"))
-    float GravityScale = 1.0f;
+    float GravityScale = 1.25f;
 
     /** 最小模拟摇杆移动速度 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BBB|移动|角色移动组件", meta = (ClampMin = "0.0", DisplayName = "最小模拟输入行走速度"))

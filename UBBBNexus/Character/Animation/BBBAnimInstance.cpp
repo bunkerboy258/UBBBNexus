@@ -172,36 +172,6 @@ void UBBBAnimInstance::NativeThreadSafeUpdateAnimation(const float DeltaSeconds)
     LeanAlpha = FMath::FInterpTo(LeanAlpha, TargetAlpha, DeltaSeconds, 10.0f);
 }
 
-bool UBBBAnimInstance::ShouldTriggerLandRoll(
-    const bool bJustLanded,
-    const FVector LandingVelocity,
-    const float MinFallSpeed) const
-{
-    const UBBBAnimInstance *Main = GetBBBMainAnimInstanceThreadSafe();
-    if (!bJustLanded || Main->bSourceCrouching || Main->bSourceSliding || Main->bSourceAiming)
-    {
-        return false;
-    }
-
-    if (-LandingVelocity.Z < FMath::Max(MinFallSpeed, 0.0f))
-    {
-        return false;
-    }
-
-    const FVector Forward = FRotator(0.0f, Main->SourceActorRotation.Yaw, 0.0f).Vector();
-    const FVector PlanarVelocity(LandingVelocity.X, LandingVelocity.Y, 0.0f);
-    const FVector PlanarInput(Main->SourceMovementInput.X, Main->SourceMovementInput.Y, 0.0f);
-    if (PlanarVelocity.SizeSquared() >= FMath::Square(140.0f))
-    {
-        return FVector::DotProduct(Forward, PlanarVelocity.GetSafeNormal()) >= 0.45f;
-    }
-    if (PlanarInput.SizeSquared() >= FMath::Square(0.35f))
-    {
-        return FVector::DotProduct(Forward, PlanarInput.GetSafeNormal()) >= 0.45f;
-    }
-    return false;
-}
-
 UBBBAnimInstance *UBBBAnimInstance::GetBBBMainAnimInstanceThreadSafe() const
 {
     // 优先取得骨骼网格上的主动画实例保证链接层读取统一状态
