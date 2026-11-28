@@ -81,6 +81,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
 
     Controller->SubmitItemAdd(TEXT("ModernWeapons_Rifle_01"));
     Controller->SubmitItemAdd(TEXT("Grenade_01"), 4);
+    Controller->SubmitItemAdd(TEXT("Grenade_Stun"));
     Step();
     int32 Start = 0;
     int32 Count = 0;
@@ -90,8 +91,10 @@ bool FBBBConsumableTest::RunTest(const FString &)
     TestNull(TEXT("库存消耗品没有手持 Actor"),
              Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots[Start].HeldInstance.Get());
     TestNull(TEXT("未使用时没有消耗品运行时"), Character->RuntimeData.Item.ReadCharacterItemUseState().Runtime.Get());
-    Controller->SubmitItemSelect(0);
+    TestEqual(TEXT("进场自动选择一号位"), Controller->GetSelectedItemSlot(), 0);
+    Controller->SubmitItemMove(Start + 1, Start + 2, Controller->GetItemInstanceId(Start + 1));
     Step();
+    TestEqual(TEXT("后续投掷物位于第三格"), Controller->GetItemDisplayData(Start + 2).Quantity, 1);
     AActor *Weapon = Character->GetHeldItem();
     if (!TestNotNull(TEXT("装备主手有效"), Weapon))
     {
@@ -136,7 +139,7 @@ bool FBBBConsumableTest::RunTest(const FString &)
         Controller->SubmitItemMove(Start, Start + 2, Controller->GetItemInstanceId(Start));
         Step();
         TestEqual(TEXT("使用期间拒绝装备切换"), Character->GetHeldItem(), Weapon);
-        TestEqual(TEXT("使用期间拒绝库存移动"), Controller->GetItemDisplayData(Start + 2).Quantity, 0);
+        TestEqual(TEXT("使用期间拒绝库存移动"), Controller->GetItemDisplayData(Start + 2).Quantity, 1);
         Release();
         Release();
         Step();
@@ -147,6 +150,8 @@ bool FBBBConsumableTest::RunTest(const FString &)
         {
             TestTrue(TEXT("零数量仍保留至使用结束"),
                      Character->RuntimeData.Item.ReadCharacterItemInventoryState().Slots[Start].InstanceId.IsValid());
+            TestEqual(TEXT("动作结束前不提前切换"),
+                      Character->RuntimeData.Item.ReadCharacterItemBarState().SelectedThrowableSlot, 0);
         }
         Finish();
         Step();
@@ -155,6 +160,9 @@ bool FBBBConsumableTest::RunTest(const FString &)
         TestNull(TEXT("完成后回收当次对象"), Character->RuntimeData.Item.ReadCharacterItemUseState().Runtime.Get());
         TestEqual(TEXT("耗尽不清空有效装备"), Character->GetHeldItem(), Weapon);
         TestEqual(TEXT("结束不销毁已投出的世界实体"), CountThrowables(), Baseline + Index + 1);
+        TestEqual(TEXT("最后一枚完成后跳过空格"),
+                  Controller->GetSelectedThrowableSlot(), Index == 3 ? 2 : 0);
+        TestEqual(TEXT("自动选择后不自动使用下一格"), Controller->GetItemDisplayData(Start + 2).Quantity, 1);
     }
     auto *Target = World->SpawnActor<AActor>();
     auto *Collision = NewObject<UBoxComponent>(Target);

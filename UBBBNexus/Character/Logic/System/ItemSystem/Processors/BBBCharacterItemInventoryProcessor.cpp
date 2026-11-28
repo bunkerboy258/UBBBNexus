@@ -155,17 +155,24 @@ void FBBBCharacterItemInventoryProcessor::Update(FBBBCharacterItemUpdateContext 
             Inventory.Slots[TargetSlot] = Restored;
             ++Operations.SucceededCount;
         }
-        if (Operations.PendingRestoreWeaponSlot == INDEX_NONE
-            || (Operations.PendingRestoreWeaponSlot >= 0 && Operations.PendingRestoreWeaponSlot < Inventory.QuickAccessSlotCount))
+        const int32 RestoredWeaponSlot = Context.Character.IsPlayerControlled() && Inventory.QuickAccessSlotCount > 0
+            ? 0 : Operations.PendingRestoreWeaponSlot;
+        if (RestoredWeaponSlot == INDEX_NONE || (RestoredWeaponSlot >= 0 && RestoredWeaponSlot < Inventory.QuickAccessSlotCount))
         {
-            Operations.PendingSelectedSlots.Add(Operations.PendingRestoreWeaponSlot);
+            Operations.PendingSelectedSlots.Insert(RestoredWeaponSlot, 0);
         }
         const int32 ConsumableStart = Inventory.EquipmentSlotCount + Inventory.WearableSlotCount;
-        if (Operations.PendingRestoreConsumableSlot >= ConsumableStart
-            && Operations.PendingRestoreConsumableSlot < ConsumableStart + Inventory.ConsumableQuickAccessSlotCount)
+        const int32 RestoredConsumableSlot = Operations.PendingRestoreConsumableSlot;
+        if (RestoredConsumableSlot >= 0 && RestoredConsumableSlot < Inventory.ConsumableQuickAccessSlotCount)
         {
-            Context.RuntimeData.Item.ItemBarState.SelectedConsumableSlot = Operations.PendingRestoreConsumableSlot;
-            ++Context.RuntimeData.Item.ItemBarState.Revision;
+            auto &Bar = Context.RuntimeData.Item.ItemBarState;
+            Bar.SelectedConsumableSlot = RestoredConsumableSlot;
+            const auto *Definition = Cast<UBBBConsumableDefinition>(Inventory.Slots[ConsumableStart + RestoredConsumableSlot].Definition);
+            if (Definition && Definition->bThrowable)
+            {
+                Bar.SelectedThrowableSlot = RestoredConsumableSlot;
+            }
+            ++Bar.Revision;
         }
         ++Inventory.Revision;
         ++Operations.Revision;
